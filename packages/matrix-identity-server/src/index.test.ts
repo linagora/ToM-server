@@ -1,6 +1,6 @@
 import express from 'express'
 import request from 'supertest'
-import IdServer from '@twake/matrix-identity-server'
+import IdServer from './index'
 
 const idServer = new IdServer()
 

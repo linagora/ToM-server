@@ -3,7 +3,7 @@ import typescript from '@rollup/plugin-typescript'
 import {nodeResolve} from '@rollup/plugin-node-resolve'
 
 import builtins from 'builtins'
-//import terser from "@rollup/plugin-terser";
+import terser from "@rollup/plugin-terser";
 
 const plugins = [
   typescript(),
@@ -11,7 +11,7 @@ const plugins = [
   nodeResolve({
     preferBuiltins: true,
   }),
-  //terser(),
+  terser(),
 ]
 
 function configure (esm, external) {
