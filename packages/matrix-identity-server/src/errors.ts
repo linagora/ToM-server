@@ -44,9 +44,20 @@ export const errCodes = {
   unknown: "M_UNKNOWN",
 }
 
-export const errMsg = (code: keyof typeof errCodes, explanation: string) => {
+const defaultMsg = (s: string): string => {
+  return s.replace(/^M_/,'')
+    .split('_')
+    .map(s => {
+      const t=s.toLowerCase();
+      return t.charAt(0).toUpperCase()+t.slice(1)
+    })
+    .join(' ')
+}
+
+export const errMsg = (code: keyof typeof errCodes, explanation?: string) => {
+  const errCode = errCodes[code]
   return JSON.stringify({
-    errcode: errCodes[code],
-    error: explanation,
+    errcode: errCode,
+    error: explanation ? explanation : defaultMsg(errCode),
   })
 }
