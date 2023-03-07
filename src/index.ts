@@ -1,3 +1,0 @@
-/**
- * Twake Identity Server
- */
