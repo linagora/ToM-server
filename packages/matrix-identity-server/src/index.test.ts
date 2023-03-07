@@ -6,7 +6,7 @@ const idServer = new IdServer()
 
 const app = express()
 
-Object.keys(idServer.api.get).forEach( k => {
+Object.keys(idServer.api.get).forEach(k => {
   app.get(k, idServer.api.get[k])
 })
 

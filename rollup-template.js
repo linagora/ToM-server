@@ -1,17 +1,17 @@
 import commonjs from '@rollup/plugin-commonjs'
 import typescript from '@rollup/plugin-typescript'
-import {nodeResolve} from '@rollup/plugin-node-resolve'
+import { nodeResolve } from '@rollup/plugin-node-resolve'
 
 import builtins from 'builtins'
-import terser from "@rollup/plugin-terser";
+import terser from '@rollup/plugin-terser'
 
 const plugins = [
   typescript(),
   commonjs(),
   nodeResolve({
-    preferBuiltins: true,
+    preferBuiltins: true
   }),
-  terser(),
+  terser()
 ]
 
 function configure (esm, external) {
@@ -32,7 +32,7 @@ function configure (esm, external) {
           exports: 'auto'
         },
     external: [...builtins(), ...external],
-    plugins,
+    plugins
   }
 }
 function setExternal (external) {
