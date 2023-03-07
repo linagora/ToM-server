@@ -15,6 +15,11 @@
     "type": "git",
     "url": "https://ci.linagora.com/publicgroup/oss/twake/tom-server.git"
   },
+  "files": [
+    "package.json",
+    "dist",
+    "*.md"
+  ],
   "keywords": [
     "matrix", "twake"
   ],
