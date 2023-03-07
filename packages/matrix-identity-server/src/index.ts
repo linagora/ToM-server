@@ -1,15 +1,12 @@
-import type http from 'http'
-import { Request, Response, NextFunction } from 'express'
-
-type expressAppHandler = (
-  req: Request | http.IncomingMessage,
-  res: Response | http.ServerResponse,
-  next?: NextFunction
-) => void;
+// types
+import type {expressAppHandler} from './utils'
 
 type IdServerAPI = {
   [url: string]: expressAppHandler
 }
+
+// Internal libraries
+import versions from './versions'
 
 export default class MatrixServer {
   api: {
@@ -22,25 +19,11 @@ export default class MatrixServer {
     // TODO: insert here all endpoints
     this.api = {
       get: {
-        '/': (req,res) => {
-          this.send(res, 200, {"todo":"response"})
-        }
+        '/_matrix/identity/versions': versions,
       },
       post: {
-        '/': (req,res) => {
-          this.send(res, 200, {"todo":"response"})
-        }
       },
     }
   }
 
-  send(res: Response | http.ServerResponse, status: number, body: object): void {
-    const content = JSON.stringify(body)
-    res.writeHead(status, {
-      'Content-Type': 'application/json; charset=utf-8',
-      'Content-Length': content.length,
-    });
-    res.write(content)
-    res.end()
-  }
 }
