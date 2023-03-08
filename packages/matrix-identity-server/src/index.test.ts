@@ -3,6 +3,8 @@ import request from 'supertest'
 import IdServer from './index'
 import fs from 'fs'
 import { randomString } from './utils/tokenUtils'
+import fetch from 'node-fetch'
+jest.mock('node-fetch', ()=>jest.fn())
 
 process.env.TWAKE_IDENTITY_SERVER_CONF = './src/__testData__/registerConf.json'
 
@@ -31,6 +33,7 @@ beforeAll(async () => {
 
 beforeEach(() => {
   jest.clearAllMocks()
+  jest.mock('node-fetch', ()=>jest.fn())
 })
 
 afterAll(() => {
@@ -67,6 +70,18 @@ describe('register endpoint (v2)', () => {
     expect(console.error.mock.calls[0][0]).toMatch(/JSON error/i)
   })
   it('should accept valid request', async () => {
+    const mockResponse = Promise.resolve({
+      ok: true,
+      status: 200,
+      json: () => {
+          return {
+            sub: '@dwho:example.com'
+          }
+      },
+     })
+    // @ts-ignore
+    fetch.mockImplementation(()=> mockResponse)
+    await mockResponse
     const response = await request(app)
       .post('/_matrix/identity/v2/account/register')
       .send({
@@ -95,6 +110,54 @@ describe('register endpoint (v2)', () => {
     expect(response.statusCode).toBe(200)
     // @ts-ignore
     expect(console.warn.mock.calls[0][1][0]).toMatch(/\badditional_param\b/i)
+  })
+  it('should reject missing "sub" from server', async () => {
+    const mockResponse = Promise.resolve({
+      ok: true,
+      status: 200,
+      json: () => {
+          return {
+            email: 'dwho@example.com'
+          }
+      },
+     })
+    // @ts-ignore
+    fetch.mockImplementation(()=> mockResponse)
+    await mockResponse
+    const response = await request(app)
+      .post('/_matrix/identity/v2/account/register')
+      .send({
+        access_token: "bar",
+        expires_in: 86400,
+        matrix_server_name: 'matrix.example.com',
+        token_type: 'Bearer'
+      })
+      .set('Accept', 'application/json')
+    expect(response.statusCode).toBe(500)
+  })
+  it('should reject bad "sub" from server', async () => {
+    const mockResponse = Promise.resolve({
+      ok: true,
+      status: 200,
+      json: () => {
+          return {
+            sub: 'dwho@example.com'
+          }
+      },
+     })
+    // @ts-ignore
+    fetch.mockImplementation(()=> mockResponse)
+    await mockResponse
+    const response = await request(app)
+      .post('/_matrix/identity/v2/account/register')
+      .send({
+        access_token: "bar",
+        expires_in: 86400,
+        matrix_server_name: 'matrix.example.com',
+        token_type: 'Bearer'
+      })
+      .set('Accept', 'application/json')
+    expect(response.statusCode).toBe(500)
   })
 })
 

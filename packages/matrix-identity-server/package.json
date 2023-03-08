@@ -42,6 +42,7 @@
     "sqlite3": "^5.1.4"
   },
   "dependencies": {
-    "@twake/config-parser": "*"
+    "@twake/config-parser": "*",
+    "node-fetch": "^3.3.0"
   }
 }
