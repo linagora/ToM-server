@@ -23,7 +23,8 @@
     "*.md"
   ],
   "keywords": [
-    "matrix", "twake"
+    "matrix",
+    "twake"
   ],
   "author": [
     {
@@ -35,5 +36,9 @@
   "bugs": {
     "url": "https://ci.linagora.com/publicgroup/oss/twake/tom-server/-/issues"
   },
-  "homepage": "https://ci.linagora.com/publicgroup/oss/twake/tom-server"
+  "homepage": "https://ci.linagora.com/publicgroup/oss/twake/tom-server",
+  "optionalDependencies": {
+    "pg": "^8.10.0",
+    "sqlite3": "^5.1.4"
+  }
 }
