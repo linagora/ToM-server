@@ -6,7 +6,7 @@ stages:
 
 npm:
   tags:
-    - gitlab-runner-002.linagora.dc2 
+    - ultralight
   stage: build
   script:
     - npm install
@@ -21,7 +21,7 @@ npm:
 
 test:
   tags:
-    - gitlab-runner-002.linagora.dc2 
+    - ultralight 
   stage: test
   dependencies:
     - npm
