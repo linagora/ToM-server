@@ -3,7 +3,7 @@ import twakeConfig from './index'
 test('Default values', () => {
   const res = twakeConfig({
     value_1: null,
-    value_2: undefined,
+    value_2: null,
     value_3: 1,
     value_4: true,
     value_6: false,
@@ -20,7 +20,7 @@ test('Default values', () => {
 test('Default values with file', () => {
   const res = twakeConfig({
     value_1: null,
-    value_2: undefined,
+    value_2: null,
     value_3: 1,
     value_4: true,
     value_6: false,
@@ -41,7 +41,7 @@ test('Environment variables', () => {
   process.env.VALUE_4 = 'val4'
   const res = twakeConfig({
     value_1: null,
-    value_2: undefined,
+    value_2: null,
     value_3: 1,
     value_4: true,
     value_6: false,
@@ -55,4 +55,17 @@ test('Environment variables', () => {
     value_6: false,
     value_7: 'ZZZ'
   })
+})
+
+test('Unwanted key', () => {
+  expect(() => {
+    twakeConfig({
+      value_1: null,
+      value_2: null,
+      value_3: 1,
+      value_4: true,
+      value_6: false,
+      value_7: 'ZZZ'
+    }, './src/__testData__/desc2.json')
+  }).toThrowError("Key unwanted_value isn't accepted")
 })
