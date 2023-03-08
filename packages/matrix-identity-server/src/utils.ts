@@ -38,9 +38,9 @@ export const Authenticate = (db: Database): authorizationFunction => {
     if (req.headers.authorization != null) {
       const re = req.headers.authorization.match(tokenRe)
       if (re != null) {
-        getToken.each(re[1], (err, row) => {
-          if (err == null) {
-            callback(JSON.parse(row.data))
+        getToken.all(re[1], (err, row) => {
+          if (err == null && row.length > 0) {
+            callback(JSON.parse(row[0].data))
           } else {
             send(res, 401, errMsg('unAuthorized'))
           }

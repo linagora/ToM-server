@@ -2,6 +2,7 @@ import express from 'express'
 import request from 'supertest'
 import IdServer from './index'
 import fs from 'fs'
+import { randomString } from './utils/tokenUtils'
 
 process.env.TWAKE_IDENTITY_SERVER_CONF = './src/__testData__/registerConf.json'
 
@@ -94,6 +95,29 @@ describe('register endpoint (v2)', () => {
     expect(response.statusCode).toBe(200)
     // @ts-ignore
     expect(console.warn.mock.calls[0][1][0]).toMatch(/\badditional_param\b/i)
+  })
+})
+
+describe('Authentication', () => {
+  it('should reject missing token', async () => {
+    const response = await request(app)
+      .get('/_matrix/identity/v2/account')
+      .set('Accept', 'application/json')
+    expect(response.statusCode).toBe(401)
+  })
+  it('should reject token that mismatch regex', async () => {
+    const response = await request(app)
+      .get('/_matrix/identity/v2/account')
+      .set('Authorization', `Bearer zzzzzzz`)
+      .set('Accept', 'application/json')
+    expect(response.statusCode).toBe(401)
+  })
+  it('should reject expired or invalid token', async () => {
+    const response = await request(app)
+      .get('/_matrix/identity/v2/account')
+      .set('Authorization', `Bearer ${randomString(64)}`)
+      .set('Accept', 'application/json')
+    expect(response.statusCode).toBe(401)
   })
 })
 
