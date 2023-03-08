@@ -6,7 +6,7 @@
   "scripts": {
     "build": "lerna run build",
     "test": "lerna run test",
-    "clean": "rimraf packages/*/dist ./node_modules/.cache/nx"
+    "clean": "rimraf packages/*/dist packages/*/coverage ./node_modules/.cache/nx"
   },
   "repository": {
     "type": "git",

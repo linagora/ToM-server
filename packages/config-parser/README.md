@@ -1,11 +1,11 @@
-# @twake/config
+# @twake/config-parser
 
 Simple module to load a configuration
 
 ## Synopsis
 
 ```js
-import twakeConfig from '@twake/config'
+import twakeConfig from '@twake/config-parser'
 
 const desc = {
   value_1: null,   // configuration key without default value
