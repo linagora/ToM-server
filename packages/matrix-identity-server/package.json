@@ -40,5 +40,8 @@
   "optionalDependencies": {
     "pg": "^8.10.0",
     "sqlite3": "^5.1.4"
+  },
+  "dependencies": {
+    "@twake/config-parser": "*"
   }
 }
