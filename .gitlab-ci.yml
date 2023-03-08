@@ -20,6 +20,6 @@ npm:
 test:
   stage: test
   dependencies:
-    - build
+    - npm
   script:
     - npm test
