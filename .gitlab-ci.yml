@@ -10,6 +10,7 @@ npm:
   stage: build
   script:
     - npm install
+    - npm run build
   cache:
     paths:
       - node_modules/
@@ -18,10 +19,11 @@ npm:
     when: on_success
     paths:
       - node_modules/
+      - packages/*/dist/
 
 test:
   tags:
-    - ultralight 
+    - ultralight
   stage: test
   dependencies:
     - npm
