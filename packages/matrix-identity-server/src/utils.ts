@@ -1,6 +1,8 @@
 import type http from 'http'
 import { type Request, type Response, type NextFunction } from 'express'
 import { errMsg } from './utils/errors'
+import { type Database } from 'sqlite3'
+import { type tokenContent } from './account/register'
 
 export type expressAppHandler = (
   req: Request | http.IncomingMessage,
@@ -15,10 +17,42 @@ export const send = (res: Response | http.ServerResponse, status: number, body: 
      : JSON.stringify(body)
   res.writeHead(status, {
     'Content-Type': 'application/json; charset=utf-8',
-    'Content-Length': content.length
+    'Content-Length': content.length,
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers': 'Origin, X-Requested-With, Content-Type, Accept, Authorization'
   })
   res.write(content)
   res.end()
+}
+
+type authorizationFunction = (
+  req: Request | http.IncomingMessage,
+  res: Response | http.ServerResponse,
+  callback: (data: tokenContent) => void) => void
+
+export const Authenticate = (db: Database): authorizationFunction => {
+  const getToken = db.prepare('SELECT * FROM tokens WHERE id=?')
+  const tokenRe = /^Bearer ([a-zA-Z0-9]{64})$/
+  const sub: authorizationFunction = (req, res, callback) => {
+    if (req.headers.authorization != null) {
+      const re = req.headers.authorization.match(tokenRe)
+      if (re != null) {
+        getToken.each(re[1], (err, row) => {
+          if (err == null) {
+            callback(JSON.parse(row.data))
+          } else {
+            send(res, 401, errMsg('unAuthorized'))
+          }
+        })
+      } else {
+        send(res, 401, errMsg('unAuthorized'))
+      }
+    } else {
+      send(res, 401, errMsg('unAuthorized'))
+    }
+  }
+  return sub
 }
 
 export const jsonContent = (req: Request | http.IncomingMessage, res: Response | http.ServerResponse, callback: (obj: Record<string, string>) => void): void => {

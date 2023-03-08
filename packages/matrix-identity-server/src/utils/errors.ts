@@ -3,6 +3,9 @@ export const errCodes = {
   // Not authorizated (not authenticated)
   forbidden: 'M_FORBIDDEN',
 
+  // Not authorized
+  unAuthorized: 'M_UNAUTHORIZED',
+
   // The resource requested could not be located.
   notFound: 'M_NOT_FOUND',
 

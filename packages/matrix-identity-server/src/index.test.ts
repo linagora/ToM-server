@@ -9,6 +9,8 @@ const idServer = new IdServer()
 
 const app = express()
 
+let validToken: string
+
 idServer.ready.then(() => {
   // @ts-ignore
   Object.keys(idServer.api.get).forEach(k => {
@@ -75,6 +77,7 @@ describe('register endpoint (v2)', () => {
       .set('Accept', 'application/json')
     expect(response.statusCode).toBe(200)
     expect(response.body.token).toMatch(/^[a-zA-Z0-9]{64}$/)
+    validToken = response.body.token
   })
   it('should log additional parameters', async () => {
     console.warn = jest.fn()
@@ -91,5 +94,15 @@ describe('register endpoint (v2)', () => {
     expect(response.statusCode).toBe(200)
     // @ts-ignore
     expect(console.warn.mock.calls[0][1][0]).toMatch(/\badditional_param\b/i)
+  })
+})
+
+describe('account v2 endpoint', () => {
+  it('should accept valid token', async () => {
+    const response = await request(app)
+      .get('/_matrix/identity/v2/account')
+      .set('Authorization', `Bearer ${validToken}`)
+      .set('Accept', 'application/json')
+    expect(response.statusCode).toBe(200)
   })
 })

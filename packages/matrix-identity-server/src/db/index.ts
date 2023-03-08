@@ -22,8 +22,7 @@ const IdentityServerDb = (args: dbArgs): Promise<Database> => {
               }
               resolve(db)
             })
-          }
-          else {
+          } else {
             /* istanbul ignore next */
             resolve(db)
           }

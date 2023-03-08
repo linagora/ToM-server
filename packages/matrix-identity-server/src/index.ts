@@ -10,6 +10,7 @@ import { send, type expressAppHandler } from './utils'
 import { errMsg } from './utils/errors'
 import register from './account/register'
 import IdentityServerDb from './db'
+import account from './account'
 
 type IdServerAPI = Record<string, expressAppHandler>
 
@@ -52,7 +53,8 @@ export default class MatrixIdentityServer {
             '/': (req, res) => {
               send(res, 403, errMsg('forbidden'))
             },
-            '/_matrix/identity/versions': versions
+            '/_matrix/identity/versions': versions,
+            '/_matrix/identity/v2/account': account(this.db)
           },
           post: {
             '/_matrix/identity/v2/account/register': register(this.db)

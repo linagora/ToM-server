@@ -9,13 +9,18 @@ const schema = {
   token_type: true
 }
 
+export interface tokenContent {
+  sub: string
+  epoch: number
+}
+
 const Register = (db: Database): expressAppHandler => {
   const insertToken = db.prepare('INSERT INTO tokens VALUES (?,?)')
   return (req, res) => {
     jsonContent(req, res, (obj) => {
       validateParameters(res, schema, obj, (obj) => {
         // TODO: validate token and get OIDC data
-        const data = {
+        const data: tokenContent = {
           sub: 'dwho',
           epoch: epoch()
         }
