@@ -4,8 +4,9 @@
   "description": "Identity Server for Twake, compliant with Matrix Identity Server spec",
   "type": "module",
   "scripts": {
-    "build": "lerna run build",
+    "build": "npm run softClean && lerna run build",
     "test": "lerna run test",
+    "softClean": "rimraf packages/*/dist",
     "clean": "rimraf packages/*/dist packages/*/coverage ./node_modules/.cache/nx"
   },
   "repository": {
