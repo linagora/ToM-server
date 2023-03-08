@@ -1,6 +1,7 @@
 import express from 'express'
 import request from 'supertest'
 import IdServer from './index'
+import fs from 'fs'
 
 process.env.TWAKE_IDENTITY_SERVER_CONF = './src/__testData__/registerConf.json'
 
@@ -17,6 +18,10 @@ Object.keys(idServer.api.post).forEach(k => {
 
 beforeEach(() => {
   jest.clearAllMocks()
+})
+
+afterAll(() => {
+  fs.unlinkSync('src/__testData__/test.db')
 })
 
 test('Reject /', async () => {

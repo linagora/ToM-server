@@ -1,25 +1,26 @@
 import idDb from './index'
+import { randomString } from '../utils/tokenUtils'
 
-test('Returns a SQLite database', (done) => {
+test('Returns a SQLite database initialized', (done) => {
   idDb({
     host: ":memory:",
     type: 'sqlite'
   }).then(db=>{
     db.serialize(() => {
-      db.run("CREATE TABLE lorem (info TEXT)")
-      const stmt = db.prepare("INSERT INTO lorem VALUES (?)")
-      stmt.run("Ipsum")
+      const stmt = db.prepare("INSERT INTO tokens VALUES(?,?)")
+      const id = randomString(64)
+      stmt.run(id, '{}')
       stmt.finalize()
-      db.each("SELECT rowid AS id, info FROM lorem", (err, row) => {
-        expect(row.id).toBe(1)
-        expect(row.info).toBe('Ipsum')
+      db.each("SELECT * FROM tokens", (err, row) => {
+        expect(row.id).toEqual(id)
+        expect(row.data).toEqual('{}')
         done()
       })
     })
   })
 })
 
-test('Only known db', async () => {
+test('Throws on unknown db', async () => {
   await expect(
     idDb({
       host: ":memory:",
