@@ -29,7 +29,7 @@ export const send = (res: Response | http.ServerResponse, status: number, body: 
 type authorizationFunction = (
   req: Request | http.IncomingMessage,
   res: Response | http.ServerResponse,
-  callback: (data: tokenContent) => void) => void
+  callback: (data: tokenContent, id?: string) => void) => void
 
 export const Authenticate = (db: Database): authorizationFunction => {
   const getToken = db.prepare('SELECT * FROM tokens WHERE id=?')
@@ -40,7 +40,7 @@ export const Authenticate = (db: Database): authorizationFunction => {
       if (re != null) {
         getToken.all(re[1], (err, row) => {
           if (err == null && row.length > 0) {
-            callback(JSON.parse(row[0].data))
+            callback(JSON.parse(row[0].data), re[1])
           } else {
             send(res, 401, errMsg('unAuthorized'))
           }

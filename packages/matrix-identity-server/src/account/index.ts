@@ -1,4 +1,4 @@
-import { Authenticate, jsonContent, send, validateParameters, type expressAppHandler } from '../utils'
+import { Authenticate, send, type expressAppHandler } from '../utils'
 import { type Database } from 'sqlite3'
 import { type tokenContent } from './register'
 

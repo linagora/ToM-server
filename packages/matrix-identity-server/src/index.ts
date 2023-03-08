@@ -11,6 +11,7 @@ import { errMsg } from './utils/errors'
 import register from './account/register'
 import IdentityServerDb from './db'
 import account from './account'
+import logout from './account/logout'
 
 type IdServerAPI = Record<string, expressAppHandler>
 
@@ -57,7 +58,8 @@ export default class MatrixIdentityServer {
             '/_matrix/identity/v2/account': account(this.db)
           },
           post: {
-            '/_matrix/identity/v2/account/register': register(this.db)
+            '/_matrix/identity/v2/account/register': register(this.db),
+            '/_matrix/identity/v2/account/logout': logout(this.db)
           }
         }
         resolve(true)
