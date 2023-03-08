@@ -78,3 +78,7 @@ export const validateParameters: validateParametersType = (res, desc, content, c
     callback(content)
   }
 }
+
+export const epoch = (): number => {
+  return Math.floor(Date.now() / 1000)
+}

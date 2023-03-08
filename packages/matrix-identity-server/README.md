@@ -14,15 +14,17 @@ const idServer = new IdServer()
 
 const app = express()
 
-Object.keys(idServer.api.get).forEach( k => {
-  app.get(k, idServer.api.get[k])
-})
+idServer.ready.then( () => {
+  Object.keys(idServer.api.get).forEach( k => {
+    app.get(k, idServer.api.get[k])
+  })
 
-Object.keys(idServer.api.post).forEach( k => {
-  app.post(k, idServer.api.get[k])
-})
+  Object.keys(idServer.api.post).forEach( k => {
+    app.post(k, idServer.api.get[k])
+  })
 
-app.listen(3000)
+  app.listen(3000)
+})
 ```
 
 ## Copyright and license

@@ -19,7 +19,7 @@ interface Config {
 }
 
 export default class MatrixIdentityServer {
-  api: {
+  api?: {
     get: IdServerAPI
     post: IdServerAPI
     put?: IdServerAPI
@@ -29,19 +29,9 @@ export default class MatrixIdentityServer {
 
   conf: Config
 
+  ready: Promise<boolean>
+
   constructor () {
-    // TODO: insert here all endpoints
-    this.api = {
-      get: {
-        '/': (req, res) => {
-          send(res, 403, errMsg('forbidden'))
-        },
-        '/_matrix/identity/versions': versions
-      },
-      post: {
-        '/_matrix/identity/v2/account/register': register
-      }
-    }
     this.conf = configParser(
       confDesc,
       /* istanbul ignore next */
@@ -50,11 +40,29 @@ export default class MatrixIdentityServer {
         : fs.existsSync('/etc/twake/identity-server.conf')
           ? '/etc/twake/identity-server.conf'
           : undefined) as Config
-    void IdentityServerDb({
-      type: this.conf.database_engine,
-      host: this.conf.database_host
-    }).then(db => {
-      this.db = db
+    this.ready = new Promise((resolve, reject) => {
+      void IdentityServerDb({
+        type: this.conf.database_engine,
+        host: this.conf.database_host
+      }).then(db => {
+        this.db = db
+        // TODO: insert here all endpoints
+        this.api = {
+          get: {
+            '/': (req, res) => {
+              send(res, 403, errMsg('forbidden'))
+            },
+            '/_matrix/identity/versions': versions
+          },
+          post: {
+            '/_matrix/identity/v2/account/register': register(this.db)
+          }
+        }
+        resolve(true)
+      }).catch(e => {
+        /* istanbul ignore next */
+        reject(e)
+      })
     })
   }
 }
