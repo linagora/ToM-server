@@ -1,0 +1,25 @@
+image: node:lts-slim
+
+stages:
+  - build
+  - test
+
+npm:
+  stage: build
+  script:
+    - npm install
+  cache:
+    paths:
+      - node_modules/
+  artifacts:
+    expire_in: 1 days
+    when: on_success
+    paths:
+      - node_modules/
+
+test:
+  stage: test
+  dependencies:
+    - build
+  script:
+    - npm test
