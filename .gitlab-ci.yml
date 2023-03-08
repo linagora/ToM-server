@@ -5,6 +5,8 @@ stages:
   - test
 
 npm:
+  tags:
+    - gitlab-runner-002.linagora.dc2 
   stage: build
   script:
     - npm install
@@ -18,6 +20,8 @@ npm:
       - node_modules/
 
 test:
+  tags:
+    - gitlab-runner-002.linagora.dc2 
   stage: test
   dependencies:
     - npm
