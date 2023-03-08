@@ -8,6 +8,10 @@
     "lib": ["esnext"],
     "sourceMap": true,
     "noEmitOnError": true,
+    "resolveJsonModule":true,
     "declaration": true
-  }
+  },
+  "exclude": [
+    "**/*.test.ts"
+  ]
 }

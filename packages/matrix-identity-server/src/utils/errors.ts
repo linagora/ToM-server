@@ -54,10 +54,10 @@ const defaultMsg = (s: string): string => {
     .join(' ')
 }
 
-export const errMsg = (code: keyof typeof errCodes, explanation?: string): string => {
+export const errMsg = (code: keyof typeof errCodes, explanation?: string): object => {
   const errCode = errCodes[code]
-  return JSON.stringify({
+  return {
     errcode: errCode,
     error: (explanation != null) ? explanation : defaultMsg(errCode)
-  })
+  }
 }

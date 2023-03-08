@@ -4,6 +4,7 @@
   "description": "Matrix Identity Server",
   "main": "dist/index.js",
   "type": "module",
+  "types": "./dist/index.d.ts",
   "exports": {
     "require": "./dist/index.cjs",
     "import": "./dist/index.js"

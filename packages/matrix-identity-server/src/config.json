@@ -1,0 +1,4 @@
+{
+  "database_engine": "sqlite",
+  "database_host": "/var/lib/twake/identity-server.db"
+}
