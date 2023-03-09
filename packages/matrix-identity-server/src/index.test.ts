@@ -55,6 +55,11 @@ test('versions endpoint', async () => {
   expect(response.statusCode).toBe(200)
 })
 
+test('Terms endpoint', async() => {
+  const response = await request(app).get('/_matrix/identity/v2/terms')
+  expect(response.statusCode).toBe(200)
+})
+
 describe('register endpoint (v2)', () => {
   it('should require all parameters', async () => {
     const response = await request(app)

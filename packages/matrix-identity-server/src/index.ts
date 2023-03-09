@@ -13,6 +13,7 @@ import IdentityServerDb from './db'
 import account from './account'
 import logout from './account/logout'
 import status from './status'
+import Terms from './terms'
 
 type IdServerAPI = Record<string, expressAppHandler>
 
@@ -55,9 +56,10 @@ export default class MatrixIdentityServer {
             '/': (req, res) => {
               send(res, 403, errMsg('forbidden'))
             },
+            '/_matrix/identity/v2': status,
             '/_matrix/identity/versions': versions,
             '/_matrix/identity/v2/account': account(this.db),
-            '/_matrix/identity/v2': status
+            '/_matrix/identity/v2/terms': Terms(this.db)
           },
           post: {
             '/_matrix/identity/v2/account/register': register(this.db),

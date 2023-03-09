@@ -42,9 +42,12 @@ export const errCodes = {
 
   // The third party identifier is already in use by another user. Typically this error will have an additional mxid property to indicate who owns the third party identifier.
   threepidInUse: 'M_THREEPID_IN_USE',
+ 
   // An unknown error has occurred.
+  unknown: 'M_UNKNOWN',
 
-  unknown: 'M_UNKNOWN'
+  // Server requires some policies
+  termsNotSigned: 'M_TERMS_NOT_SIGNED'
 }
 
 const defaultMsg = (s: string): string => {
