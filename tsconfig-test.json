@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "strict": true,
+    "module": "esnext",
+    "target": "es2015",
+    "esModuleInterop": true,
+    "moduleResolution": "node",
+    "lib": ["esnext"],
+    "sourceMap": true,
+    "noEmitOnError": true,
+    "resolveJsonModule":true,
+    "declaration": true
+  }
+}

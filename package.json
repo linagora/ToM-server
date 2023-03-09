@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "build": "npm run softClean && lerna run build",
+    "lint": "eslint packages/*/src --ext .ts",
+    "lint-fix": "eslint --fix packages/*/src --ext .ts",
     "test": "lerna run test",
     "softClean": "rimraf packages/*/dist",
     "clean": "rimraf packages/*/dist packages/*/coverage ./node_modules/.cache/nx"

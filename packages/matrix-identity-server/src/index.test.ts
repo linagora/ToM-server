@@ -4,7 +4,7 @@ import IdServer from './index'
 import fs from 'fs'
 import { randomString } from './utils/tokenUtils'
 import fetch from 'node-fetch'
-jest.mock('node-fetch', ()=>jest.fn())
+jest.mock('node-fetch', () => jest.fn())
 
 process.env.TWAKE_IDENTITY_SERVER_CONF = './src/__testData__/registerConf.json'
 
@@ -14,17 +14,17 @@ const app = express()
 
 let validToken: string
 
-idServer.ready.then(() => {
-  // @ts-ignore
+void idServer.ready.then(() => {
+  // @ts-expect-error api is always defind when "ready"
   Object.keys(idServer.api.get).forEach(k => {
-    // @ts-ignore
+  // @ts-expect-error api is always defind when "ready"
     app.get(k, idServer.api.get[k])
   })
-  // @ts-ignore
+  // @ts-expect-error api is always defind when "ready"
   Object.keys(idServer.api.post).forEach(k => {
-    // @ts-ignore
+    // @ts-expect-error api is always defind when "ready"
     app.post(k, idServer.api.post[k])
-  })  
+  })
 })
 
 beforeAll(async () => {
@@ -33,7 +33,7 @@ beforeAll(async () => {
 
 beforeEach(() => {
   jest.clearAllMocks()
-  jest.mock('node-fetch', ()=>jest.fn())
+  jest.mock('node-fetch', () => jest.fn())
 })
 
 afterAll(() => {
@@ -45,7 +45,7 @@ test('Reject /', async () => {
   expect(response.statusCode).toBe(403)
 })
 
-test('Status',async () => {
+test('Status', async () => {
   const response = await request(app).get('/_matrix/identity/v2')
   expect(response.statusCode).toBe(200)
 })
@@ -55,7 +55,7 @@ test('versions endpoint', async () => {
   expect(response.statusCode).toBe(200)
 })
 
-test('Terms endpoint', async() => {
+test('Terms endpoint', async () => {
   const response = await request(app).get('/_matrix/identity/v2/terms')
   expect(response.statusCode).toBe(200)
 })
@@ -64,7 +64,7 @@ describe('register endpoint (v2)', () => {
   it('should require all parameters', async () => {
     const response = await request(app)
       .post('/_matrix/identity/v2/account/register')
-      .send({access_token: "bar"})
+      .send({ access_token: 'bar' })
       .set('Accept', 'application/json')
     expect(response.statusCode).toBe(400)
     expect(response.body.errcode).toEqual('M_MISSING_PARAMS')
@@ -76,7 +76,7 @@ describe('register endpoint (v2)', () => {
       .send('{"access_token": "bar"')
       .set('Accept', 'application/json')
     expect(response.statusCode).toBe(400)
-    // @ts-ignore
+    // @ts-expect-error mock is unknown
     expect(console.error.mock.calls[0][0]).toMatch(/JSON error/i)
   })
   it('should accept valid request', async () => {
@@ -84,18 +84,18 @@ describe('register endpoint (v2)', () => {
       ok: true,
       status: 200,
       json: () => {
-          return {
-            sub: '@dwho:example.com'
-          }
-      },
-     })
-    // @ts-ignore
-    fetch.mockImplementation(()=> mockResponse)
+        return {
+          sub: '@dwho:example.com'
+        }
+      }
+    })
+    // @ts-expect-error mock is unknown
+    fetch.mockImplementation(async () => await mockResponse)
     await mockResponse
     const response = await request(app)
       .post('/_matrix/identity/v2/account/register')
       .send({
-        access_token: "bar",
+        access_token: 'bar',
         expires_in: 86400,
         matrix_server_name: 'matrix.example.com',
         token_type: 'Bearer'
@@ -110,7 +110,7 @@ describe('register endpoint (v2)', () => {
     const response = await request(app)
       .post('/_matrix/identity/v2/account/register')
       .send({
-        access_token: "bar",
+        access_token: 'bar',
         expires_in: 86400,
         matrix_server_name: 'matrix.example.com',
         token_type: 'Bearer',
@@ -118,7 +118,7 @@ describe('register endpoint (v2)', () => {
       })
       .set('Accept', 'application/json')
     expect(response.statusCode).toBe(200)
-    // @ts-ignore
+    // @ts-expect-error mock is unknown
     expect(console.warn.mock.calls[0][1][0]).toMatch(/\badditional_param\b/i)
   })
   it('should reject missing "sub" from server', async () => {
@@ -126,18 +126,18 @@ describe('register endpoint (v2)', () => {
       ok: true,
       status: 200,
       json: () => {
-          return {
-            email: 'dwho@example.com'
-          }
-      },
-     })
-    // @ts-ignore
-    fetch.mockImplementation(()=> mockResponse)
+        return {
+          email: 'dwho@example.com'
+        }
+      }
+    })
+    // @ts-expect-error mock is unknown
+    fetch.mockImplementation(async () => await mockResponse)
     await mockResponse
     const response = await request(app)
       .post('/_matrix/identity/v2/account/register')
       .send({
-        access_token: "bar",
+        access_token: 'bar',
         expires_in: 86400,
         matrix_server_name: 'matrix.example.com',
         token_type: 'Bearer'
@@ -150,18 +150,18 @@ describe('register endpoint (v2)', () => {
       ok: true,
       status: 200,
       json: () => {
-          return {
-            sub: 'dwho@example.com'
-          }
-      },
-     })
-    // @ts-ignore
-    fetch.mockImplementation(()=> mockResponse)
+        return {
+          sub: 'dwho@example.com'
+        }
+      }
+    })
+    // @ts-expect-error mock is unknown
+    fetch.mockImplementation(async () => await mockResponse)
     await mockResponse
     const response = await request(app)
       .post('/_matrix/identity/v2/account/register')
       .send({
-        access_token: "bar",
+        access_token: 'bar',
         expires_in: 86400,
         matrix_server_name: 'matrix.example.com',
         token_type: 'Bearer'
@@ -181,7 +181,7 @@ describe('Authentication', () => {
   it('should reject token that mismatch regex', async () => {
     const response = await request(app)
       .get('/_matrix/identity/v2/account')
-      .set('Authorization', `Bearer zzzzzzz`)
+      .set('Authorization', 'Bearer zzzzzzz')
       .set('Accept', 'application/json')
     expect(response.statusCode).toBe(401)
   })
@@ -202,7 +202,7 @@ describe('account v2 endpoint', () => {
       .set('Accept', 'application/json')
     expect(response.statusCode).toBe(200)
   })
-  it('should logout',async () => {
+  it('should logout', async () => {
     let response = await request(app)
       .post('/_matrix/identity/v2/account/logout')
       .set('Authorization', `Bearer ${validToken}`)

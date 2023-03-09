@@ -6,7 +6,7 @@ const twakeConfig = (desc: ConfigDescription, defaultConfigurationFile?: fs.Path
   // Use optional configuration file if given
   const res =
     defaultConfigurationFile != null
-      ? JSON.parse(fs.readFileSync(defaultConfigurationFile).toString()) 
+      ? JSON.parse(fs.readFileSync(defaultConfigurationFile).toString())
       : {}
   // Parse wanted keys
   Object.keys(desc).forEach((key: string) => {
