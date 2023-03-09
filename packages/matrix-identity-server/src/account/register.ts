@@ -13,7 +13,7 @@ const schema = {
 
 type registerArgs = Record<keyof typeof schema, string>
 
-type userInfoResponse = {
+interface userInfoResponse {
   sub: string
 }
 
@@ -22,7 +22,7 @@ export interface tokenContent {
   epoch: number
 }
 
-const hostnameRe = /^(([a-zA-Z]|[a-zA-Z][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z]|[A-Za-z][A-Za-z0-9\-]*[A-Za-z0-9])$/i
+const hostnameRe = /^(([a-zA-Z]|[a-zA-Z][a-zA-Z0-9-]*[a-zA-Z0-9])\.)*([A-Za-z]|[A-Za-z][A-Za-z0-9-]*[A-Za-z0-9])$/i
 
 const Register = (db: Database): expressAppHandler => {
   const insertToken = db.prepare('INSERT INTO tokens VALUES (?,?)')

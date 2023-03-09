@@ -45,6 +45,11 @@ test('Reject /', async () => {
   expect(response.statusCode).toBe(403)
 })
 
+test('Status',async () => {
+  const response = await request(app).get('/_matrix/identity/v2')
+  expect(response.statusCode).toBe(200)
+})
+
 test('versions endpoint', async () => {
   const response = await request(app).get('/_matrix/identity/versions')
   expect(response.statusCode).toBe(200)
