@@ -1,3 +1,7 @@
 {
-  "database_host": "./src/__testData__/test.db"
+  "database_engine": "sqlite",
+  "database_host": "./src/__testData__/test.db",
+  "server_name": "matrix.org",
+  "smtp_sender": "yadd@debian.org",
+  "template_dir": "./templates"
 }

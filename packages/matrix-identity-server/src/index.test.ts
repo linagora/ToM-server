@@ -4,7 +4,14 @@ import IdServer from './index'
 import fs from 'fs'
 import { randomString } from './utils/tokenUtils'
 import fetch from 'node-fetch'
+
 jest.mock('node-fetch', () => jest.fn())
+const sendMailMock = jest.fn()
+jest.mock('nodemailer', () => ({
+  createTransport: jest.fn().mockImplementation(() => ({
+    sendMail: sendMailMock
+  }))
+}))
 
 process.env.TWAKE_IDENTITY_SERVER_CONF = './src/__testData__/registerConf.json'
 
@@ -34,6 +41,11 @@ beforeAll(async () => {
 beforeEach(() => {
   jest.clearAllMocks()
   jest.mock('node-fetch', () => jest.fn())
+  jest.mock('nodemailer', () => ({
+    createTransport: jest.fn().mockImplementation(() => ({
+      sendMail: sendMailMock
+    }))
+  }))
 })
 
 afterAll(() => {
@@ -191,6 +203,52 @@ describe('Authentication', () => {
       .set('Authorization', `Bearer ${randomString(64)}`)
       .set('Accept', 'application/json')
     expect(response.statusCode).toBe(401)
+  })
+})
+
+describe('register email', () => {
+  it('should refuse to register an invalid email', async () => {
+    const response = await request(app)
+      .post('/_matrix/identity/v2/validate/email/requestToken')
+      .set('Authorization', `Bearer ${validToken}`)
+      .set('Accept', 'application/json')
+      .send({
+        client_secret: 'mysecret',
+        email: '@yadd:debian.org',
+        next_link: 'http://localhost:8090',
+        send_attempt: 1
+      })
+    expect(response.statusCode).toBe(400)
+    expect(sendMailMock).not.toHaveBeenCalled()
+  })
+  it('should refuse an invalid secret', async () => {
+    const response = await request(app)
+      .post('/_matrix/identity/v2/validate/email/requestToken')
+      .set('Authorization', `Bearer ${validToken}`)
+      .set('Accept', 'application/json')
+      .send({
+        client_secret: 'my',
+        email: 'yadd@debian.org',
+        next_link: 'http://localhost:8090',
+        send_attempt: 1
+      })
+    expect(response.statusCode).toBe(400)
+    expect(sendMailMock).not.toHaveBeenCalled()
+  })
+  it('should accept to register a valid email', async () => {
+    const response = await request(app)
+      .post('/_matrix/identity/v2/validate/email/requestToken')
+      .set('Authorization', `Bearer ${validToken}`)
+      .set('Accept', 'application/json')
+      .send({
+        client_secret: 'mysecret',
+        email: 'xg@xnr.fr',
+        next_link: 'http://localhost:8090',
+        send_attempt: 1
+      })
+    expect(response.statusCode).toBe(200)
+    expect(sendMailMock.mock.calls[0][0].to).toBe('xg@xnr.fr')
+    expect(sendMailMock.mock.calls[0][0].raw).toMatch(/token=&client_secret=mysecret&sid=/)
   })
 })
 

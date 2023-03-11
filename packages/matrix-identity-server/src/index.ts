@@ -14,12 +14,23 @@ import account from './account'
 import logout from './account/logout'
 import status from './status'
 import Terms from './terms'
+import RequestToken from './validate/email/requestToken'
 
 type IdServerAPI = Record<string, expressAppHandler>
 
-interface Config {
+export interface Config {
+  base_url: string
   database_engine: 'sqlite' | 'pg'
   database_host: string
+  server_name: string
+  smtp_password?: string
+  smtp_port?: number
+  smtp_sender?: string
+  smtp_server: string
+  smtp_tls?: boolean
+  smtp_user?: string
+  smtp_verify_certificate?: boolean
+  template_dir: string
 }
 
 export default class MatrixIdentityServer {
@@ -63,7 +74,8 @@ export default class MatrixIdentityServer {
           },
           post: {
             '/_matrix/identity/v2/account/register': register(this.db),
-            '/_matrix/identity/v2/account/logout': logout(this.db)
+            '/_matrix/identity/v2/account/logout': logout(this.db),
+            '/_matrix/identity/v2/validate/email/requestToken': RequestToken(this.db, this.conf)
           }
         }
         resolve(true)

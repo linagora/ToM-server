@@ -1,4 +1,14 @@
 {
+  "base_url": true,
   "database_engine": "sqlite",
-  "database_host": "/var/lib/twake/identity-server.db"
+  "database_host": "./tokens.db",
+  "server_name": "localhost",
+  "smtp_password": false,
+  "smtp_tls": false,
+  "smtp_user": false,
+  "smtp_verify_certificate": false,
+  "smtp_sender": false,
+  "smtp_server": "localhost",
+  "smtp_port": 25,
+  "template_dir": "./templates"
 }
