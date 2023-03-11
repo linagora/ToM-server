@@ -6,6 +6,14 @@ test('Returns a SQLite database initialized', (done) => {
   idDb({
     host: ':memory:',
     type: 'sqlite'
+  }, {
+    database_vacuum_delay: 36000000,
+    base_url: '',
+    database_engine: 'sqlite',
+    database_host: '',
+    server_name: '',
+    smtp_server: '',
+    template_dir: ''
   }).then(db => {
     db.serialize(() => {
       const stmt = db.prepare('INSERT INTO tokens VALUES(?,?)')
@@ -27,6 +35,8 @@ test('Throws on unknown db', async () => {
       host: ':memory:',
       // @ts-expect-error this is the error
       type: 'unknown'
+    }, {
+      database_vacuum_delay: 36000000
     })
   ).rejects.toThrow()
 })

@@ -22,6 +22,7 @@ export interface Config {
   base_url: string
   database_engine: 'sqlite' | 'pg'
   database_host: string
+  database_vacuum_delay: number
   server_name: string
   smtp_password?: string
   smtp_port?: number
@@ -59,7 +60,7 @@ export default class MatrixIdentityServer {
       void IdentityServerDb({
         type: this.conf.database_engine,
         host: this.conf.database_host
-      }).then(db => {
+      }, this.conf).then(db => {
         this.db = db
         // TODO: insert here all endpoints
         this.api = {

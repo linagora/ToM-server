@@ -1,4 +1,5 @@
 export default {
+  forceExit: true,
   testTimeout: 100000,
   testEnvironment: 'node',
   preset: 'ts-jest',
