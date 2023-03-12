@@ -33,6 +33,7 @@ describe('Id Server DB', () => {
             } else {
               expect(row[0].id).toEqual(id)
               expect(row[0].data).toEqual('{}')
+              clearTimeout(idDb.cleanJob)
               done()
             }
           })
@@ -61,6 +62,7 @@ describe('Id Server DB', () => {
         idDb.verifyOneTimeToken(token).then(data => {
           done("Souldn't have find a value")
         }).catch(e => {
+          clearTimeout(idDb.cleanJob)
           done()
         })
       }).catch(e => done(e))
@@ -84,6 +86,7 @@ test('OneTimeToken timeout', (done) => {
       idDb.verifyOneTimeToken(token).then((data) => {
         done('Should throw')
       }).catch(e => {
+        clearTimeout(idDb.cleanJob)
         done()
       })
     }, 1500)

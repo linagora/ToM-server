@@ -50,6 +50,7 @@ beforeEach(() => {
 
 afterAll(() => {
   fs.unlinkSync('src/__testData__/test.db')
+  clearTimeout(idServer.db?.cleanJob)
 })
 
 test('Reject /', async () => {
