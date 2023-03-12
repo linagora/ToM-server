@@ -1,23 +1,27 @@
 import IdDb from './index'
 import { randomString } from '../utils/tokenUtils'
 import fs from 'fs'
+import { Config } from '..'
 
 afterEach(() => {
   fs.unlinkSync('./test.db')
 })
 
+const baseConf: Config = {
+  database_vacuum_delay: 36000000,
+  base_url: '',
+  database_engine: 'sqlite',
+  database_host: './test.db',
+  mail_link_delay: 7200,
+  server_name: '',
+  smtp_server: '',
+  template_dir: ''
+}
+
 describe('Id Server DB', () => {
   it('should a SQLite database initialized', (done) => {
     // eslint-disable-next-line @typescript-eslint/no-floating-promises
-    const idDb = new IdDb({
-      database_vacuum_delay: 36000000,
-      base_url: '',
-      database_engine: 'sqlite',
-      database_host: './test.db',
-      server_name: '',
-      smtp_server: '',
-      template_dir: ''
-    })
+    const idDb = new IdDb(baseConf)
     idDb.ready.then(() => {
       idDb.serialize(() => {
         const stmt = idDb.prepare('INSERT INTO tokens VALUES(?,?)')
@@ -43,15 +47,7 @@ describe('Id Server DB', () => {
   })
 
   it('should provide one-time-token', (done) => {
-    const idDb = new IdDb({
-      database_vacuum_delay: 36000000,
-      base_url: '',
-      database_engine: 'sqlite',
-      database_host: './test.db',
-      server_name: '',
-      smtp_server: '',
-      template_dir: ''
-    })
+    const idDb = new IdDb(baseConf)
     idDb.ready.then(() => {
       const token = idDb.createOneTimeToken({ a: 1 })
       expect(token).toMatch(/^[a-zA-Z0-9]+$/)
@@ -71,15 +67,7 @@ describe('Id Server DB', () => {
 })
 
 test('OneTimeToken timeout', (done) => {
-  const idDb = new IdDb({
-    database_vacuum_delay: 1000,
-    base_url: '',
-    database_engine: 'sqlite',
-    database_host: './test.db',
-    server_name: '',
-    smtp_server: '',
-    template_dir: ''
-  })
+  const idDb = new IdDb({ ...baseConf, database_vacuum_delay: 1000 })
   idDb.ready.then(() => {
     const token = idDb.createOneTimeToken({ a: 1 }, 10)
     setTimeout(() => {

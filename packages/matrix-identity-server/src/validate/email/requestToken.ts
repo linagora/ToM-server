@@ -34,7 +34,7 @@ const preConfigureTemplate = (template: string, conf: Config, transport: Mailer)
         ? conf.base_url.replace(/\/+$/, '')
         : `https://${conf.server_name}`
     ) +
-    '/_matrix/identity/v2/validate/email/requestToken'
+    '/_matrix/identity/v2/validate/email/submitToken'
   return template
     // initialize "From"
     .replace(/__from__/g, transport.from)
@@ -86,8 +86,12 @@ const RequestToken = (db: IdentityServerDb, conf: Config): expressAppHandler => 
               // TODO: check for send_attempt
 
               // TODO generate sid and token and store them
-              const token = randomString(64)
-              const sid = db.createOneTimeToken({ token })
+              const sid = randomString(64)
+              const token = db.createOneTimeToken({
+                sid,
+                email: dst,
+                client_secret: (obj as RequestTokenArgs).client_secret
+              }, conf.mail_link_delay)
               void transport.sendMail({
                 to: (obj as RequestTokenArgs).email,
                 raw: mailBody(
@@ -99,7 +103,7 @@ const RequestToken = (db: IdentityServerDb, conf: Config): expressAppHandler => 
                 )
               })
               // TODO: send mail
-              send(res, 200, {})
+              send(res, 200, { sid })
             }
           }
         })

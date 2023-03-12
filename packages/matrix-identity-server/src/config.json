@@ -3,6 +3,7 @@
   "database_engine": "sqlite",
   "database_host": "./tokens.db",
   "database_vacuum_delay": 3600000,
+  "mail_link_delay": 7200,
   "server_name": "localhost",
   "smtp_password": false,
   "smtp_tls": false,

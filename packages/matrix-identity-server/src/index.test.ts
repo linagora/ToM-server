@@ -208,6 +208,8 @@ describe('Authentication', () => {
 })
 
 describe('register email', () => {
+  let sid: string,
+    token: string
   it('should refuse to register an invalid email', async () => {
     const response = await request(app)
       .post('/_matrix/identity/v2/validate/email/requestToken')
@@ -236,7 +238,7 @@ describe('register email', () => {
     expect(response.statusCode).toBe(400)
     expect(sendMailMock).not.toHaveBeenCalled()
   })
-  it('should accept to register a valid email', async () => {
+  it('should accept valid email registration query', async () => {
     const response = await request(app)
       .post('/_matrix/identity/v2/validate/email/requestToken')
       .set('Authorization', `Bearer ${validToken}`)
@@ -249,7 +251,54 @@ describe('register email', () => {
       })
     expect(response.statusCode).toBe(200)
     expect(sendMailMock.mock.calls[0][0].to).toBe('xg@xnr.fr')
-    expect(sendMailMock.mock.calls[0][0].raw).toMatch(/token=[a-zA-Z0-9]{64}&client_secret=mysecret&sid=[a-zA-Z0-9]{64}/)
+    expect(sendMailMock.mock.calls[0][0].raw).toMatch(/token=([a-zA-Z0-9]{64})&client_secret=mysecret&sid=([a-zA-Z0-9]{64})/)
+    token = RegExp.$1
+    sid = RegExp.$2
+  })
+  /* Works but disabled to avoid invalidate previous token
+  it('should refuse mismatch registration parameters', async () => {
+    const response = await request(app)
+      .get('/_matrix/identity/v2/validate/email/submitToken')
+      .query({
+        token,
+        client_secret: 'mysecret2',
+        sid
+      })
+      .set('Accept', 'application/json')
+    expect(response.statusCode).toBe(400)
+  })
+  */
+  it('should reject registration with a missing parameter', async () => {
+    const response = await request(app)
+      .get('/_matrix/identity/v2/validate/email/submitToken')
+      .query({
+        token,
+        sid
+      })
+      .set('Accept', 'application/json')
+    expect(response.statusCode).toBe(400)
+  })
+  it('should accept to register mail after click', async () => {
+    const response = await request(app)
+      .get('/_matrix/identity/v2/validate/email/submitToken')
+      .query({
+        token,
+        client_secret: 'mysecret',
+        sid
+      })
+      .set('Accept', 'application/json')
+    expect(response.statusCode).toBe(200)
+  })
+  it('should refuse a second registration', async () => {
+    const response = await request(app)
+      .get('/_matrix/identity/v2/validate/email/submitToken')
+      .query({
+        token,
+        client_secret: 'mysecret',
+        sid
+      })
+      .set('Accept', 'application/json')
+    expect(response.statusCode).toBe(400)
   })
 })
 

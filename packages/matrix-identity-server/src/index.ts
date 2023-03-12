@@ -14,6 +14,7 @@ import logout from './account/logout'
 import status from './status'
 import Terms from './terms'
 import RequestToken from './validate/email/requestToken'
+import SubmitToken from './validate/email/submitToken'
 
 type IdServerAPI = Record<string, expressAppHandler>
 
@@ -22,6 +23,7 @@ export interface Config {
   database_engine: SupportedDatabases
   database_host: string
   database_vacuum_delay: number
+  mail_link_delay: number
   server_name: string
   smtp_password?: string
   smtp_port?: number
@@ -67,7 +69,8 @@ export default class MatrixIdentityServer {
             '/_matrix/identity/v2': status,
             '/_matrix/identity/versions': versions,
             '/_matrix/identity/v2/account': account(db),
-            '/_matrix/identity/v2/terms': Terms(db)
+            '/_matrix/identity/v2/terms': Terms(db),
+            '/_matrix/identity/v2/validate/email/submitToken': SubmitToken(db, this.conf)
           },
           post: {
             '/_matrix/identity/v2/account/register': register(db),
