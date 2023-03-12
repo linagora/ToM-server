@@ -25,7 +25,7 @@ const SubmitToken = (db: IdentityServerDb, conf: Config): expressAppHandler => {
         if ((data as mailToken).sid === prms.sid && (data as mailToken).client_secret === prms.client_secret) {
           // TODO REGISTER (data as mailToken).mail
           console.error(prms.client_secret, (data as mailToken).client_secret)
-          send(res, 200, { result: 'success' })
+          send(res, 200, { success: true })
         } else {
           send(res, 400, errMsg('invalidParam', 'sid or secret mismatch'))
         }
