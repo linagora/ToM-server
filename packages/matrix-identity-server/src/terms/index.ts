@@ -1,8 +1,8 @@
+import type IdentityServerDb from '../db'
 import { type expressAppHandler, send } from '../utils'
-import { type Database } from 'sqlite3'
 
 // TODO: implement policies
-const Terms = (db: Database): expressAppHandler => {
+const Terms = (db: IdentityServerDb): expressAppHandler => {
   return (req, res) => {
     send(res, 200, {
       policies: {

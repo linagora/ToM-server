@@ -1,8 +1,8 @@
 import { type expressAppHandler, jsonContent, validateParameters, send, epoch } from '../utils'
 import { randomString } from '../utils/tokenUtils'
-import { type Database } from 'sqlite3'
 import fetch from 'node-fetch'
 import { errMsg } from '../utils/errors'
+import type IdentityServerDb from '../db'
 
 const schema = {
   access_token: true,
@@ -24,8 +24,12 @@ export interface tokenContent {
 
 const hostnameRe = /^(([a-zA-Z]|[a-zA-Z][a-zA-Z0-9-]*[a-zA-Z0-9])\.)*([A-Za-z]|[A-Za-z][A-Za-z0-9-]*[A-Za-z0-9])$/i
 
-const Register = (db: Database): expressAppHandler => {
+const Register = (db: IdentityServerDb): expressAppHandler => {
   const insertToken = db.prepare('INSERT INTO tokens VALUES (?,?)')
+  /* istanbul ignore if */
+  if (insertToken == null) {
+    throw new Error("Don't instanciate API before server is ready")
+  }
   return (req, res) => {
     jsonContent(req, res, (obj) => {
       validateParameters(res, schema, obj, (obj) => {

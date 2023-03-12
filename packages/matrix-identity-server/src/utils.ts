@@ -1,8 +1,8 @@
 import type http from 'http'
 import { type Request, type Response, type NextFunction } from 'express'
 import { errMsg } from './utils/errors'
-import { type Database } from 'sqlite3'
 import { type tokenContent } from './account/register'
+import type IdentityServerDb from './db'
 
 export type expressAppHandler = (
   req: Request | http.IncomingMessage,
@@ -12,6 +12,7 @@ export type expressAppHandler = (
 
 export const send = (res: Response | http.ServerResponse, status: number, body: string | object): void => {
   const content =
+  /* istanbul ignore next */
    typeof body === 'string'
      ? body
      : JSON.stringify(body)
@@ -31,8 +32,12 @@ type authorizationFunction = (
   res: Response | http.ServerResponse,
   callback: (data: tokenContent, id?: string) => void) => void
 
-export const Authenticate = (db: Database): authorizationFunction => {
+export const Authenticate = (db: IdentityServerDb): authorizationFunction => {
   const getToken = db.prepare('SELECT * FROM tokens WHERE id=?')
+  /* istanbul ignore if */
+  if (getToken == null) {
+    throw new Error('Server not ready')
+  }
   const tokenRe = /^Bearer ([a-zA-Z0-9]{64})$/
   const sub: authorizationFunction = (req, res, callback) => {
     if (req.headers.authorization != null) {

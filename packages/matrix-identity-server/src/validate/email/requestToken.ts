@@ -1,11 +1,11 @@
 import { Authenticate, jsonContent, send, validateParameters, type expressAppHandler } from '../../utils'
-import { type Database } from 'sqlite3'
 import { type tokenContent } from '../../account/register'
 import { errMsg } from '../../utils/errors'
 import { type Config } from '../../index'
 import fs from 'fs'
 import { randomString } from '../../utils/tokenUtils'
 import Mailer from '../../utils/mailer'
+import type IdentityServerDb from '../../db'
 
 interface RequestTokenArgs {
   client_secret: string
@@ -29,6 +29,7 @@ const preConfigureTemplate = (template: string, conf: Config, transport: Mailer)
   const mb = randomString(32)
   const baseUrl =
     (
+      /* istanbul ignore next */
       (conf.base_url != null && conf.base_url.length > 0)
         ? conf.base_url.replace(/\/+$/, '')
         : `https://${conf.server_name}`
@@ -59,7 +60,7 @@ const mailBody = (template: string, dst: string, token: string, secret: string, 
     }).toString())
 }
 
-const RequestToken = (db: Database, conf: Config): expressAppHandler => {
+const RequestToken = (db: IdentityServerDb, conf: Config): expressAppHandler => {
   const authenticate = Authenticate(db)
   const transport = new Mailer(conf)
   const verificationTemplate = preConfigureTemplate(fs.readFileSync(`${conf.template_dir}/mailVerification.tpl`).toString(), conf, transport)

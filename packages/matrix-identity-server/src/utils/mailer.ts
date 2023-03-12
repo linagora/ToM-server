@@ -15,6 +15,7 @@ class Mailer {
       }
     } = {
       host: conf.smtp_server,
+      /* istanbul ignore next */
       port: conf.smtp_port != null ? conf.smtp_port : 25,
       // TODO: push this to options
       tls: { rejectUnauthorized: conf.smtp_verify_certificate }
@@ -28,6 +29,7 @@ class Mailer {
       }
     }
     this.transport = nodeMailer.createTransport(opt)
+    /* istanbul ignore next */
     this.from = (conf.smtp_sender != null && conf.smtp_sender.length > 0) ? conf.smtp_sender : `no-reply@${conf.server_name}`
   }
 
