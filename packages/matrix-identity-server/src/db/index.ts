@@ -1,5 +1,6 @@
 import type { Database, Statement as SQLiteStatement } from 'sqlite3'
 import { type Config } from '..'
+import { randomString } from '../utils/tokenUtils'
 
 export type SupportedDatabases = 'sqlite' | 'pg'
 
@@ -8,22 +9,19 @@ type Statement = SQLiteStatement
 
 const tables = {
   tokens: 'id varchar(64) primary key, data text',
-  oneTimeToken: 'id varchar(64) primary key, utime int, data text'
+  oneTimeTokens: 'id varchar(64) primary key, expires int, data text',
+  attempts: 'email test primary key, expires int, attempt int'
 }
 
-const dbMaintenance = (db: Database, delay: number): void => {
-  const _vacuum = (): void => {
-    /* istanbul ignore next */
-    db.run('DELETE FROM oneTimeToken where utime > ' + Math.floor(Date.now() / 1000).toString())
-    /* istanbul ignore next */
-    setTimeout(_vacuum, delay)
-  }
-  setTimeout(_vacuum, delay)
-}
+const cleanByExpires = [
+  'oneTimeTokens',
+  'attempts'
+]
 
 class IdentityServerDb {
   db?: Database
   ready: Promise<boolean>
+  cleanJob?: NodeJS.Timeout
   constructor (conf: Config) {
     this.ready = new Promise((resolve, reject) => {
       /* istanbul ignore else */
@@ -45,7 +43,7 @@ class IdentityServerDb {
                   } else {
                     created++
                     if (created === arr.length) {
-                      dbMaintenance(db, conf.database_vacuum_delay)
+                      this.dbMaintenance(conf.database_vacuum_delay)
                       resolve(true)
                     } else if (i === arr.length) {
                       reject(new Error(`Was able to create ${created} database instead of ${arr.length}`))
@@ -55,7 +53,7 @@ class IdentityServerDb {
               })
             } else {
               /* istanbul ignore next */
-              dbMaintenance(db, conf.database_vacuum_delay)
+              this.dbMaintenance(conf.database_vacuum_delay)
               /* istanbul ignore next */
               resolve(true)
             }
@@ -78,15 +76,15 @@ class IdentityServerDb {
     return this.db.prepare(query)
   }
 
-  //run (query: string, callback: (err: string | null) => void): void {
-  //  /* istanbul ignore else */
-  //  if (this.db != null) {
-  //    this.db.run(query, callback)
-  //  } else {
-  //    // eslint-disable-next-line n/no-callback-literal
-  //    callback('Database not ready, please wait')
-  //  }
-  //}
+  run (query: string, callback?: (err: string | null) => void): void {
+    /* istanbul ignore else */
+    if (this.db != null) {
+      this.db.run(query, callback)
+    } else {
+      // eslint-disable-next-line n/no-callback-literal
+      if (callback != null) callback('Database not ready, please wait')
+    }
+  }
 
   all (query: string, callback: (err: string | null | string, row?: Array<Record<string, string>>) => void): void {
     /* istanbul ignore if */
@@ -102,6 +100,58 @@ class IdentityServerDb {
       throw new Error('Wait for database to be ready')
     }
     this.db.serialize(callback)
+  }
+
+  createOneTimeToken (data: object, expires?: number): string {
+    /* istanbul ignore if */
+    if (this.db == null) {
+      throw new Error('Wait for database to be ready')
+    }
+    const id = randomString(64)
+    // default: expires in 600 s
+    expires ||= Math.floor(Date.now() / 1000 + 600)
+    this.run(`INSERT INTO oneTimeTokens VALUES('${id}', ${expires}, '${JSON.stringify(data)}')`, (err) => {
+      /* istanbul ignore if */
+      if (err != null) {
+        console.error('Failed to insert token', err)
+      }
+    })
+    return id
+  }
+
+  // eslint-disable-next-line @typescript-eslint/promise-function-async
+  verifyOneTimeToken (id: string): Promise<object> {
+    /* istanbul ignore if */
+    if (this.db == null) {
+      throw new Error('Wait for database to be ready')
+    }
+    return new Promise((resolve, reject) => {
+      this.all(`SELECT data FROM oneTimeTokens WHERE id='${id}'`, (err, rows) => {
+        if (err != null || rows == null || rows.length !== 1) {
+          reject(err)
+        } else {
+          this.run(`DELETE FROM oneTimeTokens WHERE id='${id}'`, (err) => {
+            /* istanbul ignore next */
+            if (err != null) console.error(err)
+            resolve(JSON.parse(rows[0].data))
+          })
+        }
+      })
+    })
+  }
+
+  dbMaintenance (delay: number): void {
+    const _vacuum = (): void => {
+      /* istanbul ignore next */
+      if (this.db != null) {
+        cleanByExpires.forEach(table => {
+          this.run(`DELETE FROM ${table} where expires < ` + Math.floor(Date.now() / 1000).toString())
+        })
+      }
+      /* istanbul ignore next */
+      this.cleanJob = setTimeout(_vacuum, delay)
+    }
+    this.cleanJob = setTimeout(_vacuum, delay)
   }
 }
 
