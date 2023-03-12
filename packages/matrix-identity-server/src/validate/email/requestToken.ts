@@ -85,16 +85,17 @@ const RequestToken = (db: IdentityServerDb, conf: Config): expressAppHandler => 
 
               // TODO: check for send_attempt
 
-              // TODO generate sid and token
-              const sid = ''
-              const token = ''
+              // TODO generate sid and token and store them
+              const token = randomString(64)
+              const sid = db.createOneTimeToken({ token })
               void transport.sendMail({
                 to: (obj as RequestTokenArgs).email,
                 raw: mailBody(
                   verificationTemplate,
                   dst,
                   token,
-                  (obj as RequestTokenArgs).client_secret, sid
+                  (obj as RequestTokenArgs).client_secret,
+                  sid
                 )
               })
               // TODO: send mail

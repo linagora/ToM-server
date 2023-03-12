@@ -249,7 +249,7 @@ describe('register email', () => {
       })
     expect(response.statusCode).toBe(200)
     expect(sendMailMock.mock.calls[0][0].to).toBe('xg@xnr.fr')
-    expect(sendMailMock.mock.calls[0][0].raw).toMatch(/token=&client_secret=mysecret&sid=/)
+    expect(sendMailMock.mock.calls[0][0].raw).toMatch(/token=[a-zA-Z0-9]{64}&client_secret=mysecret&sid=[a-zA-Z0-9]{64}/)
   })
 })
 
