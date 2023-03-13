@@ -45,8 +45,8 @@ abstract class SQL {
       }
       const stmt = this.db.prepare(`SELECT ${fields.join(',')} FROM ${table} WHERE ${field}=?`)
       stmt.all(value, (err: string, rows: Array<Record<string, string | number>>) => {
+        /* istanbul ignore if */
         if (err != null) {
-          /* istanbul ignore next */
           reject(err)
         } else {
           resolve(rows)
@@ -64,8 +64,8 @@ abstract class SQL {
       }
       const stmt = this.db.prepare(`DELETE FROM ${table} WHERE ${field}=?`)
       stmt.run(value, (err: string) => {
+        /* istanbul ignore if */
         if (err != null) {
-          /* istanbul ignore next */
           reject(err)
         } else {
           resolve()
@@ -83,8 +83,8 @@ abstract class SQL {
       }
       const stmt = this.db.prepare(`DELETE FROM ${table} WHERE ${field}<?`)
       stmt.run(value, (err: string) => {
+        /* istanbul ignore if */
         if (err != null) {
-          /* istanbul ignore next */
           reject(err)
         } else {
           resolve()

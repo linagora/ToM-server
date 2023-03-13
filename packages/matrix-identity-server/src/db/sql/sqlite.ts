@@ -10,8 +10,8 @@ class SQLite extends SQL {
   // eslint-disable-next-line @typescript-eslint/promise-function-async
   createDatabases (conf: Config): Promise<boolean> {
     const db = this.db = new sqlite3.Database(conf.database_host)
+    /* istanbul ignore if */
     if (db == null) {
-      /* istanbul ignore next */
       throw new Error('Database not created')
     }
     return new Promise((resolve, reject) => {
@@ -20,11 +20,12 @@ class SQLite extends SQL {
           let created = 0
           Object.keys(tables).forEach((table, i, arr) => {
             db.run(`CREATE TABLE ${table}(${tables[table as keyof typeof tables]})`, (err: any) => {
-            /* istanbul ignore next */
+            /* istanbul ignore if */
               if (err != null) {
                 throw new Error(err)
               } else {
                 created++
+                /* istanbul ignore else */
                 if (created === arr.length) {
                   resolve(true)
                 } else if (i === arr.length) {

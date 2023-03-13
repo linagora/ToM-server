@@ -30,13 +30,13 @@ class IdentityServerDb implements IdDbBackend {
   cleanJob?: NodeJS.Timeout
   constructor (conf: Config) {
     let Module
+    /* istanbul ignore next */
     switch (conf.database_engine) {
       case 'sqlite': {
         Module = Sqlite
         break
       }
       default: {
-        /* istanbul ignore next */
         throw new Error(`Unsupported database type ${conf.database_engine}`)
       }
     }

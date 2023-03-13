@@ -3,19 +3,16 @@ import { randomString } from '../utils/tokenUtils'
 import fs from 'fs'
 import { type Config } from '..'
 
+import DefaultConfig from '../config.json'
+
 afterEach(() => {
   fs.unlinkSync('./test.db')
 })
 
 const baseConf: Config = {
-  database_vacuum_delay: 36000000,
-  base_url: '',
+  ...DefaultConfig,
   database_engine: 'sqlite',
-  database_host: './test.db',
-  mail_link_delay: 7200,
-  server_name: '',
-  smtp_server: '',
-  template_dir: ''
+  database_host: './test.db'
 }
 
 describe('Id Server DB', () => {
