@@ -24,7 +24,7 @@ let validToken: string
 void idServer.ready.then(() => {
   // @ts-expect-error api is always defind when "ready"
   Object.keys(idServer.api.get).forEach(k => {
-  // @ts-expect-error api is always defind when "ready"
+    // @ts-expect-error api is always defind when "ready"
     app.get(k, idServer.api.get[k])
   })
   // @ts-expect-error api is always defind when "ready"
@@ -53,9 +53,14 @@ afterAll(() => {
   clearTimeout(idServer.db?.cleanJob)
 })
 
-test('Reject /', async () => {
-  const response = await request(app).get('/')
-  expect(response.statusCode).toBe(403)
+test('Reject unimplemented endpoitn with 404', async () => {
+  const response = await request(app).get('/_matrix/unknown')
+  expect(response.statusCode).toBe(404)
+})
+
+test('Reject bad method with 405', async () => {
+  const response = await request(app).get('/_matrix/identity/v2/account/register')
+  expect(response.statusCode).toBe(405)
 })
 
 test('/_matrix/identity/v2 (status)', async () => {

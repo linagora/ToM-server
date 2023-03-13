@@ -23,6 +23,8 @@ export interface Config {
   database_engine: SupportedDatabases
   database_host: string
   database_vacuum_delay: number
+  key_delay: number
+  keys_depth: number
   mail_link_delay: number
   server_name: string
   smtp_password?: string
@@ -61,21 +63,33 @@ export default class MatrixIdentityServer {
       const db = this.db = new IdentityServerDb(this.conf)
       db.ready.then(() => {
         // TODO: insert here all endpoints
+        const badMethod: expressAppHandler = (req, res) => {
+          send(res, 405, errMsg('unrecognized'))
+        }
+        // TODO
+        // const badEndPoint: expressAppHandler = (req, res) => {
+        //   send(res, 404, errMsg('unrecognized'))
+        // }
         this.api = {
           get: {
-            '/': (req, res) => {
-              send(res, 403, errMsg('forbidden'))
-            },
             '/_matrix/identity/v2': status,
             '/_matrix/identity/versions': versions,
             '/_matrix/identity/v2/account': account(db),
+            '/_matrix/identity/v2/account/register': badMethod,
+            '/_matrix/identity/v2/account/logout': badMethod,
             '/_matrix/identity/v2/terms': Terms(db),
-            '/_matrix/identity/v2/validate/email/submitToken': SubmitToken(db, this.conf)
+            '/_matrix/identity/v2/validate/email/requestToken': badMethod,
+            '/_matrix/identity/v2/validate/email/submitToken': SubmitToken(db, this.conf),
           },
           post: {
+            '/_matrix/identity/v2': badMethod,
+            '/_matrix/identity/versions': badMethod,
+            '/_matrix/identity/v2/account': badMethod,
             '/_matrix/identity/v2/account/register': register(db),
             '/_matrix/identity/v2/account/logout': logout(db),
-            '/_matrix/identity/v2/validate/email/requestToken': RequestToken(db, this.conf)
+            '/_matrix/identity/v2/terms': badMethod,
+            '/_matrix/identity/v2/validate/email/requestToken': RequestToken(db, this.conf),
+            // TODO: /_matrix/identity/v2/validate/email/submitToken
           }
         }
         resolve(true)
