@@ -4,6 +4,11 @@ stages:
   - build
   - test
 
+default:
+  cache: &global_cache
+    paths:
+      - node_modules/
+
 npm:
   tags:
     - docker
@@ -12,19 +17,21 @@ npm:
     - npm install
     - npm run build
   cache:
-    paths:
-      - node_modules/
+    <<: *global_cache
+    policy: push
   artifacts:
     expire_in: 1 days
     when: on_success
     paths:
-      - node_modules/
       - packages/*/dist/
 
 test:
   tags:
     - docker
   stage: test
+  cache:
+    <<: *global_cache
+    policy: pull
   dependencies:
     - npm
   script:
