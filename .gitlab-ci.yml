@@ -6,7 +6,7 @@ stages:
 
 npm:
   tags:
-    - ultralight
+    - docker
   stage: build
   script:
     - npm install
@@ -23,7 +23,7 @@ npm:
 
 test:
   tags:
-    - ultralight
+    - docker
   stage: test
   dependencies:
     - npm
