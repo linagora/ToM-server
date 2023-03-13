@@ -38,7 +38,7 @@ export const Authenticate = (db: IdentityServerDb): authorizationFunction => {
     if (req.headers.authorization != null) {
       const re = req.headers.authorization.match(tokenRe)
       if (re != null) {
-        db.get('tokens', 'id', re[1]).then((rows) => {
+        db.get('tokens', ['data'], 'id', re[1]).then((rows) => {
           callback(JSON.parse(rows[0].data as string), re[1])
         }).catch(e => {
           send(res, 401, errMsg('unAuthorized'))

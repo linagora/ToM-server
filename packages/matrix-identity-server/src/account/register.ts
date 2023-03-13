@@ -45,7 +45,7 @@ const Register = (db: IdentityServerDb): expressAppHandler => {
                     epoch: epoch()
                   }
                   const token = randomString(64)
-                  db.insert('tokens', [token, JSON.stringify(data)]).then(() => {
+                  db.insert('tokens', { id: token, data: JSON.stringify(data) }).then(() => {
                     send(res, 200, { token, access_token: token })
                   }).catch(e => {
                     /* istanbul ignore next */

@@ -24,8 +24,8 @@ describe('Id Server DB', () => {
     const idDb = new IdDb(baseConf)
     idDb.ready.then(() => {
       const id = randomString(64)
-      idDb.insert('tokens', [id, '{}']).then(() => {
-        idDb.get('tokens', 'id', id).then(rows => {
+      idDb.insert('tokens', { id, data: '{}' }).then(() => {
+        idDb.get('tokens', ['id', 'data'], 'id', id).then(rows => {
           expect(rows.length).toBe(1)
           expect(rows[0].id).toEqual(id)
           expect(rows[0].data).toEqual('{}')

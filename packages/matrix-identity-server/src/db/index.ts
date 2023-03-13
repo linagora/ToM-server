@@ -9,8 +9,8 @@ export const cleanByExpires = [
 
 export type SupportedDatabases = 'sqlite' | 'pg'
 
-type Insert = (table: string, values: Array<string | number>) => Promise<void>
-type Get = (table: string, field: string, value: string | number) => Promise<Array<Record<string, string | number >>>
+type Insert = (table: string, values: Record<string, string | number>) => Promise<void>
+type Get = (table: string, fields: string[], field: string, value: string | number) => Promise<Array<Record<string, string | number >>>
 type DeleteEqual = (table: string, field: string, value: string | number) => Promise<void>
 type DeleteLowerThan = (table: string, field: string, value: string | number) => Promise<void>
 
@@ -57,13 +57,13 @@ class IdentityServerDb implements IdDbBackend {
   }
 
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
-  insert (table: string, values: Array<string | number>) {
+  insert (table: string, values: Record<string, string | number>) {
     return this.db.insert(table, values)
   }
 
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
-  get (table: string, field: string, value: string | number) {
-    return this.db.get(table, field, value)
+  get (table: string, fields: string[], field: string, value: string | number) {
+    return this.db.get(table, fields, field, value)
   }
 
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
@@ -84,7 +84,7 @@ class IdentityServerDb implements IdDbBackend {
     const id = randomString(64)
     // default: expires in 600 s
     expires ||= Math.floor(Date.now() / 1000 + 600)
-    this.db.insert('oneTimeTokens', [id, expires, JSON.stringify(data)]).catch(err => {
+    this.db.insert('oneTimeTokens', { id, expires, data: JSON.stringify(data) }).catch(err => {
       /* istanbul ignore next */
       console.error('Failed to insert token', err)
     })
@@ -98,7 +98,7 @@ class IdentityServerDb implements IdDbBackend {
       throw new Error('Wait for database to be ready')
     }
     return new Promise((resolve, reject) => {
-      this.db.get('oneTimeTokens', 'id', id).then((rows) => {
+      this.db.get('oneTimeTokens', ['data'], 'id', id).then((rows) => {
         this.db.deleteEqual('oneTimeTokens', 'id', id).catch((e: any) => { console.error(e) })
         resolve(JSON.parse(rows[0].data as string))
       }).catch(e => {

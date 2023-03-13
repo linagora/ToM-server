@@ -18,26 +18,32 @@ abstract class SQL {
   }
 
   // eslint-disable-next-line @typescript-eslint/promise-function-async
-  insert (table: string, values: Array<string | number>): Promise<void> {
+  insert (table: string, values: Record<string, string | number>): Promise<void> {
     return new Promise((resolve, reject) => {
       /* istanbul ignore if */
       if (this.db == null) {
         throw new Error('Wait for database to be ready')
       }
-      const stmt = this.db.prepare(`INSERT INTO ${table} VALUES(${values.map(v => '?').join(',')})`)
-      stmt.run(values).finalize()
+      const names: string[] = []
+      const vals: Array<string | number> = []
+      Object.keys(values).forEach(k => {
+        names.push(k)
+        vals.push(values[k])
+      })
+      const stmt = this.db.prepare(`INSERT INTO ${table}(${names.join(',')}) VALUES(${names.map(v => '?').join(',')})`)
+      stmt.run(vals).finalize()
       resolve()
     })
   }
 
   // eslint-disable-next-line @typescript-eslint/promise-function-async
-  get (table: string, field: string, value: string | number): Promise<Array<Record<string, string | number >>> {
+  get (table: string, fields: string[], field: string, value: string | number): Promise<Array<Record<string, string | number >>> {
     return new Promise((resolve, reject) => {
       /* istanbul ignore if */
       if (this.db == null) {
         throw new Error('Wait for database to be ready')
       }
-      const stmt = this.db.prepare(`SELECT * FROM ${table} WHERE ${field}=?`)
+      const stmt = this.db.prepare(`SELECT ${fields.join(',')} FROM ${table} WHERE ${field}=?`)
       stmt.all(value, (err: string, rows: Array<Record<string, string | number>>) => {
         if (err != null) {
           /* istanbul ignore next */
