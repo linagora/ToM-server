@@ -58,22 +58,22 @@ test('Reject /', async () => {
   expect(response.statusCode).toBe(403)
 })
 
-test('Status', async () => {
+test('/_matrix/identity/v2 (status)', async () => {
   const response = await request(app).get('/_matrix/identity/v2')
   expect(response.statusCode).toBe(200)
 })
 
-test('versions endpoint', async () => {
+test('/_matrix/identity/versions', async () => {
   const response = await request(app).get('/_matrix/identity/versions')
   expect(response.statusCode).toBe(200)
 })
 
-test('Terms endpoint', async () => {
+test('/_matrix/identity/v2/terms', async () => {
   const response = await request(app).get('/_matrix/identity/v2/terms')
   expect(response.statusCode).toBe(200)
 })
 
-describe('register endpoint (v2)', () => {
+describe('/_matrix/identity/v2/account/register', () => {
   it('should require all parameters', async () => {
     const response = await request(app)
       .post('/_matrix/identity/v2/account/register')
@@ -184,8 +184,8 @@ describe('register endpoint (v2)', () => {
   })
 })
 
-describe('Authentication', () => {
-  it('should reject missing token', async () => {
+describe('/_matrix/identity/v2/account', () => {
+  it('should reject missing token (', async () => {
     const response = await request(app)
       .get('/_matrix/identity/v2/account')
       .set('Accept', 'application/json')
@@ -207,102 +207,106 @@ describe('Authentication', () => {
   })
 })
 
-describe('register email', () => {
+describe('/_matrix/identity/v2/validate/email', () => {
   let sid: string,
     token: string
-  it('should refuse to register an invalid email', async () => {
-    const response = await request(app)
-      .post('/_matrix/identity/v2/validate/email/requestToken')
-      .set('Authorization', `Bearer ${validToken}`)
-      .set('Accept', 'application/json')
-      .send({
-        client_secret: 'mysecret',
-        email: '@yadd:debian.org',
-        next_link: 'http://localhost:8090',
-        send_attempt: 1
-      })
-    expect(response.statusCode).toBe(400)
-    expect(sendMailMock).not.toHaveBeenCalled()
+  describe('/_matrix/identity/v2/validate/email/requestToken', () => {
+    it('should refuse to register an invalid email', async () => {
+      const response = await request(app)
+        .post('/_matrix/identity/v2/validate/email/requestToken')
+        .set('Authorization', `Bearer ${validToken}`)
+        .set('Accept', 'application/json')
+        .send({
+          client_secret: 'mysecret',
+          email: '@yadd:debian.org',
+          next_link: 'http://localhost:8090',
+          send_attempt: 1
+        })
+      expect(response.statusCode).toBe(400)
+      expect(sendMailMock).not.toHaveBeenCalled()
+    })
+    it('should refuse an invalid secret', async () => {
+      const response = await request(app)
+        .post('/_matrix/identity/v2/validate/email/requestToken')
+        .set('Authorization', `Bearer ${validToken}`)
+        .set('Accept', 'application/json')
+        .send({
+          client_secret: 'my',
+          email: 'yadd@debian.org',
+          next_link: 'http://localhost:8090',
+          send_attempt: 1
+        })
+      expect(response.statusCode).toBe(400)
+      expect(sendMailMock).not.toHaveBeenCalled()
+    })
+    it('should accept valid email registration query', async () => {
+      const response = await request(app)
+        .post('/_matrix/identity/v2/validate/email/requestToken')
+        .set('Authorization', `Bearer ${validToken}`)
+        .set('Accept', 'application/json')
+        .send({
+          client_secret: 'mysecret',
+          email: 'xg@xnr.fr',
+          next_link: 'http://localhost:8090',
+          send_attempt: 1
+        })
+      expect(response.statusCode).toBe(200)
+      expect(sendMailMock.mock.calls[0][0].to).toBe('xg@xnr.fr')
+      expect(sendMailMock.mock.calls[0][0].raw).toMatch(/token=([a-zA-Z0-9]{64})&client_secret=mysecret&sid=([a-zA-Z0-9]{64})/)
+      token = RegExp.$1
+      sid = RegExp.$2
+    })
   })
-  it('should refuse an invalid secret', async () => {
-    const response = await request(app)
-      .post('/_matrix/identity/v2/validate/email/requestToken')
-      .set('Authorization', `Bearer ${validToken}`)
-      .set('Accept', 'application/json')
-      .send({
-        client_secret: 'my',
-        email: 'yadd@debian.org',
-        next_link: 'http://localhost:8090',
-        send_attempt: 1
-      })
-    expect(response.statusCode).toBe(400)
-    expect(sendMailMock).not.toHaveBeenCalled()
-  })
-  it('should accept valid email registration query', async () => {
-    const response = await request(app)
-      .post('/_matrix/identity/v2/validate/email/requestToken')
-      .set('Authorization', `Bearer ${validToken}`)
-      .set('Accept', 'application/json')
-      .send({
-        client_secret: 'mysecret',
-        email: 'xg@xnr.fr',
-        next_link: 'http://localhost:8090',
-        send_attempt: 1
-      })
-    expect(response.statusCode).toBe(200)
-    expect(sendMailMock.mock.calls[0][0].to).toBe('xg@xnr.fr')
-    expect(sendMailMock.mock.calls[0][0].raw).toMatch(/token=([a-zA-Z0-9]{64})&client_secret=mysecret&sid=([a-zA-Z0-9]{64})/)
-    token = RegExp.$1
-    sid = RegExp.$2
-  })
-  /* Works but disabled to avoid invalidate previous token
-  it('should refuse mismatch registration parameters', async () => {
-    const response = await request(app)
-      .get('/_matrix/identity/v2/validate/email/submitToken')
-      .query({
-        token,
-        client_secret: 'mysecret2',
-        sid
-      })
-      .set('Accept', 'application/json')
-    expect(response.statusCode).toBe(400)
-  })
-  */
-  it('should reject registration with a missing parameter', async () => {
-    const response = await request(app)
-      .get('/_matrix/identity/v2/validate/email/submitToken')
-      .query({
-        token,
-        sid
-      })
-      .set('Accept', 'application/json')
-    expect(response.statusCode).toBe(400)
-  })
-  it('should accept to register mail after click', async () => {
-    const response = await request(app)
-      .get('/_matrix/identity/v2/validate/email/submitToken')
-      .query({
-        token,
-        client_secret: 'mysecret',
-        sid
-      })
-      .set('Accept', 'application/json')
-    expect(response.statusCode).toBe(200)
-  })
-  it('should refuse a second registration', async () => {
-    const response = await request(app)
-      .get('/_matrix/identity/v2/validate/email/submitToken')
-      .query({
-        token,
-        client_secret: 'mysecret',
-        sid
-      })
-      .set('Accept', 'application/json')
-    expect(response.statusCode).toBe(400)
+  describe('/_matrix/identity/v2/validate/email/submitToken', () => {
+    /* Works but disabled to avoid invalidate previous token
+    it('should refuse mismatch registration parameters', async () => {
+      const response = await request(app)
+        .get('/_matrix/identity/v2/validate/email/submitToken')
+        .query({
+          token,
+          client_secret: 'mysecret2',
+          sid
+        })
+        .set('Accept', 'application/json')
+      expect(response.statusCode).toBe(400)
+    })
+    */
+    it('should reject registration with a missing parameter', async () => {
+      const response = await request(app)
+        .get('/_matrix/identity/v2/validate/email/submitToken')
+        .query({
+          token,
+          sid
+        })
+        .set('Accept', 'application/json')
+      expect(response.statusCode).toBe(400)
+    })
+    it('should accept to register mail after click', async () => {
+      const response = await request(app)
+        .get('/_matrix/identity/v2/validate/email/submitToken')
+        .query({
+          token,
+          client_secret: 'mysecret',
+          sid
+        })
+        .set('Accept', 'application/json')
+      expect(response.statusCode).toBe(200)
+    })
+    it('should refuse a second registration', async () => {
+      const response = await request(app)
+        .get('/_matrix/identity/v2/validate/email/submitToken')
+        .query({
+          token,
+          client_secret: 'mysecret',
+          sid
+        })
+        .set('Accept', 'application/json')
+      expect(response.statusCode).toBe(400)
+    })
   })
 })
 
-describe('account v2 endpoint', () => {
+describe('/_matrix/identity/v2/account', () => {
   it('should accept valid token', async () => {
     const response = await request(app)
       .get('/_matrix/identity/v2/account')
@@ -310,7 +314,7 @@ describe('account v2 endpoint', () => {
       .set('Accept', 'application/json')
     expect(response.statusCode).toBe(200)
   })
-  it('should logout', async () => {
+  it('should logout (/_matrix/identity/v2/account/logout)', async () => {
     let response = await request(app)
       .post('/_matrix/identity/v2/account/logout')
       .set('Authorization', `Bearer ${validToken}`)
