@@ -33,22 +33,15 @@ type authorizationFunction = (
   callback: (data: tokenContent, id?: string) => void) => void
 
 export const Authenticate = (db: IdentityServerDb): authorizationFunction => {
-  const getToken = db.prepare('SELECT * FROM tokens WHERE id=?')
-  /* istanbul ignore if */
-  if (getToken == null) {
-    throw new Error('Server not ready')
-  }
   const tokenRe = /^Bearer ([a-zA-Z0-9]{64})$/
   const sub: authorizationFunction = (req, res, callback) => {
     if (req.headers.authorization != null) {
       const re = req.headers.authorization.match(tokenRe)
       if (re != null) {
-        getToken.all(re[1], (err, row) => {
-          if (err == null && row.length > 0) {
-            callback(JSON.parse(row[0].data), re[1])
-          } else {
-            send(res, 401, errMsg('unAuthorized'))
-          }
+        db.get('tokens', 'id', re[1]).then((rows) => {
+          callback(JSON.parse(rows[0].data as string), re[1])
+        }).catch(e => {
+          send(res, 401, errMsg('unAuthorized'))
         })
       } else {
         send(res, 401, errMsg('unAuthorized'))

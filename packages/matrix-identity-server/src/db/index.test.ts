@@ -1,7 +1,7 @@
 import IdDb from './index'
 import { randomString } from '../utils/tokenUtils'
 import fs from 'fs'
-import { Config } from '..'
+import { type Config } from '..'
 
 afterEach(() => {
   fs.unlinkSync('./test.db')
@@ -23,26 +23,16 @@ describe('Id Server DB', () => {
     // eslint-disable-next-line @typescript-eslint/no-floating-promises
     const idDb = new IdDb(baseConf)
     idDb.ready.then(() => {
-      idDb.serialize(() => {
-        const stmt = idDb.prepare('INSERT INTO tokens VALUES(?,?)')
-        if (stmt == null) {
-          done('DB not ready')
-        } else {
-          const id = randomString(64)
-          stmt.run(id, '{}')
-          stmt.finalize()
-          idDb.all('SELECT * FROM tokens', (_err, row) => {
-            if (_err != null || row == null) {
-              done('Table "tokens" not created')
-            } else {
-              expect(row[0].id).toEqual(id)
-              expect(row[0].data).toEqual('{}')
-              clearTimeout(idDb.cleanJob)
-              done()
-            }
-          })
-        }
-      })
+      const id = randomString(64)
+      idDb.insert('tokens', [id, '{}']).then(() => {
+        idDb.get('tokens', 'id', id).then(rows => {
+          expect(rows.length).toBe(1)
+          expect(rows[0].id).toEqual(id)
+          expect(rows[0].data).toEqual('{}')
+          clearTimeout(idDb.cleanJob)
+          done()
+        }).catch(e => done(e))
+      }).catch(e => done(e))
     }).catch(e => done(e))
   })
 

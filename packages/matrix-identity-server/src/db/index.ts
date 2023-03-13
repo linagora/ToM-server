@@ -1,105 +1,79 @@
-import type { Database, Statement as SQLiteStatement } from 'sqlite3'
 import { type Config } from '..'
 import { randomString } from '../utils/tokenUtils'
+import Sqlite from './sql/sqlite'
 
-export type SupportedDatabases = 'sqlite' | 'pg'
-
-// TODO: add pg type here
-type Statement = SQLiteStatement
-
-const tables = {
-  tokens: 'id varchar(64) primary key, data text',
-  oneTimeTokens: 'id varchar(64) primary key, expires int, data text',
-  attempts: 'email test primary key, expires int, attempt int'
-}
-
-const cleanByExpires = [
+export const cleanByExpires = [
   'oneTimeTokens',
   'attempts'
 ]
 
-class IdentityServerDb {
-  db?: Database
+export type SupportedDatabases = 'sqlite' | 'pg'
+
+type Insert = (table: string, values: Array<string | number>) => Promise<void>
+type Get = (table: string, field: string, value: string | number) => Promise<Array<Record<string, string | number >>>
+type DeleteEqual = (table: string, field: string, value: string | number) => Promise<void>
+type DeleteLowerThan = (table: string, field: string, value: string | number) => Promise<void>
+
+export interface IdDbBackend {
   ready: Promise<boolean>
+  createDatabases: (conf: Config) => Promise<boolean>
+  insert: Insert
+  get: Get
+  deleteEqual: DeleteEqual
+  deleteLowerThan: DeleteLowerThan
+}
+export type InsertType = (table: string, values: Array<string | number>) => Promise<void>
+
+class IdentityServerDb implements IdDbBackend {
+  ready: Promise<boolean>
+  db: IdDbBackend
   cleanJob?: NodeJS.Timeout
   constructor (conf: Config) {
-    this.ready = new Promise((resolve, reject) => {
-      /* istanbul ignore else */
-      if (conf.database_engine === 'sqlite') {
-        import('sqlite3').then(mod => {
-          const db = this.db = new mod.Database(conf.database_host)
-          /* istanbul ignore if */
-          if (db == null) {
-            throw new Error('Database not created')
-          }
-          db.run('SELECT count(id) FROM tokens', (err: any) => {
-            if (err != null && /no such table/.test(err.message)) {
-              let created = 0
-              Object.keys(tables).forEach((table, i, arr) => {
-                db.run(`CREATE TABLE ${table}(${tables[table as keyof typeof tables]})`, (err: any) => {
-                  /* istanbul ignore next */
-                  if (err != null) {
-                    throw new Error(err)
-                  } else {
-                    created++
-                    if (created === arr.length) {
-                      this.dbMaintenance(conf.database_vacuum_delay)
-                      resolve(true)
-                    } else if (i === arr.length) {
-                      reject(new Error(`Was able to create ${created} database instead of ${arr.length}`))
-                    }
-                  }
-                })
-              })
-            } else {
-              /* istanbul ignore next */
-              this.dbMaintenance(conf.database_vacuum_delay)
-              /* istanbul ignore next */
-              resolve(true)
-            }
-          })
-        }).catch(e => {
-          /* istanbul ignore next */
-          throw new Error(e)
-        })
-      } else {
-        throw new Error(`unsupported database "${conf.database_engine}"`)
+    let Module
+    switch (conf.database_engine) {
+      case 'sqlite': {
+        Module = Sqlite
+        break
       }
+      default: {
+        /* istanbul ignore next */
+        throw new Error(`Unsupported database type ${conf.database_engine}`)
+      }
+    }
+    this.db = new Module(conf)
+    this.ready = this.db.ready
+    this.ready.then(() => {
+      this.dbMaintenance(conf.database_vacuum_delay)
+    }).catch(e => {
+      /* istanbul ignore next */
+      console.error('DB maintenance error', e)
     })
   }
 
-  prepare (query: string): Statement | null {
-    /* istanbul ignore if */
-    if (this.db == null) {
-      throw new Error('Wait for database to be ready')
-    }
-    return this.db.prepare(query)
+  /* istanbul ignore next */
+  // eslint-disable-next-line @typescript-eslint/promise-function-async
+  createDatabases (conf: Config): Promise<boolean> {
+    throw new Error('Must be overidden')
   }
 
-  run (query: string, callback?: (err: string | null) => void): void {
-    /* istanbul ignore else */
-    if (this.db != null) {
-      this.db.run(query, callback)
-    } else {
-      // eslint-disable-next-line n/no-callback-literal
-      if (callback != null) callback('Database not ready, please wait')
-    }
+  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
+  insert (table: string, values: Array<string | number>) {
+    return this.db.insert(table, values)
   }
 
-  all (query: string, callback: (err: string | null | string, row?: Array<Record<string, string>>) => void): void {
-    /* istanbul ignore if */
-    if (this.db == null) {
-      throw new Error('Wait for database to be ready')
-    }
-    this.db.all(query, callback)
+  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
+  get (table: string, field: string, value: string | number) {
+    return this.db.get(table, field, value)
   }
 
-  serialize (callback: () => void): void {
-    /* istanbul ignore if */
-    if (this.db == null) {
-      throw new Error('Wait for database to be ready')
-    }
-    this.db.serialize(callback)
+  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
+  deleteEqual (table: string, field: string, value: string | number) {
+    return this.db.deleteEqual(table, field, value)
+  }
+
+  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
+  deleteLowerThan (table: string, field: string, value: string | number) {
+    return this.db.deleteLowerThan(table, field, value)
   }
 
   createOneTimeToken (data: object, expires?: number): string {
@@ -110,11 +84,9 @@ class IdentityServerDb {
     const id = randomString(64)
     // default: expires in 600 s
     expires ||= Math.floor(Date.now() / 1000 + 600)
-    this.run(`INSERT INTO oneTimeTokens VALUES('${id}', ${expires}, '${JSON.stringify(data)}')`, (err) => {
-      /* istanbul ignore if */
-      if (err != null) {
-        console.error('Failed to insert token', err)
-      }
+    this.db.insert('oneTimeTokens', [id, expires, JSON.stringify(data)]).catch(err => {
+      /* istanbul ignore next */
+      console.error('Failed to insert token', err)
     })
     return id
   }
@@ -126,16 +98,11 @@ class IdentityServerDb {
       throw new Error('Wait for database to be ready')
     }
     return new Promise((resolve, reject) => {
-      this.all(`SELECT data FROM oneTimeTokens WHERE id='${id}'`, (err, rows) => {
-        if (err != null || rows == null || rows.length !== 1) {
-          reject(err)
-        } else {
-          this.run(`DELETE FROM oneTimeTokens WHERE id='${id}'`, (err) => {
-            /* istanbul ignore next */
-            if (err != null) console.error(err)
-            resolve(JSON.parse(rows[0].data))
-          })
-        }
+      this.db.get('oneTimeTokens', 'id', id).then((rows) => {
+        this.db.deleteEqual('oneTimeTokens', 'id', id).catch((e: any) => { console.error(e) })
+        resolve(JSON.parse(rows[0].data as string))
+      }).catch(e => {
+        reject(e)
       })
     })
   }
@@ -143,11 +110,9 @@ class IdentityServerDb {
   dbMaintenance (delay: number): void {
     const _vacuum = (): void => {
       /* istanbul ignore next */
-      if (this.db != null) {
-        cleanByExpires.forEach(table => {
-          this.run(`DELETE FROM ${table} where expires < ` + Math.floor(Date.now() / 1000).toString())
-        })
-      }
+      cleanByExpires.forEach(table => {
+        void this.deleteLowerThan(table, 'expires', Math.floor(Date.now() / 1000))
+      })
       /* istanbul ignore next */
       this.cleanJob = setTimeout(_vacuum, delay)
     }
