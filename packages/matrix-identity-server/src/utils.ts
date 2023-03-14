@@ -24,14 +24,17 @@ export const send = (res: Response | http.ServerResponse, status: number, body: 
   res.end()
 }
 
-type authorizationFunction = (
+type AuthorizationFunction = (
   req: Request | http.IncomingMessage,
   res: Response | http.ServerResponse,
   callback: (data: tokenContent, id?: string) => void) => void
 
-export const Authenticate = (db: IdentityServerDb): authorizationFunction => {
+let authorizationFunction: AuthorizationFunction
+
+export const Authenticate = (db: IdentityServerDb): AuthorizationFunction => {
+  if (authorizationFunction != null) return authorizationFunction
   const tokenRe = /^Bearer ([a-zA-Z0-9]{64})$/
-  const sub: authorizationFunction = (req, res, callback) => {
+  authorizationFunction = (req, res, callback) => {
     let token: string | null = ''
     if (req.headers.authorization != null) {
       const re = req.headers.authorization.match(tokenRe)
@@ -54,7 +57,7 @@ export const Authenticate = (db: IdentityServerDb): authorizationFunction => {
       send(res, 401, errMsg('unAuthorized'))
     }
   }
-  return sub
+  return authorizationFunction
 }
 
 export const jsonContent = (req: Request | http.IncomingMessage, res: Response | http.ServerResponse, callback: (obj: Record<string, string>) => void): void => {
