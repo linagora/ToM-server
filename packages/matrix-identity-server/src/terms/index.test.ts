@@ -3,6 +3,7 @@ import express from 'express'
 import request from 'supertest'
 import DefaultConfig from '../config.json'
 import { type Config } from '..'
+import { resetPolicies } from './_computePolicies'
 
 const policies = {
   privacy_policy: {
@@ -36,7 +37,7 @@ describe('Terms', () => {
     const baseConf: Config = {
       ...DefaultConfig,
       database_engine: 'sqlite',
-      database_host: './test.db',
+      database_host: ':memory:',
       policies
     }
 
@@ -51,6 +52,7 @@ describe('Terms', () => {
     })
   })
   describe('policies in a distinct file', () => {
+    resetPolicies()
     const app = express()
     const baseConf: Config = {
       ...DefaultConfig,

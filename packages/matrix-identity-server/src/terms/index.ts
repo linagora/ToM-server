@@ -1,11 +1,10 @@
 import { type Config } from '..'
-import type IdentityServerDb from '../db'
 import { type expressAppHandler, send } from '../utils'
-import fs from 'fs'
+import computePolicy from './_computePolicies'
 
 export interface Policy {
   version: string
-  [key: string]: { name: string, url: string } | string;
+  [key: string]: { name: string, url: string } | string
 }
 
 export interface Policies {
@@ -13,23 +12,8 @@ export interface Policies {
   terms_of_service?: Policy
 }
 
-// TODO: implement policies
 const Terms = (conf: Config): expressAppHandler => {
-  let policies: Policies = {}
-  if (conf.policies != null) {
-    if (typeof conf.policies === 'string') {
-      try {
-        policies = JSON.parse(fs.readFileSync(conf.policies).toString()) as Policies
-      } catch (e) {
-        /* istanbul ignore next */
-        console.error('Error:', e)
-        /* istanbul ignore next */
-        throw new Error('Unable to parse policies file')
-      }
-    } else {
-      policies = conf.policies
-    }
-  }
+  const policies = computePolicy(conf)
   return (req, res) => {
     send(res, 200, { policies })
   }

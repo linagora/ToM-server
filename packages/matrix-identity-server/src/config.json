@@ -6,6 +6,7 @@
   "key_delay": 3600,
   "keys_depth": 5,
   "mail_link_delay": 7200,
+  "policies": null,
   "server_name": "localhost",
   "smtp_password": "",
   "smtp_tls": true,

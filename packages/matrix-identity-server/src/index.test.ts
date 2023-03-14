@@ -53,7 +53,7 @@ afterAll(() => {
   clearTimeout(idServer.db?.cleanJob)
 })
 
-test('Reject unimplemented endpoitn with 404', async () => {
+test('Reject unimplemented endpoint with 404', async () => {
   const response = await request(app).get('/_matrix/unknown')
   expect(response.statusCode).toBe(404)
 })

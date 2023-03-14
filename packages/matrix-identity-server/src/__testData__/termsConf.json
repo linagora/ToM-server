@@ -1,0 +1,31 @@
+{
+  "database_engine": "sqlite",
+  "database_host": "./src/__testData__/terms.db",
+  "server_name": "matrix.org",
+  "smtp_sender": "yadd@debian.org",
+  "policies": {
+    "privacy_policy": {
+      "en": {
+        "name": "Privacy Policy",
+        "url": "https://example.org/somewhere/privacy-1.2-en.html"
+      },
+      "fr": {
+        "name": "Politique de confidentialité",
+        "url": "https://example.org/somewhere/privacy-1.2-fr.html"
+      },
+      "version": "1.2"
+    },
+    "terms_of_service": {
+      "en": {
+        "name": "Terms of Service",
+        "url": "https://example.org/somewhere/terms-2.0-en.html"
+      },
+      "fr": {
+        "name": "Conditions d'utilisation",
+        "url": "https://example.org/somewhere/terms-2.0-fr.html"
+      },
+      "version": "2.0"
+    }
+  },
+  "template_dir": "./templates"
+}
