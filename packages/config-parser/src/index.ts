@@ -2,12 +2,14 @@ import fs from 'fs'
 
 type ConfigDescription = Record<string, string | number | boolean | null | undefined>
 
-const twakeConfig = (desc: ConfigDescription, defaultConfigurationFile?: fs.PathOrFileDescriptor): object => {
+const twakeConfig = (desc: ConfigDescription, defaultConfigurationFile?: object | fs.PathOrFileDescriptor): object => {
   // Use optional configuration file if given
   const res =
-    defaultConfigurationFile != null
-      ? JSON.parse(fs.readFileSync(defaultConfigurationFile).toString())
-      : {}
+    defaultConfigurationFile == null
+      ? {}
+      : typeof defaultConfigurationFile === 'string'
+        ? JSON.parse(fs.readFileSync(defaultConfigurationFile).toString())
+        : defaultConfigurationFile
   // Parse wanted keys
   Object.keys(desc).forEach((key: string) => {
     // If environment variable exists, it overrides current value
