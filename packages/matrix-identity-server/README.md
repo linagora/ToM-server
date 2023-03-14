@@ -10,7 +10,16 @@ Example using [express](https://www.npmjs.com/package/express):
 ```js
 import express from 'express'
 import IdServer from '@twake/matrix-identity-server'
+
+// if configuration is in default file (/etc/twake/identity-server.conf)
 const idServer = new IdServer()
+
+// else if configuration is in a different file, set TWAKE_IDENTITY_SERVER_CONF
+process.env.TWAKE_IDENTITY_SERVER_CONF = '/path/to/config/file'
+const idServer = new IdServer()
+
+// You can also give configuration directly
+const idServer = new IdServer(config)
 
 const app = express()
 
@@ -26,6 +35,11 @@ idServer.ready.then( () => {
   app.listen(3000)
 })
 ```
+
+## Configuration file
+
+Configuration file is a JSON file. The default values are
+in [src/config.json](./src/config.json).
 
 ## Copyright and license
 

@@ -15,7 +15,7 @@ export const send = (res: Response | http.ServerResponse, status: number, body: 
   const content = typeof body === 'string' ? body : JSON.stringify(body)
   res.writeHead(status, {
     'Content-Type': 'application/json; charset=utf-8',
-    'Content-Length': content.length,
+    'Content-Length': Buffer.byteLength(content, 'utf-8'),
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
     'Access-Control-Allow-Headers': 'Origin, X-Requested-With, Content-Type, Accept, Authorization'
