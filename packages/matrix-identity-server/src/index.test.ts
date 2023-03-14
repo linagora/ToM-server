@@ -312,10 +312,17 @@ describe('/_matrix/identity/v2/validate/email', () => {
 })
 
 describe('/_matrix/identity/v2/account', () => {
-  it('should accept valid token', async () => {
+  it('should accept valid token in headers', async () => {
     const response = await request(app)
       .get('/_matrix/identity/v2/account')
       .set('Authorization', `Bearer ${validToken}`)
+      .set('Accept', 'application/json')
+    expect(response.statusCode).toBe(200)
+  })
+  it('should accept valid token in query parameters', async () => {
+    const response = await request(app)
+      .get('/_matrix/identity/v2/account')
+      .query({ access_token: validToken })
       .set('Accept', 'application/json')
     expect(response.statusCode).toBe(200)
   })

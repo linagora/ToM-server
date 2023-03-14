@@ -11,11 +11,8 @@ export type expressAppHandler = (
 ) => void
 
 export const send = (res: Response | http.ServerResponse, status: number, body: string | object): void => {
-  const content =
   /* istanbul ignore next */
-   typeof body === 'string'
-     ? body
-     : JSON.stringify(body)
+  const content = typeof body === 'string' ? body : JSON.stringify(body)
   res.writeHead(status, {
     'Content-Type': 'application/json; charset=utf-8',
     'Content-Length': content.length,
@@ -35,17 +32,24 @@ type authorizationFunction = (
 export const Authenticate = (db: IdentityServerDb): authorizationFunction => {
   const tokenRe = /^Bearer ([a-zA-Z0-9]{64})$/
   const sub: authorizationFunction = (req, res, callback) => {
+    let token: string | null = ''
     if (req.headers.authorization != null) {
       const re = req.headers.authorization.match(tokenRe)
       if (re != null) {
-        db.get('tokens', ['data'], 'id', re[1]).then((rows) => {
-          callback(JSON.parse(rows[0].data as string), re[1])
-        }).catch(e => {
-          send(res, 401, errMsg('unAuthorized'))
-        })
-      } else {
-        send(res, 401, errMsg('unAuthorized'))
+        token = re[1]
       }
+    // @ts-expect-error req.query exists
+    } else if (req.query != null) {
+      // @ts-expect-error req.query.access_token may be null
+      token = req.query.access_token
+    }
+    if (token != null) {
+      db.get('tokens', ['data'], 'id', token).then((rows) => {
+        // @ts-expect-error token is defined
+        callback(JSON.parse(rows[0].data as string), token)
+      }).catch(e => {
+        send(res, 401, errMsg('unAuthorized'))
+      })
     } else {
       send(res, 401, errMsg('unAuthorized'))
     }
