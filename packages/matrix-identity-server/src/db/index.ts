@@ -125,10 +125,28 @@ class IdentityServerDb implements IdDbBackend {
     }
     return new Promise((resolve, reject) => {
       this.verifyToken(id).then((data) => {
-        this.db.deleteEqual('oneTimeTokens', 'id', id).catch((e: any) => { console.error(e) })
+        void this.deleteToken(id)
         resolve(data)
       }).catch(e => {
         reject(e)
+      })
+    })
+  }
+
+  // eslint-disable-next-line @typescript-eslint/promise-function-async
+  deleteToken (id: string): Promise<void> {
+    /* istanbul ignore if */
+    if (this.db == null) {
+      throw new Error('Wait for database to be ready')
+    }
+    return new Promise((resolve, reject) => {
+      this.db.deleteEqual('oneTimeTokens', 'id', id).then((e: any) => {
+        /* istanbul ignore if */
+        if (e != null) console.error(e)
+        resolve()
+      }).catch(e => {
+        /* istanbul ignore next */
+        console.error(`Token ${id} already deleted`, e)
       })
     })
   }

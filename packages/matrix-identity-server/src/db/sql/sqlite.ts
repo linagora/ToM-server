@@ -1,6 +1,6 @@
 import sqlite3, { type Database, type Statement } from 'sqlite3'
 import { type Config } from '../..'
-import SQL, { tables } from './sql'
+import SQL, { tables, indexes } from './sql'
 
 export type SQLiteDatabase = Database
 
@@ -19,15 +19,23 @@ class SQLite extends SQL {
         if (err != null && /no such table/.test(err.message)) {
           let created = 0
           Object.keys(tables).forEach((table, i, arr) => {
-            db.run(`CREATE TABLE ${table}(${tables[table as keyof typeof tables]})`, (err: any) => {
+            db.run(`CREATE TABLE ${table}(${tables[table as keyof typeof tables]})`, (err: Error | null) => {
             /* istanbul ignore if */
               if (err != null) {
-                throw new Error(err)
+                throw err
               } else {
                 created++
                 /* istanbul ignore else */
                 if (created === arr.length) {
                   resolve(true)
+                  Object.keys(indexes).forEach((table) => {
+                    indexes[table].forEach(index => {
+                      db.run(`CREATE INDEX i_${table}_${index} ON ${table} (${index})`, (err: Error | null) => {
+                        /* istanbul ignore if */
+                        if (err != null) console.error(`Index ${index}`, err)
+                      })
+                    })
+                  })
                 } else if (i === arr.length) {
                   reject(new Error(`Was able to create ${created} database instead of ${arr.length}`))
                 }

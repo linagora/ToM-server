@@ -7,6 +7,11 @@ export const tables = {
   attempts: 'email test primary key, expires int, attempt int'
 }
 
+export const indexes: Record<string, string[]> = {
+  oneTimeTokens: ['expires'],
+  attempts: ['expires']
+}
+
 abstract class SQL {
   db?: SQLiteDatabase // | pg,...
   ready: Promise<boolean>
