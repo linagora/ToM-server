@@ -75,7 +75,8 @@ export const jsonContent = (req: Request | http.IncomingMessage, res: Response |
   req.on('end', () => {
     let obj
     try {
-      if (req.headers['content-type']!= null && req.headers['content-type'].match(/^application\/x-www-form-urlencoded/) != null) {
+      // eslint-disable-next-line @typescript-eslint/prefer-optional-chain
+      if (req.headers['content-type'] != null && req.headers['content-type'].match(/^application\/x-www-form-urlencoded/) != null) {
         obj = querystring.parse(content)
       } else {
         obj = JSON.parse(content)

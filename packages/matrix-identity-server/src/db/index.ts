@@ -83,12 +83,38 @@ class IdentityServerDb implements IdDbBackend {
     }
     const id = randomString(64)
     // default: expires in 600 s
-    expires ||= Math.floor(Date.now() / 1000 + 600)
+    expires = Math.floor(Date.now() / 1000 + (expires != null ? expires : 600))
     this.db.insert('oneTimeTokens', { id, expires, data: JSON.stringify(data) }).catch(err => {
       /* istanbul ignore next */
       console.error('Failed to insert token', err)
     })
     return id
+  }
+
+  // No difference in creation between a token and a one-time-token
+  createToken (data: object, expires?: number): string {
+    return this.createOneTimeToken(data, expires)
+  }
+
+  // eslint-disable-next-line @typescript-eslint/promise-function-async
+  verifyToken (id: string): Promise<object> {
+    /* istanbul ignore if */
+    if (this.db == null) {
+      throw new Error('Wait for database to be ready')
+    }
+    return new Promise((resolve, reject) => {
+      this.db.get('oneTimeTokens', ['data', 'expires'], 'id', id).then((rows) => {
+        /* istanbul ignore else */
+        if ((rows[0].expires as number) >= Math.floor(Date.now() / 1000)) {
+          resolve(JSON.parse(rows[0].data as string))
+        } else {
+          console.error(rows)
+          reject(new Error('Token expired' + (rows[0].expires as number).toString()))
+        }
+      }).catch(e => {
+        reject(e)
+      })
+    })
   }
 
   // eslint-disable-next-line @typescript-eslint/promise-function-async
@@ -98,9 +124,9 @@ class IdentityServerDb implements IdDbBackend {
       throw new Error('Wait for database to be ready')
     }
     return new Promise((resolve, reject) => {
-      this.db.get('oneTimeTokens', ['data'], 'id', id).then((rows) => {
+      this.verifyToken(id).then((data) => {
         this.db.deleteEqual('oneTimeTokens', 'id', id).catch((e: any) => { console.error(e) })
-        resolve(JSON.parse(rows[0].data as string))
+        resolve(data)
       }).catch(e => {
         reject(e)
       })

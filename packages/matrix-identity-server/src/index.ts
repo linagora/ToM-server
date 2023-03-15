@@ -66,7 +66,6 @@ export default class MatrixIdentityServer {
     this.ready = new Promise((resolve, reject) => {
       const db = this.db = new IdentityServerDb(this.conf)
       db.ready.then(() => {
-        // TODO: insert here all endpoints
         const badMethod: expressAppHandler = (req, res) => {
           send(res, 405, errMsg('unrecognized'))
         }
@@ -92,8 +91,8 @@ export default class MatrixIdentityServer {
             '/_matrix/identity/v2/account/register': register(db),
             '/_matrix/identity/v2/account/logout': logout(db),
             '/_matrix/identity/v2/terms': PostTerms(db, this.conf),
-            '/_matrix/identity/v2/validate/email/requestToken': RequestToken(db, this.conf)
-            // TODO: /_matrix/identity/v2/validate/email/submitToken
+            '/_matrix/identity/v2/validate/email/requestToken': RequestToken(db, this.conf),
+            '/_matrix/identity/v2/validate/email/submitToken': SubmitToken(db, this.conf)
           }
         }
         resolve(true)

@@ -2,6 +2,7 @@ import express from 'express'
 import request from 'supertest'
 import IdServer from './index'
 import fs from 'fs'
+import querystring from 'querystring'
 import { randomString } from './utils/tokenUtils'
 import fetch from 'node-fetch'
 
@@ -128,13 +129,14 @@ describe('/_matrix/identity/v2/account/register', () => {
     console.warn = jest.fn()
     const response = await request(app)
       .post('/_matrix/identity/v2/account/register')
-      .send({
+      .set('Content-Type', 'application/x-www-form-urlencoded')
+      .send(querystring.stringify({
         access_token: 'bar',
         expires_in: 86400,
         matrix_server_name: 'matrix.example.com',
         token_type: 'Bearer',
         additional_param: 'value'
-      })
+      }))
       .set('Accept', 'application/json')
     expect(response.statusCode).toBe(200)
     // @ts-expect-error mock is unknown
@@ -279,8 +281,8 @@ describe('/_matrix/identity/v2/validate/email', () => {
     */
     it('should reject registration with a missing parameter', async () => {
       const response = await request(app)
-        .get('/_matrix/identity/v2/validate/email/submitToken')
-        .query({
+        .post('/_matrix/identity/v2/validate/email/submitToken')
+        .send({
           token,
           sid
         })

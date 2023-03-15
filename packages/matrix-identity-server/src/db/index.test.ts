@@ -56,7 +56,7 @@ describe('Id Server DB', () => {
 test('OneTimeToken timeout', (done) => {
   const idDb = new IdDb({ ...baseConf, database_vacuum_delay: 1000 })
   idDb.ready.then(() => {
-    const token = idDb.createOneTimeToken({ a: 1 }, 10)
+    const token = idDb.createOneTimeToken({ a: 1 }, 1)
     setTimeout(() => {
       idDb.verifyOneTimeToken(token).then((data) => {
         done('Should throw')
@@ -64,7 +64,7 @@ test('OneTimeToken timeout', (done) => {
         clearTimeout(idDb.cleanJob)
         done()
       })
-    }, 1500)
+    }, 3000)
   }).catch(e => {
     done(e)
   })
