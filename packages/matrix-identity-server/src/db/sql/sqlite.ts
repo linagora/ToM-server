@@ -1,4 +1,5 @@
 import sqlite3, { type Database, type Statement } from 'sqlite3'
+import { type Collections } from '../index'
 import { type Config } from '../..'
 import SQL, { tables, indexes } from './sql'
 
@@ -15,7 +16,7 @@ class SQLite extends SQL {
       throw new Error('Database not created')
     }
     return new Promise((resolve, reject) => {
-      db.run('SELECT count(id) FROM tokens', (err: any) => {
+      db.run('SELECT count(id) FROM accessTokens', (err: any) => {
         if (err != null && /no such table/.test(err.message)) {
           let created = 0
           Object.keys(tables).forEach((table, i, arr) => {
@@ -29,7 +30,8 @@ class SQLite extends SQL {
                 if (created === arr.length) {
                   resolve(true)
                   Object.keys(indexes).forEach((table) => {
-                    indexes[table].forEach(index => {
+                    // @ts-expect-error table is defined here
+                    indexes[table as Collections].forEach(index => {
                       db.run(`CREATE INDEX i_${table}_${index} ON ${table} (${index})`, (err: Error | null) => {
                         /* istanbul ignore if */
                         if (err != null) console.error(`Index ${index}`, err)

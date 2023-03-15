@@ -8,7 +8,7 @@ const Logout = (db: IdentityServerDb): expressAppHandler => {
   return (req, res) => {
     // @ts-expect-error id is defined here
     authenticate(req, res, (idToken: tokenContent, id: string) => {
-      db.deleteEqual('tokens', 'id', id).then(() => {
+      db.deleteEqual('accessTokens', 'id', id).then(() => {
         send(res, 200, {})
       }).catch(e => {
         /* istanbul ignore next */

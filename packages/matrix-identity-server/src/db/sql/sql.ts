@@ -1,13 +1,14 @@
+import { type Collections } from '..'
 import { type Config } from '../..'
 import { type SQLiteDatabase } from './sqlite'
 
-export const tables = {
-  tokens: 'id varchar(64) primary key, data text',
+export const tables: Record<Collections, string> = {
+  accessTokens: 'id varchar(64) primary key, data text',
   oneTimeTokens: 'id varchar(64) primary key, expires int, data text',
   attempts: 'email test primary key, expires int, attempt int'
 }
 
-export const indexes: Record<string, string[]> = {
+export const indexes: Partial<Record<Collections, string[]>> = {
   oneTimeTokens: ['expires'],
   attempts: ['expires']
 }

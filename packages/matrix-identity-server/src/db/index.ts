@@ -2,17 +2,19 @@ import { type Config } from '..'
 import { randomString } from '../utils/tokenUtils'
 import Sqlite from './sql/sqlite'
 
-export const cleanByExpires = [
+export type SupportedDatabases = 'sqlite' | 'pg'
+
+export type Collections = 'accessTokens' | 'oneTimeTokens' | 'attempts'
+
+export const cleanByExpires: Collections[] = [
   'oneTimeTokens',
   'attempts'
 ]
 
-export type SupportedDatabases = 'sqlite' | 'pg'
-
-type Insert = (table: string, values: Record<string, string | number>) => Promise<void>
-type Get = (table: string, fields: string[], field: string, value: string | number) => Promise<Array<Record<string, string | number >>>
-type DeleteEqual = (table: string, field: string, value: string | number) => Promise<void>
-type DeleteLowerThan = (table: string, field: string, value: string | number) => Promise<void>
+type Insert = (table: Collections, values: Record<string, string | number>) => Promise<void>
+type Get = (table: Collections, fields: string[], field: string, value: string | number) => Promise<Array<Record<string, string | number >>>
+type DeleteEqual = (table: Collections, field: string, value: string | number) => Promise<void>
+type DeleteLowerThan = (table: Collections, field: string, value: string | number) => Promise<void>
 
 export interface IdDbBackend {
   ready: Promise<boolean>
@@ -57,22 +59,22 @@ class IdentityServerDb implements IdDbBackend {
   }
 
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
-  insert (table: string, values: Record<string, string | number>) {
+  insert (table: Collections, values: Record<string, string | number>) {
     return this.db.insert(table, values)
   }
 
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
-  get (table: string, fields: string[], field: string, value: string | number) {
+  get (table: Collections, fields: string[], field: string, value: string | number) {
     return this.db.get(table, fields, field, value)
   }
 
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
-  deleteEqual (table: string, field: string, value: string | number) {
+  deleteEqual (table: Collections, field: string, value: string | number) {
     return this.db.deleteEqual(table, field, value)
   }
 
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
-  deleteLowerThan (table: string, field: string, value: string | number) {
+  deleteLowerThan (table: Collections, field: string, value: string | number) {
     return this.db.deleteLowerThan(table, field, value)
   }
 
