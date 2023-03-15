@@ -92,6 +92,7 @@ describe('/_matrix/identity/v2/account/register', () => {
     const response = await request(app)
       .post('/_matrix/identity/v2/account/register')
       .send('{"access_token": "bar"')
+      .set('Content-Type', 'application/json')
       .set('Accept', 'application/json')
     expect(response.statusCode).toBe(400)
     // @ts-expect-error mock is unknown
@@ -295,6 +296,7 @@ describe('/_matrix/identity/v2/validate/email', () => {
           sid
         })
         .set('Accept', 'application/json')
+      expect(response.body).toEqual({ success: true })
       expect(response.statusCode).toBe(200)
     })
     it('should refuse a second registration', async () => {

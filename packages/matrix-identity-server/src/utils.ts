@@ -3,6 +3,7 @@ import { type Request, type Response, type NextFunction } from 'express'
 import { errMsg } from './utils/errors'
 import { type tokenContent } from './account/register'
 import type IdentityServerDb from './db'
+import querystring from 'querystring'
 
 export type expressAppHandler = (
   req: Request | http.IncomingMessage,
@@ -74,7 +75,11 @@ export const jsonContent = (req: Request | http.IncomingMessage, res: Response |
   req.on('end', () => {
     let obj
     try {
-      obj = JSON.parse(content)
+      if (req.headers['content-type']!= null && req.headers['content-type'].match(/^application\/x-www-form-urlencoded/) != null) {
+        obj = querystring.parse(content)
+      } else {
+        obj = JSON.parse(content)
+      }
     } catch (err) {
       console.error('JSON error', err)
       send(res, 400, errMsg('unknown', err as string))
