@@ -160,9 +160,9 @@ class IdentityServerDb implements IdDbBackend {
         void this.deleteLowerThan(table, 'expires', Math.floor(Date.now() / 1000))
       })
       /* istanbul ignore next */
-      this.cleanJob = setTimeout(_vacuum, delay)
+      this.cleanJob = setTimeout(_vacuum, delay * 1000)
     }
-    this.cleanJob = setTimeout(_vacuum, delay)
+    this.cleanJob = setTimeout(_vacuum, delay * 1000)
   }
 }
 

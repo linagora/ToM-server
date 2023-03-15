@@ -2,7 +2,7 @@
   "base_url": "",
   "database_engine": "sqlite",
   "database_host": "./tokens.db",
-  "database_vacuum_delay": 3600000,
+  "database_vacuum_delay": 3600,
   "key_delay": 3600,
   "keys_depth": 5,
   "mail_link_delay": 7200,
