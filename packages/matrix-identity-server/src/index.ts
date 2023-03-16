@@ -52,7 +52,7 @@ export default class MatrixIdentityServer {
 
   ready: Promise<boolean>
 
-  constructor (conf?: Config) {
+  constructor (conf?: Partial<Config>) {
     this.api = { get: {}, post: {} }
     this.conf = configParser(
       confDesc,
