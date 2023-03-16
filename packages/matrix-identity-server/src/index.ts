@@ -40,7 +40,7 @@ export interface Config {
 }
 
 export default class MatrixIdentityServer {
-  api?: {
+  api: {
     get: IdServerAPI
     post: IdServerAPI
     put?: IdServerAPI
@@ -53,6 +53,7 @@ export default class MatrixIdentityServer {
   ready: Promise<boolean>
 
   constructor (conf?: Config) {
+    this.api = { get: {}, post: {} }
     this.conf = configParser(
       confDesc,
       /* istanbul ignore next */

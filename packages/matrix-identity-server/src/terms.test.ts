@@ -22,14 +22,10 @@ const app = express()
 let validToken: string
 
 void idServer.ready.then(() => {
-  // @ts-expect-error api is always defind when "ready"
   Object.keys(idServer.api.get).forEach(k => {
-    // @ts-expect-error api is always defind when "ready"
     app.get(k, idServer.api.get[k])
   })
-  // @ts-expect-error api is always defind when "ready"
   Object.keys(idServer.api.post).forEach(k => {
-    // @ts-expect-error api is always defind when "ready"
     app.post(k, idServer.api.post[k])
   })
 })
