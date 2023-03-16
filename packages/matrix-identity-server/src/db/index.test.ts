@@ -6,17 +6,17 @@ import { type Config } from '..'
 import DefaultConfig from '../config.json'
 
 afterEach(() => {
-  fs.unlinkSync('./test.db')
+  fs.unlinkSync('./testdb.db')
 })
 
 const baseConf: Config = {
   ...DefaultConfig,
   database_engine: 'sqlite',
-  database_host: './test.db'
+  database_host: './testdb.db'
 }
 
 describe('Id Server DB', () => {
-  it('should a SQLite database initialized', (done) => {
+  it('should have SQLite database initialized', (done) => {
     // eslint-disable-next-line @typescript-eslint/no-floating-promises
     const idDb = new IdDb(baseConf)
     idDb.ready.then(() => {
@@ -54,7 +54,7 @@ describe('Id Server DB', () => {
 })
 
 test('OneTimeToken timeout', (done) => {
-  const idDb = new IdDb({ ...baseConf, database_vacuum_delay: 1 })
+  const idDb = new IdDb({ ...baseConf, database_vacuum_delay: 3 })
   idDb.ready.then(() => {
     const token = idDb.createOneTimeToken({ a: 1 }, 1)
     setTimeout(() => {
@@ -64,7 +64,7 @@ test('OneTimeToken timeout', (done) => {
         clearTimeout(idDb.cleanJob)
         done()
       })
-    }, 3000)
+    }, 6000)
   }).catch(e => {
     done(e)
   })

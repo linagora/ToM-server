@@ -5,7 +5,8 @@ import { type SQLiteDatabase } from './sqlite'
 export const tables: Record<Collections, string> = {
   accessTokens: 'id varchar(64) primary key, data text',
   oneTimeTokens: 'id varchar(64) primary key, expires int, data text',
-  attempts: 'email test primary key, expires int, attempt int'
+  attempts: 'email primary key, expires int, attempt int',
+  keys: 'name varchar(32) primary key, data text'
 }
 
 export const indexes: Partial<Record<Collections, string[]>> = {
@@ -15,7 +16,7 @@ export const indexes: Partial<Record<Collections, string[]>> = {
 
 abstract class SQL {
   db?: SQLiteDatabase // | pg,...
-  ready: Promise<boolean>
+  ready: Promise<void>
   cleanJob?: NodeJS.Timeout
 
   constructor (conf: Config) {
@@ -37,8 +38,9 @@ abstract class SQL {
         vals.push(values[k])
       })
       const stmt = this.db.prepare(`INSERT INTO ${table}(${names.join(',')}) VALUES(${names.map(v => '?').join(',')})`)
-      stmt.run(vals).finalize()
-      resolve()
+      stmt.run(vals).finalize(() => {
+        resolve()
+      })
     })
   }
 

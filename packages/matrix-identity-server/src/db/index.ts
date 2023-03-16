@@ -4,7 +4,7 @@ import Sqlite from './sql/sqlite'
 
 export type SupportedDatabases = 'sqlite' | 'pg'
 
-export type Collections = 'accessTokens' | 'oneTimeTokens' | 'attempts'
+export type Collections = 'accessTokens' | 'oneTimeTokens' | 'attempts' | 'keys'
 
 export const cleanByExpires: Collections[] = [
   'oneTimeTokens',
@@ -17,7 +17,7 @@ type DeleteEqual = (table: Collections, field: string, value: string | number) =
 type DeleteLowerThan = (table: Collections, field: string, value: string | number) => Promise<void>
 
 export interface IdDbBackend {
-  ready: Promise<boolean>
+  ready: Promise<void>
   createDatabases: (conf: Config) => Promise<boolean>
   insert: Insert
   get: Get
@@ -27,7 +27,7 @@ export interface IdDbBackend {
 export type InsertType = (table: string, values: Array<string | number>) => Promise<void>
 
 class IdentityServerDb implements IdDbBackend {
-  ready: Promise<boolean>
+  ready: Promise<void>
   db: IdDbBackend
   cleanJob?: NodeJS.Timeout
   constructor (conf: Config) {
@@ -43,13 +43,31 @@ class IdentityServerDb implements IdDbBackend {
       }
     }
     this.db = new Module(conf)
-    this.ready = this.db.ready
+    this.ready = new Promise((resolve, reject) => {
+      this.db.ready.then(() => {
+        this.init().then(() => {
+          resolve()
+        }).catch(e => {
+          /* istanbul ignore next */
+          reject(e)
+        })
+      }).catch(e => {
+        /* istanbul ignore next */
+        reject(e)
+      })
+    })
     this.ready.then(() => {
       this.dbMaintenance(conf.database_vacuum_delay)
     }).catch(e => {
       /* istanbul ignore next */
       console.error('DB maintenance error', e)
     })
+  }
+
+  async init (): Promise<void> {
+    const pepper = randomString(8)
+    await this.db.insert('keys', { name: 'pepper', data: pepper })
+    // TODO: calculate hash for phones and mails using @twake/crypto hash.sha256(mail, 'email', pepper)
   }
 
   /* istanbul ignore next */
@@ -107,10 +125,9 @@ class IdentityServerDb implements IdDbBackend {
     return new Promise((resolve, reject) => {
       this.db.get('oneTimeTokens', ['data', 'expires'], 'id', id).then((rows) => {
         /* istanbul ignore else */
-        if ((rows[0].expires as number) >= Math.floor(Date.now() / 1000)) {
+        if (rows.length > 0 && (rows[0].expires as number) >= Math.floor(Date.now() / 1000)) {
           resolve(JSON.parse(rows[0].data as string))
         } else {
-          console.error(rows)
           reject(new Error('Token expired' + (rows[0].expires as number).toString()))
         }
       }).catch(e => {

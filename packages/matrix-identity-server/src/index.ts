@@ -16,6 +16,7 @@ import Terms, { type Policies } from './terms'
 import RequestToken from './validate/email/requestToken'
 import SubmitToken from './validate/email/submitToken'
 import PostTerms from './terms/index.post'
+import hashDetails from './lookup/hash_details'
 
 type IdServerAPI = Record<string, expressAppHandler>
 
@@ -81,6 +82,7 @@ export default class MatrixIdentityServer {
             '/_matrix/identity/v2/account': account(db),
             '/_matrix/identity/v2/account/register': badMethod,
             '/_matrix/identity/v2/account/logout': badMethod,
+            '/_matrix/identity/v2/hash_details': hashDetails(db),
             '/_matrix/identity/v2/terms': Terms(this.conf),
             '/_matrix/identity/v2/validate/email/requestToken': badMethod,
             '/_matrix/identity/v2/validate/email/submitToken': SubmitToken(db, this.conf)

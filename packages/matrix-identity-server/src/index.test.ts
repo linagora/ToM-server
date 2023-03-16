@@ -5,6 +5,7 @@ import fs from 'fs'
 import querystring from 'querystring'
 import { randomString } from './utils/tokenUtils'
 import fetch from 'node-fetch'
+import { supportedHashes } from '@twake/crypto'
 
 jest.mock('node-fetch', () => jest.fn())
 const sendMailMock = jest.fn()
@@ -307,6 +308,29 @@ describe('/_matrix/identity/v2/validate/email', () => {
         })
         .set('Accept', 'application/json')
       expect(response.statusCode).toBe(400)
+    })
+  })
+})
+
+describe('/_matrix/identity/v2/lookup', () => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  let pepper = ''
+  describe('/_matrix/identity/v2/hash_details', () => {
+    it('should require authentication', async () => {
+      const response = await request(app)
+        .get('/_matrix/identity/v2/hash_details')
+        .set('Accept', 'application/json')
+      expect(response.statusCode).toBe(401)
+    })
+    it('should display algorithms and pepper', async () => {
+      const response = await request(app)
+        .get('/_matrix/identity/v2/hash_details')
+        .set('Authorization', `Bearer ${validToken}`)
+        .set('Accept', 'application/json')
+      expect(response.statusCode).toBe(200)
+      expect(response.body).toHaveProperty('lookup_pepper')
+      pepper = response.body.lookup_pepper
+      expect(response.body.algorithms).toEqual(supportedHashes)
     })
   })
 })

@@ -37,6 +37,6 @@ function configure (esm, external) {
   }
 }
 function setExternal (external) {
-  return [configure(true, external)]
+  return [configure(true, external), configure(false, external)]
 }
 export default setExternal
