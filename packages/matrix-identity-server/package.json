@@ -10,7 +10,10 @@
     "import": "./dist/index.js"
   },
   "scripts": {
-    "build": "rollup -c",
+    "build": "npm run build:lib && npm run build:example",
+    "build:lib": "rollup -c",
+    "build:example": "rollup -p @rollup/plugin-typescript -e express -e @twake/matrix-identity-server -o example/identity-server.js example/identity-server.ts",
+    "start": "node example/identity-server.js",
     "test": "jest"
   },
   "repository": {
@@ -20,6 +23,7 @@
   "files": [
     "package.json",
     "dist",
+    "example/identity-server.js",
     "*.md"
   ],
   "keywords": [

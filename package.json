@@ -9,7 +9,7 @@
     "lint-fix": "eslint --fix packages/*/src --ext .ts",
     "test": "lerna run test",
     "softClean": "rimraf packages/*/dist",
-    "clean": "rimraf packages/*/dist packages/*/coverage ./node_modules/.cache/nx"
+    "clean": "rimraf packages/*/dist packages/*/coverage ./node_modules/.cache/nx packages/matrix-identity-server/example/identity-server.js"
   },
   "repository": {
     "type": "git",

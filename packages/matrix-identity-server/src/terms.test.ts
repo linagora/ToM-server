@@ -76,6 +76,7 @@ test('Get authentication token', async () => {
   validToken = response.body.token
 })
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 let policies: Policies
 
 describe('When "terms of use" exists', () => {

@@ -43,7 +43,7 @@ class SQLite extends SQL {
                       })
                     })
                   } else if (i === arr.length) {
-                    reject(new Error(`Was able to create ${created} database instead of ${arr.length}`))
+                    reject(new Error(`Was able to create ${created} database(s) instead of ${arr.length}`))
                   }
                 }
               })
