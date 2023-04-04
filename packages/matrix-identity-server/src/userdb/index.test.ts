@@ -3,16 +3,16 @@ import fs from 'fs'
 import UserDB from './index'
 import defaultConfig from '../config.json'
 
-const dbName = './test.db'
+const dbName = './testldap.db'
 
 beforeAll(done => {
   const db = new sqlite3.Database(dbName)
-  db.run(`CREATE TABLE users(uid varchar(64) primary key)`, (err) => {
-    if (err) {
+  db.run('CREATE TABLE users(uid varchar(64) primary key)', (err) => {
+    if (err != null) {
       done(err)
     } else {
-      db.run(`INSERT INTO users values('dwho')`, (err) => {
-        if (err) {
+      db.run('INSERT INTO users values(\'dwho\')', (err) => {
+        if (err != null) {
           done(err)
         } else {
           done()
