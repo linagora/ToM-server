@@ -11,7 +11,7 @@
   "scripts": {
     "build": "npm run build:lib && npm run build:example",
     "build:lib": "rollup -c",
-    "build:example": "rollup -p @rollup/plugin-typescript -e express -e @twake/matrix-identity-server -o example/identity-server.js example/identity-server.ts",
+    "build:example": "rollup -p @rollup/plugin-typescript -e express,@twake/matrix-identity-server -m -o example/identity-server.js example/identity-server.ts",
     "start": "node example/identity-server.js",
     "test": "jest"
   },
@@ -41,6 +41,7 @@
   },
   "homepage": "https://ci.linagora.com/publicgroup/oss/twake/tom-server",
   "optionalDependencies": {
+    "ldapjs": "^3.0.2",
     "pg": "^8.10.0",
     "sqlite3": "^5.1.6"
   },
