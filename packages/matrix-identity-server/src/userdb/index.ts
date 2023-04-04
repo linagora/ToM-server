@@ -1,4 +1,5 @@
 import { type Config } from '../index'
+import UserDBLDAP from './ldap'
 import UserDBSQLite from './sql/sqlite'
 
 export type SupportedUserDatabases = 'sqlite' | 'ldap'
@@ -12,15 +13,19 @@ export interface UserDBBackend {
   get: Get
 }
 
-class UserDB {
+class UserDB implements UserDBBackend {
   ready: Promise<void>
   db: UserDBBackend
   constructor (conf: Config) {
     let Module
     /* istanbul ignore next */
-    switch (conf.database_engine) {
+    switch (conf.userdb_engine) {
       case 'sqlite': {
         Module = UserDBSQLite
+        break
+      }
+      case 'ldap': {
+        Module = UserDBLDAP
         break
       }
       default: {
@@ -37,6 +42,11 @@ class UserDB {
         reject(e)
       })
     })
+  }
+
+  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
+  get (table: Collections, fields: string[], field: string, value: string | number) {
+    return this.db.get(table, fields, field, value)
   }
 }
 
