@@ -48,7 +48,6 @@ describe('LDAP', () => {
         userDB.get('', [], 'uid', 'zz').then(list => {
           done('zz does not exist')
         }).catch(e => {
-          userDB.client.destroy()
           done()
         })
       }).catch(e => done(e))
