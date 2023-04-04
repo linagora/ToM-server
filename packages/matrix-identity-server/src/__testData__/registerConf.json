@@ -3,5 +3,6 @@
   "database_host": "./src/__testData__/test.db",
   "server_name": "matrix.org",
   "smtp_sender": "yadd@debian.org",
-  "template_dir": "./templates"
+  "template_dir": "./templates",
+  "userdb_engine": "ldap"
 }

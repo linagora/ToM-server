@@ -5,6 +5,12 @@
   "database_vacuum_delay": 3600,
   "key_delay": 3600,
   "keys_depth": 5,
+  "ldap_base": "",
+  "ldap_filter": "(ObjectClass=inetOrgPerson)",
+  "ldap_password": "",
+  "ldap_uri": "",
+  "ldap_user": "",
+  "ldapjs_opts": {},
   "mail_link_delay": 7200,
   "policies": null,
   "server_name": "localhost",
@@ -15,5 +21,6 @@
   "smtp_sender": "",
   "smtp_server": "localhost",
   "smtp_port": 25,
+  "userdb_engine": "sqlite",
   "template_dir": "./templates"
 }

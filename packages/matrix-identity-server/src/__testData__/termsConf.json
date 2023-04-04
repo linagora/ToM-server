@@ -27,5 +27,6 @@
       "version": "2.0"
     }
   },
-  "template_dir": "./templates"
+  "template_dir": "./templates",
+  "userdb_engine": "ldap"
 }

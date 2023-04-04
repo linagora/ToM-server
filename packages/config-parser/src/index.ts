@@ -1,6 +1,6 @@
 import fs from 'fs'
 
-type ConfigDescription = Record<string, string | number | boolean | null | undefined>
+type ConfigDescription = Record<string, string | Record<string, any> | number | boolean | null | undefined>
 
 const twakeConfig = (desc: ConfigDescription, defaultConfigurationFile?: object | fs.PathOrFileDescriptor): object => {
   // Use optional configuration file if given

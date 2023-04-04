@@ -7,7 +7,7 @@ export class Hash {
   nacl?: Nacl
   constructor () {
     this.ready = new Promise((resolve, reject) => {
-      _nacl.instantiate(nacl => {
+      void _nacl.instantiate(nacl => {
         this.nacl = nacl
         resolve()
       })

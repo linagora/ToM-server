@@ -12,7 +12,8 @@ afterEach(() => {
 const baseConf: Config = {
   ...DefaultConfig,
   database_engine: 'sqlite',
-  database_host: './testdb.db'
+  database_host: './testdb.db',
+  userdb_engine: 'ldap'
 }
 
 describe('Id Server DB', () => {

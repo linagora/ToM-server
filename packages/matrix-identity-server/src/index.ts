@@ -17,6 +17,7 @@ import RequestToken from './validate/email/requestToken'
 import SubmitToken from './validate/email/submitToken'
 import PostTerms from './terms/index.post'
 import hashDetails from './lookup/hash_details'
+import { type SupportedUserDatabases } from './userdb'
 
 type IdServerAPI = Record<string, expressAppHandler>
 
@@ -27,6 +28,12 @@ export interface Config {
   database_vacuum_delay: number
   key_delay: number
   keys_depth: number
+  ldap_filter: string
+  ldap_base: string
+  ldap_password: string
+  ldap_uri: string
+  ldap_user: string
+  ldapjs_opts?: Record<string, any>
   mail_link_delay: number
   policies?: Policies | string | null
   server_name: string
@@ -37,6 +44,7 @@ export interface Config {
   smtp_tls?: boolean
   smtp_user?: string
   smtp_verify_certificate?: boolean
+  userdb_engine: SupportedUserDatabases
   template_dir: string
 }
 
