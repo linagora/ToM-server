@@ -10,6 +10,7 @@ What we have to store:
 |    One-Time-Token      |  10 mn  | JSON object                                   |      expires     |
 |     Terms accepts      |  always | Version of policy accepted                    |                  |
 |   Pepper used in hash  |  1 day  | Must recalculate adress hashes at each change |                  |
+|     Previous pepper    |  1 day  |                                               |                  |
 |   Last pepper change   |  1 day  |                                               |                  |
 
 

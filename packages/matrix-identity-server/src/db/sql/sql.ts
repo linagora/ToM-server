@@ -45,6 +45,27 @@ abstract class SQL {
   }
 
   // eslint-disable-next-line @typescript-eslint/promise-function-async
+  update (table: Collections, values: Record<string, string | number>, field: string, value: string | number): Promise<void> {
+    return new Promise((resolve, reject) => {
+      /* istanbul ignore if */
+      if (this.db == null) {
+        throw new Error('Wait for database to be ready')
+      }
+      const names: string[] = []
+      const vals: Array<string | number> = []
+      Object.keys(values).forEach(k => {
+        names.push(k)
+        vals.push(values[k])
+      })
+      vals.push(value)
+      const stmt = this.db.prepare(`UPDATE ${table} SET ${names.join('=?,')}=? WHERE ${field}=?`)
+      stmt.run(vals).finalize(() => {
+        resolve()
+      })
+    })
+  }
+
+  // eslint-disable-next-line @typescript-eslint/promise-function-async
   get (table: string, fields: string[], field: string, value: string | number): Promise<Array<Record<string, string | number >>> {
     return new Promise((resolve, reject) => {
       /* istanbul ignore if */

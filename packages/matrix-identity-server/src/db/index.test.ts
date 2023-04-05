@@ -52,6 +52,22 @@ describe('Id Server DB', () => {
       }).catch(e => done(e))
     }).catch(e => done(e))
   })
+
+  it('should update', (done) => {
+    const idDb = new IdDb(baseConf)
+    idDb.ready.then(() => {
+      const token = idDb.createToken({ a: 1 })
+      idDb.update('oneTimeTokens', { data: '{ "a": 2 }' }, 'id', token).then(() => {
+        idDb.verifyToken(token).then(data => {
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
+          // @ts-ignore
+          expect(data.a).toEqual(2)
+          clearTimeout(idDb.cleanJob)
+          done()
+        }).catch(e => done(e))
+      }).catch(e => done(e))
+    }).catch(e => done(e))
+  })
 })
 
 test('OneTimeToken timeout', (done) => {
