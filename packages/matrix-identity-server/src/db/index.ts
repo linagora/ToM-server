@@ -4,7 +4,7 @@ import Sqlite from './sql/sqlite'
 
 export type SupportedDatabases = 'sqlite' | 'pg'
 
-export type Collections = 'accessTokens' | 'oneTimeTokens' | 'attempts' | 'keys'
+export type Collections = 'accessTokens' | 'oneTimeTokens' | 'attempts' | 'keys' | 'hashes'
 
 export const cleanByExpires: Collections[] = [
   'oneTimeTokens',

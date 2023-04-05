@@ -36,7 +36,7 @@ class UserDBLDAP implements UserDBBackend {
   get (table: string, fields: string[], field: string, value: string | number): Promise<Array<Record<string, string | string[] | number >>> {
     return new Promise((resolve, reject) => {
       const opts: SearchOptions = {
-        filter: `${field}=${value}`,
+        filter: `(${field}=${value})`,
         scope: 'sub'
       }
       if (fields.length > 0) opts.attributes = fields
@@ -81,6 +81,11 @@ class UserDBLDAP implements UserDBBackend {
         reject(e)
       })
     })
+  }
+
+  // eslint-disable-next-line @typescript-eslint/promise-function-async
+  getAll (table: string, fields: string[]): Promise<Array<Record<string, string | string[] | number >>> {
+    return this.get(table, fields, 'objectClass', '*')
   }
 }
 

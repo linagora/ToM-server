@@ -6,7 +6,8 @@ export const tables: Record<Collections, string> = {
   accessTokens: 'id varchar(64) primary key, data text',
   oneTimeTokens: 'id varchar(64) primary key, expires int, data text',
   attempts: 'email primary key, expires int, attempt int',
-  keys: 'name varchar(32) primary key, data text'
+  keys: 'name varchar(32) primary key, data text',
+  hashes: 'hash varchar(32) primary key, pepper varchar(32), type varchar(8), value text'
 }
 
 export const indexes: Partial<Record<Collections, string[]>> = {
@@ -74,6 +75,24 @@ abstract class SQL {
       }
       const stmt = this.db.prepare(`SELECT ${fields.join(',')} FROM ${table} WHERE ${field}=?`)
       stmt.all(value, (err: string, rows: Array<Record<string, string | number>>) => {
+        /* istanbul ignore if */
+        if (err != null) {
+          reject(err)
+        } else {
+          resolve(rows)
+        }
+      })
+    })
+  }
+
+  // eslint-disable-next-line @typescript-eslint/promise-function-async
+  getAll (table: string, fields: string[]): Promise<Array<Record<string, string | number >>> {
+    return new Promise((resolve, reject) => {
+      /* istanbul ignore if */
+      if (this.db == null) {
+        throw new Error('Wait for database to be ready')
+      }
+      this.db.all(`SELECT ${fields.length > 0 ? fields.join(',') : '*'} FROM ${table}`, (err: string, rows: Array<Record<string, string | number>>) => {
         /* istanbul ignore if */
         if (err != null) {
           reject(err)
