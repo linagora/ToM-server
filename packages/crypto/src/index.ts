@@ -1,6 +1,7 @@
 import _nacl, { type Nacl } from 'js-nacl'
 
-export const supportedHashes = ['sha256', 'sha512']
+// export const supportedHashes = ['sha256', 'sha512']
+export const supportedHashes = ['sha256']
 
 export class Hash {
   ready: Promise<void>
