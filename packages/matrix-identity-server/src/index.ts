@@ -113,4 +113,8 @@ export default class MatrixIdentityServer {
       })
     })
   }
+
+  cleanJobs (): void {
+    clearTimeout(this.db?.cleanJob)
+  }
 }

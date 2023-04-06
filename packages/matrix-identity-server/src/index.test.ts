@@ -48,7 +48,7 @@ beforeEach(() => {
 
 afterAll(() => {
   fs.unlinkSync('src/__testData__/test.db')
-  clearTimeout(idServer.db?.cleanJob)
+  idServer.cleanJobs()
 })
 
 test('Reject unimplemented endpoint with 404', async () => {
