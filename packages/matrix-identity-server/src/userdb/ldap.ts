@@ -7,16 +7,16 @@ class UserDBLDAP implements UserDBBackend {
   ready: Promise<void>
   ldap: () => Promise<Client>
   constructor (conf: Config) {
-    this.base = conf.ldap_base
+    this.base = (conf.ldap_base != null) ? conf.ldap_base : ''
     const ldapjsOpts = conf.ldapjs_opts != null ? conf.ldapjs_opts : {}
     // eslint-disable-next-line @typescript-eslint/promise-function-async
     this.ldap = (): Promise<Client> => {
       const client = ldapjs.createClient({
         ...ldapjsOpts,
-        url: [conf.ldap_uri]
+        url: [conf.ldap_uri != null ? conf.ldap_uri : '']
       })
       return new Promise((resolve, reject) => {
-        if (conf.ldap_user != null && conf.ldap_user.length > 0) {
+        if (conf.ldap_user != null && conf.ldap_user.length > 0 && conf.ldap_password != null) {
           client.bind(conf.ldap_user, conf.ldap_password, (err) => {
             if (err == null) {
               resolve(client)

@@ -12,6 +12,7 @@
   "ldap_user": "",
   "ldapjs_opts": {},
   "mail_link_delay": 7200,
+  "pepperCron": "0 0 0 * * *",
   "policies": null,
   "server_name": "localhost",
   "smtp_password": "",

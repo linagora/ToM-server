@@ -1,9 +1,11 @@
 import express from 'express'
 import request from 'supertest'
-import IdServer from './index'
+import IdServer, { type Config } from './index'
 import fs from 'fs'
 import fetch from 'node-fetch'
 import { type Policies } from './terms'
+import defaultConfig from './__testData__/termsConf.json'
+import buildUserDB from './__testData__/buildUserDB'
 
 jest.mock('node-fetch', () => jest.fn())
 const sendMailMock = jest.fn()
@@ -15,23 +17,31 @@ jest.mock('nodemailer', () => ({
 
 process.env.TWAKE_IDENTITY_SERVER_CONF = './src/__testData__/termsConf.json'
 
-const idServer = new IdServer()
-
-const app = express()
-
+let idServer: IdServer
 let validToken: string
+let app: express.Application
 
-void idServer.ready.then(() => {
-  Object.keys(idServer.api.get).forEach(k => {
-    app.get(k, idServer.api.get[k])
-  })
-  Object.keys(idServer.api.post).forEach(k => {
-    app.post(k, idServer.api.post[k])
-  })
-})
+beforeAll((done) => {
+  const conf: Config = {
+    ...defaultConfig,
+    database_engine: 'sqlite',
+    base_url: 'http://example.com/',
+    userdb_engine: 'sqlite'
+  }
+  buildUserDB(conf).then(() => {
+    idServer = new IdServer()
+    app = express()
 
-beforeAll(async () => {
-  await idServer.ready
+    idServer.ready.then(() => {
+      Object.keys(idServer.api.get).forEach(k => {
+        app.get(k, idServer.api.get[k])
+      })
+      Object.keys(idServer.api.post).forEach(k => {
+        app.post(k, idServer.api.post[k])
+      })
+      done()
+    }).catch(e => { done(e) })
+  }).catch(e => { done(e) })
 })
 
 beforeEach(() => {
@@ -46,7 +56,7 @@ beforeEach(() => {
 
 afterAll(() => {
   fs.unlinkSync('src/__testData__/terms.db')
-  clearTimeout(idServer.db?.cleanJob)
+  idServer.cleanJobs()
 })
 
 test('Get authentication token', async () => {

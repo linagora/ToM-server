@@ -38,7 +38,7 @@ describe('Terms', () => {
       ...DefaultConfig,
       database_engine: 'sqlite',
       database_host: ':memory:',
-      userdb_engine: 'ldap',
+      userdb_engine: 'sqlite',
       policies
     }
 
@@ -59,7 +59,7 @@ describe('Terms', () => {
       ...DefaultConfig,
       database_engine: 'sqlite',
       database_host: './test.db',
-      userdb_engine: 'ldap',
+      userdb_engine: 'sqlite',
       policies: './src/terms/__testData__/policies.json'
     }
 

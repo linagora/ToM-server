@@ -1,3 +1,15 @@
 import config from '../../rollup-template.js'
 
-export default config(['express', 'fs', 'querystring', 'sqlite3', 'pg', 'node-fetch', 'nodemailer', '@twake/config-parser', '@twake/crypto'])
+export default config([
+  'express',
+  'fs',
+  'ldapjs',
+  'node-cron',
+  'querystring',
+  'sqlite3',
+  'pg',
+  'node-fetch',
+  'nodemailer',
+  '@twake/config-parser',
+  '@twake/crypto'
+])

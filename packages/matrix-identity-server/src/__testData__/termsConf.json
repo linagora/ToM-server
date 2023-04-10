@@ -1,8 +1,13 @@
 {
   "database_engine": "sqlite",
   "database_host": "./src/__testData__/terms.db",
+  "database_vacuum_delay": 7200,
+  "key_delay": 3600,
+  "keys_depth": 5,
+  "mail_link_delay": 7200,
   "server_name": "matrix.org",
   "smtp_sender": "yadd@debian.org",
+  "smtp_server": "localhost",
   "policies": {
     "privacy_policy": {
       "en": {
@@ -28,5 +33,5 @@
     }
   },
   "template_dir": "./templates",
-  "userdb_engine": "ldap"
+  "userdb_engine": "sqlite"
 }

@@ -39,7 +39,7 @@ afterAll(() => {
 
 describe('updateHashes', () => {
   it('should be able to generate new hashes without previous values', (done) => {
-    updateHashes(conf, db, userDB)
+    updateHashes(conf, db, userDB).catch(e => { done(e) })
     setTimeout(() => {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
       // @ts-ignore getAll isn't part of IdentityDB

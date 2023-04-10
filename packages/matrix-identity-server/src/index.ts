@@ -1,12 +1,14 @@
-// Internal libraries
-import versions from './versions'
-import configParser from '@twake/config-parser'
-import confDesc from './config.json'
 import fs from 'fs'
+import configParser from '@twake/config-parser'
 
-// types
+// Internal libraries
+import CronTasks from './cron'
+import versions from './versions'
+import confDesc from './config.json'
 import { send, type expressAppHandler } from './utils'
 import { errMsg } from './utils/errors'
+
+// Endpoints
 import register from './account/register'
 import IdentityServerDb, { type SupportedDatabases } from './db'
 import account from './account'
@@ -17,7 +19,7 @@ import RequestToken from './validate/email/requestToken'
 import SubmitToken from './validate/email/submitToken'
 import PostTerms from './terms/index.post'
 import hashDetails from './lookup/hash_details'
-import { type SupportedUserDatabases } from './userdb'
+import UserDB, { type SupportedUserDatabases } from './userdb'
 
 type IdServerAPI = Record<string, expressAppHandler>
 
@@ -28,13 +30,14 @@ export interface Config {
   database_vacuum_delay: number
   key_delay: number
   keys_depth: number
-  ldap_filter: string
-  ldap_base: string
-  ldap_password: string
-  ldap_uri: string
-  ldap_user: string
+  ldap_filter?: string
+  ldap_base?: string
+  ldap_password?: string
+  ldap_uri?: string
+  ldap_user?: string
   ldapjs_opts?: Record<string, any>
   mail_link_delay: number
+  pepperCron?: string
   policies?: Policies | string | null
   server_name: string
   smtp_password?: string
@@ -57,6 +60,10 @@ export default class MatrixIdentityServer {
 
   db?: IdentityServerDb
 
+  userDB?: UserDB
+
+  cronTasks?: CronTasks
+
   conf: Config
 
   ready: Promise<boolean>
@@ -75,10 +82,12 @@ export default class MatrixIdentityServer {
             : undefined) as Config
     this.ready = new Promise((resolve, reject) => {
       const db = this.db = new IdentityServerDb(this.conf)
+      const userDB = this.userDB = new UserDB(this.conf)
       db.ready.then(() => {
         const badMethod: expressAppHandler = (req, res) => {
           send(res, 405, errMsg('unrecognized'))
         }
+        this.cronTasks = new CronTasks(this.conf, db, userDB)
         // TODO
         // const badEndPoint: expressAppHandler = (req, res) => {
         //   send(res, 404, errMsg('unrecognized'))
@@ -116,5 +125,6 @@ export default class MatrixIdentityServer {
 
   cleanJobs (): void {
     clearTimeout(this.db?.cleanJob)
+    this.cronTasks?.stop()
   }
 }
