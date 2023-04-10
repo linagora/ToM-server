@@ -20,6 +20,7 @@ import SubmitToken from './validate/email/submitToken'
 import PostTerms from './terms/index.post'
 import hashDetails from './lookup/hash_details'
 import UserDB, { type SupportedUserDatabases } from './userdb'
+import lookup from './lookup'
 
 type IdServerAPI = Record<string, expressAppHandler>
 
@@ -59,13 +60,9 @@ export default class MatrixIdentityServer {
   }
 
   db?: IdentityServerDb
-
   userDB?: UserDB
-
   cronTasks?: CronTasks
-
   conf: Config
-
   ready: Promise<boolean>
 
   constructor (conf?: Partial<Config>) {
@@ -110,6 +107,7 @@ export default class MatrixIdentityServer {
             '/_matrix/identity/v2/account': badMethod,
             '/_matrix/identity/v2/account/register': register(db),
             '/_matrix/identity/v2/account/logout': logout(db),
+            '/_matrix/identity/v2/lookup': lookup(db),
             '/_matrix/identity/v2/terms': PostTerms(db, this.conf),
             '/_matrix/identity/v2/validate/email/requestToken': RequestToken(db, this.conf),
             '/_matrix/identity/v2/validate/email/submitToken': SubmitToken(db, this.conf)

@@ -13,7 +13,7 @@ export const cleanByExpires: Collections[] = [
 
 type Insert = (table: Collections, values: Record<string, string | number>) => Promise<void>
 type Update = (table: Collections, values: Record<string, string | number>, field: string, value: string | number) => Promise<void>
-type Get = (table: Collections, fields: string[], field: string, value: string | number) => Promise<Array<Record<string, string | number >>>
+type Get = (table: Collections, fields: string[], field: string, value: string | number | string[]) => Promise<Array<Record<string, string | number >>>
 type DeleteEqual = (table: Collections, field: string, value: string | number) => Promise<void>
 type DeleteLowerThan = (table: Collections, field: string, value: string | number) => Promise<void>
 
@@ -89,7 +89,7 @@ class IdentityServerDb implements IdDbBackend {
   }
 
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
-  get (table: Collections, fields: string[], field: string, value: string | number) {
+  get (table: Collections, fields: string[], field: string, value: string | number | string[]) {
     return this.db.get(table, fields, field, value)
   }
 

@@ -67,13 +67,19 @@ abstract class SQL {
   }
 
   // eslint-disable-next-line @typescript-eslint/promise-function-async
-  get (table: string, fields: string[], field: string, value: string | number): Promise<Array<Record<string, string | number >>> {
+  get (table: string, fields: string[], field: string, value: string | number | string[]): Promise<Array<Record<string, string | number >>> {
     return new Promise((resolve, reject) => {
       /* istanbul ignore if */
       if (this.db == null) {
         throw new Error('Wait for database to be ready')
       }
-      const stmt = this.db.prepare(`SELECT ${fields.join(',')} FROM ${table} WHERE ${field}=?`)
+      let condition: string
+      if (typeof value === 'object') {
+        condition = value.map((val) => `${field}=?`).join(' OR ')
+      } else {
+        condition = `${field}=?`
+      }
+      const stmt = this.db.prepare(`SELECT ${fields.join(',')} FROM ${table} WHERE ${condition}`)
       stmt.all(value, (err: string, rows: Array<Record<string, string | number>>) => {
         /* istanbul ignore if */
         if (err != null) {

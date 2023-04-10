@@ -8,6 +8,7 @@ import fetch from 'node-fetch'
 import { supportedHashes } from '@twake/crypto'
 import defaultConfig from './__testData__/registerConf.json'
 import buildUserDB from './__testData__/buildUserDB'
+import { Hash } from '@twake/crypto'
 
 jest.mock('node-fetch', () => jest.fn())
 const sendMailMock = jest.fn()
@@ -327,12 +328,14 @@ describe('/_matrix/identity/v2/lookup', () => {
   let pepper = ''
   describe('/_matrix/identity/v2/hash_details', () => {
     it('should require authentication', async () => {
+      await idServer.cronTasks?.ready
       const response = await request(app)
         .get('/_matrix/identity/v2/hash_details')
         .set('Accept', 'application/json')
       expect(response.statusCode).toBe(401)
     })
     it('should display algorithms and pepper', async () => {
+      await idServer.cronTasks?.ready
       const response = await request(app)
         .get('/_matrix/identity/v2/hash_details')
         .set('Authorization', `Bearer ${validToken}`)
@@ -341,6 +344,26 @@ describe('/_matrix/identity/v2/lookup', () => {
       expect(response.body).toHaveProperty('lookup_pepper')
       pepper = response.body.lookup_pepper
       expect(response.body.algorithms).toEqual(supportedHashes)
+    })
+  })
+
+  describe('/_matrix/identity/v2/lookup', () => {
+    it('should return Matrix id', async () => {
+      const hash = new Hash()
+      await hash.ready
+      await idServer.cronTasks?.ready
+      const phoneHash = hash.sha256(`33612345678 phone ${pepper}`)
+      const response = await request(app)
+        .post('/_matrix/identity/v2/lookup')
+        .send({
+          addresses: [phoneHash],
+          algorithm: 'sha256',
+          pepper
+        })
+        .set('Authorization', `Bearer ${validToken}`)
+        .set('Accept', 'application/json')
+      expect(response.statusCode).toBe(200)
+      expect(response.body.mappings[phoneHash]).toBe('@dwho:matrix.org')
     })
   })
 })

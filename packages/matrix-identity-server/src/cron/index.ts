@@ -11,21 +11,25 @@ import updateHashes from './updateHashes'
 // eslint-disable-next-line @typescript-eslint/promise-function-async
 class CronTasks {
   tasks: ScheduledTask[]
+  ready: Promise<void>
   constructor (conf: Config, db: IdentityServerDb, userdb: UserDB) {
     if (conf.pepperCron == null) conf.pepperCron = '0 0 0 * * *'
     if (!cron.validate(conf.pepperCron)) throw new Error(`Invalid cron line: ${conf.pepperCron}`)
     this.tasks = []
-    updateHashes(conf, db, userdb).then(() => {
-      const task = cron.schedule(conf.pepperCron as string, () => {
-        updateHashes(conf, db, userdb).catch(e => {
-          console.error('Pepper update failed', e)
+    this.ready = new Promise((resolve, reject) => {
+      updateHashes(conf, db, userdb).then(() => {
+        const task = cron.schedule(conf.pepperCron as string, () => {
+          updateHashes(conf, db, userdb).catch(e => {
+            console.error('Pepper update failed', e)
+          })
+        }, {
+          timezone: 'GMT'
         })
-      }, {
-        timezone: 'GMT'
+        this.tasks.push(task)
+        resolve()
+      }).catch(e => {
+        reject(e)
       })
-      this.tasks.push(task)
-    }).catch(e => {
-      throw new Error(e)
     })
   }
 
