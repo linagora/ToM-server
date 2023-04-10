@@ -15,6 +15,7 @@ const lookup = (db: IdentityServerDb): expressAppHandler => {
       jsonContent(req, res, (obj) => {
         validateParameters(res, schema, obj, (obj) => {
           if (typeof (obj as { addresses: string[] }).addresses !== 'object') {
+            /* istanbul ignore next */
             send(res, 400, errMsg('invalidParam'))
           } else {
             db.get('hashes', ['value', 'hash'], 'hash', (obj as { addresses: string[] }).addresses).then(rows => {
@@ -26,6 +27,7 @@ const lookup = (db: IdentityServerDb): expressAppHandler => {
               })
               send(res, 200, { mappings })
             }).catch(e => {
+              /* istanbul ignore next */
               send(res, 500, errMsg('unknown', e))
             })
           }

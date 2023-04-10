@@ -20,6 +20,7 @@ class CronTasks {
       updateHashes(conf, db, userdb).then(() => {
         const task = cron.schedule(conf.pepperCron as string, () => {
           updateHashes(conf, db, userdb).catch(e => {
+            /* istanbul ignore next */
             console.error('Pepper update failed', e)
           })
         }, {
@@ -28,6 +29,7 @@ class CronTasks {
         this.tasks.push(task)
         resolve()
       }).catch(e => {
+        /* istanbul ignore next */
         reject(e)
       })
     })

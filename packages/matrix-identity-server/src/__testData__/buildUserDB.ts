@@ -15,7 +15,10 @@ const buildUserDB = (conf: Config): Promise<void> => {
           resolve()
         })
       })
-    }).catch(e => { reject(e) })
+    }).catch(e => {
+      /* istanbul ignore next */
+      reject(e)
+    })
   })
 }
 

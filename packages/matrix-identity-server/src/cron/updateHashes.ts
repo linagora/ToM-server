@@ -78,16 +78,19 @@ const updateHashes = (conf: Config, db: IdentityServerDb, userDB: UserDB): Promi
         }).catch(e => {
         /* istanbul ignore next */
           console.error('Unable to publish new pepper', e)
+          /* istanbul ignore next */
           reject(e)
         })
       }).catch(e => {
       /* istanbul ignore next */
         console.error('Update hashes failed', e)
+        /* istanbul ignore next */
         reject(e)
       })
     }).catch(e => {
     /* istanbul ignore next */
       console.error('Update hashes failed', e)
+      /* istanbul ignore next */
       reject(e)
     })
   })
