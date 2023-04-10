@@ -17,17 +17,29 @@ class CronTasks {
     if (!cron.validate(conf.pepperCron)) throw new Error(`Invalid cron line: ${conf.pepperCron}`)
     this.tasks = []
     this.ready = new Promise((resolve, reject) => {
-      updateHashes(conf, db, userdb).then(() => {
-        const task = cron.schedule(conf.pepperCron as string, () => {
-          updateHashes(conf, db, userdb).catch(e => {
-            /* istanbul ignore next */
-            console.error('Pepper update failed', e)
+      db.getCount('hashes', 'hash').then(count => {
+        const sub = (): void => {
+          const task = cron.schedule(conf.pepperCron as string, () => {
+            updateHashes(conf, db, userdb).catch(e => {
+              /* istanbul ignore next */
+              console.error('Pepper update failed', e)
+            })
+          }, {
+            timezone: 'GMT'
           })
-        }, {
-          timezone: 'GMT'
-        })
-        this.tasks.push(task)
-        resolve()
+          this.tasks.push(task)
+          resolve()
+        }
+        if (count !== 0) {
+          sub()
+        } else {
+          updateHashes(conf, db, userdb).then(() => {
+            sub()
+          }).catch(e => {
+            /* istanbul ignore next */
+            reject(e)
+          })
+        }
       }).catch(e => {
         /* istanbul ignore next */
         reject(e)

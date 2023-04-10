@@ -69,7 +69,7 @@ describe('Id Server DB', () => {
     }).catch(e => done(e))
   })
 
-  it('should return count', (done) => {
+  it('should return count without value', (done) => {
     const idDb = new IdDb(baseConf)
     idDb.ready.then(() => {
       idDb.createToken({ a: 1 })
@@ -77,6 +77,24 @@ describe('Id Server DB', () => {
         expect(val).toBe(1)
         clearTimeout(idDb.cleanJob)
         done()
+      }).catch(e => done(e))
+    }).catch(e => done(e))
+  })
+
+  it('should return count with value', (done) => {
+    const idDb = new IdDb(baseConf)
+    idDb.ready.then(() => {
+      const token = idDb.createToken({ a: 1 })
+      idDb.getCount('oneTimeTokens', 'id', token).then(val => {
+        expect(val).toBe(1)
+        idDb.getCount('oneTimeTokens', 'id', token + 'z').then(val => {
+          expect(val).toBe(0)
+          idDb.getCount('oneTimeTokens', 'id', [token, token + 'z']).then(val => {
+            expect(val).toBe(1)
+            clearTimeout(idDb.cleanJob)
+            done()
+          }).catch(e => done(e))
+        }).catch(e => done(e))
       }).catch(e => done(e))
     }).catch(e => done(e))
   })

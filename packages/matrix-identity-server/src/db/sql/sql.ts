@@ -94,6 +94,7 @@ abstract class SQL {
   // eslint-disable-next-line @typescript-eslint/promise-function-async
   getCount (table: Collections, field: string, value?: string | number | string[]): Promise<number> {
     return new Promise((resolve, reject) => {
+      /* istanbul ignore if */
       if (this.db == null) {
         throw new Error('Wait for database to be ready')
       }
@@ -108,10 +109,11 @@ abstract class SQL {
       }
       const stmt = this.db.prepare(`SELECT count(${field}) as res FROM ${table}${condition}`)
       const sub = (err: string, rows: Array<Record<string, string | number>>): void => {
-        if (err != null) {
-          reject(err)
-        } else {
+        /* istanbul ignore else */
+        if (err == null) {
           resolve(rows[0].res as number)
+        } else {
+          reject(err)
         }
       }
       if (value != null) {
