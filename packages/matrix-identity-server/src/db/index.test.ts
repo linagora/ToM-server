@@ -68,6 +68,18 @@ describe('Id Server DB', () => {
       }).catch(e => done(e))
     }).catch(e => done(e))
   })
+
+  it('should return count', (done) => {
+    const idDb = new IdDb(baseConf)
+    idDb.ready.then(() => {
+      idDb.createToken({ a: 1 })
+      idDb.getCount('oneTimeTokens', 'id').then(val => {
+        expect(val).toBe(1)
+        clearTimeout(idDb.cleanJob)
+        done()
+      }).catch(e => done(e))
+    }).catch(e => done(e))
+  })
 })
 
 test('OneTimeToken timeout', (done) => {

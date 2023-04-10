@@ -5,10 +5,9 @@ import fs from 'fs'
 import querystring from 'querystring'
 import { randomString } from './utils/tokenUtils'
 import fetch from 'node-fetch'
-import { supportedHashes } from '@twake/crypto'
+import { Hash, supportedHashes } from '@twake/crypto'
 import defaultConfig from './__testData__/registerConf.json'
 import buildUserDB from './__testData__/buildUserDB'
-import { Hash } from '@twake/crypto'
 
 jest.mock('node-fetch', () => jest.fn())
 const sendMailMock = jest.fn()

@@ -92,6 +92,37 @@ abstract class SQL {
   }
 
   // eslint-disable-next-line @typescript-eslint/promise-function-async
+  getCount (table: Collections, field: string, value?: string | number | string[]): Promise<number> {
+    return new Promise((resolve, reject) => {
+      if (this.db == null) {
+        throw new Error('Wait for database to be ready')
+      }
+      let condition: string = ''
+      if (value != null) {
+        condition = ' WHERE '
+        if (typeof value === 'object') {
+          condition += value.map((val) => `${field}=?`).join(' OR ')
+        } else {
+          condition += `${field}=?`
+        }
+      }
+      const stmt = this.db.prepare(`SELECT count(${field}) as res FROM ${table}${condition}`)
+      const sub = (err: string, rows: Array<Record<string, string | number>>): void => {
+        if (err != null) {
+          reject(err)
+        } else {
+          resolve(rows[0].res as number)
+        }
+      }
+      if (value != null) {
+        stmt.all(value, sub)
+      } else {
+        stmt.all(sub)
+      }
+    })
+  }
+
+  // eslint-disable-next-line @typescript-eslint/promise-function-async
   getAll (table: string, fields: string[]): Promise<Array<Record<string, string | number >>> {
     return new Promise((resolve, reject) => {
       /* istanbul ignore if */
