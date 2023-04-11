@@ -3,5 +3,5 @@ import { ElementClient } from './element';
 import { FluffyChatClient } from './fluffychat';
 
 export const getClients = (resource: string): IClient[] => {
-	return [new ElementClient(resource), new FluffyChatClient(resource)];
+	return [new FluffyChatClient(resource), new ElementClient(resource)];
 };
