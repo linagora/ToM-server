@@ -38,21 +38,20 @@ test:
     - npm test
 
 invite_build:
-  image: docker:dind
+  image:
+    name: gcr.io/kaniko-project/executor:v1.9.0-debug
+    entrypoint: ['']
   tags:
     - docker
   stage: build
   only:
     changes:
-      - "packages/matrix-invite/**/*"
+      - 'packages/matrix-invite/**/*'
     refs:
       - master
   script:
-    - docker login -u $DOCKERHUB_USER -p $DOCKERHUB_PASSWORD $DOCKERHUB_REGISTRY
-    - cd packages/matrix-invite
-    - docker build -f Dockerfile --tag latest .
-    - docker push latest
-  services:
-    - docker:dind
-  variables:  
-    DOCKER_TLS_CERTDIR: "/certs"
+    - echo "{\"auths\":{\"${DOCKERHUB_REGISTRY}\":{\"auth\":\"$(printf "%s:%s" "${DOCKERHUB_USER}" "${DOCKERHUB_PASSWORD}" | base64 | tr -d '\n')\"}z" > /kaniko/.docker/config.json
+    - /kaniko/executor
+      --context "${CI_PROJECT_DIR}/packages/matrix-invite/"
+      --dockerfile "${CI_PROJECT_DIR}/packages/matrix-invite/Dockerfile"
+      --destination "docker.io/twaketech/twake-matrix-invite:latest"
