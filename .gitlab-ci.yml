@@ -36,3 +36,18 @@ test:
     - npm
   script:
     - npm test
+
+invite_build:
+  tags:
+    - docker
+  stage: build
+  only:
+    changes:
+      - "packages/matrix-invite/**/*"
+    refs:
+      - master
+  script:
+    - docker login -u $DOCKERHUB_USER -p $DOCKERHUB_PASSWORD $DOCKERHUB_REGISTRY
+    - cd packages/matrix-invite
+    - docker build -f Dockerfile --tag latest .
+    - docker push latest
