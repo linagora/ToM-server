@@ -14,7 +14,7 @@ npm:
     - docker
   stage: build
   script:
-    - npm ci
+    - npm ci --include=dev
     - npm run build
   cache:
     <<: *global_cache
