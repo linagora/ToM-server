@@ -54,3 +54,5 @@ invite_build:
     - docker push latest
   services:
     - docker:dind
+  variables:  
+    DOCKER_TLS_CERTDIR: "/certs"
