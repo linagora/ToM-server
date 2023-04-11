@@ -1,0 +1,5 @@
+{
+  "database_engine": "sqlite",
+  "database_host": "./server.db",
+  "server_name": "matrix.org"
+}
