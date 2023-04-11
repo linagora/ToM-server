@@ -3,6 +3,7 @@ image: node:lts-slim
 stages:
   - build
   - test
+  - deploy
 
 default:
   cache: &global_cache
@@ -29,6 +30,7 @@ test:
   tags:
     - docker
   stage: test
+  image: mcr.microsoft.com/playwright:v1.32.0-focal
   cache:
     <<: *global_cache
     policy: pull
@@ -44,7 +46,7 @@ invite_build:
     entrypoint: ['']
   tags:
     - docker
-  stage: build
+  stage: deploy
   only:
     changes:
       - 'packages/matrix-invite/**/*'
