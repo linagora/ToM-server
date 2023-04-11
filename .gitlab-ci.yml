@@ -35,6 +35,7 @@ test:
   dependencies:
     - npm
   script:
+    - npm ci --include=dev
     - npm test
 
 invite_build:
