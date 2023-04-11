@@ -1,4 +1,4 @@
-# Matrix invite
+# Matrix invitation
 
 ## Developing
 
