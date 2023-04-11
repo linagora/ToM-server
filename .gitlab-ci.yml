@@ -51,7 +51,7 @@ invite_build:
     changes:
       - 'packages/matrix-invite/**/*'
     refs:
-      - master
+      - master@publicgroup/oss/twake/tom-server
   script:
     - echo "{\"auths\":{\"${DOCKERHUB_REGISTRY}\":{\"auth\":\"$(printf "%s:%s" "${DOCKERHUB_USER}" "${DOCKERHUB_PASSWORD}" | base64 | tr -d '\n')\"}}}" > /kaniko/.docker/config.json
     - /kaniko/executor
