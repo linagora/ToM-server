@@ -1,4 +1,4 @@
-# to.matrix.twake.app
+# Matrix invitation
 
 ## Developing
 
