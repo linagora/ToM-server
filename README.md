@@ -12,6 +12,7 @@ This is a multi-packages repository. See [packages](./packages) directory.
 * [@twake/config-parser](./packages/config-parser): simple file parser that uses also environment variables
 * [@twake/matrix-identity-server](./packages/matrix-identity-server):
   [Matrix Identity Service](https://spec.matrix.org/v1.6/identity-service-api/) implementation for Node.js
+* [@twake/matrix-invite](./packages/matrix-invite): matrix invitation web application
 
 ## Copyright and license
 
