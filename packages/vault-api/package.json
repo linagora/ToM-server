@@ -1,0 +1,44 @@
+{
+  "name": "@twake/vault-api",
+  "version": "0.0.1",
+  "description": "Twake Vault REST API",
+  "main": "dist/index.js",
+  "type": "module",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    "import": "./dist/index.js"
+  },
+  "scripts": {
+    "test": "jest",
+    "build": "npm run build:lib && npm run build:example",
+    "build:lib": "rollup -c",
+    "build:example": "rollup -p @rollup/plugin-typescript -e express,@twake/vault-api -m -o example/vault-api.js example/vault-api.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://ci.linagora.com/publicgroup/oss/twake/tom-server.git"
+  },
+  "files": [
+    "package.json",
+    "dist",
+    "example/vault-api.js",
+    "*.md"
+  ],
+  "keywords": [
+    "matrix",
+    "twake",
+    "vault"
+  ],
+  "author": {
+    "name": "Jordy Cabannes",
+    "email": "jcabannes@linagora.com"
+  },
+  "license": "AGPL-3.0-or-later",
+  "optionalDependencies": {
+    "sqlite3": "^5.1.6"
+  },
+  "dependencies": {
+    "@twake/config-parser": "*",
+    "@twake/matrix-identity-server": "*"
+  }
+}
