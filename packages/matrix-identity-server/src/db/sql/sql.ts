@@ -1,6 +1,5 @@
 import { type PgDatabase } from './pg'
 import { type Collections } from '..'
-import { type Config } from '../..'
 import { type SQLiteDatabase } from './sqlite'
 
 export const tables: Record<Collections, string> = {
@@ -23,12 +22,12 @@ export const initializeValues: Partial<Record<Collections, Array<Record<string, 
   ]
 }
 
-abstract class SQL {
+abstract class SQL<T> {
   db?: SQLiteDatabase | PgDatabase
   ready: Promise<void>
   cleanJob?: NodeJS.Timeout
 
-  constructor (conf: Config) {
+  constructor (conf: T) {
     // @ts-expect-error method is defined in child class
     this.ready = this.createDatabases(conf)
   }
