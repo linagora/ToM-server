@@ -38,6 +38,7 @@ test:
     - npm test
 
 invite_build:
+  image: docker:dind
   tags:
     - docker
   stage: build
