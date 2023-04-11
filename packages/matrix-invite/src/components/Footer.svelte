@@ -1,3 +1,13 @@
+<script>
+	import { goto } from '$app/navigation';
+	import { reset } from '$store/preferred-domains';
+
+	const clearPreferences = () => {
+		reset();
+		goto('/');
+	}
+</script>
+
 <div class="flex flex-col p-8 pt-16 text-base space-y-3 w-full">
 	<div>
 		<svg class="h-8" viewBox="0 0 66 28" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -48,5 +58,6 @@
 				class="text-sky-500">Matrix</a
 			>, an open network for secure, decentralized communication.
 		</p>
+		<button class="text-sky-600 cursor-pointer" on:click={clearPreferences}>clear preferences</button>
 	</div>
 </div>
