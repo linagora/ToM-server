@@ -52,3 +52,5 @@ invite_build:
     - cd packages/matrix-invite
     - docker build -f Dockerfile --tag latest .
     - docker push latest
+  services:
+    - docker:dind
