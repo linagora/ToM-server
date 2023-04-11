@@ -3,7 +3,7 @@ image: node:lts-slim
 stages:
   - build
   - test
-  - deploy
+  - push_docker
 
 default:
   cache: &global_cache
@@ -46,7 +46,7 @@ invite_build:
     entrypoint: ['']
   tags:
     - docker
-  stage: deploy
+  stage: push_docker
   only:
     changes:
       - 'packages/matrix-invite/**/*'
