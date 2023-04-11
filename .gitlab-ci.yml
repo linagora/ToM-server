@@ -57,4 +57,4 @@ invite_build:
     - /kaniko/executor
       --context "${CI_PROJECT_DIR}/packages/matrix-invite/"
       --dockerfile "${CI_PROJECT_DIR}/packages/matrix-invite/Dockerfile"
-      --destination "docker.io/kferjani/twake-matrix-invite:latest"
+      --destination "docker.io/twaketech/twake-matrix-invite:latest"
