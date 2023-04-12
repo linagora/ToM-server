@@ -1,13 +1,15 @@
 import { type Database, type Statement } from 'sqlite3'
-import { type IdDbBackend, type Collections } from '../index'
+import { type Collections, type IdDbBackend } from '../index'
 import { type Config } from '../..'
-import SQL, { tables, indexes } from './sql'
+import SQL from './sql'
+import createTables from './_createTables'
 
 export type SQLiteDatabase = Database
 
 export type SQLiteStatement = Statement
 
 class SQLite extends SQL implements IdDbBackend {
+  db?: SQLiteDatabase
   // eslint-disable-next-line @typescript-eslint/promise-function-async
   createDatabases (conf: Config): Promise<boolean> {
     return new Promise((resolve, reject) => {
@@ -20,42 +22,120 @@ class SQLite extends SQL implements IdDbBackend {
         if (db == null) {
           throw new Error('Database not created')
         }
-        db.run('SELECT count(id) FROM accessTokens', (err: any) => {
-          if (err != null && /no such table/.test(err.message)) {
-            let created = 0
-            Object.keys(tables).forEach((table, i, arr) => {
-              db.run(`CREATE TABLE ${table}(${tables[table as keyof typeof tables]})`, (err: Error | null) => {
-              /* istanbul ignore if */
-                if (err != null) {
-                  throw err
-                } else {
-                  created++
-                  /* istanbul ignore else */
-                  if (created === arr.length) {
-                    resolve(true)
-                    Object.keys(indexes).forEach((table) => {
-                      // @ts-expect-error table is defined here
-                      indexes[table as Collections].forEach(index => {
-                        db.run(`CREATE INDEX i_${table}_${index} ON ${table} (${index})`, (err: Error | null) => {
-                          /* istanbul ignore if */
-                          if (err != null) console.error(`Index ${index}`, err)
-                        })
-                      })
-                    })
-                  } else if (i === arr.length) {
-                    reject(new Error(`Was able to create ${created} database(s) instead of ${arr.length}`))
-                  }
-                }
-              })
-            })
-          } else {
-            /* istanbul ignore next */
-            resolve(true)
-          }
-        })
+        createTables(db, resolve, reject)
       }).catch(e => {
         /* istanbul ignore next */
         throw e
+      })
+    })
+  }
+
+  // eslint-disable-next-line @typescript-eslint/promise-function-async
+  insert (table: string, values: Record<string, string | number>): Promise<void> {
+    return new Promise((resolve, reject) => {
+      /* istanbul ignore if */
+      if (this.db == null) {
+        throw new Error('Wait for database to be ready')
+      }
+      const names: string[] = []
+      const vals: Array<string | number> = []
+      Object.keys(values).forEach(k => {
+        names.push(k)
+        vals.push(values[k])
+      })
+      const stmt = this.db.prepare(`INSERT INTO ${table}(${names.join(',')}) VALUES(${names.map(v => '?').join(',')})`)
+      stmt.run(vals).finalize(() => {
+        resolve()
+      })
+    })
+  }
+
+  // eslint-disable-next-line @typescript-eslint/promise-function-async
+  update (table: Collections, values: Record<string, string | number>, field: string, value: string | number): Promise<void> {
+    return new Promise((resolve, reject) => {
+      /* istanbul ignore if */
+      if (this.db == null) {
+        throw new Error('Wait for database to be ready')
+      }
+      const names: string[] = []
+      const vals: Array<string | number> = []
+      Object.keys(values).forEach(k => {
+        names.push(k)
+        vals.push(values[k])
+      })
+      vals.push(value)
+      const stmt = this.db.prepare(`UPDATE ${table} SET ${names.join('=?,')}=? WHERE ${field}=?`)
+      stmt.run(vals).finalize(() => {
+        resolve()
+      })
+    })
+  }
+
+  // eslint-disable-next-line @typescript-eslint/promise-function-async
+  get (table: string, fields?: string[], field?: string, value?: string | number | string[]): Promise<Array<Record<string, string | number >>> {
+    return new Promise((resolve, reject) => {
+      /* istanbul ignore if */
+      if (this.db == null) {
+        throw new Error('Wait for database to be ready')
+      }
+      let condition: string = ''
+      if (fields == null || fields.length === 0) {
+        fields = ['*']
+      }
+      if (field != null && value != null) {
+        if (typeof value === 'object') {
+          condition = 'WHERE ' + value.map((val) => `${field}=?`).join(' OR ')
+        } else {
+          condition = 'WHERE ' + `${field}=?`
+        }
+      }
+
+      const stmt = this.db.prepare(`SELECT ${fields.join(',')} FROM ${table} ${condition}`)
+      stmt.all(value, (err: string, rows: Array<Record<string, string | number>>) => {
+        /* istanbul ignore if */
+        if (err != null) {
+          reject(err)
+        } else {
+          resolve(rows)
+        }
+      })
+    })
+  }
+
+  // eslint-disable-next-line @typescript-eslint/promise-function-async
+  deleteEqual (table: string, field: string, value: string | number): Promise<void> {
+    return new Promise((resolve, reject) => {
+      /* istanbul ignore if */
+      if (this.db == null) {
+        throw new Error('Wait for database to be ready')
+      }
+      const stmt = this.db.prepare(`DELETE FROM ${table} WHERE ${field}=?`)
+      stmt.run(value, (err: string) => {
+        /* istanbul ignore if */
+        if (err != null) {
+          reject(err)
+        } else {
+          resolve()
+        }
+      })
+    })
+  }
+
+  // eslint-disable-next-line @typescript-eslint/promise-function-async
+  deleteLowerThan (table: string, field: string, value: string | number): Promise<void> {
+    return new Promise((resolve, reject) => {
+      /* istanbul ignore if */
+      if (this.db == null) {
+        throw new Error('Wait for database to be ready')
+      }
+      const stmt = this.db.prepare(`DELETE FROM ${table} WHERE ${field}<?`)
+      stmt.run(value, (err: string) => {
+        /* istanbul ignore if */
+        if (err != null) {
+          reject(err)
+        } else {
+          resolve()
+        }
       })
     })
   }

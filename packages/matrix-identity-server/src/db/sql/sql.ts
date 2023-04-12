@@ -1,3 +1,4 @@
+// import { type PgDatabase } from './pg'
 import { type Collections } from '..'
 import { type Config } from '../..'
 import { type SQLiteDatabase } from './sqlite'
@@ -16,7 +17,7 @@ export const indexes: Partial<Record<Collections, string[]>> = {
 }
 
 abstract class SQL {
-  db?: SQLiteDatabase // | pg,...
+  db?: SQLiteDatabase // | PgDatabase
   ready: Promise<void>
   cleanJob?: NodeJS.Timeout
 
@@ -26,158 +27,21 @@ abstract class SQL {
   }
 
   // eslint-disable-next-line @typescript-eslint/promise-function-async
-  insert (table: string, values: Record<string, string | number>): Promise<void> {
-    return new Promise((resolve, reject) => {
-      /* istanbul ignore if */
-      if (this.db == null) {
-        throw new Error('Wait for database to be ready')
-      }
-      const names: string[] = []
-      const vals: Array<string | number> = []
-      Object.keys(values).forEach(k => {
-        names.push(k)
-        vals.push(values[k])
-      })
-      const stmt = this.db.prepare(`INSERT INTO ${table}(${names.join(',')}) VALUES(${names.map(v => '?').join(',')})`)
-      stmt.run(vals).finalize(() => {
-        resolve()
-      })
-    })
-  }
-
-  // eslint-disable-next-line @typescript-eslint/promise-function-async
-  update (table: Collections, values: Record<string, string | number>, field: string, value: string | number): Promise<void> {
-    return new Promise((resolve, reject) => {
-      /* istanbul ignore if */
-      if (this.db == null) {
-        throw new Error('Wait for database to be ready')
-      }
-      const names: string[] = []
-      const vals: Array<string | number> = []
-      Object.keys(values).forEach(k => {
-        names.push(k)
-        vals.push(values[k])
-      })
-      vals.push(value)
-      const stmt = this.db.prepare(`UPDATE ${table} SET ${names.join('=?,')}=? WHERE ${field}=?`)
-      stmt.run(vals).finalize(() => {
-        resolve()
-      })
-    })
-  }
-
-  // eslint-disable-next-line @typescript-eslint/promise-function-async
-  get (table: string, fields: string[], field: string, value: string | number | string[]): Promise<Array<Record<string, string | number >>> {
-    return new Promise((resolve, reject) => {
-      /* istanbul ignore if */
-      if (this.db == null) {
-        throw new Error('Wait for database to be ready')
-      }
-      let condition: string
-      if (typeof value === 'object') {
-        condition = value.map((val) => `${field}=?`).join(' OR ')
-      } else {
-        condition = `${field}=?`
-      }
-      const stmt = this.db.prepare(`SELECT ${fields.join(',')} FROM ${table} WHERE ${condition}`)
-      stmt.all(value, (err: string, rows: Array<Record<string, string | number>>) => {
-        /* istanbul ignore if */
-        if (err != null) {
-          reject(err)
-        } else {
-          resolve(rows)
-        }
-      })
-    })
-  }
-
-  // eslint-disable-next-line @typescript-eslint/promise-function-async
   getCount (table: Collections, field: string, value?: string | number | string[]): Promise<number> {
     return new Promise((resolve, reject) => {
-      /* istanbul ignore if */
-      if (this.db == null) {
-        throw new Error('Wait for database to be ready')
-      }
-      let condition: string = ''
-      if (value != null) {
-        condition = ' WHERE '
-        if (typeof value === 'object') {
-          condition += value.map((val) => `${field}=?`).join(' OR ')
-        } else {
-          condition += `${field}=?`
-        }
-      }
-      const stmt = this.db.prepare(`SELECT count(${field}) as res FROM ${table}${condition}`)
-      const sub = (err: string, rows: Array<Record<string, string | number>>): void => {
-        /* istanbul ignore else */
-        if (err == null) {
-          resolve(rows[0].res as number)
-        } else {
-          reject(err)
-        }
-      }
-      if (value != null) {
-        stmt.all(value, sub)
-      } else {
-        stmt.all(sub)
-      }
+      // @ts-expect-error implemented later
+      this.get(table, [`count(${field})`], field, value).then(rows => {
+        resolve(rows[0][`count(${field})`] as number)
+      }).catch((e: any) => {
+        reject(e)
+      })
     })
   }
 
   // eslint-disable-next-line @typescript-eslint/promise-function-async
   getAll (table: string, fields: string[]): Promise<Array<Record<string, string | number >>> {
-    return new Promise((resolve, reject) => {
-      /* istanbul ignore if */
-      if (this.db == null) {
-        throw new Error('Wait for database to be ready')
-      }
-      this.db.all(`SELECT ${fields.length > 0 ? fields.join(',') : '*'} FROM ${table}`, (err: string, rows: Array<Record<string, string | number>>) => {
-        /* istanbul ignore if */
-        if (err != null) {
-          reject(err)
-        } else {
-          resolve(rows)
-        }
-      })
-    })
-  }
-
-  // eslint-disable-next-line @typescript-eslint/promise-function-async
-  deleteEqual (table: string, field: string, value: string | number): Promise<void> {
-    return new Promise((resolve, reject) => {
-      /* istanbul ignore if */
-      if (this.db == null) {
-        throw new Error('Wait for database to be ready')
-      }
-      const stmt = this.db.prepare(`DELETE FROM ${table} WHERE ${field}=?`)
-      stmt.run(value, (err: string) => {
-        /* istanbul ignore if */
-        if (err != null) {
-          reject(err)
-        } else {
-          resolve()
-        }
-      })
-    })
-  }
-
-  // eslint-disable-next-line @typescript-eslint/promise-function-async
-  deleteLowerThan (table: string, field: string, value: string | number): Promise<void> {
-    return new Promise((resolve, reject) => {
-      /* istanbul ignore if */
-      if (this.db == null) {
-        throw new Error('Wait for database to be ready')
-      }
-      const stmt = this.db.prepare(`DELETE FROM ${table} WHERE ${field}<?`)
-      stmt.run(value, (err: string) => {
-        /* istanbul ignore if */
-        if (err != null) {
-          reject(err)
-        } else {
-          resolve()
-        }
-      })
-    })
+    // @ts-expect-error implemented later
+    return this.get(table, fields)
   }
 }
 

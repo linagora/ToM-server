@@ -26,8 +26,11 @@ type IdServerAPI = Record<string, expressAppHandler>
 
 export interface Config {
   base_url: string
+  database_name?: string
   database_engine: SupportedDatabases
   database_host: string
+  database_password?: string
+  database_user?: string
   database_vacuum_delay: number
   key_delay: number
   keys_depth: number
