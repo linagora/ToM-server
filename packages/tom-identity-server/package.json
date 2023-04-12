@@ -14,7 +14,7 @@
     "build:lib": "rollup -c",
     "build:example": "rollup -p @rollup/plugin-typescript -e express,@twake/matrix-identity-server -m -o example/identity-server.js example/identity-server.ts",
     "start": "node example/identity-server.js",
-    "test": "jest"
+    "test": "jest --passWithNoTests"
   },
   "repository": {
     "type": "git",
