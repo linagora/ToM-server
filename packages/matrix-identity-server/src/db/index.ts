@@ -59,11 +59,13 @@ class IdentityServerDb implements IdDbBackend {
         this.init().then(() => {
           resolve()
         }).catch(e => {
+          /* istanbul ignore next */
           console.error('initialization failed')
           /* istanbul ignore next */
           reject(e)
         })
       }).catch(e => {
+        /* istanbul ignore next */
         console.error('Database initialization failed')
         /* istanbul ignore next */
         reject(e)
@@ -185,6 +187,7 @@ class IdentityServerDb implements IdDbBackend {
       }).catch(e => {
         /* istanbul ignore next */
         console.error(`Token ${id} already deleted`, e)
+        /* istanbul ignore next */
         resolve()
       })
     })

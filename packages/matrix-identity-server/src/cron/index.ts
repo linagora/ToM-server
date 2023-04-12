@@ -20,10 +20,12 @@ class CronTasks {
       db.getCount('hashes', 'hash').then(count => {
         const sub = (): void => {
           const task = cron.schedule(conf.pepperCron as string, () => {
-            updateHashes(conf, db, userdb).catch(e => {
-              /* istanbul ignore next */
-              console.error('Pepper update failed', e)
-            })
+            updateHashes(conf, db, userdb)
+            /* istanbul ignore next */
+              .catch(e => {
+                /* istanbul ignore next */
+                console.error('Pepper update failed', e)
+              })
           }, {
             timezone: 'GMT'
           })

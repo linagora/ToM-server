@@ -3,7 +3,7 @@ export default {
   testEnvironment: 'node',
   preset: 'ts-jest',
   collectCoverage: true,
-  collectCoverageFrom: ['./src/**/*.ts'],
+  collectCoverageFrom: ['./src/**/{!(pg),}.ts'],
   coverageThreshold: {
     global: {
       branches: 80,

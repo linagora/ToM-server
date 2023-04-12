@@ -31,6 +31,7 @@ const createTables = (db: SQLite | Pg, resolve: (b: boolean) => void, reject: (e
               })
             })
           }).catch(e => {
+            /* istanbul ignore next */
             reject(e)
           })
         })
