@@ -1,13 +1,13 @@
 {
-  "name": "@twake/matrix-identity-server",
+  "name": "@twake/identity-server",
   "version": "0.0.1",
-  "description": "Matrix Identity Server",
+  "description": "Twake Identity Server",
   "main": "dist/index.js",
   "type": "module",
   "types": "./dist/index.d.ts",
   "exports": {
     "import": "./dist/index.js",
-    "require": "./dist/index.cjs"
+    "require": "./dist/index.js"
   },
   "scripts": {
     "build": "npm run build:lib && npm run build:example",
@@ -47,10 +47,7 @@
     "sqlite3": "^5.1.6"
   },
   "dependencies": {
-    "@twake/config-parser": "*",
-    "@twake/crypto": "*",
-    "node-cron": "^3.0.2",
-    "node-fetch": "^3.3.0",
-    "nodemailer": "^6.9.1"
+    "@twake/matrix-identity-server": "*",
+    "ldapjs": "^2.3.3"
   }
 }

@@ -1,5 +1,5 @@
 coverage/
 dist/
 node_modules/
-packages/matrix-identity-server/example/identity-server.js
+packages/*/example/*.js*
 *.map
