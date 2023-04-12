@@ -22,12 +22,32 @@ class SQLite extends SQL implements IdDbBackend {
         if (db == null) {
           throw new Error('Database not created')
         }
-        createTables(db, resolve, reject)
+        createTables(this, resolve, reject)
       }).catch(e => {
         /* istanbul ignore next */
         throw e
       })
     })
+  }
+
+  // eslint-disable-next-line @typescript-eslint/promise-function-async
+  rawQuery (query: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.db?.run(query, err => {
+        /* istanbul ignore else */
+        if (err == null) {
+          resolve()
+        } else {
+          reject(err)
+        }
+      })
+    })
+  }
+
+  // eslint-disable-next-line @typescript-eslint/promise-function-async
+  exists (table: string): Promise<number> {
+    // @ts-expect-error sqlite_master not listed in Collections
+    return this.getCount('sqlite_master', 'name', table)
   }
 
   // eslint-disable-next-line @typescript-eslint/promise-function-async
@@ -76,7 +96,7 @@ class SQLite extends SQL implements IdDbBackend {
     return new Promise((resolve, reject) => {
       /* istanbul ignore if */
       if (this.db == null) {
-        throw new Error('Wait for database to be ready')
+        reject(new Error('Wait for database to be ready'))
       }
       let condition: string = ''
       if (fields == null || fields.length === 0) {
@@ -90,6 +110,8 @@ class SQLite extends SQL implements IdDbBackend {
         }
       }
 
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
+      // @ts-ignore never undefined
       const stmt = this.db.prepare(`SELECT ${fields.join(',')} FROM ${table} ${condition}`)
       stmt.all(value, (err: string, rows: Array<Record<string, string | number>>) => {
         /* istanbul ignore if */
@@ -98,6 +120,9 @@ class SQLite extends SQL implements IdDbBackend {
         } else {
           resolve(rows)
         }
+      })
+      stmt.finalize((err) => {
+        reject(err)
       })
     })
   }

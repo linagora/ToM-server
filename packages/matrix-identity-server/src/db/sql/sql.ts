@@ -33,6 +33,7 @@ abstract class SQL {
       this.get(table, [`count(${field})`], field, value).then(rows => {
         resolve(rows[0][`count(${field})`] as number)
       }).catch((e: any) => {
+        /* istanbul ignore next */
         reject(e)
       })
     })
