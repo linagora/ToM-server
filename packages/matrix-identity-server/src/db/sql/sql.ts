@@ -1,14 +1,14 @@
-// import { type PgDatabase } from './pg'
+import { type PgDatabase } from './pg'
 import { type Collections } from '..'
 import { type Config } from '../..'
 import { type SQLiteDatabase } from './sqlite'
 
 export const tables: Record<Collections, string> = {
-  accessTokens: 'id varchar(64) primary key, data text',
-  oneTimeTokens: 'id varchar(64) primary key, expires int, data text',
-  attempts: 'email primary key, expires int, attempt int',
-  keys: 'name varchar(32) primary key, data text',
-  hashes: 'hash varchar(32) primary key, pepper varchar(32), type varchar(8), value text'
+  accessTokens: 'id varchar(64) PRIMARY KEY, data text',
+  oneTimeTokens: 'id varchar(64) PRIMARY KEY, expires int, data text',
+  attempts: 'email text PRIMARY KEY, expires int, attempt int',
+  keys: 'name varchar(32) PRIMARY KEY, data text',
+  hashes: 'hash varchar(32) PRIMARY KEY, pepper varchar(32), type varchar(8), value text'
 }
 
 export const indexes: Partial<Record<Collections, string[]>> = {
@@ -16,8 +16,15 @@ export const indexes: Partial<Record<Collections, string[]>> = {
   attempts: ['expires']
 }
 
+export const initializeValues: Partial<Record<Collections, Array<Record<string, string | number>>>> = {
+  keys: [
+    { name: 'pepper', data: '' },
+    { name: 'previousPepper', data: '' }
+  ]
+}
+
 abstract class SQL {
-  db?: SQLiteDatabase // | PgDatabase
+  db?: SQLiteDatabase | PgDatabase
   ready: Promise<void>
   cleanJob?: NodeJS.Timeout
 
@@ -30,8 +37,8 @@ abstract class SQL {
   getCount (table: Collections, field: string, value?: string | number | string[]): Promise<number> {
     return new Promise((resolve, reject) => {
       // @ts-expect-error implemented later
-      this.get(table, [`count(${field})`], field, value).then(rows => {
-        resolve(rows[0][`count(${field})`] as number)
+      this.get(table, [`count(${field}) as count`], field, value).then(rows => {
+        resolve(parseInt(rows[0].count))
       }).catch((e: any) => {
         /* istanbul ignore next */
         reject(e)

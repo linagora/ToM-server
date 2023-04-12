@@ -6,7 +6,7 @@ import { type Config } from '..'
 import DefaultConfig from '../config.json'
 
 afterEach(() => {
-  fs.unlinkSync('./testdb.db')
+  process.env.TEST_PG === 'yes' || fs.unlinkSync('./testdb.db')
 })
 
 const baseConf: Config = {
@@ -14,6 +14,14 @@ const baseConf: Config = {
   database_engine: 'sqlite',
   database_host: './testdb.db',
   userdb_engine: 'ldap'
+}
+
+if (process.env.TEST_PG === 'yes') {
+  baseConf.database_engine = 'pg'
+  baseConf.database_host = process.env.PG_HOST ?? 'localhost'
+  baseConf.database_user = process.env.PG_USER ?? 'twake'
+  baseConf.database_password = process.env.PG_PASSWORD ?? 'twake'
+  baseConf.database_name = process.env.PG_DATABASE ?? 'test'
 }
 
 describe('Id Server DB', () => {
@@ -28,6 +36,7 @@ describe('Id Server DB', () => {
           expect(rows[0].id).toEqual(id)
           expect(rows[0].data).toEqual('{}')
           clearTimeout(idDb.cleanJob)
+          idDb.close()
           done()
         }).catch(e => done(e))
       }).catch(e => done(e))
@@ -47,6 +56,7 @@ describe('Id Server DB', () => {
           done("Souldn't have find a value")
         }).catch(e => {
           clearTimeout(idDb.cleanJob)
+          idDb.close()
           done()
         })
       }).catch(e => done(e))
@@ -63,6 +73,7 @@ describe('Id Server DB', () => {
           // @ts-ignore
           expect(data.a).toEqual(2)
           clearTimeout(idDb.cleanJob)
+          idDb.close()
           done()
         }).catch(e => done(e))
       }).catch(e => done(e))
@@ -72,11 +83,14 @@ describe('Id Server DB', () => {
   it('should return count without value', (done) => {
     const idDb = new IdDb(baseConf)
     idDb.ready.then(() => {
-      idDb.createToken({ a: 1 })
-      idDb.getCount('oneTimeTokens', 'id').then(val => {
-        expect(val).toBe(1)
-        clearTimeout(idDb.cleanJob)
-        done()
+      idDb.getCount('oneTimeTokens', 'id').then(initialValue => {
+        idDb.createToken({ a: 1 })
+        idDb.getCount('oneTimeTokens', 'id').then(val => {
+          expect(val).toBe(initialValue + 1)
+          clearTimeout(idDb.cleanJob)
+          idDb.close()
+          done()
+        }).catch(e => done(e))
       }).catch(e => done(e))
     }).catch(e => done(e))
   })
@@ -92,6 +106,7 @@ describe('Id Server DB', () => {
           idDb.getCount('oneTimeTokens', 'id', [token, token + 'z']).then(val => {
             expect(val).toBe(1)
             clearTimeout(idDb.cleanJob)
+            idDb.close()
             done()
           }).catch(e => done(e))
         }).catch(e => done(e))
@@ -109,6 +124,7 @@ test('OneTimeToken timeout', (done) => {
         done('Should throw')
       }).catch(e => {
         clearTimeout(idDb.cleanJob)
+        idDb.close()
         done()
       })
     }, 6000)

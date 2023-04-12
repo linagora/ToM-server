@@ -64,11 +64,15 @@ const updateHashes = (conf: Config, db: IdentityServerDb, userDB: UserDB): Promi
                 resolve(true)
               })
             }).catch((e: any) => {
-            /* istanbul ignore next */
+              /* istanbul ignore next */
+              console.error('Unable to initialize js-nacl', e)
+              /* istanbul ignore next */
               reject(e)
             })
           }).catch(e => {
-          /* istanbul ignore next */
+            /* istanbul ignore next */
+            console.error('Unable to parse user DB', e)
+            /* istanbul ignore next */
             reject(e)
           })
         })

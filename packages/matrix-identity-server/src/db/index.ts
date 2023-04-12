@@ -1,5 +1,6 @@
 import { type Config } from '..'
 import { randomString } from '../utils/tokenUtils'
+import Pg from './sql/pg'
 import Sqlite from './sql/sqlite'
 
 export type SupportedDatabases = 'sqlite' | 'pg'
@@ -27,6 +28,7 @@ export interface IdDbBackend {
   update: Update
   deleteEqual: DeleteEqual
   deleteLowerThan: DeleteLowerThan
+  close: () => void
 }
 export type InsertType = (table: string, values: Array<string | number>) => Promise<void>
 
@@ -42,7 +44,12 @@ class IdentityServerDb implements IdDbBackend {
         Module = Sqlite
         break
       }
+      case 'pg': {
+        Module = Pg
+        break
+      }
       default: {
+        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
         throw new Error(`Unsupported database type ${conf.database_engine}`)
       }
     }
@@ -52,10 +59,12 @@ class IdentityServerDb implements IdDbBackend {
         this.init().then(() => {
           resolve()
         }).catch(e => {
+          console.error('initialization failed')
           /* istanbul ignore next */
           reject(e)
         })
       }).catch(e => {
+        console.error('Database initialization failed')
         /* istanbul ignore next */
         reject(e)
       })
@@ -68,10 +77,8 @@ class IdentityServerDb implements IdDbBackend {
     })
   }
 
+  // For later
   async init (): Promise<void> {
-    const pepper = randomString(8)
-    await this.db.insert('keys', { name: 'pepper', data: pepper })
-    // TODO: calculate hash for phones and mails using @twake/crypto hash.sha256(mail, 'email', pepper)
   }
 
   /* istanbul ignore next */
@@ -173,13 +180,12 @@ class IdentityServerDb implements IdDbBackend {
       throw new Error('Wait for database to be ready')
     }
     return new Promise((resolve, reject) => {
-      this.db.deleteEqual('oneTimeTokens', 'id', id).then((e: any) => {
-        /* istanbul ignore if */
-        if (e != null) console.error(e)
+      this.db.deleteEqual('oneTimeTokens', 'id', id).then(() => {
         resolve()
       }).catch(e => {
         /* istanbul ignore next */
         console.error(`Token ${id} already deleted`, e)
+        resolve()
       })
     })
   }
@@ -194,6 +200,10 @@ class IdentityServerDb implements IdDbBackend {
       this.cleanJob = setTimeout(_vacuum, delay * 1000)
     }
     this.cleanJob = setTimeout(_vacuum, delay * 1000)
+  }
+
+  close (): void {
+    this.db.close()
   }
 }
 

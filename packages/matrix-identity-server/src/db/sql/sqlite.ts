@@ -164,6 +164,10 @@ class SQLite extends SQL implements IdDbBackend {
       })
     })
   }
+
+  close (): void {
+    // this.db?.close()
+  }
 }
 
 export default SQLite

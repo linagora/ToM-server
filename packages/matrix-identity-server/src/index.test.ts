@@ -339,8 +339,8 @@ describe('/_matrix/identity/v2/lookup', () => {
         .get('/_matrix/identity/v2/hash_details')
         .set('Authorization', `Bearer ${validToken}`)
         .set('Accept', 'application/json')
-      expect(response.statusCode).toBe(200)
       expect(response.body).toHaveProperty('lookup_pepper')
+      expect(response.statusCode).toBe(200)
       pepper = response.body.lookup_pepper
       expect(response.body.algorithms).toEqual(supportedHashes)
     })
