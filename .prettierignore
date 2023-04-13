@@ -1,0 +1,15 @@
+/*
+!/packages
+packages/**/*.json
+packages/**/*.js
+packages/**/*.cjs
+packages/**/*.md
+packages/**/*.svelte
+packages/**/*.yml
+packages/**/*.css
+packages/**/*.html
+packages/**/*.d.ts
+packages/**/dist
+packages/**/coverage
+packages/**/__testData__
+packages/**/node_modules
