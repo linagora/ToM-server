@@ -38,20 +38,28 @@ beforeAll((done) => {
     conf.database_password = process.env.PG_PASSWORD ?? 'twake'
     conf.database_name = process.env.PG_DATABASE ?? 'test'
   }
-  buildUserDB(conf).then(() => {
-    idServer = new IdServer()
-    app = express()
+  buildUserDB(conf)
+    .then(() => {
+      idServer = new IdServer()
+      app = express()
 
-    idServer.ready.then(() => {
-      Object.keys(idServer.api.get).forEach(k => {
-        app.get(k, idServer.api.get[k])
-      })
-      Object.keys(idServer.api.post).forEach(k => {
-        app.post(k, idServer.api.post[k])
-      })
-      done()
-    }).catch(e => { done(e) })
-  }).catch(e => { done(e) })
+      idServer.ready
+        .then(() => {
+          Object.keys(idServer.api.get).forEach((k) => {
+            app.get(k, idServer.api.get[k])
+          })
+          Object.keys(idServer.api.post).forEach((k) => {
+            app.post(k, idServer.api.post[k])
+          })
+          done()
+        })
+        .catch((e) => {
+          done(e)
+        })
+    })
+    .catch((e) => {
+      done(e)
+    })
 })
 
 beforeEach(() => {
@@ -75,7 +83,9 @@ test('Reject unimplemented endpoint with 404', async () => {
 })
 
 test('Reject bad method with 405', async () => {
-  const response = await request(app).get('/_matrix/identity/v2/account/register')
+  const response = await request(app).get(
+    '/_matrix/identity/v2/account/register'
+  )
   expect(response.statusCode).toBe(405)
 })
 
@@ -145,13 +155,15 @@ describe('/_matrix/identity/v2/account/register', () => {
     const response = await request(app)
       .post('/_matrix/identity/v2/account/register')
       .set('Content-Type', 'application/x-www-form-urlencoded')
-      .send(querystring.stringify({
-        access_token: 'bar',
-        expires_in: 86400,
-        matrix_server_name: 'matrix.example.com',
-        token_type: 'Bearer',
-        additional_param: 'value'
-      }))
+      .send(
+        querystring.stringify({
+          access_token: 'bar',
+          expires_in: 86400,
+          matrix_server_name: 'matrix.example.com',
+          token_type: 'Bearer',
+          additional_param: 'value'
+        })
+      )
       .set('Accept', 'application/json')
     expect(response.statusCode).toBe(200)
     // @ts-expect-error mock is unknown
@@ -231,8 +243,7 @@ describe('/_matrix/identity/v2/account', () => {
 })
 
 describe('/_matrix/identity/v2/validate/email', () => {
-  let sid: string,
-    token: string
+  let sid: string, token: string
   describe('/_matrix/identity/v2/validate/email/requestToken', () => {
     it('should refuse to register an invalid email', async () => {
       const response = await request(app)
@@ -275,7 +286,9 @@ describe('/_matrix/identity/v2/validate/email', () => {
         })
       expect(response.statusCode).toBe(200)
       expect(sendMailMock.mock.calls[0][0].to).toBe('xg@xnr.fr')
-      expect(sendMailMock.mock.calls[0][0].raw).toMatch(/token=([a-zA-Z0-9]{64})&client_secret=mysecret&sid=([a-zA-Z0-9]{64})/)
+      expect(sendMailMock.mock.calls[0][0].raw).toMatch(
+        /token=([a-zA-Z0-9]{64})&client_secret=mysecret&sid=([a-zA-Z0-9]{64})/
+      )
       token = RegExp.$1
       sid = RegExp.$2
     })

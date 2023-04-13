@@ -8,14 +8,18 @@ const idServer = new IdServer({
 
 const app = express()
 
-idServer.ready.then(() => {
-  Object.keys(idServer.api.get).forEach(k => {
-    app.get(k, idServer.api.get[k])
+idServer.ready
+  .then(() => {
+    Object.keys(idServer.api.get).forEach((k) => {
+      app.get(k, idServer.api.get[k])
+    })
+    Object.keys(idServer.api.post).forEach((k) => {
+      app.post(k, idServer.api.post[k])
+    })
+    const port = process.argv[2] != null ? parseInt(process.argv[2]) : 3000
+    console.log(`Listening on port ${port}`)
+    app.listen(port)
   })
-  Object.keys(idServer.api.post).forEach(k => {
-    app.post(k, idServer.api.post[k])
+  .catch((e) => {
+    throw e
   })
-  const port = process.argv[2] != null ? parseInt(process.argv[2]) : 3000
-  console.log(`Listening on port ${port}`)
-  app.listen(port)
-}).catch(e => { throw e })

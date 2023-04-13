@@ -37,20 +37,28 @@ beforeAll((done) => {
     conf.database_password = process.env.PG_PASSWORD ?? 'twake'
     conf.database_name = process.env.PG_DATABASE ?? 'test'
   }
-  buildUserDB(conf).then(() => {
-    idServer = new IdServer()
-    app = express()
+  buildUserDB(conf)
+    .then(() => {
+      idServer = new IdServer()
+      app = express()
 
-    idServer.ready.then(() => {
-      Object.keys(idServer.api.get).forEach(k => {
-        app.get(k, idServer.api.get[k])
-      })
-      Object.keys(idServer.api.post).forEach(k => {
-        app.post(k, idServer.api.post[k])
-      })
-      done()
-    }).catch(e => { done(e) })
-  }).catch(e => { done(e) })
+      idServer.ready
+        .then(() => {
+          Object.keys(idServer.api.get).forEach((k) => {
+            app.get(k, idServer.api.get[k])
+          })
+          Object.keys(idServer.api.post).forEach((k) => {
+            app.post(k, idServer.api.post[k])
+          })
+          done()
+        })
+        .catch((e) => {
+          done(e)
+        })
+    })
+    .catch((e) => {
+      done(e)
+    })
 })
 
 beforeEach(() => {

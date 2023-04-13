@@ -4,7 +4,7 @@ import defaultConfig from '../config.json'
 
 const server = ldapjs.createServer()
 
-beforeAll(done => {
+beforeAll((done) => {
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
   // @ts-ignore
   server.search('ou=users, o=example', (req, res, next) => {
@@ -28,7 +28,9 @@ beforeAll(done => {
 
 afterAll((done) => {
   // server.removeAllListeners()
-  server.close(() => { done() })
+  server.close(() => {
+    done()
+  })
 })
 
 describe('LDAP', () => {
@@ -40,17 +42,26 @@ describe('LDAP', () => {
       ldap_uri: 'ldap://localhost:63389',
       ldap_base: 'ou=users,o=example'
     })
-    userDB.get('', [], 'uid', 'dwho').then(list => {
-      expect(list[0].dn).toBe('ou=users,o=example')
-      // userDB.client.destroy()
-      userDB.get('', ['uid'], 'uid', 'dwho').then(list => {
-        expect(list[0]).toEqual({ uid: 'dwho' })
-        userDB.get('', [], 'uid', 'zz').then(list => {
-          done('zz does not exist')
-        }).catch(e => {
-          done()
-        })
-      }).catch(e => done(e))
-    }).catch(e => done(e))
+    userDB
+      .get('', [], 'uid', 'dwho')
+      .then((list) => {
+        expect(list[0].dn).toBe('ou=users,o=example')
+        // userDB.client.destroy()
+        userDB
+          .get('', ['uid'], 'uid', 'dwho')
+          .then((list) => {
+            expect(list[0]).toEqual({ uid: 'dwho' })
+            userDB
+              .get('', [], 'uid', 'zz')
+              .then((list) => {
+                done('zz does not exist')
+              })
+              .catch((e) => {
+                done()
+              })
+          })
+          .catch((e) => done(e))
+      })
+      .catch((e) => done(e))
   })
 })

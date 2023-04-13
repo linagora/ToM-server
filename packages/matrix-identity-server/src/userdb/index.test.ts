@@ -5,13 +5,13 @@ import defaultConfig from '../config.json'
 
 const dbName = './testldap.db'
 
-beforeAll(done => {
+beforeAll((done) => {
   const db = new sqlite3.Database(dbName)
   db.run('CREATE TABLE users(uid varchar(64) primary key)', (err) => {
     if (err != null) {
       done(err)
     } else {
-      db.run('INSERT INTO users values(\'dwho\')', (err) => {
+      db.run("INSERT INTO users values('dwho')", (err) => {
         if (err != null) {
           done(err)
         } else {
@@ -34,11 +34,20 @@ describe('UserDB', () => {
       database_host: dbName,
       database_engine: 'sqlite'
     })
-    userDB.ready.then(() => {
-      userDB.get('users', ['uid'], 'uid', 'dwho').then(list => {
-        expect(list[0].uid).toBe('dwho')
-        done()
-      }).catch(e => { done(e) })
-    }).catch(e => { done(e) })
+    userDB.ready
+      .then(() => {
+        userDB
+          .get('users', ['uid'], 'uid', 'dwho')
+          .then((list) => {
+            expect(list[0].uid).toBe('dwho')
+            done()
+          })
+          .catch((e) => {
+            done(e)
+          })
+      })
+      .catch((e) => {
+        done(e)
+      })
   })
 })

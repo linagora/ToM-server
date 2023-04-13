@@ -2,7 +2,13 @@
 import { type Policies } from '.'
 import { type Config } from '..'
 import type IdentityServerDb from '../db'
-import { Authenticate, jsonContent, send, validateParameters, type expressAppHandler } from '../utils'
+import {
+  Authenticate,
+  jsonContent,
+  send,
+  validateParameters,
+  type expressAppHandler
+} from '../utils'
 import { errMsg } from '../utils/errors'
 import computePolicy from './_computePolicies'
 
@@ -11,13 +17,15 @@ type UrlsFromPolicies = Record<string, string[]>
 const getUrlsFromPolicies = (policies: Policies): UrlsFromPolicies => {
   const urlsFromPolicies: UrlsFromPolicies = {}
   Object.keys(policies).forEach((policyName) => {
-    const policy = policies[policyName as ('privacy_policy' | 'terms_of_service')]
+    const policy = policies[policyName as 'privacy_policy' | 'terms_of_service']
     if (policy != null) {
       const newName = `${policyName} ${policy.version}`
       Object.keys(policy).forEach((lang: string) => {
         if (typeof policy[lang] !== 'string') {
           if (urlsFromPolicies[newName] == null) urlsFromPolicies[newName] = []
-          urlsFromPolicies[newName].push((policy[lang] as Record<string, 'name' | 'url'>).url)
+          urlsFromPolicies[newName].push(
+            (policy[lang] as Record<string, 'name' | 'url'>).url
+          )
         }
       })
     }
@@ -36,8 +44,8 @@ const PostTerms = (db: IdentityServerDb, conf: Config): expressAppHandler => {
           const done: string[] = []
           /* istanbul ignore if */
           if (typeof urls === 'string') urls = [urls]
-          Object.keys(urlsFromPolicies).forEach(policyName => {
-            (urls as string[]).forEach(url => {
+          Object.keys(urlsFromPolicies).forEach((policyName) => {
+            ;(urls as string[]).forEach((url) => {
               if (urlsFromPolicies[policyName].includes(url)) {
                 done.push(policyName)
               }

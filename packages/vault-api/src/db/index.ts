@@ -5,7 +5,7 @@ import { type VaultDbBackend, recoveryWords } from './utils'
 export default class VaultDb {
   ready: Promise<void>
   db: VaultDbBackend
-  constructor (conf: Config) {
+  constructor(conf: Config) {
     let Module
     /* istanbul ignore next */
     switch (conf.database_engine) {
@@ -22,17 +22,17 @@ export default class VaultDb {
   }
 
   // eslint-disable-next-line @typescript-eslint/promise-function-async
-  insert (values: Record<string, string>): Promise<void> {
+  insert(values: Record<string, string>): Promise<void> {
     return this.db.insert(recoveryWords.title, values).catch((e) => {
       throw e
     })
   }
 
   // eslint-disable-next-line @typescript-eslint/promise-function-async
-  get (userId: string): Promise<Array<Record<string, string | string>>> {
+  get(userId: string): Promise<Array<Record<string, string | string>>> {
     return (
       this.db.get(recoveryWords.title, ['words'], 'userId', userId) as Promise<
-      Array<Record<string, string | string>>
+        Array<Record<string, string | string>>
       >
     ).catch((e) => {
       throw e

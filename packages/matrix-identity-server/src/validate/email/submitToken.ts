@@ -18,20 +18,35 @@ interface mailToken {
 const SubmitToken = (db: IdentityServerDb, conf: Config): expressAppHandler => {
   return (req, res) => {
     const realMethod = (prms: parameters): void => {
-      if (((prms.client_secret?.length) != null) && ((prms.token?.length) != null) && ((prms.sid?.length) != null)) {
-        db.verifyToken(prms.token).then((data) => {
-          if ((data as mailToken).sid === prms.sid && (data as mailToken).client_secret === prms.client_secret) {
-            // TODO REGISTER (data as mailToken).mail
-            db.deleteToken(prms.token as string).then(() => {
-              send(res, 200, { success: true })
-            }).catch(e => {})
-          } else {
-            send(res, 400, errMsg('invalidParam', 'sid or secret mismatch'))
-          }
-        }).catch(e => {
-          console.error('Token error', e)
-          send(res, 400, errMsg('invalidParam', 'Unknown or expired token' + (e as string)))
-        })
+      if (
+        prms.client_secret?.length != null &&
+        prms.token?.length != null &&
+        prms.sid?.length != null
+      ) {
+        db.verifyToken(prms.token)
+          .then((data) => {
+            if (
+              (data as mailToken).sid === prms.sid &&
+              (data as mailToken).client_secret === prms.client_secret
+            ) {
+              // TODO REGISTER (data as mailToken).mail
+              db.deleteToken(prms.token as string)
+                .then(() => {
+                  send(res, 200, { success: true })
+                })
+                .catch((e) => {})
+            } else {
+              send(res, 400, errMsg('invalidParam', 'sid or secret mismatch'))
+            }
+          })
+          .catch((e) => {
+            console.error('Token error', e)
+            send(
+              res,
+              400,
+              errMsg('invalidParam', 'Unknown or expired token' + (e as string))
+            )
+          })
       } else {
         send(res, 400, errMsg('missingParams'))
       }

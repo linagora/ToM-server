@@ -28,20 +28,28 @@ beforeAll((done) => {
     base_url: 'http://example.com/',
     userdb_engine: 'sqlite'
   }
-  buildUserDB(conf).then(() => {
-    idServer = new IdServer()
-    app = express()
+  buildUserDB(conf)
+    .then(() => {
+      idServer = new IdServer()
+      app = express()
 
-    idServer.ready.then(() => {
-      Object.keys(idServer.api.get).forEach(k => {
-        app.get(k, idServer.api.get[k])
-      })
-      Object.keys(idServer.api.post).forEach(k => {
-        app.post(k, idServer.api.post[k])
-      })
-      done()
-    }).catch(e => { done(e) })
-  }).catch(e => { done(e) })
+      idServer.ready
+        .then(() => {
+          Object.keys(idServer.api.get).forEach((k) => {
+            app.get(k, idServer.api.get[k])
+          })
+          Object.keys(idServer.api.post).forEach((k) => {
+            app.post(k, idServer.api.post[k])
+          })
+          done()
+        })
+        .catch((e) => {
+          done(e)
+        })
+    })
+    .catch((e) => {
+      done(e)
+    })
 })
 
 beforeEach(() => {
@@ -107,7 +115,9 @@ describe('When "terms of use" exists', () => {
       const response = await request(app)
         .post('/_matrix/identity/v2/terms')
         .set('Authorization', `Bearer ${validToken}`)
-        .send({ user_accepts: ['https://example.org/somewhere/privacy-1.2-en.html'] })
+        .send({
+          user_accepts: ['https://example.org/somewhere/privacy-1.2-en.html']
+        })
       expect(response.statusCode).toBe(200)
     })
   })

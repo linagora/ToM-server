@@ -29,7 +29,7 @@ export const allowCors: expressAppHandler = (req, res, next) => {
 export class VaultAPIError extends Error {
   statusCode: number
 
-  constructor (message: string, statusCode: number) {
+  constructor(message: string, statusCode: number) {
     super(message)
     this.statusCode = statusCode
   }

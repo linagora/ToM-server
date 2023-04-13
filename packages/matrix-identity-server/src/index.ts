@@ -71,7 +71,7 @@ export default class MatrixIdentityServer {
   conf: Config
   ready: Promise<boolean>
 
-  constructor (conf?: Partial<Config>) {
+  constructor(conf?: Partial<Config>) {
     this.api = { get: {}, post: {} }
     this.conf = configParser(
       confDesc,
@@ -79,55 +79,67 @@ export default class MatrixIdentityServer {
       conf != null
         ? conf
         : process.env.TWAKE_IDENTITY_SERVER_CONF != null
-          ? process.env.TWAKE_IDENTITY_SERVER_CONF
-          : fs.existsSync('/etc/twake/identity-server.conf')
-            ? '/etc/twake/identity-server.conf'
-            : undefined) as Config
+        ? process.env.TWAKE_IDENTITY_SERVER_CONF
+        : fs.existsSync('/etc/twake/identity-server.conf')
+        ? '/etc/twake/identity-server.conf'
+        : undefined
+    ) as Config
     this.ready = new Promise((resolve, reject) => {
-      const db = this.db = new IdentityServerDb(this.conf)
-      const userDB = this.userDB = new UserDB(this.conf)
-      db.ready.then(() => {
-        const badMethod: expressAppHandler = (req, res) => {
-          send(res, 405, errMsg('unrecognized'))
-        }
-        this.cronTasks = new CronTasks(this.conf, db, userDB)
-        // TODO
-        // const badEndPoint: expressAppHandler = (req, res) => {
-        //   send(res, 404, errMsg('unrecognized'))
-        // }
-        this.api = {
-          get: {
-            '/_matrix/identity/v2': status,
-            '/_matrix/identity/versions': versions,
-            '/_matrix/identity/v2/account': account(db),
-            '/_matrix/identity/v2/account/register': badMethod,
-            '/_matrix/identity/v2/account/logout': badMethod,
-            '/_matrix/identity/v2/hash_details': hashDetails(db),
-            '/_matrix/identity/v2/terms': Terms(this.conf),
-            '/_matrix/identity/v2/validate/email/requestToken': badMethod,
-            '/_matrix/identity/v2/validate/email/submitToken': SubmitToken(db, this.conf)
-          },
-          post: {
-            '/_matrix/identity/v2': badMethod,
-            '/_matrix/identity/versions': badMethod,
-            '/_matrix/identity/v2/account': badMethod,
-            '/_matrix/identity/v2/account/register': register(db),
-            '/_matrix/identity/v2/account/logout': logout(db),
-            '/_matrix/identity/v2/lookup': lookup(db),
-            '/_matrix/identity/v2/terms': PostTerms(db, this.conf),
-            '/_matrix/identity/v2/validate/email/requestToken': RequestToken(db, this.conf),
-            '/_matrix/identity/v2/validate/email/submitToken': SubmitToken(db, this.conf)
+      const db = (this.db = new IdentityServerDb(this.conf))
+      const userDB = (this.userDB = new UserDB(this.conf))
+      db.ready
+        .then(() => {
+          const badMethod: expressAppHandler = (req, res) => {
+            send(res, 405, errMsg('unrecognized'))
           }
-        }
-        resolve(true)
-      }).catch(e => {
-        /* istanbul ignore next */
-        reject(e)
-      })
+          this.cronTasks = new CronTasks(this.conf, db, userDB)
+          // TODO
+          // const badEndPoint: expressAppHandler = (req, res) => {
+          //   send(res, 404, errMsg('unrecognized'))
+          // }
+          this.api = {
+            get: {
+              '/_matrix/identity/v2': status,
+              '/_matrix/identity/versions': versions,
+              '/_matrix/identity/v2/account': account(db),
+              '/_matrix/identity/v2/account/register': badMethod,
+              '/_matrix/identity/v2/account/logout': badMethod,
+              '/_matrix/identity/v2/hash_details': hashDetails(db),
+              '/_matrix/identity/v2/terms': Terms(this.conf),
+              '/_matrix/identity/v2/validate/email/requestToken': badMethod,
+              '/_matrix/identity/v2/validate/email/submitToken': SubmitToken(
+                db,
+                this.conf
+              )
+            },
+            post: {
+              '/_matrix/identity/v2': badMethod,
+              '/_matrix/identity/versions': badMethod,
+              '/_matrix/identity/v2/account': badMethod,
+              '/_matrix/identity/v2/account/register': register(db),
+              '/_matrix/identity/v2/account/logout': logout(db),
+              '/_matrix/identity/v2/lookup': lookup(db),
+              '/_matrix/identity/v2/terms': PostTerms(db, this.conf),
+              '/_matrix/identity/v2/validate/email/requestToken': RequestToken(
+                db,
+                this.conf
+              ),
+              '/_matrix/identity/v2/validate/email/submitToken': SubmitToken(
+                db,
+                this.conf
+              )
+            }
+          }
+          resolve(true)
+        })
+        .catch((e) => {
+          /* istanbul ignore next */
+          reject(e)
+        })
     })
   }
 
-  cleanJobs (): void {
+  cleanJobs(): void {
     clearTimeout(this.db?.cleanJob)
     this.cronTasks?.stop()
     this.db?.close()

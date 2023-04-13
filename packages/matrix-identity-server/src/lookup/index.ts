@@ -1,5 +1,11 @@
 import type IdentityServerDb from '../db'
-import { Authenticate, jsonContent, type expressAppHandler, validateParameters, send } from '../utils'
+import {
+  Authenticate,
+  jsonContent,
+  type expressAppHandler,
+  validateParameters,
+  send
+} from '../utils'
 import { errMsg } from '../utils/errors'
 
 const schema = {
@@ -18,18 +24,25 @@ const lookup = (db: IdentityServerDb): expressAppHandler => {
             /* istanbul ignore next */
             send(res, 400, errMsg('invalidParam'))
           } else {
-            db.get('hashes', ['value', 'hash'], 'hash', (obj as { addresses: string[] }).addresses).then(rows => {
-              // send(res, 200, rows)
-              const mappings: Record<string, string> = {}
-              rows.forEach(row => {
-                // @ts-expect-error row.hash is not null
-                mappings[row.hash] = row.value
+            db.get(
+              'hashes',
+              ['value', 'hash'],
+              'hash',
+              (obj as { addresses: string[] }).addresses
+            )
+              .then((rows) => {
+                // send(res, 200, rows)
+                const mappings: Record<string, string> = {}
+                rows.forEach((row) => {
+                  // @ts-expect-error row.hash is not null
+                  mappings[row.hash] = row.value
+                })
+                send(res, 200, { mappings })
               })
-              send(res, 200, { mappings })
-            }).catch(e => {
-              /* istanbul ignore next */
-              send(res, 500, errMsg('unknown', e))
-            })
+              .catch((e) => {
+                /* istanbul ignore next */
+                send(res, 500, errMsg('unknown', e))
+              })
           }
         })
       })

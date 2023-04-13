@@ -7,7 +7,8 @@ export const tables: Record<Collections, string> = {
   oneTimeTokens: 'id varchar(64) PRIMARY KEY, expires int, data text',
   attempts: 'email text PRIMARY KEY, expires int, attempt int',
   keys: 'name varchar(32) PRIMARY KEY, data text',
-  hashes: 'hash varchar(32) PRIMARY KEY, pepper varchar(32), type varchar(8), value text'
+  hashes:
+    'hash varchar(32) PRIMARY KEY, pepper varchar(32), type varchar(8), value text'
 }
 
 export const indexes: Partial<Record<Collections, string[]>> = {
@@ -15,7 +16,9 @@ export const indexes: Partial<Record<Collections, string[]>> = {
   attempts: ['expires']
 }
 
-export const initializeValues: Partial<Record<Collections, Array<Record<string, string | number>>>> = {
+export const initializeValues: Partial<
+  Record<Collections, Array<Record<string, string | number>>>
+> = {
   keys: [
     { name: 'pepper', data: '' },
     { name: 'previousPepper', data: '' }
@@ -27,26 +30,35 @@ abstract class SQL<T> {
   ready: Promise<void>
   cleanJob?: NodeJS.Timeout
 
-  constructor (conf: T) {
+  constructor(conf: T) {
     // @ts-expect-error method is defined in child class
     this.ready = this.createDatabases(conf)
   }
 
   // eslint-disable-next-line @typescript-eslint/promise-function-async
-  getCount (table: Collections, field: string, value?: string | number | string[]): Promise<number> {
+  getCount(
+    table: Collections,
+    field: string,
+    value?: string | number | string[]
+  ): Promise<number> {
     return new Promise((resolve, reject) => {
       // @ts-expect-error implemented later
-      this.get(table, [`count(${field}) as count`], field, value).then(rows => {
-        resolve(parseInt(rows[0].count))
-      }).catch((e: any) => {
-        /* istanbul ignore next */
-        reject(e)
-      })
+      this.get(table, [`count(${field}) as count`], field, value)
+        .then((rows: Array<Record<string, string>>) => {
+          resolve(parseInt(rows[0].count))
+        })
+        .catch((e: any) => {
+          /* istanbul ignore next */
+          reject(e)
+        })
     })
   }
 
   // eslint-disable-next-line @typescript-eslint/promise-function-async
-  getAll (table: string, fields: string[]): Promise<Array<Record<string, string | number >>> {
+  getAll(
+    table: string,
+    fields: string[]
+  ): Promise<Array<Record<string, string | number>>> {
     // @ts-expect-error implemented later
     return this.get(table, fields)
   }

@@ -7,8 +7,16 @@ export type SupportedUserDatabases = 'sqlite' | 'pg' | 'ldap'
 
 export type Collections = 'users' | 'groups'
 
-type Get = (table: Collections, fields: string[], field: string, value: string | number) => Promise<Array<Record<string, string | string[] | number >>>
-type GetAll = (table: Collections, fields: string[]) => Promise<Array<Record<string, string | string[] | number >>>
+type Get = (
+  table: Collections,
+  fields: string[],
+  field: string,
+  value: string | number
+) => Promise<Array<Record<string, string | string[] | number>>>
+type GetAll = (
+  table: Collections,
+  fields: string[]
+) => Promise<Array<Record<string, string | string[] | number>>>
 
 export interface UserDBBackend {
   ready: Promise<void>
@@ -19,7 +27,7 @@ export interface UserDBBackend {
 class UserDB implements UserDBBackend {
   ready: Promise<void>
   db: UserDBBackend
-  constructor (conf: Config) {
+  constructor(conf: Config) {
     let Module
     /* istanbul ignore next */
     switch (conf.userdb_engine) {
@@ -41,23 +49,30 @@ class UserDB implements UserDBBackend {
     }
     this.db = new Module(conf)
     this.ready = new Promise((resolve, reject) => {
-      this.db.ready.then(() => {
-        // TODO: insert here init if needed
-        resolve()
-      }).catch(e => {
-        /* istanbul ignore next */
-        reject(e)
-      })
+      this.db.ready
+        .then(() => {
+          // TODO: insert here init if needed
+          resolve()
+        })
+        .catch((e) => {
+          /* istanbul ignore next */
+          reject(e)
+        })
     })
   }
 
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
-  get (table: Collections, fields: string[], field: string, value: string | number) {
+  get(
+    table: Collections,
+    fields: string[],
+    field: string,
+    value: string | number
+  ) {
     return this.db.get(table, fields, field, value)
   }
 
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
-  getAll (table: Collections, fields: string[]) {
+  getAll(table: Collections, fields: string[]) {
     return this.db.getAll(table, fields)
   }
 }

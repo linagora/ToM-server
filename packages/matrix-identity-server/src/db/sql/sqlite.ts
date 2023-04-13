@@ -11,29 +11,31 @@ export type SQLiteStatement = Statement
 class SQLite<T = Config> extends SQL<T> implements IdDbBackend {
   declare db?: SQLiteDatabase
   // eslint-disable-next-line @typescript-eslint/promise-function-async
-  createDatabases (conf: Config): Promise<boolean> {
+  createDatabases(conf: Config): Promise<boolean> {
     return new Promise((resolve, reject) => {
-      import('sqlite3').then(sqlite3 => {
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
-        // @ts-ignore
-        if (sqlite3.Database == null) sqlite3 = sqlite3.default
-        const db = this.db = new sqlite3.Database(conf.database_host)
-        /* istanbul ignore if */
-        if (db == null) {
-          throw new Error('Database not created')
-        }
-        createTables(this, resolve, reject)
-      }).catch(e => {
-        /* istanbul ignore next */
-        throw e
-      })
+      import('sqlite3')
+        .then((sqlite3) => {
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
+          // @ts-ignore
+          if (sqlite3.Database == null) sqlite3 = sqlite3.default
+          const db = (this.db = new sqlite3.Database(conf.database_host))
+          /* istanbul ignore if */
+          if (db == null) {
+            throw new Error('Database not created')
+          }
+          createTables(this, resolve, reject)
+        })
+        .catch((e) => {
+          /* istanbul ignore next */
+          throw e
+        })
     })
   }
 
   // eslint-disable-next-line @typescript-eslint/promise-function-async
-  rawQuery (query: string): Promise<void> {
+  rawQuery(query: string): Promise<void> {
     return new Promise((resolve, reject) => {
-      this.db?.run(query, err => {
+      this.db?.run(query, (err) => {
         /* istanbul ignore else */
         if (err == null) {
           resolve()
@@ -45,13 +47,16 @@ class SQLite<T = Config> extends SQL<T> implements IdDbBackend {
   }
 
   // eslint-disable-next-line @typescript-eslint/promise-function-async
-  exists (table: string): Promise<number> {
+  exists(table: string): Promise<number> {
     // @ts-expect-error sqlite_master not listed in Collections
     return this.getCount('sqlite_master', 'name', table)
   }
 
   // eslint-disable-next-line @typescript-eslint/promise-function-async
-  insert (table: string, values: Record<string, string | number>): Promise<void> {
+  insert(
+    table: string,
+    values: Record<string, string | number>
+  ): Promise<void> {
     return new Promise((resolve, reject) => {
       /* istanbul ignore if */
       if (this.db == null) {
@@ -59,11 +64,15 @@ class SQLite<T = Config> extends SQL<T> implements IdDbBackend {
       }
       const names: string[] = []
       const vals: Array<string | number> = []
-      Object.keys(values).forEach(k => {
+      Object.keys(values).forEach((k) => {
         names.push(k)
         vals.push(values[k])
       })
-      const stmt = this.db.prepare(`INSERT INTO ${table}(${names.join(',')}) VALUES(${names.map(v => '?').join(',')})`)
+      const stmt = this.db.prepare(
+        `INSERT INTO ${table}(${names.join(',')}) VALUES(${names
+          .map((v) => '?')
+          .join(',')})`
+      )
       stmt.run(vals).finalize(() => {
         resolve()
       })
@@ -71,7 +80,12 @@ class SQLite<T = Config> extends SQL<T> implements IdDbBackend {
   }
 
   // eslint-disable-next-line @typescript-eslint/promise-function-async
-  update (table: string, values: Record<string, string | number>, field: string, value: string | number): Promise<void> {
+  update(
+    table: string,
+    values: Record<string, string | number>,
+    field: string,
+    value: string | number
+  ): Promise<void> {
     return new Promise((resolve, reject) => {
       /* istanbul ignore if */
       if (this.db == null) {
@@ -79,12 +93,14 @@ class SQLite<T = Config> extends SQL<T> implements IdDbBackend {
       }
       const names: string[] = []
       const vals: Array<string | number> = []
-      Object.keys(values).forEach(k => {
+      Object.keys(values).forEach((k) => {
         names.push(k)
         vals.push(values[k])
       })
       vals.push(value)
-      const stmt = this.db.prepare(`UPDATE ${table} SET ${names.join('=?,')}=? WHERE ${field}=?`)
+      const stmt = this.db.prepare(
+        `UPDATE ${table} SET ${names.join('=?,')}=? WHERE ${field}=?`
+      )
       stmt.run(vals).finalize(() => {
         resolve()
       })
@@ -92,7 +108,12 @@ class SQLite<T = Config> extends SQL<T> implements IdDbBackend {
   }
 
   // eslint-disable-next-line @typescript-eslint/promise-function-async
-  get (table: string, fields?: string[], field?: string, value?: string | number | string[]): Promise<Array<Record<string, string | number >>> {
+  get(
+    table: string,
+    fields?: string[],
+    field?: string,
+    value?: string | number | string[]
+  ): Promise<Array<Record<string, string | number>>> {
     return new Promise((resolve, reject) => {
       /* istanbul ignore if */
       if (this.db == null) {
@@ -112,15 +133,20 @@ class SQLite<T = Config> extends SQL<T> implements IdDbBackend {
 
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
       // @ts-ignore never undefined
-      const stmt = this.db.prepare(`SELECT ${fields.join(',')} FROM ${table} ${condition}`)
-      stmt.all(value, (err: string, rows: Array<Record<string, string | number>>) => {
-        /* istanbul ignore if */
-        if (err != null) {
-          reject(err)
-        } else {
-          resolve(rows)
+      const stmt = this.db.prepare(
+        `SELECT ${fields.join(',')} FROM ${table} ${condition}`
+      )
+      stmt.all(
+        value,
+        (err: string, rows: Array<Record<string, string | number>>) => {
+          /* istanbul ignore if */
+          if (err != null) {
+            reject(err)
+          } else {
+            resolve(rows)
+          }
         }
-      })
+      )
       stmt.finalize((err) => {
         reject(err)
       })
@@ -128,7 +154,11 @@ class SQLite<T = Config> extends SQL<T> implements IdDbBackend {
   }
 
   // eslint-disable-next-line @typescript-eslint/promise-function-async
-  deleteEqual (table: string, field: string, value: string | number): Promise<void> {
+  deleteEqual(
+    table: string,
+    field: string,
+    value: string | number
+  ): Promise<void> {
     return new Promise((resolve, reject) => {
       /* istanbul ignore if */
       if (this.db == null) {
@@ -147,7 +177,11 @@ class SQLite<T = Config> extends SQL<T> implements IdDbBackend {
   }
 
   // eslint-disable-next-line @typescript-eslint/promise-function-async
-  deleteLowerThan (table: string, field: string, value: string | number): Promise<void> {
+  deleteLowerThan(
+    table: string,
+    field: string,
+    value: string | number
+  ): Promise<void> {
     return new Promise((resolve, reject) => {
       /* istanbul ignore if */
       if (this.db == null) {
@@ -165,7 +199,7 @@ class SQLite<T = Config> extends SQL<T> implements IdDbBackend {
     })
   }
 
-  close (): void {
+  close(): void {
     // this.db?.close()
   }
 }
