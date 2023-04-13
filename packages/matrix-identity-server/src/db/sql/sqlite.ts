@@ -9,7 +9,7 @@ export type SQLiteDatabase = Database
 export type SQLiteStatement = Statement
 
 class SQLite extends SQL implements IdDbBackend {
-  db?: SQLiteDatabase
+  declare db?: SQLiteDatabase
   // eslint-disable-next-line @typescript-eslint/promise-function-async
   createDatabases (conf: Config): Promise<boolean> {
     return new Promise((resolve, reject) => {

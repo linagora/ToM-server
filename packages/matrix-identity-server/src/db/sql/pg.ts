@@ -8,7 +8,7 @@ import { type ClientConfig, type Client as PgClient } from 'pg'
 export type PgDatabase = PgClient
 
 class Pg extends SQL implements IdDbBackend {
-  db?: PgDatabase
+  declare db?: PgDatabase
   // eslint-disable-next-line @typescript-eslint/promise-function-async
   createDatabases (conf: Config): Promise<boolean> {
     return new Promise((resolve, reject) => {
@@ -139,17 +139,7 @@ class Pg extends SQL implements IdDbBackend {
   // eslint-disable-next-line @typescript-eslint/promise-function-async
   deleteEqual (table: string, field: string, value: string | number): Promise<void> {
     if (this.db == null) return Promise.reject(new Error('DB not ready'))
-    return new Promise((resolve, reject) => {
-      this.db?.query(`DELETE FROM ${table} WHERE ${field}=$1`, [value], (err, res) => {
-        if (err != null) {
-          console.error('DELETE FAILED', err)
-          reject(err)
-        } else {
-          resolve()
-        }
-      })
-    })
-    //return this.db.query(`DELETE FROM ${table} WHERE ${field}=$1`, [value]) as unknown as Promise<void>
+    return this.db.query(`DELETE FROM ${table} WHERE ${field}=$1`, [value]) as unknown as Promise<void>
   }
 
   // eslint-disable-next-line @typescript-eslint/promise-function-async
@@ -159,7 +149,7 @@ class Pg extends SQL implements IdDbBackend {
   }
 
   close (): void {
-    this.db?.end()
+    void this.db?.end()
   }
 }
 
