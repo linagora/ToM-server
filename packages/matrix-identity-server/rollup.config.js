@@ -8,8 +8,8 @@ export default config([
   'querystring',
   'sqlite3',
   'pg',
-  'node-fetch',
   'nodemailer',
+  'node-fetch',
   '@twake/config-parser',
   '@twake/crypto'
 ])

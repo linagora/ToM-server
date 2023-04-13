@@ -1,6 +1,6 @@
 import commonjs from '@rollup/plugin-commonjs'
 import typescript from '@rollup/plugin-typescript'
-//import { nodeResolve } from '@rollup/plugin-node-resolve'
+import { nodeResolve } from '@rollup/plugin-node-resolve'
 import json from '@rollup/plugin-json'
 
 import terser from '@rollup/plugin-terser'
@@ -33,10 +33,10 @@ function configure (esm, external) {
           exports: 'auto'
         },
     external: external,
-    plugins
+    plugins,
   }
 }
 function setExternal (external) {
-  return [configure(true, external), configure(false, external)]
+  return [configure(true, external)] //, configure(false, external)]
 }
 export default setExternal

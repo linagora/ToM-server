@@ -6,8 +6,7 @@
   "type": "module",
   "types": "./dist/index.d.ts",
   "exports": {
-    "import": "./dist/index.js",
-    "require": "./dist/index.cjs"
+    "import": "./dist/index.js"
   },
   "scripts": {
     "build": "npm run build:lib && npm run build:example",

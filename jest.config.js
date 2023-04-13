@@ -11,5 +11,8 @@ export default {
       lines: 90,
       statements: 90
     }
-  }
+  },
+  moduleNameMapper: {
+    "@twake/(.*)$": "<rootDir>/../$1/src",
+  },
 }
