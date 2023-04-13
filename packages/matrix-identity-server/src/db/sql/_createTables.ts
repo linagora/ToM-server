@@ -4,10 +4,8 @@ import type SQLite from './sqlite'
 
 const createTables = (db: SQLite | Pg, resolve: (b: boolean) => void, reject: (e: Error) => void): void => {
   db.exists('accessTokens').then(count => {
-    // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
-    if (count) {
-      resolve(true)
-    } else {
+    /* istanbul ignore else */// eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+    if (!count) {
       const promises: Array<Promise<void>> = []
       Object.keys(tables).forEach((table, i, arr) => {
         promises.push(db.rawQuery(`CREATE TABLE ${table}(${tables[table as keyof typeof tables]})`))
@@ -39,6 +37,8 @@ const createTables = (db: SQLite | Pg, resolve: (b: boolean) => void, reject: (e
         /* istanbul ignore next */
         reject(e)
       })
+    } else {
+      resolve(true)
     }
   }).catch(err => {
     /* istanbul ignore next */

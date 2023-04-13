@@ -20,6 +20,7 @@ class CronTasks {
       db.getCount('hashes', 'hash').then(count => {
         const sub = (): void => {
           const task = cron.schedule(conf.pepperCron as string, () => {
+            /* istanbul ignore next */
             updateHashes(conf, db, userdb)
             /* istanbul ignore next */
               .catch(e => {
@@ -33,6 +34,7 @@ class CronTasks {
           resolve()
         }
         if (count !== 0) {
+          /* istanbul ignore next */
           sub()
         } else {
           updateHashes(conf, db, userdb).then(() => {

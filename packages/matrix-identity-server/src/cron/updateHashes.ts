@@ -36,7 +36,7 @@ const updateHashes = (conf: Config, db: IdentityServerDb, userDB: UserDB): Promi
       const newPepper = randomString(32)
       Promise.all([
       // move current pepper to 'previousPepper'
-        db.update('keys', { data: (values[1] as string) }, 'name', 'previousPepper'),
+        db.update('keys', { data: (values[0] as string) }, 'name', 'previousPepper'),
         // New hashes
         new Promise((resolve, reject) => {
           userDB.getAll('users', [...fieldsToHash, 'uid']).then(rows => {

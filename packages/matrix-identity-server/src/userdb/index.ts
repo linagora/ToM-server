@@ -1,8 +1,9 @@
 import { type Config } from '../index'
 import UserDBLDAP from './ldap'
+import UserDBPg from './sql/pg'
 import UserDBSQLite from './sql/sqlite'
 
-export type SupportedUserDatabases = 'sqlite' | 'ldap'
+export type SupportedUserDatabases = 'sqlite' | 'pg' | 'ldap'
 
 export type Collections = 'users' | 'groups'
 
@@ -24,6 +25,10 @@ class UserDB implements UserDBBackend {
     switch (conf.userdb_engine) {
       case 'sqlite': {
         Module = UserDBSQLite
+        break
+      }
+      case 'pg': {
+        Module = UserDBPg
         break
       }
       case 'ldap': {

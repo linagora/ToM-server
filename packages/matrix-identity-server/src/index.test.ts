@@ -30,6 +30,14 @@ beforeAll((done) => {
     base_url: 'http://example.com/',
     userdb_engine: 'sqlite'
   }
+  if (process.env.TEST_PG === 'yes') {
+    conf.database_engine = 'pg'
+    conf.userdb_engine = 'pg'
+    conf.database_host = process.env.PG_HOST ?? 'localhost'
+    conf.database_user = process.env.PG_USER ?? 'twake'
+    conf.database_password = process.env.PG_PASSWORD ?? 'twake'
+    conf.database_name = process.env.PG_DATABASE ?? 'test'
+  }
   buildUserDB(conf).then(() => {
     idServer = new IdServer()
     app = express()
