@@ -44,7 +44,7 @@ abstract class SQL<T> {
     return new Promise((resolve, reject) => {
       // @ts-expect-error implemented later
       this.get(table, [`count(${field}) as count`], field, value)
-        .then((rows) => {
+        .then((rows: Array<Record<string, string>>) => {
           resolve(parseInt(rows[0].count))
         })
         .catch((e: any) => {
