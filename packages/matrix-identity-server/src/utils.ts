@@ -11,7 +11,11 @@ export type expressAppHandler = (
   next?: NextFunction
 ) => void
 
-export const send = (res: Response | http.ServerResponse, status: number, body: string | object): void => {
+export const send = (
+  res: Response | http.ServerResponse,
+  status: number,
+  body: string | object
+): void => {
   /* istanbul ignore next */
   const content = typeof body === 'string' ? body : JSON.stringify(body)
   res.writeHead(status, {
@@ -19,7 +23,8 @@ export const send = (res: Response | http.ServerResponse, status: number, body: 
     'Content-Length': Buffer.byteLength(content, 'utf-8'),
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-    'Access-Control-Allow-Headers': 'Origin, X-Requested-With, Content-Type, Accept, Authorization'
+    'Access-Control-Allow-Headers':
+      'Origin, X-Requested-With, Content-Type, Accept, Authorization'
   })
   res.write(content)
   res.end()
@@ -28,7 +33,8 @@ export const send = (res: Response | http.ServerResponse, status: number, body: 
 type AuthorizationFunction = (
   req: Request | http.IncomingMessage,
   res: Response | http.ServerResponse,
-  callback: (data: tokenContent, id?: string) => void) => void
+  callback: (data: tokenContent, id?: string) => void
+) => void
 
 let authorizationFunction: AuthorizationFunction
 
@@ -42,18 +48,20 @@ export const Authenticate = (db: IdentityServerDb): AuthorizationFunction => {
       if (re != null) {
         token = re[1]
       }
-    // @ts-expect-error req.query exists
+      // @ts-expect-error req.query exists
     } else if (req.query != null) {
       // @ts-expect-error req.query.access_token may be null
       token = req.query.access_token
     }
     if (token != null) {
-      db.get('accessTokens', ['data'], 'id', token).then((rows) => {
-        // @ts-expect-error token is defined
-        callback(JSON.parse(rows[0].data as string), token)
-      }).catch(e => {
-        send(res, 401, errMsg('unAuthorized'))
-      })
+      db.get('accessTokens', ['data'], 'id', token)
+        .then((rows) => {
+          // @ts-expect-error token is defined
+          callback(JSON.parse(rows[0].data as string), token)
+        })
+        .catch((e) => {
+          send(res, 401, errMsg('unAuthorized'))
+        })
     } else {
       send(res, 401, errMsg('unAuthorized'))
     }
@@ -61,7 +69,11 @@ export const Authenticate = (db: IdentityServerDb): AuthorizationFunction => {
   return authorizationFunction
 }
 
-export const jsonContent = (req: Request | http.IncomingMessage, res: Response | http.ServerResponse, callback: (obj: Record<string, string>) => void): void => {
+export const jsonContent = (
+  req: Request | http.IncomingMessage,
+  res: Response | http.ServerResponse,
+  callback: (obj: Record<string, string>) => void
+): void => {
   let content = ''
   let accept = true
   req.on('data', (body: string) => {
@@ -76,7 +88,12 @@ export const jsonContent = (req: Request | http.IncomingMessage, res: Response |
     let obj
     try {
       // eslint-disable-next-line @typescript-eslint/prefer-optional-chain
-      if (req.headers['content-type'] != null && req.headers['content-type'].match(/^application\/x-www-form-urlencoded/) != null) {
+      if (
+        req.headers['content-type'] != null &&
+        req.headers['content-type'].match(
+          /^application\/x-www-form-urlencoded/
+        ) != null
+      ) {
         obj = querystring.parse(content)
       } else {
         obj = JSON.parse(content)
@@ -99,7 +116,12 @@ type validateParametersType = (
   callback: (obj: object) => void
 ) => void
 
-export const validateParameters: validateParametersType = (res, desc, content, callback) => {
+export const validateParameters: validateParametersType = (
+  res,
+  desc,
+  content,
+  callback
+) => {
   const missingParameters: string[] = []
   const additionalParameters: string[] = []
   // Check for required parameters
@@ -109,7 +131,14 @@ export const validateParameters: validateParametersType = (res, desc, content, c
     }
   })
   if (missingParameters.length > 0) {
-    send(res, 400, errMsg('missingParams', `Missing parameters ${missingParameters.join(', ')}`))
+    send(
+      res,
+      400,
+      errMsg(
+        'missingParams',
+        `Missing parameters ${missingParameters.join(', ')}`
+      )
+    )
   } else {
     Object.keys(content).forEach((key) => {
       if (desc[key] == null) {

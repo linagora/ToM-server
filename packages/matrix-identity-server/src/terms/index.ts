@@ -4,7 +4,7 @@ import computePolicy from './_computePolicies'
 
 export interface Policy {
   version: string
-  [key: string]: { name: string, url: string } | string
+  [key: string]: { name: string; url: string } | string
 }
 
 export interface Policies {

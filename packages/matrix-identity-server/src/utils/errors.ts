@@ -1,5 +1,4 @@
 export const errCodes = {
-
   // Not authorizated (not authenticated)
   forbidden: 'M_FORBIDDEN',
 
@@ -51,19 +50,23 @@ export const errCodes = {
 }
 
 const defaultMsg = (s: string): string => {
-  return s.replace(/^M_/, '')
+  return s
+    .replace(/^M_/, '')
     .split('_')
-    .map(s => {
+    .map((s) => {
       const t = s.toLowerCase()
       return t.charAt(0).toUpperCase() + t.slice(1)
     })
     .join(' ')
 }
 
-export const errMsg = (code: keyof typeof errCodes, explanation?: string): object => {
+export const errMsg = (
+  code: keyof typeof errCodes,
+  explanation?: string
+): object => {
   const errCode = errCodes[code]
   return {
     errcode: errCode,
-    error: (explanation != null) ? explanation : defaultMsg(errCode)
+    error: explanation != null ? explanation : defaultMsg(errCode)
   }
 }

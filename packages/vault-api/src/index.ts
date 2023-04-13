@@ -24,7 +24,7 @@ export default class TwakeVaultAPI {
   conf: Config
   ready: Promise<boolean>
 
-  constructor (conf?: Partial<Config>) {
+  constructor(conf?: Partial<Config>) {
     this.endpoints = Router()
     this.conf = configParser(
       confDesc,
@@ -58,14 +58,14 @@ export default class TwakeVaultAPI {
     })
   }
 
-  private _getConfigurationFile (
+  private _getConfigurationFile(
     conf: Partial<Config> | undefined
   ): object | fs.PathOrFileDescriptor | undefined {
     if (conf != null) {
       return conf
     } else if (process.env.TWAKE_VAULT_SERVER_CONF != null) {
       return process.env.TWAKE_VAULT_SERVER_CONF
-    } else /* istanbul ignore if */ if (
+    } /* istanbul ignore if */ else if (
       fs.existsSync('/etc/twake/vault-server.conf')
     ) {
       /* istanbul ignore next */

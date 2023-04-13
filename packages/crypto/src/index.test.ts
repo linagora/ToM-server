@@ -1,28 +1,36 @@
 import { Hash } from './index'
 
 const sha256Results: Record<string, string> = {
-  'alice@example.com email matrixrocks': '4kenr7N9drpCJ4AfalmlGQVsOn3o2RHjkADUpXJWZUc',
-  'bob@example.com email matrixrocks': 'LJwSazmv46n0hlMlsb_iYxI0_HXEqy_yj6Jm636cdT8',
-  '18005552067 msisdn matrixrocks': 'nlo35_T5fzSGZzJApqu8lgIudJvmOQtDaHtr-I4rU7I'
+  'alice@example.com email matrixrocks':
+    '4kenr7N9drpCJ4AfalmlGQVsOn3o2RHjkADUpXJWZUc',
+  'bob@example.com email matrixrocks':
+    'LJwSazmv46n0hlMlsb_iYxI0_HXEqy_yj6Jm636cdT8',
+  '18005552067 msisdn matrixrocks':
+    'nlo35_T5fzSGZzJApqu8lgIudJvmOQtDaHtr-I4rU7I'
 }
 
 const sha512Results: Record<string, string> = {
-  'alice@example.com email matrixrocks': 'c3TM9O_rjRNXZqGs9pFWXI5vUHFOLXbFfyCHSLd2uRKIa_YGsnVKriiGrJc6L6OweHWkHj5Mpvtiy6ownVPriQ',
-  'bob@example.com email matrixrocks': '9qZ5E82WIiOUqXHGk7ImtQgVB0-4Doux5UrxwaKXlE5sjQSW2oCrZiaVo4xt3EwWEVxdTILN3MuEdDRZJbq8Zg',
-  '18005552067 msisdn matrixrocks': '2ETkcIjIUHqsIT-VOSwJ09tFSjTwTRpK86OlvDQhyqg1_miu_OaaIKbMbHgZNliHtJ2TF0A41pG3znq3HJq8sg'
+  'alice@example.com email matrixrocks':
+    'c3TM9O_rjRNXZqGs9pFWXI5vUHFOLXbFfyCHSLd2uRKIa_YGsnVKriiGrJc6L6OweHWkHj5Mpvtiy6ownVPriQ',
+  'bob@example.com email matrixrocks':
+    '9qZ5E82WIiOUqXHGk7ImtQgVB0-4Doux5UrxwaKXlE5sjQSW2oCrZiaVo4xt3EwWEVxdTILN3MuEdDRZJbq8Zg',
+  '18005552067 msisdn matrixrocks':
+    '2ETkcIjIUHqsIT-VOSwJ09tFSjTwTRpK86OlvDQhyqg1_miu_OaaIKbMbHgZNliHtJ2TF0A41pG3znq3HJq8sg'
 }
 
 describe('Hash methods', () => {
   it('should give the wanted result', (done) => {
     const hash = new Hash()
-    hash.ready.then(() => {
-      Object.keys(sha256Results).forEach(str => {
-        expect(hash.sha256(str)).toEqual(sha256Results[str])
-        expect(hash.sha256(...str.split(' '))).toEqual(sha256Results[str])
-        expect(hash.sha512(str)).toEqual(sha512Results[str])
-        expect(hash.sha512(...str.split(' '))).toEqual(sha512Results[str])
+    hash.ready
+      .then(() => {
+        Object.keys(sha256Results).forEach((str) => {
+          expect(hash.sha256(str)).toEqual(sha256Results[str])
+          expect(hash.sha256(...str.split(' '))).toEqual(sha256Results[str])
+          expect(hash.sha512(str)).toEqual(sha512Results[str])
+          expect(hash.sha512(...str.split(' '))).toEqual(sha512Results[str])
+        })
+        done()
       })
-      done()
-    }).catch(e => done(e))
+      .catch((e) => done(e))
   })
 })

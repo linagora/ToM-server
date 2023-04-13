@@ -1,9 +1,11 @@
-import MatrixIdentityServer, { type Config as MConfig } from '@twake/matrix-identity-server'
+import MatrixIdentityServer, {
+  type Config as MConfig
+} from '@twake/matrix-identity-server'
 
 export type Config = MConfig
 
 export default class TwakeIdentityServer extends MatrixIdentityServer {
-  constructor (conf?: Partial<Config>) {
+  constructor(conf?: Partial<Config>) {
     super(conf)
     // const superReady = this.ready
     // console.error('DEBUG 1')

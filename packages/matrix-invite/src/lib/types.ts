@@ -1,14 +1,14 @@
 export interface IClient {
-	name: string;
-	description: string;
-	homepage: string;
-	author: string;
-	icon: string;
-	platforms: PlatformType[];
-  instructions: string | null;
-	deepLink: string | null;
-  installLinks: InstallLink[];
-  webLink: string | null;
+  name: string
+  description: string
+  homepage: string
+  author: string
+  icon: string
+  platforms: PlatformType[]
+  instructions: string | null
+  deepLink: string | null
+  installLinks: InstallLink[]
+  webLink: string | null
 }
 
 export enum PlatformType {
@@ -17,7 +17,7 @@ export enum PlatformType {
   IOS,
   WINDOWS,
   MACOS,
-  LINUX,
+  LINUX
 }
 
 export enum ResourceType {
@@ -25,16 +25,26 @@ export enum ResourceType {
   USER,
   ROOM_ID,
   GROUP,
-  EVENT,
+  EVENT
 }
 
 export type ParsedUrl = {
-	type: ResourceType;
-	domain: string;
-	resource: string;
-};
+  type: ResourceType
+  domain: string
+  resource: string
+}
 
 export type InstallLink = {
-  url: string;
-  platform: "PlayStore" | "FDroid" | "FlatHub" | "AppStore" | "Android" | "IOS" | "Linux" | "MacOS" | "Windows" | "Web";
+  url: string
+  platform:
+    | 'PlayStore'
+    | 'FDroid'
+    | 'FlatHub'
+    | 'AppStore'
+    | 'Android'
+    | 'IOS'
+    | 'Linux'
+    | 'MacOS'
+    | 'Windows'
+    | 'Web'
 }

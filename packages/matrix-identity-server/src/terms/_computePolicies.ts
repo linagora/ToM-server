@@ -9,7 +9,9 @@ const computePolicy = (conf: Config): Policies => {
   if (conf.policies != null) {
     if (typeof conf.policies === 'string') {
       try {
-        policies = JSON.parse(fs.readFileSync(conf.policies).toString()) as Policies
+        policies = JSON.parse(
+          fs.readFileSync(conf.policies).toString()
+        ) as Policies
       } catch (e) {
         /* istanbul ignore next */
         console.error('Error:', e)
