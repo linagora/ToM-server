@@ -7,7 +7,7 @@ import { type ClientConfig, type Client as PgClient } from 'pg'
 
 export type PgDatabase = PgClient
 
-class Pg extends SQL implements IdDbBackend {
+class Pg<T = Config> extends SQL<T> implements IdDbBackend {
   declare db?: PgDatabase
   // eslint-disable-next-line @typescript-eslint/promise-function-async
   createDatabases (conf: Config): Promise<boolean> {

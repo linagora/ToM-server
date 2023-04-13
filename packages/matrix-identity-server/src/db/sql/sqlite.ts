@@ -1,14 +1,14 @@
 import { type Database, type Statement } from 'sqlite3'
-import { type Collections, type IdDbBackend } from '../index'
-import { type Config } from '../..'
+import { type IdDbBackend } from '../index'
 import SQL from './sql'
 import createTables from './_createTables'
+import { type Config } from '../..'
 
 export type SQLiteDatabase = Database
 
 export type SQLiteStatement = Statement
 
-class SQLite extends SQL implements IdDbBackend {
+class SQLite<T = Config> extends SQL<T> implements IdDbBackend {
   declare db?: SQLiteDatabase
   // eslint-disable-next-line @typescript-eslint/promise-function-async
   createDatabases (conf: Config): Promise<boolean> {
@@ -71,7 +71,7 @@ class SQLite extends SQL implements IdDbBackend {
   }
 
   // eslint-disable-next-line @typescript-eslint/promise-function-async
-  update (table: Collections, values: Record<string, string | number>, field: string, value: string | number): Promise<void> {
+  update (table: string, values: Record<string, string | number>, field: string, value: string | number): Promise<void> {
     return new Promise((resolve, reject) => {
       /* istanbul ignore if */
       if (this.db == null) {

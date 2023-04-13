@@ -22,6 +22,9 @@ import hashDetails from './lookup/hash_details'
 import UserDB, { type SupportedUserDatabases } from './userdb'
 import lookup from './lookup'
 
+export * as SQLite from './db/sql/sqlite'
+export { type tokenContent } from './account/register'
+
 type IdServerAPI = Record<string, expressAppHandler>
 
 export interface Config {
