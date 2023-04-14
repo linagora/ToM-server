@@ -13,7 +13,8 @@
     "format:check": "prettier --check .",
     "format:fix": "prettier --write .",
     "postinstall": "chmod u+x .husky/*",
-    "prepare": "husky install"
+    "prepare": "husky install",
+    "doc": "node documentation/swagger.cjs"
   },
   "repository": {
     "type": "git",
@@ -63,6 +64,8 @@
     "rollup": "^3.18.0",
     "rollup-plugin-cleaner": "^1.0.0",
     "supertest": "^6.3.3",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-dist": "^4.18.3",
     "ts-jest": "^29.1.0",
     "typescript": "^4.9.5"
   },
