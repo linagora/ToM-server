@@ -42,23 +42,69 @@ describe('LDAP', () => {
       ldap_uri: 'ldap://localhost:63389',
       ldap_base: 'ou=users,o=example'
     })
-    userDB
-      .get('', [], 'uid', 'dwho')
-      .then((list) => {
-        expect(list[0].dn).toBe('ou=users,o=example')
-        // userDB.client.destroy()
+    userDB.ready
+      .then(() => {
         userDB
-          .get('', ['uid'], 'uid', 'dwho')
+          .get('', [], 'uid', 'dwho')
+          .then((list) => {
+            expect(list[0].dn).toBe('ou=users,o=example')
+            // userDB.client.destroy()
+            userDB
+              .get('', ['uid'], 'uid', 'dwho')
+              .then((list) => {
+                expect(list[0]).toEqual({ uid: 'dwho' })
+                userDB
+                  .get('', [], 'uid', 'zz')
+                  .then((list) => {
+                    done('zz does not exist')
+                  })
+                  .catch((e) => {
+                    done()
+                  })
+              })
+              .catch((e) => done(e))
+          })
+          .catch((e) => done(e))
+      })
+      .catch((e) => done(e))
+  })
+
+  it('should provide match', (done) => {
+    const userDB = new UserDBLDAP({
+      ...defaultConfig,
+      database_engine: 'sqlite',
+      userdb_engine: 'sqlite',
+      ldap_uri: 'ldap://localhost:63389',
+      ldap_base: 'ou=users,o=example'
+    })
+    userDB.ready
+      .then(() => {
+        userDB
+          .match('', ['uid'], 'uid', 'wh')
           .then((list) => {
             expect(list[0]).toEqual({ uid: 'dwho' })
-            userDB
-              .get('', [], 'uid', 'zz')
-              .then((list) => {
-                done('zz does not exist')
-              })
-              .catch((e) => {
-                done()
-              })
+            done()
+          })
+          .catch((e) => done(e))
+      })
+      .catch((e) => done(e))
+  })
+
+  it('should provide getAll', (done) => {
+    const userDB = new UserDBLDAP({
+      ...defaultConfig,
+      database_engine: 'sqlite',
+      userdb_engine: 'sqlite',
+      ldap_uri: 'ldap://localhost:63389',
+      ldap_base: 'ou=users,o=example'
+    })
+    userDB.ready
+      .then(() => {
+        userDB
+          .getAll('', ['uid'])
+          .then((list) => {
+            expect(list[0]).toEqual({ uid: 'dwho' })
+            done()
           })
           .catch((e) => done(e))
       })

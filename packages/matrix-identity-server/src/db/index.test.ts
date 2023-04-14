@@ -79,6 +79,34 @@ describe('Id Server DB', () => {
       .catch((e) => done(e))
   })
 
+  it('should provide match()', (done) => {
+    const idDb = new IdDb(baseConf)
+    idDb.ready
+      .then(() => {
+        const token = idDb.createOneTimeToken({ a: 1 })
+        expect(token).toMatch(/^[a-zA-Z0-9]+$/)
+        idDb
+          .match('oneTimeTokens', ['id'], 'id', token.substring(2, 28))
+          .then((data) => {
+            expect(data[0].id).toBe(token)
+            idDb
+              .verifyOneTimeToken(token)
+              .then((data) => {
+                // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
+                // @ts-ignore
+                expect(data.a).toEqual(1)
+                clearTimeout(idDb.cleanJob)
+                done()
+              })
+              .catch((e) => done(e))
+          })
+          .catch((e) => {
+            done(e)
+          })
+      })
+      .catch((e) => done(e))
+  })
+
   it('should update', (done) => {
     const idDb = new IdDb(baseConf)
     idDb.ready

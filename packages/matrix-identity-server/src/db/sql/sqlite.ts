@@ -154,6 +154,47 @@ class SQLite<T = Config> extends SQL<T> implements IdDbBackend {
   }
 
   // eslint-disable-next-line @typescript-eslint/promise-function-async
+  match(
+    table: string,
+    fields: string[],
+    field: string,
+    values: string | number | Array<string | number>
+  ): Promise<Array<Record<string, string | number>>> {
+    return new Promise((resolve, reject) => {
+      /* istanbul ignore if */
+      if (this.db == null) {
+        reject(new Error('Wait for database to be ready'))
+      } else {
+        if (typeof values !== 'object') values = [values]
+
+        values = values.map((val) => {
+          return `%${val}%`
+        })
+        const condition = values.map(() => `${field} LIKE ?`).join(' OR ')
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
+        // @ts-ignore never undefined
+        const stmt = this.db.prepare(
+          `SELECT ${fields.join(',')} FROM ${table} WHERE ${condition}`
+        )
+        stmt.all(
+          values,
+          (err: string, rows: Array<Record<string, string | number>>) => {
+            /* istanbul ignore if */
+            if (err != null) {
+              reject(err)
+            } else {
+              resolve(rows)
+            }
+          }
+        )
+        stmt.finalize((err) => {
+          reject(err)
+        })
+      }
+    })
+  }
+
+  // eslint-disable-next-line @typescript-eslint/promise-function-async
   deleteEqual(
     table: string,
     field: string,
@@ -162,17 +203,18 @@ class SQLite<T = Config> extends SQL<T> implements IdDbBackend {
     return new Promise((resolve, reject) => {
       /* istanbul ignore if */
       if (this.db == null) {
-        throw new Error('Wait for database to be ready')
+        reject(new Error('Wait for database to be ready'))
+      } else {
+        const stmt = this.db.prepare(`DELETE FROM ${table} WHERE ${field}=?`)
+        stmt.run(value, (err: string) => {
+          /* istanbul ignore if */
+          if (err != null) {
+            reject(err)
+          } else {
+            resolve()
+          }
+        })
       }
-      const stmt = this.db.prepare(`DELETE FROM ${table} WHERE ${field}=?`)
-      stmt.run(value, (err: string) => {
-        /* istanbul ignore if */
-        if (err != null) {
-          reject(err)
-        } else {
-          resolve()
-        }
-      })
     })
   }
 

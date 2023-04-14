@@ -89,8 +89,7 @@ export const jsonContent = (
     try {
       // eslint-disable-next-line @typescript-eslint/prefer-optional-chain
       if (
-        req.headers['content-type'] != null &&
-        req.headers['content-type'].match(
+        req.headers['content-type']?.match(
           /^application\/x-www-form-urlencoded/
         ) != null
       ) {

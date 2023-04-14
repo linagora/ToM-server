@@ -9,19 +9,26 @@ export type Collections = 'users' | 'groups'
 
 type Get = (
   table: Collections,
-  fields: string[],
-  field: string,
-  value: string | number
+  fields?: string[],
+  field?: string,
+  value?: string | number
 ) => Promise<Array<Record<string, string | string[] | number>>>
 type GetAll = (
   table: Collections,
   fields: string[]
+) => Promise<Array<Record<string, string | string[] | number>>>
+type Match = (
+  table: Collections,
+  fields: string[],
+  field: string,
+  value: string | number
 ) => Promise<Array<Record<string, string | string[] | number>>>
 
 export interface UserDBBackend {
   ready: Promise<void>
   get: Get
   getAll: GetAll
+  match: Match
 }
 
 class UserDB implements UserDBBackend {
@@ -64,11 +71,21 @@ class UserDB implements UserDBBackend {
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
   get(
     table: Collections,
+    fields?: string[],
+    field?: string,
+    value?: string | number
+  ) {
+    return this.db.get(table, fields, field, value)
+  }
+
+  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
+  match(
+    table: Collections,
     fields: string[],
     field: string,
     value: string | number
   ) {
-    return this.db.get(table, fields, field, value)
+    return this.db.match(table, fields, field, value)
   }
 
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async

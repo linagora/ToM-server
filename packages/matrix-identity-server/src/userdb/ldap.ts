@@ -37,18 +37,17 @@ class UserDBLDAP implements UserDBBackend {
   }
 
   // eslint-disable-next-line @typescript-eslint/promise-function-async
-  get(
+  _get(
     table: string,
-    fields: string[],
-    field: string,
-    value: string | number
+    filter: string,
+    fields?: string[]
   ): Promise<Array<Record<string, string | string[] | number>>> {
     return new Promise((resolve, reject) => {
       const opts: SearchOptions = {
-        filter: `(${field}=${value})`,
+        filter,
         scope: 'sub'
       }
-      if (fields.length > 0) opts.attributes = fields
+      if (fields != null && fields.length > 0) opts.attributes = fields
       this.ldap()
         .then((client) => {
           client.search(this.base, opts, (err, res) => {
@@ -62,7 +61,7 @@ class UserDBLDAP implements UserDBBackend {
               })
               res.on('searchEntry', (entry) => {
                 const res: Record<string, string | string[] | number> = {}
-                if (fields.length > 0) {
+                if (fields != null && fields.length > 0) {
                   fields.forEach((k) => {
                     res[k] = entry.object[k]
                   })
@@ -93,6 +92,43 @@ class UserDBLDAP implements UserDBBackend {
           reject(e)
         })
     })
+  }
+
+  // eslint-disable-next-line @typescript-eslint/promise-function-async
+  get(
+    table: string,
+    fields?: string[],
+    field?: string,
+    value?: string | number | Array<string | number>
+  ): Promise<Array<Record<string, string | string[] | number>>> {
+    let filter: string
+    if (field == null || value == null) {
+      /* istanbul ignore next */
+      filter = '(objectClass=*)'
+    } else {
+      if (typeof value !== 'object') value = [value]
+      filter = value.reduce((prev, current) => {
+        return `${prev}(${field}=${current})`
+      }, '') as string
+      if (value.length > 1) filter = `(|${filter})`
+    }
+
+    return this._get(table, filter, fields)
+  }
+
+  // eslint-disable-next-line @typescript-eslint/promise-function-async
+  match(
+    table: string,
+    fields: string[],
+    field: string,
+    values: string | number | Array<string | number>
+  ): Promise<Array<Record<string, string | string[] | number>>> {
+    if (typeof values !== 'object') values = [values]
+    let filter = values.reduce((prev, current) => {
+      return `${prev}(${field}=*${current}*)`
+    }, '') as string
+    if (values.length > 1) filter = `(|${filter})`
+    return this._get(table, filter, fields)
   }
 
   // eslint-disable-next-line @typescript-eslint/promise-function-async

@@ -35,6 +35,12 @@ type GetCount = (
   field: string,
   value?: string | number | string[]
 ) => Promise<number>
+type Match = (
+  table: Collections,
+  fields: string[],
+  field: string,
+  value: string | number | string[]
+) => Promise<Array<Record<string, string | string[] | number>>>
 type DeleteEqual = (
   table: Collections,
   field: string,
@@ -52,6 +58,7 @@ export interface IdDbBackend {
   insert: Insert
   get: Get
   getCount: GetCount
+  match: Match
   update: Update
   deleteEqual: DeleteEqual
   deleteLowerThan: DeleteLowerThan
@@ -159,6 +166,16 @@ class IdentityServerDb implements IdDbBackend {
   }
 
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
+  match(
+    table: Collections,
+    fields: string[],
+    field: string,
+    value: string | number | string[]
+  ) {
+    return this.db.match(table, fields, field, value)
+  }
+
+  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
   deleteEqual(table: Collections, field: string, value: string | number) {
     return this.db.deleteEqual(table, field, value)
   }
@@ -252,7 +269,7 @@ class IdentityServerDb implements IdDbBackend {
         })
         .catch((e) => {
           /* istanbul ignore next */
-          console.error(`Token ${id} already deleted`, e)
+          console.info(`Token ${id} already deleted`, e)
           /* istanbul ignore next */
           resolve()
         })

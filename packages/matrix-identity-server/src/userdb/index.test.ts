@@ -50,4 +50,28 @@ describe('UserDB', () => {
         done(e)
       })
   })
+
+  it('should provide match', (done) => {
+    const userDB = new UserDB({
+      ...defaultConfig,
+      userdb_engine: 'sqlite',
+      database_host: dbName,
+      database_engine: 'sqlite'
+    })
+    userDB.ready
+      .then(() => {
+        userDB
+          .match('users', ['uid'], 'uid', 'wh')
+          .then((list) => {
+            expect(list[0].uid).toBe('dwho')
+            done()
+          })
+          .catch((e) => {
+            done(e)
+          })
+      })
+      .catch((e) => {
+        done(e)
+      })
+  })
 })
