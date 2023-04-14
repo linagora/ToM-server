@@ -14,6 +14,7 @@ class CronTasks {
   ready: Promise<void>
   constructor(conf: Config, db: IdentityServerDb, userdb: UserDB) {
     if (conf.pepperCron == null) conf.pepperCron = '0 0 0 * * *'
+    /* istanbul ignore if */
     if (!cron.validate(conf.pepperCron))
       throw new Error(`Invalid cron line: ${conf.pepperCron}`)
     this.tasks = []

@@ -191,7 +191,7 @@ describe('/_matrix/identity/v2/account/register', () => {
         token_type: 'Bearer'
       })
       .set('Accept', 'application/json')
-    expect(response.statusCode).toBe(500)
+    expect(response.statusCode).toBe(400)
   })
   it('should reject bad "sub" from server', async () => {
     const mockResponse = Promise.resolve({
@@ -215,7 +215,7 @@ describe('/_matrix/identity/v2/account/register', () => {
         token_type: 'Bearer'
       })
       .set('Accept', 'application/json')
-    expect(response.statusCode).toBe(500)
+    expect(response.statusCode).toBe(400)
   })
 })
 

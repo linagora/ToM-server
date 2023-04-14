@@ -9,7 +9,7 @@ class UserDBSQLite extends SQLite implements UserDBBackend {
       import('sqlite3')
         .then((sqlite3) => {
           // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
-          // @ts-ignore
+          /* istanbul ignore next */ // @ts-ignore
           if (sqlite3.Database == null) sqlite3 = sqlite3.default
           const db = (this.db = new sqlite3.Database(conf.database_host))
           /* istanbul ignore if */

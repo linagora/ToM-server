@@ -21,11 +21,13 @@ import PostTerms from './terms/index.post'
 import hashDetails from './lookup/hash_details'
 import UserDB, { type SupportedUserDatabases } from './userdb'
 import lookup from './lookup'
+import _validateMatrixToken from './utils/validateMatrixToken'
 
 export * as SQLite from './db/sql/sqlite'
 export { type tokenContent } from './account/register'
 export * as Utils from './utils'
 export const errMsg = _errMsg
+export const validateMatrixToken = _validateMatrixToken
 
 type IdServerAPI = Record<string, expressAppHandler>
 
