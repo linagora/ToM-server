@@ -120,14 +120,14 @@ class UserDBLDAP implements UserDBBackend {
   match(
     table: string,
     fields: string[],
-    field: string,
-    values: string | number | Array<string | number>
+    searchFields: string[],
+    value: string | number
   ): Promise<Array<Record<string, string | string[] | number>>> {
-    if (typeof values !== 'object') values = [values]
-    let filter = values.reduce((prev, current) => {
-      return `${prev}(${field}=*${current}*)`
-    }, '') as string
-    if (values.length > 1) filter = `(|${filter})`
+    if (typeof searchFields !== 'object') searchFields = [searchFields]
+    let filter = searchFields.reduce((prev, current) => {
+      return `${prev}(${current}=*${value}*)`
+    }, '')
+    if (searchFields.length > 1) filter = `(|${filter})`
     return this._get(table, filter, fields)
   }
 

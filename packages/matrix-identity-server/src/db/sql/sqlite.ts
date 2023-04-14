@@ -157,22 +157,19 @@ class SQLite<T = Config> extends SQL<T> implements IdDbBackend {
   match(
     table: string,
     fields: string[],
-    field: string,
-    values: string | number | Array<string | number>
+    searchFields: string[],
+    value: string | number
   ): Promise<Array<Record<string, string | number>>> {
     return new Promise((resolve, reject) => {
       /* istanbul ignore if */
       if (this.db == null) {
         reject(new Error('Wait for database to be ready'))
       } else {
-        if (typeof values !== 'object') values = [values]
-
-        values = values.map((val) => {
-          return `%${val}%`
-        })
-        const condition = values.map(() => `${field} LIKE ?`).join(' OR ')
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
-        // @ts-ignore never undefined
+        if (typeof searchFields !== 'object') searchFields = [searchFields]
+        if (typeof fields !== 'object') fields = [fields]
+        if (fields.length === 0) fields = ['*']
+        const values = searchFields.map(() => `%${value}%`)
+        const condition = searchFields.map((f) => `${f} LIKE ?`).join(' OR ')
         const stmt = this.db.prepare(
           `SELECT ${fields.join(',')} FROM ${table} WHERE ${condition}`
         )

@@ -61,7 +61,7 @@ describe('UserDB', () => {
     userDB.ready
       .then(() => {
         userDB
-          .match('users', ['uid'], 'uid', 'wh')
+          .match('users', ['uid'], ['uid'], 'wh')
           .then((list) => {
             expect(list[0].uid).toBe('dwho')
             done()

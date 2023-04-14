@@ -80,7 +80,7 @@ describe('LDAP', () => {
     userDB.ready
       .then(() => {
         userDB
-          .match('', ['uid'], 'uid', 'wh')
+          .match('', ['uid'], ['uid'], 'wh')
           .then((list) => {
             expect(list[0]).toEqual({ uid: 'dwho' })
             done()

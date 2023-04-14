@@ -6,7 +6,7 @@ import CronTasks from './cron'
 import versions from './versions'
 import confDesc from './config.json'
 import { send, type expressAppHandler } from './utils'
-import { errMsg } from './utils/errors'
+import { errMsg as _errMsg } from './utils/errors'
 
 // Endpoints
 import register from './account/register'
@@ -24,6 +24,8 @@ import lookup from './lookup'
 
 export * as SQLite from './db/sql/sqlite'
 export { type tokenContent } from './account/register'
+export * as Utils from './utils'
+export const errMsg = _errMsg
 
 type IdServerAPI = Record<string, expressAppHandler>
 

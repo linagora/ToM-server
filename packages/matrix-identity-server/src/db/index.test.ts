@@ -86,7 +86,7 @@ describe('Id Server DB', () => {
         const token = idDb.createOneTimeToken({ a: 1 })
         expect(token).toMatch(/^[a-zA-Z0-9]+$/)
         idDb
-          .match('oneTimeTokens', ['id'], 'id', token.substring(2, 28))
+          .match('oneTimeTokens', ['id'], ['id'], token.substring(2, 28))
           .then((data) => {
             expect(data[0].id).toBe(token)
             idDb

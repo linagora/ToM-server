@@ -38,8 +38,8 @@ type GetCount = (
 type Match = (
   table: Collections,
   fields: string[],
-  field: string,
-  value: string | number | string[]
+  searchFields: string[],
+  value: string | number
 ) => Promise<Array<Record<string, string | string[] | number>>>
 type DeleteEqual = (
   table: Collections,
@@ -169,10 +169,10 @@ class IdentityServerDb implements IdDbBackend {
   match(
     table: Collections,
     fields: string[],
-    field: string,
-    value: string | number | string[]
+    searchFields: string[],
+    value: string | number
   ) {
-    return this.db.match(table, fields, field, value)
+    return this.db.match(table, fields, searchFields, value)
   }
 
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
