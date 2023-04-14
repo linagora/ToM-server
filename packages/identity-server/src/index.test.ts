@@ -104,6 +104,22 @@ describe('/_matrix/identity/v2/account/register', () => {
   })
 })
 
+describe('/_twake/identity/v1/lookup/match', () => {
+  it('should find user with partial value', async () => {
+    const response = await request(app)
+      .post('/_twake/identity/v1/lookup/match')
+      .set('Accept', 'application/json')
+      .set('Authorization', `Bearer ${validToken}`)
+      .send({
+        scope: ['uid'],
+        fields: ['uid'],
+        val: 'who'
+      })
+    expect(response.status).toBe(200)
+    expect(response.body).toEqual({ matches: [{ uid: 'dwho' }] })
+  })
+})
+
 describe('/_matrix/identity/v2/lookup', () => {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   let pepper = ''

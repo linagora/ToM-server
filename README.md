@@ -13,6 +13,8 @@ This is a multi-packages repository. See [packages](./packages) directory.
 * [@twake/matrix-identity-server](./packages/matrix-identity-server):
   [Matrix Identity Service](https://spec.matrix.org/v1.6/identity-service-api/) implementation for Node.js
 * [@twake/matrix-invite](./packages/matrix-invite): matrix invitation web application
+* [@twake/identity-server](./packages/identity-server): extends [@twake/matrix-identity-server](./packages/matrix-identity-server)
+* [@twake/vault-api](./packages/vault-api): implements a vault API to store messages recovery sentence for each matrix user id
 
 ## Copyright and license
 

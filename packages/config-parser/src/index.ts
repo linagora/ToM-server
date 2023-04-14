@@ -1,6 +1,6 @@
 import fs from 'fs'
 
-type ConfigDescription = Record<
+export type ConfigDescription = Record<
   string,
   string | Record<string, any> | number | boolean | null | undefined
 >

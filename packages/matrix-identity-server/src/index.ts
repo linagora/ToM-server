@@ -1,10 +1,10 @@
 import fs from 'fs'
-import configParser from '@twake/config-parser'
+import configParser, { type ConfigDescription } from '@twake/config-parser'
 
 // Internal libraries
 import CronTasks from './cron'
 import versions from './versions'
-import confDesc from './config.json'
+import defaultConfDesc from './config.json'
 import { send, type expressAppHandler } from './utils'
 import { errMsg as _errMsg } from './utils/errors'
 
@@ -28,6 +28,7 @@ export { type tokenContent } from './account/register'
 export * as Utils from './utils'
 export const errMsg = _errMsg
 export const validateMatrixToken = _validateMatrixToken
+export const defaultConfig = defaultConfDesc
 
 type IdServerAPI = Record<string, expressAppHandler>
 
@@ -75,8 +76,9 @@ export default class MatrixIdentityServer {
   conf: Config
   ready: Promise<boolean>
 
-  constructor(conf?: Partial<Config>) {
+  constructor(conf?: Partial<Config>, confDesc?: ConfigDescription) {
     this.api = { get: {}, post: {} }
+    if (confDesc == null) confDesc = defaultConfDesc
     this.conf = configParser(
       confDesc,
       /* istanbul ignore next */
