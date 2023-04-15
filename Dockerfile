@@ -4,9 +4,9 @@ WORKDIR /usr/src/app
 
 COPY package*.json ./
 
-RUN npm install
-
 COPY . .
 
+RUN npm install && npm build
+
 EXPOSE 3000
-CMD [ "npm", "test" ]
+CMD [ "node", "/usr/src/app/server.mjs" ]
