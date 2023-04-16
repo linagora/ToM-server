@@ -1,10 +1,9 @@
-import type IdentityServerDb from '../db'
+import type MatrixIdentityServer from '..'
 import {
-  Authenticate,
   jsonContent,
-  type expressAppHandler,
   validateParameters,
-  send
+  send,
+  type expressAppHandler
 } from '../utils'
 import { errMsg } from '../utils/errors'
 
@@ -14,22 +13,22 @@ const schema = {
   pepper: false
 }
 
-const lookup = (db: IdentityServerDb): expressAppHandler => {
-  const authenticate = Authenticate(db)
+const lookup = (idServer: MatrixIdentityServer): expressAppHandler => {
   return (req, res) => {
-    authenticate(req, res, (data, id) => {
+    idServer.authenticate(req, res, (data, id) => {
       jsonContent(req, res, (obj) => {
         validateParameters(res, schema, obj, (obj) => {
           if (typeof (obj as { addresses: string[] }).addresses !== 'object') {
             /* istanbul ignore next */
             send(res, 400, errMsg('invalidParam'))
           } else {
-            db.get(
-              'hashes',
-              ['value', 'hash'],
-              'hash',
-              (obj as { addresses: string[] }).addresses
-            )
+            idServer.db
+              .get(
+                'hashes',
+                ['value', 'hash'],
+                'hash',
+                (obj as { addresses: string[] }).addresses
+              )
               .then((rows) => {
                 // send(res, 200, rows)
                 const mappings: Record<string, string> = {}

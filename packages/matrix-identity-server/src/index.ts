@@ -5,7 +5,12 @@ import configParser, { type ConfigDescription } from '@twake/config-parser'
 import CronTasks from './cron'
 import versions from './versions'
 import defaultConfDesc from './config.json'
-import { send, type expressAppHandler } from './utils'
+import {
+  send,
+  type expressAppHandler,
+  type AuthenticationFunction,
+  Authenticate
+} from './utils'
 import { errMsg as _errMsg } from './utils/errors'
 
 // Endpoints
@@ -70,11 +75,13 @@ export default class MatrixIdentityServer {
     put?: IdServerAPI
   }
 
-  db?: IdentityServerDb
-  userDB?: UserDB
+  db: IdentityServerDb
+  userDB: UserDB
   cronTasks?: CronTasks
   conf: Config
   ready: Promise<boolean>
+
+  authenticate: AuthenticationFunction
 
   constructor(conf?: Partial<Config>, confDesc?: ConfigDescription) {
     this.api = { get: {}, post: {} }
@@ -90,9 +97,10 @@ export default class MatrixIdentityServer {
         ? '/etc/twake/identity-server.conf'
         : undefined
     ) as Config
+    const db = (this.db = new IdentityServerDb(this.conf))
+    const userDB = (this.userDB = new UserDB(this.conf))
+    this.authenticate = Authenticate(db)
     this.ready = new Promise((resolve, reject) => {
-      const db = (this.db = new IdentityServerDb(this.conf))
-      const userDB = (this.userDB = new UserDB(this.conf))
       db.ready
         .then(() => {
           const badMethod: expressAppHandler = (req, res) => {
@@ -107,33 +115,27 @@ export default class MatrixIdentityServer {
             get: {
               '/_matrix/identity/v2': status,
               '/_matrix/identity/versions': versions,
-              '/_matrix/identity/v2/account': account(db),
+              '/_matrix/identity/v2/account': account(this),
               '/_matrix/identity/v2/account/register': badMethod,
               '/_matrix/identity/v2/account/logout': badMethod,
-              '/_matrix/identity/v2/hash_details': hashDetails(db),
+              '/_matrix/identity/v2/hash_details': hashDetails(this),
               '/_matrix/identity/v2/terms': Terms(this.conf),
               '/_matrix/identity/v2/validate/email/requestToken': badMethod,
-              '/_matrix/identity/v2/validate/email/submitToken': SubmitToken(
-                db,
-                this.conf
-              )
+              '/_matrix/identity/v2/validate/email/submitToken':
+                SubmitToken(this)
             },
             post: {
               '/_matrix/identity/v2': badMethod,
               '/_matrix/identity/versions': badMethod,
               '/_matrix/identity/v2/account': badMethod,
               '/_matrix/identity/v2/account/register': register(db),
-              '/_matrix/identity/v2/account/logout': logout(db),
-              '/_matrix/identity/v2/lookup': lookup(db),
-              '/_matrix/identity/v2/terms': PostTerms(db, this.conf),
-              '/_matrix/identity/v2/validate/email/requestToken': RequestToken(
-                db,
-                this.conf
-              ),
-              '/_matrix/identity/v2/validate/email/submitToken': SubmitToken(
-                db,
-                this.conf
-              )
+              '/_matrix/identity/v2/account/logout': logout(this),
+              '/_matrix/identity/v2/lookup': lookup(this),
+              '/_matrix/identity/v2/terms': PostTerms(this),
+              '/_matrix/identity/v2/validate/email/requestToken':
+                RequestToken(this),
+              '/_matrix/identity/v2/validate/email/submitToken':
+                SubmitToken(this)
             }
           }
           resolve(true)

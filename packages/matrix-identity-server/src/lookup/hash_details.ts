@@ -1,14 +1,13 @@
 import { supportedHashes } from '@twake/crypto'
-import type IdentityServerDb from '../db'
-import { type expressAppHandler, send } from '../utils'
+import { send, type expressAppHandler } from '../utils'
 import { errMsg } from '../utils/errors'
-import { Authenticate } from '../utils'
+import type MatrixIdentityServer from '..'
 
-const hashDetails = (db: IdentityServerDb): expressAppHandler => {
-  const authenticate = Authenticate(db)
+const hashDetails = (idServer: MatrixIdentityServer): expressAppHandler => {
   return (req, res) => {
-    authenticate(req, res, (tokenContent, id) => {
-      db.get('keys', ['data'], 'name', 'pepper')
+    idServer.authenticate(req, res, (tokenContent, id) => {
+      idServer.db
+        .get('keys', ['data'], 'name', 'pepper')
         .then((rows) => {
           send(res, 200, {
             algorithms: supportedHashes,

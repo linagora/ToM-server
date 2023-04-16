@@ -1,5 +1,4 @@
 import {
-  Authenticate,
   jsonContent,
   send,
   validateParameters,
@@ -7,11 +6,11 @@ import {
 } from '../../utils'
 import { type tokenContent } from '../../account/register'
 import { errMsg } from '../../utils/errors'
+import type MatrixIdentityServer from '../../index'
 import { type Config } from '../../index'
 import fs from 'fs'
 import { randomString } from '../../utils/tokenUtils'
 import Mailer from '../../utils/mailer'
-import type IdentityServerDb from '../../db'
 
 interface RequestTokenArgs {
   client_secret: string
@@ -81,19 +80,17 @@ const mailBody = (
   )
 }
 
-const RequestToken = (
-  db: IdentityServerDb,
-  conf: Config
-): expressAppHandler => {
-  const authenticate = Authenticate(db)
-  const transport = new Mailer(conf)
+const RequestToken = (idServer: MatrixIdentityServer): expressAppHandler => {
+  const transport = new Mailer(idServer.conf)
   const verificationTemplate = preConfigureTemplate(
-    fs.readFileSync(`${conf.template_dir}/mailVerification.tpl`).toString(),
-    conf,
+    fs
+      .readFileSync(`${idServer.conf.template_dir}/mailVerification.tpl`)
+      .toString(),
+    idServer.conf,
     transport
   )
   return (req, res) => {
-    authenticate(req, res, (idToken: tokenContent) => {
+    idServer.authenticate(req, res, (idToken: tokenContent) => {
       jsonContent(req, res, (obj) => {
         validateParameters(res, schema, obj, (obj) => {
           const dst = (obj as RequestTokenArgs).email
@@ -115,13 +112,13 @@ const RequestToken = (
 
               // TODO generate sid and token and store them
               const sid = randomString(64)
-              const token = db.createOneTimeToken(
+              const token = idServer.db.createOneTimeToken(
                 {
                   sid,
                   email: dst,
                   client_secret: (obj as RequestTokenArgs).client_secret
                 },
-                conf.mail_link_delay
+                idServer.conf.mail_link_delay
               )
               void transport.sendMail({
                 to: (obj as RequestTokenArgs).email,

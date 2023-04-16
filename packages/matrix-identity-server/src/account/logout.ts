@@ -1,14 +1,14 @@
-import type IdentityServerDb from '../db'
-import { Authenticate, send, type expressAppHandler } from '../utils'
+import type MatrixIdentityServer from '..'
+import { send, type expressAppHandler } from '../utils'
 import { errMsg } from '../utils/errors'
 import { type tokenContent } from './register'
 
-const Logout = (db: IdentityServerDb): expressAppHandler => {
-  const authenticate = Authenticate(db)
+const Logout = (idServer: MatrixIdentityServer): expressAppHandler => {
   return (req, res) => {
     // @ts-expect-error id is defined here
-    authenticate(req, res, (idToken: tokenContent, id: string) => {
-      db.deleteEqual('accessTokens', 'id', id)
+    idServer.authenticate(req, res, (idToken: tokenContent, id: string) => {
+      idServer.db
+        .deleteEqual('accessTokens', 'id', id)
         .then(() => {
           send(res, 200, {})
         })

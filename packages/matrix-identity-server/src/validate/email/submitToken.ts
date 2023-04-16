@@ -1,5 +1,4 @@
-import { type Config } from '../..'
-import type IdentityServerDb from '../../db'
+import type MatrixIdentityServer from '../..'
 import { type expressAppHandler, send, jsonContent } from '../../utils'
 import { errMsg } from '../../utils/errors'
 
@@ -15,7 +14,7 @@ interface mailToken {
   sid: string
 }
 
-const SubmitToken = (db: IdentityServerDb, conf: Config): expressAppHandler => {
+const SubmitToken = (idServer: MatrixIdentityServer): expressAppHandler => {
   return (req, res) => {
     const realMethod = (prms: parameters): void => {
       if (
@@ -23,14 +22,16 @@ const SubmitToken = (db: IdentityServerDb, conf: Config): expressAppHandler => {
         prms.token?.length != null &&
         prms.sid?.length != null
       ) {
-        db.verifyToken(prms.token)
+        idServer.db
+          .verifyToken(prms.token)
           .then((data) => {
             if (
               (data as mailToken).sid === prms.sid &&
               (data as mailToken).client_secret === prms.client_secret
             ) {
               // TODO REGISTER (data as mailToken).mail
-              db.deleteToken(prms.token as string)
+              idServer.db
+                .deleteToken(prms.token as string)
                 .then(() => {
                   send(res, 200, { success: true })
                 })

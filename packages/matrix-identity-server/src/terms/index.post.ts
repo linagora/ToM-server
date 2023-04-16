@@ -1,9 +1,7 @@
 /* istanbul ignore file */
 import { type Policies } from '.'
-import { type Config } from '..'
-import type IdentityServerDb from '../db'
+import type MatrixIdentityServer from '..'
 import {
-  Authenticate,
   jsonContent,
   send,
   validateParameters,
@@ -33,11 +31,10 @@ const getUrlsFromPolicies = (policies: Policies): UrlsFromPolicies => {
   return urlsFromPolicies
 }
 
-const PostTerms = (db: IdentityServerDb, conf: Config): expressAppHandler => {
-  const authenticate = Authenticate(db)
-  const urlsFromPolicies = getUrlsFromPolicies(computePolicy(conf))
+const PostTerms = (idServer: MatrixIdentityServer): expressAppHandler => {
+  const urlsFromPolicies = getUrlsFromPolicies(computePolicy(idServer.conf))
   return (req, res) => {
-    authenticate(req, res, (data, id) => {
+    idServer.authenticate(req, res, (data, id) => {
       jsonContent(req, res, (data) => {
         validateParameters(res, { user_accepts: true }, data, (data) => {
           let urls = (data as { user_accepts: string[] | string }).user_accepts
