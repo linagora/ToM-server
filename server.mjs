@@ -9,7 +9,11 @@ const __dirname = path.dirname(__filename)
 //const vaultApiServer = new TwakeVaultAPI()
 
 const idServer = new IdServer({
-  database_host: ':memory:',
+  database_host: process.env.DATABASE_HOST,
+  database_user: process.env.DATABASE_USER,
+  database_password: process.env.DATABASE_PASSWORD,
+  database_name: process.env.DATABASE_NAME,
+  database_engine: process.env.DATABASE_ENGINE,
   ldap_base: process.env.LDAP_BASE,
   ldap_user: process.env.LDAP_USER,
   ldap_password: process.env.LDAP_PASSWORD,
