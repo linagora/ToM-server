@@ -26,9 +26,11 @@ const app = express()
     idServer.ready
       .then(() => {
         Object.keys(idServer.api.get).forEach((k) => {
+          console.log('Add GET endpoint', k)
           app.get(k, idServer.api.get[k])
         })
         Object.keys(idServer.api.post).forEach((k) => {
+          console.log('Add POST endpoint', k)
           app.post(k, idServer.api.post[k])
         })
         const port = process.argv[2] != null ? parseInt(process.argv[2]) : 3000
