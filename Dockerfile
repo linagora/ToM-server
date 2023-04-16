@@ -6,7 +6,7 @@ COPY package*.json ./
 
 COPY . .
 
-RUN npm install && npm build
+RUN npm install && npm run build
 
 EXPOSE 3000
 CMD [ "node", "/usr/src/app/server.mjs" ]
