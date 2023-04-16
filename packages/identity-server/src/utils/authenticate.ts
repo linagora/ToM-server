@@ -14,9 +14,9 @@ const Authenticate = (
   db: IdentityServerDb,
   conf: Config
 ): AuthenticationFunction => {
-  const tokenRe = /^Bearer ([a-zA-Z0-9]{64})$/
+  const tokenRe = /^Bearer (\S+)$/
   return (req, res, callback) => {
-    let token: string | null = ''
+    let token: string = ''
     if (req.headers.authorization != null) {
       const re = req.headers.authorization.match(tokenRe)
       if (re != null) {
@@ -27,10 +27,9 @@ const Authenticate = (
       // @ts-expect-error req.query.access_token may be null
       token = req.query.access_token
     }
-    if (token != null) {
+    if (token != null && token.length > 0) {
       db.get('accessTokens', ['data'], 'id', token)
         .then((rows) => {
-          // @ts-expect-error token is defined
           callback(JSON.parse(rows[0].data as string), token)
         })
         .catch((e) => {
@@ -68,6 +67,7 @@ const Authenticate = (
                 // @ts-ignore token is defined
                 callback(data, token)
               } else {
+                console.warn('Bad token', userInfo)
                 Utils.send(res, 401, errMsg('unAuthorized'))
               }
             })
