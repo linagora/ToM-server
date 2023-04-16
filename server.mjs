@@ -14,6 +14,7 @@ const idServer = new IdServer({
   ldap_user: process.env.LDAP_USER,
   ldap_password: process.env.LDAP_PASSWORD,
   ldap_uri: process.env.LDAP_URI,
+  matrix_server: process.env.MATRIX_SERVER,
   template_dir: path.join(__dirname,'packages','identity-server','templates'),
   userdb_engine: 'ldap',
 })
