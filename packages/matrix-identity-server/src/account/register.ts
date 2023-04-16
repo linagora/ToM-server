@@ -6,7 +6,6 @@ import {
   epoch
 } from '../utils'
 import { randomString } from '../utils/tokenUtils'
-import fetch from 'node-fetch'
 import { errMsg } from '../utils/errors'
 import type IdentityServerDb from '../db'
 import validateMatrixToken from '../utils/validateMatrixToken'
