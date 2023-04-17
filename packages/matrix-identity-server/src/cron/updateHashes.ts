@@ -55,7 +55,6 @@ const updateHashes = (
             userDB
               .getAll('users', [...dbFieldsToHash, 'uid'])
               .then((rows) => {
-                console.log('DEBUG', rows)
                 const hash = new Hash()
                 hash.ready
                   .then(() => {
