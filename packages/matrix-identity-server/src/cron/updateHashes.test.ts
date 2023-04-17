@@ -22,7 +22,7 @@ beforeAll((done) => {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
       // @ts-ignore run is a sqlite3 method only
       userDB.db.db.run(
-        'CREATE TABLE users (uid varchar(8), phone varchar(12), email varchar(32))',
+        'CREATE TABLE users (uid varchar(8), mobile varchar(12), mail varchar(32))',
         () => {
           // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
           // @ts-ignore same

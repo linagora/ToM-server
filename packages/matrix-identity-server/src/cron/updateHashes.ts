@@ -9,6 +9,7 @@ import type UserDB from '../userdb'
 import { randomString } from '../utils/tokenUtils'
 
 const fieldsToHash = ['phone', 'email']
+const dbFieldsToHash = ['mobile', 'mail']
 
 // eslint-disable-next-line @typescript-eslint/promise-function-async
 const updateHashes = (
@@ -52,20 +53,23 @@ const updateHashes = (
           // New hashes
           new Promise((resolve, reject) => {
             userDB
-              .getAll('users', [...fieldsToHash, 'uid'])
+              .getAll('users', [...dbFieldsToHash, 'uid'])
               .then((rows) => {
+                console.log('DEBUG', rows)
                 const hash = new Hash()
                 hash.ready
                   .then(() => {
                     rows.forEach((row) => {
-                      fieldsToHash.forEach((field) => {
-                        if (row[field] != null) {
+                      fieldsToHash.forEach((field, i) => {
+                        if (row[dbFieldsToHash[i]] != null) {
                           supportedHashes.forEach((method: string) => {
                             db.insert('hashes', {
                               // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
                               // @ts-ignore method is a function of hash
                               hash: hash[method](
-                                `${row[field] as string} ${field} ${newPepper}`
+                                `${
+                                  row[dbFieldsToHash[i]] as string
+                                } ${field} ${newPepper}`
                               ),
                               pepper: newPepper,
                               type: field,
@@ -99,6 +103,7 @@ const updateHashes = (
           .then(() => {
             db.update('keys', { data: newPepper }, 'name', 'pepper')
               .then(() => {
+                console.log('Identity server: new pepper published', newPepper)
                 resolve()
               })
               .catch((e) => {
