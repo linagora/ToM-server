@@ -1,16 +1,19 @@
 /* istanbul ignore file */
 import { type Collections, type IdDbBackend } from '..'
-import { type Config } from '../..'
+import { type CoreConfig, type Config } from '../..'
 import createTables from './_createTables'
 import SQL from './sql'
 import { type ClientConfig, type Client as PgClient } from 'pg'
 
 export type PgDatabase = PgClient
 
-class Pg<T = Config> extends SQL<T> implements IdDbBackend {
+class Pg<T extends CoreConfig = Config>
+  extends SQL<T>
+  implements IdDbBackend<T>
+{
   declare db?: PgDatabase
   // eslint-disable-next-line @typescript-eslint/promise-function-async
-  createDatabases(conf: Config): Promise<boolean> {
+  createDatabases(conf: CoreConfig): Promise<boolean> {
     return new Promise((resolve, reject) => {
       import('pg')
         .then((pg) => {

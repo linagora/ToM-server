@@ -1,10 +1,8 @@
-import { type SupportedDatabases } from './db/sql/sql'
+import { type CoreConfig } from '@twake/matrix-identity-server'
 import { type NextFunction, type Request, type Response } from 'express'
 
-export interface Config {
-  database_engine: SupportedDatabases
-  database_host: string
-  server_name: string
+export interface Config extends CoreConfig {
+  matrix_server: string
 }
 
 export type expressAppHandler = (

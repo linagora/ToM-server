@@ -11,5 +11,3 @@ export const recoveryWordsSQL: ISQLTableDetail = {
     words: 'words TEXT NOT NULL'
   }
 }
-
-export type SupportedDatabases = 'sqlite' | 'pg'

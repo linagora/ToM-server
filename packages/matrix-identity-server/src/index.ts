@@ -37,13 +37,17 @@ export const defaultConfig = defaultConfDesc
 
 type IdServerAPI = Record<string, expressAppHandler>
 
-export interface Config {
-  base_url: string
+export interface CoreConfig {
   database_name?: string
   database_engine: SupportedDatabases
   database_host: string
+  server_name: string
   database_password?: string
   database_user?: string
+}
+
+export interface Config extends CoreConfig {
+  base_url: string
   database_vacuum_delay: number
   key_delay: number
   keys_depth: number
@@ -56,7 +60,6 @@ export interface Config {
   mail_link_delay: number
   pepperCron?: string
   policies?: Policies | string | null
-  server_name: string
   smtp_password?: string
   smtp_port?: number
   smtp_sender?: string
