@@ -7,6 +7,8 @@ import autocompletion from './lookup/autocompletion'
 import { type ConfigDescription } from '@twake/config-parser'
 import Authenticate from './utils/authenticate'
 
+export type { WhoAmIResponse } from './utils/authenticate'
+
 export type Config = MConfig & {
   matrix_server: string
 }
