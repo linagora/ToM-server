@@ -1,13 +1,18 @@
-import { type SupportedDatabases } from './db/sql/sql'
+import { type CoreConfig } from '@twake/matrix-identity-server'
 import { type NextFunction, type Request, type Response } from 'express'
 
-export interface Config {
-  database_engine: SupportedDatabases
-  database_host: string
-  server_name: string
+export interface Config extends CoreConfig {
+  matrix_server: string
 }
 
 export type expressAppHandler = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => void
+
+export type expressAppHandlerError = (
+  error: VaultAPIError | Error,
   req: Request,
   res: Response,
   next: NextFunction
@@ -24,6 +29,22 @@ export const allowCors: expressAppHandler = (req, res, next) => {
     'Origin, X-Requested-With, Content-Type, Accept, Authorization'
   )
   next()
+}
+
+export const errorMiddleware: expressAppHandlerError = (
+  error,
+  req,
+  res,
+  next
+) => {
+  const vaultError: VaultAPIError =
+    error instanceof VaultAPIError
+      ? error
+      : new VaultAPIError(error.message, 500)
+  res.status(vaultError.statusCode)
+  res.json({
+    error: vaultError.message
+  })
 }
 
 export class VaultAPIError extends Error {

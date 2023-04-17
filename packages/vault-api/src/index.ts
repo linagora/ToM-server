@@ -4,9 +4,16 @@ import confDesc from './config.json'
 import { Router } from 'express'
 import isAuth, { type tokenDetail } from './middlewares/auth'
 import parser from './middlewares/parser'
-import { allowCors, type Config } from './utils'
+import {
+  allowCors,
+  type expressAppHandler,
+  type expressAppHandlerError,
+  type Config,
+  errorMiddleware
+} from './utils'
 import VaultDb from './db'
 import {
+  type VaultController,
   getRecoveryWords,
   methodNotAllowed,
   saveRecoveryWords
@@ -35,20 +42,10 @@ export default class TwakeVaultAPI {
       this.vaultDb.ready
         .then(() => {
           this.endpoints
-            .route('/recoveryWords')
-            .get(
-              allowCors,
-              parser,
-              isAuth(this.vaultDb.db),
-              getRecoveryWords(this.vaultDb)
-            )
-            .post(
-              allowCors,
-              parser,
-              isAuth(this.vaultDb.db),
-              saveRecoveryWords(this.vaultDb)
-            )
-            .all(allowCors, methodNotAllowed)
+            .route('/_twake/recoveryWords')
+            .get(...this._middlewares(getRecoveryWords))
+            .post(...this._middlewares(saveRecoveryWords))
+            .all(allowCors, methodNotAllowed, errorMiddleware)
           resolve(true)
         })
         .catch((err) => {
@@ -65,13 +62,23 @@ export default class TwakeVaultAPI {
       return conf
     } else if (process.env.TWAKE_VAULT_SERVER_CONF != null) {
       return process.env.TWAKE_VAULT_SERVER_CONF
-    } /* istanbul ignore if */ else if (
-      fs.existsSync('/etc/twake/vault-server.conf')
-    ) {
+    } else if (fs.existsSync('/etc/twake/vault-server.conf')) {
       /* istanbul ignore next */
       return '/etc/twake/vault-server.conf'
     } else {
       return undefined
     }
+  }
+
+  private _middlewares(
+    controller: VaultController
+  ): Array<expressAppHandler | expressAppHandlerError> {
+    return [
+      allowCors,
+      ...parser,
+      isAuth(this.vaultDb.db, this.conf),
+      controller(this.vaultDb),
+      errorMiddleware
+    ]
   }
 }

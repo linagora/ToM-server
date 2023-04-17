@@ -1,18 +1,21 @@
 import { type NextFunction, type Request, type Response } from 'express'
 import { type VaultDbBackend } from '../db/utils'
-import { type tokenContent } from '@twake/matrix-identity-server'
-
+import { type tokenContent, Utils } from '@twake/matrix-identity-server'
+import { type Config, VaultAPIError, type expressAppHandler } from '../utils'
+import fetch from 'node-fetch'
+import { type WhoAmIResponse } from '@twake/identity-server'
 export interface tokenDetail {
   value: string
   content: tokenContent
 }
 
-const tokenRe = /^Bearer ([a-zA-Z0-9]{64})$/
-const unauthorizedError = { error: 'Not Authorized' }
+const tokenRe = /^Bearer (\S+)$/
+const unauthorizedError = new VaultAPIError('Not Authorized', 401)
 
-const isAuth = (db: VaultDbBackend) => {
+const isAuth = (db: VaultDbBackend, conf: Config): expressAppHandler => {
+  let tokenData: tokenContent
   return (req: Request, res: Response, next: NextFunction): void => {
-    let token: string | null = null
+    let token: string = ''
     if (req.headers?.authorization != null) {
       const re = req.headers.authorization.match(tokenRe)
       if (re != null) {
@@ -22,24 +25,58 @@ const isAuth = (db: VaultDbBackend) => {
       // @ts-expect-error req.query.access_token may be null
       token = req.query.access_token
     }
-    if (token != null) {
+    if (token != null && token.length > 0) {
       db.get('accessTokens', ['data'], 'id', token)
+        // eslint-disable-next-line @typescript-eslint/promise-function-async
         .then((rows) => {
           if (rows.length === 0) {
-            res.status(401).json(unauthorizedError)
+            return (
+              fetch(
+                `https://${conf.matrix_server}/_matrix/client/r0/account/whoami`,
+                {
+                  headers: {
+                    Authorization: `Bearer ${token}`
+                  }
+                }
+              ) // eslint-disable-next-line @typescript-eslint/promise-function-async
+                .then((res) => res.json())
+                // eslint-disable-next-line @typescript-eslint/promise-function-async
+                .then((userInfo) => {
+                  const uid = (userInfo as WhoAmIResponse).user_id
+                  if (uid != null) {
+                    tokenData = {
+                      sub: uid,
+                      epoch: Utils.epoch()
+                    }
+                    return db.insert('accessTokens', {
+                      id: token,
+                      data: JSON.stringify(tokenData)
+                    })
+                  } else {
+                    throw unauthorizedError
+                  }
+                })
+                .then((result) => {
+                  req.token = {
+                    content: tokenData,
+                    value: token
+                  }
+                  next()
+                })
+            )
+          } else {
+            req.token = {
+              content: JSON.parse(rows[0].data as string),
+              value: token
+            }
+            next()
           }
-          req.token = {
-            content: JSON.parse(rows[0].data as string),
-            // @ts-expect-error token is defined
-            value: token
-          }
-          next()
         })
-        .catch((e) => {
-          res.status(401).json(unauthorizedError)
+        .catch((err) => {
+          next(err)
         })
     } else {
-      res.status(401).json(unauthorizedError)
+      throw unauthorizedError
     }
   }
 }

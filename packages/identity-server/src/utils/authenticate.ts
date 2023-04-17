@@ -4,7 +4,7 @@ import { Utils, errMsg, type tokenContent } from '@twake/matrix-identity-server'
 import { type Config } from '..'
 import fetch from 'node-fetch'
 
-interface WhoAmIResponse {
+export interface WhoAmIResponse {
   user_id?: string
   is_guest?: string
   device_id?: string

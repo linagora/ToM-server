@@ -3,7 +3,7 @@ import fs from 'fs'
 import { getRecoveryWords, methodNotAllowed, saveRecoveryWords } from './vault'
 import DefaultConfig from '../config.json'
 import { type Request, type Response, type NextFunction } from 'express'
-import { type expressAppHandler, type Config } from '../utils'
+import { type expressAppHandler, type Config, VaultAPIError } from '../utils'
 import { type tokenDetail } from '../middlewares/auth'
 
 const testFilePath = './testcontrollers.db'
@@ -56,19 +56,24 @@ describe('Vault controllers', () => {
   })
 
   afterEach(() => {
+    mockResponse.statusCode = undefined
+  })
+
+  afterEach(() => {
     if (fs.existsSync(testFilePath)) {
       fs.unlinkSync(testFilePath)
     }
     jest.resetModules()
   })
 
-  it('should return response with status code 405 on method not allowed', () => {
-    methodNotAllowed(
-      mockRequest as Request,
-      mockResponse as Response,
-      nextFunction
-    )
-    expect(mockResponse.statusCode).toEqual(405)
+  it('should throw method not allowed error', () => {
+    expect(() => {
+      methodNotAllowed(
+        mockRequest as Request,
+        mockResponse as Response,
+        nextFunction
+      )
+    }).toThrow(new VaultAPIError('Method not allowed', 405))
   })
 
   it('should return response with status code 201 on save success', async () => {
@@ -79,14 +84,13 @@ describe('Vault controllers', () => {
     expect(mockResponse.statusCode).toEqual(201)
   })
 
-  it('should return response with status code 500 on save error', async () => {
-    jest
-      .spyOn(dbManager, 'insert')
-      .mockRejectedValue(new Error('Insert failed'))
+  it('should call next function to throw error on saving failed', async () => {
+    const errorMsg = 'Insert failed'
+    jest.spyOn(dbManager, 'insert').mockRejectedValue(new Error(errorMsg))
     const handler: expressAppHandler = saveRecoveryWords(dbManager)
     handler(mockRequest as Request, mockResponse as Response, nextFunction)
     await new Promise(process.nextTick)
-    expect(mockResponse.statusCode).toEqual(500)
+    expect(nextFunction).toHaveBeenCalledWith(new Error(errorMsg))
   })
 
   it('should return response with status code 200 on get success', async () => {
@@ -97,15 +101,17 @@ describe('Vault controllers', () => {
     expect(mockResponse.statusCode).toEqual(200)
   })
 
-  it('should return response with status code 404 when no result', async () => {
+  it('should call next function to throw not found error when no result', async () => {
     jest.spyOn(dbManager, 'get').mockResolvedValue([])
     const handler: expressAppHandler = getRecoveryWords(dbManager)
     handler(mockRequest as Request, mockResponse as Response, nextFunction)
     await new Promise(process.nextTick)
-    expect(mockResponse.statusCode).toEqual(404)
+    expect(nextFunction).toHaveBeenCalledWith(
+      new VaultAPIError('User has no recovery sentence', 404)
+    )
   })
 
-  it('should return response with status code 409 when duplicate results', async () => {
+  it('should call next function to throw conflict error when duplicate results', async () => {
     jest
       .spyOn(dbManager, 'get')
       .mockResolvedValue([
@@ -115,14 +121,17 @@ describe('Vault controllers', () => {
     const handler: expressAppHandler = getRecoveryWords(dbManager)
     handler(mockRequest as Request, mockResponse as Response, nextFunction)
     await new Promise(process.nextTick)
-    expect(mockResponse.statusCode).toEqual(409)
+    expect(nextFunction).toHaveBeenCalledWith(
+      new VaultAPIError('User has more than one recovery sentence', 409)
+    )
   })
 
-  it('should return response with status code 500 on get error', async () => {
-    jest.spyOn(dbManager, 'get').mockRejectedValue(new Error('Get failed'))
+  it('should call next function to throw not found error on getting failed', async () => {
+    const errorMsg = 'Get failed'
+    jest.spyOn(dbManager, 'get').mockRejectedValue(new Error(errorMsg))
     const handler: expressAppHandler = getRecoveryWords(dbManager)
     handler(mockRequest as Request, mockResponse as Response, nextFunction)
     await new Promise(process.nextTick)
-    expect(mockResponse.statusCode).toEqual(500)
+    expect(nextFunction).toHaveBeenCalledWith(new Error(errorMsg))
   })
 })
