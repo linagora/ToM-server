@@ -5,11 +5,23 @@ import TwakeVaultAPI from './index'
 import buildTokenTable from './__testData__/buildTokenTable'
 import { type Config } from './utils'
 import defaultConfig from './config.json'
+import fetch from 'node-fetch'
+import { recoveryWords } from './db/utils'
+import { type VaultDBSQLite } from './db/sql/sqlite'
 
+const endpoint = '/recoveryWords'
 const testFilePath = './server.db'
 const words = 'This is a test sentence'
 const accessToken =
   'accessTokenddddddddddddddddddddddddddddddddddddddddddddddddddddd'
+
+const unsavedToken = accessToken.replace('accessToken', 'unsavedToken')
+
+const matrixServerResponseBody = {
+  user_id: 'test',
+  is_guest: 'test',
+  device_id: 'test'
+}
 
 describe('getConfigurationFile method', () => {
   let vaultApiServerConfigTest: TwakeVaultAPI
@@ -27,7 +39,8 @@ describe('getConfigurationFile method', () => {
     const config: Config = {
       database_engine: 'sqlite',
       database_host: dbFilePath,
-      server_name: 'test'
+      server_name: 'test',
+      matrix_server: 'localhost'
     }
     vaultApiServerConfigTest = new TwakeVaultAPI(config)
     await vaultApiServerConfigTest.ready
@@ -61,6 +74,9 @@ describe('Vault API server', () => {
   })
 
   beforeEach(() => {
+    ;(fetch as jest.Mock<any, any, any>).mockResolvedValue({
+      json: jest.fn().mockResolvedValue(matrixServerResponseBody)
+    })
     jest.clearAllMocks()
   })
 
@@ -76,16 +92,16 @@ describe('Vault API server', () => {
   })
 
   test('reject not allowed method with 405', async () => {
-    const response = await request(app).put('/recoveryWords')
+    const response = await request(app).put(endpoint)
     expect(response.statusCode).toBe(405)
     expect(response.body).toStrictEqual({
       error: 'Method not allowed'
     })
   })
 
-  test('error on get words in dabase for connected who did not save words before', async () => {
+  test('error on get words in database for connected who did not save words before', async () => {
     const response = await request(app)
-      .get('/recoveryWords')
+      .get(endpoint)
       .set('Authorization', `Bearer ${accessToken}`)
     expect(response.statusCode).toBe(404)
     expect(response.body).toStrictEqual({
@@ -95,7 +111,7 @@ describe('Vault API server', () => {
 
   test('insert words in dabase for the connected user', async () => {
     const response = await request(app)
-      .post('/recoveryWords')
+      .post(endpoint)
       .send({ words })
       .set('Authorization', `Bearer ${accessToken}`)
     expect(response.statusCode).toBe(201)
@@ -106,7 +122,7 @@ describe('Vault API server', () => {
 
   test('get words in dabase for the connected user', async () => {
     const response = await request(app)
-      .get('/recoveryWords')
+      .get(endpoint)
       .set('Authorization', `Bearer ${accessToken}`)
     expect(response.statusCode).toBe(200)
     expect(response.body).toStrictEqual({
@@ -114,26 +130,86 @@ describe('Vault API server', () => {
     })
   })
 
-  test('error on get words in dabase for unauthorized user', async () => {
+  test('get words in database user authenticated whose access_token is not stored without recovery sentence', async () => {
     const response = await request(app)
-      .get('/recoveryWords')
-      .set(
-        'Authorization',
-        `Bearer ${accessToken.replace('accessToken', 'falsyT')}`
-      )
-    expect(response.statusCode).toBe(401)
-    expect(response.body).toStrictEqual({ error: 'Not Authorized' })
+      .get(endpoint)
+      .set('Authorization', `Bearer ${unsavedToken}`)
+    expect(response.statusCode).toBe(404)
+    expect(response.body).toStrictEqual({
+      error: 'User has no recovery sentence'
+    })
+    await removeUserInAccessTokenTable(unsavedToken)
   })
 
-  test('error on post words in dabase for unauthorized user', async () => {
-    const response = await request(app)
-      .post('/recoveryWords')
-      .send({ words })
-      .set(
-        'Authorization',
-        `Bearer ${accessToken.replace('accessToken', 'falsyT')}`
+  test('get words in database user authenticated whose access_token is not stored with recovery sentence', async () => {
+    const recoverySentence = 'This is another recovery sentence'
+    await new Promise<void>((resolve, reject) => {
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-expect-error
+      ;(vaultApiServer.vaultDb.db as VaultDBSQLite).db.run(
+        `INSERT INTO ${recoveryWords.title} VALUES('${matrixServerResponseBody.user_id}', '${recoverySentence}')`,
+        () => {
+          resolve()
+        }
       )
-    expect(response.statusCode).toBe(401)
-    expect(response.body).toStrictEqual({ error: 'Not Authorized' })
+    })
+    let response = await request(app)
+      .get(endpoint)
+      .set('Authorization', `Bearer ${unsavedToken}`)
+    expect(response.statusCode).toBe(200)
+    expect(response.body).toStrictEqual({
+      words: recoverySentence
+    })
+    await removeUserInAccessTokenTable(unsavedToken)
+    await removeUserInRecoveryWordsTable(matrixServerResponseBody.user_id)
+    response = await request(app)
+      .get(endpoint)
+      .set('Authorization', `Bearer ${unsavedToken}`)
+    expect(response.statusCode).toBe(404)
   })
+
+  test('post words in database for authenticated user whose access_token is not stored', async () => {
+    const response = await request(app)
+      .post(endpoint)
+      .send({ words })
+      .set('Authorization', `Bearer ${unsavedToken}`)
+    expect(response.statusCode).toBe(201)
+    expect(response.body).toStrictEqual({
+      message: 'Saved recovery words sucessfully'
+    })
+    await removeUserInAccessTokenTable(unsavedToken)
+    await removeUserInRecoveryWordsTable(matrixServerResponseBody.user_id)
+  })
+
+  const removeUserInAccessTokenTable = async (
+    accessToken: string
+  ): Promise<void> => {
+    // eslint-disable-next-line @typescript-eslint/return-await
+    return new Promise<void>((resolve, reject) => {
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-expect-error
+      ;(vaultApiServer.vaultDb.db as VaultDBSQLite).db.run(
+        `DELETE FROM accessTokens WHERE id = '${accessToken}'`,
+        () => {
+          resolve()
+        }
+      )
+    })
+  }
+
+  const removeUserInRecoveryWordsTable = async (
+    userId: string
+  ): Promise<void> => {
+    // eslint-disable-next-line @typescript-eslint/return-await
+    return new Promise<void>((resolve, reject) => {
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-expect-error
+      ;(vaultApiServer.vaultDb.db as VaultDBSQLite).db.run(
+        `DELETE FROM ${recoveryWords.title} WHERE userId = '${userId}'`,
+        () => {
+          resolve()
+        }
+      )
+    })
+  }
 })
