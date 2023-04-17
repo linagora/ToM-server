@@ -42,7 +42,7 @@ export default class TwakeVaultAPI {
       this.vaultDb.ready
         .then(() => {
           this.endpoints
-            .route('/recoveryWords')
+            .route('/_twake/recoveryWords')
             .get(...this._middlewares(getRecoveryWords))
             .post(...this._middlewares(saveRecoveryWords))
             .all(allowCors, methodNotAllowed, errorMiddleware)

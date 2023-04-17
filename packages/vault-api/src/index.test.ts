@@ -9,7 +9,7 @@ import fetch from 'node-fetch'
 import { recoveryWords } from './db/utils'
 import { type VaultDBSQLite } from './db/sql/sqlite'
 
-const endpoint = '/recoveryWords'
+const endpoint = '/_twake/recoveryWords'
 const testFilePath = './server.db'
 const words = 'This is a test sentence'
 const accessToken =
