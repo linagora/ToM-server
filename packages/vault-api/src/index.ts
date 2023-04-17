@@ -4,9 +4,16 @@ import confDesc from './config.json'
 import { Router } from 'express'
 import isAuth, { type tokenDetail } from './middlewares/auth'
 import parser from './middlewares/parser'
-import { allowCors, type Config } from './utils'
+import {
+  allowCors,
+  type expressAppHandler,
+  type expressAppHandlerError,
+  type Config,
+  errorMiddleware
+} from './utils'
 import VaultDb from './db'
 import {
+  type VaultController,
   getRecoveryWords,
   methodNotAllowed,
   saveRecoveryWords
@@ -16,6 +23,19 @@ declare module 'express-serve-static-core' {
   interface Request {
     token: tokenDetail
   }
+}
+
+const middlewares = (
+  controller: VaultController,
+  vaultDb: VaultDb
+): Array<expressAppHandler | expressAppHandlerError> => {
+  return [
+    allowCors,
+    ...parser,
+    isAuth(vaultDb.db),
+    controller(vaultDb),
+    errorMiddleware
+  ]
 }
 
 export default class TwakeVaultAPI {
@@ -36,19 +56,9 @@ export default class TwakeVaultAPI {
         .then(() => {
           this.endpoints
             .route('/recoveryWords')
-            .get(
-              allowCors,
-              parser,
-              isAuth(this.vaultDb.db),
-              getRecoveryWords(this.vaultDb)
-            )
-            .post(
-              allowCors,
-              parser,
-              isAuth(this.vaultDb.db),
-              saveRecoveryWords(this.vaultDb)
-            )
-            .all(allowCors, methodNotAllowed)
+            .get(...middlewares(getRecoveryWords, this.vaultDb))
+            .post(...middlewares(saveRecoveryWords, this.vaultDb))
+            .all(allowCors, methodNotAllowed, errorMiddleware)
           resolve(true)
         })
         .catch((err) => {
@@ -65,9 +75,7 @@ export default class TwakeVaultAPI {
       return conf
     } else if (process.env.TWAKE_VAULT_SERVER_CONF != null) {
       return process.env.TWAKE_VAULT_SERVER_CONF
-    } /* istanbul ignore if */ else if (
-      fs.existsSync('/etc/twake/vault-server.conf')
-    ) {
+    } else if (fs.existsSync('/etc/twake/vault-server.conf')) {
       /* istanbul ignore next */
       return '/etc/twake/vault-server.conf'
     } else {
