@@ -1,8 +1,10 @@
 import type VaultDb from '../db'
 import { VaultAPIError, type expressAppHandler } from '../utils'
 
+export type VaultController = (db: VaultDb) => expressAppHandler
+
 export const methodNotAllowed: expressAppHandler = (req, res, next) => {
-  res.status(405).json({ error: 'Method not allowed' })
+  throw new VaultAPIError('Method not allowed', 405)
 }
 
 export const saveRecoveryWords = (db: VaultDb): expressAppHandler => {
@@ -16,9 +18,7 @@ export const saveRecoveryWords = (db: VaultDb): expressAppHandler => {
         res.status(201).json({ message: 'Saved recovery words sucessfully' })
       })
       .catch((err) => {
-        res.status(500).json({
-          error: err.message
-        })
+        next(err)
       })
   }
 }
@@ -41,11 +41,7 @@ export const getRecoveryWords = (db: VaultDb): expressAppHandler => {
         res.status(200).json({ words: data[0].words })
       })
       .catch((err) => {
-        const statusCode: number = err.statusCode ?? 500
-        res.status(statusCode)
-        res.json({
-          error: err.message
-        })
+        next(err)
       })
   }
 }

@@ -1,6 +1,7 @@
 import { type NextFunction, type Request, type Response } from 'express'
 import { type VaultDbBackend } from '../db/utils'
 import { type tokenContent } from '@twake/matrix-identity-server'
+import { VaultAPIError, type expressAppHandler } from '../utils'
 
 export interface tokenDetail {
   value: string
@@ -8,9 +9,9 @@ export interface tokenDetail {
 }
 
 const tokenRe = /^Bearer ([a-zA-Z0-9]{64})$/
-const unauthorizedError = { error: 'Not Authorized' }
+const unauthorizedError = new VaultAPIError('Not Authorized', 401)
 
-const isAuth = (db: VaultDbBackend) => {
+const isAuth = (db: VaultDbBackend): expressAppHandler => {
   return (req: Request, res: Response, next: NextFunction): void => {
     let token: string | null = null
     if (req.headers?.authorization != null) {
@@ -26,7 +27,7 @@ const isAuth = (db: VaultDbBackend) => {
       db.get('accessTokens', ['data'], 'id', token)
         .then((rows) => {
           if (rows.length === 0) {
-            res.status(401).json(unauthorizedError)
+            throw unauthorizedError
           }
           req.token = {
             content: JSON.parse(rows[0].data as string),
@@ -35,11 +36,11 @@ const isAuth = (db: VaultDbBackend) => {
           }
           next()
         })
-        .catch((e) => {
-          res.status(401).json(unauthorizedError)
+        .catch((err) => {
+          next(err)
         })
     } else {
-      res.status(401).json(unauthorizedError)
+      throw unauthorizedError
     }
   }
 }

@@ -1,5 +1,5 @@
 import { type VaultDbBackend } from '../db/utils'
-import { type expressAppHandler } from '../utils'
+import { VaultAPIError, type expressAppHandler } from '../utils'
 import isAuth, { type tokenDetail } from './auth'
 import { type Request, type Response, type NextFunction } from 'express'
 
@@ -11,6 +11,8 @@ const token: tokenDetail = {
   value: 'accessTokenddddddddddddddddddddddddddddddddddddddddddddddddddddd',
   content: { sub: 'userId', epoch: 1 }
 }
+
+const unauthorizedError = new VaultAPIError('Not Authorized', 401)
 
 describe('Auth middleware', () => {
   const db: Partial<VaultDbBackend> = {
@@ -61,41 +63,42 @@ describe('Auth middleware', () => {
     expect(mockRequest.token).toStrictEqual(token)
   })
 
-  it('should send response with 401 status code if no entry associated to access_token in database', async () => {
+  it('should call next function to throw unauthorized error if no entry associated to access_token in database', async () => {
     jest.spyOn(db, 'get').mockResolvedValue([])
     const handler: expressAppHandler = isAuth(db as VaultDbBackend)
     handler(mockRequest as Request, mockResponse as Response, nextFunction)
     await new Promise(process.nextTick)
-    expect(mockResponse.statusCode).toEqual(401)
+    expect(nextFunction).toHaveBeenCalledWith(unauthorizedError)
   })
 
-  it('should send response with 401 status code if an error occured on retrieving associated entry in database', async () => {
-    jest.spyOn(db, 'get').mockRejectedValue(new Error())
+  it('should call next function to throw error if an error occured on retrieving associated entry in database', async () => {
+    const errorMsg = 'An error occured in the database'
+    jest.spyOn(db, 'get').mockRejectedValue(new Error(errorMsg))
     const handler: expressAppHandler = isAuth(db as VaultDbBackend)
     handler(mockRequest as Request, mockResponse as Response, nextFunction)
     await new Promise(process.nextTick)
-    expect(mockResponse.statusCode).toEqual(401)
+    expect(nextFunction).toHaveBeenCalledWith(new Error(errorMsg))
   })
 
-  it('should send response with 401 status code if request headers and query fields are empty', async () => {
+  it('should call next function to throw unauthorized error if request headers and query fields are empty', async () => {
     mockRequest = {
       headers: {},
       query: {}
     }
     const handler: expressAppHandler = isAuth(db as VaultDbBackend)
-    handler(mockRequest as Request, mockResponse as Response, nextFunction)
-    await new Promise(process.nextTick)
-    expect(mockResponse.statusCode).toEqual(401)
+    expect(() => {
+      handler(mockRequest as Request, mockResponse as Response, nextFunction)
+    }).toThrow(unauthorizedError)
   })
 
-  it('should send response with 401 status code if request headers and query fields are undefined', async () => {
+  it('should call next function to throw unauthorized error if request headers and query fields are undefined', async () => {
     mockRequest = {
       headers: undefined,
       query: undefined
     }
     const handler: expressAppHandler = isAuth(db as VaultDbBackend)
-    handler(mockRequest as Request, mockResponse as Response, nextFunction)
-    await new Promise(process.nextTick)
-    expect(mockResponse.statusCode).toEqual(401)
+    expect(() => {
+      handler(mockRequest as Request, mockResponse as Response, nextFunction)
+    }).toThrow(unauthorizedError)
   })
 })

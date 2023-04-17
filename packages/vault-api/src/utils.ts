@@ -13,6 +13,13 @@ export type expressAppHandler = (
   next: NextFunction
 ) => void
 
+export type expressAppHandlerError = (
+  error: VaultAPIError | Error,
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => void
+
 export const allowCors: expressAppHandler = (req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', '*')
   res.setHeader(
@@ -24,6 +31,22 @@ export const allowCors: expressAppHandler = (req, res, next) => {
     'Origin, X-Requested-With, Content-Type, Accept, Authorization'
   )
   next()
+}
+
+export const errorMiddleware: expressAppHandlerError = (
+  error,
+  req,
+  res,
+  next
+) => {
+  const vaultError: VaultAPIError =
+    error instanceof VaultAPIError
+      ? error
+      : new VaultAPIError(error.message, 500)
+  res.status(vaultError.statusCode)
+  res.json({
+    error: vaultError.message
+  })
 }
 
 export class VaultAPIError extends Error {
