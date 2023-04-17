@@ -39,6 +39,7 @@
   },
   "dependencies": {
     "@twake/config-parser": "*",
-    "@twake/matrix-identity-server": "*"
+    "@twake/matrix-identity-server": "*",
+    "@twake/identity-server": "*"
   }
 }

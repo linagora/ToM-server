@@ -25,19 +25,6 @@ declare module 'express-serve-static-core' {
   }
 }
 
-const middlewares = (
-  controller: VaultController,
-  vaultDb: VaultDb
-): Array<expressAppHandler | expressAppHandlerError> => {
-  return [
-    allowCors,
-    ...parser,
-    isAuth(vaultDb.db),
-    controller(vaultDb),
-    errorMiddleware
-  ]
-}
-
 export default class TwakeVaultAPI {
   endpoints: Router
   vaultDb: VaultDb
@@ -56,8 +43,8 @@ export default class TwakeVaultAPI {
         .then(() => {
           this.endpoints
             .route('/recoveryWords')
-            .get(...middlewares(getRecoveryWords, this.vaultDb))
-            .post(...middlewares(saveRecoveryWords, this.vaultDb))
+            .get(...this._middlewares(getRecoveryWords))
+            .post(...this._middlewares(saveRecoveryWords))
             .all(allowCors, methodNotAllowed, errorMiddleware)
           resolve(true)
         })
@@ -81,5 +68,17 @@ export default class TwakeVaultAPI {
     } else {
       return undefined
     }
+  }
+
+  private _middlewares(
+    controller: VaultController
+  ): Array<expressAppHandler | expressAppHandlerError> {
+    return [
+      allowCors,
+      ...parser,
+      isAuth(this.vaultDb.db, this.conf),
+      controller(this.vaultDb),
+      errorMiddleware
+    ]
   }
 }
