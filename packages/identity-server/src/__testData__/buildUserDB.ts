@@ -9,7 +9,7 @@ interface Config {
 
 let created = false
 
-const createQuery = 'CREATE TABLE users (uid varchar(8), phone varchar(12), email varchar(32))'
+const createQuery = 'CREATE TABLE users (uid varchar(8), mobile varchar(12), mail varchar(32))'
 const insertQuery = "INSERT INTO users VALUES('dwho', '33612345678', 'dwho@company.com')"
 
 // eslint-disable-next-line @typescript-eslint/promise-function-async

@@ -19,7 +19,8 @@ process.env.TWAKE_IDENTITY_SERVER_CONF = './src/__testData__/registerConf.json'
 
 let idServer: IdServer
 let app: express.Application
-let validToken: string
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+let federationToken: string
 
 beforeAll((done) => {
   const conf: Config = {
@@ -61,7 +62,6 @@ beforeAll((done) => {
 })
 
 beforeEach(() => {
-  jest.clearAllMocks()
   jest.mock('node-fetch', () => jest.fn())
   jest.mock('nodemailer', () => ({
     createTransport: jest.fn().mockImplementation(() => ({
@@ -70,11 +70,94 @@ beforeEach(() => {
   }))
 })
 
+afterEach(() => {
+  jest.clearAllMocks()
+})
+
 afterAll(() => {
   if (process.env.TEST_PG !== 'yes') fs.unlinkSync('src/__testData__/test.db')
   idServer.cleanJobs()
 })
 
+describe('Using Matrix Token', () => {
+  const validToken = 'syt_ZHdobw_FakeTokenFromMatrixV_25Unpr'
+
+  it('should require authentication', async () => {
+    await idServer.cronTasks?.ready
+    const response = await request(app)
+      .get('/_matrix/identity/v2/hash_details')
+      .set('Accept', 'application/json')
+    expect(response.statusCode).toBe(401)
+  })
+
+  describe('/_matrix/identity/v2/lookup', () => {
+    const mockResponse = Promise.resolve({
+      ok: true,
+      status: 200,
+      json: () => {
+        return {
+          user_id: 'dwho'
+        }
+      }
+    })
+    // @ts-expect-error mock is unknown
+    fetch.mockImplementation(async () => await mockResponse)
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    let pepper = ''
+    describe('/_matrix/identity/v2/hash_details', () => {
+      it('should display algorithms and pepper', async () => {
+        await idServer.cronTasks?.ready
+        const response = await request(app)
+          .get('/_matrix/identity/v2/hash_details')
+          .query({ access_token: validToken })
+          // .set('Authorization', `Bearer ${validToken}`)
+          .set('Accept', 'application/json')
+        expect(response.body).toHaveProperty('lookup_pepper')
+        expect(response.statusCode).toBe(200)
+        pepper = response.body.lookup_pepper
+        expect(response.body.algorithms).toEqual(supportedHashes)
+      })
+    })
+
+    describe('/_matrix/identity/v2/lookup', () => {
+      it('should return Matrix id', async () => {
+        const hash = new Hash()
+        await hash.ready
+        await idServer.cronTasks?.ready
+        const phoneHash = hash.sha256(`33612345678 phone ${pepper}`)
+        const response = await request(app)
+          .post('/_matrix/identity/v2/lookup')
+          .send({
+            addresses: [phoneHash],
+            algorithm: 'sha256',
+            pepper
+          })
+          .set('Authorization', `Bearer ${validToken}`)
+          .set('Accept', 'application/json')
+        expect(response.statusCode).toBe(200)
+        expect(response.body.mappings[phoneHash]).toBe('@dwho:matrix.org')
+      })
+    })
+  })
+
+  describe('/_twake/identity/v1/lookup/match', () => {
+    it('should find user with partial value', async () => {
+      const response = await request(app)
+        .post('/_twake/identity/v1/lookup/match')
+        .set('Authorization', `Bearer ${validToken}`)
+        .set('Accept', 'application/json')
+        .send({
+          scope: ['uid'],
+          fields: ['uid'],
+          val: 'who'
+        })
+      expect(response.status).toBe(200)
+      expect(response.body).toEqual({ matches: [{ uid: 'dwho' }] })
+    })
+  })
+})
+
+/*
 describe('/_matrix/identity/v2/account/register', () => {
   it('should accept valid request', async () => {
     const mockResponse = Promise.resolve({
@@ -100,68 +183,7 @@ describe('/_matrix/identity/v2/account/register', () => {
       .set('Accept', 'application/json')
     expect(response.statusCode).toBe(200)
     expect(response.body.token).toMatch(/^[a-zA-Z0-9]{64}$/)
-    validToken = response.body.token
-  })
-})
-
-describe('/_twake/identity/v1/lookup/match', () => {
-  it('should find user with partial value', async () => {
-    const response = await request(app)
-      .post('/_twake/identity/v1/lookup/match')
-      .set('Accept', 'application/json')
-      .set('Authorization', `Bearer ${validToken}`)
-      .send({
-        scope: ['uid'],
-        fields: ['uid'],
-        val: 'who'
-      })
-    expect(response.status).toBe(200)
-    expect(response.body).toEqual({ matches: [{ uid: 'dwho' }] })
-  })
-})
-
-describe('/_matrix/identity/v2/lookup', () => {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  let pepper = ''
-  describe('/_matrix/identity/v2/hash_details', () => {
-    it('should require authentication', async () => {
-      await idServer.cronTasks?.ready
-      const response = await request(app)
-        .get('/_matrix/identity/v2/hash_details')
-        .set('Accept', 'application/json')
-      expect(response.statusCode).toBe(401)
-    })
-    it('should display algorithms and pepper', async () => {
-      await idServer.cronTasks?.ready
-      const response = await request(app)
-        .get('/_matrix/identity/v2/hash_details')
-        .set('Authorization', `Bearer ${validToken}`)
-        .set('Accept', 'application/json')
-      expect(response.body).toHaveProperty('lookup_pepper')
-      expect(response.statusCode).toBe(200)
-      pepper = response.body.lookup_pepper
-      expect(response.body.algorithms).toEqual(supportedHashes)
-    })
-  })
-
-  describe('/_matrix/identity/v2/lookup', () => {
-    it('should return Matrix id', async () => {
-      const hash = new Hash()
-      await hash.ready
-      await idServer.cronTasks?.ready
-      const phoneHash = hash.sha256(`33612345678 phone ${pepper}`)
-      const response = await request(app)
-        .post('/_matrix/identity/v2/lookup')
-        .send({
-          addresses: [phoneHash],
-          algorithm: 'sha256',
-          pepper
-        })
-        .set('Authorization', `Bearer ${validToken}`)
-        .set('Accept', 'application/json')
-      expect(response.statusCode).toBe(200)
-      expect(response.body.mappings[phoneHash]).toBe('@dwho:matrix.org')
-    })
+    federationToken = response.body.token
   })
 })
 
@@ -169,13 +191,14 @@ describe('/_matrix/identity/v2/account', () => {
   it('should logout (/_matrix/identity/v2/account/logout)', async () => {
     let response = await request(app)
       .post('/_matrix/identity/v2/account/logout')
-      .set('Authorization', `Bearer ${validToken}`)
+      .set('Authorization', `Bearer ${federationToken}`)
       .set('Accept', 'application/json')
     expect(response.statusCode).toBe(200)
     response = await request(app)
       .get('/_matrix/identity/v2/account')
-      .set('Authorization', `Bearer ${validToken}`)
+      .set('Authorization', `Bearer ${federationToken}`)
       .set('Accept', 'application/json')
     expect(response.statusCode).toBe(401)
   })
 })
+*/

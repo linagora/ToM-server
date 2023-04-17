@@ -1,6 +1,5 @@
-import type IdentityServerDb from '@twake/matrix-identity-server/dist/db'
+import type TwakeIdentityServer from '..'
 import { Utils, type expressAppHandler } from '..'
-import type UserDB from '@twake/matrix-identity-server/dist/userdb'
 import { errMsg } from '@twake/matrix-identity-server'
 
 const schema = {
@@ -17,13 +16,9 @@ export interface Query {
   val: string
 }
 
-const autocompletion = (
-  db: IdentityServerDb,
-  userDb: UserDB
-): expressAppHandler => {
-  const authenticate = Utils.Authenticate(db)
+const autocompletion = (idServer: TwakeIdentityServer): expressAppHandler => {
   return (req, res) => {
-    authenticate(req, res, (token, id) => {
+    idServer.authenticate(req, res, (token, id) => {
       Utils.jsonContent(req, res, (obj) => {
         Utils.validateParameters(res, schema, obj, (data) => {
           let fields = (data as Query).fields
@@ -43,7 +38,7 @@ const autocompletion = (
           })
           /* istanbul ignore else */
           if (!error) {
-            userDb
+            idServer.userDB
               .match('users', fields, scope, (data as Query).val)
               .then((rows) => {
                 Utils.send(res, 200, { matches: rows })

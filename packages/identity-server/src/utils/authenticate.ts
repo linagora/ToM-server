@@ -47,6 +47,7 @@ const Authenticate = (
             .then((res) => res.json())
             .then((userInfo) => {
               const uid = (userInfo as WhoAmIResponse).user_id
+              /* istanbul ignore else */
               if (uid != null) {
                 const data: tokenContent = {
                   sub: uid,
@@ -60,6 +61,7 @@ const Authenticate = (
                   id: token,
                   data: JSON.stringify(data)
                 }).catch((e) => {
+                  /* istanbul ignore next */
                   console.error('Unable to insert a token', e)
                 })
                 // eslint-disable-next-line n/no-callback-literal
@@ -72,10 +74,14 @@ const Authenticate = (
               }
             })
             .catch((e) => {
+              /* istanbul ignore next */
+              console.debug('Fetch error', e)
+              /* istanbul ignore next */
               Utils.send(res, 401, errMsg('unAuthorized'))
             })
         })
     } else {
+      console.warn('Access tried without token', req.headers)
       Utils.send(res, 401, errMsg('unAuthorized'))
     }
   }

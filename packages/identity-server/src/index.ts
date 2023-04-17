@@ -29,12 +29,8 @@ export default class TwakeIdentityServer extends MatrixIdentityServer {
       superReady
         .then(() => {
           // Extend API
-          this.api.post['/_twake/identity/v1/lookup/match'] = autocompletion(
-            // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
-            // @ts-ignore this.db is defined here
-            this.db,
-            this.userDB
-          )
+          this.api.post['/_twake/identity/v1/lookup/match'] =
+            autocompletion(this)
           resolve(true)
         })
         .catch((e) => {
