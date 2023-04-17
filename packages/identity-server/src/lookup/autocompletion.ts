@@ -8,7 +8,7 @@ const schema = {
   val: true
 }
 
-export const SearchFields = new Set<string>(['mail', 'phone', 'uid'])
+export const SearchFields = new Set<string>(['mail', 'mobile', 'uid'])
 
 export interface Query {
   scope: string[]
