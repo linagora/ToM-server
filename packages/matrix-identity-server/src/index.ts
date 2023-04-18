@@ -29,6 +29,7 @@ import lookup from './lookup'
 import _validateMatrixToken from './utils/validateMatrixToken'
 
 export * as SQLite from './db/sql/sqlite'
+export * as IdentityServerDb from './db'
 export { type tokenContent } from './account/register'
 export * as Utils from './utils'
 export const errMsg = _errMsg

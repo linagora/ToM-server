@@ -1,0 +1,52 @@
+{
+  "name": "@twake/server",
+  "version": "0.0.1",
+  "description": "This is the Twake on Matrix server",
+  "main": "dist/index.js",
+  "type": "module",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    "import": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "npm run build:lib && npm run build:example",
+    "build:lib": "rollup -c",
+    "build:example": "rollup -p @rollup/plugin-typescript -e express,@twake/server -m -o example/tom-server.js example/tom-server.ts",
+    "start": "node example/tom-server.js",
+    "test": "jest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://ci.linagora.com/publicgroup/oss/twake/tom-server.git"
+  },
+  "files": [
+    "package.json",
+    "dist",
+    "*.md"
+  ],
+  "keywords": [
+    "matrix",
+    "twake",
+    "server"
+  ],
+  "author": [
+    {
+      "name": "Jordy Cabannes",
+      "email": "jcabannes@linagora.com"
+    }
+  ],
+  "license": "AGPL-3.0-or-later",
+  "bugs": {
+    "url": "https://ci.linagora.com/publicgroup/oss/twake/tom-server/-/issues"
+  },
+  "homepage": "https://ci.linagora.com/publicgroup/oss/twake/tom-server",
+  "optionalDependencies": {
+    "ldapjs": "^2.3.3",
+    "pg": "^8.10.0",
+    "sqlite3": "^5.1.6"
+  },
+  "dependencies": {
+    "@twake/matrix-identity-server": "*",
+    "ldapjs": "^2.3.3"
+  }
+}
