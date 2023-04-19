@@ -1,6 +1,0 @@
-{
-  "database_engine": "sqlite",
-  "database_host": "./tokens.db",
-  "server_name": "localhost",
-  "matrix_server": "localhost"
-}

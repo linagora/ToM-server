@@ -1,6 +1,4 @@
-import configParser, { type ConfigDescription } from '@twake/config-parser'
-import fs from 'fs'
-import defaultConfDesc from './config.json'
+import defaultConfDesc from '../config.json'
 import { Router } from 'express'
 import isAuth, { type tokenDetail } from './middlewares/auth'
 import parser from './middlewares/parser'
@@ -33,13 +31,9 @@ export default class TwakeVaultAPI {
   conf: Config
   ready: Promise<boolean>
 
-  constructor(conf?: Partial<Config>, confDesc?: ConfigDescription) {
+  constructor(conf: Config) {
+    this.conf = conf
     this.endpoints = Router()
-    if (confDesc == null) confDesc = defaultConfDesc
-    this.conf = configParser(
-      confDesc,
-      this._getConfigurationFile(conf)
-    ) as Config
     this.vaultDb = new VaultDb(this.conf)
     this.ready = new Promise((resolve, reject) => {
       this.vaultDb.ready
@@ -56,21 +50,6 @@ export default class TwakeVaultAPI {
           reject(err)
         })
     })
-  }
-
-  private _getConfigurationFile(
-    conf: Partial<Config> | undefined
-  ): object | fs.PathOrFileDescriptor | undefined {
-    if (conf != null) {
-      return conf
-    } else if (process.env.TWAKE_VAULT_SERVER_CONF != null) {
-      return process.env.TWAKE_VAULT_SERVER_CONF
-    } else if (fs.existsSync('/etc/twake/vault-server.conf')) {
-      /* istanbul ignore next */
-      return '/etc/twake/vault-server.conf'
-    } else {
-      return undefined
-    }
   }
 
   private _middlewares(

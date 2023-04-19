@@ -1,6 +1,6 @@
 import fs from 'fs'
 import VaultDb from '.'
-import DefaultConfig from '../config.json'
+import DefaultConfig from '../../config.json'
 import { Database } from 'sqlite3'
 import { type Config } from '../../utils'
 
@@ -9,7 +9,8 @@ const testFilePath = './testdb.db'
 const baseConf: Partial<Config> = {
   ...DefaultConfig,
   database_engine: 'sqlite',
-  database_host: testFilePath
+  database_host: testFilePath,
+  userdb_engine: 'sqlite'
 }
 
 const mockedFn = jest.fn()

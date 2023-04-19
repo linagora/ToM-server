@@ -1,7 +1,7 @@
 import VaultDb from '../db'
 import fs from 'fs'
 import { getRecoveryWords, methodNotAllowed, saveRecoveryWords } from './vault'
-import DefaultConfig from '../config.json'
+import DefaultConfig from '../../config.json'
 import { type Request, type Response, type NextFunction } from 'express'
 import { type expressAppHandler, VaultAPIError } from '../utils'
 import { type tokenDetail } from '../middlewares/auth'
@@ -12,7 +12,8 @@ const testFilePath = './testcontrollers.db'
 const baseConf: Partial<Config> = {
   ...DefaultConfig,
   database_engine: 'sqlite',
-  database_host: testFilePath
+  database_host: testFilePath,
+  userdb_engine: 'sqlite'
 }
 
 const words = 'This is a test sentence'

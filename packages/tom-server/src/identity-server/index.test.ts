@@ -41,7 +41,7 @@ beforeAll((done) => {
   }
   buildUserDB(conf)
     .then(() => {
-      idServer = new IdServer()
+      idServer = new IdServer(conf)
       app = express()
 
       idServer.ready
