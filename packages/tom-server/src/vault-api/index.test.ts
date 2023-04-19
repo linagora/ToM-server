@@ -7,9 +7,11 @@ import defaultConfig from '../config.json'
 import fetch from 'node-fetch'
 import { recoveryWords } from './db/utils'
 import { type VaultDBSQLite } from './db/sql/sqlite'
+import path from 'path'
+import JEST_PROCESS_ROOT_PATH from '../../jest.globals'
 
 const endpoint = '/_twake/recoveryWords'
-const testFilePath = './vault.db'
+const testFilePath = path.join(JEST_PROCESS_ROOT_PATH, 'vault.db')
 const words = 'This is a test sentence'
 const accessToken =
   'accessTokenddddddddddddddddddddddddddddddddddddddddddddddddddddd'
@@ -58,9 +60,6 @@ describe('Vault API server', () => {
   let app: express.Application
 
   beforeAll((done) => {
-    process.env.TWAKE_VAULT_SERVER_CONF =
-      './src/vault-api/__testData__/config.json'
-
     vaultApiServer = new TwakeVaultAPI({
       ...defaultConfig,
       database_engine: 'sqlite',

@@ -5,8 +5,10 @@ import fs from 'fs'
 import { type Config } from './utils'
 import buildUserDB from './identity-server/__testData__/buildUserDB'
 import TwakeServer from './index'
+import path from 'path'
+import JEST_PROCESS_ROOT_PATH from '../jest.globals'
 
-const testDb = './global.db'
+const testDb = path.join(JEST_PROCESS_ROOT_PATH, 'global.db')
 
 let idServer: TwakeServer
 let app: express.Application
@@ -18,7 +20,12 @@ beforeAll((done) => {
     database_host: testDb,
     base_url: 'http://example.com/',
     userdb_engine: 'sqlite',
-    template_dir: './src/identity-server/templates'
+    template_dir: path.join(
+      JEST_PROCESS_ROOT_PATH,
+      'src',
+      'identity-server',
+      'templates'
+    )
   }
   if (process.env.TEST_PG === 'yes') {
     conf.database_engine = 'pg'

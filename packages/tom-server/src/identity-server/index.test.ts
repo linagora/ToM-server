@@ -7,6 +7,8 @@ import { Hash, supportedHashes } from '@twake/crypto'
 import defaultConfig from './__testData__/registerConf.json'
 import buildUserDB from './__testData__/buildUserDB'
 import IdServer from '.'
+import path from 'path'
+import JEST_PROCESS_ROOT_PATH from '../../jest.globals'
 
 jest.mock('node-fetch', () => jest.fn())
 const sendMailMock = jest.fn()
@@ -16,8 +18,17 @@ jest.mock('nodemailer', () => ({
   }))
 }))
 
-process.env.TWAKE_IDENTITY_SERVER_CONF =
-  './src/identity-server/__testData__/registerConf.json'
+const pathToTestDataFolder = path.join(
+  JEST_PROCESS_ROOT_PATH,
+  'src',
+  'identity-server',
+  '__testData__'
+)
+
+process.env.TWAKE_IDENTITY_SERVER_CONF = path.join(
+  pathToTestDataFolder,
+  'registerConf.json'
+)
 
 let idServer: IdServer
 let app: express.Application
@@ -78,7 +89,7 @@ afterEach(() => {
 
 afterAll(() => {
   if (process.env.TEST_PG !== 'yes')
-    fs.unlinkSync('src/identity-server/__testData__/test.db')
+    fs.unlinkSync(path.join(pathToTestDataFolder, 'test.db'))
   idServer.cleanJobs()
 })
 

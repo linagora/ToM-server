@@ -6,8 +6,10 @@ import { type Request, type Response, type NextFunction } from 'express'
 import { type expressAppHandler, VaultAPIError } from '../utils'
 import { type tokenDetail } from '../middlewares/auth'
 import { type Config } from '../../utils'
+import path from 'path'
+import JEST_PROCESS_ROOT_PATH from '../../../jest.globals'
 
-const testFilePath = './testcontrollers.db'
+const testFilePath = path.join(JEST_PROCESS_ROOT_PATH, 'testcontrollers.db')
 
 const baseConf: Partial<Config> = {
   ...DefaultConfig,

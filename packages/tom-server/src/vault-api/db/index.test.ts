@@ -3,8 +3,10 @@ import VaultDb from '.'
 import DefaultConfig from '../../config.json'
 import { Database } from 'sqlite3'
 import { type Config } from '../../utils'
+import path from 'path'
+import JEST_PROCESS_ROOT_PATH from '../../../jest.globals'
 
-const testFilePath = './testdb.db'
+const testFilePath = path.join(JEST_PROCESS_ROOT_PATH, 'testdb.db')
 
 const baseConf: Partial<Config> = {
   ...DefaultConfig,
