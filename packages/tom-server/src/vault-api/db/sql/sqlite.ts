@@ -3,10 +3,7 @@ import { type VaultDbBackend } from '../utils'
 import { SQLite } from '@twake/matrix-identity-server'
 import { type Config } from '../../../utils'
 
-export class VaultDBSQLite
-  extends SQLite.default<Config>
-  implements VaultDbBackend
-{
+export class VaultDBSQLite extends SQLite.default implements VaultDbBackend {
   // eslint-disable-next-line @typescript-eslint/promise-function-async
   createDatabases(conf: Config): Promise<boolean> {
     return new Promise((resolve, reject) => {

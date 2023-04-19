@@ -1,4 +1,4 @@
-import { type CoreConfig, type Config } from '..'
+import { type Config } from '..'
 import { randomString } from '../utils/tokenUtils'
 import Pg from './sql/pg'
 import Sqlite from './sql/sqlite'
@@ -52,9 +52,9 @@ type DeleteLowerThan = (
   value: string | number
 ) => Promise<void>
 
-export interface IdDbBackend<T extends CoreConfig = Config> {
+export interface IdDbBackend {
   ready: Promise<void>
-  createDatabases: (conf: T) => Promise<boolean>
+  createDatabases: (conf: Config) => Promise<boolean>
   insert: Insert
   get: Get
   getCount: GetCount

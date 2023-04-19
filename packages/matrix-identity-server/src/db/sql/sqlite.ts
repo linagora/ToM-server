@@ -2,19 +2,16 @@ import { type Database, type Statement } from 'sqlite3'
 import { type IdDbBackend } from '../index'
 import SQL from './sql'
 import createTables from './_createTables'
-import { type CoreConfig, type Config } from '../..'
+import { type Config } from '../..'
 
 export type SQLiteDatabase = Database
 
 export type SQLiteStatement = Statement
 
-class SQLite<T extends CoreConfig = Config>
-  extends SQL<T>
-  implements IdDbBackend<T>
-{
+class SQLite extends SQL implements IdDbBackend {
   declare db?: SQLiteDatabase
   // eslint-disable-next-line @typescript-eslint/promise-function-async
-  createDatabases(conf: CoreConfig): Promise<boolean> {
+  createDatabases(conf: Config): Promise<boolean> {
     return new Promise((resolve, reject) => {
       import('sqlite3')
         .then((sqlite3) => {
