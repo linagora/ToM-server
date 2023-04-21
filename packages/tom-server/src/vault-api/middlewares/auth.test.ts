@@ -1,5 +1,5 @@
+import { type TwakeDB } from '../../db'
 import { type Config } from '../../utils'
-import { type VaultDbBackend } from '../db/utils'
 import { VaultAPIError, type expressAppHandler } from '../utils'
 import isAuth, { type tokenDetail } from './auth'
 import { type Request, type Response, type NextFunction } from 'express'
@@ -23,7 +23,7 @@ const matrixServerResponseBody = {
 const unauthorizedError = new VaultAPIError('Not Authorized', 401)
 
 describe('Auth middleware', () => {
-  const db: Partial<VaultDbBackend> = {
+  const db: Partial<TwakeDB> = {
     get: jest.fn().mockResolvedValue([
       {
         id: token.value,
@@ -56,10 +56,7 @@ describe('Auth middleware', () => {
   })
 
   it('should retrieve token from authorization header and store token data in req object', async () => {
-    const handler: expressAppHandler = isAuth(
-      db as VaultDbBackend,
-      conf as Config
-    )
+    const handler: expressAppHandler = isAuth(db as TwakeDB, conf as Config)
     handler(mockRequest as Request, mockResponse as Response, nextFunction)
     await new Promise(process.nextTick)
     expect(mockRequest.token).toStrictEqual(token)
@@ -72,10 +69,7 @@ describe('Auth middleware', () => {
         access_token: token.value
       }
     }
-    const handler: expressAppHandler = isAuth(
-      db as VaultDbBackend,
-      conf as Config
-    )
+    const handler: expressAppHandler = isAuth(db as TwakeDB, conf as Config)
     handler(mockRequest as Request, mockResponse as Response, nextFunction)
     await new Promise(process.nextTick)
     expect(mockRequest.token).toStrictEqual(token)
@@ -83,10 +77,7 @@ describe('Auth middleware', () => {
 
   it('should add access_token in database if no entry found and user is already authenticated on matrix server', async () => {
     jest.spyOn(db, 'get').mockResolvedValue([])
-    const handler: expressAppHandler = isAuth(
-      db as VaultDbBackend,
-      conf as Config
-    )
+    const handler: expressAppHandler = isAuth(db as TwakeDB, conf as Config)
     handler(mockRequest as Request, mockResponse as Response, nextFunction)
     await new Promise(process.nextTick)
     expect(db.insert).toHaveBeenCalled()
@@ -104,10 +95,7 @@ describe('Auth middleware', () => {
         .fn()
         .mockResolvedValue({ ...matrixServerResponseBody, user_id: null })
     })
-    const handler: expressAppHandler = isAuth(
-      db as VaultDbBackend,
-      conf as Config
-    )
+    const handler: expressAppHandler = isAuth(db as TwakeDB, conf as Config)
     handler(mockRequest as Request, mockResponse as Response, nextFunction)
     await new Promise(process.nextTick)
     expect(db.insert).not.toHaveBeenCalled()
@@ -119,10 +107,7 @@ describe('Auth middleware', () => {
     const errorDb = new Error('An error occured in the database')
     jest.spyOn(db, 'get').mockResolvedValue([])
     jest.spyOn(db, 'insert').mockRejectedValue(errorDb)
-    const handler: expressAppHandler = isAuth(
-      db as VaultDbBackend,
-      conf as Config
-    )
+    const handler: expressAppHandler = isAuth(db as TwakeDB, conf as Config)
     handler(mockRequest as Request, mockResponse as Response, nextFunction)
     await new Promise(process.nextTick)
     expect(nextFunction).toHaveBeenCalledWith(errorDb)
@@ -135,10 +120,7 @@ describe('Auth middleware', () => {
     ;(fetch as jest.Mock<any, any, any>).mockResolvedValue({
       json: jest.fn().mockRejectedValue(errorMatrixServer)
     })
-    const handler: expressAppHandler = isAuth(
-      db as VaultDbBackend,
-      conf as Config
-    )
+    const handler: expressAppHandler = isAuth(db as TwakeDB, conf as Config)
     handler(mockRequest as Request, mockResponse as Response, nextFunction)
     await new Promise(process.nextTick)
     expect(db.insert).not.toHaveBeenCalled()
@@ -149,10 +131,7 @@ describe('Auth middleware', () => {
   it('should call next function to throw error if an error occured on retrieving associated entry in database', async () => {
     const errorDb = new Error('An error occured in the database')
     jest.spyOn(db, 'get').mockRejectedValue(errorDb)
-    const handler: expressAppHandler = isAuth(
-      db as VaultDbBackend,
-      conf as Config
-    )
+    const handler: expressAppHandler = isAuth(db as TwakeDB, conf as Config)
     handler(mockRequest as Request, mockResponse as Response, nextFunction)
     await new Promise(process.nextTick)
     expect(nextFunction).toHaveBeenCalledWith(errorDb)
@@ -164,10 +143,7 @@ describe('Auth middleware', () => {
       headers: {},
       query: {}
     }
-    const handler: expressAppHandler = isAuth(
-      db as VaultDbBackend,
-      conf as Config
-    )
+    const handler: expressAppHandler = isAuth(db as TwakeDB, conf as Config)
     expect(() => {
       handler(mockRequest as Request, mockResponse as Response, nextFunction)
     }).toThrow(unauthorizedError)
@@ -178,10 +154,7 @@ describe('Auth middleware', () => {
       headers: undefined,
       query: undefined
     }
-    const handler: expressAppHandler = isAuth(
-      db as VaultDbBackend,
-      conf as Config
-    )
+    const handler: expressAppHandler = isAuth(db as TwakeDB, conf as Config)
     expect(() => {
       handler(mockRequest as Request, mockResponse as Response, nextFunction)
     }).toThrow(unauthorizedError)

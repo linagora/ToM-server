@@ -1,10 +1,10 @@
 import { type NextFunction, type Request, type Response } from 'express'
-import { type VaultDbBackend } from '../db/utils'
 import { VaultAPIError, type expressAppHandler } from '../utils'
 import fetch from 'node-fetch'
 import { type Config } from '../../utils'
 import { Utils, type tokenContent } from '@twake/matrix-identity-server'
 import { type WhoAmIResponse } from '../../identity-server'
+import { type TwakeDB } from '../../db'
 export interface tokenDetail {
   value: string
   content: tokenContent
@@ -13,7 +13,7 @@ export interface tokenDetail {
 const tokenRe = /^Bearer (\S+)$/
 const unauthorizedError = new VaultAPIError('Not Authorized', 401)
 
-const isAuth = (db: VaultDbBackend, conf: Config): expressAppHandler => {
+const isAuth = (db: TwakeDB, conf: Config): expressAppHandler => {
   let tokenData: tokenContent
   return (req: Request, res: Response, next: NextFunction): void => {
     let token: string = ''

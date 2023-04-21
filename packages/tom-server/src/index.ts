@@ -6,12 +6,14 @@ import IdServer from './identity-server'
 import VaultServer from './vault-api'
 import WellKnown from './wellKnown'
 import defaultConfig from './config.json'
+import initializeDb, { type TwakeDB } from './db'
 
 export default class TwakeServer {
   endpoints: Router
   ready: Promise<boolean>
   idServer: IdServer
   conf: Config
+  db?: TwakeDB
 
   constructor(conf?: Partial<Config>, confDesc?: ConfigDescription) {
     if (confDesc == null) confDesc = defaultConfig as ConfigDescription
@@ -22,27 +24,34 @@ export default class TwakeServer {
 
     this.endpoints = Router()
     this.idServer = new IdServer(this.conf)
-    const vaultServer = new VaultServer(this.conf)
     const wellKnown = new WellKnown(this.idServer.conf)
     this.ready = new Promise((resolve, reject) => {
-      Promise.all([this.idServer.ready, vaultServer.ready])
+      const abort = (e: Error): void => {
+        /* istanbul ignore next */
+        console.error('Unable to initialize server')
+        /* istanbul ignore next */
+        reject(e)
+      }
+      this.idServer.ready
         .then(() => {
-          Object.keys(this.idServer.api.get).forEach((k) => {
-            this.endpoints.get(k, this.idServer.api.get[k])
-          })
-          Object.keys(this.idServer.api.post).forEach((k) => {
-            this.endpoints.post(k, this.idServer.api.post[k])
-          })
-          this.endpoints.use(vaultServer.endpoints)
-          Object.keys(wellKnown.api.get).forEach((k) => {
-            this.endpoints.get(k, wellKnown.api.get[k])
-          })
-          resolve(true)
+          initializeDb(this)
+            .then(() => {
+              const vaultServer = new VaultServer(this.conf, this)
+              Object.keys(this.idServer.api.get).forEach((k) => {
+                this.endpoints.get(k, this.idServer.api.get[k])
+              })
+              Object.keys(this.idServer.api.post).forEach((k) => {
+                this.endpoints.post(k, this.idServer.api.post[k])
+              })
+              this.endpoints.use(vaultServer.endpoints)
+              Object.keys(wellKnown.api.get).forEach((k) => {
+                this.endpoints.get(k, wellKnown.api.get[k])
+              })
+              resolve(true)
+            })
+            .catch(abort)
         })
-        .catch((err) => {
-          /* istanbul ignore next */
-          reject(err)
-        })
+        .catch(abort)
     })
   }
 

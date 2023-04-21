@@ -1,4 +1,3 @@
-import VaultDb from '../db'
 import fs from 'fs'
 import { getRecoveryWords, methodNotAllowed, saveRecoveryWords } from './vault'
 import DefaultConfig from '../../config.json'
@@ -8,6 +7,9 @@ import { type tokenDetail } from '../middlewares/auth'
 import { type Config } from '../../utils'
 import path from 'path'
 import JEST_PROCESS_ROOT_PATH from '../../../jest.globals'
+import { type TwakeDB } from '../../db'
+import TwakeServer from '../..'
+import buildTokenTable from '../__testData__/buildTokenTable'
 
 const testFilePath = path.join(JEST_PROCESS_ROOT_PATH, 'testcontrollers.db')
 
@@ -15,6 +17,7 @@ const baseConf: Partial<Config> = {
   ...DefaultConfig,
   database_engine: 'sqlite',
   database_host: testFilePath,
+  template_dir: './src/identity-server/templates',
   userdb_engine: 'sqlite'
 }
 
@@ -25,38 +28,44 @@ interface ITestRequest extends Partial<Request> {
 }
 
 describe('Vault controllers', () => {
-  let dbManager: VaultDb
+  let dbManager: TwakeDB
   let mockRequest: ITestRequest
   let mockResponse: Partial<Response>
+  let server: TwakeServer
   const nextFunction: NextFunction = jest.fn()
 
   beforeAll((done) => {
-    dbManager = new VaultDb(baseConf as Config)
-    dbManager.ready
+    buildTokenTable(baseConf as Config)
       .then(() => {
-        mockRequest = {
-          token: {
-            value: 'token_value',
-            content: {
-              sub: 'userId',
-              epoch: 1
+        server = new TwakeServer(baseConf as Config) // VaultDb(baseConf as Config)
+        server.ready
+          .then(() => {
+            dbManager = server.db as TwakeDB
+            mockRequest = {
+              token: {
+                value: 'token_value',
+                content: {
+                  sub: 'userId',
+                  epoch: 1
+                }
+              },
+              body: {
+                words
+              }
             }
-          },
-          body: {
-            words
-          }
-        }
-        mockResponse = {
-          statusCode: undefined,
-          status: jest.fn().mockImplementation((code: number) => {
-            mockResponse.statusCode = code
-            return mockResponse
-          }),
-          json: jest.fn().mockReturnValue(mockResponse)
-        }
-        done()
+            mockResponse = {
+              statusCode: undefined,
+              status: jest.fn().mockImplementation((code: number) => {
+                mockResponse.statusCode = code
+                return mockResponse
+              }),
+              json: jest.fn().mockReturnValue(mockResponse)
+            }
+            done()
+          })
+          .catch(done)
       })
-      .catch((e) => done(e))
+      .catch(done)
   })
 
   afterEach(() => {
@@ -68,6 +77,10 @@ describe('Vault controllers', () => {
       fs.unlinkSync(testFilePath)
     }
     jest.resetModules()
+  })
+
+  afterAll(() => {
+    server.cleanJobs()
   })
 
   it('should throw method not allowed error', () => {

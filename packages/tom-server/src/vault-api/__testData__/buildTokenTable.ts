@@ -1,5 +1,6 @@
-import type VaultDb from '../db'
+import { type Config } from '../../utils'
 import { type tokenDetail } from '../middlewares/auth'
+import sqlite3 from 'sqlite3'
 
 const token: tokenDetail = {
   value: 'accessTokenddddddddddddddddddddddddddddddddddddddddddddddddddddd',
@@ -7,21 +8,20 @@ const token: tokenDetail = {
 }
 
 // eslint-disable-next-line @typescript-eslint/promise-function-async
-const buildTokenTable = (dbManager: VaultDb): Promise<void> => {
+const buildTokenTable = (conf: Config): Promise<void> => {
   return new Promise((resolve, reject) => {
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
-    // @ts-ignore same
-    dbManager.db.db.run(
+    const dbManager = new sqlite3.Database(conf.database_host)
+    dbManager.run(
       'CREATE TABLE accessTokens (id varchar(64) primary key, data text)',
       () =>
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
-        // @ts-ignore same
-        dbManager.db.db.run(
+        dbManager.run(
           `INSERT INTO accessTokens VALUES('${token.value}', '${JSON.stringify(
             token.content
           )}')`,
           () => {
-            resolve()
+            dbManager.run('CREATE TABLE users (uid varchar(8), mobile varchar(12), mail varchar(32))', () => {
+              resolve()
+            })
           }
         )
     )

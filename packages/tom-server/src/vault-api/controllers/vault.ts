@@ -1,19 +1,20 @@
-import type VaultDb from '../db'
+import { type TwakeDB } from '../../db'
 import { VaultAPIError, type expressAppHandler } from '../utils'
 
-export type VaultController = (db: VaultDb) => expressAppHandler
+export type VaultController = (db: TwakeDB) => expressAppHandler
 
 export const methodNotAllowed: expressAppHandler = (req, res, next) => {
   throw new VaultAPIError('Method not allowed', 405)
 }
 
-export const saveRecoveryWords = (db: VaultDb): expressAppHandler => {
+export const saveRecoveryWords = (db: TwakeDB): expressAppHandler => {
   return (req, res, next) => {
     const data: Record<string, string> = {
       userId: req.token.content.sub,
       words: req.body.words
     }
-    db.insert(data)
+    // @ts-expect-error 'recoveryWords' isn't declared in Collection
+    db.insert('recoveryWords', data)
       .then((_) => {
         res.status(201).json({ message: 'Saved recovery words sucessfully' })
       })
@@ -23,11 +24,12 @@ export const saveRecoveryWords = (db: VaultDb): expressAppHandler => {
   }
 }
 
-export const getRecoveryWords = (db: VaultDb): expressAppHandler => {
+export const getRecoveryWords = (db: TwakeDB): expressAppHandler => {
   return (req, res, next) => {
     const userId: string = req.token.content.sub
-    db.get(userId)
-      .then((data: Array<Record<string, string | string>>) => {
+    // @ts-expect-error recoveryWords isn't declared in Collections
+    db.get('recoveryWords', ['words'], 'userId', userId)
+      .then((data) => {
         if (data.length === 0) {
           const error = new VaultAPIError('User has no recovery sentence', 404)
           throw error

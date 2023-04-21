@@ -8,7 +8,6 @@ import {
   type expressAppHandlerError,
   errorMiddleware
 } from './utils'
-import VaultDb from './db'
 import {
   type VaultController,
   getRecoveryWords,
@@ -16,6 +15,8 @@ import {
   saveRecoveryWords
 } from './controllers/vault'
 import { type Config } from '../utils'
+import { type TwakeDB } from '../db'
+import type TwakeServer from '..'
 
 declare module 'express-serve-static-core' {
   interface Request {
@@ -27,29 +28,18 @@ export const defaultConfig = defaultConfDesc
 
 export default class TwakeVaultAPI {
   endpoints: Router
-  vaultDb: VaultDb
+  vaultDb: TwakeDB
   conf: Config
-  ready: Promise<boolean>
 
-  constructor(conf: Config) {
+  constructor(conf: Config, server: TwakeServer) {
     this.conf = conf
     this.endpoints = Router()
-    this.vaultDb = new VaultDb(this.conf)
-    this.ready = new Promise((resolve, reject) => {
-      this.vaultDb.ready
-        .then(() => {
-          this.endpoints
-            .route('/_twake/recoveryWords')
-            .get(...this._middlewares(getRecoveryWords))
-            .post(...this._middlewares(saveRecoveryWords))
-            .all(allowCors, methodNotAllowed, errorMiddleware)
-          resolve(true)
-        })
-        .catch((err) => {
-          /* istanbul ignore next */
-          reject(err)
-        })
-    })
+    this.vaultDb = server.db as TwakeDB
+    this.endpoints
+      .route('/_twake/recoveryWords')
+      .get(...this._middlewares(getRecoveryWords))
+      .post(...this._middlewares(saveRecoveryWords))
+      .all(allowCors, methodNotAllowed, errorMiddleware)
   }
 
   private _middlewares(
@@ -58,7 +48,7 @@ export default class TwakeVaultAPI {
     return [
       allowCors,
       ...parser,
-      isAuth(this.vaultDb.db, this.conf),
+      isAuth(this.vaultDb, this.conf),
       controller(this.vaultDb),
       errorMiddleware
     ]
