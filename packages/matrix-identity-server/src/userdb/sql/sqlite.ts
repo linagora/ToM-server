@@ -1,10 +1,18 @@
+import { type Collections,  } from '../../db'
 import { type UserDBBackend } from '..'
 import { type Config } from '../..'
 import SQLite from '../../db/sql/sqlite'
 
 class UserDBSQLite extends SQLite implements UserDBBackend {
   // eslint-disable-next-line @typescript-eslint/promise-function-async
-  createDatabases(conf: Config): Promise<boolean> {
+  createDatabases(
+    conf: Config,
+    tables: Record<Collections, string>,
+    indexes: Partial<Record<Collections, string[]>>,
+    initializeValues: Partial<
+      Record<Collections, Array<Record<string, string | number>>>
+    >
+  ): Promise<void> {
     return new Promise((resolve, reject) => {
       import('sqlite3')
         .then((sqlite3) => {
@@ -16,7 +24,7 @@ class UserDBSQLite extends SQLite implements UserDBBackend {
           if (db == null) {
             reject(new Error('Database not created'))
           }
-          resolve(true)
+          resolve()
         })
         .catch((e) => {
           /* istanbul ignore next */

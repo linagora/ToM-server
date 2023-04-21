@@ -54,7 +54,7 @@ type DeleteLowerThan = (
 
 export interface IdDbBackend {
   ready: Promise<void>
-  createDatabases: (conf: Config) => Promise<boolean>
+  createDatabases: (conf: Config, ...args: any) => Promise<void>
   insert: Insert
   get: Get
   getCount: GetCount
@@ -127,8 +127,8 @@ class IdentityServerDb implements IdDbBackend {
 
   /* istanbul ignore next */
   // eslint-disable-next-line @typescript-eslint/promise-function-async
-  createDatabases(conf: Config): Promise<boolean> {
-    throw new Error('Must be overidden')
+  createDatabases(conf: Config, ...args: any): Promise<void> {
+    return this.db.createDatabases(conf, ...args)
   }
 
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async

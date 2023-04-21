@@ -3,7 +3,16 @@ import { type Collections } from '..'
 import { type SQLiteDatabase } from './sqlite'
 import { type Config } from '../..'
 
-export const tables: Record<Collections, string> = {
+export type CreateDbMethod = (
+  conf: Config,
+  tables: Record<Collections, string>,
+  indexes: Partial<Record<Collections, string[]>>,
+  initializeValues: Partial<
+    Record<Collections, Array<Record<string, string | number>>>
+  >
+) => Promise<void>
+
+const tables: Record<Collections, string> = {
   accessTokens: 'id varchar(64) PRIMARY KEY, data text',
   oneTimeTokens: 'id varchar(64) PRIMARY KEY, expires int, data text',
   attempts: 'email text PRIMARY KEY, expires int, attempt int',
@@ -12,12 +21,12 @@ export const tables: Record<Collections, string> = {
     'hash varchar(48) PRIMARY KEY, pepper varchar(32), type varchar(8), value text'
 }
 
-export const indexes: Partial<Record<Collections, string[]>> = {
+const indexes: Partial<Record<Collections, string[]>> = {
   oneTimeTokens: ['expires'],
   attempts: ['expires']
 }
 
-export const initializeValues: Partial<
+const initializeValues: Partial<
   Record<Collections, Array<Record<string, string | number>>>
 > = {
   keys: [
@@ -33,7 +42,7 @@ abstract class SQL {
 
   constructor(conf: Config) {
     // @ts-expect-error method is defined in child class
-    this.ready = this.createDatabases(conf)
+    this.ready = this.createDatabases(conf, tables, indexes, initializeValues)
   }
 
   // eslint-disable-next-line @typescript-eslint/promise-function-async

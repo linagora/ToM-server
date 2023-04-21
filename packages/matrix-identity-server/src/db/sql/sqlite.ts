@@ -1,5 +1,5 @@
 import { type Database, type Statement } from 'sqlite3'
-import { type IdDbBackend } from '../index'
+import { type Collections, type IdDbBackend } from '../index'
 import SQL from './sql'
 import createTables from './_createTables'
 import { type Config } from '../..'
@@ -11,7 +11,14 @@ export type SQLiteStatement = Statement
 class SQLite extends SQL implements IdDbBackend {
   declare db?: SQLiteDatabase
   // eslint-disable-next-line @typescript-eslint/promise-function-async
-  createDatabases(conf: Config): Promise<boolean> {
+  createDatabases(
+    conf: Config,
+    tables: Record<Collections, string>,
+    indexes: Partial<Record<Collections, string[]>>,
+    initializeValues: Partial<
+      Record<Collections, Array<Record<string, string | number>>>
+    >
+  ): Promise<void> {
     return new Promise((resolve, reject) => {
       import('sqlite3')
         .then((sqlite3) => {
@@ -23,7 +30,7 @@ class SQLite extends SQL implements IdDbBackend {
           if (db == null) {
             throw new Error('Database not created')
           }
-          createTables(this, resolve, reject)
+          createTables(this, tables, indexes, initializeValues, resolve, reject)
         })
         .catch((e) => {
           /* istanbul ignore next */

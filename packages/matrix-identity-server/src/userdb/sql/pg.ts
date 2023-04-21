@@ -1,11 +1,19 @@
 import { type ClientConfig } from 'pg'
-import { type UserDBBackend } from '..'
+import { type Collections,  } from '../../db'
+import { type UserDBBackend } from '../'
 import { type Config } from '../..'
 import Pg, { type PgDatabase } from '../../db/sql/pg'
 
 class UserDBPg extends Pg implements UserDBBackend {
   // eslint-disable-next-line @typescript-eslint/promise-function-async
-  createDatabases(conf: Config): Promise<boolean> {
+  createDatabases(
+    conf: Config,
+    tables: Record<Collections, string>,
+    indexes: Partial<Record<Collections, string[]>>,
+    initializeValues: Partial<
+      Record<Collections, Array<Record<string, string | number>>>
+    >
+  ): Promise<void> {
     return new Promise((resolve, reject) => {
       import('pg')
         .then((pg) => {
@@ -36,7 +44,7 @@ class UserDBPg extends Pg implements UserDBBackend {
           const db: PgDatabase = (this.db = new pg.Client(opts))
           db.connect()
             .then(() => {
-              resolve(true)
+              resolve()
             })
             .catch((e: any) => {
               console.error('Unable to connect to Pg database')

@@ -10,7 +10,14 @@ export type PgDatabase = PgClient
 class Pg extends SQL implements IdDbBackend {
   declare db?: PgDatabase
   // eslint-disable-next-line @typescript-eslint/promise-function-async
-  createDatabases(conf: Config): Promise<boolean> {
+  createDatabases(
+    conf: Config,
+    tables: Record<Collections, string>,
+    indexes: Partial<Record<Collections, string[]>>,
+    initializeValues: Partial<
+      Record<Collections, Array<Record<string, string | number>>>
+    >
+  ): Promise<void> {
     return new Promise((resolve, reject) => {
       import('pg')
         .then((pg) => {
@@ -41,7 +48,14 @@ class Pg extends SQL implements IdDbBackend {
           const db: PgClient = (this.db = new pg.Client(opts))
           db.connect()
             .then(() => {
-              createTables(this, resolve, reject)
+              createTables(
+                this,
+                tables,
+                indexes,
+                initializeValues,
+                resolve,
+                reject
+              )
             })
             .catch((e) => {
               console.error('Unable to create tables', e)
