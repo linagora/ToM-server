@@ -1,4 +1,4 @@
-import { type Collections,  } from '../../db'
+import { type Collections } from '../../db'
 import { type UserDBBackend } from '..'
 import { type Config } from '../..'
 import SQLite from '../../db/sql/sqlite'

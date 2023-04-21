@@ -1,5 +1,5 @@
 import { type ClientConfig } from 'pg'
-import { type Collections,  } from '../../db'
+import { type Collections } from '../../db'
 import { type UserDBBackend } from '../'
 import { type Config } from '../..'
 import Pg, { type PgDatabase } from '../../db/sql/pg'
