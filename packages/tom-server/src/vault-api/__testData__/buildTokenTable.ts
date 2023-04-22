@@ -20,7 +20,15 @@ const buildTokenTable = (conf: Config): Promise<void> => {
           )}')`,
           () => {
             dbManager.run('CREATE TABLE users (uid varchar(8), mobile varchar(12), mail varchar(32))', () => {
-              resolve()
+              dbManager.close((err) => {
+                /* istanbul ignore if */
+                if(err != null) {
+                  console.error(err)
+                  reject(err)
+                } else {
+                  resolve()
+                }
+              })
             })
           }
         )

@@ -210,7 +210,7 @@ class SQLite extends SQL implements IdDbBackend {
         reject(new Error('Wait for database to be ready'))
       } else {
         const stmt = this.db.prepare(`DELETE FROM ${table} WHERE ${field}=?`)
-        stmt.run(value, (err: string) => {
+        stmt.run(value).finalize((err) => {
           /* istanbul ignore if */
           if (err != null) {
             reject(err)
@@ -234,7 +234,7 @@ class SQLite extends SQL implements IdDbBackend {
         throw new Error('Wait for database to be ready')
       }
       const stmt = this.db.prepare(`DELETE FROM ${table} WHERE ${field}<?`)
-      stmt.run(value, (err: string) => {
+      stmt.run(value).finalize((err) => {
         /* istanbul ignore if */
         if (err != null) {
           reject(err)
@@ -246,7 +246,7 @@ class SQLite extends SQL implements IdDbBackend {
   }
 
   close(): void {
-    // this.db?.close()
+    this.db?.close()
   }
 }
 

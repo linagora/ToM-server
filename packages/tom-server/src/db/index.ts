@@ -25,8 +25,9 @@ const initializeDb = (server: TwakeServer): Promise<void> => {
           /* istanbul ignore next */
           .catch((e) => reject)
         break
-      default: // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+      default:
         /* istanbul ignore next */ throw new Error(
+          // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
           `Unsupported DB type ${server.conf.database_engine}`
         )
     }

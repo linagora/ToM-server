@@ -185,25 +185,37 @@ class IdentityServerDb implements IdDbBackend {
     return this.db.deleteLowerThan(table, field, value)
   }
 
-  createOneTimeToken(data: object, expires?: number): string {
+  // eslint-disable-next-line @typescript-eslint/promise-function-async
+  createOneTimeToken(data: object, expires?: number): Promise<string> {
     /* istanbul ignore if */
     if (this.db == null) {
       throw new Error('Wait for database to be ready')
     }
     const id = randomString(64)
     // default: expires in 600 s
-    expires = Math.floor(Date.now() / 1000 + (expires != null ? expires : 600))
-    this.db
-      .insert('oneTimeTokens', { id, expires, data: JSON.stringify(data) })
-      .catch((err) => {
-        /* istanbul ignore next */
-        console.error('Failed to insert token', err)
-      })
-    return id
+    const expiresForDb = Math.floor(
+      Date.now() / 1000 + (expires != null ? expires : 600)
+    )
+    return new Promise((resolve, reject) => {
+      this.db
+        .insert('oneTimeTokens', {
+          id,
+          expires: expiresForDb,
+          data: JSON.stringify(data)
+        })
+        .then(() => {
+          resolve(id)
+        })
+        .catch((err) => {
+          /* istanbul ignore next */
+          console.error('Failed to insert token', err)
+        })
+    })
   }
 
   // No difference in creation between a token and a one-time-token
-  createToken(data: object, expires?: number): string {
+  // eslint-disable-next-line @typescript-eslint/promise-function-async
+  createToken(data: object, expires?: number): Promise<string> {
     return this.createOneTimeToken(data, expires)
   }
 
@@ -239,15 +251,20 @@ class IdentityServerDb implements IdDbBackend {
 
   // eslint-disable-next-line @typescript-eslint/promise-function-async
   verifyOneTimeToken(id: string): Promise<object> {
+    let res: object
     /* istanbul ignore if */
     if (this.db == null) {
       throw new Error('Wait for database to be ready')
     }
     return new Promise((resolve, reject) => {
       this.verifyToken(id)
+        // eslint-disable-next-line @typescript-eslint/promise-function-async
         .then((data) => {
-          void this.deleteToken(id)
-          resolve(data)
+          res = data
+          return this.deleteToken(id)
+        })
+        .then(() => {
+          resolve(res)
         })
         .catch((e) => {
           reject(e)
@@ -277,19 +294,22 @@ class IdentityServerDb implements IdDbBackend {
   }
 
   dbMaintenance(delay: number): void {
-    const _vacuum = (): void => {
+    const _vacuum = async (): Promise<void> => {
       /* istanbul ignore next */
-      cleanByExpires.forEach((table) => {
-        void this.deleteLowerThan(
-          table,
-          'expires',
-          Math.floor(Date.now() / 1000)
-        )
-      })
+      await Promise.all(
+        // eslint-disable-next-line @typescript-eslint/promise-function-async
+        cleanByExpires.map((table) => {
+          return this.deleteLowerThan(
+            table,
+            'expires',
+            Math.floor(Date.now() / 1000)
+          )
+        })
+      )
       /* istanbul ignore next */
-      this.cleanJob = setTimeout(_vacuum, delay * 1000)
+      this.cleanJob = setTimeout(() => _vacuum, delay * 1000)
     }
-    this.cleanJob = setTimeout(_vacuum, delay * 1000)
+    this.cleanJob = setTimeout(() => _vacuum, delay * 1000)
   }
 
   close(): void {

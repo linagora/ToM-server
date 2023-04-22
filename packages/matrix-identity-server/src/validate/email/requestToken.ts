@@ -112,26 +112,33 @@ const RequestToken = (idServer: MatrixIdentityServer): expressAppHandler => {
 
               // TODO generate sid and token and store them
               const sid = randomString(64)
-              const token = idServer.db.createOneTimeToken(
-                {
-                  sid,
-                  email: dst,
-                  client_secret: (obj as RequestTokenArgs).client_secret
-                },
-                idServer.conf.mail_link_delay
-              )
-              void transport.sendMail({
-                to: (obj as RequestTokenArgs).email,
-                raw: mailBody(
-                  verificationTemplate,
-                  dst,
-                  token,
-                  (obj as RequestTokenArgs).client_secret,
-                  sid
+              idServer.db
+                .createOneTimeToken(
+                  {
+                    sid,
+                    email: dst,
+                    client_secret: (obj as RequestTokenArgs).client_secret
+                  },
+                  idServer.conf.mail_link_delay
                 )
-              })
-              // TODO: send mail
-              send(res, 200, { sid })
+                .then((token) => {
+                  void transport.sendMail({
+                    to: (obj as RequestTokenArgs).email,
+                    raw: mailBody(
+                      verificationTemplate,
+                      dst,
+                      token,
+                      (obj as RequestTokenArgs).client_secret,
+                      sid
+                    )
+                  })
+                  // TODO: send mail
+                  send(res, 200, { sid })
+                })
+                .catch((err) => {
+                  console.error('Token error', err)
+                  send(res, 400, errMsg('unknown', err))
+                })
             }
           }
         })

@@ -55,24 +55,28 @@ describe('Id Server DB', () => {
     const idDb = new IdDb(baseConf)
     idDb.ready
       .then(() => {
-        const token = idDb.createOneTimeToken({ a: 1 })
-        expect(token).toMatch(/^[a-zA-Z0-9]+$/)
         idDb
-          .verifyOneTimeToken(token)
-          .then((data) => {
-            // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
-            // @ts-ignore
-            expect(data.a).toEqual(1)
+          .createOneTimeToken({ a: 1 })
+          .then((token) => {
+            expect(token).toMatch(/^[a-zA-Z0-9]+$/)
             idDb
               .verifyOneTimeToken(token)
               .then((data) => {
-                done("Souldn't have find a value")
+                // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
+                // @ts-ignore
+                expect(data.a).toEqual(1)
+                idDb
+                  .verifyOneTimeToken(token)
+                  .then((data) => {
+                    done("Souldn't have find a value")
+                  })
+                  .catch((e) => {
+                    clearTimeout(idDb.cleanJob)
+                    idDb.close()
+                    done()
+                  })
               })
-              .catch((e) => {
-                clearTimeout(idDb.cleanJob)
-                idDb.close()
-                done()
-              })
+              .catch((e) => done(e))
           })
           .catch((e) => done(e))
       })
@@ -83,26 +87,31 @@ describe('Id Server DB', () => {
     const idDb = new IdDb(baseConf)
     idDb.ready
       .then(() => {
-        const token = idDb.createOneTimeToken({ a: 1 })
-        expect(token).toMatch(/^[a-zA-Z0-9]+$/)
         idDb
-          .match('oneTimeTokens', ['id'], ['id'], token.substring(2, 28))
-          .then((data) => {
-            expect(data[0].id).toBe(token)
+          .createOneTimeToken({ a: 1 })
+          .then((token) => {
+            expect(token).toMatch(/^[a-zA-Z0-9]+$/)
             idDb
-              .verifyOneTimeToken(token)
+              .match('oneTimeTokens', ['id'], ['id'], token.substring(2, 28))
               .then((data) => {
-                // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
-                // @ts-ignore
-                expect(data.a).toEqual(1)
-                clearTimeout(idDb.cleanJob)
-                done()
+                expect(data[0].id).toBe(token)
+                idDb
+                  .verifyOneTimeToken(token)
+                  .then((data) => {
+                    // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
+                    // @ts-ignore
+                    expect(data.a).toEqual(1)
+                    clearTimeout(idDb.cleanJob)
+                    idDb.close()
+                    done()
+                  })
+                  .catch((e) => done(e))
               })
-              .catch((e) => done(e))
+              .catch((e) => {
+                done(e)
+              })
           })
-          .catch((e) => {
-            done(e)
-          })
+          .catch((e) => done(e))
       })
       .catch((e) => done(e))
   })
@@ -111,19 +120,23 @@ describe('Id Server DB', () => {
     const idDb = new IdDb(baseConf)
     idDb.ready
       .then(() => {
-        const token = idDb.createToken({ a: 1 })
         idDb
-          .update('oneTimeTokens', { data: '{ "a": 2 }' }, 'id', token)
-          .then(() => {
+          .createOneTimeToken({ a: 1 })
+          .then((token) => {
             idDb
-              .verifyToken(token)
-              .then((data) => {
-                // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
-                // @ts-ignore
-                expect(data.a).toEqual(2)
-                clearTimeout(idDb.cleanJob)
-                idDb.close()
-                done()
+              .update('oneTimeTokens', { data: '{ "a": 2 }' }, 'id', token)
+              .then(() => {
+                idDb
+                  .verifyToken(token)
+                  .then((data) => {
+                    // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
+                    // @ts-ignore
+                    expect(data.a).toEqual(2)
+                    clearTimeout(idDb.cleanJob)
+                    idDb.close()
+                    done()
+                  })
+                  .catch((e) => done(e))
               })
               .catch((e) => done(e))
           })
@@ -139,14 +152,18 @@ describe('Id Server DB', () => {
         idDb
           .getCount('oneTimeTokens', 'id')
           .then((initialValue) => {
-            idDb.createToken({ a: 1 })
             idDb
-              .getCount('oneTimeTokens', 'id')
-              .then((val) => {
-                expect(val).toBe(initialValue + 1)
-                clearTimeout(idDb.cleanJob)
-                idDb.close()
-                done()
+              .createToken({ a: 1 })
+              .then(() => {
+                idDb
+                  .getCount('oneTimeTokens', 'id')
+                  .then((val) => {
+                    expect(val).toBe(initialValue + 1)
+                    clearTimeout(idDb.cleanJob)
+                    idDb.close()
+                    done()
+                  })
+                  .catch((e) => done(e))
               })
               .catch((e) => done(e))
           })
@@ -159,19 +176,50 @@ describe('Id Server DB', () => {
     const idDb = new IdDb(baseConf)
     idDb.ready
       .then(() => {
-        const token = idDb.createToken({ a: 1 })
         idDb
-          .getCount('oneTimeTokens', 'id', token)
-          .then((val) => {
-            expect(val).toBe(1)
+          .createToken({ a: 1 })
+          .then((token) => {
             idDb
-              .getCount('oneTimeTokens', 'id', token + 'z')
+              .getCount('oneTimeTokens', 'id', token)
               .then((val) => {
-                expect(val).toBe(0)
+                expect(val).toBe(1)
                 idDb
-                  .getCount('oneTimeTokens', 'id', [token, token + 'z'])
+                  .getCount('oneTimeTokens', 'id', token + 'z')
                   .then((val) => {
-                    expect(val).toBe(1)
+                    expect(val).toBe(0)
+                    idDb
+                      .getCount('oneTimeTokens', 'id', [token, token + 'z'])
+                      .then((val) => {
+                        expect(val).toBe(1)
+                        clearTimeout(idDb.cleanJob)
+                        idDb.close()
+                        done()
+                      })
+                      .catch((e) => done(e))
+                  })
+                  .catch((e) => done(e))
+              })
+              .catch((e) => done(e))
+          })
+          .catch((e) => done(e))
+      })
+      .catch((e) => done(e))
+  })
+
+  it('should delete lower than value', (done) => {
+    const idDb = new IdDb(baseConf)
+    idDb.ready
+      .then(() => {
+        idDb
+          .createToken({ a: 1 }, 5)
+          .then((token) => {
+            idDb
+              .deleteLowerThan('oneTimeTokens', 'expires', 6)
+              .then((val) => {
+                idDb
+                  .getCount('oneTimeTokens', 'id', token + 'z')
+                  .then((val) => {
+                    expect(val).toBe(0)
                     clearTimeout(idDb.cleanJob)
                     idDb.close()
                     done()
@@ -190,19 +238,25 @@ test('OneTimeToken timeout', (done) => {
   const idDb = new IdDb({ ...baseConf, database_vacuum_delay: 3 })
   idDb.ready
     .then(() => {
-      const token = idDb.createOneTimeToken({ a: 1 }, 1)
-      setTimeout(() => {
-        idDb
-          .verifyOneTimeToken(token)
-          .then((data) => {
-            done('Should throw')
-          })
-          .catch((e) => {
-            clearTimeout(idDb.cleanJob)
-            idDb.close()
-            done()
-          })
-      }, 6000)
+      idDb
+        .createOneTimeToken({ a: 1 }, 1)
+        .then((token) => {
+          setTimeout(() => {
+            idDb
+              .verifyOneTimeToken(token)
+              .then((data) => {
+                done('Should throw')
+              })
+              .catch((e) => {
+                clearTimeout(idDb.cleanJob)
+                idDb.close()
+                done()
+              })
+          }, 6000)
+        })
+        .catch((e) => {
+          done(e)
+        })
     })
     .catch((e) => {
       done(e)

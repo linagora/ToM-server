@@ -58,31 +58,48 @@ const updateHashes = (
                 const hash = new Hash()
                 hash.ready
                   .then(() => {
-                    rows.forEach((row) => {
-                      fieldsToHash.forEach((field, i) => {
-                        if (row[dbFieldsToHash[i]] != null) {
-                          supportedHashes.forEach((method: string) => {
-                            db.insert('hashes', {
-                              // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
-                              // @ts-ignore method is a function of hash
-                              hash: hash[method](
-                                `${
-                                  row[dbFieldsToHash[i]] as string
-                                } ${field} ${newPepper}`
-                              ),
-                              pepper: newPepper,
-                              type: field,
-                              // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-                              value: `@${row.uid}:${conf.server_name}`
-                            }).catch((e) => {
-                              /* istanbul ignore next */
-                              console.error('Unable to store hash', e)
-                            })
-                          })
-                        }
-                      })
+                    const promises: Array<Promise<void>> = []
+                    if (fieldsToHash.length === 0) {
                       resolve(true)
-                    })
+                    } else {
+                      rows.forEach((row) => {
+                        fieldsToHash.forEach((field, i) => {
+                          if (row[dbFieldsToHash[i]] != null) {
+                            // eslint-disable-next-line @typescript-eslint/promise-function-async
+                            supportedHashes.forEach((method: string) => {
+                              promises.push(
+                                db.insert('hashes', {
+                                  // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
+                                  // @ts-ignore method is a function of hash
+                                  hash: hash[method](
+                                    `${
+                                      row[dbFieldsToHash[i]] as string
+                                    } ${field} ${newPepper}`
+                                  ),
+                                  pepper: newPepper,
+                                  type: field,
+                                  // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+                                  value: `@${row.uid}:${conf.server_name}`
+                                })
+                              )
+                            })
+                          }
+                        })
+                      })
+                      if (promises.length === 0) {
+                        resolve(true)
+                      } else {
+                        Promise.all(promises)
+                          .then(() => {
+                            resolve(true)
+                          })
+                          .catch((e) => {
+                            /* istanbul ignore next */
+                            console.error('Unable to store hash', e)
+                            reject(e)
+                          })
+                      }
+                    }
                   })
                   .catch((e: any) => {
                     /* istanbul ignore next */

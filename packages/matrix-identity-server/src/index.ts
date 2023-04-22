@@ -102,44 +102,51 @@ export default class MatrixIdentityServer {
     const userDB = (this.userDB = new UserDB(this.conf))
     this.authenticate = Authenticate(db)
     this.ready = new Promise((resolve, reject) => {
-      db.ready
+      Promise.all([db.ready, userDB.ready])
         .then(() => {
-          const badMethod: expressAppHandler = (req, res) => {
-            send(res, 405, errMsg('unrecognized'))
-          }
           this.cronTasks = new CronTasks(this.conf, db, userDB)
-          // TODO
-          // const badEndPoint: expressAppHandler = (req, res) => {
-          //   send(res, 404, errMsg('unrecognized'))
-          // }
-          this.api = {
-            get: {
-              '/_matrix/identity/v2': status,
-              '/_matrix/identity/versions': versions,
-              '/_matrix/identity/v2/account': account(this),
-              '/_matrix/identity/v2/account/register': badMethod,
-              '/_matrix/identity/v2/account/logout': badMethod,
-              '/_matrix/identity/v2/hash_details': hashDetails(this),
-              '/_matrix/identity/v2/terms': Terms(this.conf),
-              '/_matrix/identity/v2/validate/email/requestToken': badMethod,
-              '/_matrix/identity/v2/validate/email/submitToken':
-                SubmitToken(this)
-            },
-            post: {
-              '/_matrix/identity/v2': badMethod,
-              '/_matrix/identity/versions': badMethod,
-              '/_matrix/identity/v2/account': badMethod,
-              '/_matrix/identity/v2/account/register': register(db),
-              '/_matrix/identity/v2/account/logout': logout(this),
-              '/_matrix/identity/v2/lookup': lookup(this),
-              '/_matrix/identity/v2/terms': PostTerms(this),
-              '/_matrix/identity/v2/validate/email/requestToken':
-                RequestToken(this),
-              '/_matrix/identity/v2/validate/email/submitToken':
-                SubmitToken(this)
-            }
-          }
-          resolve(true)
+          this.cronTasks.ready
+            .then(() => {
+              const badMethod: expressAppHandler = (req, res) => {
+                send(res, 405, errMsg('unrecognized'))
+              }
+              // TODO
+              // const badEndPoint: expressAppHandler = (req, res) => {
+              //   send(res, 404, errMsg('unrecognized'))
+              // }
+              this.api = {
+                get: {
+                  '/_matrix/identity/v2': status,
+                  '/_matrix/identity/versions': versions,
+                  '/_matrix/identity/v2/account': account(this),
+                  '/_matrix/identity/v2/account/register': badMethod,
+                  '/_matrix/identity/v2/account/logout': badMethod,
+                  '/_matrix/identity/v2/hash_details': hashDetails(this),
+                  '/_matrix/identity/v2/terms': Terms(this.conf),
+                  '/_matrix/identity/v2/validate/email/requestToken': badMethod,
+                  '/_matrix/identity/v2/validate/email/submitToken':
+                    SubmitToken(this)
+                },
+                post: {
+                  '/_matrix/identity/v2': badMethod,
+                  '/_matrix/identity/versions': badMethod,
+                  '/_matrix/identity/v2/account': badMethod,
+                  '/_matrix/identity/v2/account/register': register(db),
+                  '/_matrix/identity/v2/account/logout': logout(this),
+                  '/_matrix/identity/v2/lookup': lookup(this),
+                  '/_matrix/identity/v2/terms': PostTerms(this),
+                  '/_matrix/identity/v2/validate/email/requestToken':
+                    RequestToken(this),
+                  '/_matrix/identity/v2/validate/email/submitToken':
+                    SubmitToken(this)
+                }
+              }
+              resolve(true)
+            })
+            .catch((e) => {
+              /* istanbul ignore next */
+              reject(e)
+            })
         })
         .catch((e) => {
           /* istanbul ignore next */

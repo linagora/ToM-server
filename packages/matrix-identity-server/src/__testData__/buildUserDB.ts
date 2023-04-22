@@ -18,9 +18,14 @@ const buildUserDB = (conf: Config): Promise<void> => {
     if (conf.userdb_engine === 'sqlite') {
       userDb.ready.then(() => {
         (userDb.db as UserDBSQLite).db?.run(createQuery, () => {
-          (userDb.db as UserDBSQLite).db?.run(insertQuery, () => {
-            created = true
-            resolve()
+          (userDb.db as UserDBSQLite).db?.run(insertQuery).close((err) => {
+            /* istanbul ignore if */
+            if(err != null) {
+              reject(err)
+            } else {
+              created = true
+              resolve()
+            }
           })
         })
       }).catch(e => {

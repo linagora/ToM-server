@@ -26,9 +26,15 @@ const buildUserDB = (conf: Config): Promise<void> => {
             if (err != null) {
               reject(err)
             } else {
-              userDb.close()
-              created = true
-              resolve()
+              userDb.close((err) => {
+                /* istanbul ignore if */
+                if(err != null) {
+                  console.error(err)
+                  reject(err)
+                }
+                created = true
+                resolve()
+              })
             }
           })
         }
