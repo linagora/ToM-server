@@ -12,10 +12,10 @@ const buildTokenTable = (conf: Config): Promise<void> => {
   return new Promise((resolve, reject) => {
     const dbManager = new sqlite3.Database(conf.database_host)
     dbManager.run(
-      'CREATE TABLE accessTokens (id varchar(64) primary key, data text)',
+      'CREATE TABLE matrixTokens (id varchar(64) primary key, data text)',
       () =>
         dbManager.run(
-          `INSERT INTO accessTokens VALUES('${token.value}', '${JSON.stringify(
+          `INSERT INTO matrixTokens VALUES('${token.value}', '${JSON.stringify(
             token.content
           )}')`,
           () => {

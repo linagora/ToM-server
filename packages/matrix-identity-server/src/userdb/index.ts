@@ -61,10 +61,8 @@ class UserDB implements UserDBBackend {
           // TODO: insert here init if needed
           resolve()
         })
-        .catch((e) => {
-          /* istanbul ignore next */
-          reject(e)
-        })
+        /* istanbul ignore next */
+        .catch(reject)
     })
   }
 

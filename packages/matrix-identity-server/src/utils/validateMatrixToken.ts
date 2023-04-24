@@ -13,6 +13,7 @@ const validateMatrixToken = (
   matrixServer: string,
   accessToken: string
 ): Promise<string> => {
+  /* istanbul ignore if */
   if (!hostnameRe.test(matrixServer))
     return Promise.reject('Bad matrix_server_name')
   return new Promise((resolve, reject) => {
@@ -35,9 +36,7 @@ const validateMatrixToken = (
           reject("The Matrix homeserver did not include 'sub' in its response")
         }
       })
-      .catch((e) => {
-        reject(e)
-      })
+      .catch(reject)
   })
 }
 

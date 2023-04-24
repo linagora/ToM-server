@@ -51,13 +51,9 @@ const buildUserDB = (conf: Config): Promise<void> => {
         userDb.query(createQuery).then(() => {
           userDb.query(insertQuery).then(() => {
             resolve()
-          }).catch(e => {
-            reject(e)
-          })
-        }).catch(e => {
-          reject(e)
-        })
-      }).catch(e => { reject(e) })
+          }).catch(reject)
+        }).catch(reject)
+      }).catch(reject)
     }
   })
 }

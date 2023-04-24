@@ -28,10 +28,7 @@ const buildUserDB = (conf: Config): Promise<void> => {
             }
           })
         })
-      }).catch(e => {
-        /* istanbul ignore next */
-        reject(e)
-      })
+      }).catch(reject)
     } else {
       (userDb.db as UserDBPg).db?.query(createQuery, () => {
         (userDb.db as UserDBPg).db?.query(insertQuery, () => {

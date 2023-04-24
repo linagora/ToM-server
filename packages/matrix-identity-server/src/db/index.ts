@@ -12,7 +12,7 @@ export type Collections =
   | 'keys'
   | 'hashes'
 
-export const cleanByExpires: Collections[] = ['oneTimeTokens', 'attempts']
+const cleanByExpires: Collections[] = ['oneTimeTokens', 'attempts']
 
 type Insert = (
   table: Collections,
@@ -73,7 +73,9 @@ class IdentityServerDb implements IdDbBackend {
   ready: Promise<void>
   db: IdDbBackend
   cleanJob?: NodeJS.Timeout
+  cleanByExpires: Collections[]
   constructor(conf: Config) {
+    this.cleanByExpires = cleanByExpires
     let Module
     /* istanbul ignore next */
     switch (conf.database_engine) {

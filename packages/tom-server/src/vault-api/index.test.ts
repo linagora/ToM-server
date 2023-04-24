@@ -202,7 +202,8 @@ describe('Vault API server', () => {
     // eslint-disable-next-line @typescript-eslint/return-await
     return new Promise<void>((resolve, reject) => {
       vaultApiServer.db
-        ?.deleteEqual('accessTokens', 'id', accessToken)
+        // @ts-expect-error matrixTokens isn't member of Collections
+        ?.deleteEqual('matrixTokens', 'id', accessToken)
         .then(() => {
           resolve()
         })

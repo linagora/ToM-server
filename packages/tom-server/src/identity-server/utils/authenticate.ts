@@ -30,7 +30,8 @@ const Authenticate = (
       token = req.query.access_token
     }
     if (token != null && token.length > 0) {
-      db.get('accessTokens', ['data'], 'id', token)
+      // @ts-expect-error recoveryWords not in Collections
+      db.get('matrixTokens', ['data'], 'id', token)
         .then((rows) => {
           callback(JSON.parse(rows[0].data as string), token)
         })
@@ -56,7 +57,8 @@ const Authenticate = (
                   epoch: Utils.epoch()
                 }
                 // STORE
-                db.insert('accessTokens', {
+                // @ts-expect-error recoveryWords not in Collections
+                db.insert('matrixTokens', {
                   // eslint-disable-next-line n/no-callback-literal
                   // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
                   // @ts-ignore token is defined

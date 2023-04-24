@@ -6,7 +6,7 @@ import fetch from 'node-fetch'
 import { Hash, supportedHashes } from '@twake/crypto'
 import defaultConfig from './__testData__/registerConf.json'
 import buildUserDB from './__testData__/buildUserDB'
-import IdServer from '.'
+import TwakeServer from '..'
 import path from 'path'
 import JEST_PROCESS_ROOT_PATH from '../../jest.globals'
 
@@ -30,7 +30,7 @@ process.env.TWAKE_IDENTITY_SERVER_CONF = path.join(
   'registerConf.json'
 )
 
-let idServer: IdServer
+let twakeServer: TwakeServer
 let app: express.Application
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 let federationToken: string
@@ -52,17 +52,12 @@ beforeAll((done) => {
   }
   buildUserDB(conf)
     .then(() => {
-      idServer = new IdServer(conf)
+      twakeServer = new TwakeServer(conf)
       app = express()
 
-      idServer.ready
+      twakeServer.ready
         .then(() => {
-          Object.keys(idServer.api.get).forEach((k) => {
-            app.get(k, idServer.api.get[k])
-          })
-          Object.keys(idServer.api.post).forEach((k) => {
-            app.post(k, idServer.api.post[k])
-          })
+          app.use(twakeServer.endpoints)
           done()
         })
         .catch((e) => {
@@ -90,14 +85,14 @@ afterEach(() => {
 afterAll(() => {
   if (process.env.TEST_PG !== 'yes')
     fs.unlinkSync(path.join(pathToTestDataFolder, 'test.db'))
-  idServer.cleanJobs()
+  twakeServer.cleanJobs()
 })
 
 describe('Using Matrix Token', () => {
   const validToken = 'syt_ZHdobw_FakeTokenFromMatrixV_25Unpr'
 
   it('should require authentication', async () => {
-    await idServer.cronTasks?.ready
+    await twakeServer.idServer.cronTasks?.ready
     const response = await request(app)
       .get('/_matrix/identity/v2/hash_details')
       .set('Accept', 'application/json')
@@ -120,7 +115,7 @@ describe('Using Matrix Token', () => {
     let pepper = ''
     describe('/_matrix/identity/v2/hash_details', () => {
       it('should display algorithms and pepper', async () => {
-        await idServer.cronTasks?.ready
+        await twakeServer.idServer.cronTasks?.ready
         const response = await request(app)
           .get('/_matrix/identity/v2/hash_details')
           .query({ access_token: validToken })
@@ -137,7 +132,7 @@ describe('Using Matrix Token', () => {
       it('should return Matrix id', async () => {
         const hash = new Hash()
         await hash.ready
-        await idServer.cronTasks?.ready
+        await twakeServer.idServer.cronTasks?.ready
         const phoneHash = hash.sha256(`33612345678 phone ${pepper}`)
         const response = await request(app)
           .post('/_matrix/identity/v2/lookup')

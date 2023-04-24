@@ -51,7 +51,8 @@ const createTables = (
               _resolve()
             }
           })
-          .catch((e) => _reject)
+          /* istanbul ignore next */
+          .catch(_reject)
       })
     )
   })
