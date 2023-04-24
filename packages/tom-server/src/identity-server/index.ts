@@ -25,10 +25,8 @@ export default class TwakeIdentityServer extends MatrixIdentityServer {
             autocompletion(this)
           resolve(true)
         })
-        .catch((e) => {
-          /* istanbul ignore next */
-          reject(e)
-        })
+        /* istanbul ignore next */
+        .catch(reject)
     })
   }
 }

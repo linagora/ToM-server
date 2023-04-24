@@ -60,6 +60,7 @@ const updateHashes = (
                   .then(() => {
                     const promises: Array<Promise<void>> = []
                     if (fieldsToHash.length === 0) {
+                      /* istanbul ignore next */
                       resolve(true)
                     } else {
                       rows.forEach((row) => {
@@ -86,6 +87,7 @@ const updateHashes = (
                           }
                         })
                       })
+                      /* istanbul ignore if */
                       if (promises.length === 0) {
                         resolve(true)
                       } else {
@@ -96,6 +98,7 @@ const updateHashes = (
                           .catch((e) => {
                             /* istanbul ignore next */
                             console.error('Unable to store hash', e)
+                            /* istanbul ignore next */
                             reject(e)
                           })
                       }

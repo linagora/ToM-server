@@ -87,10 +87,8 @@ class UserDBLDAP implements UserDBBackend {
             }
           })
         })
-        .catch((e) => {
-          /* istanbul ignore next */
-          reject(e)
-        })
+        /* istanbul ignore next */
+        .catch(reject)
     })
   }
 

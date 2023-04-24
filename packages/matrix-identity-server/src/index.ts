@@ -143,15 +143,11 @@ export default class MatrixIdentityServer {
               }
               resolve(true)
             })
-            .catch((e) => {
-              /* istanbul ignore next */
-              reject(e)
-            })
+            /* istanbul ignore next */
+            .catch(reject)
         })
-        .catch((e) => {
-          /* istanbul ignore next */
-          reject(e)
-        })
+        /* istanbul ignore next */
+        .catch(reject)
     })
   }
 

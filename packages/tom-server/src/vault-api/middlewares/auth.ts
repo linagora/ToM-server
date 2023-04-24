@@ -27,7 +27,8 @@ const isAuth = (db: TwakeDB, conf: Config): expressAppHandler => {
       token = req.query.access_token
     }
     if (token != null && token.length > 0) {
-      db.get('accessTokens', ['data'], 'id', token)
+      // @ts-expect-error matrixTokens isn't member of Collections
+      db.get('matrixTokens', ['data'], 'id', token)
         // eslint-disable-next-line @typescript-eslint/promise-function-async
         .then((rows) => {
           if (rows.length === 0) {
@@ -49,7 +50,8 @@ const isAuth = (db: TwakeDB, conf: Config): expressAppHandler => {
                       sub: uid,
                       epoch: Utils.epoch()
                     }
-                    return db.insert('accessTokens', {
+                    // @ts-expect-error matrixTokens isn't member of Collections
+                    return db.insert('matrixTokens', {
                       id: token,
                       data: JSON.stringify(tokenData)
                     })

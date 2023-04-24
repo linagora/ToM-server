@@ -13,17 +13,20 @@ const initializeDb = (server: TwakeServer): Promise<void> => {
           .createDatabases(
             server.conf,
             {
-              recoveryWords: 'userId text PRIMARY KEY, words TEXT'
+              recoveryWords: 'userId text PRIMARY KEY, words TEXT',
+              matrixTokens: 'id varchar(64) PRIMARY KEY, data text'
             },
             {},
             {}
           )
           .then(() => {
             server.db = server.idServer.db // as TwakeDB
+            // @ts-expect-error matrixTokens isn't member of Collections
+            server.db.cleanByExpires.push('matrixTokens')
             resolve()
           })
           /* istanbul ignore next */
-          .catch((e) => reject)
+          .catch(reject)
         break
       default:
         /* istanbul ignore next */ throw new Error(
