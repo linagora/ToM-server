@@ -7,6 +7,7 @@ import VaultServer from './vault-api'
 import WellKnown from './wellKnown'
 import defaultConfig from './config.json'
 import initializeDb, { type TwakeDB } from './db'
+import privateNoteApiRouter from './private-note-api'
 
 export default class TwakeServer {
   endpoints: Router
@@ -47,6 +48,12 @@ export default class TwakeServer {
               Object.keys(wellKnown.api.get).forEach((k) => {
                 this.endpoints.get(k, wellKnown.api.get[k])
               })
+
+              const privateNoteApi = privateNoteApiRouter(
+                this.idServer.db,
+                conf as Config
+              )
+              this.endpoints.use(privateNoteApi)
               resolve(true)
             })
             .catch(abort)
