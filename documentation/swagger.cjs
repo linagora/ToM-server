@@ -13,6 +13,16 @@ const vaultApiPath = path.join(
   'index.ts'
 )
 
+const identityServerApiPath = path.join(
+  __dirname,
+  '..',
+  'packages',
+  'tom-server',
+  'src',
+  'identity-server',
+  'index.ts'
+)
+
 const options = {
   definition: {
     openapi: '3.0.0',
@@ -66,6 +76,30 @@ const options = {
               }
             }
           }
+        },
+        BadRequest: {
+          description: 'Bad request',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  errorCode: {
+                    type: 'string',
+                    description: 'A Matrix error code'
+                  },
+                  error: {
+                    type: 'string',
+                    description: 'A human-readable error message'
+                  }
+                }
+              },
+              example: {
+                errorCode: 'M_MISSING_PARAMS',
+                error: 'Properties are missing in the request body'
+              }
+            }
+          }
         }
       }
     },
@@ -75,7 +109,7 @@ const options = {
       }
     ]
   },
-  apis: [vaultApiPath]
+  apis: [identityServerApiPath, vaultApiPath]
 }
 
 const swaggerSpec = swaggerJsDoc(options)
