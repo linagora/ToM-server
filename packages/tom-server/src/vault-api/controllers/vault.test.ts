@@ -38,7 +38,11 @@ describe('Vault controllers', () => {
         mockResponse.statusCode = code
         return mockResponse
       }),
-      json: jest.fn().mockReturnValue(mockResponse)
+      json: jest.fn().mockReturnValue(mockResponse),
+      writeHead: jest.fn(),
+      write: jest.fn(),
+      send: jest.fn(),
+      end: jest.fn()
     }
   })
 
