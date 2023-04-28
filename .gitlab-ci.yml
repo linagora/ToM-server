@@ -45,6 +45,7 @@ invite_build:
   tags:
     - docker
   stage: push_docker
+  before_script: []
   only:
     changes:
       - 'packages/matrix-invite/**/*'
