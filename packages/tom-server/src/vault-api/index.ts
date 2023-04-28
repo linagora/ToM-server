@@ -37,7 +37,96 @@ export default class TwakeVaultAPI {
     this.vaultDb = server.db as TwakeDB
     this.endpoints
       .route('/_twake/recoveryWords')
+      /**
+       * @openapi
+       * '/_twake/recoveryWords':
+       *  get:
+       *    tags:
+       *    - Vault API
+       *    description: Allow for the connected user to retrieve its recovery words
+       *    responses:
+       *      200:
+       *        description: Success
+       *        content:
+       *          application/json:
+       *            schema:
+       *              type: object
+       *              properties:
+       *                words:
+       *                  type: string
+       *                  description: Recovery words of the connected user
+       *            example:
+       *              words: This is the recovery sentence of rtyler
+       *      404:
+       *        description: Not found
+       *        content:
+       *          application/json:
+       *            schema:
+       *              type: object
+       *              properties:
+       *                error:
+       *                  type: string
+       *                  description: Connected user has no recovery sentence
+       *            example:
+       *              error: User has no recovery sentence
+       *      409:
+       *        description: Conflict
+       *        content:
+       *          application/json:
+       *            schema:
+       *              type: object
+       *              properties:
+       *                error:
+       *                  type: string
+       *                  description: Connected user has multiple recovery sentence
+       *            example:
+       *              error: User has more than one recovery sentence
+       *      401:
+       *        $ref: '#/components/responses/Unauthorized'
+       *      500:
+       *        $ref: '#/components/responses/InternalServerError'
+       */
       .get(...this._middlewares(getRecoveryWords))
+      /**
+       * @openapi
+       * '/_twake/recoveryWords':
+       *  post:
+       *    tags:
+       *    - Vault API
+       *    description: Store connected user recovery words in database
+       *    requestBody:
+       *      description: Object containing the recovery words of the connected user
+       *      required: true
+       *      content:
+       *        application/json:
+       *          schema:
+       *            type: object
+       *            properties:
+       *              words:
+       *                type: string
+       *                description: The recovery words of the connected user
+       *            required:
+       *              - words
+       *          example:
+       *            words: This is the recovery sentence of rtyler
+       *    responses:
+       *      200:
+       *        description: Success
+       *        content:
+       *          application/json:
+       *            schema:
+       *              type: object
+       *              properties:
+       *                message:
+       *                  type: string
+       *                  description: Message indicating that words have been successfully saved
+       *              example:
+       *                message: Saved recovery words sucessfully
+       *      401:
+       *        $ref: '#/components/responses/Unauthorized'
+       *      500:
+       *        $ref: '#/components/responses/InternalServerError'
+       */
       .post(...this._middlewares(saveRecoveryWords))
       .all(allowCors, methodNotAllowed, errorMiddleware)
   }

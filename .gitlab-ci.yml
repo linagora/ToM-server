@@ -3,23 +3,25 @@ image: node:lts-slim
 stages:
   - build
   - test
+  - deploy
   - push_docker
 
 default:
-  cache: &global_cache
-    paths:
-      - node_modules/
+  before_script:
+    - npm ci --include=dev
+
+variables:
+  DOCS_FOLDER: "documentation"
+  SPEC_TO_DISPLAY: "openapi.json"
+  DISABLE_TRY_IT_OUT_JS_METHOD: "const DisableTryItOutPlugin = function() {return {statePlugins:{spec:{wrapSelectors:{allowTryItOutFor:() => () => false}}}}}"
+  DISABLE_TRY_IT_OUT_PLUGIN: ", DisableTryItOutPlugin"
 
 npm:
   tags:
     - docker
   stage: build
   script:
-    - npm ci --include=dev
     - npm run build
-  cache:
-    <<: *global_cache
-    policy: push
   artifacts:
     expire_in: 1 days
     when: on_success
@@ -31,13 +33,9 @@ test:
     - docker
   stage: test
   image: mcr.microsoft.com/playwright:v1.32.0-focal
-  cache:
-    <<: *global_cache
-    policy: pull
   dependencies:
     - npm
   script:
-    - npm ci --include=dev
     - npm test
 
 invite_build:
@@ -58,3 +56,20 @@ invite_build:
       --context "${CI_PROJECT_DIR}/packages/matrix-invite/"
       --dockerfile "${CI_PROJECT_DIR}/packages/matrix-invite/Dockerfile"
       --destination "docker.io/twaketech/twake-matrix-invite:latest"
+
+pages:
+  tags:
+    - docker
+  stage: deploy
+  script:
+    - npm run doc
+    - mkdir public
+    - cp -rp node_modules/swagger-ui-dist/* public
+    - cp -rp $DOCS_FOLDER/* public
+    - sed -i "/window\.onload\s=\sfunction()\s{/a $DISABLE_TRY_IT_OUT_JS_METHOD" public/swagger-initializer.js
+    - sed -i "s#https://petstore\.swagger\.io/v2/swagger\.json#$SPEC_TO_DISPLAY#g" public/swagger-initializer.js
+    - sed -i "/SwaggerUIBundle\.plugins\.DownloadUrl/a $DISABLE_TRY_IT_OUT_PLUGIN" public/swagger-initializer.js
+  artifacts:
+    paths:
+      - public
+

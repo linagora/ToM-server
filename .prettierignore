@@ -1,5 +1,6 @@
 /*
 !/packages
+!/documentation
 packages/**/*.json
 packages/**/*.js
 packages/**/*.cjs
