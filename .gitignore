@@ -1,5 +1,6 @@
 coverage/
 dist/
+documentation/
 node_modules/
 packages/*/example/*.js*
 *.map
