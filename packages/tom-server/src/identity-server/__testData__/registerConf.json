@@ -1,4 +1,5 @@
 {
+  "cron_service": true,
   "database_engine": "sqlite",
   "database_host": "./src/identity-server/__testData__/test.db",
   "database_vacuum_delay": 7200,

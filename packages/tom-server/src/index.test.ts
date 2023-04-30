@@ -46,6 +46,7 @@ beforeAll((done) => {
           done()
         })
         .catch((e) => {
+          console.error('HERE')
           done(e)
         })
     })

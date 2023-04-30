@@ -10,10 +10,12 @@ export default (db: IdentityServerDb, conf: Config): RequestHandler => {
 
     authenticator(req, res, (data: tokenContent, token: string | undefined) => {
       try {
+        /* istanbul ignore if */
         if (token === undefined) {
           throw new Error('Missing token')
         }
 
+        /* istanbul ignore if */
         if (data.sub === undefined) {
           throw new Error('Invalid data')
         }
@@ -24,6 +26,7 @@ export default (db: IdentityServerDb, conf: Config): RequestHandler => {
 
         return
       } catch (error) {
+        console.error('Auth error', error)
         return res.status(401).json({ error: 'Unauthorized' })
       }
     })

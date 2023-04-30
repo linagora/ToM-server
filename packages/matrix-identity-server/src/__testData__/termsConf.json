@@ -1,4 +1,5 @@
 {
+  "cron_service": false,
   "database_engine": "sqlite",
   "database_host": "./src/__testData__/terms.db",
   "database_vacuum_delay": 7200,

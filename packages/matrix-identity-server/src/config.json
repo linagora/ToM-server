@@ -1,5 +1,6 @@
 {
   "base_url": "",
+  "cron_service": true,
   "database_engine": "sqlite",
   "database_host": "./tokens.db",
   "database_name": "",

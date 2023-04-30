@@ -39,6 +39,7 @@ export const defaultConfig = defaultConfDesc
 type IdServerAPI = Record<string, expressAppHandler>
 
 export interface Config {
+  cron_service: boolean
   database_name?: string
   database_engine: SupportedDatabases
   database_host: string

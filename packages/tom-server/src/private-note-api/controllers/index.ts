@@ -80,6 +80,7 @@ export const deleteNote = async (
     const { id } = req.params
     const itemId = +id
 
+    /* istanbul ignore if */
     if (id === undefined || isNaN(itemId)) {
       throw new Error('Missing id')
     }

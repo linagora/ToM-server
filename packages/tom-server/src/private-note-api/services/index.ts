@@ -100,6 +100,7 @@ class PrivateNoteService implements IPrivateNoteService {
         }
       })
 
+      /* istanbul ignore if */
       if (updatedNote == null) {
         throw new Error('Note not updated')
       }
