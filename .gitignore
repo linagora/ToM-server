@@ -1,6 +1,7 @@
 coverage/
 dist/
 documentation/
+!documentation/swagger.cjs
 node_modules/
 packages/*/example/*.js*
 *.map
