@@ -7,6 +7,7 @@ import { type Config } from '..'
 import type IdentityServerDb from '../db'
 import type UserDB from '../userdb'
 import { randomString } from '../utils/tokenUtils'
+import MatrixDB from '../matrixDb'
 
 const fieldsToHash = ['phone', 'email']
 const dbFieldsToHash = ['mobile', 'mail']
@@ -17,6 +18,28 @@ const updateHashes = (
   db: IdentityServerDb,
   userDB: UserDB
 ): Promise<void> => {
+  // If Matrix DB is available, this function filter inactive users
+  const _filter = async (
+    rows: Array<Record<string, string | number | string[]>>
+  ): Promise<Array<Record<string, string | number | string[]>>> => {
+    const matrixDb = new MatrixDB(conf)
+    await matrixDb.ready
+    for (let i = 0; i < rows.length; i++) {
+      const res = await matrixDb
+        .get(
+          'users',
+          ['name]'],
+          'name',
+          `@${rows[i].uid as string}:${conf.server_name}`
+        )
+        .catch((e) => {
+          rows[i].inactive = 1
+        })
+      if (res == null || res.length === 0) rows[i].inactive = 1
+    }
+    return rows
+  }
+
   return new Promise((resolve, reject) => {
     /**
      * Step 1:
@@ -54,63 +77,79 @@ const updateHashes = (
           new Promise((resolve, reject) => {
             userDB
               .getAll('users', [...dbFieldsToHash, 'uid'])
-              .then((rows) => {
-                const hash = new Hash()
-                hash.ready
-                  .then(() => {
-                    const promises: Array<Promise<void>> = []
-                    if (fieldsToHash.length === 0) {
-                      /* istanbul ignore next */
-                      resolve(true)
-                    } else {
-                      rows.forEach((row) => {
-                        fieldsToHash.forEach((field, i) => {
-                          if (row[dbFieldsToHash[i]] != null) {
-                            // eslint-disable-next-line @typescript-eslint/promise-function-async
-                            supportedHashes.forEach((method: string) => {
-                              promises.push(
-                                db.insert('hashes', {
-                                  // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
-                                  // @ts-ignore method is a function of hash
-                                  hash: hash[method](
-                                    `${
-                                      row[dbFieldsToHash[i]] as string
-                                    } ${field} ${newPepper}`
-                                  ),
-                                  pepper: newPepper,
-                                  type: field,
-                                  // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-                                  value: `@${row.uid}:${conf.server_name}`
-                                })
-                              )
-                            })
-                          }
-                        })
-                      })
-                      /* istanbul ignore if */
-                      if (promises.length === 0) {
+              .then(async (rows) => {
+                if (
+                  // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+                  conf.matrix_database_host &&
+                  // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+                  conf.matrix_database_engine
+                ) {
+                  return await _filter(rows)
+                } else {
+                  return rows
+                }
+              })
+              .then(
+                (rows: Array<Record<string, string | number | string[]>>) => {
+                  const hash = new Hash()
+                  hash.ready
+                    .then(() => {
+                      const promises: Array<Promise<void>> = []
+                      if (fieldsToHash.length === 0) {
+                        /* istanbul ignore next */
                         resolve(true)
                       } else {
-                        Promise.all(promises)
-                          .then(() => {
-                            resolve(true)
+                        rows.forEach((row) => {
+                          fieldsToHash.forEach((field, i) => {
+                            if (row[dbFieldsToHash[i]] != null) {
+                              // eslint-disable-next-line @typescript-eslint/promise-function-async
+                              supportedHashes.forEach((method: string) => {
+                                promises.push(
+                                  db.insert('hashes', {
+                                    // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
+                                    // @ts-ignore method is a function of hash
+                                    hash: hash[method](
+                                      `${
+                                        row[dbFieldsToHash[i]] as string
+                                      } ${field} ${newPepper}`
+                                    ),
+                                    pepper: newPepper,
+                                    type: field,
+                                    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+                                    value: `@${row.uid}:${conf.server_name}`,
+                                    // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+                                    active: row.inactive ? 0 : 1
+                                  })
+                                )
+                              })
+                            }
                           })
-                          .catch((e) => {
-                            /* istanbul ignore next */
-                            console.error('Unable to store hash', e)
-                            /* istanbul ignore next */
-                            reject(e)
-                          })
+                        })
+                        /* istanbul ignore if */
+                        if (promises.length === 0) {
+                          resolve(true)
+                        } else {
+                          Promise.all(promises)
+                            .then(() => {
+                              resolve(true)
+                            })
+                            .catch((e) => {
+                              /* istanbul ignore next */
+                              console.error('Unable to store hash', e)
+                              /* istanbul ignore next */
+                              reject(e)
+                            })
+                        }
                       }
-                    }
-                  })
-                  .catch((e: any) => {
-                    /* istanbul ignore next */
-                    console.error('Unable to initialize js-nacl', e)
-                    /* istanbul ignore next */
-                    reject(e)
-                  })
-              })
+                    })
+                    .catch((e: any) => {
+                      /* istanbul ignore next */
+                      console.error('Unable to initialize js-nacl', e)
+                      /* istanbul ignore next */
+                      reject(e)
+                    })
+                }
+              )
               .catch((e) => {
                 /* istanbul ignore next */
                 console.error('Unable to parse user DB', e)

@@ -18,7 +18,7 @@ const tables: Record<Collections, string> = {
   attempts: 'email text PRIMARY KEY, expires int, attempt int',
   keys: 'name varchar(32) PRIMARY KEY, data text',
   hashes:
-    'hash varchar(48) PRIMARY KEY, pepper varchar(32), type varchar(8), value text'
+    'hash varchar(48) PRIMARY KEY, pepper varchar(32), type varchar(8), value text, active integer'
 }
 
 const indexes: Partial<Record<Collections, string[]>> = {

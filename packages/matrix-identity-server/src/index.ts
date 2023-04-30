@@ -32,6 +32,7 @@ export * as SQLite from './db/sql/sqlite'
 export * as IdentityServerDb from './db'
 export { type tokenContent } from './account/register'
 export * as Utils from './utils'
+export * as MatrixErrors from './utils/errors'
 export const errMsg = _errMsg
 export const validateMatrixToken = _validateMatrixToken
 export const defaultConfig = defaultConfDesc
@@ -40,10 +41,9 @@ type IdServerAPI = Record<string, expressAppHandler>
 
 export interface Config {
   cron_service: boolean
-  database_name?: string
   database_engine: SupportedDatabases
   database_host: string
-  server_name: string
+  database_name?: string
   database_password?: string
   database_user?: string
   base_url: string
@@ -57,8 +57,14 @@ export interface Config {
   ldap_user?: string
   ldapjs_opts?: Record<string, any>
   mail_link_delay: number
+  matrix_database_engine?: SupportedDatabases | null
+  matrix_database_host?: string | null
+  matrix_database_name?: string | null
+  matrix_database_password?: string | null
+  matrix_database_user?: string | null
   pepperCron?: string
   policies?: Policies | string | null
+  server_name: string
   smtp_password?: string
   smtp_port?: number
   smtp_sender?: string
