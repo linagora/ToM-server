@@ -40,13 +40,14 @@ export const defaultConfig = defaultConfDesc
 type IdServerAPI = Record<string, expressAppHandler>
 
 export interface Config {
+  additional_features?: boolean
+  base_url: string
   cron_service: boolean
   database_engine: SupportedDatabases
   database_host: string
   database_name?: string
   database_password?: string
   database_user?: string
-  base_url: string
   database_vacuum_delay: number
   key_delay: number
   keys_depth: number
@@ -73,6 +74,10 @@ export interface Config {
   smtp_user?: string
   smtp_verify_certificate?: boolean
   userdb_engine: SupportedUserDatabases
+  userdb_host?: string
+  userdb_name?: string
+  userdb_password?: string
+  userdb_user?: string
   template_dir: string
 }
 

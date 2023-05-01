@@ -31,6 +31,7 @@ describe('UserDB', () => {
     const userDB = new UserDB({
       ...defaultConfig,
       userdb_engine: 'sqlite',
+      userdb_host: dbName,
       database_host: dbName,
       database_engine: 'sqlite'
     })
@@ -55,6 +56,7 @@ describe('UserDB', () => {
     const userDB = new UserDB({
       ...defaultConfig,
       userdb_engine: 'sqlite',
+      userdb_host: dbName,
       database_host: dbName,
       database_engine: 'sqlite'
     })

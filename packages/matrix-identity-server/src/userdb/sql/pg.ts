@@ -21,23 +21,23 @@ class UserDBPg extends Pg implements UserDBBackend {
           // @ts-ignore
           if (pg.Database == null) pg = pg.default
           if (
-            conf.database_host == null ||
-            conf.database_user == null ||
-            conf.database_password == null ||
-            conf.database_name == null
+            conf.userdb_host == null ||
+            conf.userdb_user == null ||
+            conf.userdb_password == null ||
+            conf.userdb_name == null
           ) {
             throw new Error(
-              'database_name, database_user and database_password are required when using Postgres'
+              'userdb_name, userdb_user and userdb_password are required when using Postgres'
             )
           }
           const opts: ClientConfig = {
-            host: conf.database_host,
-            user: conf.database_user,
-            password: conf.database_password,
-            database: conf.database_name
+            host: conf.userdb_host,
+            user: conf.userdb_user,
+            password: conf.userdb_password,
+            database: conf.userdb_name
           }
           // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
-          if (conf.database_host.match(/^(.*):(\d+)/)) {
+          if (conf.userdb_host.match(/^(.*):(\d+)/)) {
             opts.host = RegExp.$1
             opts.port = parseInt(RegExp.$2)
           }

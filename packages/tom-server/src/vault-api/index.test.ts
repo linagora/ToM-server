@@ -65,7 +65,8 @@ describe('Vault API server', () => {
       database_host: testFilePath,
       matrix_server: 'localhost',
       template_dir: './src/identity-server/templates',
-      userdb_engine: 'sqlite'
+      userdb_engine: 'sqlite',
+      userdb_host: testFilePath
     }
     buildTokenTable(conf as Config)
       .then(() => {

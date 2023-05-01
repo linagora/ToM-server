@@ -11,5 +11,6 @@
   "smtp_sender": "yadd@debian.org",
   "smtp_server": "localhost",
   "template_dir": "./src/identity-server/templates",
-  "userdb_engine": "sqlite"
+  "userdb_engine": "sqlite",
+  "userdb_host": "./src/identity-server/__testData__/test.db"
 }

@@ -4,15 +4,12 @@ import MatrixDBSQLite from './sql/sqlite'
 
 type Collections = 'users'
 
+/*
 type Get = (
   table: Collections,
   fields?: string[],
   field?: string,
   value?: string | number
-) => Promise<Array<Record<string, string | string[] | number>>>
-type GetAll = (
-  table: Collections,
-  fields: string[]
 ) => Promise<Array<Record<string, string | string[] | number>>>
 type Match = (
   table: Collections,
@@ -20,12 +17,18 @@ type Match = (
   searchFields: string[],
   value: string | number
 ) => Promise<Array<Record<string, string | string[] | number>>>
+*/
+type GetAll = (
+  table: Collections,
+  fields: string[]
+) => Promise<Array<Record<string, string | string[] | number>>>
 
 export interface MatrixDBBackend {
   ready: Promise<void>
-  get: Get
+  // get: Get
   getAll: GetAll
-  match: Match
+  // match: Match
+  close: () => void
 }
 
 class MatrixDB implements MatrixDBBackend {
@@ -64,28 +67,12 @@ class MatrixDB implements MatrixDBBackend {
   }
 
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
-  get(
-    table: Collections,
-    fields?: string[],
-    field?: string,
-    value?: string | number
-  ) {
-    return this.db.get(table, fields, field, value)
-  }
-
-  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
-  match(
-    table: Collections,
-    fields: string[],
-    searchFields: string[],
-    value: string | number
-  ) {
-    return this.db.match(table, fields, searchFields, value)
-  }
-
-  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
   getAll(table: Collections, fields: string[]) {
     return this.db.getAll(table, fields)
+  }
+
+  close(): void {
+    this.db.close()
   }
 }
 

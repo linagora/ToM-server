@@ -34,5 +34,6 @@
     }
   },
   "template_dir": "./templates",
-  "userdb_engine": "sqlite"
+  "userdb_engine": "sqlite",
+  "userdb_host": "./src/__testData__/terms.db"
 }

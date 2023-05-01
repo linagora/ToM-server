@@ -18,24 +18,36 @@ const updateHashes = (
   db: IdentityServerDb,
   userDB: UserDB
 ): Promise<void> => {
+  const isMatrixDbAvailable =
+    // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+    conf.matrix_database_host &&
+    // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+    conf.matrix_database_engine
+
   // If Matrix DB is available, this function filter inactive users
   const _filter = async (
     rows: Array<Record<string, string | number | string[]>>
   ): Promise<Array<Record<string, string | number | string[]>>> => {
-    const matrixDb = new MatrixDB(conf)
-    await matrixDb.ready
-    for (let i = 0; i < rows.length; i++) {
-      const res = await matrixDb
-        .get(
-          'users',
-          ['name]'],
-          'name',
-          `@${rows[i].uid as string}:${conf.server_name}`
-        )
-        .catch((e) => {
-          rows[i].inactive = 1
-        })
-      if (res == null || res.length === 0) rows[i].inactive = 1
+    // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+    if (isMatrixDbAvailable) {
+      const matrixDb = new MatrixDB(conf)
+      await matrixDb.ready
+      const entries = await matrixDb.getAll('users', ['name']).catch((e) => {
+        /* istanbul ignore next */
+        console.error('Unable to query Matrix DB', e)
+      })
+      matrixDb.close()
+      /* istanbul ignore if */
+      if (entries == null) {
+        return rows
+      }
+      const names: string[] = []
+      entries.forEach((row) => {
+        names.push((row.name as string).replace(/^@(.*?):(?:.*)$/, '$1'))
+      })
+      for (let i = 0; i < rows.length; i++) {
+        if (names.includes(rows[i].uid as string)) rows[i].active = 1
+      }
     }
     return rows
   }
@@ -77,18 +89,7 @@ const updateHashes = (
           new Promise((resolve, reject) => {
             userDB
               .getAll('users', [...dbFieldsToHash, 'uid'])
-              .then(async (rows) => {
-                if (
-                  // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
-                  conf.matrix_database_host &&
-                  // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
-                  conf.matrix_database_engine
-                ) {
-                  return await _filter(rows)
-                } else {
-                  return rows
-                }
-              })
+              .then(_filter)
               .then(
                 (rows: Array<Record<string, string | number | string[]>>) => {
                   const hash = new Hash()
@@ -118,7 +119,9 @@ const updateHashes = (
                                     // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
                                     value: `@${row.uid}:${conf.server_name}`,
                                     // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
-                                    active: row.inactive ? 0 : 1
+                                    active: isMatrixDbAvailable
+                                      ? (row.active as number)
+                                      : 1
                                   })
                                 )
                               })

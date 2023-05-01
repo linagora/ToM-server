@@ -19,7 +19,9 @@ class UserDBSQLite extends SQLite implements UserDBBackend {
           // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
           /* istanbul ignore next */ // @ts-ignore
           if (sqlite3.Database == null) sqlite3 = sqlite3.default
-          const db = (this.db = new sqlite3.Database(conf.database_host))
+          const db = (this.db = new sqlite3.Database(
+            conf.userdb_host as string
+          ))
           /* istanbul ignore if */
           if (db == null) {
             reject(new Error('Database not created'))

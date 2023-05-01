@@ -25,18 +25,28 @@ const lookup = (idServer: MatrixIdentityServer): expressAppHandler => {
             idServer.db
               .get(
                 'hashes',
-                ['value', 'hash'],
+                ['value', 'hash', 'active'],
                 'hash',
                 (obj as { addresses: string[] }).addresses
               )
               .then((rows) => {
                 // send(res, 200, rows)
                 const mappings: Record<string, string> = {}
+                const inactives: Record<string, string> = {}
                 rows.forEach((row) => {
-                  // @ts-expect-error row.hash is not null
-                  mappings[row.hash] = row.value
+                  if (row.active === 1) {
+                    // @ts-expect-error row.hash is not null
+                    mappings[row.hash] = row.value
+                  } else {
+                    // @ts-expect-error row.hash is not null
+                    inactives[row.hash] = row.value
+                  }
                 })
-                send(res, 200, { mappings })
+                if (idServer.conf.additional_features ?? false) {
+                  send(res, 200, { mappings, inactive_mappings: inactives })
+                } else {
+                  send(res, 200, { mappings })
+                }
               })
               .catch((e) => {
                 /* istanbul ignore next */
