@@ -20,6 +20,7 @@ beforeAll((done) => {
     database_host: testDb,
     base_url: 'http://example.com/',
     userdb_engine: 'sqlite',
+    userdb_host: testDb,
     template_dir: path.join(
       JEST_PROCESS_ROOT_PATH,
       'src',

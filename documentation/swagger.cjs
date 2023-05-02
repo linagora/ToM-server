@@ -13,6 +13,15 @@ const vaultApiPath = path.join(
   'index.ts'
 )
 
+const matrixIdentityServerApiPath = path.join(
+  __dirname,
+  '..',
+  'packages',
+  'matrix-identity-server',
+  'src',
+  'api-doc.ts'
+)
+
 const identityServerApiPath = path.join(
   __dirname,
   '..',
@@ -109,7 +118,7 @@ const options = {
       }
     ]
   },
-  apis: [identityServerApiPath, vaultApiPath]
+  apis: [matrixIdentityServerApiPath, identityServerApiPath, vaultApiPath]
 }
 
 const swaggerSpec = swaggerJsDoc(options)

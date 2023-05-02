@@ -1,10 +1,10 @@
 import { type ClientConfig } from 'pg'
 import { type Collections } from '../../db'
-import { type UserDBBackend } from '../'
+import { type MatrixDBBackend } from '../'
 import { type Config } from '../..'
 import Pg, { type PgDatabase } from '../../db/sql/pg'
 
-class UserDBPg extends Pg implements UserDBBackend {
+class MatrixDBPg extends Pg implements MatrixDBBackend {
   // eslint-disable-next-line @typescript-eslint/promise-function-async
   createDatabases(
     conf: Config,
@@ -21,23 +21,23 @@ class UserDBPg extends Pg implements UserDBBackend {
           // @ts-ignore
           if (pg.Database == null) pg = pg.default
           if (
-            conf.userdb_host == null ||
-            conf.userdb_user == null ||
-            conf.userdb_password == null ||
-            conf.userdb_name == null
+            conf.matrix_database_host == null ||
+            conf.matrix_database_user == null ||
+            conf.matrix_database_password == null ||
+            conf.matrix_database_name == null
           ) {
             throw new Error(
-              'userdb_name, userdb_user and userdb_password are required when using Postgres'
+              'database_name, database_user and database_password are required when using Postgres'
             )
           }
           const opts: ClientConfig = {
-            host: conf.userdb_host,
-            user: conf.userdb_user,
-            password: conf.userdb_password,
-            database: conf.userdb_name
+            host: conf.matrix_database_host,
+            user: conf.matrix_database_user,
+            password: conf.matrix_database_password,
+            database: conf.matrix_database_name
           }
           // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
-          if (conf.userdb_host.match(/^(.*):(\d+)/)) {
+          if (conf.matrix_database_host.match(/^(.*):(\d+)/)) {
             opts.host = RegExp.$1
             opts.port = parseInt(RegExp.$2)
           }
@@ -59,4 +59,4 @@ class UserDBPg extends Pg implements UserDBBackend {
   }
 }
 
-export default UserDBPg
+export default MatrixDBPg

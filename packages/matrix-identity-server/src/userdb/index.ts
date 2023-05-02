@@ -29,6 +29,7 @@ export interface UserDBBackend {
   get: Get
   getAll: GetAll
   match: Match
+  close: () => void
 }
 
 class UserDB implements UserDBBackend {
@@ -51,7 +52,8 @@ class UserDB implements UserDBBackend {
         break
       }
       default: {
-        throw new Error(`Unsupported database type ${conf.database_engine}`)
+        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+        throw new Error(`Unsupported database type ${conf.userdb_engine}`)
       }
     }
     this.db = new Module(conf)
@@ -89,6 +91,10 @@ class UserDB implements UserDBBackend {
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
   getAll(table: Collections, fields: string[]) {
     return this.db.getAll(table, fields)
+  }
+
+  close(): void {
+    this.db.close()
   }
 }
 

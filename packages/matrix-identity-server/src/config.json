@@ -1,4 +1,5 @@
 {
+  "additional_features": false,
   "base_url": "",
   "cron_service": true,
   "database_engine": "sqlite",
@@ -16,6 +17,11 @@
   "ldap_user": "",
   "ldapjs_opts": {},
   "mail_link_delay": 7200,
+  "matrix_database_engine": null,
+  "matrix_database_host": null,
+  "matrix_database_name": null,
+  "matrix_database_password": null,
+  "matrix_database_user": null,
   "pepperCron": "0 0 0 * * *",
   "policies": null,
   "server_name": "localhost",
@@ -27,5 +33,9 @@
   "smtp_server": "localhost",
   "smtp_port": 25,
   "userdb_engine": "sqlite",
+  "userdb_host": "./tokens.db",
+  "userdb_name": "",
+  "userdb_password": "",
+  "userdb_user": "",
   "template_dir": "./templates"
 }

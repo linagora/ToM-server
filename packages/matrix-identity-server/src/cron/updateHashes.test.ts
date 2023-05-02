@@ -1,3 +1,4 @@
+import fs from 'fs'
 import IdentityServerDB from '../db'
 import defaultConfig from '../config.json'
 import { type Config } from '..'
@@ -9,6 +10,7 @@ const conf: Config = {
   database_engine: 'sqlite',
   database_host: ':memory:',
   userdb_engine: 'sqlite',
+  userdb_host: './src/__testData__/hashes.db',
   server_name: 'company.com'
 }
 
@@ -42,6 +44,7 @@ beforeAll((done) => {
 
 afterAll(() => {
   clearTimeout(db.cleanJob)
+  fs.unlinkSync('./src/__testData__/hashes.db')
 })
 
 describe('updateHashes', () => {

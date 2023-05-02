@@ -18,7 +18,7 @@ const createTables = (
       new Promise<void>((_resolve, _reject) => {
         db.exists(table)
           .then((count) => {
-            // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+            /* istanbul ignore else */ // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
             if (!count) {
               db.rawQuery(
                 `CREATE TABLE ${table}(${tables[table as keyof typeof tables]})`

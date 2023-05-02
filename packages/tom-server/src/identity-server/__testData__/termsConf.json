@@ -34,5 +34,6 @@
     }
   },
   "template_dir": "./src/identity-server/templates",
-  "userdb_engine": "sqlite"
+  "userdb_engine": "sqlite",
+  "userdb_host": "./src/identity-server/__testData__/terms.db"
 }

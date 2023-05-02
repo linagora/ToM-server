@@ -136,6 +136,8 @@ class UserDBLDAP implements UserDBBackend {
   ): Promise<Array<Record<string, string | string[] | number>>> {
     return this.get(table, fields, 'objectClass', '*')
   }
+
+  close(): void {}
 }
 
 export default UserDBLDAP

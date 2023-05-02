@@ -19,6 +19,7 @@ class CronTasks {
       throw new Error(`Invalid cron line: ${conf.pepperCron}`)
     this.tasks = []
     this.ready = new Promise((resolve, reject) => {
+      /* istanbul ignore else */
       if (conf.cron_service) {
         db.getCount('hashes', 'hash')
           .then((count) => {
