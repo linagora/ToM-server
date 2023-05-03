@@ -1,17 +1,23 @@
-import {
-  checkGetRequirements,
-  checkCreationRequirements,
-  checkDeleteRequirements,
-  checkUpdateRequirements
-} from '../middlewares/validation.middleware'
+import PrivateNoteValidationMiddleware from '../middlewares/validation.middleware'
 import type { AuthRequest } from '../types'
 import type { Response, NextFunction } from 'express'
-import { prismaMock } from '../../../singleton'
+import type { IdentityServerDb } from '../../utils'
 
 describe('Validation middlewares', () => {
   let mockRequest: Partial<AuthRequest>
   let mockResponse: Partial<Response>
   const nextFunction: NextFunction = jest.fn()
+
+  const dbMock = {
+    get: jest.fn(),
+    insert: jest.fn(),
+    update: jest.fn(),
+    deleteEqual: jest.fn(),
+    getCount: jest.fn()
+  }
+
+  const privateNoteValidationMiddlewareMock =
+    new PrivateNoteValidationMiddleware(dbMock as unknown as IdentityServerDb)
 
   beforeEach(() => {
     mockRequest = {}
@@ -31,7 +37,7 @@ describe('Validation middlewares', () => {
         userId: 'test'
       }
 
-      checkGetRequirements(
+      privateNoteValidationMiddlewareMock.checkGetRequirements(
         mockRequest as AuthRequest,
         mockResponse as Response,
         nextFunction
@@ -48,7 +54,7 @@ describe('Validation middlewares', () => {
         userId: 'XXXX'
       }
 
-      checkGetRequirements(
+      privateNoteValidationMiddlewareMock.checkGetRequirements(
         mockRequest as AuthRequest,
         mockResponse as Response,
         nextFunction
@@ -67,7 +73,7 @@ describe('Validation middlewares', () => {
         userId: 'someone else'
       }
 
-      checkGetRequirements(
+      privateNoteValidationMiddlewareMock.checkGetRequirements(
         mockRequest as AuthRequest,
         mockResponse as Response,
         nextFunction
@@ -89,7 +95,7 @@ describe('Validation middlewares', () => {
         userId: 'test'
       }
 
-      checkCreationRequirements(
+      privateNoteValidationMiddlewareMock.checkCreationRequirements(
         mockRequest as AuthRequest,
         mockResponse as Response,
         nextFunction
@@ -108,7 +114,7 @@ describe('Validation middlewares', () => {
         userId: 'test2'
       }
 
-      checkCreationRequirements(
+      privateNoteValidationMiddlewareMock.checkCreationRequirements(
         mockRequest as AuthRequest,
         mockResponse as Response,
         nextFunction
@@ -126,7 +132,7 @@ describe('Validation middlewares', () => {
         userId: 'test'
       }
 
-      checkCreationRequirements(
+      privateNoteValidationMiddlewareMock.checkCreationRequirements(
         mockRequest as AuthRequest,
         mockResponse as Response,
         nextFunction
@@ -146,14 +152,16 @@ describe('Validation middlewares', () => {
         userId: 'test'
       }
 
-      prismaMock.note.findFirst.mockResolvedValue({
-        id: 1,
-        authorId: 'test',
-        content: 'hello',
-        targetId: 'test'
-      })
+      dbMock.get.mockResolvedValue([
+        {
+          id: 1,
+          authorId: 'test',
+          content: 'hello',
+          targetId: 'test'
+        }
+      ])
 
-      await checkDeleteRequirements(
+      await privateNoteValidationMiddlewareMock.checkDeleteRequirements(
         mockRequest as AuthRequest,
         mockResponse as Response,
         nextFunction
@@ -171,9 +179,9 @@ describe('Validation middlewares', () => {
         userId: 'test2'
       }
 
-      prismaMock.note.findFirst.mockResolvedValue(null)
+      dbMock.get.mockResolvedValue([])
 
-      await checkDeleteRequirements(
+      await privateNoteValidationMiddlewareMock.checkDeleteRequirements(
         mockRequest as AuthRequest,
         mockResponse as Response,
         nextFunction
@@ -191,9 +199,9 @@ describe('Validation middlewares', () => {
         userId: 'test2'
       }
 
-      prismaMock.note.findFirst.mockRejectedValue(new Error('test'))
+      dbMock.get.mockRejectedValue(new Error('test'))
 
-      await checkDeleteRequirements(
+      await privateNoteValidationMiddlewareMock.checkDeleteRequirements(
         mockRequest as AuthRequest,
         mockResponse as Response,
         nextFunction
@@ -214,14 +222,16 @@ describe('Validation middlewares', () => {
         userId: 'test'
       }
 
-      prismaMock.note.findFirst.mockResolvedValue({
-        id: 1,
-        authorId: 'test',
-        content: 'hello',
-        targetId: 'test'
-      })
+      dbMock.get.mockResolvedValue([
+        {
+          id: 1,
+          authorId: 'test',
+          content: 'hello',
+          targetId: 'test'
+        }
+      ])
 
-      await checkUpdateRequirements(
+      await privateNoteValidationMiddlewareMock.checkUpdateRequirements(
         mockRequest as AuthRequest,
         mockResponse as Response,
         nextFunction
@@ -240,9 +250,9 @@ describe('Validation middlewares', () => {
         userId: 'test2'
       }
 
-      prismaMock.note.findFirst.mockResolvedValue(null)
+      dbMock.getCount.mockResolvedValue(0)
 
-      await checkUpdateRequirements(
+      await privateNoteValidationMiddlewareMock.checkUpdateRequirements(
         mockRequest as AuthRequest,
         mockResponse as Response,
         nextFunction
@@ -260,9 +270,37 @@ describe('Validation middlewares', () => {
         userId: 'test2'
       }
 
-      prismaMock.note.findFirst.mockRejectedValue(new Error('test'))
+      dbMock.getCount.mockRejectedValue(new Error('test'))
 
-      await checkUpdateRequirements(
+      await privateNoteValidationMiddlewareMock.checkUpdateRequirements(
+        mockRequest as AuthRequest,
+        mockResponse as Response,
+        nextFunction
+      )
+
+      expect(nextFunction).not.toHaveBeenCalled()
+      expect(mockResponse.status).toHaveBeenCalledWith(400)
+    })
+
+    it('should not pass when note is not from the connected user', async () => {
+      mockRequest = {
+        body: {
+          content: 'hello',
+          id: 'test'
+        },
+        userId: 'test2'
+      }
+
+      dbMock.get.mockResolvedValue([
+        {
+          id: 1,
+          authorId: 'someonelese',
+          content: 'hello',
+          targetId: 'test'
+        }
+      ])
+
+      await privateNoteValidationMiddlewareMock.checkUpdateRequirements(
         mockRequest as AuthRequest,
         mockResponse as Response,
         nextFunction

@@ -16,6 +16,5 @@ export default {
   moduleNameMapper: {
     "@twake/(.*)$": "<rootDir>/../$1/src",
   },
-  setupFilesAfterEnv: ['<rootDir>/singleton.ts'],
   clearMocks: true,
 }

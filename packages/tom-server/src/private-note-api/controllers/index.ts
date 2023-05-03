@@ -1,120 +1,137 @@
 import { type NextFunction, type Request, type Response } from 'express'
 import PrivateNoteService from '../services'
+import type { TwakeDB } from '../../db'
+import type { IPrivateNoteApiController, IPrivateNoteService } from '../types'
 
-/**
- * Creates a note
- *
- * @param {Request} req - request object
- * @param {Response} res - response object
- * @param {NextFunction} next - next function
- * @returns {Promise<void>}
- */
-export const create = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> => {
-  try {
-    const { author, target, content } = req.body
+export default class PrivateNoteApiController
+  implements IPrivateNoteApiController
+{
+  privateNoteApiService: IPrivateNoteService
 
-    await PrivateNoteService.create(author, target, content)
-
-    res.status(201).send()
-    return
-  } catch (error) {
-    next(error)
+  constructor(private readonly db: TwakeDB) {
+    this.privateNoteApiService = new PrivateNoteService(db)
   }
-}
 
-/**
- * Fetches a note
- *
- * @param {Request} req - request object
- * @param {Response} res - response object
- * @param {NextFunction} next - next function
- * @returns {Promise<void>}
- */
-export const get = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> => {
-  try {
-    const { author, target } = req.query
+  /**
+   * Creates a note
+   *
+   * @param {Request} req - request object
+   * @param {Response} res - response object
+   * @param {NextFunction} next - next function
+   * @returns {Promise<void>}
+   */
+  create = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
+    try {
+      const { author, target, content } = req.body
 
-    if (author === undefined || target === undefined) {
-      throw new Error('Missing author or target id')
-    }
+      if (
+        author === undefined ||
+        target === undefined ||
+        content === undefined
+      ) {
+        throw new Error('Missing parameters', {
+          cause: 'missing required fields'
+        })
+      }
 
-    const note = await PrivateNoteService.get(
-      author as string,
-      target as string
-    )
+      await this.privateNoteApiService.create(author, target, content)
 
-    if (note === null) {
-      res.status(404).send()
+      res.status(201).send()
       return
+    } catch (error) {
+      next(error)
     }
-
-    res.status(200).json(note)
-    return
-  } catch (error) {
-    next(error)
   }
-}
 
-/**
- * Deletes a note
- *
- * @param {Request} req - request object
- * @param {Response} res - response object
- * @param {NextFunction} next - next function
- * @returns {Promise<void>}
- */
-export const deleteNote = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> => {
-  try {
-    const { id } = req.params
-    const itemId = +id
+  /**
+   * Fetches a note
+   *
+   * @param {Request} req - request object
+   * @param {Response} res - response object
+   * @param {NextFunction} next - next function
+   * @returns {Promise<void>}
+   */
+  get = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
+    try {
+      const { author, target } = req.query
 
-    /* istanbul ignore if */
-    if (id === undefined || isNaN(itemId)) {
-      throw new Error('Missing id')
+      if (author === undefined || target === undefined) {
+        throw new Error('Missing author or target id')
+      }
+
+      const note = await this.privateNoteApiService.get(
+        author as string,
+        target as string
+      )
+
+      if (note === null) {
+        res.status(404).send()
+        return
+      }
+
+      res.status(200).json(note)
+      return
+    } catch (error) {
+      next(error)
     }
-
-    await PrivateNoteService.delete(itemId)
-
-    res.status(204).send()
-    return
-  } catch (error) {
-    next(error)
   }
-}
 
-/**
- * Updates a note
- *
- * @param {Request} req - request object
- * @param {Response} res - response object
- * @param {NextFunction} next - next function
- * @returns {Promise<void>}
- */
-export const update = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> => {
-  try {
-    const { id, content } = req.body
+  /**
+   * Deletes a note
+   *
+   * @param {Request} req - request object
+   * @param {Response} res - response object
+   * @param {NextFunction} next - next function
+   * @returns {Promise<void>}
+   */
+  deleteNote = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
+    try {
+      const { id } = req.params
+      const itemId = +id
 
-    await PrivateNoteService.update(id, content)
+      await this.privateNoteApiService.delete(itemId)
 
-    res.status(204).send()
-    return
-  } catch (error) {
-    next(error)
+      res.status(204).send()
+      return
+    } catch (error) {
+      next(error)
+    }
+  }
+
+  /**
+   * Updates a note
+   *
+   * @param {Request} req - request object
+   * @param {Response} res - response object
+   * @param {NextFunction} next - next function
+   * @returns {Promise<void>}
+   */
+  update = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
+    try {
+      const { id, content } = req.body
+
+      await this.privateNoteApiService.update(id, content)
+
+      res.status(204).send()
+      return
+    } catch (error) {
+      next(error)
+    }
   }
 }

@@ -12,3 +12,4 @@ export type Config = MConfig & {
 }
 
 export type IdentityServerDb = MIdentityServerDb.default
+export type Collections = MIdentityServerDb.Collections
