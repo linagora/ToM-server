@@ -14,7 +14,9 @@ const initializeDb = (server: TwakeServer): Promise<void> => {
             server.conf,
             {
               recoveryWords: 'userId text PRIMARY KEY, words TEXT',
-              matrixTokens: 'id varchar(64) PRIMARY KEY, data text'
+              matrixTokens: 'id varchar(64) PRIMARY KEY, data text',
+              privateNotes:
+                'id varchar(64) PRIMARY KEY, authorId varchar(64), content text, targetId varchar(64)'
             },
             {},
             {}

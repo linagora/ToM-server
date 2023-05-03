@@ -1,134 +1,168 @@
 import type { NextFunction, Response } from 'express'
-import type { AuthRequest } from '../types'
-import prisma from '../../prisma/client'
+import type {
+  AuthRequest,
+  IPrivateNoteApiValidationMiddleware,
+  Note
+} from '../types'
+import type { TwakeDB } from '../../db'
+import type { Collections } from '../../utils'
 
-/**
- * Checks if the creation request is valid.
- *
- * @param {AuthRequest} req -  the request object
- * @param {Response} res - the response object
- * @param {NextFunction} next - the next handler
- */
-export const checkCreationRequirements = (
-  req: AuthRequest,
-  res: Response,
-  next: NextFunction
-): void => {
-  try {
-    const { author, target, content } = req.body
+export default class PrivateNoteApiValidationMiddleware
+  implements IPrivateNoteApiValidationMiddleware
+{
+  constructor(private readonly db: TwakeDB) {}
 
-    if (author === undefined || target === undefined || content === undefined) {
-      throw new Error('Missing required fields')
-    }
+  /**
+   * Checks if the creation request is valid.
+   *
+   * @param {AuthRequest} req -  the request object
+   * @param {Response} res - the response object
+   * @param {NextFunction} next - the next handler
+   */
+  checkCreationRequirements = (
+    req: AuthRequest,
+    res: Response,
+    next: NextFunction
+  ): void => {
+    try {
+      const { author, target, content } = req.body
 
-    if (author !== req.userId) {
-      throw new Error('Unauthorized')
-    }
-
-    next()
-  } catch (error) {
-    res.status(400).json({ message: 'Bad Request' })
-  }
-}
-
-/**
- * Checks if the creation request is valid.
- *
- * @param {AuthRequest} req -  the request object
- * @param {Response} res - the response object
- * @param {NextFunction} next - the next handler
- */
-export const checkGetRequirements = (
-  req: AuthRequest,
-  res: Response,
-  next: NextFunction
-): void => {
-  try {
-    const { author, target } = req.query
-
-    if (author === undefined || target === undefined) {
-      throw new Error('Missing required query parameters')
-    }
-
-    if (author !== req.userId) {
-      throw new Error('Unauthorized')
-    }
-
-    next()
-  } catch (error) {
-    res.status(400).json({ message: 'Bad Request' })
-  }
-}
-
-/**
- * Checks if the creation request is valid.
- *
- * @param {AuthRequest} req -  the request object
- * @param {Response} res - the response object
- * @param {NextFunction} next - the next handler
- */
-export const checkUpdateRequirements = async (
-  req: AuthRequest,
-  res: Response,
-  next: NextFunction
-): Promise<void> => {
-  try {
-    const { id, content } = req.body
-
-    if (id === undefined || content === undefined) {
-      throw new Error('Missing required query parameters')
-    }
-
-    const ExistingNode = await prisma.note.findFirst({
-      where: {
-        id,
-        authorId: req.userId
+      if (
+        author === undefined ||
+        target === undefined ||
+        content === undefined
+      ) {
+        throw new Error('Missing required fields')
       }
-    })
 
-    if (ExistingNode === null) {
-      throw new Error('Unauthorized')
-    }
-
-    next()
-  } catch (error) {
-    res.status(400).json({ message: 'Bad Request' })
-  }
-}
-
-/**
- * Checks if the creation request is valid.
- *
- * @param {AuthRequest} req -  the request object
- * @param {Response} res - the response object
- * @param {NextFunction} next - the next handler
- */
-export const checkDeleteRequirements = async (
-  req: AuthRequest,
-  res: Response,
-  next: NextFunction
-): Promise<void> => {
-  try {
-    const { id } = req.params
-
-    if (id === undefined) {
-      throw new Error('Missing required query parameters')
-    }
-
-    const itemId = +id
-    const ExistingNode = await prisma.note.findFirst({
-      where: {
-        id: itemId,
-        authorId: req.userId
+      if (author !== req.userId) {
+        throw new Error('Unauthorized')
       }
-    })
 
-    if (ExistingNode === null) {
-      throw new Error('Unauthorized')
+      next()
+    } catch (error) {
+      res.status(400).json({ message: 'Bad Request' })
     }
+  }
 
-    next()
-  } catch (error) {
-    res.status(400).json({ message: 'Bad Request' })
+  /**
+   * Checks if the creation request is valid.
+   *
+   * @param {AuthRequest} req -  the request object
+   * @param {Response} res - the response object
+   * @param {NextFunction} next - the next handler
+   */
+  checkGetRequirements = (
+    req: AuthRequest,
+    res: Response,
+    next: NextFunction
+  ): void => {
+    try {
+      const { author, target } = req.query
+
+      if (author === undefined || target === undefined) {
+        throw new Error('Missing required query parameters')
+      }
+
+      if (author !== req.userId) {
+        throw new Error('Unauthorized')
+      }
+
+      next()
+    } catch (error) {
+      res.status(400).json({ message: 'Bad Request' })
+    }
+  }
+
+  /**
+   * Checks if the creation request is valid.
+   *
+   * @param {AuthRequest} req -  the request object
+   * @param {Response} res - the response object
+   * @param {NextFunction} next - the next handler
+   */
+  checkUpdateRequirements = async (
+    req: AuthRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
+    try {
+      const { id, content } = req.body
+
+      if (id === undefined || content === undefined) {
+        throw new Error('Missing required query parameters')
+      }
+
+      const ExistingNotes = (await this.db.get(
+        'PrivateNotes' as Collections,
+        ['authorId'],
+        'id',
+        id
+      )) as unknown as Note[]
+
+      if (ExistingNotes.length === 0) {
+        throw new Error('Not found')
+      }
+
+      if (
+        ExistingNotes?.find((note) => note.authorId === req.userId) ===
+        undefined
+      ) {
+        throw new Error('Unauthorized')
+      }
+
+      next()
+    } catch (error) {
+      res.status(400).json({ message: 'Bad Request' })
+    }
+  }
+
+  /**
+   * Checks if the creation request is valid.
+   *
+   * @param {AuthRequest} req -  the request object
+   * @param {Response} res - the response object
+   * @param {NextFunction} next - the next handler
+   */
+  checkDeleteRequirements = async (
+    req: AuthRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
+    try {
+      const { id } = req.params
+
+      if (id === undefined) {
+        throw new Error('Missing required query parameters')
+      }
+
+      const itemId = +id
+
+      if (isNaN(itemId)) {
+        throw new Error('Bad Request')
+      }
+
+      const existingNotes = (await this.db.get(
+        'PrivateNotes' as Collections,
+        ['authorId'],
+        'id',
+        itemId
+      )) as unknown as Note[]
+
+      if (existingNotes.length === 0) {
+        throw new Error('Not Found')
+      }
+
+      if (
+        existingNotes?.find((note) => note.authorId === req.userId) ===
+        undefined
+      ) {
+        throw new Error('Unauthorized')
+      }
+
+      next()
+    } catch (error) {
+      res.status(400).json({ message: 'Bad Request' })
+    }
   }
 }

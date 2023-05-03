@@ -1,29 +1,44 @@
 /* eslint-disable @typescript-eslint/no-misused-promises */
 import { Router } from 'express'
-import { create, deleteNote, get, update } from '../controllers'
+import PrivateNoteApiController from '../controllers'
 import type { IdentityServerDb, Config } from '../../utils'
 import authMiddleware from '../middlewares/auth.middleware'
-import {
-  checkCreationRequirements,
-  checkDeleteRequirements,
-  checkGetRequirements,
-  checkUpdateRequirements
-} from '../middlewares/validation.middleware'
+import PrivateNoteApiValidationMiddleware from '../middlewares/validation.middleware'
 
 export const PATH = '/_twake/private_note'
 
 export default (db: IdentityServerDb, config: Config): Router => {
   const router = Router()
   const authenticate = authMiddleware(db, config)
+  const privateNoteApiController = new PrivateNoteApiController(db)
+  const validationMiddleware = new PrivateNoteApiValidationMiddleware(db)
 
-  router.get(PATH, authenticate, checkGetRequirements, get)
-  router.post(PATH, authenticate, checkCreationRequirements, create)
-  router.put(PATH, authenticate, checkUpdateRequirements, update)
+  router.get(
+    PATH,
+    authenticate,
+    validationMiddleware.checkGetRequirements,
+    privateNoteApiController.get
+  )
+
+  router.post(
+    PATH,
+    authenticate,
+    validationMiddleware.checkCreationRequirements,
+    privateNoteApiController.create
+  )
+
+  router.put(
+    PATH,
+    authenticate,
+    validationMiddleware.checkUpdateRequirements,
+    privateNoteApiController.update
+  )
+
   router.delete(
     `${PATH}/:id`,
     authenticate,
-    checkDeleteRequirements,
-    deleteNote
+    validationMiddleware.checkDeleteRequirements,
+    privateNoteApiController.deleteNote
   )
 
   return router

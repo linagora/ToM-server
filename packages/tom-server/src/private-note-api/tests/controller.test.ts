@@ -2,12 +2,19 @@
 import express, { type NextFunction, type Response } from 'express'
 import router, { PATH } from '../routes'
 import supertest from 'supertest'
-import { prismaMock } from '../../../singleton'
 import bodyParser from 'body-parser'
 import type { Config, IdentityServerDb } from '../../utils'
 import type { AuthRequest } from '../types'
 
 const app = express()
+
+const dbMock = {
+  get: jest.fn(),
+  insert: jest.fn(),
+  update: jest.fn(),
+  deleteEqual: jest.fn(),
+  getCount: jest.fn()
+}
 
 jest.mock('../../identity-server/utils/authenticate', () => {
   return (db: IdentityServerDb, conf: Config) =>
@@ -23,33 +30,37 @@ jest.mock('../../identity-server/utils/authenticate', () => {
 
 jest.mock('../../private-note-api/middlewares/validation.middleware.ts', () => {
   const passiveMiddlewareMock = (
-    req: AuthRequest,
-    res: Response,
+    _req: AuthRequest,
+    _res: Response,
     next: NextFunction
   ): void => {
     next()
   }
 
-  return {
-    checkGetRequirements: passiveMiddlewareMock,
-    checkCreationRequirements: passiveMiddlewareMock,
-    checkUpdateRequirements: passiveMiddlewareMock,
-    checkDeleteRequirements: passiveMiddlewareMock
+  return function () {
+    return {
+      checkGetRequirements: passiveMiddlewareMock,
+      checkCreationRequirements: passiveMiddlewareMock,
+      checkUpdateRequirements: passiveMiddlewareMock,
+      checkDeleteRequirements: passiveMiddlewareMock
+    }
   }
 })
 
 app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({ extended: true }))
-app.use(router({} as IdentityServerDb, {} as Config))
+app.use(router(dbMock as unknown as IdentityServerDb, {} as Config))
 
 describe('the private note controller', () => {
   it('should try to fetch a note', async () => {
-    prismaMock.note.findFirst.mockResolvedValue({
-      id: 1,
-      authorId: 'test',
-      content: 'some note',
-      targetId: 'test'
-    })
+    dbMock.get.mockResolvedValue([
+      {
+        id: 1,
+        authorId: 'test',
+        content: 'some note',
+        targetId: 'test'
+      }
+    ])
 
     const response = await supertest(app)
       .get(PATH)
@@ -61,13 +72,7 @@ describe('the private note controller', () => {
   })
 
   it('should try to create a note', async () => {
-    prismaMock.note.findFirst.mockResolvedValue(null)
-    prismaMock.note.create.mockResolvedValue({
-      id: 1,
-      authorId: 'test',
-      content: 'some note',
-      targetId: 'test'
-    })
+    dbMock.get.mockResolvedValue([])
 
     const response = await supertest(app)
       .post(PATH)
@@ -77,20 +82,14 @@ describe('the private note controller', () => {
   })
 
   it('should try to update a note', async () => {
-    prismaMock.note.findFirst.mockResolvedValue({
-      id: 1,
-      authorId: 'test',
-      content: 'some note',
-      targetId: 'test'
-    })
-
-    prismaMock.note.update.mockResolvedValue({
-      id: 1,
-      authorId: 'test',
-      content: 'some note',
-      targetId: 'test'
-    })
-
+    dbMock.get.mockResolvedValue([
+      {
+        id: 1,
+        authorId: 'test',
+        content: 'some note',
+        targetId: 'test'
+      }
+    ])
     const response = await supertest(app)
       .put(PATH)
       .send({ id: 1, content: 'some note' })
@@ -99,19 +98,14 @@ describe('the private note controller', () => {
   })
 
   it('should try to delete a note', async () => {
-    prismaMock.note.findFirst.mockResolvedValue({
-      id: 1,
-      authorId: 'test',
-      content: 'some note',
-      targetId: 'test'
-    })
-
-    prismaMock.note.delete.mockResolvedValue({
-      id: 1,
-      authorId: 'test',
-      content: 'some note',
-      targetId: 'test'
-    })
+    dbMock.get.mockResolvedValue([
+      {
+        id: 1,
+        authorId: 'test',
+        content: 'some note',
+        targetId: 'test'
+      }
+    ])
 
     const response = await supertest(app).delete(`${PATH}/1`).send()
 
@@ -128,7 +122,7 @@ describe('the private note controller', () => {
   })
 
   it('should return 404 when a note is not found', async () => {
-    prismaMock.note.findFirst.mockResolvedValue(null)
+    dbMock.get.mockResolvedValue([])
 
     const response = await supertest(app)
       .get(PATH)
@@ -145,7 +139,7 @@ describe('the private note controller', () => {
   })
 
   it('should fail to update a note when it does not already exist', async () => {
-    prismaMock.note.findFirst.mockResolvedValue(null)
+    dbMock.getCount.mockRejectedValue(0)
 
     const response = await supertest(app)
       .put(PATH)
@@ -155,7 +149,7 @@ describe('the private note controller', () => {
   })
 
   it('should fail to delete a note when it does not already exist', async () => {
-    prismaMock.note.findFirst.mockResolvedValue(null)
+    dbMock.getCount.mockRejectedValue(0)
 
     const response = await supertest(app).delete(`${PATH}/1`).send()
 

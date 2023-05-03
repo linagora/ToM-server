@@ -46,9 +46,7 @@
     "sqlite3": "^5.1.6"
   },
   "dependencies": {
-    "@prisma/client": "^4.13.0",
-    "@twake/matrix-identity-server": "*",
-    "prisma": "^4.13.0"
+    "@twake/matrix-identity-server": "*"
   },
   "devDependencies": {
     "jest-mock-extended": "^2.0.4"

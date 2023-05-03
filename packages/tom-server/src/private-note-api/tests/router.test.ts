@@ -5,7 +5,6 @@ import supertest from 'supertest'
 import bodyParser from 'body-parser'
 import type { Config, IdentityServerDb } from '../../utils'
 import type { AuthRequest } from '../types'
-import { checkGetRequirements } from '../../private-note-api/middlewares/validation.middleware'
 import errorMiddleware from '../middlewares/error.middleware'
 
 beforeEach(() => {
@@ -14,20 +13,18 @@ beforeEach(() => {
 
 const app = express()
 
-jest.mock('../../private-note-api/middlewares/validation.middleware.ts', () => {
-  const passiveMiddlewareMock = (
-    req: AuthRequest,
-    res: Response,
-    next: NextFunction
-  ): void => {
-    next()
-  }
+const middlewareSpy = jest.fn().mockImplementation((_req, _res, next) => {
+  next()
+})
 
-  return {
-    checkGetRequirements: jest.fn(passiveMiddlewareMock),
-    checkCreationRequirements: passiveMiddlewareMock,
-    checkUpdateRequirements: passiveMiddlewareMock,
-    checkDeleteRequirements: passiveMiddlewareMock
+jest.mock('../../private-note-api/middlewares/validation.middleware.ts', () => {
+  return function () {
+    return {
+      checkGetRequirements: middlewareSpy,
+      checkCreationRequirements: jest.fn(),
+      checkUpdateRequirements: jest.fn(),
+      checkDeleteRequirements: jest.fn()
+    }
   }
 })
 
@@ -40,11 +37,13 @@ jest.mock('../../private-note-api/controllers/index.ts', () => {
     res.status(200).json({ message: 'test' })
   }
 
-  return {
-    get: passiveControllerMock,
-    create: passiveControllerMock,
-    update: passiveControllerMock,
-    deleteNote: passiveControllerMock
+  return function () {
+    return {
+      get: passiveControllerMock,
+      create: passiveControllerMock,
+      update: passiveControllerMock,
+      deleteNote: passiveControllerMock
+    }
   }
 })
 
@@ -61,7 +60,7 @@ describe('Private Note API Router', () => {
   it('should not call the validation middleware if Bearer token is not set', async () => {
     const response = await supertest(app).get(PATH)
 
-    expect(checkGetRequirements).not.toHaveBeenCalled()
+    expect(middlewareSpy).not.toHaveBeenCalled()
     expect(response.status).toBe(401)
     expect(console.warn).toHaveBeenCalledWith(
       'Access tried without token',
@@ -72,11 +71,11 @@ describe('Private Note API Router', () => {
   it('should call the validation middleware if Bearer token is set in the Authorization Headers', async () => {
     await supertest(app).get(PATH).set('Authorization', 'Bearer test')
 
-    expect(checkGetRequirements).toHaveBeenCalled()
+    expect(middlewareSpy).toHaveBeenCalled()
   })
   it('should call the validation middleware if access token is set in the request query', async () => {
     await supertest(app).get(PATH).query({ access_token: 'test' })
 
-    expect(checkGetRequirements).toHaveBeenCalled()
+    expect(middlewareSpy).toHaveBeenCalled()
   })
 })

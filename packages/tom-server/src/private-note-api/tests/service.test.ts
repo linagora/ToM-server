@@ -1,21 +1,33 @@
-import privateNoteService from '../services'
+import { type IdentityServerDb } from '../../utils'
+import PrivateNoteService from '../services'
 import { type Note } from '../types'
-import { prismaMock } from '../../../singleton'
 
 describe('the Private Note Service', () => {
-  it('should create a note', async () => {
-    const sampleNote: Note = {
-      id: 1,
-      authorId: 'test',
-      targetId: 'test',
-      content: 'test'
-    }
+  const dbMock = {
+    get: jest.fn(),
+    insert: jest.fn(),
+    update: jest.fn(),
+    deleteEqual: jest.fn(),
+    getCount: jest.fn()
+  }
 
-    prismaMock.note.create.mockResolvedValue(sampleNote)
+  const privateNoteServiceMock = new PrivateNoteService(
+    dbMock as unknown as IdentityServerDb
+  )
+
+  it('should create a note', async () => {
+    dbMock.get.mockResolvedValue([])
+    dbMock.insert.mockResolvedValue(undefined)
 
     await expect(
-      privateNoteService.create('test', 'test', 'test')
-    ).resolves.toEqual(sampleNote)
+      privateNoteServiceMock.create('testauthor', 'testtarget', 'testcontent')
+    ).resolves.not.toThrow()
+
+    expect(dbMock.insert).toHaveBeenCalledWith('privateNotes', {
+      authorId: 'testauthor',
+      targetId: 'testtarget',
+      content: 'testcontent'
+    })
   })
 
   it('should fetch a note', async () => {
@@ -26,72 +38,71 @@ describe('the Private Note Service', () => {
       content: 'something'
     }
 
-    prismaMock.note.findFirst.mockResolvedValue(sampleNote)
+    dbMock.get.mockResolvedValue([sampleNote])
 
-    await expect(privateNoteService.get('test', 'test')).resolves.toEqual(
+    await expect(privateNoteServiceMock.get('test', 'test')).resolves.toEqual(
       'something'
+    )
+
+    expect(dbMock.get).toHaveBeenCalledWith(
+      'privateNotes',
+      ['content'],
+      'authorId',
+      'test'
     )
   })
 
   it('should update a note', async () => {
-    const sampleNote: Note = {
-      id: 1,
-      authorId: 'test',
-      targetId: 'test',
-      content: 'something'
-    }
-
-    prismaMock.note.findFirst.mockResolvedValue(sampleNote)
-    prismaMock.note.update.mockResolvedValue({
-      ...sampleNote,
-      content: 'new note content'
-    })
+    dbMock.getCount.mockResolvedValue(1)
+    dbMock.update.mockResolvedValue(undefined)
 
     await expect(
-      privateNoteService.update(1, 'new note content')
-    ).resolves.toEqual({ ...sampleNote, content: 'new note content' })
+      privateNoteServiceMock.update(1, 'new note content')
+    ).resolves.not.toThrow()
+
+    expect(dbMock.update).toHaveBeenCalledWith(
+      'privateNotes',
+      { content: 'new note content' },
+      'id',
+      1
+    )
   })
 
   it('should delete a note', async () => {
-    const sampleNote: Note = {
-      id: 1,
-      authorId: 'test',
-      targetId: 'test',
-      content: 'something'
-    }
+    dbMock.getCount.mockResolvedValue(1)
 
-    prismaMock.note.delete.mockResolvedValue(sampleNote)
+    await expect(privateNoteServiceMock.delete(1)).resolves.not.toThrow()
 
-    await expect(privateNoteService.delete(1)).resolves.toEqual(sampleNote)
+    expect(dbMock.deleteEqual).toHaveBeenCalledWith('privateNotes', 'id', 1)
   })
 
   it('should return null if the note does not exist', async () => {
-    prismaMock.note.findFirst.mockResolvedValue(null)
+    dbMock.get.mockResolvedValue([])
 
-    await expect(privateNoteService.get('test', 'test')).resolves.toBeNull()
+    await expect(privateNoteServiceMock.get('test', 'test')).resolves.toBeNull()
   })
 
   it('should throw an error if the note cannot be deleted', async () => {
-    prismaMock.note.delete.mockRejectedValue(new Error('Some error'))
+    dbMock.deleteEqual.mockRejectedValue(new Error('Some error'))
 
-    await expect(privateNoteService.delete(1)).rejects.toThrow(
+    await expect(privateNoteServiceMock.delete(1)).rejects.toThrow(
       'Failed to delete note'
     )
   })
 
   it('should throw an error if the note cannot be updated', async () => {
-    prismaMock.note.findFirst.mockRejectedValue(new Error('Some random error'))
+    dbMock.getCount.mockRejectedValue(new Error('Some random error'))
 
     await expect(
-      privateNoteService.update(1, 'new note content')
+      privateNoteServiceMock.update(1, 'new note content')
     ).rejects.toThrow('Failed to update note')
   })
 
   it('should throw an error if the note cannot be created', async () => {
-    prismaMock.note.create.mockRejectedValue(new Error('Some random error'))
+    dbMock.insert.mockRejectedValue(new Error('Some random error'))
 
     await expect(
-      privateNoteService.create('test', 'test', 'test')
+      privateNoteServiceMock.create('test', 'test', 'test')
     ).rejects.toThrow('Failed to create note')
   })
 })

@@ -1,7 +1,9 @@
 import type { Note, IPrivateNoteService } from '../types'
-import prisma from '../../prisma/client'
+import type { TwakeDB } from '../../db'
+import type { Collections } from '../../utils'
 
 class PrivateNoteService implements IPrivateNoteService {
+  constructor(private readonly db: TwakeDB) {}
   /**
    * Get a note by author and target
    *
@@ -14,14 +16,16 @@ class PrivateNoteService implements IPrivateNoteService {
     targetId: string
   ): Promise<string | null> => {
     try {
-      const note = await prisma.note.findFirst({
-        where: {
-          authorId,
-          targetId
-        }
-      })
+      const notes = (await this.db.get(
+        'privateNotes' as Collections,
+        ['content'],
+        'authorId',
+        authorId
+      )) as unknown as Note[]
 
-      if (note === null) {
+      const note = notes.find((note) => note.targetId === targetId)
+
+      if (note === undefined) {
         return null
       }
 
@@ -42,32 +46,26 @@ class PrivateNoteService implements IPrivateNoteService {
     authorId: string,
     targetId: string,
     content: string
-  ): Promise<Note> => {
+  ): Promise<void> => {
     try {
-      const existingNote = await prisma.note.findFirst({
-        where: {
-          authorId,
-          targetId
-        }
-      })
+      const notes = (await this.db.get(
+        'privateNotes' as Collections,
+        ['content'],
+        'authorId',
+        authorId
+      )) as unknown as Note[]
 
-      if (existingNote != null) {
+      const existingNote = notes.find((note) => note.targetId === targetId)
+
+      if (existingNote !== undefined) {
         throw new Error('Note already exists')
       }
 
-      const newNote = await prisma.note.create({
-        data: {
-          authorId,
-          targetId,
-          content
-        }
+      await this.db.insert('privateNotes' as Collections, {
+        authorId,
+        targetId,
+        content
       })
-
-      if (newNote == null) {
-        throw new Error('Note not created')
-      }
-
-      return newNote
     } catch (error) {
       throw new Error('Failed to create note', { cause: error })
     }
@@ -79,33 +77,19 @@ class PrivateNoteService implements IPrivateNoteService {
    * @param {number} id - The id of the note
    * @param {string} content -  The new note content
    */
-  public update = async (id: number, content: string): Promise<Note> => {
+  public update = async (id: number, content: string): Promise<void> => {
     try {
-      const existingNote = await prisma.note.findFirst({
-        where: {
-          id
-        }
-      })
+      const existingNoteCount = await this.db.getCount(
+        'privateNotes' as Collections,
+        'id',
+        id
+      )
 
-      if (existingNote == null) {
+      if (existingNoteCount === 0) {
         throw new Error('Note not found')
       }
 
-      const updatedNote = await prisma.note.update({
-        where: {
-          id
-        },
-        data: {
-          content
-        }
-      })
-
-      /* istanbul ignore if */
-      if (updatedNote == null) {
-        throw new Error('Note not updated')
-      }
-
-      return updatedNote
+      await this.db.update('privateNotes' as Collections, { content }, 'id', id)
     } catch (error) {
       throw new Error('Failed to update note', { cause: error })
     }
@@ -116,23 +100,23 @@ class PrivateNoteService implements IPrivateNoteService {
    *
    * @param {number} id - The id of the note
    */
-  public delete = async (id: number): Promise<Note> => {
+  public delete = async (id: number): Promise<void> => {
     try {
-      const deletedNote = await prisma.note.delete({
-        where: {
-          id
-        }
-      })
+      const existingNoteCount = await this.db.getCount(
+        'privateNotes' as Collections,
+        'id',
+        id
+      )
 
-      if (deletedNote == null) {
-        throw new Error('Note not deleted')
+      if (existingNoteCount === 0) {
+        throw new Error('Note not found')
       }
 
-      return deletedNote
+      await this.db.deleteEqual('privateNotes' as Collections, 'id', id)
     } catch (error) {
       throw new Error('Failed to delete note', { cause: error })
     }
   }
 }
 
-export default new PrivateNoteService()
+export default PrivateNoteService
