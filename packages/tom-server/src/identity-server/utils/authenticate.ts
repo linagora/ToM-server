@@ -19,7 +19,7 @@ const Authenticate = (
   const tokenRe = /^Bearer (\S+)$/
   return (req, res, callback) => {
     let token: string = ''
-    if (req.headers.authorization != null) {
+    if (req.headers?.authorization != null) {
       const re = req.headers.authorization.match(tokenRe)
       if (re != null) {
         token = re[1]
@@ -33,6 +33,9 @@ const Authenticate = (
       // @ts-expect-error recoveryWords not in Collections
       db.get('matrixTokens', ['data'], 'id', token)
         .then((rows) => {
+          if (rows.length === 0) {
+            throw Error()
+          }
           callback(JSON.parse(rows[0].data as string), token)
         })
         .catch((e) => {
