@@ -1,5 +1,5 @@
 import { Utils } from '@twake/matrix-identity-server'
-import { type Config, type expressAppHandler } from '../utils'
+import { type Config, type expressAppHandler } from '../types'
 
 class WellKnown {
   api: {

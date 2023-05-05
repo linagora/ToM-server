@@ -33,7 +33,7 @@ export * as IdentityServerDb from './db'
 export { type tokenContent } from './account/register'
 export * as Utils from './utils'
 export * as MatrixErrors from './utils/errors'
-export * as MatrixDB from './matrixDb'
+export { default as MatrixDB, type MatrixDBBackend } from './matrixDb'
 export const errMsg = _errMsg
 export const validateMatrixToken = _validateMatrixToken
 export const defaultConfig = defaultConfDesc

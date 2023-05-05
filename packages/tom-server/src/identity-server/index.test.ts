@@ -1,6 +1,6 @@
 import express from 'express'
 import request from 'supertest'
-import { type Config } from '../utils'
+import { type Config } from '../types'
 import fs from 'fs'
 import fetch from 'node-fetch'
 import { Hash, supportedHashes } from '@twake/crypto'
@@ -40,7 +40,9 @@ beforeAll((done) => {
     ...defaultConfig,
     database_engine: 'sqlite',
     base_url: 'http://example.com/',
-    userdb_engine: 'sqlite'
+    userdb_engine: 'sqlite',
+    matrix_database_engine: 'sqlite',
+    matrix_database_host: path.join(pathToTestDataFolder, 'test.matrix.db')
   }
   if (process.env.TEST_PG === 'yes') {
     conf.database_engine = 'pg'
@@ -49,6 +51,11 @@ beforeAll((done) => {
     conf.database_user = process.env.PG_USER ?? 'twake'
     conf.database_password = process.env.PG_PASSWORD ?? 'twake'
     conf.database_name = process.env.PG_DATABASE ?? 'test'
+    conf.matrix_database_engine = 'pg'
+    conf.matrix_database_host = process.env.PG_HOST ?? 'localhost'
+    conf.matrix_database_user = process.env.PG_USER ?? 'twake'
+    conf.matrix_database_password = process.env.PG_PASSWORD ?? 'twake'
+    conf.matrix_database_name = process.env.PG_DATABASE ?? 'test'
   }
   buildUserDB(conf)
     .then(() => {
@@ -85,6 +92,7 @@ afterEach(() => {
 afterAll(() => {
   if (process.env.TEST_PG !== 'yes')
     fs.unlinkSync(path.join(pathToTestDataFolder, 'test.db'))
+  fs.unlinkSync(path.join(pathToTestDataFolder, 'test.matrix.db'))
   twakeServer.cleanJobs()
 })
 

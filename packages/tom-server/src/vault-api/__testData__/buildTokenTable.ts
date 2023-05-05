@@ -1,4 +1,4 @@
-import { type Config } from '../../utils'
+import { type Config } from '../../types'
 import { type tokenDetail } from '../middlewares/auth'
 import sqlite3 from 'sqlite3'
 
@@ -11,6 +11,8 @@ const token: tokenDetail = {
 const buildTokenTable = (conf: Config): Promise<void> => {
   return new Promise((resolve, reject) => {
     const dbManager = new sqlite3.Database(conf.database_host)
+    const matrixDbManager = new sqlite3.Database(conf.matrix_database_host)
+
     dbManager.run(
       'CREATE TABLE matrixTokens (id varchar(64) primary key, data text)',
       () =>
@@ -33,6 +35,8 @@ const buildTokenTable = (conf: Config): Promise<void> => {
           }
         )
     )
+
+    matrixDbManager.run('CREATE TABLE users (uid varchar(8), name varchar(32), mobile varchar(12), mail varchar(32))')
   })
 }
 

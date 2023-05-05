@@ -1,6 +1,6 @@
 import type { Note, IPrivateNoteService } from '../types'
 import type { TwakeDB } from '../../db'
-import type { Collections } from '../../utils'
+import type { Collections } from '../../types'
 
 class PrivateNoteService implements IPrivateNoteService {
   constructor(private readonly db: TwakeDB) {}

@@ -2,15 +2,15 @@ import { type Config } from '..'
 import MatrixDBPg from './sql/pg'
 import MatrixDBSQLite from './sql/sqlite'
 
-type Collections = 'users'
+type Collections = 'users' | 'room_memberships' | 'room_stats_state'
 
-/*
 type Get = (
   table: Collections,
   fields?: string[],
   field?: string,
   value?: string | number
 ) => Promise<Array<Record<string, string | string[] | number>>>
+/*
 type Match = (
   table: Collections,
   fields: string[],
@@ -25,7 +25,7 @@ type GetAll = (
 
 export interface MatrixDBBackend {
   ready: Promise<void>
-  // get: Get
+  get: Get
   getAll: GetAll
   // match: Match
   close: () => void
@@ -69,6 +69,15 @@ class MatrixDB implements MatrixDBBackend {
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
   getAll(table: Collections, fields: string[]) {
     return this.db.getAll(table, fields)
+  }
+
+  get = async (
+    table: Collections,
+    fields?: string[],
+    field?: string,
+    value?: string | number
+  ): Promise<Array<Record<string, string | string[] | number>>> => {
+    return await this.db.get(table, fields, field, value)
   }
 
   close(): void {

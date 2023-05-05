@@ -7,10 +7,12 @@ import fetch from 'node-fetch'
 import path from 'path'
 import JEST_PROCESS_ROOT_PATH from '../../jest.globals'
 import TwakeServer from '..'
-import { type Config } from '../utils'
+import { type Config } from '../types'
 
 const endpoint = '/_twake/recoveryWords'
 const testFilePath = path.join(JEST_PROCESS_ROOT_PATH, 'vault.db')
+const matrixTestFilePath = path.join(JEST_PROCESS_ROOT_PATH, 'matrix.db')
+
 const words = 'This is a test sentence'
 const accessToken =
   'accessTokenddddddddddddddddddddddddddddddddddddddddddddddddddddd'
@@ -64,9 +66,11 @@ describe('Vault API server', () => {
       database_engine: 'sqlite',
       database_host: testFilePath,
       matrix_server: 'localhost',
-      template_dir: './src/identity-server/templates',
+      template_dir: path.join(__dirname, '../identity-server/templates'),
       userdb_engine: 'sqlite',
-      userdb_host: testFilePath
+      userdb_host: testFilePath,
+      matrix_database_engine: 'sqlite',
+      matrix_database_host: matrixTestFilePath
     }
     buildTokenTable(conf as Config)
       .then(() => {
@@ -78,10 +82,12 @@ describe('Vault API server', () => {
             done()
           })
           .catch((e) => {
+            console.error(e)
             done(e)
           })
       })
       .catch((e) => {
+        console.error(e)
         done(e)
       })
   })
@@ -96,6 +102,9 @@ describe('Vault API server', () => {
   afterAll(() => {
     if (fs.existsSync(testFilePath)) {
       fs.unlinkSync(testFilePath)
+    }
+    if (fs.existsSync(matrixTestFilePath)) {
+      fs.unlinkSync(matrixTestFilePath)
     }
     vaultApiServer.cleanJobs()
   })

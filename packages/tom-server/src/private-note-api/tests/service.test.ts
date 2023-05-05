@@ -1,4 +1,4 @@
-import { type IdentityServerDb } from '../../utils'
+import { type IdentityServerDb } from '../../types'
 import PrivateNoteService from '../services'
 import { type Note } from '../types'
 

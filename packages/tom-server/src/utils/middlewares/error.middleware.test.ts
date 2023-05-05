@@ -1,4 +1,4 @@
-import errorMiddleware from '../middlewares/error.middleware'
+import errorMiddleware from './error.middleware'
 import { type Request, type Response, type NextFunction } from 'express'
 
 describe('Error middleware', () => {

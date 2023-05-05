@@ -3,9 +3,8 @@ import express, { type NextFunction, type Response } from 'express'
 import router, { PATH } from '../routes'
 import supertest from 'supertest'
 import bodyParser from 'body-parser'
-import type { Config, IdentityServerDb } from '../../utils'
-import type { AuthRequest } from '../types'
-import errorMiddleware from '../middlewares/error.middleware'
+import type { Config, IdentityServerDb, AuthRequest } from '../../types'
+import errorMiddleware from '../../utils/middlewares/error.middleware'
 
 beforeEach(() => {
   jest.spyOn(console, 'warn').mockImplementation(() => {})

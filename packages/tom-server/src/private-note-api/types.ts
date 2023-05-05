@@ -1,4 +1,5 @@
-import type { NextFunction, Request, Response } from 'express'
+import type { NextFunction, Response } from 'express'
+import type { AuthRequest } from '../types'
 
 export interface IPrivateNoteService {
   get: (author: string, target: string) => Promise<string | null>
@@ -49,9 +50,4 @@ export interface Note {
   authorId: string
   targetId: string
   content: string
-}
-
-export interface AuthRequest extends Request {
-  userId?: string
-  accessToken?: string
 }

@@ -17,6 +17,15 @@ const buildUserDB = (conf: Config): Promise<void> => {
   if (created) return Promise.resolve()
   return new Promise((resolve, reject) => {
     if (conf.database_engine === 'sqlite') {
+      const matrixDb = new sqlite3.Database(conf.matrix_database_host)
+      
+      matrixDb.run('CREATE TABLE users (uid varchar(8), name varchar(32), mobile varchar(12), mail varchar(32))', (err) => {
+        if (err != null) {
+          reject(err)
+        }
+        
+        matrixDb.run("INSERT INTO users VALUES('dwho', 'dwho', '33612345678', 'dwho@company.com')")
+      })
       const userDb = new sqlite3.Database(conf.database_host)
       userDb.run(createQuery, (err) => {
         if (err != null) {

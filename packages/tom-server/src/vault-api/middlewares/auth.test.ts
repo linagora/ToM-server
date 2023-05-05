@@ -1,5 +1,5 @@
 import { type TwakeDB } from '../../db'
-import { type Config } from '../../utils'
+import { type Config } from '../../types'
 import { type expressAppHandler } from '../utils'
 import isAuth, { type tokenDetail } from './auth'
 import { type Request, type Response, type NextFunction } from 'express'
@@ -44,6 +44,9 @@ describe('Auth middleware', () => {
   let mockRequest: ITestRequest
   let mockResponse: Partial<Response>
   const nextFunction: NextFunction = jest.fn()
+  jest.spyOn(console, 'error').mockImplementation(() => {})
+  jest.spyOn(console, 'debug').mockImplementation(() => {})
+  jest.spyOn(console, 'log').mockImplementation(() => {})
   let spyConsoleWarn: jest.SpyInstance
   beforeAll(() => {
     mockResponse = {
@@ -52,7 +55,7 @@ describe('Auth middleware', () => {
       send: jest.fn(),
       end: jest.fn()
     }
-    spyConsoleWarn = jest.spyOn(console, 'warn')
+    spyConsoleWarn = jest.spyOn(console, 'warn').mockImplementation(() => {})
   })
 
   beforeEach(() => {
