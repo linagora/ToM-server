@@ -3,8 +3,7 @@ import express, { type NextFunction, type Response } from 'express'
 import router, { PATH } from '../routes'
 import supertest from 'supertest'
 import bodyParser from 'body-parser'
-import type { Config, IdentityServerDb } from '../../utils'
-import type { AuthRequest } from '../types'
+import type { Config, IdentityServerDb, AuthRequest } from '../../types'
 
 const app = express()
 

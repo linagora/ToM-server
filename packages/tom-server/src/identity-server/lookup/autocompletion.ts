@@ -1,5 +1,5 @@
 import { errMsg, Utils } from '@twake/matrix-identity-server'
-import { type expressAppHandler } from '../../utils'
+import { type expressAppHandler } from '../../types'
 import type TwakeIdentityServer from '..'
 
 const schema = {

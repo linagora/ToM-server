@@ -4,7 +4,7 @@
 import autocompletion from './lookup/autocompletion'
 import { type ConfigDescription } from '@twake/config-parser'
 import Authenticate from './utils/authenticate'
-import { type Config } from '../utils'
+import { type Config } from '../types'
 import MatrixIdentityServer from '@twake/matrix-identity-server'
 import defaultConfig from '../config.json'
 

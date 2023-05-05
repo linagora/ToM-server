@@ -4,7 +4,7 @@ import {
   type AuthenticationFunction,
   type Config,
   type IdentityServerDb
-} from '../../utils'
+} from '../../types'
 
 export interface WhoAmIResponse {
   user_id?: string

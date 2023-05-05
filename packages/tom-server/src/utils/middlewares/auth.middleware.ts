@@ -1,6 +1,5 @@
 import type { NextFunction, RequestHandler, Response } from 'express'
-import type { AuthRequest } from '../types'
-import type { Config, IdentityServerDb } from '../../utils'
+import type { Config, IdentityServerDb, AuthRequest } from '../../types'
 import Authenticate from '../../identity-server/utils/authenticate'
 import { type tokenContent } from '@twake/matrix-identity-server'
 
@@ -10,12 +9,10 @@ export default (db: IdentityServerDb, conf: Config): RequestHandler => {
 
     authenticator(req, res, (data: tokenContent, token: string | undefined) => {
       try {
-        /* istanbul ignore if */
         if (token === undefined) {
           throw new Error('Missing token')
         }
 
-        /* istanbul ignore if */
         if (data.sub === undefined) {
           throw new Error('Invalid data')
         }

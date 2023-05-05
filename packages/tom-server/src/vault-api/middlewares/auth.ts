@@ -1,6 +1,6 @@
 import { type NextFunction, type Request, type Response } from 'express'
 import { VaultAPIError, type expressAppHandler } from '../utils'
-import { type Config } from '../../utils'
+import { type Config } from '../../types'
 import { type tokenContent } from '@twake/matrix-identity-server'
 import { type TwakeDB } from '../../db'
 import Authenticate from '../../identity-server/utils/authenticate'

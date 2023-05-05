@@ -14,7 +14,7 @@ import {
   methodNotAllowed,
   saveRecoveryWords
 } from './controllers/vault'
-import { type Config } from '../utils'
+import { type Config } from '../types'
 import { type TwakeDB } from '../db'
 import type TwakeServer from '..'
 

@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-misused-promises */
 import { Router } from 'express'
 import PrivateNoteApiController from '../controllers'
-import type { IdentityServerDb, Config } from '../../utils'
-import authMiddleware from '../middlewares/auth.middleware'
+import type { IdentityServerDb, Config } from '../../types'
+import authMiddleware from '../../utils/middlewares/auth.middleware'
 import PrivateNoteApiValidationMiddleware from '../middlewares/validation.middleware'
 
 export const PATH = '/_twake/private_note'

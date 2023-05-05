@@ -1,7 +1,6 @@
 import PrivateNoteValidationMiddleware from '../middlewares/validation.middleware'
-import type { AuthRequest } from '../types'
 import type { Response, NextFunction } from 'express'
-import type { IdentityServerDb } from '../../utils'
+import type { IdentityServerDb, AuthRequest } from '../../types'
 
 describe('Validation middlewares', () => {
   let mockRequest: Partial<AuthRequest>
@@ -210,6 +209,49 @@ describe('Validation middlewares', () => {
       expect(nextFunction).not.toHaveBeenCalled()
       expect(mockResponse.status).toHaveBeenCalledWith(400)
     })
+
+    it('should not call the next handler if requirements are not met', async () => {
+      mockRequest = {
+        params: {},
+        userId: 'test'
+      }
+
+      await privateNoteValidationMiddlewareMock.checkDeleteRequirements(
+        mockRequest as AuthRequest,
+        mockResponse as Response,
+        nextFunction
+      )
+
+      expect(nextFunction).not.toHaveBeenCalled()
+      expect(mockResponse.status).toHaveBeenCalledWith(400)
+    })
+
+    it('should not pass when the note author is not the connected user', async () => {
+      mockRequest = {
+        params: {
+          id: 'test'
+        },
+        userId: 'test2'
+      }
+
+      dbMock.get.mockResolvedValue([
+        {
+          id: 1,
+          authorId: 'test2',
+          content: 'hello',
+          targetId: 'test'
+        }
+      ])
+
+      await privateNoteValidationMiddlewareMock.checkDeleteRequirements(
+        mockRequest as AuthRequest,
+        mockResponse as Response,
+        nextFunction
+      )
+
+      expect(nextFunction).not.toHaveBeenCalled()
+      expect(mockResponse.status).toHaveBeenCalledWith(400)
+    })
   })
 
   describe('checkUpdateRequirements middleware', () => {
@@ -299,6 +341,22 @@ describe('Validation middlewares', () => {
           targetId: 'test'
         }
       ])
+
+      await privateNoteValidationMiddlewareMock.checkUpdateRequirements(
+        mockRequest as AuthRequest,
+        mockResponse as Response,
+        nextFunction
+      )
+
+      expect(nextFunction).not.toHaveBeenCalled()
+      expect(mockResponse.status).toHaveBeenCalledWith(400)
+    })
+
+    it('should not call the next handler if requirements are not met', async () => {
+      mockRequest = {
+        body: {},
+        userId: 'test'
+      }
 
       await privateNoteValidationMiddlewareMock.checkUpdateRequirements(
         mockRequest as AuthRequest,

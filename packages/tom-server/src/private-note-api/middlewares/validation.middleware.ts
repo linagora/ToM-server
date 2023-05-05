@@ -1,11 +1,7 @@
 import type { NextFunction, Response } from 'express'
-import type {
-  AuthRequest,
-  IPrivateNoteApiValidationMiddleware,
-  Note
-} from '../types'
+import type { IPrivateNoteApiValidationMiddleware, Note } from '../types'
 import type { TwakeDB } from '../../db'
-import type { Collections } from '../../utils'
+import type { Collections, AuthRequest } from '../../types'
 
 export default class PrivateNoteApiValidationMiddleware
   implements IPrivateNoteApiValidationMiddleware
