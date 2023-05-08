@@ -118,7 +118,12 @@ const options = {
       }
     ]
   },
-  apis: [matrixIdentityServerApiPath, identityServerApiPath, vaultApiPath]
+  apis: [
+    matrixIdentityServerApiPath,
+    identityServerApiPath,
+    vaultApiPath,
+    '**/routes/*.ts'
+  ]
 }
 
 const swaggerSpec = swaggerJsDoc(options)
