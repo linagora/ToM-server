@@ -9,7 +9,7 @@ import { errMsg } from '../../utils/errors'
 import type MatrixIdentityServer from '../../index'
 import { type Config } from '../../types'
 import fs from 'fs'
-import { randomString } from '../../utils/tokenUtils'
+import { randomString } from '@twake/crypto'
 import Mailer from '../../utils/mailer'
 
 interface RequestTokenArgs {
