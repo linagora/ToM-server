@@ -40,6 +40,7 @@
     "url": "https://ci.linagora.com/publicgroup/oss/twake/tom-server/-/issues"
   },
   "homepage": "https://ci.linagora.com/publicgroup/oss/twake/tom-server",
-  "optionalDependencies": {},
-  "dependencies": {}
+  "dependencies": {
+    "@twake/config-parser": "*",
+  }
 }
