@@ -1,11 +1,19 @@
 import { type Request, type Response, type NextFunction } from 'express'
-import { allowCors } from './utils'
+import { allowCors, methodNotAllowed } from './utils'
+import { AppServerAPIError, ErrCodes } from './errors'
 
 describe('Utils methods', () => {
   let mockRequest: Partial<Request>
   const mockResponse: Partial<Response> = {
     setHeader: jest.fn().mockImplementation(() => {
       return mockResponse
+    }),
+    status: jest.fn().mockImplementation(() => {
+      return mockResponse
+    }),
+    json: jest.fn().mockImplementation(() => {
+      return mockResponse
+    })
     })
   }
   const nextFunction: NextFunction = jest.fn()
@@ -13,6 +21,18 @@ describe('Utils methods', () => {
   beforeEach(() => {
     jest.clearAllMocks()
     mockRequest = {}
+  })
+
+  it('methodNotAllowed: should throw an error with 405 status', () => {
+    expect(() => {
+      methodNotAllowed(
+        mockRequest as Request,
+        mockResponse as Response,
+        nextFunction
+      )
+    }).toThrow(
+      new AppServerAPIError({ status: 405, code: ErrCodes.M_UNRECOGNIZED })
+    )
   })
 
   it('allowCors: should set header in response to avoid CORS error', async () => {

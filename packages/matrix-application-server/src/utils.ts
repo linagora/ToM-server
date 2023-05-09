@@ -1,5 +1,5 @@
 import { type NextFunction, type Request, type Response } from 'express'
-import { type AppServerAPIError } from './errors'
+import { ErrCodes, AppServerAPIError } from './errors'
 
 export type expressAppHandler = (
   req: Request,
@@ -29,4 +29,8 @@ export const allowCors: expressAppHandler = (req, res, next) => {
     'Origin, X-Requested-With, Content-Type, Accept, Authorization'
   )
   next()
+}
+
+export const methodNotAllowed: expressAppHandler = (req, res, next) => {
+  throw new AppServerAPIError({ status: 405, code: ErrCodes.M_UNRECOGNIZED })
 }

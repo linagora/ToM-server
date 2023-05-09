@@ -3,13 +3,19 @@ import defaultConfig from './config.json'
 import fs from 'fs'
 import path from 'path'
 import testConfig from './__testData__/config.json'
+import express from 'express'
+import request from 'supertest'
 
+const endpointPrefix = '/_matrix/app/v1'
+const transactionEndpoint = endpointPrefix + '/transactions/1'
+const homeserverToken =
+  'hsTokenTestwdakZQunWWNe3DZitAerw9aNqJ2a6HVp0sJtg7qTJWXcHnBjgN0NL'
 const registrationFilePath = path.join(__dirname, '..', 'registration.yaml')
 
 describe('MatrixApplicationServer', () => {
-  describe('getConfigurationFile', () => {
-    let appServer: MatrixApplicationServer
+  let appServer: MatrixApplicationServer
 
+  describe('getConfigurationFile', () => {
     afterEach(() => {
       jest.restoreAllMocks()
       if (fs.existsSync(registrationFilePath)) {
@@ -57,4 +63,97 @@ describe('MatrixApplicationServer', () => {
     })
   })
 
+  describe('Integration tests', () => {
+    let app: express.Application
+
+    beforeAll(() => {
+      app = express()
+      appServer = new MatrixApplicationServer(testConfig)
+      app.use(appServer.endpoints)
+    })
+
+    beforeEach(() => {
+      jest.clearAllMocks()
+    })
+
+    it('reject unimplemented endpoint with 404', async () => {
+      const response = await request(app).get('/unkown')
+      expect(response.statusCode).toBe(404)
+    })
+
+    it('error on request with invalid token', async () => {
+      const response = await request(app)
+        .put(transactionEndpoint)
+        .set('Authorization', 'Bearer falsy_hs_token')
+      expect(response.statusCode).toBe(403)
+      expect(response.body).toStrictEqual({
+        errcode: 'M_FORBIDDEN',
+        error: 'Forbidden'
+      })
+    })
+
+    describe('Transactions endpoint', () => {
+      const correctBodyEventsValue = [
+        {
+          state_key: 'test',
+          type: 'm.room.member'
+        },
+        {
+          type: 'm.room.message'
+        }
+      ]
+
+      beforeAll(() => {
+        appServer.lastProcessedTxnId = '0'
+      })
+
+      it('reject not allowed method with 405', async () => {
+        const response = await request(app).get(transactionEndpoint)
+        expect(response.statusCode).toBe(405)
+        expect(response.body).toStrictEqual({
+          errcode: 'M_UNRECOGNIZED',
+          error: 'Unrecognized'
+        })
+      })
+
+      it('should send a response with 200 and update lastProcessedTxnId property', async () => {
+        expect(appServer.lastProcessedTxnId).toEqual('0')
+        const response = await request(app)
+          .put(transactionEndpoint)
+          .set('Authorization', `Bearer ${homeserverToken}`)
+          .send({
+            events: correctBodyEventsValue
+          })
+        expect(response.statusCode).toBe(200)
+        expect(response.body).toEqual({})
+        expect(appServer.lastProcessedTxnId).toEqual('1')
+      })
+
+      it('should send a response with 200 if transaction id already has been processed', async () => {
+        expect(appServer.lastProcessedTxnId).toEqual('1')
+        const response = await request(app)
+          .put(transactionEndpoint)
+          .set('Authorization', `Bearer ${homeserverToken}`)
+          .send({
+            events: correctBodyEventsValue
+          })
+        expect(response.statusCode).toBe(200)
+        expect(response.body).toEqual({})
+        expect(appServer.lastProcessedTxnId).toEqual('1')
+      })
+
+      it('should send an error with status 400 if body events property is not an array', async () => {
+        const response = await request(app)
+          .put(transactionEndpoint)
+          .set('Authorization', `Bearer ${homeserverToken}`)
+          .send({
+            events: null
+          })
+        expect(response.statusCode).toBe(400)
+        expect(response.body).toEqual({
+          error: 'Error field: Invalid value (property: events)'
+        })
+      })
+    })
+  })
 })

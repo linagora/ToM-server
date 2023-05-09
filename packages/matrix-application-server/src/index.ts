@@ -1,8 +1,11 @@
 import {
   allowCors,
   type expressAppHandlerError,
-  type expressAppHandler
+  type expressAppHandler,
+  methodNotAllowed,
+  Endpoints
 } from './utils'
+import transaction from './controllers/transaction'
 import { Router, json, urlencoded } from 'express'
 import { type AppServerController } from './controllers/utils'
 import { errorMiddleware } from './errors'
@@ -25,6 +28,7 @@ export default class MatrixApplicationServer {
   endpoints: Router
   conf: Config
   appServiceRegistration: AppServiceRegistration
+  lastProcessedTxnId = ''
 
   /**
    * Construct a new application service.
@@ -43,9 +47,19 @@ export default class MatrixApplicationServer {
       this.conf.registration_file_path
     )
     this.endpoints = Router()
+    this.endpoints
+      .route('/_matrix/app/v1/transactions/:txnId')
+      .put(this._middlewares(transaction, Endpoints.TRANSACTIONS))
+      .all(allowCors, methodNotAllowed, errorMiddleware)
   }
 
+  /**
+   * Get an array of middlewares that the request should go through
+   * @param {AppServerController} controller Endpoint main middleware
+   * @return {Array<expressAppHandler | expressAppHandlerError>} Array of middlewares
+   */
   private _middlewares(
+    controller: AppServerController,
     endpoint: string
   ): Array<expressAppHandler | expressAppHandlerError | ValidationChain> {
     return [
@@ -54,6 +68,7 @@ export default class MatrixApplicationServer {
       urlencoded({ extended: false }),
       auth(this.appServiceRegistration.hsToken),
       ...validation(endpoint),
+      controller(this),
       errorMiddleware
     ]
   }
