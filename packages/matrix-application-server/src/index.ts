@@ -1,4 +1,11 @@
-import { Router } from 'express'
+import {
+  allowCors,
+  type expressAppHandlerError,
+  type expressAppHandler
+} from './utils'
+import { Router, json, urlencoded } from 'express'
+import { type AppServerController } from './controllers/utils'
+import { errorMiddleware } from './errors'
 import fs from 'fs'
 import configParser, { type ConfigDescription } from '@twake/config-parser'
 import defaultConfDesc from './config.json'
@@ -33,6 +40,15 @@ export default class MatrixApplicationServer {
       this.conf.registration_file_path
     )
     this.endpoints = Router()
+  }
+
+  private _middlewares(): Array<expressAppHandler | expressAppHandlerError> {
+    return [
+      allowCors,
+      json(),
+      urlencoded({ extended: false }),
+      errorMiddleware
+    ]
   }
 
   /**
