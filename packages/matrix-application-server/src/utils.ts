@@ -14,6 +14,10 @@ export type expressAppHandlerError = (
   next: NextFunction
 ) => void
 
+export enum Endpoints {
+  TRANSACTIONS = 'transactions'
+}
+
 export const allowCors: expressAppHandler = (req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', '*')
   res.setHeader(

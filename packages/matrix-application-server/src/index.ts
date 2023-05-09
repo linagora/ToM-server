@@ -11,6 +11,8 @@ import configParser, { type ConfigDescription } from '@twake/config-parser'
 import defaultConfDesc from './config.json'
 import AppServiceRegistration, { type Namespaces } from './utils/registration'
 import auth from './middlewares/auth'
+import validation from './middlewares/validation'
+import { type ValidationChain } from 'express-validator'
 
 export interface Config {
   application_server_url: string
@@ -43,12 +45,15 @@ export default class MatrixApplicationServer {
     this.endpoints = Router()
   }
 
-  private _middlewares(): Array<expressAppHandler | expressAppHandlerError> {
+  private _middlewares(
+    endpoint: string
+  ): Array<expressAppHandler | expressAppHandlerError | ValidationChain> {
     return [
       allowCors,
       json(),
       urlencoded({ extended: false }),
       auth(this.appServiceRegistration.hsToken),
+      ...validation(endpoint),
       errorMiddleware
     ]
   }
