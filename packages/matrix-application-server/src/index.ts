@@ -2,6 +2,7 @@ import { Router } from 'express'
 import fs from 'fs'
 import configParser, { type ConfigDescription } from '@twake/config-parser'
 import defaultConfDesc from './config.json'
+import AppServiceRegistration, { type Namespaces } from './utils/registration'
 
 export interface Config {
   application_server_url: string
@@ -13,6 +14,7 @@ export interface Config {
 export default class MatrixApplicationServer {
   endpoints: Router
   conf: Config
+  appServiceRegistration: AppServiceRegistration
 
   /**
    * Construct a new application service.
@@ -26,6 +28,10 @@ export default class MatrixApplicationServer {
       confDesc,
       this._getConfigurationFile(conf)
     ) as Config
+    this.appServiceRegistration = new AppServiceRegistration(this.conf)
+    this.appServiceRegistration.createRegisterFile(
+      this.conf.registration_file_path
+    )
     this.endpoints = Router()
   }
 

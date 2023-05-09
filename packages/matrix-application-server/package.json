@@ -42,5 +42,10 @@
   "homepage": "https://ci.linagora.com/publicgroup/oss/twake/tom-server",
   "dependencies": {
     "@twake/config-parser": "*",
+    "@twake/crypto": "*",
+    "js-yaml": "^4.1.0"
+  },
+  "devDependencies": {
+    "@types/js-yaml": "^4.0.5"
   }
 }
