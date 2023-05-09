@@ -11,6 +11,12 @@ export type expressAppHandler = MUtils.expressAppHandler
 export type AuthenticationFunction = MUtils.AuthenticationFunction
 
 export type Config = MConfig & {
+  jitsiBaseUrl: string
+  jitsiJwtAlgorithm: string
+  jitsiJwtIssuer: string
+  jitsiJwtSecret: string
+  jitsiPreferredDomain: string
+  jitsiUseJwt: boolean
   matrix_server: string
   matrix_database_host: string
 }

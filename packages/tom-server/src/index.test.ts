@@ -79,6 +79,13 @@ test('/.well-known/matrix/client', async () => {
     domain: 'matrix.org',
     'm.homeserver': { base_url: 'localhost' },
     'm.identity_server': { base_url: 'http://example.com/' },
+    'm.integrations': {
+      jitsi: {
+        baseUrl: 'https://jitsi.example.com/',
+        preferredDomain: 'jitsi.example.com',
+        useJwt: false
+      }
+    },
     't.server': { base_url: 'http://example.com/' }
   })
 })

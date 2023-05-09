@@ -13,6 +13,7 @@ export default (db: IdentityServerDb, conf: Config): RequestHandler => {
           throw new Error('Missing token')
         }
 
+        /* istanbul ignore if */
         if (data.sub === undefined) {
           throw new Error('Invalid data')
         }

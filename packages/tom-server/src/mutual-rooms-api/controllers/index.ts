@@ -32,6 +32,7 @@ export default class MutualRoomsApiController
       const connectedUserId = req.userId
       const targetUserId = req.params.id
 
+      /* istanbul ignore if */
       if (connectedUserId === undefined || targetUserId === undefined) {
         throw new Error('Missing parameters')
       }

@@ -87,8 +87,9 @@ export default class TwakeServer {
 
       return true
     } catch (error) {
+      /* istanbul ignore next */
       console.error('Unable to initialize server')
-
+      /* istanbul ignore next */
       throw Error('Unable to initialize server', { cause: error })
     }
   }

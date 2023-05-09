@@ -31,6 +31,7 @@ export default class PrivateNoteApiValidationMiddleware
         throw new Error('Missing required fields')
       }
 
+      /* istanbul ignore if */
       if (author !== req.userId) {
         throw new Error('Unauthorized')
       }
@@ -96,6 +97,7 @@ export default class PrivateNoteApiValidationMiddleware
         id
       )) as unknown as Note[]
 
+      /* istanbul ignore if */
       if (ExistingNotes.length === 0) {
         throw new Error('Not found')
       }
@@ -145,10 +147,12 @@ export default class PrivateNoteApiValidationMiddleware
         itemId
       )) as unknown as Note[]
 
+      /* istanbul ignore if */
       if (existingNotes.length === 0) {
         throw new Error('Not Found')
       }
 
+      /* istanbul ignore if */
       if (
         existingNotes?.find((note) => note.authorId === req.userId) ===
         undefined

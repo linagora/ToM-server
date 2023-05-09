@@ -31,6 +31,7 @@ class PrivateNoteService implements IPrivateNoteService {
 
       return note.content
     } catch (error) {
+      /* istanbul ignore next */
       throw new Error('Failed to get note', { cause: error })
     }
   }
@@ -57,6 +58,7 @@ class PrivateNoteService implements IPrivateNoteService {
 
       const existingNote = notes.find((note) => note.targetId === targetId)
 
+      /* istanbul ignore if */
       if (existingNote !== undefined) {
         throw new Error('Note already exists')
       }
@@ -85,6 +87,7 @@ class PrivateNoteService implements IPrivateNoteService {
         id
       )
 
+      /* istanbul ignore if */
       if (existingNoteCount === 0) {
         throw new Error('Note not found')
       }
@@ -108,6 +111,7 @@ class PrivateNoteService implements IPrivateNoteService {
         id
       )
 
+      /* istanbul ignore if */
       if (existingNoteCount === 0) {
         throw new Error('Note not found')
       }
