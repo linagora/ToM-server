@@ -2,6 +2,7 @@ import {
   allowCors,
   type expressAppHandlerError,
   type expressAppHandler,
+  legacyEndpointHandler,
   methodNotAllowed,
   Endpoints
 } from './utils'
@@ -51,6 +52,11 @@ export default class MatrixApplicationServer {
       .route('/_matrix/app/v1/transactions/:txnId')
       .put(this._middlewares(transaction, Endpoints.TRANSACTIONS))
       .all(allowCors, methodNotAllowed, errorMiddleware)
+
+    this.endpoints.all(
+      /^\/users|rooms|transactions\/:[a-zA-Z0-9]/g,
+      legacyEndpointHandler
+    )
   }
 
   /**

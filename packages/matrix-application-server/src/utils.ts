@@ -31,6 +31,20 @@ export const allowCors: expressAppHandler = (req, res, next) => {
   next()
 }
 
+export const legacyEndpointHandler: expressAppHandler = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  res
+    .status(308)
+    .location('/_matrix/app/v1' + req.originalUrl)
+    .json({
+      errcode: ErrCodes.M_UNKNOWN,
+      error: 'This non-standard endpoint has been removed'
+    })
+}
+
 export const methodNotAllowed: expressAppHandler = (req, res, next) => {
   throw new AppServerAPIError({ status: 405, code: ErrCodes.M_UNRECOGNIZED })
 }

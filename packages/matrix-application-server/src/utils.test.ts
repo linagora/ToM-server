@@ -1,5 +1,5 @@
 import { type Request, type Response, type NextFunction } from 'express'
-import { allowCors, methodNotAllowed } from './utils'
+import { allowCors, legacyEndpointHandler, methodNotAllowed } from './utils'
 import { AppServerAPIError, ErrCodes } from './errors'
 
 describe('Utils methods', () => {
@@ -13,7 +13,9 @@ describe('Utils methods', () => {
     }),
     json: jest.fn().mockImplementation(() => {
       return mockResponse
-    })
+    }),
+    location: jest.fn().mockImplementation(() => {
+      return mockResponse
     })
   }
   const nextFunction: NextFunction = jest.fn()
@@ -52,4 +54,23 @@ describe('Utils methods', () => {
     )
   })
 
+  it('legacyEndpointHandler: should set Location header with the real endpoint path', async () => {
+    mockRequest = {
+      ...mockRequest,
+      originalUrl: '/old-endpoint'
+    }
+    legacyEndpointHandler(
+      mockRequest as Request,
+      mockResponse as Response,
+      nextFunction
+    )
+    expect(mockResponse.status).toHaveBeenCalledWith(308)
+    expect(mockResponse.location).toHaveBeenCalledWith(
+      `/_matrix/app/v1${mockRequest.originalUrl as string}`
+    )
+    expect(mockResponse.json).toHaveBeenCalledWith({
+      errcode: ErrCodes.M_UNKNOWN,
+      error: 'This non-standard endpoint has been removed'
+    })
+  })
 })

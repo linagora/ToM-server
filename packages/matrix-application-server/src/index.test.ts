@@ -81,6 +81,17 @@ describe('MatrixApplicationServer', () => {
       expect(response.statusCode).toBe(404)
     })
 
+    it('old endpoint should send a response with 308 status, body with error message and "Location" header with correct url', async () => {
+      const testEndpoint = '/users/test'
+      const response = await request(app).get(testEndpoint)
+      expect(response.statusCode).toBe(308)
+      expect(response.body).toStrictEqual({
+        errcode: 'M_UNKNOWN',
+        error: 'This non-standard endpoint has been removed'
+      })
+      expect(response.get('Location')).toEqual(endpointPrefix + testEndpoint)
+    })
+
     it('error on request with invalid token', async () => {
       const response = await request(app)
         .put(transactionEndpoint)
