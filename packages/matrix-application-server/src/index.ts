@@ -10,6 +10,7 @@ import fs from 'fs'
 import configParser, { type ConfigDescription } from '@twake/config-parser'
 import defaultConfDesc from './config.json'
 import AppServiceRegistration, { type Namespaces } from './utils/registration'
+import auth from './middlewares/auth'
 
 export interface Config {
   application_server_url: string
@@ -47,6 +48,7 @@ export default class MatrixApplicationServer {
       allowCors,
       json(),
       urlencoded({ extended: false }),
+      auth(this.appServiceRegistration.hsToken),
       errorMiddleware
     ]
   }
