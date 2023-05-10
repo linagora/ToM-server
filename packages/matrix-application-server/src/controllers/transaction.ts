@@ -1,10 +1,13 @@
 import type MatrixApplicationServer from '..'
-import { AppServerAPIError } from '../utils'
+import { AppServerAPIError, type expressAppHandler } from '../utils'
 import { type ClientEvent, type TransactionRequestBody } from '../interfaces'
-import { type AppServerController } from '.'
 import { validationResult, type ValidationError } from 'express-validator'
 
-export const transaction: AppServerController = (
+export type TransactionController = (
+  appServer: MatrixApplicationServer
+) => expressAppHandler
+
+export const transaction: TransactionController = (
   appServer: MatrixApplicationServer
 ) => {
   return (req, res, next) => {

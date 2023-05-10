@@ -1,4 +1,4 @@
-import { transaction, type AppServerController } from './controllers'
+import { transaction, query } from './controllers'
 import { Router, json, urlencoded } from 'express'
 import fs from 'fs'
 import configParser, { type ConfigDescription } from '@twake/config-parser'
@@ -50,7 +50,17 @@ export default class MatrixApplicationServer {
     this.endpoints = Router()
     this.endpoints
       .route('/_matrix/app/v1/transactions/:txnId')
-      .put(this._middlewares(transaction, Endpoints.TRANSACTIONS))
+      .put(this._middlewares(Endpoints.TRANSACTIONS), transaction(this))
+      .all(allowCors, methodNotAllowed, errorMiddleware)
+
+    this.endpoints
+      .route('/_matrix/app/v1/users/:userId')
+      .get(this._middlewares(Endpoints.USERS), query)
+      .all(allowCors, methodNotAllowed, errorMiddleware)
+
+    this.endpoints
+      .route('/_matrix/app/v1/rooms/:roomAlias')
+      .get(this._middlewares(Endpoints.ROOMS), query)
       .all(allowCors, methodNotAllowed, errorMiddleware)
 
     this.endpoints.all(
@@ -61,11 +71,10 @@ export default class MatrixApplicationServer {
 
   /**
    * Get an array of middlewares that the request should go through
-   * @param {AppServerController} controller Endpoint main middleware
-   * @return {Array<expressAppHandler | expressAppHandlerError>} Array of middlewares
+   * @param {string} endpoint Request resource endpoint
+   * @return {Array<expressAppHandler | expressAppHandlerError | ValidationChain>} Array of middlewares
    */
   private _middlewares(
-    controller: AppServerController,
     endpoint: string
   ): Array<expressAppHandler | expressAppHandlerError | ValidationChain> {
     return [
@@ -74,7 +83,6 @@ export default class MatrixApplicationServer {
       urlencoded({ extended: false }),
       auth(this.appServiceRegistration.hsToken),
       ...validation(endpoint),
-      controller(this),
       errorMiddleware
     ]
   }

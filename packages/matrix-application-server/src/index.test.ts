@@ -175,5 +175,49 @@ describe('MatrixApplicationServer', () => {
         })
       })
     })
+
+    describe('Users endpoint', () => {
+      const userEndpoint = endpointPrefix + '/users/1'
+
+      it('reject not allowed method with 405', async () => {
+        const response = await request(app).put(userEndpoint)
+        expect(response.statusCode).toBe(405)
+        expect(response.body).toStrictEqual({
+          errcode: 'M_UNRECOGNIZED',
+          error: 'Unrecognized'
+        })
+      })
+
+      it('should send a response with 200', async () => {
+        const response = await request(app)
+          .get(userEndpoint)
+          .set('Authorization', `Bearer ${homeserverToken}`)
+          .send()
+        expect(response.statusCode).toBe(200)
+        expect(response.body).toEqual({})
+      })
+    })
+
+    describe('Rooms endpoint', () => {
+      const roomEndpoint = endpointPrefix + '/rooms/1'
+
+      it('reject not allowed method with 405', async () => {
+        const response = await request(app).put(roomEndpoint)
+        expect(response.statusCode).toBe(405)
+        expect(response.body).toStrictEqual({
+          errcode: 'M_UNRECOGNIZED',
+          error: 'Unrecognized'
+        })
+      })
+
+      it('should send a response with 200', async () => {
+        const response = await request(app)
+          .get(roomEndpoint)
+          .set('Authorization', `Bearer ${homeserverToken}`)
+          .send()
+        expect(response.statusCode).toBe(200)
+        expect(response.body).toEqual({})
+      })
+    })
   })
 })
