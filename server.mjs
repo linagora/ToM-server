@@ -6,7 +6,7 @@ import { fileURLToPath } from 'url'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
-const tomServer = new TomServer({
+const conf = {
   base_url: process.env.BASE_URL,
   cron_service: process.env.CRON_SERVICE ?? true,
   database_engine: process.env.DATABASE_ENGINE,
@@ -32,9 +32,10 @@ const tomServer = new TomServer({
   matrix_database_password: process.env.MATRIX_DATABASE_PASSWORD,
   matrix_database_user: process.env.MATRIX_DATABASE_USER,
   server_name: process.env.SERVER_NAME,
-  template_dir: path.join(__dirname,'packages','tom-server','templates'),
+  template_dir: path.join(__dirname,'packages','tom-server','src','identity-server','templates'),
   userdb_engine: 'ldap',
-})
+}
+const tomServer = new TomServer(conf)
 
 const app = express()
 

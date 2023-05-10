@@ -53,7 +53,7 @@ class UserDB implements UserDBBackend {
       }
       default: {
         // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-        throw new Error(`Unsupported database type ${conf.userdb_engine}`)
+        throw new Error(`Unsupported user-database type ${conf.userdb_engine}`)
       }
     }
     this.db = new Module(conf)

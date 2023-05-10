@@ -50,7 +50,7 @@ class MatrixDB implements MatrixDBBackend {
       default: {
         throw new Error(
           // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-          `Unsupported database type ${conf.matrix_database_engine}`
+          `Unsupported matrix-database type ${conf.matrix_database_engine}`
         )
       }
     }
