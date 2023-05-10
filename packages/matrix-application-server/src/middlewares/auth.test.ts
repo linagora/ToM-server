@@ -5,6 +5,11 @@ import { type Request, type Response, type NextFunction } from 'express'
 const homeserverToken =
   'hsTokenTestwdakZQunWWNe3DZitAerw9aNqJ2a6HVp0sJtg7qTJWXcHnBjgN0NL'
 
+const unauthorizedError = new AppServerAPIError({
+  status: 401,
+  code: ErrCodes.M_UNAUTHORIZED
+})
+
 const forbiddenError = new AppServerAPIError({
   status: 403,
   code: ErrCodes.M_FORBIDDEN
@@ -29,12 +34,22 @@ describe('Authentication', () => {
     expect(nextFunction).toHaveBeenCalled()
   })
 
-  it('should throw AppServerAPIError with 403 status if headers is undefined in request object', () => {
+  it('should throw AppServerAPIError with 401 status if headers is undefined in request object', () => {
     mockRequest = {}
     const handler: expressAppHandler = auth(homeserverToken)
     expect(() => {
       handler(mockRequest as Request, mockResponse as Response, nextFunction)
-    }).toThrowError(forbiddenError)
+    }).toThrowError(unauthorizedError)
+  })
+
+  it('should throw AppServerAPIError with 401 status if authorization header is undefined in request object', () => {
+    mockRequest = {
+      headers: {}
+    }
+    const handler: expressAppHandler = auth(homeserverToken)
+    expect(() => {
+      handler(mockRequest as Request, mockResponse as Response, nextFunction)
+    }).toThrowError(unauthorizedError)
   })
 
   it('should throw AppServerAPIError with 403 status if authorization token does not match regex', () => {

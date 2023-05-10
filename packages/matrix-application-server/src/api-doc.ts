@@ -16,6 +16,8 @@
  *        $ref: '#/components/responses/PermanentRedirect'
  *      400:
  *        $ref: '#/components/responses/BadRequest'
+ *      401:
+ *        $ref: '#/components/responses/MatrixUnauthorized'
  *      403:
  *        $ref: '#/components/responses/Forbidden'
  *      404:

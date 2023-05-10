@@ -92,6 +92,15 @@ describe('MatrixApplicationServer', () => {
       expect(response.get('Location')).toEqual(endpointPrefix + testEndpoint)
     })
 
+    it('error on request without authorization header', async () => {
+      const response = await request(app).put(transactionEndpoint)
+      expect(response.statusCode).toBe(401)
+      expect(response.body).toStrictEqual({
+        errcode: 'M_UNAUTHORIZED',
+        error: 'Unauthorized'
+      })
+    })
+
     it('error on request with invalid token', async () => {
       const response = await request(app)
         .put(transactionEndpoint)

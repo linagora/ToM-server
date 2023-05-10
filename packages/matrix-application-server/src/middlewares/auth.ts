@@ -10,6 +10,11 @@ export default (expectedHomeserverToken: string): expressAppHandler => {
       if (re != null) {
         token = re[1]
       }
+    } else {
+      throw new AppServerAPIError({
+        status: 401,
+        code: ErrCodes.M_UNAUTHORIZED
+      })
     }
     if (expectedHomeserverToken === token) {
       next()

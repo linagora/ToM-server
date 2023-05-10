@@ -85,6 +85,30 @@ const options = {
             }
           }
         },
+        MatrixUnauthorized: {
+          description: 'Unauthorized',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  errcode: {
+                    type: 'string',
+                    description: 'A Matrix error code'
+                  },
+                  error: {
+                    type: 'string',
+                    description: 'A human-readable error message'
+                  }
+                }
+              },
+              example: {
+                errcode: 'M_UNAUTHORIZED',
+                error: 'Unauthorized'
+              }
+            }
+          }
+        },
         Unauthorized: {
           description: 'Unauthorized',
           content: {

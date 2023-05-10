@@ -1,6 +1,9 @@
 import { type expressAppHandlerError } from './utils'
 
 export enum ErrCodes {
+  // The homeserver has not supplied credentials
+  M_UNAUTHORIZED = 'M_UNAUTHORIZED',
+
   // The token hs_token does not match it own hs_token
   M_FORBIDDEN = 'M_FORBIDDEN',
 
