@@ -15,7 +15,9 @@ export type expressAppHandlerError = (
 ) => void
 
 export enum Endpoints {
-  TRANSACTIONS = 'transactions'
+  TRANSACTIONS = 'transactions',
+  USERS = 'users',
+  ROOMS = 'rooms'
 }
 
 export const allowCors: expressAppHandler = (req, res, next) => {
