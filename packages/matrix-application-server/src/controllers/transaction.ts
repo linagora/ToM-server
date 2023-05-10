@@ -1,10 +1,10 @@
 import type MatrixApplicationServer from '..'
-import { AppServerAPIError } from '../errors'
+import { AppServerAPIError } from '../utils'
 import { type ClientEvent, type TransactionRequestBody } from '../interfaces'
-import { type AppServerController } from './utils'
+import { type AppServerController } from '.'
 import { validationResult, type ValidationError } from 'express-validator'
 
-const transaction: AppServerController = (
+export const transaction: AppServerController = (
   appServer: MatrixApplicationServer
 ) => {
   return (req, res, next) => {
@@ -43,5 +43,3 @@ const transaction: AppServerController = (
     res.send()
   }
 }
-
-export default transaction

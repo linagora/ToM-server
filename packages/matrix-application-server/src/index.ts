@@ -1,19 +1,19 @@
-import {
-  allowCors,
-  type expressAppHandlerError,
-  type expressAppHandler,
-  legacyEndpointHandler,
-  methodNotAllowed,
-  Endpoints
-} from './utils'
-import transaction from './controllers/transaction'
+import { transaction, type AppServerController } from './controllers'
 import { Router, json, urlencoded } from 'express'
-import { type AppServerController } from './controllers/utils'
-import { errorMiddleware } from './errors'
 import fs from 'fs'
 import configParser, { type ConfigDescription } from '@twake/config-parser'
 import defaultConfDesc from './config.json'
-import AppServiceRegistration, { type Namespaces } from './utils/registration'
+import {
+  allowCors,
+  AppServiceRegistration,
+  errorMiddleware,
+  legacyEndpointHandler,
+  methodNotAllowed,
+  Endpoints,
+  type expressAppHandlerError,
+  type expressAppHandler,
+  type Namespaces
+} from './utils'
 import auth from './middlewares/auth'
 import validation from './middlewares/validation'
 import { type ValidationChain } from 'express-validator'

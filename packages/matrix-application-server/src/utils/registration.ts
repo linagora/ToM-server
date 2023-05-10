@@ -25,7 +25,7 @@ export interface AppServiceOutput {
   url: string
 }
 
-class AppServiceRegistration {
+export class AppServiceRegistration {
   asToken: string
   hsToken: string
   id: string
@@ -259,5 +259,3 @@ class AppServiceRegistration {
     return false
   }
 }
-
-export default AppServiceRegistration

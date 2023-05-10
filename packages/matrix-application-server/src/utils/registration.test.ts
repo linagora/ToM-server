@@ -1,6 +1,6 @@
 import { type Config } from '..'
 import defaultConfig from '../config.json'
-import AppServiceRegistration, { type AppServiceOutput } from './registration'
+import { AppServiceRegistration, type AppServiceOutput } from './registration'
 import yaml from 'js-yaml'
 import path from 'path'
 import fs from 'fs'

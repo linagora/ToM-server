@@ -1,7 +1,6 @@
 import type MatrixApplicationServer from '..'
-import { AppServerAPIError } from '../errors'
-import { type expressAppHandler } from '../utils'
-import transaction from './transaction'
+import { AppServerAPIError, type expressAppHandler } from '../utils'
+import { transaction } from './transaction'
 import { type Request, type Response, type NextFunction } from 'express'
 import { Result } from 'express-validator'
 

@@ -1,6 +1,5 @@
 import { type NextFunction, type Request, type Response } from 'express'
-import { type expressAppHandler } from '../utils'
-import { AppServerAPIError, ErrCodes } from '../errors'
+import { AppServerAPIError, ErrCodes, type expressAppHandler } from '../utils'
 
 export default (expectedHomeserverToken: string): expressAppHandler => {
   return (req: Request, res: Response, next: NextFunction) => {
