@@ -39,7 +39,7 @@
       "version": "2.0"
     }
   },
-  "template_dir": "./src/identity-server/templates",
+  "template_dir": "./templates",
   "userdb_engine": "sqlite",
   "userdb_host": "./src/identity-server/__testData__/terms.db"
 }

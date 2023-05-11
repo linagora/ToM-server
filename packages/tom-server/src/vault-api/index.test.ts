@@ -66,7 +66,7 @@ describe('Vault API server', () => {
       database_engine: 'sqlite',
       database_host: testFilePath,
       matrix_server: 'localhost',
-      template_dir: path.join(__dirname, '../identity-server/templates'),
+      template_dir: './templates',
       userdb_engine: 'sqlite',
       userdb_host: testFilePath,
       matrix_database_engine: 'sqlite',

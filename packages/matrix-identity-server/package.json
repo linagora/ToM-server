@@ -23,6 +23,7 @@
     "package.json",
     "dist",
     "example/identity-server.js",
+    "templates",
     "*.md"
   ],
   "keywords": [

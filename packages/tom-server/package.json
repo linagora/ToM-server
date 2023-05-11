@@ -22,6 +22,7 @@
   "files": [
     "package.json",
     "dist",
+    "templates",
     "*.md"
   ],
   "keywords": [

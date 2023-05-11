@@ -22,12 +22,6 @@ beforeAll((done) => {
     base_url: 'http://example.com/',
     userdb_engine: 'sqlite',
     userdb_host: testDb,
-    template_dir: path.join(
-      JEST_PROCESS_ROOT_PATH,
-      'src',
-      'identity-server',
-      'templates'
-    ),
     matrix_database_engine: 'sqlite',
     matrix_database_host: matrixTestDb
   }
