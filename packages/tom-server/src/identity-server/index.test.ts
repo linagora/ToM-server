@@ -152,7 +152,7 @@ describe('Using Matrix Token', () => {
           .set('Authorization', `Bearer ${validToken}`)
           .set('Accept', 'application/json')
         expect(response.statusCode).toBe(200)
-        expect(response.body.mappings[phoneHash]).toBe('@dwho:matrix.org')
+        expect(response.body.mappings[phoneHash]).toBe('@dwho:example.com')
       })
     })
   })

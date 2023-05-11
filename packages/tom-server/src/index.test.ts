@@ -76,7 +76,6 @@ test('/.well-known/matrix/client', async () => {
   const response = await request(app).get('/.well-known/matrix/client')
   expect(response.statusCode).toBe(200)
   expect(response.body).toEqual({
-    domain: 'matrix.org',
     'm.homeserver': { base_url: 'localhost' },
     'm.identity_server': { base_url: 'http://example.com/' },
     'm.integrations': {
@@ -86,6 +85,6 @@ test('/.well-known/matrix/client', async () => {
         useJwt: false
       }
     },
-    't.server': { base_url: 'http://example.com/' }
+    't.server': { base_url: 'http://example.com/', server_name: 'example.com' }
   })
 })

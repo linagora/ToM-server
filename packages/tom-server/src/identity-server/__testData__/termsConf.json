@@ -12,7 +12,7 @@
   "key_delay": 3600,
   "keys_depth": 5,
   "mail_link_delay": 7200,
-  "server_name": "matrix.org",
+  "server_name": "example.com",
   "smtp_sender": "yadd@debian.org",
   "smtp_server": "localhost",
   "policies": {

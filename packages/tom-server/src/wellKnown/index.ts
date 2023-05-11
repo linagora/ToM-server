@@ -8,8 +8,9 @@ interface WellKnownType {
   'm.identity_server': {
     base_url: string
   }
-  't.server': {
+  't.server'?: {
     base_url: string
+    server_name?: string
   }
   'm.integrations': {
     jitsi: {
@@ -23,7 +24,6 @@ interface WellKnownType {
       }
     }
   }
-  domain: string
 }
 
 class WellKnown {
@@ -43,7 +43,8 @@ class WellKnown {
           base_url: conf.base_url
         },
         't.server': {
-          base_url: conf.base_url
+          base_url: conf.base_url,
+          server_name: conf.server_name
         },
         'm.integrations': {
           jitsi: {
@@ -51,8 +52,7 @@ class WellKnown {
             baseUrl: conf.jitsiBaseUrl,
             useJwt: conf.jitsiUseJwt
           }
-        },
-        domain: conf.server_name
+        }
       }
       /* istanbul ignore if */ // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
       if (conf.jitsiUseJwt) {
