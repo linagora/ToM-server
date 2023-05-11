@@ -32,8 +32,10 @@ const conf = {
   matrix_database_password: process.env.MATRIX_DATABASE_PASSWORD,
   matrix_database_user: process.env.MATRIX_DATABASE_USER,
   server_name: process.env.SERVER_NAME,
-  template_dir: process.env.TEMPLATE_DIR ?? path.join(__dirname,'node_modules','@twake','server','templates'),
-  userdb_engine: 'ldap',
+  template_dir:
+    process.env.TEMPLATE_DIR ??
+    path.join(__dirname, 'node_modules', '@twake', 'server', 'templates'),
+  userdb_engine: 'ldap'
 }
 const tomServer = new TomServer(conf)
 

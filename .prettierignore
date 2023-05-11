@@ -1,4 +1,5 @@
 /*
+!/server.mjs
 !/packages
 !/documentation
 packages/**/*.json
