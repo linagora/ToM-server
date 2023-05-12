@@ -1,6 +1,6 @@
 # @twake/vault-api
 
-Node.js library that implements a Twake on Matrix server.
+Node.js library that implements a Twake-on-Matrix server.
 
 ## Synopsis
 

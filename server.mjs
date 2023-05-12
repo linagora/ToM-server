@@ -31,6 +31,7 @@ const conf = {
   matrix_database_name: process.env.MATRIX_DATABASE_NAME,
   matrix_database_password: process.env.MATRIX_DATABASE_PASSWORD,
   matrix_database_user: process.env.MATRIX_DATABASE_USER,
+  oidc_issuer: process.env.OIDC_ISSUER,
   server_name: process.env.SERVER_NAME,
   template_dir:
     process.env.TEMPLATE_DIR ??

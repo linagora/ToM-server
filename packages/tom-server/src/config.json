@@ -29,6 +29,7 @@
   "matrix_database_name": null,
   "matrix_database_password": null,
   "matrix_database_user": null,
+  "oidc_issuer": "",
   "pepperCron": "0 0 0 * * *",
   "policies": null,
   "server_name": "localhost",

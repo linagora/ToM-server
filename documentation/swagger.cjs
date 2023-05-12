@@ -32,6 +32,16 @@ const identityServerApiPath = path.join(
   'index.ts'
 )
 
+const metadataApiPath = path.join(
+  __dirname,
+  '..',
+  'packages',
+  'tom-server',
+  'src',
+  'wellKnown',
+  'index.ts'
+)
+
 const options = {
   definition: {
     openapi: '3.0.0',
@@ -122,6 +132,7 @@ const options = {
     matrixIdentityServerApiPath,
     identityServerApiPath,
     vaultApiPath,
+    metadataApiPath,
     '**/routes/*.ts'
   ]
 }

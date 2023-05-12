@@ -19,6 +19,7 @@ export type Config = MConfig & {
   jitsiUseJwt: boolean
   matrix_server: string
   matrix_database_host: string
+  oidc_issuer?: string
 }
 
 export type IdentityServerDb = MIdentityServerDb.default

@@ -1,3 +1,89 @@
+/**
+ * @openapi
+ * /.well-knwon/matrix/client:
+ *  get:
+ *    tags:
+ *      - Auto configuration
+ *    description: Get server metadata for auto configuration
+ *    responses:
+ *      200:
+ *        description: Give server metadata
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: object
+ *              properties:
+ *                m.homeserver:
+ *                  type: object
+ *                  properties:
+ *                    base_url:
+ *                      type: string
+ *                      description: Base URL of Matrix server
+ *                m.identity_server:
+ *                  type: object
+ *                  properties:
+ *                    base_url:
+ *                      type: string
+ *                      description: Base URL of Identity server
+ *                t.server:
+ *                  type: object
+ *                  properties:
+ *                    base_url:
+ *                      type: string
+ *                      description: Base URL of Identity server
+ *                    server_name:
+ *                      type: string
+ *                      description: Domain handled by Matrix server
+ *                m.integrations:
+ *                  type: object
+ *                  properties:
+ *                    jitsi:
+ *                      type: object
+ *                      properties:
+ *                        preferredDomain:
+ *                          type: string
+ *                          description: Jitsi's preffered domain
+ *                        baseUrl:
+ *                          type: string
+ *                          description: URL of Jitsi server
+ *                        useJwt:
+ *                          type: boolean
+ *                          description: True if Jitsi server requires a JWT
+ *                        jwt:
+ *                          type: object
+ *                          properties:
+ *                            algorithm:
+ *                              type: string
+ *                              description: algorithm used to generate JWT
+ *                            secret:
+ *                              type: string
+ *                              description: password of JWTs
+ *                            issuer:
+ *                              type: string
+ *                              description: issuer of JWTs
+ *                m.authentication:
+ *                  type: object
+ *                  properties:
+ *                    issuer:
+ *                      type: string
+ *                      description: URL of OIDC issuer
+ *            example:
+ *              m.homeserver:
+ *                base_url: matrix.example.com
+ *              m.identity_server:
+ *                base_url: global-id-server.twake.app
+ *              m.integrations:
+ *                jitsi:
+ *                  baseUrl: https://jitsi.example.com/
+ *                  preferredDomain: jitsi.example.com
+ *                  useJwt: false
+ *              m.authentication:
+ *                issuer: https://auth.example.com
+ *              t.server:
+ *                base_url: https://tom.example.com
+ *                server_name: example.com
+ */
+
 import { Utils } from '@twake/matrix-identity-server'
 import { type Config, type expressAppHandler } from '../types'
 
@@ -23,6 +109,10 @@ interface WellKnownType {
         issuer: string
       }
     }
+  }
+  'm.authentication'?: {
+    issuer: string
+    account?: string
   }
 }
 
@@ -60,6 +150,11 @@ class WellKnown {
           algorithm: conf.jitsiJwtAlgorithm,
           secret: conf.jitsiJwtSecret,
           issuer: conf.jitsiJwtIssuer
+        }
+      }
+      if (conf.oidc_issuer != null && conf.oidc_issuer.length >= 0) {
+        wellKnown['m.authentication'] = {
+          issuer: conf.oidc_issuer
         }
       }
       Utils.send(res, 200, wellKnown)

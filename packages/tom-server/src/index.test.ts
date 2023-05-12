@@ -17,13 +17,14 @@ let app: express.Application
 beforeAll((done) => {
   const conf: Config = {
     ...defaultConfig,
+    base_url: 'http://example.com/',
     database_engine: 'sqlite',
     database_host: testDb,
-    base_url: 'http://example.com/',
-    userdb_engine: 'sqlite',
-    userdb_host: testDb,
     matrix_database_engine: 'sqlite',
-    matrix_database_host: matrixTestDb
+    matrix_database_host: matrixTestDb,
+    oidc_issuer: 'https://auth.example.com',
+    userdb_engine: 'sqlite',
+    userdb_host: testDb
   }
   if (process.env.TEST_PG === 'yes') {
     conf.database_engine = 'pg'
@@ -78,6 +79,9 @@ test('/.well-known/matrix/client', async () => {
         preferredDomain: 'jitsi.example.com',
         useJwt: false
       }
+    },
+    'm.authentication': {
+      issuer: 'https://auth.example.com'
     },
     't.server': { base_url: 'http://example.com/', server_name: 'example.com' }
   })
