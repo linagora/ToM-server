@@ -8,7 +8,7 @@ type Get = (
   table: Collections,
   fields?: string[],
   field?: string,
-  value?: string | number
+  value?: string | number | Array<string | number>
 ) => Promise<Array<Record<string, string | string[] | number>>>
 /*
 type Match = (
@@ -75,7 +75,7 @@ class MatrixDB implements MatrixDBBackend {
     table: Collections,
     fields?: string[],
     field?: string,
-    value?: string | number
+    value?: string | number | Array<string | number>
   ): Promise<Array<Record<string, string | string[] | number>>> => {
     return await this.db.get(table, fields, field, value)
   }

@@ -10,7 +10,7 @@ interface Config {
 let created = false
 
 const createQuery = 'CREATE TABLE users (uid varchar(8), mobile varchar(12), mail varchar(32))'
-const insertQuery = "INSERT INTO users VALUES('dwho', '33612345678', 'dwho@company.com')"
+const insertQuery = "INSERT INTO users VALUES('dwho', '33612345678', 'dwho@example.com')"
 
 // eslint-disable-next-line @typescript-eslint/promise-function-async
 const buildUserDB = (conf: Config): Promise<void> => {
@@ -19,12 +19,16 @@ const buildUserDB = (conf: Config): Promise<void> => {
     if (conf.database_engine === 'sqlite') {
       const matrixDb = new sqlite3.Database(conf.matrix_database_host)
       
-      matrixDb.run('CREATE TABLE users (uid varchar(8), name varchar(32), mobile varchar(12), mail varchar(32))', (err) => {
+      matrixDb.run('CREATE TABLE users (name text, desactivated text, admin integer)', (err) => {
         if (err != null) {
           reject(err)
+        } else {
+          matrixDb.run("INSERT INTO users VALUES('@dwho:example.com', '', 0)", (err) => {
+            if (err != null) {
+              reject(err)
+            }
+          })
         }
-        
-        matrixDb.run("INSERT INTO users VALUES('dwho', 'dwho', '33612345678', 'dwho@company.com')")
       })
       const userDb = new sqlite3.Database(conf.database_host)
       userDb.run(createQuery, (err) => {

@@ -27,7 +27,7 @@ export default class TwakeServer {
     ) as Config
 
     this.endpoints = Router()
-    this.idServer = new IdServer(this.conf)
+    this.idServer = new IdServer(this)
     this.matrixDb = new MatrixDB(this.conf)
 
     this.ready = this.initServer()

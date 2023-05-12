@@ -1,6 +1,6 @@
 import { errMsg, Utils } from '@twake/matrix-identity-server'
 import { type expressAppHandler } from '../../types'
-import type TwakeIdentityServer from '..'
+import type TwakeServer from '../..'
 
 const schema = {
   scope: true,
@@ -16,11 +16,17 @@ export interface Query {
   val: string
 }
 
-const autocompletion = (idServer: TwakeIdentityServer): expressAppHandler => {
+const autocompletion = (tomServer: TwakeServer): expressAppHandler => {
   return (req, res) => {
-    idServer.authenticate(req, res, (token, id) => {
+    tomServer.idServer.authenticate(req, res, (token, id) => {
       Utils.jsonContent(req, res, (obj) => {
         Utils.validateParameters(res, schema, obj, (data) => {
+          const sendError = (e: string): void => {
+            /* istanbul ignore next */
+            console.error('Autocompletion error', e)
+            /* istanbul ignore next */
+            Utils.send(res, 500, errMsg('unknown', e))
+          }
           let fields = (data as Query).fields
           let scope = (data as Query).scope
           /* istanbul ignore if */
@@ -38,15 +44,37 @@ const autocompletion = (idServer: TwakeIdentityServer): expressAppHandler => {
           })
           /* istanbul ignore else */
           if (!error) {
-            idServer.userDB
-              .match('users', fields, scope, (data as Query).val)
+            tomServer.idServer.userDB
+              .match('users', [...fields, 'uid'], scope, (data as Query).val)
               .then((rows) => {
-                Utils.send(res, 200, { matches: rows })
+                const mUid = rows.map((v) => {
+                  return `@${v.uid as string}:${tomServer.conf.server_name}`
+                })
+                tomServer.matrixDb
+                  .get('users', ['*'], 'name', mUid)
+                  .then((matrixRows) => {
+                    const mUids: Record<string, true> = {}
+                    const matches: typeof rows = []
+                    // eslint-disable-next-line @typescript-eslint/naming-convention
+                    const inactive_matches: typeof rows = []
+
+                    matrixRows.forEach((mrow) => {
+                      mUids[
+                        (mrow.name as string).replace(/^@(.*?):(?:.*)$/, '$1')
+                      ] = true
+                    })
+                    rows.forEach((row) => {
+                      if (mUids[row.uid as string]) {
+                        matches.push(row)
+                      } else {
+                        inactive_matches.push(row)
+                      }
+                    })
+                    Utils.send(res, 200, { matches, inactive_matches })
+                  })
+                  .catch(sendError)
               })
-              .catch((e) => {
-                /* istanbul ignore next */
-                Utils.send(res, 500, errMsg('unknown', e))
-              })
+              .catch(sendError)
           } else {
             Utils.send(res, 400, errMsg('invalidParam'))
           }

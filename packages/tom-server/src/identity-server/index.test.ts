@@ -169,7 +169,10 @@ describe('Using Matrix Token', () => {
           val: 'who'
         })
       expect(response.status).toBe(200)
-      expect(response.body).toEqual({ matches: [{ uid: 'dwho' }] })
+      expect(response.body).toEqual({
+        matches: [{ uid: 'dwho' }],
+        inactive_matches: []
+      })
     })
   })
 })

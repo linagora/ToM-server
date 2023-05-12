@@ -162,7 +162,7 @@ class Pg extends SQL implements IdDbBackend {
     table: string,
     fields?: string[],
     field?: string,
-    value?: string | number | string[]
+    value?: string | number | Array<string | number>
   ): Promise<Array<Record<string, string | number>>> {
     return new Promise((resolve, reject) => {
       /* istanbul ignore if */

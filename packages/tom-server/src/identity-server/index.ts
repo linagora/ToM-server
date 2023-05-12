@@ -7,14 +7,15 @@ import Authenticate from './utils/authenticate'
 import { type Config } from '../types'
 import MatrixIdentityServer from '@twake/matrix-identity-server'
 import defaultConfig from '../config.json'
+import type TwakeServer from '..'
 
 export type { WhoAmIResponse } from './utils/authenticate'
 
 export default class TwakeIdentityServer extends MatrixIdentityServer {
   declare conf: Config
-  constructor(conf: Config, confDesc?: ConfigDescription) {
+  constructor(parent: TwakeServer, confDesc?: ConfigDescription) {
     if (confDesc == null) confDesc = defaultConfig
-    super(conf, confDesc)
+    super(parent.conf, confDesc)
     this.authenticate = Authenticate(this.db, this.conf)
     const superReady = this.ready
     this.ready = new Promise((resolve, reject) => {
@@ -85,7 +86,7 @@ export default class TwakeIdentityServer extends MatrixIdentityServer {
            *        $ref: '#/components/responses/BadRequest'
            */
           this.api.post['/_twake/identity/v1/lookup/match'] =
-            autocompletion(this)
+            autocompletion(parent)
           resolve(true)
         })
         /* istanbul ignore next */

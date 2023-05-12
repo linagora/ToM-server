@@ -52,8 +52,10 @@ abstract class SQL {
     value?: string | number | string[]
   ): Promise<number> {
     return new Promise((resolve, reject) => {
+      const args: any[] = [table, [`count(${field}) as count`]]
+      if (value != null) args.push(field, value)
       // @ts-expect-error implemented later
-      this.get(table, [`count(${field}) as count`], field, value)
+      this.get(...args)
         .then((rows: Array<Record<string, string>>) => {
           resolve(parseInt(rows[0].count))
         })
