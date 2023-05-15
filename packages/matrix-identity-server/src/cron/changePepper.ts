@@ -1,23 +1,20 @@
 /**
- * Update hashes
+ * Change pepper and update hashes
  */
 
-import { Hash, supportedHashes } from '@twake/crypto'
-import { type DbGetResult, type Config } from '../types'
-import type IdentityServerDb from '../db'
-import type UserDB from '../userdb'
+import { type DbGetResult } from '../types'
+import type MatrixIdentityServer from '..'
 import { randomString } from '../utils/tokenUtils'
 import MatrixDB from '../matrixDb'
+import updateHash, { type UpdatableFields } from '../lookup/updateHash'
 
-const fieldsToHash = ['phone', 'email']
 const dbFieldsToHash = ['mobile', 'mail']
 
 // eslint-disable-next-line @typescript-eslint/promise-function-async
-const updateHashes = (
-  conf: Config,
-  db: IdentityServerDb,
-  userDB: UserDB
-): Promise<void> => {
+const updateHashes = (idServer: MatrixIdentityServer): Promise<void> => {
+  const conf = idServer.conf
+  const db = idServer.db
+  const userDB = idServer.userDB
   const isMatrixDbAvailable =
     // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
     conf.matrix_database_host &&
@@ -97,64 +94,28 @@ const updateHashes = (
               .getAll('users', [...dbFieldsToHash, 'uid'])
               .then(_filter)
               .then((rows: DbGetResult) => {
-                const hash = new Hash()
-                hash.ready
-                  .then(() => {
-                    const promises: Array<Promise<void>> = []
-                    if (fieldsToHash.length === 0) {
-                      /* istanbul ignore next */
-                      _resolve(true)
-                    } else {
-                      rows.forEach((row) => {
-                        fieldsToHash.forEach((field, i) => {
-                          if (
-                            row[dbFieldsToHash[i]] != null &&
-                            row[dbFieldsToHash[i]].toString().length > 0
-                          ) {
-                            // eslint-disable-next-line @typescript-eslint/promise-function-async
-                            supportedHashes.forEach((method: string) => {
-                              promises.push(
-                                db.insert('hashes', {
-                                  // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
-                                  // @ts-ignore method is a function of hash
-                                  hash: hash[method](
-                                    `${
-                                      row[dbFieldsToHash[i]] as string
-                                    } ${field} ${newPepper}`
-                                  ),
-                                  pepper: newPepper,
-                                  type: field,
-                                  // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-                                  value: `@${row.uid}:${conf.server_name}`,
-                                  // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
-                                  active: isMatrixDbAvailable
-                                    ? (row.active as number)
-                                    : 1
-                                })
-                              )
-                            })
-                          }
-                        })
-                      })
-                      /* istanbul ignore if */
-                      if (promises.length === 0) {
-                        _resolve(true)
-                      } else {
-                        Promise.all(promises)
-                          .then(() => {
-                            _resolve(true)
-                          })
-                          .catch((e) => {
-                            console.error(
-                              'Unable to insert (at least) one hash',
-                              e
-                            )
-                            _resolve(true)
-                          })
-                      }
+                const init: UpdatableFields = {}
+                updateHash(
+                  idServer,
+                  rows.reduce((res, row) => {
+                    res[`@${row.uid as string}:${conf.server_name}`] = {
+                      email: row.mail as string,
+                      phone: row.mobile as string,
+                      // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+                      active: isMatrixDbAvailable ? (row.active as number) : 1
                     }
-                  })
-                  .catch(logAndReject('Unable to initialize js-nacl'))
+                    return res
+                  }, init) as unknown as UpdatableFields,
+                  newPepper
+                )
+                  .then(_resolve)
+                  .catch(_reject)
+              })
+              .catch((e) => {
+                /* istanbul ignore next */
+                console.error('Unable to parse user DB', e)
+                /* istanbul ignore next */
+                reject(e)
               })
               .catch(logAndReject('Unable to parse user DB'))
           })

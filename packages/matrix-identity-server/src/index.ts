@@ -29,6 +29,7 @@ import lookup from './lookup'
 import _validateMatrixToken from './utils/validateMatrixToken'
 import { type Config } from './types'
 import Cache from './cache'
+import updateHash from './lookup/updateHash'
 
 export * from './types'
 export * as SQLite from './db/sql/sqlite'
@@ -56,6 +57,7 @@ export default class MatrixIdentityServer {
   conf: Config
   ready: Promise<boolean>
   cache?: Cache
+  updateHash?: typeof updateHash
 
   authenticate: AuthenticationFunction
 
@@ -81,7 +83,8 @@ export default class MatrixIdentityServer {
     this.ready = new Promise((resolve, reject) => {
       Promise.all([db.ready, userDB.ready])
         .then(() => {
-          this.cronTasks = new CronTasks(this.conf, db, userDB)
+          this.cronTasks = new CronTasks(this)
+          this.updateHash = updateHash
           this.cronTasks.ready
             .then(() => {
               const badMethod: expressAppHandler = (req, res) => {

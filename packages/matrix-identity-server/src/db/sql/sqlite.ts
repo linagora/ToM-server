@@ -127,6 +127,7 @@ class SQLite extends SQL implements IdDbBackend {
       if (typeof value !== 'object') {
         value = value != null ? [value] : []
       }
+      /* istanbul ignore if */
       if (this.db == null) {
         reject(new Error('Wait for database to be ready'))
       }

@@ -3,7 +3,7 @@ import IdentityServerDB from '../db'
 import defaultConfig from '../config.json'
 import { type Config } from '../types'
 import UserDB from '../userdb'
-import updateHashes from './updateHashes'
+import updateHashes from './changePepper'
 
 const conf: Config = {
   ...defaultConfig,
@@ -49,7 +49,8 @@ afterAll(() => {
 
 describe('updateHashes', () => {
   it('should be able to generate new hashes without previous values', (done) => {
-    updateHashes(conf, db, userDB).catch((e) => {
+    // @ts-expect-error equivalent to MatrixIdentityServer here
+    updateHashes({ conf, db, userDB }).catch((e) => {
       done(e)
     })
     setTimeout(() => {

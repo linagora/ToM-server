@@ -3,6 +3,7 @@ import config from '../../rollup-template.js'
 export default config([
   'express',
   'fs',
+  'generic-pool',
   'ldapjs',
   'node-cron',
   'querystring',

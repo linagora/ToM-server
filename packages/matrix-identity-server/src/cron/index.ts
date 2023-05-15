@@ -3,16 +3,16 @@
  */
 
 import cron, { type ScheduledTask } from 'node-cron'
-import { type Config } from '../types'
-import type IdentityServerDb from '../db'
-import type UserDB from '../userdb'
-import updateHashes from './updateHashes'
+import type MatrixIdentityServer from '..'
+import updateHashes from './changePepper'
 
 // eslint-disable-next-line @typescript-eslint/promise-function-async
 class CronTasks {
   tasks: ScheduledTask[]
   ready: Promise<void>
-  constructor(conf: Config, db: IdentityServerDb, userdb: UserDB) {
+  constructor(idServer: MatrixIdentityServer) {
+    const conf = idServer.conf
+    const db = idServer.db
     if (conf.pepperCron == null) conf.pepperCron = '0 0 0 * * *'
     /* istanbul ignore if */
     if (!cron.validate(conf.pepperCron))
@@ -28,7 +28,7 @@ class CronTasks {
                 conf.pepperCron as string,
                 () => {
                   /* istanbul ignore next */
-                  updateHashes(conf, db, userdb)
+                  updateHashes(idServer)
                     /* istanbul ignore next */
                     .catch((e) => {
                       /* istanbul ignore next */
@@ -46,7 +46,7 @@ class CronTasks {
               /* istanbul ignore next */
               sub()
             } else {
-              updateHashes(conf, db, userdb)
+              updateHashes(idServer)
                 .then(() => {
                   sub()
                 })
