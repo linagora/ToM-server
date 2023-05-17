@@ -12,6 +12,7 @@
     "clean": "rimraf packages/*/dist packages/*/coverage ./node_modules/.cache/nx packages/*/example/*.js*",
     "format:check": "prettier --check .",
     "format:fix": "prettier --write .",
+    "format:fix-diff": "prettier --write $(git checkout|grep -E '^M|A'|cut -f2)",
     "postinstall": "chmod u+x .husky/*",
     "prepare": "husky install",
     "doc": "node documentation/swagger.cjs"
