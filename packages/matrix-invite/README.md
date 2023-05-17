@@ -1,5 +1,9 @@
 # Matrix invite
 
+## Spec
+
+https://spec.matrix.org/unstable/appendices/#matrixto-navigation
+
 ## Developing
 
 Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:

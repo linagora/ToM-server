@@ -50,6 +50,12 @@ const autocompletion = (tomServer: TwakeServer): expressAppHandler => {
                 const mUid = rows.map((v) => {
                   return `@${v.uid as string}:${tomServer.conf.server_name}`
                 })
+                /**
+                 * For the record, this can be replaced by a call to
+                 * <matrix server>/_matrix/app/v1/users/{userId}
+                 *
+                 * See https://spec.matrix.org/v1.6/application-service-api/#get_matrixappv1usersuserid
+                 */
                 tomServer.matrixDb
                   .get('users', ['*'], 'name', mUid)
                   .then((matrixRows) => {
