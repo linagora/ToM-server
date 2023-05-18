@@ -127,7 +127,7 @@ class WellKnown {
     this._wellKnownClient = (req, res) => {
       const wellKnown: WellKnownType = {
         'm.homeserver': {
-          base_url: conf.matrix_server
+          base_url: `https://${conf.matrix_server}/`
         },
         'm.identity_server': {
           base_url: conf.base_url
