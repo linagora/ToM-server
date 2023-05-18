@@ -71,7 +71,7 @@ test('/.well-known/matrix/client', async () => {
   const response = await request(app).get('/.well-known/matrix/client')
   expect(response.statusCode).toBe(200)
   expect(response.body).toEqual({
-    'm.homeserver': { base_url: 'localhost' },
+    'm.homeserver': { base_url: 'https://localhost/' },
     'm.identity_server': { base_url: 'http://example.com/' },
     'm.integrations': {
       jitsi: {
