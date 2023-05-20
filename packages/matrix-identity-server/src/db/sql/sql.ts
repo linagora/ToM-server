@@ -1,7 +1,7 @@
 import { type PgDatabase } from './pg'
 import { type Collections } from '..'
 import { type SQLiteDatabase } from './sqlite'
-import { type Config } from '../..'
+import { type DbGetResult, type Config } from '../../types'
 
 export type CreateDbMethod = (
   conf: Config,
@@ -67,10 +67,7 @@ abstract class SQL {
   }
 
   // eslint-disable-next-line @typescript-eslint/promise-function-async
-  getAll(
-    table: string,
-    fields: string[]
-  ): Promise<Array<Record<string, string | number>>> {
+  getAll(table: string, fields: string[]): Promise<DbGetResult> {
     // @ts-expect-error implemented later
     return this.get(table, fields)
   }

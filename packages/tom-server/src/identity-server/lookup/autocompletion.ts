@@ -1,4 +1,4 @@
-import { Utils } from '@twake/matrix-identity-server'
+import { Utils, errMsg } from '@twake/matrix-identity-server'
 import { type expressAppHandler } from '../../types'
 import type TwakeServer from '../..'
 import _search from './_search'
@@ -16,7 +16,18 @@ const autocompletion = (tomServer: TwakeServer): expressAppHandler => {
     tomServer.idServer.authenticate(req, res, (token, id) => {
       Utils.jsonContent(req, res, (obj) => {
         Utils.validateParameters(res, schema, obj, (data) => {
-          search(res, data as Query)
+          if (
+            (data as Query).val != null &&
+            ((data as Query).val as string).length < 3
+          ) {
+            Utils.send(
+              res,
+              400,
+              errMsg('invalidParam', 'Send at least 3 characters')
+            )
+          } else {
+            search(res, data as Query)
+          }
         })
       })
     })

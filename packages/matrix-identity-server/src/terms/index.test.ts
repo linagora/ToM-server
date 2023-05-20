@@ -2,7 +2,7 @@ import Terms from './index'
 import express from 'express'
 import request from 'supertest'
 import DefaultConfig from '../config.json'
-import { type Config } from '..'
+import { type Config } from '../types'
 import { resetPolicies } from './_computePolicies'
 
 const policies = {

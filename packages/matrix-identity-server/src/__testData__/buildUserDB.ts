@@ -1,5 +1,5 @@
 /* istanbul ignore file */
-import { type Config } from '..'
+import { type Config } from '../types'
 import sqlite3 from 'sqlite3'
 import UserDB from '../userdb'
 import type UserDBPg from '../userdb/sql/pg'

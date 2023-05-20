@@ -1,7 +1,7 @@
 import IdDb from './index'
 import { randomString } from '../utils/tokenUtils'
 import fs from 'fs'
-import { type Config } from '..'
+import { type Config } from '../types'
 
 import DefaultConfig from '../config.json'
 

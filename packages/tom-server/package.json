@@ -30,12 +30,10 @@
     "twake",
     "server"
   ],
-  "author": 
-    {
-      "name": "Jordy Cabannes",
-      "email": "jcabannes@linagora.com"
-    }
-,
+  "author": {
+    "name": "Jordy Cabannes",
+    "email": "jcabannes@linagora.com"
+  },
   "license": "AGPL-3.0-or-later",
   "bugs": {
     "url": "https://ci.linagora.com/publicgroup/oss/twake/tom-server/-/issues"
@@ -47,7 +45,8 @@
     "sqlite3": "^5.1.6"
   },
   "dependencies": {
-    "@twake/matrix-identity-server": "*"
+    "@twake/matrix-identity-server": "*",
+    "redis": "^4.6.6"
   },
   "devDependencies": {
     "jest-mock-extended": "^2.0.4"

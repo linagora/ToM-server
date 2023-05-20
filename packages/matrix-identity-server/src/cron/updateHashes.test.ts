@@ -1,7 +1,7 @@
 import fs from 'fs'
 import IdentityServerDB from '../db'
 import defaultConfig from '../config.json'
-import { type Config } from '..'
+import { type Config } from '../types'
 import UserDB from '../userdb'
 import updateHashes from './updateHashes'
 

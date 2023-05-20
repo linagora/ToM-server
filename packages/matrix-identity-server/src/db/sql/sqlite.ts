@@ -2,7 +2,7 @@ import { type Database, type Statement } from 'sqlite3'
 import { type Collections, type IdDbBackend } from '../index'
 import SQL from './sql'
 import createTables from './_createTables'
-import { type Config } from '../..'
+import { type DbGetResult, type Config } from '../../types'
 
 export type SQLiteDatabase = Database
 
@@ -120,7 +120,7 @@ class SQLite extends SQL implements IdDbBackend {
     fields?: string[],
     field?: string,
     value?: string | number | Array<string | number>
-  ): Promise<Array<Record<string, string | number>>> {
+  ): Promise<DbGetResult> {
     return new Promise((resolve, reject) => {
       /* istanbul ignore if */
       if (typeof value !== 'object') {
@@ -165,7 +165,7 @@ class SQLite extends SQL implements IdDbBackend {
     fields: string[],
     searchFields: string[],
     value: string | number
-  ): Promise<Array<Record<string, string | number>>> {
+  ): Promise<DbGetResult> {
     return new Promise((resolve, reject) => {
       /* istanbul ignore if */
       if (this.db == null) {

@@ -43,7 +43,9 @@
   "homepage": "https://ci.linagora.com/publicgroup/oss/twake/tom-server",
   "optionalDependencies": {
     "ldapjs": "^2.3.3",
+    "node-cache": "^5.1.2",
     "pg": "^8.10.0",
+    "redis": "^4.6.6",
     "sqlite3": "^5.1.6"
   },
   "dependencies": {

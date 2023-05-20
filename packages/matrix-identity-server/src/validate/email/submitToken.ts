@@ -37,6 +37,7 @@ const SubmitToken = (idServer: MatrixIdentityServer): expressAppHandler => {
                 })
                 .catch((e) => {})
             } else {
+              /* istanbul ignore next */
               send(res, 400, errMsg('invalidParam', 'sid or secret mismatch'))
             }
           })

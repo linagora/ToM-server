@@ -1,4 +1,4 @@
-import { type Config } from '..'
+import { type DbGetResult, type Config } from '../types'
 import { randomString } from '../utils/tokenUtils'
 import Pg from './sql/pg'
 import Sqlite from './sql/sqlite'
@@ -29,7 +29,7 @@ type Get = (
   fields: string[],
   field: string,
   value: string | number | string[]
-) => Promise<Array<Record<string, string | number>>>
+) => Promise<DbGetResult>
 type GetCount = (
   table: Collections,
   field: string,
@@ -40,7 +40,7 @@ type Match = (
   fields: string[],
   searchFields: string[],
   value: string | number
-) => Promise<Array<Record<string, string | string[] | number>>>
+) => Promise<DbGetResult>
 type DeleteEqual = (
   table: Collections,
   field: string,

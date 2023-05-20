@@ -1,6 +1,6 @@
 import { type Collections } from '../../db'
 import { type UserDBBackend } from '..'
-import { type Config } from '../..'
+import { type Config } from '../../types'
 import SQLite from '../../db/sql/sqlite'
 
 class UserDBSQLite extends SQLite implements UserDBBackend {

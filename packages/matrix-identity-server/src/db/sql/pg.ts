@@ -1,6 +1,6 @@
 /* istanbul ignore file */
 import { type Collections, type IdDbBackend } from '..'
-import { type Config } from '../..'
+import { type DbGetResult, type Config } from '../../types'
 import createTables from './_createTables'
 import SQL from './sql'
 import { type ClientConfig, type Client as PgClient } from 'pg'
@@ -163,7 +163,7 @@ class Pg extends SQL implements IdDbBackend {
     fields?: string[],
     field?: string,
     value?: string | number | Array<string | number>
-  ): Promise<Array<Record<string, string | number>>> {
+  ): Promise<DbGetResult> {
     return new Promise((resolve, reject) => {
       /* istanbul ignore if */
       if (this.db == null) {
@@ -201,7 +201,7 @@ class Pg extends SQL implements IdDbBackend {
     fields: string[],
     searchFields: string[],
     value: string | number
-  ): Promise<Array<Record<string, string | number>>> {
+  ): Promise<DbGetResult> {
     return new Promise((resolve, reject) => {
       /* istanbul ignore if */
       if (this.db == null) {

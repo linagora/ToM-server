@@ -1,4 +1,5 @@
-import { type Config } from '../index'
+import type Cache from '../cache'
+import { type DbGetResult, type Config } from '../types'
 import UserDBLDAP from './ldap'
 import UserDBPg from './sql/pg'
 import UserDBSQLite from './sql/sqlite'
@@ -12,17 +13,14 @@ type Get = (
   fields?: string[],
   field?: string,
   value?: string | number
-) => Promise<Array<Record<string, string | string[] | number>>>
-type GetAll = (
-  table: Collections,
-  fields: string[]
-) => Promise<Array<Record<string, string | string[] | number>>>
+) => Promise<DbGetResult>
+type GetAll = (table: Collections, fields: string[]) => Promise<DbGetResult>
 type Match = (
   table: Collections,
   fields: string[],
   searchFields: string[],
   value: string | number
-) => Promise<Array<Record<string, string | string[] | number>>>
+) => Promise<DbGetResult>
 
 export interface UserDBBackend {
   ready: Promise<void>
@@ -35,7 +33,9 @@ export interface UserDBBackend {
 class UserDB implements UserDBBackend {
   ready: Promise<void>
   db: UserDBBackend
-  constructor(conf: Config) {
+  cache?: Cache
+  constructor(conf: Config, cache?: Cache) {
+    this.cache = cache
     let Module
     /* istanbul ignore next */
     switch (conf.userdb_engine) {
@@ -89,8 +89,29 @@ class UserDB implements UserDBBackend {
   }
 
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
-  getAll(table: Collections, fields: string[]) {
-    return this.db.getAll(table, fields)
+  getAll(table: Collections, fields: string[]): Promise<DbGetResult> {
+    if (this.cache != null) {
+      return new Promise((resolve, reject) => {
+        const key: string = [table, ...fields].join(',')
+        ;(this.cache as Cache)
+          .get(key)
+          .then((data) => {
+            if (data == null) throw new Error()
+            resolve(data)
+          })
+          .catch(() => {
+            this.db
+              .getAll(table, fields)
+              .then((res) => {
+                ;(this.cache as Cache).set(key, res).catch(console.error)
+                resolve(res)
+              })
+              .catch(reject)
+          })
+      })
+    } else {
+      return this.db.getAll(table, fields)
+    }
   }
 
   close(): void {
