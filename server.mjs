@@ -2,6 +2,7 @@ import express from 'express'
 import TomServer from '@twake/server'
 import path from 'node:path'
 import { fileURLToPath } from 'url'
+import { createRequestHandler } from '@remix-run/express'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -39,8 +40,16 @@ const conf = {
   userdb_engine: 'ldap'
 }
 const tomServer = new TomServer(conf)
-
 const app = express()
+
+app.get(
+  '/',
+  createRequestHandler({
+    build: await import(
+      path.join(process.cwd(), 'landing', 'build', 'index.js')
+    )
+  })
+)
 
 tomServer.ready
   .then(() => {

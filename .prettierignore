@@ -2,6 +2,7 @@
 !/server.mjs
 !/packages
 !/documentation
+!/landing
 packages/**/*.json
 packages/**/*.js
 packages/**/*.cjs
