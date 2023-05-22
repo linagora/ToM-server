@@ -25,8 +25,8 @@ const pathToTestDataFolder = path.join(
   '__testData__'
 )
 
-const db = path.join(pathToTestDataFolder, 'test.db')
-const matrixDb = path.join(pathToTestDataFolder, 'test.matrix.db')
+const db = path.join(pathToTestDataFolder, 'test-cache.db')
+const matrixDb = path.join(pathToTestDataFolder, 'test.matrix-cache.db')
 
 process.env.TWAKE_IDENTITY_SERVER_CONF = path.join(
   pathToTestDataFolder,
@@ -41,6 +41,7 @@ let federationToken: string
 beforeAll((done) => {
   const conf: Config = {
     ...defaultConfig,
+    cache_engine: 'memory',
     database_engine: 'sqlite',
     database_host: db,
     base_url: 'http://example.com/',
@@ -104,14 +105,6 @@ afterAll(() => {
 
 describe('Using Matrix Token', () => {
   const validToken = 'syt_ZHdobw_FakeTokenFromMatrixV_25Unpr'
-
-  it('should require authentication', async () => {
-    await twakeServer.idServer.cronTasks?.ready
-    const response = await request(app)
-      .get('/_matrix/identity/v2/hash_details')
-      .set('Accept', 'application/json')
-    expect(response.statusCode).toBe(401)
-  })
 
   describe('/_matrix/identity/v2/lookup', () => {
     const mockResponse = Promise.resolve({

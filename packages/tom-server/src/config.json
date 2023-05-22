@@ -1,6 +1,7 @@
 {
   "additional_features": true,
   "base_url": "",
+  "cache_engine": "",
   "cron_service": true,
   "database_engine": "sqlite",
   "database_host": "./tokens.db",
@@ -32,6 +33,7 @@
   "oidc_issuer": "",
   "pepperCron": "0 0 0 * * *",
   "policies": null,
+  "redis_uri": "",
   "server_name": "localhost",
   "smtp_password": "",
   "smtp_tls": true,
