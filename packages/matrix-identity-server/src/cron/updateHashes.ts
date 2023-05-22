@@ -51,6 +51,12 @@ const updateHashes = (
   }
 
   return new Promise((resolve, reject) => {
+    const logAndReject = (msg: string) => {
+      return (e: any) => {
+        console.error(msg, e)
+        reject(e)
+      }
+    }
     /**
      * Step 1:
      *  - drop old-old hashes
@@ -135,28 +141,13 @@ const updateHashes = (
                           .then(() => {
                             resolve(true)
                           })
-                          .catch((e) => {
-                            /* istanbul ignore next */
-                            console.error('Unable to store hash', e)
-                            /* istanbul ignore next */
-                            reject(e)
-                          })
+                          .catch(logAndReject('Unable to store hash'))
                       }
                     }
                   })
-                  .catch((e: any) => {
-                    /* istanbul ignore next */
-                    console.error('Unable to initialize js-nacl', e)
-                    /* istanbul ignore next */
-                    reject(e)
-                  })
+                  .catch(logAndReject('Unable to initialize js-nacl'))
               })
-              .catch((e) => {
-                /* istanbul ignore next */
-                console.error('Unable to parse user DB', e)
-                /* istanbul ignore next */
-                reject(e)
-              })
+              .catch(logAndReject('Unable to parse user DB'))
           })
         ])
           .then(() => {
@@ -165,26 +156,11 @@ const updateHashes = (
                 console.log('Identity server: new pepper published', newPepper)
                 resolve()
               })
-              .catch((e) => {
-                /* istanbul ignore next */
-                console.error('Unable to publish new pepper', e)
-                /* istanbul ignore next */
-                reject(e)
-              })
+              .catch(logAndReject('Unable to publish new pepper'))
           })
-          .catch((e) => {
-            /* istanbul ignore next */
-            console.error('Update hashes failed', e)
-            /* istanbul ignore next */
-            reject(e)
-          })
+          .catch(logAndReject('Update hashes failed'))
       })
-      .catch((e) => {
-        /* istanbul ignore next */
-        console.error('Update hashes failed', e)
-        /* istanbul ignore next */
-        reject(e)
-      })
+      .catch(logAndReject('Update hashes failed'))
   })
 }
 
