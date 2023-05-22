@@ -88,7 +88,7 @@ describe('UserDB', () => {
     userDB.ready
       .then(() => {
         userDB
-          .getAll('users', ['uid'])
+          .getAll('users', ['uid'], 'uid')
           .then((list) => {
             expect(list).toEqual([{ uid: 'dwho' }])
             userDB

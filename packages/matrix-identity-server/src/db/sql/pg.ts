@@ -162,7 +162,8 @@ class Pg extends SQL implements IdDbBackend {
     table: string,
     fields?: string[],
     field?: string,
-    value?: string | number | Array<string | number>
+    value?: string | number | Array<string | number>,
+    order?: string
   ): Promise<DbGetResult> {
     return new Promise((resolve, reject) => {
       /* istanbul ignore if */
@@ -179,10 +180,15 @@ class Pg extends SQL implements IdDbBackend {
               'WHERE ' +
               value.map((val, i) => `${field}=$${i + 1}`).join(' OR ')
           } else {
-            value = [value as string]
+            value = value != null ? [value] : []
             condition = 'WHERE ' + `${field}=$1`
           }
         }
+
+        if (order != null) {
+          condition += `ORDER BY ${order}`
+        }
+
         this.db.query(
           `SELECT ${fields.join(',')} FROM ${table} ${condition}`,
           value as string[],

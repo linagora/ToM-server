@@ -119,12 +119,13 @@ class SQLite extends SQL implements IdDbBackend {
     table: string,
     fields?: string[],
     field?: string,
-    value?: string | number | Array<string | number>
+    value?: string | number | Array<string | number>,
+    order?: string
   ): Promise<DbGetResult> {
     return new Promise((resolve, reject) => {
       /* istanbul ignore if */
       if (typeof value !== 'object') {
-        value = [value as string | number]
+        value = value != null ? [value] : []
       }
       if (this.db == null) {
         reject(new Error('Wait for database to be ready'))
@@ -135,6 +136,10 @@ class SQLite extends SQL implements IdDbBackend {
       }
       if (field != null && value != null) {
         condition = 'WHERE ' + value.map((val) => `${field}=?`).join(' OR ')
+      }
+      if (order != null) {
+        condition += `ORDER BY ?`
+        value.push(order)
       }
 
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error

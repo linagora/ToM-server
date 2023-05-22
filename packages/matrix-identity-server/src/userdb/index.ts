@@ -14,7 +14,11 @@ type Get = (
   field?: string,
   value?: string | number
 ) => Promise<DbGetResult>
-type GetAll = (table: Collections, fields: string[]) => Promise<DbGetResult>
+type GetAll = (
+  table: Collections,
+  fields: string[],
+  order?: string
+) => Promise<DbGetResult>
 type Match = (
   table: Collections,
   fields: string[],
@@ -89,10 +93,15 @@ class UserDB implements UserDBBackend {
   }
 
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
-  getAll(table: Collections, fields: string[]): Promise<DbGetResult> {
+  getAll(
+    table: Collections,
+    fields: string[],
+    order?: string
+  ): Promise<DbGetResult> {
     if (this.cache != null) {
       return new Promise((resolve, reject) => {
-        const key: string = [table, ...fields].join(',')
+        let key: string = [table, ...fields].join(',')
+        if (order != null) key += `_${order}`
         ;(this.cache as Cache)
           .get(key)
           .then((data) => {
@@ -101,7 +110,7 @@ class UserDB implements UserDBBackend {
           })
           .catch(() => {
             this.db
-              .getAll(table, fields)
+              .getAll(table, fields, order)
               .then((res) => {
                 ;(this.cache as Cache).set(key, res).catch(console.error)
                 resolve(res)
