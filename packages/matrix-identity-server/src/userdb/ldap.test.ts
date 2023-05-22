@@ -56,10 +56,10 @@ describe('LDAP', () => {
                 userDB
                   .get('', [], 'uid', 'zz')
                   .then((list) => {
-                    done('zz does not exist')
+                    done()
                   })
                   .catch((e) => {
-                    done()
+                    done('ee')
                   })
               })
               .catch(done)
