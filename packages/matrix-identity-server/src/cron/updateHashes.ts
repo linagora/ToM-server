@@ -92,7 +92,7 @@ const updateHashes = (
             'previousPepper'
           ),
           // New hashes
-          new Promise((resolve, reject) => {
+          new Promise((_resolve, _reject) => {
             userDB
               .getAll('users', [...dbFieldsToHash, 'uid'])
               .then(_filter)
@@ -103,11 +103,14 @@ const updateHashes = (
                     const promises: Array<Promise<void>> = []
                     if (fieldsToHash.length === 0) {
                       /* istanbul ignore next */
-                      resolve(true)
+                      _resolve(true)
                     } else {
                       rows.forEach((row) => {
                         fieldsToHash.forEach((field, i) => {
-                          if (row[dbFieldsToHash[i]] != null) {
+                          if (
+                            row[dbFieldsToHash[i]] != null &&
+                            row[dbFieldsToHash[i]].toString().length > 0
+                          ) {
                             // eslint-disable-next-line @typescript-eslint/promise-function-async
                             supportedHashes.forEach((method: string) => {
                               promises.push(
@@ -135,13 +138,19 @@ const updateHashes = (
                       })
                       /* istanbul ignore if */
                       if (promises.length === 0) {
-                        resolve(true)
+                        _resolve(true)
                       } else {
                         Promise.all(promises)
                           .then(() => {
-                            resolve(true)
+                            _resolve(true)
                           })
-                          .catch(logAndReject('Unable to store hash'))
+                          .catch((e) => {
+                            console.error(
+                              'Unable to insert (at least) one hash',
+                              e
+                            )
+                            _resolve(true)
+                          })
                       }
                     }
                   })
