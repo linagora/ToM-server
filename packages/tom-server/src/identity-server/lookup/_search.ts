@@ -53,40 +53,45 @@ const _search = (tomServer: TwakeServer): SearchFunction => {
           : tomServer.idServer.userDB.getAll('users', _fields, _fields[0])
       request
         .then((rows) => {
-          const start = data.offset ?? 0
-          const end = start + (data.limit ?? 30)
-          rows = rows.slice(start, end)
-          const mUid = rows.map((v) => {
-            return `@${v.uid as string}:${tomServer.conf.server_name}`
-          })
-          /**
-           * For the record, this can be replaced by a call to
-           * <matrix server>/_matrix/app/v1/users/{userId}
-           *
-           * See https://spec.matrix.org/v1.6/application-service-api/#get_matrixappv1usersuserid
-           */
-          tomServer.matrixDb
-            .get('users', ['*'], 'name', mUid)
-            .then((matrixRows) => {
-              const mUids: Record<string, true> = {}
-              const matches: typeof rows = []
-              // eslint-disable-next-line @typescript-eslint/naming-convention
-              const inactive_matches: typeof rows = []
-
-              matrixRows.forEach((mrow) => {
-                mUids[(mrow.name as string).replace(/^@(.*?):(?:.*)$/, '$1')] =
-                  true
-              })
-              rows.forEach((row) => {
-                if (mUids[row.uid as string]) {
-                  matches.push(row)
-                } else {
-                  inactive_matches.push(row)
-                }
-              })
-              Utils.send(res, 200, { matches, inactive_matches })
+          if (rows.length === 0) {
+            Utils.send(res, 200, { matches: [], inactive_matches: [] })
+          } else {
+            const start = data.offset ?? 0
+            const end = start + (data.limit ?? 30)
+            rows = rows.slice(start, end)
+            const mUid = rows.map((v) => {
+              return `@${v.uid as string}:${tomServer.conf.server_name}`
             })
-            .catch(sendError)
+            /**
+             * For the record, this can be replaced by a call to
+             * <matrix server>/_matrix/app/v1/users/{userId}
+             *
+             * See https://spec.matrix.org/v1.6/application-service-api/#get_matrixappv1usersuserid
+             */
+            tomServer.matrixDb
+              .get('users', ['*'], 'name', mUid)
+              .then((matrixRows) => {
+                const mUids: Record<string, true> = {}
+                const matches: typeof rows = []
+                // eslint-disable-next-line @typescript-eslint/naming-convention
+                const inactive_matches: typeof rows = []
+
+                matrixRows.forEach((mrow) => {
+                  mUids[
+                    (mrow.name as string).replace(/^@(.*?):(?:.*)$/, '$1')
+                  ] = true
+                })
+                rows.forEach((row) => {
+                  if (mUids[row.uid as string]) {
+                    matches.push(row)
+                  } else {
+                    inactive_matches.push(row)
+                  }
+                })
+                Utils.send(res, 200, { matches, inactive_matches })
+              })
+              .catch(sendError)
+          }
         })
         .catch(sendError)
     } else {

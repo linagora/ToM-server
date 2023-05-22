@@ -123,7 +123,7 @@ class UserDB implements UserDBBackend {
           })
       })
     } else {
-      return this.db.getAll(table, fields)
+      return this.db.getAll(table, fields, order)
     }
   }
 

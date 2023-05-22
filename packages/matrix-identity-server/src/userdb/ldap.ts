@@ -72,7 +72,11 @@ class UserDBLDAP implements UserDBBackend {
                     if (k !== 'controls') res[k] = entry.object[k]
                   })
                 }
-                entries.push(res)
+                let realEntry = false
+                Object.keys(res).forEach((k) => {
+                  if (res[k] != null) realEntry = true
+                })
+                if (realEntry) entries.push(res)
               })
               res.on('end', () => {
                 if (entries.length > 0) {
@@ -88,7 +92,7 @@ class UserDBLDAP implements UserDBBackend {
                   resolve(entries)
                 } else {
                   client.destroy()
-                  reject(new Error('No result'))
+                  resolve([])
                 }
               })
             } else {
