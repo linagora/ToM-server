@@ -137,10 +137,7 @@ class SQLite extends SQL implements IdDbBackend {
       if (field != null && value != null) {
         condition = 'WHERE ' + value.map((val) => `${field}=?`).join(' OR ')
       }
-      if (order != null) {
-        condition += `ORDER BY ?`
-        value.push(order)
-      }
+      if (order != null) condition += `ORDER BY ${order}`
 
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
       // @ts-ignore never undefined
@@ -169,7 +166,8 @@ class SQLite extends SQL implements IdDbBackend {
     table: string,
     fields: string[],
     searchFields: string[],
-    value: string | number
+    value: string | number,
+    order?: string
   ): Promise<DbGetResult> {
     return new Promise((resolve, reject) => {
       /* istanbul ignore if */
@@ -180,7 +178,8 @@ class SQLite extends SQL implements IdDbBackend {
         if (typeof fields !== 'object') fields = [fields]
         if (fields.length === 0) fields = ['*']
         const values = searchFields.map(() => `%${value}%`)
-        const condition = searchFields.map((f) => `${f} LIKE ?`).join(' OR ')
+        let condition = searchFields.map((f) => `${f} LIKE ?`).join(' OR ')
+        if (order != null) condition += `ORDER BY ${order}`
         const stmt = this.db.prepare(
           `SELECT ${fields.join(',')} FROM ${table} WHERE ${condition}`
         )

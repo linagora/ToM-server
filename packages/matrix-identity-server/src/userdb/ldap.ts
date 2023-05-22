@@ -16,6 +16,7 @@ class UserDBLDAP implements UserDBBackend {
         url: [conf.ldap_uri != null ? conf.ldap_uri : '']
       })
       return new Promise((resolve, reject) => {
+        /* istanbul ignore if */
         if (
           conf.ldap_user != null &&
           conf.ldap_user.length > 0 &&
@@ -37,7 +38,12 @@ class UserDBLDAP implements UserDBBackend {
   }
 
   // eslint-disable-next-line @typescript-eslint/promise-function-async
-  _get(table: string, filter: string, fields?: string[]): Promise<DbGetResult> {
+  _get(
+    table: string,
+    filter: string,
+    fields?: string[],
+    order?: string
+  ): Promise<DbGetResult> {
     return new Promise((resolve, reject) => {
       const opts: SearchOptions = {
         filter,
@@ -71,6 +77,14 @@ class UserDBLDAP implements UserDBBackend {
               res.on('end', () => {
                 if (entries.length > 0) {
                   client.destroy()
+                  if (order != null)
+                    entries.sort((a, b) => {
+                      if (a[order] == null) return b[order] == null ? 0 : -1
+                      if (b[order] == null) return 1
+                      if (a[order] > b[order]) return 1
+                      if (a[order] < b[order]) return -1
+                      return 0
+                    })
                   resolve(entries)
                 } else {
                   client.destroy()
@@ -93,7 +107,8 @@ class UserDBLDAP implements UserDBBackend {
     table: string,
     fields?: string[],
     field?: string,
-    value?: string | number | Array<string | number>
+    value?: string | number | Array<string | number>,
+    order?: string
   ): Promise<DbGetResult> {
     let filter: string
     if (field == null || value == null) {
@@ -107,7 +122,7 @@ class UserDBLDAP implements UserDBBackend {
       if (value.length > 1) filter = `(|${filter})`
     }
 
-    return this._get(table, filter, fields)
+    return this._get(table, filter, fields, order)
   }
 
   // eslint-disable-next-line @typescript-eslint/promise-function-async
@@ -126,8 +141,12 @@ class UserDBLDAP implements UserDBBackend {
   }
 
   // eslint-disable-next-line @typescript-eslint/promise-function-async
-  getAll(table: string, fields: string[]): Promise<DbGetResult> {
-    return this.get(table, fields, 'objectClass', '*')
+  getAll(
+    table: string,
+    fields: string[],
+    order?: string
+  ): Promise<DbGetResult> {
+    return this.get(table, fields, 'objectClass', '*', order)
   }
 
   close(): void {}

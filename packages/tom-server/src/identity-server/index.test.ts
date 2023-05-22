@@ -174,6 +174,53 @@ describe('Using Matrix Token', () => {
         inactive_matches: []
       })
     })
+
+    it('should respect limit', async () => {
+      const response = await request(app)
+        .post('/_twake/identity/v1/lookup/match')
+        .set('Authorization', `Bearer ${validToken}`)
+        .set('Accept', 'application/json')
+        .send({
+          scope: ['uid'],
+          fields: ['uid'],
+          val: 'user',
+          limit: 4
+        })
+      expect(response.status).toBe(200)
+      expect(response.body).toEqual({
+        matches: [],
+        inactive_matches: [
+          { uid: 'user00' },
+          { uid: 'user01' },
+          { uid: 'user02' },
+          { uid: 'user03' }
+        ]
+      })
+    })
+
+    it('should respect limit and offset', async () => {
+      const response = await request(app)
+        .post('/_twake/identity/v1/lookup/match')
+        .set('Authorization', `Bearer ${validToken}`)
+        .set('Accept', 'application/json')
+        .send({
+          scope: ['uid'],
+          fields: ['uid'],
+          val: 'user',
+          limit: 4,
+          offset: 3
+        })
+      expect(response.status).toBe(200)
+      expect(response.body).toEqual({
+        matches: [],
+        inactive_matches: [
+          { uid: 'user03' },
+          { uid: 'user04' },
+          { uid: 'user05' },
+          { uid: 'user06' }
+        ]
+      })
+    })
   })
 })
 

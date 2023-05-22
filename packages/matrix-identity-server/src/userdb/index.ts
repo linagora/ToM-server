@@ -23,7 +23,8 @@ type Match = (
   table: Collections,
   fields: string[],
   searchFields: string[],
-  value: string | number
+  value: string | number,
+  order?: string
 ) => Promise<DbGetResult>
 
 export interface UserDBBackend {
@@ -87,9 +88,11 @@ class UserDB implements UserDBBackend {
     table: Collections,
     fields: string[],
     searchFields: string[],
-    value: string | number
+    value: string | number,
+    order?: string
   ) {
-    return this.db.match(table, fields, searchFields, value)
+    if (typeof order !== 'string' || !/^[\w-]+$/.test(order)) order = undefined
+    return this.db.match(table, fields, searchFields, value, order)
   }
 
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
@@ -98,6 +101,7 @@ class UserDB implements UserDBBackend {
     fields: string[],
     order?: string
   ): Promise<DbGetResult> {
+    if (typeof order !== 'string' || !/^[\w-]+$/.test(order)) order = undefined
     if (this.cache != null) {
       return new Promise((resolve, reject) => {
         let key: string = [table, ...fields].join(',')
