@@ -12,5 +12,6 @@ module.exports = {
     v2_normalizeFormMethod: true,
     v2_routeConvention: true
   },
+  serverMinify: true,
   tailwind: true
 }
