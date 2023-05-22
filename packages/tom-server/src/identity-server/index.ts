@@ -52,10 +52,10 @@ export default class TwakeIdentityServer extends MatrixIdentityServer {
            *                description: Optional value to search
            *              limit:
            *                type: integer
-           *                description: max number of result to return
+           *                description: Optional max number of result to return (default: 30)
            *              offest:
            *                type: integer
-           *                description: offset for pagination
+           *                description: Optional offset for pagination
            *            required:
            *              - scope
            *              - fields
