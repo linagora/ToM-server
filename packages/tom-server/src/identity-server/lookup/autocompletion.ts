@@ -9,7 +9,7 @@ const schema = {
   fields: false,
   limit: false,
   offset: false,
-  val: true
+  val: false
 }
 
 const autocompletion = (tomServer: TwakeServer): expressAppHandler => {
