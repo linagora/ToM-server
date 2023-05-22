@@ -15,19 +15,22 @@ import { errMsg as _errMsg } from './utils/errors'
 
 // Endpoints
 import register from './account/register'
-import IdentityServerDb, { type SupportedDatabases } from './db'
+import IdentityServerDb from './db'
 import account from './account'
 import logout from './account/logout'
 import status from './status'
-import Terms, { type Policies } from './terms'
+import Terms from './terms'
 import RequestToken from './validate/email/requestToken'
 import SubmitToken from './validate/email/submitToken'
 import PostTerms from './terms/index.post'
 import hashDetails from './lookup/hash_details'
-import UserDB, { type SupportedUserDatabases } from './userdb'
+import UserDB from './userdb'
 import lookup from './lookup'
 import _validateMatrixToken from './utils/validateMatrixToken'
+import { type Config } from './types'
+import Cache from './cache'
 
+export * from './types'
 export * as SQLite from './db/sql/sqlite'
 export * as IdentityServerDb from './db'
 export { type tokenContent } from './account/register'
@@ -39,48 +42,6 @@ export const validateMatrixToken = _validateMatrixToken
 export const defaultConfig = defaultConfDesc
 
 type IdServerAPI = Record<string, expressAppHandler>
-
-export interface Config {
-  additional_features?: boolean
-  base_url: string
-  cron_service: boolean
-  database_engine: SupportedDatabases
-  database_host: string
-  database_name?: string
-  database_password?: string
-  database_user?: string
-  database_vacuum_delay: number
-  key_delay: number
-  keys_depth: number
-  ldap_filter?: string
-  ldap_base?: string
-  ldap_password?: string
-  ldap_uri?: string
-  ldap_user?: string
-  ldapjs_opts?: Record<string, any>
-  mail_link_delay: number
-  matrix_database_engine?: SupportedDatabases | null
-  matrix_database_host?: string | null
-  matrix_database_name?: string | null
-  matrix_database_password?: string | null
-  matrix_database_user?: string | null
-  pepperCron?: string
-  policies?: Policies | string | null
-  server_name: string
-  smtp_password?: string
-  smtp_port?: number
-  smtp_sender?: string
-  smtp_server: string
-  smtp_tls?: boolean
-  smtp_user?: string
-  smtp_verify_certificate?: boolean
-  userdb_engine: SupportedUserDatabases
-  userdb_host?: string
-  userdb_name?: string
-  userdb_password?: string
-  userdb_user?: string
-  template_dir: string
-}
 
 export default class MatrixIdentityServer {
   api: {
@@ -94,6 +55,7 @@ export default class MatrixIdentityServer {
   cronTasks?: CronTasks
   conf: Config
   ready: Promise<boolean>
+  cache?: Cache
 
   authenticate: AuthenticationFunction
 
@@ -111,8 +73,10 @@ export default class MatrixIdentityServer {
         ? '/etc/twake/identity-server.conf'
         : undefined
     ) as Config
+    // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+    this.cache = this.conf.cache_engine ? new Cache(this.conf) : undefined
     const db = (this.db = new IdentityServerDb(this.conf))
-    const userDB = (this.userDB = new UserDB(this.conf))
+    const userDB = (this.userDB = new UserDB(this.conf, this.cache))
     this.authenticate = Authenticate(db)
     this.ready = new Promise((resolve, reject) => {
       Promise.all([db.ready, userDB.ready])

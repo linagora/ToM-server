@@ -1,4 +1,4 @@
-import { type Config } from '..'
+import { type Config } from '../types'
 import { type expressAppHandler, send } from '../utils'
 import computePolicy from './_computePolicies'
 

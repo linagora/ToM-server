@@ -1,6 +1,6 @@
 import { type Collections } from '../../db'
 import { type MatrixDBBackend } from '../'
-import { type Config } from '../..'
+import { type Config } from '../../types'
 import SQLite from '../../db/sql/sqlite'
 
 class MatrixDBSQLite extends SQLite implements MatrixDBBackend {

@@ -1,5 +1,5 @@
 import { type Policies } from '.'
-import { type Config } from '..'
+import { type Config } from '../types'
 import fs from 'fs'
 
 let policies: Policies = {}

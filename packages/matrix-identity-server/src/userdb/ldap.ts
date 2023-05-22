@@ -1,5 +1,5 @@
 import { type UserDBBackend } from './index'
-import { type Config } from '../index'
+import { type DbGetResult, type Config } from '../types'
 import ldapjs, { type SearchOptions, type Client } from 'ldapjs'
 
 class UserDBLDAP implements UserDBBackend {
@@ -37,11 +37,7 @@ class UserDBLDAP implements UserDBBackend {
   }
 
   // eslint-disable-next-line @typescript-eslint/promise-function-async
-  _get(
-    table: string,
-    filter: string,
-    fields?: string[]
-  ): Promise<Array<Record<string, string | string[] | number>>> {
+  _get(table: string, filter: string, fields?: string[]): Promise<DbGetResult> {
     return new Promise((resolve, reject) => {
       const opts: SearchOptions = {
         filter,
@@ -98,7 +94,7 @@ class UserDBLDAP implements UserDBBackend {
     fields?: string[],
     field?: string,
     value?: string | number | Array<string | number>
-  ): Promise<Array<Record<string, string | string[] | number>>> {
+  ): Promise<DbGetResult> {
     let filter: string
     if (field == null || value == null) {
       /* istanbul ignore next */
@@ -120,7 +116,7 @@ class UserDBLDAP implements UserDBBackend {
     fields: string[],
     searchFields: string[],
     value: string | number
-  ): Promise<Array<Record<string, string | string[] | number>>> {
+  ): Promise<DbGetResult> {
     if (typeof searchFields !== 'object') searchFields = [searchFields]
     let filter = searchFields.reduce((prev, current) => {
       return `${prev}(${current}=*${value}*)`
@@ -130,10 +126,7 @@ class UserDBLDAP implements UserDBBackend {
   }
 
   // eslint-disable-next-line @typescript-eslint/promise-function-async
-  getAll(
-    table: string,
-    fields: string[]
-  ): Promise<Array<Record<string, string | string[] | number>>> {
+  getAll(table: string, fields: string[]): Promise<DbGetResult> {
     return this.get(table, fields, 'objectClass', '*')
   }
 

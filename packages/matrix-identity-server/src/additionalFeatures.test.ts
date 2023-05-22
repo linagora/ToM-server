@@ -1,6 +1,7 @@
 import express from 'express'
 import request from 'supertest'
-import IdServer, { type Config } from './index'
+import IdServer from './index'
+import { type Config } from './types'
 import fs from 'fs'
 import fetch from 'node-fetch'
 import { Hash, supportedHashes } from '@twake/crypto'

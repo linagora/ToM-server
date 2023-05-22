@@ -7,7 +7,7 @@ import {
 import { type tokenContent } from '../../account/register'
 import { errMsg } from '../../utils/errors'
 import type MatrixIdentityServer from '../../index'
-import { type Config } from '../../index'
+import { type Config } from '../../types'
 import fs from 'fs'
 import { randomString } from '../../utils/tokenUtils'
 import Mailer from '../../utils/mailer'
@@ -136,7 +136,9 @@ const RequestToken = (idServer: MatrixIdentityServer): expressAppHandler => {
                   send(res, 200, { sid })
                 })
                 .catch((err) => {
+                  /* istanbul ignore next */
                   console.error('Token error', err)
+                  /* istanbul ignore next */
                   send(res, 400, errMsg('unknown', err))
                 })
             }

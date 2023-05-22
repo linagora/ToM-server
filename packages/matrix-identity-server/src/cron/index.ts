@@ -3,7 +3,7 @@
  */
 
 import cron, { type ScheduledTask } from 'node-cron'
-import { type Config } from '..'
+import { type Config } from '../types'
 import type IdentityServerDb from '../db'
 import type UserDB from '../userdb'
 import updateHashes from './updateHashes'

@@ -2,6 +2,8 @@ import sqlite3 from 'sqlite3'
 import fs from 'fs'
 import UserDB from './index'
 import defaultConfig from '../config.json'
+import Cache from '../cache'
+import { type Config } from '../types'
 
 const dbName = './testldap.db'
 
@@ -47,9 +49,7 @@ describe('UserDB', () => {
             done(e)
           })
       })
-      .catch((e) => {
-        done(e)
-      })
+      .catch(done)
   })
 
   it('should provide match', (done) => {
@@ -72,8 +72,35 @@ describe('UserDB', () => {
             done(e)
           })
       })
-      .catch((e) => {
-        done(e)
+      .catch(done)
+  })
+
+  it('should work with cache', (done) => {
+    const conf: Config = {
+      ...defaultConfig,
+      cache_engine: 'memory',
+      userdb_engine: 'sqlite',
+      userdb_host: dbName,
+      database_host: dbName,
+      database_engine: 'sqlite'
+    }
+    const userDB = new UserDB(conf, new Cache(conf))
+    userDB.ready
+      .then(() => {
+        userDB
+          .getAll('users', ['uid'])
+          .then((list) => {
+            expect(list).toEqual([{ uid: 'dwho' }])
+            userDB
+              .getAll('users', ['uid'])
+              .then((list2) => {
+                expect(list2).toEqual([{ uid: 'dwho' }])
+                done()
+              })
+              .catch(done)
+          })
+          .catch(done)
       })
+      .catch(done)
   })
 })

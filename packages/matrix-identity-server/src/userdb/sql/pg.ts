@@ -1,7 +1,7 @@
 import { type ClientConfig } from 'pg'
 import { type Collections } from '../../db'
 import { type UserDBBackend } from '../'
-import { type Config } from '../..'
+import { type Config } from '../../types'
 import Pg, { type PgDatabase } from '../../db/sql/pg'
 
 class UserDBPg extends Pg implements UserDBBackend {

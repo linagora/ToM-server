@@ -1,4 +1,4 @@
-import { type Config } from '..'
+import { type DbGetResult, type Config } from '../types'
 import MatrixDBPg from './sql/pg'
 import MatrixDBSQLite from './sql/sqlite'
 
@@ -9,19 +9,16 @@ type Get = (
   fields?: string[],
   field?: string,
   value?: string | number | Array<string | number>
-) => Promise<Array<Record<string, string | string[] | number>>>
+) => Promise<DbGetResult>
 /*
 type Match = (
   table: Collections,
   fields: string[],
   searchFields: string[],
   value: string | number
-) => Promise<Array<Record<string, string | string[] | number>>>
+) => Promise<DbGetResult>
 */
-type GetAll = (
-  table: Collections,
-  fields: string[]
-) => Promise<Array<Record<string, string | string[] | number>>>
+type GetAll = (table: Collections, fields: string[]) => Promise<DbGetResult>
 
 export interface MatrixDBBackend {
   ready: Promise<void>
@@ -76,7 +73,7 @@ class MatrixDB implements MatrixDBBackend {
     fields?: string[],
     field?: string,
     value?: string | number | Array<string | number>
-  ): Promise<Array<Record<string, string | string[] | number>>> => {
+  ): Promise<DbGetResult> => {
     return await this.db.get(table, fields, field, value)
   }
 
