@@ -51,6 +51,12 @@ const updateHashes = (
   }
 
   return new Promise((resolve, reject) => {
+    const logAndReject = (msg: string) => {
+      return (e: any) => {
+        console.error(msg, e)
+        reject(e)
+      }
+    }
     /**
      * Step 1:
      *  - drop old-old hashes
@@ -86,7 +92,7 @@ const updateHashes = (
             'previousPepper'
           ),
           // New hashes
-          new Promise((resolve, reject) => {
+          new Promise((_resolve, _reject) => {
             userDB
               .getAll('users', [...dbFieldsToHash, 'uid'])
               .then(_filter)
@@ -97,11 +103,14 @@ const updateHashes = (
                     const promises: Array<Promise<void>> = []
                     if (fieldsToHash.length === 0) {
                       /* istanbul ignore next */
-                      resolve(true)
+                      _resolve(true)
                     } else {
                       rows.forEach((row) => {
                         fieldsToHash.forEach((field, i) => {
-                          if (row[dbFieldsToHash[i]] != null) {
+                          if (
+                            row[dbFieldsToHash[i]] != null &&
+                            row[dbFieldsToHash[i]].toString().length > 0
+                          ) {
                             // eslint-disable-next-line @typescript-eslint/promise-function-async
                             supportedHashes.forEach((method: string) => {
                               promises.push(
@@ -129,34 +138,25 @@ const updateHashes = (
                       })
                       /* istanbul ignore if */
                       if (promises.length === 0) {
-                        resolve(true)
+                        _resolve(true)
                       } else {
                         Promise.all(promises)
                           .then(() => {
-                            resolve(true)
+                            _resolve(true)
                           })
                           .catch((e) => {
-                            /* istanbul ignore next */
-                            console.error('Unable to store hash', e)
-                            /* istanbul ignore next */
-                            reject(e)
+                            console.error(
+                              'Unable to insert (at least) one hash',
+                              e
+                            )
+                            _resolve(true)
                           })
                       }
                     }
                   })
-                  .catch((e: any) => {
-                    /* istanbul ignore next */
-                    console.error('Unable to initialize js-nacl', e)
-                    /* istanbul ignore next */
-                    reject(e)
-                  })
+                  .catch(logAndReject('Unable to initialize js-nacl'))
               })
-              .catch((e) => {
-                /* istanbul ignore next */
-                console.error('Unable to parse user DB', e)
-                /* istanbul ignore next */
-                reject(e)
-              })
+              .catch(logAndReject('Unable to parse user DB'))
           })
         ])
           .then(() => {
@@ -165,26 +165,11 @@ const updateHashes = (
                 console.log('Identity server: new pepper published', newPepper)
                 resolve()
               })
-              .catch((e) => {
-                /* istanbul ignore next */
-                console.error('Unable to publish new pepper', e)
-                /* istanbul ignore next */
-                reject(e)
-              })
+              .catch(logAndReject('Unable to publish new pepper'))
           })
-          .catch((e) => {
-            /* istanbul ignore next */
-            console.error('Update hashes failed', e)
-            /* istanbul ignore next */
-            reject(e)
-          })
+          .catch(logAndReject('Update hashes failed'))
       })
-      .catch((e) => {
-        /* istanbul ignore next */
-        console.error('Update hashes failed', e)
-        /* istanbul ignore next */
-        reject(e)
-      })
+      .catch(logAndReject('Update hashes failed'))
   })
 }
 

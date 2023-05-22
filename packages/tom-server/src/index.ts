@@ -48,6 +48,7 @@ export default class TwakeServer {
       return '/etc/twake/server.conf'
     }
 
+    /* istanbul ignore next */
     return undefined
   }
 

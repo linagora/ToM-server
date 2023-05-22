@@ -14,12 +14,17 @@ type Get = (
   field?: string,
   value?: string | number
 ) => Promise<DbGetResult>
-type GetAll = (table: Collections, fields: string[]) => Promise<DbGetResult>
+type GetAll = (
+  table: Collections,
+  fields: string[],
+  order?: string
+) => Promise<DbGetResult>
 type Match = (
   table: Collections,
   fields: string[],
   searchFields: string[],
-  value: string | number
+  value: string | number,
+  order?: string
 ) => Promise<DbGetResult>
 
 export interface UserDBBackend {
@@ -83,16 +88,24 @@ class UserDB implements UserDBBackend {
     table: Collections,
     fields: string[],
     searchFields: string[],
-    value: string | number
+    value: string | number,
+    order?: string
   ) {
-    return this.db.match(table, fields, searchFields, value)
+    if (typeof order !== 'string' || !/^[\w-]+$/.test(order)) order = undefined
+    return this.db.match(table, fields, searchFields, value, order)
   }
 
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
-  getAll(table: Collections, fields: string[]): Promise<DbGetResult> {
+  getAll(
+    table: Collections,
+    fields: string[],
+    order?: string
+  ): Promise<DbGetResult> {
+    if (typeof order !== 'string' || !/^[\w-]+$/.test(order)) order = undefined
     if (this.cache != null) {
       return new Promise((resolve, reject) => {
-        const key: string = [table, ...fields].join(',')
+        let key: string = [table, ...fields].join(',')
+        if (order != null) key += `_${order}`
         ;(this.cache as Cache)
           .get(key)
           .then((data) => {
@@ -101,7 +114,7 @@ class UserDB implements UserDBBackend {
           })
           .catch(() => {
             this.db
-              .getAll(table, fields)
+              .getAll(table, fields, order)
               .then((res) => {
                 ;(this.cache as Cache).set(key, res).catch(console.error)
                 resolve(res)

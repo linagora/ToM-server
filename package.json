@@ -13,7 +13,7 @@
     "format:check": "prettier --check .",
     "format:check-diff": "prettier --check $(git diff $(git rev-parse --abbrev-ref --symbolic-full-name @{u}) --name-status|grep -E '^M|A'|cut -f2)",
     "format:fix": "prettier --write .",
-    "format:fix-diff": "prettier --write $(git checkout|grep -E '^M|A'|cut -f2)",
+    "format:fix-diff": "prettier --write $(git checkout|grep -E '^(M|A)'|cut -f2)",
     "postinstall": "chmod u+x .husky/*",
     "prepare": "husky install",
     "doc": "node documentation/swagger.cjs"

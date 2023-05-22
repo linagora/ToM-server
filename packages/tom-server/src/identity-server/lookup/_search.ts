@@ -8,6 +8,8 @@ type SearchFunction = (res: Response | http.ServerResponse, data: Query) => void
 export interface Query {
   scope: string[]
   fields?: string[]
+  limit?: number
+  offset?: number
   val?: string
 }
 
@@ -38,17 +40,22 @@ const _search = (tomServer: TwakeServer): SearchFunction => {
     })
     /* istanbul ignore else */
     if (!error) {
+      const _fields = fields.includes('uid') ? fields : [...fields, 'uid']
       const request =
         typeof data.val === 'string' && data.val.length > 0
           ? tomServer.idServer.userDB.match(
               'users',
-              [...fields, 'uid'],
+              _fields,
               scope,
-              data.val
+              data.val,
+              _fields[0]
             )
-          : tomServer.idServer.userDB.getAll('users', fields)
+          : tomServer.idServer.userDB.getAll('users', _fields, _fields[0])
       request
         .then((rows) => {
+          const start = data.offset ?? 0
+          const end = start + (data.limit ?? 30)
+          rows = rows.slice(start, end)
           const mUid = rows.map((v) => {
             return `@${v.uid as string}:${tomServer.conf.server_name}`
           })
