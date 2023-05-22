@@ -88,11 +88,11 @@ describe('UserDB', () => {
     userDB.ready
       .then(() => {
         userDB
-          .getAll('users', ['uid'])
+          .getAll('users', ['uid'], 'uid')
           .then((list) => {
             expect(list).toEqual([{ uid: 'dwho' }])
             userDB
-              .getAll('users', ['uid'])
+              .getAll('users', ['uid'], 'uid')
               .then((list2) => {
                 expect(list2).toEqual([{ uid: 'dwho' }])
                 done()

@@ -49,15 +49,21 @@ export default class TwakeIdentityServer extends MatrixIdentityServer {
            *                  description: List of fields to return for matching users
            *              val:
            *                type: string
-           *                description: Value to search
+           *                description: Optional value to search
+           *              limit:
+           *                type: integer
+           *                description: max number of result to return
+           *              offest:
+           *                type: integer
+           *                description: offset for pagination
            *            required:
            *              - scope
            *              - fields
-           *              - val
            *          example:
            *            scope: [mail, uid]
            *            fields: [uid]
            *            val: rtyler
+           *            limit: 3
            *    responses:
            *      200:
            *        description: Success

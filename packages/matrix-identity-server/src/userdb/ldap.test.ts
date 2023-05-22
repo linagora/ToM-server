@@ -62,11 +62,11 @@ describe('LDAP', () => {
                     done()
                   })
               })
-              .catch((e) => done(e))
+              .catch(done)
           })
-          .catch((e) => done(e))
+          .catch(done)
       })
-      .catch((e) => done(e))
+      .catch(done)
   })
 
   it('should provide match', (done) => {
@@ -85,9 +85,9 @@ describe('LDAP', () => {
             expect(list[0]).toEqual({ uid: 'dwho' })
             done()
           })
-          .catch((e) => done(e))
+          .catch(done)
       })
-      .catch((e) => done(e))
+      .catch(done)
   })
 
   it('should provide getAll', (done) => {
@@ -106,8 +106,29 @@ describe('LDAP', () => {
             expect(list[0]).toEqual({ uid: 'dwho' })
             done()
           })
-          .catch((e) => done(e))
+          .catch(done)
       })
-      .catch((e) => done(e))
+      .catch(done)
+  })
+
+  it('should provide getAll with order', (done) => {
+    const userDB = new UserDBLDAP({
+      ...defaultConfig,
+      database_engine: 'sqlite',
+      userdb_engine: 'sqlite',
+      ldap_uri: 'ldap://localhost:63389',
+      ldap_base: 'ou=users,o=example'
+    })
+    userDB.ready
+      .then(() => {
+        userDB
+          .getAll('', ['uid'], 'uid')
+          .then((list) => {
+            expect(list[0]).toEqual({ uid: 'dwho' })
+            done()
+          })
+          .catch(done)
+      })
+      .catch(done)
   })
 })
