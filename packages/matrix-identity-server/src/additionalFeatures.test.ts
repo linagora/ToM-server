@@ -7,6 +7,9 @@ import fetch from 'node-fetch'
 import { Hash, supportedHashes } from '@twake/crypto'
 import defaultConfig from './__testData__/registerConf.json'
 import buildUserDB, { buildMatrixDb } from './__testData__/buildUserDB'
+import type UserDBSQLite from './userdb/sql/sqlite'
+import updateUsers from './cron/updateUsers'
+import sqlite3 from 'sqlite3'
 
 jest.mock('node-fetch', () => jest.fn())
 const sendMailMock = jest.fn()
@@ -22,18 +25,18 @@ let idServer: IdServer
 let app: express.Application
 let validToken: string
 
+const conf: Config = {
+  ...defaultConfig,
+  additional_features: true,
+  database_engine: 'sqlite',
+  database_host: 'src/__testData__/add.db',
+  base_url: 'http://example.com/',
+  matrix_database_engine: 'sqlite',
+  matrix_database_host: 'src/__testData__/matrix.db',
+  userdb_engine: 'sqlite',
+  userdb_host: 'src/__testData__/add.db'
+}
 beforeAll((done) => {
-  const conf: Config = {
-    ...defaultConfig,
-    additional_features: true,
-    database_engine: 'sqlite',
-    database_host: 'src/__testData__/add.db',
-    base_url: 'http://example.com/',
-    matrix_database_engine: 'sqlite',
-    matrix_database_host: 'src/__testData__/matrix.db',
-    userdb_engine: 'sqlite',
-    userdb_host: 'src/__testData__/add.db'
-  }
   if (process.env.TEST_PG === 'yes') {
     conf.database_engine = 'pg'
     conf.userdb_engine = 'pg'
@@ -149,6 +152,98 @@ describe('/_matrix/identity/v2/lookup', () => {
       expect(response.body.inactive_mappings[rtylerPhone]).toBe(
         '@rtyler:matrix.org'
       )
+    })
+
+    it('should detect new users', (done) => {
+      const hash = new Hash()
+      Promise.all([hash.ready, idServer.cronTasks?.ready])
+        .then(() => {
+          ;(idServer.userDB.db as UserDBSQLite).db?.run(
+            "INSERT INTO users VALUES('okenobi', '2301234567', 'okenobi@company.com')",
+            (err) => {
+              // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+              if (err) {
+                done(err)
+              } else {
+                updateUsers(idServer)
+                  .then(() => {
+                    void idServer.db.getAll('hashes', ['*']).catch(done)
+                    const okenobiPhone = hash.sha256(
+                      `2301234567 phone ${pepper}`
+                    )
+                    const okenobiMail = hash.sha256(
+                      `okenobi@company.com email ${pepper}`
+                    )
+                    const res: Record<string, string> = {}
+                    res[okenobiPhone] = res[okenobiMail] = '@okenobi:matrix.org'
+                    request(app)
+                      .post('/_matrix/identity/v2/lookup')
+                      .send({
+                        addresses: [okenobiMail, okenobiPhone],
+                        algorithm: 'sha256',
+                        pepper
+                      })
+                      .set('Authorization', `Bearer ${validToken}`)
+                      .set('Accept', 'application/json')
+                      .then((response) => {
+                        expect(response.statusCode).toBe(200)
+                        expect(response.body).toEqual({
+                          inactive_mappings: res,
+                          mappings: {}
+                        })
+                        done()
+                      })
+                      .catch(done)
+                  })
+                  .catch(done)
+              }
+            }
+          )
+        })
+        .catch(done)
+    })
+
+    it('should detect new active user', (done) => {
+      const hash = new Hash()
+      Promise.all([hash.ready, idServer.cronTasks?.ready])
+        .then(() => {
+          const matrixDb = new sqlite3.Database(
+            conf.matrix_database_host as string
+          )
+          matrixDb.run(
+            "INSERT INTO users VALUES('@rtyler:company.com')",
+            (err) => {
+              // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+              if (err) {
+                done(err)
+              } else {
+                const rtylerPhone = hash.sha256(`33687654321 phone ${pepper}`)
+                updateUsers(idServer)
+                  .then(() => {
+                    request(app)
+                      .post('/_matrix/identity/v2/lookup')
+                      .send({
+                        addresses: [rtylerPhone],
+                        algorithm: 'sha256',
+                        pepper
+                      })
+                      .set('Authorization', `Bearer ${validToken}`)
+                      .set('Accept', 'application/json')
+                      .then((response) => {
+                        expect(response.status).toBe(200)
+                        expect(response.body.mappings[rtylerPhone]).toBe(
+                          '@rtyler:matrix.org'
+                        )
+                        done()
+                      })
+                      .catch(done)
+                  })
+                  .catch(done)
+              }
+            }
+          )
+        })
+        .catch(done)
     })
   })
 })

@@ -50,7 +50,9 @@ const updateHashes = (idServer: MatrixIdentityServer): Promise<void> => {
   return new Promise((resolve, reject) => {
     const logAndReject = (msg: string) => {
       return (e: any) => {
+        /* istanbul ignore next */
         console.error(msg, e)
+        /* istanbul ignore next */
         reject(e)
       }
     }

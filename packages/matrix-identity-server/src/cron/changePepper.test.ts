@@ -56,13 +56,16 @@ describe('updateHashes', () => {
     setTimeout(() => {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
       // @ts-ignore getAll isn't part of IdentityDB
-      db.db.getAll('hashes', []).then((rows) => {
-        expect(rows.length).toBe(2)
-        rows.forEach((row: { value: string }) => {
-          expect(row.value).toBe('@dwho:company.com')
+      db.db
+        .getAll('hashes', [])
+        .then((rows) => {
+          expect(rows.length).toBe(2)
+          rows.forEach((row) => {
+            expect(row.value).toBe('@dwho:company.com')
+          })
+          done()
         })
-        done()
-      })
+        .catch(done)
     }, 1000)
   })
 })

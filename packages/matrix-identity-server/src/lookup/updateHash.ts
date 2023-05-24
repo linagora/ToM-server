@@ -49,16 +49,17 @@ const updateHash = (
           value,
           active
         ): Promise<void> => {
-          if (pepper == null) {
+          if (pepper == null || pepper.length === 0) {
             pepper = (
               (await idServer.db.get(
                 'keys',
                 ['data'],
                 'name',
-                'newPepper'
-              )) as unknown as { data: string }
-            ).data
+                'pepper'
+              )) as unknown as Array<{ data: string }>
+            )[0].data
           }
+          // console.debug('pepper + hash', [pepper, hash[method as 'sha256'](`${value} ${field} ${pepper}`)])
           await idServer.db.insert('hashes', {
             hash: hash[method as 'sha256'](`${value} ${field} ${pepper}`),
             pepper,
@@ -81,7 +82,7 @@ const updateHash = (
           fieldsToHash.forEach((field) => {
             const v = data[matrixAddress][field as keyof ValueField]
             if (v != null && v.toString().length > 0) {
-              supportedHashes.forEach((method) => {
+              supportedHashes.forEach((method: string) => {
                 params.push([
                   matrixAddress,
                   method,

@@ -37,6 +37,11 @@ type GetCount = (
   field: string,
   value?: string | number | string[]
 ) => Promise<number>
+type GetAll = (
+  table: Collections,
+  fields: string[],
+  order?: string
+) => Promise<DbGetResult>
 type Match = (
   table: Collections,
   fields: string[],
@@ -60,6 +65,7 @@ export interface IdDbBackend {
   insert: Insert
   get: Get
   getCount: GetCount
+  getAll: GetAll
   match: Match
   update: Update
   deleteEqual: DeleteEqual
@@ -167,6 +173,11 @@ class IdentityServerDb implements IdDbBackend {
     value?: string | number | string[]
   ) {
     return this.db.getCount(table, field, value)
+  }
+
+  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
+  getAll(table: Collections, fields: string[], order?: string) {
+    return this.db.getAll(table, fields, order)
   }
 
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async

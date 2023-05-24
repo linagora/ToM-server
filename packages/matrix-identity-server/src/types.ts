@@ -39,6 +39,7 @@ export interface Config {
   smtp_tls?: boolean
   smtp_user?: string
   smtp_verify_certificate?: boolean
+  update_users_cron?: string
   userdb_engine: SupportedUserDatabases
   userdb_host?: string
   userdb_name?: string

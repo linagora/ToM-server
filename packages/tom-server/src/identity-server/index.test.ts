@@ -113,7 +113,6 @@ describe('Using Matrix Token', () => {
     expect(response.statusCode).toBe(401)
   })
 
-  /*
   describe('/_matrix/identity/v2/lookup', () => {
     const mockResponse = Promise.resolve({
       ok: true,
@@ -229,7 +228,6 @@ describe('Using Matrix Token', () => {
       })
     })
   })
-  */
 })
 
 /*
