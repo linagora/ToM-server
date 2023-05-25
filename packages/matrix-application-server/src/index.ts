@@ -80,17 +80,19 @@ export default class MatrixApplicationServer extends EventEmitter {
     this.endpoints = Router()
     this.endpoints
       .route('/_matrix/app/v1/transactions/:txnId')
-      .put(this._middlewares(Endpoints.TRANSACTIONS), transaction(this))
+      .put(
+        this._middlewares(transaction(this), validation(Endpoints.TRANSACTIONS))
+      )
       .all(allowCors, methodNotAllowed, errorMiddleware)
 
     this.endpoints
       .route('/_matrix/app/v1/users/:userId')
-      .get(this._middlewares(Endpoints.USERS), query)
+      .get(this._middlewares(query, validation(Endpoints.USERS)))
       .all(allowCors, methodNotAllowed, errorMiddleware)
 
     this.endpoints
       .route('/_matrix/app/v1/rooms/:roomAlias')
-      .get(this._middlewares(Endpoints.ROOMS), query)
+      .get(this._middlewares(query, validation(Endpoints.ROOMS)))
       .all(allowCors, methodNotAllowed, errorMiddleware)
 
     this.endpoints.all(
@@ -104,15 +106,18 @@ export default class MatrixApplicationServer extends EventEmitter {
    * @param {string} endpoint Request resource endpoint
    * @return {Array<expressAppHandler | expressAppHandlerError | ValidationChain>} Array of middlewares
    */
-  private _middlewares(
-    endpoint: string
+  protected _middlewares(
+    controller: expressAppHandler,
+    validators: ValidationChain[],
+    authMiddleware = auth(this.appServiceRegistration.hsToken)
   ): Array<expressAppHandler | expressAppHandlerError | ValidationChain> {
     return [
       allowCors,
       json(),
       urlencoded({ extended: false }),
-      auth(this.appServiceRegistration.hsToken),
-      ...validation(endpoint),
+      authMiddleware,
+      ...validators,
+      controller,
       errorMiddleware
     ]
   }
