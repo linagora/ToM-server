@@ -10,6 +10,7 @@ import initializeDb, { type TwakeDB } from './db'
 import privateNoteApiRouter from './private-note-api'
 import mutualRoomsAPIRouter from './mutual-rooms-api'
 import { MatrixDB } from '@twake/matrix-identity-server'
+import roomTagsAPIRouter from './room-tags-api'
 
 export default class TwakeServer {
   endpoints: Router
@@ -65,15 +66,21 @@ export default class TwakeServer {
       const vaultServer = new VaultServer(this.conf, this)
       const wellKnown = new WellKnown(this.idServer.conf)
       const privateNoteApi = privateNoteApiRouter(this.idServer.db, this.conf)
-      const mutualRoolsAPi = mutualRoomsAPIRouter(
+      const mutualRoolsApi = mutualRoomsAPIRouter(
         this.idServer.db,
         this.conf,
         this.matrixDb.db
       )
+      const roomTagsApi = roomTagsAPIRouter(
+        this.idServer.db,
+        this.matrixDb.db,
+        this.conf
+      )
 
       this.endpoints.use(privateNoteApi)
-      this.endpoints.use(mutualRoolsAPi)
+      this.endpoints.use(mutualRoolsApi)
       this.endpoints.use(vaultServer.endpoints)
+      this.endpoints.use(roomTagsApi)
 
       Object.keys(this.idServer.api.get).forEach((k) => {
         this.endpoints.get(k, this.idServer.api.get[k])

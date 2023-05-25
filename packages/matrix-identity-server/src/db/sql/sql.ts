@@ -18,7 +18,11 @@ const tables: Record<Collections, string> = {
   attempts: 'email text PRIMARY KEY, expires int, attempt int',
   keys: 'name varchar(32) PRIMARY KEY, data text',
   hashes:
-    'hash varchar(48) PRIMARY KEY, pepper varchar(32), type varchar(8), value text, active integer'
+    'hash varchar(48) PRIMARY KEY, pepper varchar(32), type varchar(8), value text, active integer',
+  privateNotes:
+    'id varchar(64) PRIMARY KEY, authorId varchar(64), content text, targetId varchar(64)',
+  roomTags:
+    'id varchar(64) PRIMARY KEY, authorId varchar(64), content text, roomId varchar(64)'
 }
 
 const indexes: Partial<Record<Collections, string[]>> = {
