@@ -17,15 +17,43 @@ import {
 import auth from './middlewares/auth'
 import validation from './middlewares/validation'
 import { type ValidationChain } from 'express-validator'
+import { EventEmitter } from 'events'
 
 export interface Config {
   application_server_url: string
   sender_localpart: string
   registration_file_path: string
-  namespaces: Namespaces
 }
 
-export default class MatrixApplicationServer {
+export declare interface AppService {
+  /**
+   * Emitted when an event is pushed to the appservice.
+   * The format of the event object is documented at
+   * https://matrix.org/docs/spec/application_service/r0.1.2#put-matrix-app-v1-transactions-txnid
+   * @event
+   * @example
+   * appService.on("event", function(ev) {
+   *   console.log("ID: %s", ev.event_id);
+   * });
+   */
+  // eslint-disable-next-line @typescript-eslint/method-signature-style
+  on(event: 'event', cb: (event: Record<string, unknown>) => void): this
+  /**
+   * Emitted when an event of a particular type is pushed
+   * to the appservice. This will be emitted *in addition*
+   * to "event"
+   * @event
+   * @param event Should start with "type:"
+   * @example
+   * appService.on("type:m.room.message", function(event) {
+   *   console.log("ID: %s", ev.content.body);
+   * });
+   */
+  // eslint-disable-next-line @typescript-eslint/method-signature-style
+  on(event: string, cb: (event: Record<string, unknown>) => void): this
+}
+
+export default class MatrixApplicationServer extends EventEmitter {
   endpoints: Router
   conf: Config
   appServiceRegistration: AppServiceRegistration
@@ -38,6 +66,7 @@ export default class MatrixApplicationServer {
    * @param {ConfigDescription} confDesc The default configuration object
    */
   constructor(conf?: Partial<Config>, confDesc?: ConfigDescription) {
+    super()
     if (confDesc == null) confDesc = defaultConfDesc as ConfigDescription
     this.conf = configParser(
       confDesc,

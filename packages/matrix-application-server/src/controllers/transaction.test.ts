@@ -34,7 +34,8 @@ describe('Transaction', () => {
       }
     }
     appServer = {
-      lastProcessedTxnId
+      lastProcessedTxnId,
+      emit: jest.fn()
     }
   })
 
@@ -42,14 +43,14 @@ describe('Transaction', () => {
     const handler: expressAppHandler = transaction(
       appServer as MatrixApplicationServer
     )
+    const sentEvent = {
+      state_key: 'test',
+      type: 'm.room.member'
+    }
     handler(mockRequest as Request, mockResponse as Response, nextFunction)
-    expect(spyOnFilter).toHaveReturnedWith([
-      {
-        state_key: 'test',
-        type: 'm.room.member'
-      }
-    ])
+    expect(spyOnFilter).toHaveReturnedWith([sentEvent])
     expect(mockResponse.send).toHaveBeenCalledWith()
+    expect(appServer.emit).toHaveBeenCalledWith('event', sentEvent)
     expect(appServer.lastProcessedTxnId).toEqual(transactionId)
   })
 
