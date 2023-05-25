@@ -34,7 +34,7 @@ export default (
    *      type: object
    *      properties:
    *        tags:
-   *          description the room tags list
+   *          description: the room tags list
    *          type: array
    *          items:
    *            type: string
@@ -72,7 +72,7 @@ export default (
 
   /**
    * @openapi
-   * /_twake/v1/room_tags/{roomId}
+   * /_twake/v1/room_tags/{roomId}:
    *  get:
    *    tags:
    *      - Room tags
@@ -102,7 +102,7 @@ export default (
 
   /**
    * @openapi
-   * /_twake/v1/room_tags
+   * /_twake/v1/room_tags:
    *  post:
    *    tags:
    *      - Room tags
@@ -131,14 +131,14 @@ export default (
 
   /**
    * @openapi
-   * /_twake/v1/room_tags/{roomId}
+   * /_twake/v1/room_tags/{roomId}:
    *  put:
    *    tags:
    *      - Room tags
    *    description: Update room tags
    *    requestBody:
    *      content:
-   *        application/json
+   *        application/json:
    *          schema:
    *            $ref: '#/components/schemas/RoomUpdate'
    *    responses:
@@ -160,14 +160,14 @@ export default (
 
   /**
    * @openapi
-   * /_twake/v1/room_tags/{roomId}
+   * /_twake/v1/room_tags/{roomId}:
    *  delete:
    *    tags:
    *      - Room tags
    *    description: delete tags for a room
    *    requestBody:
    *      content:
-   *        application/json
+   *        application/json:
    *          schema:
    *            $ref: '#/components/schemas/RoomUpdate'
    *    responses:
