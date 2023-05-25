@@ -42,6 +42,20 @@ const conf = {
 const tomServer = new TomServer(conf)
 const app = express()
 
+app.use(
+  '/build',
+  express.static(path.join(process.cwd(), 'landing', 'public', 'build'), {
+    immutable: true,
+    maxAge: '1y'
+  })
+)
+
+app.use(
+  express.static(path.join(process.cwd(), 'landing', 'public'), {
+    maxAge: '1h'
+  })
+)
+
 app.get(
   '/',
   createRequestHandler({
