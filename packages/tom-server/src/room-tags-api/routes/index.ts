@@ -49,7 +49,7 @@ export default (
    *        roomId:
    *          type: string
    *          description: the room id
-   *    RoomUpdate:
+   *    RoomTagsUpdate:
    *      type: object
    *      properties:
    *        content:
@@ -136,11 +136,13 @@ export default (
    *    tags:
    *      - Room tags
    *    description: Update room tags
+   *    parameters:
+   *      - $ref: '#/components/parameters/roomId'
    *    requestBody:
    *      content:
    *        application/json:
    *          schema:
-   *            $ref: '#/components/schemas/RoomUpdate'
+   *            $ref: '#/components/schemas/RoomTagsUpdate'
    *    responses:
    *      204:
    *        description: Room tags updated
@@ -165,11 +167,8 @@ export default (
    *    tags:
    *      - Room tags
    *    description: delete tags for a room
-   *    requestBody:
-   *      content:
-   *        application/json:
-   *          schema:
-   *            $ref: '#/components/schemas/RoomUpdate'
+   *    parameters:
+   *      - $ref: '#/components/parameters/roomId'
    *    responses:
    *      204:
    *        description: Room tags deleted
