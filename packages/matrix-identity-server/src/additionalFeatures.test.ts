@@ -205,7 +205,13 @@ describe('/_matrix/identity/v2/lookup', () => {
 
     it('should detect new active user', (done) => {
       const hash = new Hash()
-      Promise.all([hash.ready, idServer.cronTasks?.ready])
+      Promise.all([
+        hash.ready,
+        idServer.cronTasks?.ready,
+        (idServer.userDB.db as UserDBSQLite).db?.run(
+          "DELETE FROM users WHERE uid='dwho'"
+        )
+      ])
         .then(() => {
           const matrixDb = new sqlite3.Database(
             conf.matrix_database_host as string

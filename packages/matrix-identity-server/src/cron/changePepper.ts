@@ -16,14 +16,10 @@ const updateHashes = (idServer: MatrixIdentityServer): Promise<void> => {
   const db = idServer.db
   const userDB = idServer.userDB
   const isMatrixDbAvailable =
-    // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
-    conf.matrix_database_host &&
-    // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
-    conf.matrix_database_engine
+    Boolean(conf.matrix_database_host) && Boolean(conf.matrix_database_engine)
 
   // If Matrix DB is available, this function filter inactive users
   const _filter = async (rows: DbGetResult): Promise<DbGetResult> => {
-    // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
     if (isMatrixDbAvailable) {
       const matrixDb = new MatrixDB(conf)
       await matrixDb.ready
@@ -103,7 +99,6 @@ const updateHashes = (idServer: MatrixIdentityServer): Promise<void> => {
                     res[`@${row.uid as string}:${conf.server_name}`] = {
                       email: row.mail as string,
                       phone: row.mobile as string,
-                      // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
                       active: isMatrixDbAvailable ? (row.active as number) : 1
                     }
                     return res
