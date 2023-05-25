@@ -20,9 +20,10 @@ import { type ValidationChain } from 'express-validator'
 import { EventEmitter } from 'events'
 
 export interface Config {
-  application_server_url: string
-  sender_localpart: string
+  base_url: string
+  sender_localpart?: string
   registration_file_path: string
+  namespaces?: Namespaces
 }
 
 export declare interface AppService {

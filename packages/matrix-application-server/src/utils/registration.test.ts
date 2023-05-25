@@ -51,9 +51,7 @@ describe('Registration', () => {
       expect(appServiceRegistration.senderLocalpart).toEqual(
         testConfig.sender_localpart
       )
-      expect(appServiceRegistration.url).toEqual(
-        testConfig.application_server_url
-      )
+      expect(appServiceRegistration.url).toEqual(testConfig.base_url)
       expect(appServiceRegistration.namespaces).toStrictEqual(
         testConfig.namespaces
       )
@@ -103,7 +101,7 @@ describe('Registration', () => {
     it('should throw error if url is not a string', () => {
       const config: any = {
         ...testConfig,
-        application_server_url: false
+        base_url: false
       }
       expect(() => new AppServiceRegistration(config)).toThrowError(
         new Error('The value of "url" field in configuration must be a string')
@@ -113,7 +111,7 @@ describe('Registration', () => {
     it('should throw error if url does not match regex', () => {
       const config: Config = {
         ...testConfig,
-        application_server_url: 'falsy_url'
+        base_url: 'falsy_url'
       }
       expect(() => new AppServiceRegistration(config)).toThrowError(
         new Error(

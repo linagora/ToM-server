@@ -53,7 +53,7 @@ describe('MatrixApplicationServer', () => {
 
     it('should return config from parameter', async () => {
       const config: Config = {
-        application_server_url: 'http://localhost:8080',
+        base_url: 'http://localhost:8080',
         sender_localpart: 'matrix',
         registration_file_path: 'registration.yaml',
         namespaces: { users: [] }
