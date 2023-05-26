@@ -11,7 +11,7 @@
   "scripts": {
     "build": "npm run build:lib && npm run build:example",
     "build:lib": "rollup -c",
-    "build:example": "rollup -p @rollup/plugin-typescript -e express -e @twake/matrix-application-server -o example/application-server.js example/application-server.ts",
+    "build:example": "rollup -p @rollup/plugin-typescript -e express,@twake/matrix-application-server -o example/application-server.js example/application-server.ts",
     "start": "node example/application-server.js",
     "test": "jest"
   },
