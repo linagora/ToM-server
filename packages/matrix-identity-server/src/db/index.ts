@@ -67,6 +67,7 @@ export interface IdDbBackend {
   get: Get
   getCount: GetCount
   getAll: GetAll
+  getHigherThan: Get
   match: Match
   update: Update
   deleteEqual: DeleteEqual
@@ -179,6 +180,16 @@ class IdentityServerDb implements IdDbBackend {
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
   getAll(table: Collections, fields: string[], order?: string) {
     return this.db.getAll(table, fields, order)
+  }
+
+  // eslint-disable-next-line @typescript-eslint/promise-function-async
+  getHigherThan(
+    table: Collections,
+    fields: string[],
+    field: string,
+    value: string | number | string[]
+  ): Promise<DbGetResult> {
+    return this.db.getHigherThan(table, fields, field, value)
   }
 
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async

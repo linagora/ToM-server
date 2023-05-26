@@ -38,6 +38,7 @@ export { type tokenContent } from './account/register'
 export * as Utils from './utils'
 export * as MatrixErrors from './utils/errors'
 export { default as MatrixDB, type MatrixDBBackend } from './matrixDb'
+export { default as updateUsers } from './cron/updateUsers'
 export const errMsg = _errMsg
 export const validateMatrixToken = _validateMatrixToken
 export const defaultConfig = defaultConfDesc

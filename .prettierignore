@@ -12,6 +12,7 @@ packages/**/*.yml
 packages/**/*.css
 packages/**/*.html
 packages/**/*.d.ts
+packages/**/build
 packages/**/dist
 packages/**/coverage
 packages/**/__testData__

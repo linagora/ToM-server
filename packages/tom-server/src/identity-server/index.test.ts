@@ -1,3 +1,4 @@
+import sqlite3 from 'sqlite3'
 import express from 'express'
 import request from 'supertest'
 import { type Config } from '../types'
@@ -9,6 +10,8 @@ import buildUserDB from './__testData__/buildUserDB'
 import TwakeServer from '..'
 import path from 'path'
 import JEST_PROCESS_ROOT_PATH from '../../jest.globals'
+import { updateUsers } from '@twake/matrix-identity-server'
+import { type Database } from 'sqlite3'
 
 jest.mock('node-fetch', () => jest.fn())
 const sendMailMock = jest.fn()
@@ -176,7 +179,7 @@ describe('Using Matrix Token', () => {
         })
       expect(response.status).toBe(200)
       expect(response.body).toEqual({
-        matches: [{ uid: 'dwho' }],
+        matches: [{ uid: 'dwho', address: '@dwho:example.com' }],
         inactive_matches: []
       })
     })
@@ -196,10 +199,10 @@ describe('Using Matrix Token', () => {
       expect(response.body).toEqual({
         matches: [],
         inactive_matches: [
-          { uid: 'user00' },
-          { uid: 'user01' },
-          { uid: 'user02' },
-          { uid: 'user03' }
+          { uid: 'user00', address: '@user00:example.com' },
+          { uid: 'user01', address: '@user01:example.com' },
+          { uid: 'user02', address: '@user02:example.com' },
+          { uid: 'user03', address: '@user03:example.com' }
         ]
       })
     })
@@ -220,11 +223,64 @@ describe('Using Matrix Token', () => {
       expect(response.body).toEqual({
         matches: [],
         inactive_matches: [
-          { uid: 'user03' },
-          { uid: 'user04' },
-          { uid: 'user05' },
-          { uid: 'user06' }
+          { uid: 'user03', address: '@user03:example.com' },
+          { uid: 'user04', address: '@user04:example.com' },
+          { uid: 'user05', address: '@user05:example.com' },
+          { uid: 'user06', address: '@user06:example.com' }
         ]
+      })
+    })
+  })
+
+  describe('/_twake/identity/v1/lookup/', () => {
+    it('should work without changes', async () => {
+      const response = await request(app)
+        .post('/_twake/identity/v1/lookup/diff')
+        .set('Authorization', `Bearer ${validToken}`)
+        .set('Accept', 'application/json')
+        .send({
+          since: 1685071800
+        })
+      expect(response.status).toBe(200)
+      expect(response.body).toEqual({ deleted: [], new: [] })
+    })
+
+    it('should detect changes', (done) => {
+      // @ts-expect-error db/db exists in SQLite
+      const db = twakeServer.idServer.userDB.db.db as Database
+      const matrixDb = new sqlite3.Database(
+        twakeServer.conf.matrix_database_host
+      )
+      db.run("DELETE FROM users WHERE uid='user04'", (err) => {
+        if (err) return done(err)
+        matrixDb.run(
+          "INSERT INTO users VALUES('@user07:example.com', '', 0)",
+          (err) => {
+            if (err) return done(err)
+            updateUsers(twakeServer.idServer).then(async () => {
+              const response = await request(app)
+                .post('/_twake/identity/v1/lookup/diff')
+                .set('Authorization', `Bearer ${validToken}`)
+                .set('Accept', 'application/json')
+                .send({
+                  since: 1685071800,
+                  fields: ['uid', 'mail']
+                })
+              expect(response.status).toBe(200)
+              expect(response.body).toEqual({
+                deleted: [{ uid: 'user04', address: '@user04:example.com' }],
+                new: [
+                  {
+                    uid: 'user07',
+                    address: '@user07:example.com',
+                    mail: 'user07@example.com'
+                  }
+                ]
+              })
+              done()
+            })
+          }
+        )
       })
     })
   })

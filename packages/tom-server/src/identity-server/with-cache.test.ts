@@ -169,7 +169,7 @@ describe('Using Matrix Token', () => {
         })
       expect(response.status).toBe(200)
       expect(response.body).toEqual({
-        matches: [{ uid: 'dwho' }],
+        matches: [{ uid: 'dwho', address: '@dwho:example.com' }],
         inactive_matches: []
       })
     })
@@ -189,10 +189,10 @@ describe('Using Matrix Token', () => {
       expect(response.body).toEqual({
         matches: [],
         inactive_matches: [
-          { uid: 'user00' },
-          { uid: 'user01' },
-          { uid: 'user02' },
-          { uid: 'user03' }
+          { uid: 'user00', address: '@user00:example.com' },
+          { uid: 'user01', address: '@user01:example.com' },
+          { uid: 'user02', address: '@user02:example.com' },
+          { uid: 'user03', address: '@user03:example.com' }
         ]
       })
     })
@@ -213,10 +213,10 @@ describe('Using Matrix Token', () => {
       expect(response.body).toEqual({
         matches: [],
         inactive_matches: [
-          { uid: 'user03' },
-          { uid: 'user04' },
-          { uid: 'user05' },
-          { uid: 'user06' }
+          { uid: 'user03', address: '@user03:example.com' },
+          { uid: 'user04', address: '@user04:example.com' },
+          { uid: 'user05', address: '@user05:example.com' },
+          { uid: 'user06', address: '@user06:example.com' }
         ]
       })
     })

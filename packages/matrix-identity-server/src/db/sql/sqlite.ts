@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/promise-function-async */
 import { type Database, type Statement } from 'sqlite3'
 import { type Collections, type IdDbBackend } from '../index'
 import SQL from './sql'
@@ -10,7 +11,6 @@ export type SQLiteStatement = Statement
 
 class SQLite extends SQL implements IdDbBackend {
   declare db?: SQLiteDatabase
-  // eslint-disable-next-line @typescript-eslint/promise-function-async
   createDatabases(
     conf: Config,
     tables: Record<Collections, string>,
@@ -39,7 +39,6 @@ class SQLite extends SQL implements IdDbBackend {
     })
   }
 
-  // eslint-disable-next-line @typescript-eslint/promise-function-async
   rawQuery(query: string): Promise<void> {
     return new Promise((resolve, reject) => {
       this.db?.run(query, (err) => {
@@ -53,13 +52,11 @@ class SQLite extends SQL implements IdDbBackend {
     })
   }
 
-  // eslint-disable-next-line @typescript-eslint/promise-function-async
   exists(table: string): Promise<number> {
     // @ts-expect-error sqlite_master not listed in Collections
     return this.getCount('sqlite_master', 'name', table)
   }
 
-  // eslint-disable-next-line @typescript-eslint/promise-function-async
   insert(
     table: string,
     values: Record<string, string | number>
@@ -86,7 +83,6 @@ class SQLite extends SQL implements IdDbBackend {
     })
   }
 
-  // eslint-disable-next-line @typescript-eslint/promise-function-async
   update(
     table: string,
     values: Record<string, string | number>,
@@ -114,8 +110,8 @@ class SQLite extends SQL implements IdDbBackend {
     })
   }
 
-  // eslint-disable-next-line @typescript-eslint/promise-function-async
-  get(
+  _get(
+    op: string,
     table: string,
     fields?: string[],
     field?: string,
@@ -135,8 +131,8 @@ class SQLite extends SQL implements IdDbBackend {
       if (fields == null || fields.length === 0) {
         fields = ['*']
       }
-      if (field != null && value != null) {
-        condition = 'WHERE ' + value.map((val) => `${field}=?`).join(' OR ')
+      if (field != null && value != null && value.length > 0) {
+        condition = 'WHERE ' + value.map((val) => `${field}${op}?`).join(' OR ')
       }
       if (order != null) condition += `ORDER BY ${order}`
 
@@ -162,7 +158,26 @@ class SQLite extends SQL implements IdDbBackend {
     })
   }
 
-  // eslint-disable-next-line @typescript-eslint/promise-function-async
+  get(
+    table: string,
+    fields?: string[],
+    field?: string,
+    value?: string | number | Array<string | number>,
+    order?: string
+  ): Promise<DbGetResult> {
+    return this._get('=', table, fields, field, value, order)
+  }
+
+  getHigherThan(
+    table: Collections,
+    fields: string[],
+    field: string,
+    value: string | number | string[],
+    order?: string
+  ): Promise<DbGetResult> {
+    return this._get('>', table, fields, field, value, order)
+  }
+
   match(
     table: string,
     fields: string[],
@@ -202,7 +217,6 @@ class SQLite extends SQL implements IdDbBackend {
     })
   }
 
-  // eslint-disable-next-line @typescript-eslint/promise-function-async
   deleteEqual(
     table: string,
     field: string,
@@ -226,7 +240,6 @@ class SQLite extends SQL implements IdDbBackend {
     })
   }
 
-  // eslint-disable-next-line @typescript-eslint/promise-function-async
   deleteLowerThan(
     table: string,
     field: string,

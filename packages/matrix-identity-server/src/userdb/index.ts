@@ -12,7 +12,7 @@ type Get = (
   table: Collections,
   fields?: string[],
   field?: string,
-  value?: string | number
+  value?: string | number | string[]
 ) => Promise<DbGetResult>
 type GetAll = (
   table: Collections,
@@ -78,7 +78,7 @@ class UserDB implements UserDBBackend {
     table: Collections,
     fields?: string[],
     field?: string,
-    value?: string | number
+    value?: string | number | string[]
   ) {
     return this.db.get(table, fields, field, value)
   }

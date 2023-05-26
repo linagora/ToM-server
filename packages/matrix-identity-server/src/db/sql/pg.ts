@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/promise-function-async */
 /* istanbul ignore file */
 import { type Collections, type IdDbBackend } from '..'
 import { type DbGetResult, type Config } from '../../types'
@@ -9,7 +10,6 @@ export type PgDatabase = PgClient
 
 class Pg extends SQL implements IdDbBackend {
   declare db?: PgDatabase
-  // eslint-disable-next-line @typescript-eslint/promise-function-async
   createDatabases(
     conf: Config,
     tables: Record<Collections, string>,
@@ -69,13 +69,11 @@ class Pg extends SQL implements IdDbBackend {
     })
   }
 
-  // eslint-disable-next-line @typescript-eslint/promise-function-async
   rawQuery(query: string): Promise<any> {
     if (this.db == null) return Promise.reject(new Error('DB not ready'))
     return this.db.query(query)
   }
 
-  // eslint-disable-next-line @typescript-eslint/promise-function-async
   exists(table: string): Promise<boolean> {
     return new Promise((resolve, reject) => {
       if (this.db != null) {
@@ -95,7 +93,6 @@ class Pg extends SQL implements IdDbBackend {
     })
   }
 
-  // eslint-disable-next-line @typescript-eslint/promise-function-async
   insert(
     table: string,
     values: Record<string, string | number>
@@ -124,7 +121,6 @@ class Pg extends SQL implements IdDbBackend {
     })
   }
 
-  // eslint-disable-next-line @typescript-eslint/promise-function-async
   update(
     table: Collections,
     values: Record<string, string | number>,
@@ -157,8 +153,8 @@ class Pg extends SQL implements IdDbBackend {
     })
   }
 
-  // eslint-disable-next-line @typescript-eslint/promise-function-async
-  get(
+  _get(
+    op: string,
     table: string,
     fields?: string[],
     field?: string,
@@ -176,12 +172,13 @@ class Pg extends SQL implements IdDbBackend {
         }
         if (field != null && value != null) {
           if (typeof value === 'object') {
-            condition =
-              'WHERE ' +
-              value.map((val, i) => `${field}=$${i + 1}`).join(' OR ')
+            if (value.length > 0)
+              condition =
+                'WHERE ' +
+                value.map((val, i) => `${field}${op}$${i + 1}`).join(' OR ')
           } else {
             value = value != null ? [value] : []
-            condition = 'WHERE ' + `${field}=$1`
+            if (value.length > 0) condition = 'WHERE ' + `${field}${op}$1`
           }
         }
 
@@ -199,7 +196,26 @@ class Pg extends SQL implements IdDbBackend {
     })
   }
 
-  // eslint-disable-next-line @typescript-eslint/promise-function-async
+  get(
+    table: string,
+    fields?: string[],
+    field?: string,
+    value?: string | number | Array<string | number>,
+    order?: string
+  ): Promise<DbGetResult> {
+    return this._get('=', table, fields, field, value, order)
+  }
+
+  getHigherThan(
+    table: string,
+    fields?: string[],
+    field?: string,
+    value?: string | number | Array<string | number>,
+    order?: string
+  ): Promise<DbGetResult> {
+    return this._get('>', table, fields, field, value, order)
+  }
+
   match(
     table: string,
     fields: string[],
@@ -231,7 +247,6 @@ class Pg extends SQL implements IdDbBackend {
     })
   }
 
-  // eslint-disable-next-line @typescript-eslint/promise-function-async
   deleteEqual(
     table: string,
     field: string,
@@ -243,7 +258,6 @@ class Pg extends SQL implements IdDbBackend {
     ]) as unknown as Promise<void>
   }
 
-  // eslint-disable-next-line @typescript-eslint/promise-function-async
   deleteLowerThan(
     table: string,
     field: string,

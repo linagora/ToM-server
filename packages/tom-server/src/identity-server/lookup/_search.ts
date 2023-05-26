@@ -82,6 +82,9 @@ const _search = (tomServer: TwakeServer): SearchFunction => {
                   ] = true
                 })
                 rows.forEach((row) => {
+                  row.address = `@${row.uid as string}:${
+                    tomServer.conf.server_name
+                  }`
                   if (mUids[row.uid as string]) {
                     matches.push(row)
                   } else {
