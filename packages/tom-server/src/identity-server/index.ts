@@ -135,6 +135,9 @@ export default class TwakeIdentityServer extends MatrixIdentityServer {
            *                      address:
            *                        type: string
            *                        description: Matrix address
+           *                      timestamp:
+           *                        type: integer
+           *                        description: current server timestamp
            *                      uid:
            *                        type: string
            *                        description: id of a matching user

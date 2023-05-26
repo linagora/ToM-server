@@ -45,6 +45,7 @@ export default class TwakeServer {
       return process.env.TWAKE_SERVER_CONF
     }
 
+    /* istanbul ignore if */
     if (fs.existsSync('/etc/twake/server.conf')) {
       return '/etc/twake/server.conf'
     }

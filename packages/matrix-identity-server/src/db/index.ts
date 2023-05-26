@@ -1,4 +1,5 @@
 import { type DbGetResult, type Config } from '../types'
+import { epoch } from '../utils'
 import { randomString } from '../utils/tokenUtils'
 import Pg from './sql/pg'
 import Sqlite from './sql/sqlite'
@@ -220,9 +221,8 @@ class IdentityServerDb implements IdDbBackend {
     }
     const id = randomString(64)
     // default: expires in 600 s
-    const expiresForDb = Math.floor(
-      Date.now() / 1000 + (expires != null ? expires : 600)
-    )
+    const expiresForDb =
+      epoch() + (expires != null && expires > 0 ? expires : 600)
     return new Promise((resolve, reject) => {
       this.db
         .insert('oneTimeTokens', {
@@ -257,10 +257,7 @@ class IdentityServerDb implements IdDbBackend {
         .get('oneTimeTokens', ['data', 'expires'], 'id', id)
         .then((rows) => {
           /* istanbul ignore else */
-          if (
-            rows.length > 0 &&
-            (rows[0].expires as number) >= Math.floor(Date.now() / 1000)
-          ) {
+          if (rows.length > 0 && (rows[0].expires as number) >= epoch()) {
             resolve(JSON.parse(rows[0].data as string))
           } else {
             reject(
@@ -326,11 +323,7 @@ class IdentityServerDb implements IdDbBackend {
       await Promise.all(
         // eslint-disable-next-line @typescript-eslint/promise-function-async
         cleanByExpires.map((table) => {
-          return this.deleteLowerThan(
-            table,
-            'expires',
-            Math.floor(Date.now() / 1000)
-          )
+          return this.deleteLowerThan(table, 'expires', epoch())
         })
       )
       /* istanbul ignore next */

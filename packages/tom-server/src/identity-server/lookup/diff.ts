@@ -10,10 +10,13 @@ const schema = {
 const diff = (tomServer: TwakeServer): expressAppHandler => {
   return (req, res) => {
     const error = (e: any): void => {
+      /* istanbul ignore next */
       console.error('lookup/diff error', e)
+      /* istanbul ignore next */
       Utils.send(res, 500, errMsg('unknown'))
     }
     tomServer.idServer.authenticate(req, res, (token) => {
+      const timestamp = Utils.epoch()
       Utils.jsonContent(req, res, (obj) => {
         Utils.validateParameters(res, schema, obj, (data) => {
           tomServer.idServer.db
@@ -52,7 +55,8 @@ const diff = (tomServer: TwakeServer): expressAppHandler => {
                   })
                   Utils.send(res, 200, {
                     new: newUsers,
-                    deleted
+                    deleted,
+                    timestamp
                   })
                 })
                 .catch(error)

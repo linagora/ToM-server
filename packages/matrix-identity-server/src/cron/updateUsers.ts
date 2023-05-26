@@ -2,6 +2,7 @@ import type MatrixIdentityServer from '..'
 import { MatrixDB } from '..'
 import { type DbGetResult } from '..'
 import updateHash, { type UpdatableFields } from '../lookup/updateHash'
+import { epoch } from '../utils'
 
 /**
  * updateUsers is a cron task that reads users from UserDB and find which of
@@ -66,7 +67,7 @@ const updateUsers = async (idServer: MatrixIdentityServer): Promise<void> => {
      - new active users
   */
   let found = false
-  const timestamp = Math.floor(Date.now() / 1000)
+  const timestamp = epoch()
   users.forEach((user) => {
     const uid = user.uid as string
     const matrixAddress = `@${uid}:${idServer.conf.server_name}`

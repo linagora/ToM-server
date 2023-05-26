@@ -54,6 +54,7 @@ const _search = (tomServer: TwakeServer): SearchFunction => {
       request
         .then((rows) => {
           if (rows.length === 0) {
+            /* istanbul ignore next */
             Utils.send(res, 200, { matches: [], inactive_matches: [] })
           } else {
             const start = data.offset ?? 0

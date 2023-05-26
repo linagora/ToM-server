@@ -10,8 +10,10 @@ import buildUserDB from './__testData__/buildUserDB'
 import TwakeServer from '..'
 import path from 'path'
 import JEST_PROCESS_ROOT_PATH from '../../jest.globals'
-import { updateUsers } from '@twake/matrix-identity-server'
+import { Utils, updateUsers } from '@twake/matrix-identity-server'
 import { type Database } from 'sqlite3'
+
+const timestamp = Utils.epoch()
 
 jest.mock('node-fetch', () => jest.fn())
 const sendMailMock = jest.fn()
@@ -232,7 +234,7 @@ describe('Using Matrix Token', () => {
     })
   })
 
-  describe('/_twake/identity/v1/lookup/', () => {
+  describe('/_twake/identity/v1/lookup/diff', () => {
     it('should work without changes', async () => {
       const response = await request(app)
         .post('/_twake/identity/v1/lookup/diff')
@@ -242,7 +244,12 @@ describe('Using Matrix Token', () => {
           since: 1685071800
         })
       expect(response.status).toBe(200)
-      expect(response.body).toEqual({ deleted: [], new: [] })
+      expect(response.body.timestamp).toBeGreaterThan(timestamp)
+      expect(response.body).toEqual({
+        deleted: [],
+        new: [],
+        timestamp: response.body.timestamp
+      })
     })
 
     it('should detect changes', (done) => {
@@ -257,28 +264,32 @@ describe('Using Matrix Token', () => {
           "INSERT INTO users VALUES('@user07:example.com', '', 0)",
           (err) => {
             if (err) return done(err)
-            updateUsers(twakeServer.idServer).then(async () => {
-              const response = await request(app)
-                .post('/_twake/identity/v1/lookup/diff')
-                .set('Authorization', `Bearer ${validToken}`)
-                .set('Accept', 'application/json')
-                .send({
-                  since: 1685071800,
-                  fields: ['uid', 'mail']
+            updateUsers(twakeServer.idServer)
+              .then(async () => {
+                const response = await request(app)
+                  .post('/_twake/identity/v1/lookup/diff')
+                  .set('Authorization', `Bearer ${validToken}`)
+                  .set('Accept', 'application/json')
+                  .send({
+                    since: 1685071800,
+                    fields: ['uid', 'mail']
+                  })
+                expect(response.status).toBe(200)
+                expect(response.body.timestamp).toBeGreaterThan(timestamp)
+                expect(response.body).toEqual({
+                  deleted: [{ uid: 'user04', address: '@user04:example.com' }],
+                  new: [
+                    {
+                      uid: 'user07',
+                      address: '@user07:example.com',
+                      mail: 'user07@example.com'
+                    }
+                  ],
+                  timestamp: response.body.timestamp
                 })
-              expect(response.status).toBe(200)
-              expect(response.body).toEqual({
-                deleted: [{ uid: 'user04', address: '@user04:example.com' }],
-                new: [
-                  {
-                    uid: 'user07',
-                    address: '@user07:example.com',
-                    mail: 'user07@example.com'
-                  }
-                ]
+                done()
               })
-              done()
-            })
+              .catch(done)
           }
         )
       })
