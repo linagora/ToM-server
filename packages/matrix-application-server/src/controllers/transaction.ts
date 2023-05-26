@@ -33,13 +33,15 @@ export const transaction: TransactionController = (
       res.send()
       return
     }
-    // We check that the event is not a message event but a state event (event which update metadata of a room like topic, name, members, ...)
     events.forEach((event: ClientEvent) => {
+      // We check that the event is not a message event but a state event (event which update metadata of a room like topic, name, members, ...)
       if (event.state_key != null) {
-        appServer.emit('event', event)
-        if (event.type != null) {
-          appServer.emit('type:' + event.type, event)
-        }
+        appServer.emit(
+          `type: ${event.type} | state_key: ${event.state_key}`,
+          event
+        )
+      } else {
+        appServer.emit(`type: ${event.type}`, event)
       }
     })
     appServer.lastProcessedTxnId = txnId

@@ -18,19 +18,20 @@ const forbiddenError = new AppServerAPIError({
 describe('Authentication', () => {
   let mockRequest: Partial<Request>
   let mockResponse: Partial<Response>
-  const nextFunction: NextFunction = jest.fn()
+  let nextFunction: NextFunction
   beforeEach(() => {
-    jest.clearAllMocks()
     mockRequest = {
       headers: {
         authorization: `Bearer ${homeserverToken}`
       }
     }
+    nextFunction = jest.fn()
   })
 
   it('should call next function when the auth method parameter matches the token in authorization header', () => {
     const handler: expressAppHandler = auth(homeserverToken)
     handler(mockRequest as Request, mockResponse as Response, nextFunction)
+    expect(nextFunction).toHaveBeenCalledTimes(1)
     expect(nextFunction).toHaveBeenCalled()
   })
 

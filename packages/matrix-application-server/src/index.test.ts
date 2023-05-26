@@ -17,7 +17,6 @@ describe('MatrixApplicationServer', () => {
 
   describe('getConfigurationFile', () => {
     afterEach(() => {
-      jest.restoreAllMocks()
       if (fs.existsSync(registrationFilePath)) {
         fs.unlinkSync(registrationFilePath)
       }
@@ -45,6 +44,7 @@ describe('MatrixApplicationServer', () => {
         .spyOn(jest.requireActual('@twake/config-parser'), 'default')
         .mockImplementation(() => defaultConfig)
       appServer = new MatrixApplicationServer()
+      expect(spyOnConfigParser).toHaveBeenCalledTimes(1)
       expect(spyOnConfigParser).toHaveBeenCalledWith(
         defaultConfig,
         '/etc/twake/as-server.conf'
@@ -70,10 +70,6 @@ describe('MatrixApplicationServer', () => {
       app = express()
       appServer = new MatrixApplicationServer(testConfig)
       app.use(appServer.endpoints)
-    })
-
-    beforeEach(() => {
-      jest.clearAllMocks()
     })
 
     it('reject unimplemented endpoint with 404', async () => {

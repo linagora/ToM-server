@@ -5,12 +5,14 @@ import { query } from './query'
 
 describe('Query', () => {
   const mockRequest: Partial<Request> = {}
-  const mockResponse: Partial<Response> = {
-    send: jest.fn().mockImplementation(() => mockResponse)
-  }
-  const nextFunction: NextFunction = jest.fn()
+  let mockResponse: Partial<Response>
+  let nextFunction: NextFunction
+
   beforeEach(() => {
-    jest.clearAllMocks()
+    mockResponse = {
+      send: jest.fn().mockImplementation(() => mockResponse)
+    }
+    nextFunction = jest.fn()
   })
 
   it('should send a response', () => {

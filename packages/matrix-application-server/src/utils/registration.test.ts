@@ -34,9 +34,10 @@ const testConfig = {
 
 describe('Registration', () => {
   describe('Class constructor (with setter and getter)', () => {
-    const spyOnLoad = jest.spyOn(yaml, 'load')
+    let spyOnLoad: jest.SpyInstance
+
     beforeEach(() => {
-      jest.clearAllMocks()
+      spyOnLoad = jest.spyOn(yaml, 'load')
     })
 
     it('should create a class instance based on config', () => {
@@ -57,13 +58,31 @@ describe('Registration', () => {
       )
     })
 
-    it('should create an class instance based on registration.yaml file', () => {
+    it('should create a class instance based on config with some default values', () => {
+      const appServiceRegistration = new AppServiceRegistration({
+        ...testConfig,
+        sender_localpart: undefined,
+        namespaces: undefined
+      })
+      expect(spyOnLoad).not.toHaveBeenCalled()
+      expect(appServiceRegistration.asToken).not.toBeNull()
+      expect(appServiceRegistration.asToken).not.toBeUndefined()
+      expect(appServiceRegistration.hsToken).not.toBeNull()
+      expect(appServiceRegistration.hsToken).not.toBeUndefined()
+      expect(appServiceRegistration.id).not.toBeNull()
+      expect(appServiceRegistration.id).not.toBeUndefined()
+      expect(appServiceRegistration.senderLocalpart).toEqual('')
+      expect(appServiceRegistration.url).toEqual(testConfig.base_url)
+      expect(appServiceRegistration.namespaces).toStrictEqual({})
+    })
+
+    it('should create a class instance based on registration.yaml file', () => {
       const config: Config = {
         ...testConfig,
         registration_file_path: yamlTestFilePath
       }
       const appServiceRegistration = new AppServiceRegistration(config)
-      expect(spyOnLoad).toHaveBeenCalled()
+      expect(spyOnLoad).toHaveBeenCalledTimes(1)
       expect(appServiceRegistration.asToken).toEqual('as_token_test')
       expect(appServiceRegistration.hsToken).toEqual(
         'hsTokenTestwdakZQunWWNe3DZitAerw9aNqJ2a6HVp0sJtg7qTJWXcHnBjgN0NL'
@@ -92,7 +111,7 @@ describe('Registration', () => {
       try {
         appServiceRegistration = new AppServiceRegistration(config)
       } catch (e) {
-        expect(spyOnLoad).toHaveBeenCalled()
+        expect(spyOnLoad).toHaveBeenCalledTimes(1)
         expect(e).toBeInstanceOf(yaml.YAMLException)
         expect(appServiceRegistration).toBeUndefined()
       }
@@ -205,11 +224,12 @@ describe('Registration', () => {
   })
 
   describe('Class methods', () => {
-    const spyOnDump = jest.spyOn(yaml, 'dump')
-    const spyOnWriteFileSync = jest.spyOn(fs, 'writeFileSync')
+    let spyOnDump: jest.SpyInstance
+    let spyOnWriteFileSync: jest.SpyInstance
 
     beforeEach(() => {
-      jest.clearAllMocks()
+      spyOnDump = jest.spyOn(yaml, 'dump')
+      spyOnWriteFileSync = jest.spyOn(fs, 'writeFileSync')
     })
 
     it('createRegisterFile: should create registration.yaml file', () => {
@@ -234,8 +254,9 @@ describe('Registration', () => {
         testConfig.registration_file_path
       )
 
+      expect(spyOnDump).toHaveBeenCalledTimes(1)
       expect(spyOnDump).toHaveBeenCalledWith(expectedFileContent)
-      expect(spyOnWriteFileSync).toHaveBeenCalled()
+      expect(spyOnWriteFileSync).toHaveBeenCalledTimes(1)
       expect(fs.existsSync(testConfig.registration_file_path)).toEqual(true)
       fs.unlinkSync(testConfig.registration_file_path)
     })
@@ -268,6 +289,7 @@ describe('Registration', () => {
         namespaces: appServiceRegistration.namespaces
       }
 
+      expect(spyOnInfo).toHaveBeenCalledTimes(1)
       expect(spyOnInfo).toHaveBeenCalledWith(
         'Application service registration file already exists'
       )
