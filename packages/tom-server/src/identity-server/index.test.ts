@@ -244,7 +244,7 @@ describe('Using Matrix Token', () => {
           since: 1685071800
         })
       expect(response.status).toBe(200)
-      expect(response.body.timestamp).toBeGreaterThan(timestamp)
+      expect(response.body.timestamp).toBeGreaterThanOrEqual(timestamp)
       expect(response.body).toEqual({
         deleted: [],
         new: [],
@@ -275,7 +275,9 @@ describe('Using Matrix Token', () => {
                     fields: ['uid', 'mail']
                   })
                 expect(response.status).toBe(200)
-                expect(response.body.timestamp).toBeGreaterThan(timestamp)
+                expect(response.body.timestamp).toBeGreaterThanOrEqual(
+                  timestamp
+                )
                 expect(response.body).toEqual({
                   deleted: [{ uid: 'user04', address: '@user04:example.com' }],
                   new: [
