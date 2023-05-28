@@ -24,12 +24,16 @@ const updateHashes = (idServer: MatrixIdentityServer): Promise<void> => {
       const matrixDb = new MatrixDB(conf)
       await matrixDb.ready
       const entries = await matrixDb.getAll('users', ['name']).catch((e) => {
-        /* istanbul ignore next */
-        console.error('Unable to query Matrix DB', e)
+        /* istanbul ignore if */
+        if (/relation "users" does not exist/.test(e)) {
+          console.log('Matrix DB seems not ready')
+        } else {
+          console.error('Unable to query Matrix DB', e)
+        }
       })
       matrixDb.close()
       /* istanbul ignore if */
-      if (entries == null) {
+      if (entries == null || entries.length === 0) {
         return rows
       }
       const names: string[] = []
