@@ -92,6 +92,7 @@ const updateUsers = async (idServer: MatrixIdentityServer): Promise<void> => {
         phone: user.mobile as string,
         active
       }
+      console.log(`New user detected: ${user.uid as string}, status:`, active)
       // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
     } else if (matrixUsers.includes(uid) && !knownActiveUsers[pos]) {
       updates.push(
@@ -102,6 +103,7 @@ const updateUsers = async (idServer: MatrixIdentityServer): Promise<void> => {
           active: 1
         })
       )
+      console.log(`User ${user.uid as string} becomes active`)
     }
   })
 
