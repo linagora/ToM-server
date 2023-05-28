@@ -113,6 +113,7 @@ const updateUsers = async (idServer: MatrixIdentityServer): Promise<void> => {
   const uids = users.map((user) => user.uid)
 
   const setInactive = async (address: string): Promise<void> => {
+    console.log(`User ${address} becomes inactive`)
     const res = await idServer.db.get(
       'userHistory',
       ['active'],
