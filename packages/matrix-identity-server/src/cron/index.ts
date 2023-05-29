@@ -3,93 +3,144 @@
  */
 
 import cron, { type ScheduledTask } from 'node-cron'
-import type MatrixIdentityServer from '..'
+import { type Config } from '../types'
+import type IdentityServerDb from '../db'
+import checkQuota from './check-quota'
 import updateHashes from './changePepper'
 import updateUsers from './updateUsers'
+import type MatrixIdentityServer from '..'
 
-const cronOpts = {
-  timezone: 'GMT'
-}
-
-// eslint-disable-next-line @typescript-eslint/promise-function-async
 class CronTasks {
   tasks: ScheduledTask[]
   ready: Promise<void>
+  readonly options: Record<string, string | number> = { timezone: 'GMT' }
+
   constructor(idServer: MatrixIdentityServer) {
     const conf = idServer.conf
-    const db = idServer.db
-    // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
-    if (!conf.pepperCron) conf.pepperCron = '0 0 * * *'
-    // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
-    if (!conf.update_users_cron) conf.update_users_cron = '*/10 * * * *'
-    /* istanbul ignore if */
-    if (!cron.validate(conf.pepperCron))
-      throw new Error(`Invalid cron line: ${conf.pepperCron}`)
-    /* istanbul ignore if */
-    if (!cron.validate(conf.update_users_cron))
-      throw new Error(`Invalid cron line: ${conf.update_users_cron}`)
+
     this.tasks = []
-    this.ready = new Promise((resolve, reject) => {
-      /* istanbul ignore else */
-      if (conf.cron_service) {
-        db.getCount('hashes', 'hash')
-          .then((count) => {
-            const sub = (): void => {
-              this.tasks.push(
-                cron.schedule(
-                  conf.pepperCron as string,
-                  () => {
-                    /* istanbul ignore next */
-                    updateHashes(idServer)
-                      /* istanbul ignore next */
-                      .catch((e) => {
-                        /* istanbul ignore next */
-                        console.error('Pepper update failed', e)
-                      })
-                  },
-                  cronOpts
-                )
-              )
-              this.tasks.push(
-                cron.schedule(
-                  conf.update_users_cron as string,
-                  () => {
-                    updateUsers(idServer)
-                      /* istanbul ignore next */
-                      .catch((e) => {
-                        /* istanbul ignore next */
-                        console.error('updateUsers failed', e)
-                      })
-                  },
-                  cronOpts
-                )
-              )
-              resolve()
-            }
-            if (count !== 0) {
-              /* istanbul ignore next */
-              sub()
-            } else {
-              updateHashes(idServer)
-                .then(() => {
-                  sub()
-                })
-                /* istanbul ignore next */
-                .catch(reject)
-            }
-          })
-          /* istanbul ignore next */
-          .catch(reject)
-      } else {
-        resolve()
-      }
-    })
+    this.ready = this.init(conf, idServer)
   }
 
   stop(): void {
     this.tasks.forEach((task) => {
       task.stop()
     })
+  }
+
+  /**
+   * Initializes the cron tasks
+   *
+   * @param {Config} conf - the config
+   * @param {MatrixIdentityServer} idServer - the identity server db
+   */
+  private readonly init = async (
+    conf: Config,
+    idServer: MatrixIdentityServer
+  ): Promise<void> => {
+    try {
+      if (!conf.cron_service) return
+
+      await Promise.all([
+        this._addUpdateHashesJob(conf, idServer),
+        this._addCheckUserQuotaJob(conf, idServer.db)
+      ])
+
+      return
+    } catch (error) {
+      throw Error('Failed to initialize cron tasks')
+    }
+  }
+
+  /**
+   * Update the hashes job.
+   *
+   * @param {Config} conf - the configuration
+   * @param {MatrixIdentityServer} idServer - the matrix identity server instance.
+   */
+  private readonly _addUpdateHashesJob = async (
+    conf: Config,
+    idServer: MatrixIdentityServer
+  ): Promise<void> => {
+    const cronString: string = conf.update_users_cron ?? '0 0 0 * * *'
+    const pepperCron: string = conf.pepperCron ?? '0 0 0 * * *'
+
+    if (!cron.validate(cronString)) {
+      throw new Error(`Invalid cron line: ${cronString}`)
+    }
+
+    if (!cron.validate(pepperCron)) {
+      throw new Error(`Invalid cron line: ${pepperCron}`)
+    }
+
+    const _addJob = (): void => {
+      const updateHashesTask = cron.schedule(
+        pepperCron,
+        () => {
+          updateHashes(idServer).catch((e) => {
+            console.error('Pepper update failed', e)
+          })
+        },
+        this.options
+      )
+
+      const updateUsersTask = cron.schedule(
+        cronString,
+        () => {
+          updateUsers(idServer).catch((e) => {
+            console.error('Users update failed', e)
+          })
+        },
+        this.options
+      )
+
+      this.tasks.push(updateHashesTask)
+      this.tasks.push(updateUsersTask)
+    }
+
+    try {
+      if (!conf.cron_service) return
+
+      const count = await idServer.db.getCount('hashes', 'hash')
+
+      if (count > 0) {
+        _addJob()
+      } else {
+        await updateHashes(idServer)
+        _addJob()
+      }
+    } catch (error) {
+      throw Error('Failed to add update hashes job')
+    }
+  }
+
+  /**
+   * Adds the check user quota job
+   *
+   * @param {Config} conf - the configuration
+   * @param {IdentityServerDb} db - the identity server db instance
+   */
+  private readonly _addCheckUserQuotaJob = async (
+    conf: Config,
+    db: IdentityServerDb
+  ): Promise<void> => {
+    const cronString = conf.check_quota_cron ?? '0 0 0 * * *'
+
+    if (!cron.validate(cronString)) {
+      throw new Error(`Invalid cron line: ${cronString}`)
+    }
+
+    const task = cron.schedule(
+      cronString,
+      () => {
+        checkQuota(conf, db).catch((e) => {
+          console.error('User quota check failed', e)
+        })
+      },
+      this.options
+    )
+
+    this.tasks.push(task)
   }
 }
 
