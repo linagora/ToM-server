@@ -23,7 +23,8 @@ const tables: Record<Collections, string> = {
     'id varchar(64) PRIMARY KEY, authorId varchar(64), content text, targetId varchar(64)',
   roomTags:
     'id varchar(64) PRIMARY KEY, authorId varchar(64), content text, roomId varchar(64)',
-  userHistory: 'address text PRIMARY KEY, active integer, timestamp integer'
+  userHistory: 'address text PRIMARY KEY, active integer, timestamp integer',
+  userQuotas: 'user_id varchar(64) PRIMARY KEY, size int'
 }
 
 const indexes: Partial<Record<Collections, string[]>> = {

@@ -15,6 +15,7 @@ export type Collections =
   | 'privateNotes'
   | 'roomTags'
   | 'userHistory'
+  | 'userQuotas'
 
 const cleanByExpires: Collections[] = ['oneTimeTokens', 'attempts']
 

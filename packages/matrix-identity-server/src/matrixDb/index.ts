@@ -2,7 +2,11 @@ import { type DbGetResult, type Config } from '../types'
 import MatrixDBPg from './sql/pg'
 import MatrixDBSQLite from './sql/sqlite'
 
-type Collections = 'users' | 'room_memberships' | 'room_stats_state'
+type Collections =
+  | 'users'
+  | 'room_memberships'
+  | 'room_stats_state'
+  | 'local_media_repository'
 
 type Get = (
   table: Collections,
