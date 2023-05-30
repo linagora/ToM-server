@@ -22,6 +22,15 @@ const matrixIdentityServerApiPath = path.join(
   'api-doc.ts'
 )
 
+const matrixApplicationServerApiPath = path.join(
+  __dirname,
+  '..',
+  'packages',
+  'matrix-application-server',
+  'src',
+  'api-doc.ts'
+)
+
 const identityServerApiPath = path.join(
   __dirname,
   '..',
@@ -103,7 +112,7 @@ const options = {
               schema: {
                 type: 'object',
                 properties: {
-                  errorCode: {
+                  errcode: {
                     type: 'string',
                     description: 'A Matrix error code'
                   },
@@ -114,8 +123,64 @@ const options = {
                 }
               },
               example: {
-                errorCode: 'M_MISSING_PARAMS',
+                errcode: 'M_MISSING_PARAMS',
                 error: 'Properties are missing in the request body'
+              }
+            }
+          }
+        },
+        Forbidden: {
+          description: 'Forbidden',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  errcode: {
+                    type: 'string',
+                    description: 'A Matrix error code'
+                  },
+                  error: {
+                    type: 'string',
+                    description: 'A human-readable error message'
+                  }
+                }
+              },
+              example: {
+                errcode: 'M_FORBIDDEN',
+                error: 'Forbidden'
+              }
+            }
+          }
+        },
+        PermanentRedirect: {
+          description: 'Permanent Redirect',
+          headers: {
+            Location: {
+              schema: {
+                type: 'string',
+                description: 'URL to use for recdirect'
+              }
+            }
+          },
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  errcode: {
+                    type: 'string',
+                    description: 'A Matrix error code'
+                  },
+                  error: {
+                    type: 'string',
+                    description: 'A human-readable error message'
+                  }
+                }
+              },
+              example: {
+                errcode: 'M_UNKNOWN',
+                error: 'This non-standard endpoint has been removed'
               }
             }
           }
@@ -133,7 +198,8 @@ const options = {
     identityServerApiPath,
     vaultApiPath,
     metadataApiPath,
-    '**/routes/*.ts'
+    '**/routes/*.ts',
+    matrixApplicationServerApiPath
   ]
 }
 

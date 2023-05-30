@@ -1,6 +1,6 @@
 import { type DbGetResult, type Config } from '../types'
 import { epoch } from '../utils'
-import { randomString } from '../utils/tokenUtils'
+import { randomString } from '@twake/crypto'
 import Pg from './sql/pg'
 import Sqlite from './sql/sqlite'
 

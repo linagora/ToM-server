@@ -1,4 +1,4 @@
-import { Hash } from './index'
+import { Hash, randomString } from './index'
 
 const sha256Results: Record<string, string> = {
   'alice@example.com email matrixrocks':
@@ -33,4 +33,9 @@ describe('Hash methods', () => {
       })
       .catch((e) => done(e))
   })
+})
+
+test('randomString', () => {
+  const res = randomString(64)
+  expect(res).toMatch(/^[a-zA-Z0-9]{64}$/)
 })

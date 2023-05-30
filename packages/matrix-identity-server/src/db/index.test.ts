@@ -1,5 +1,5 @@
 import IdDb from './index'
-import { randomString } from '../utils/tokenUtils'
+import { randomString } from '@twake/crypto'
 import fs from 'fs'
 import { type Config } from '../types'
 

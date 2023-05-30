@@ -4,7 +4,7 @@
 
 import { type DbGetResult } from '../types'
 import type MatrixIdentityServer from '..'
-import { randomString } from '../utils/tokenUtils'
+import { randomString } from '@twake/crypto'
 import MatrixDB from '../matrixDb'
 import updateHash, { type UpdatableFields } from '../lookup/updateHash'
 
