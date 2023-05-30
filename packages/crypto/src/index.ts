@@ -40,10 +40,7 @@ export class Hash {
 }
 
 export const randomChar = (): string => {
-  let n = Math.floor(Math.random() * 62) + 48
-  if (n > 57) n += 7
-  if (n > 90) n += 6
-  return String.fromCharCode(n)
+  return Math.random().toString(36).slice(-1)
 }
 
 export const randomString = (n: number): string => {
