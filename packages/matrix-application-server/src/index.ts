@@ -1,23 +1,9 @@
-import { transaction, query } from './controllers'
-import { Router, json, urlencoded } from 'express'
 import fs from 'fs'
 import configParser, { type ConfigDescription } from '@twake/config-parser'
 import defaultConfDesc from './config.json'
-import {
-  allowCors,
-  AppServiceRegistration,
-  errorMiddleware,
-  legacyEndpointHandler,
-  methodNotAllowed,
-  Endpoints,
-  type expressAppHandlerError,
-  type expressAppHandler,
-  type Namespaces
-} from './utils'
-import auth from './middlewares/auth'
-import validation from './middlewares/validation'
-import { type ValidationChain } from 'express-validator'
+import { AppServiceRegistration, type Namespaces } from './utils'
 import { EventEmitter } from 'events'
+import MASRouter from './routes'
 
 export interface Config {
   base_url: string
@@ -55,7 +41,7 @@ export declare interface AppService {
 }
 
 export default class MatrixApplicationServer extends EventEmitter {
-  endpoints: Router
+  router: MASRouter
   conf: Config
   appServiceRegistration: AppServiceRegistration
   lastProcessedTxnId = ''
@@ -77,49 +63,7 @@ export default class MatrixApplicationServer extends EventEmitter {
     this.appServiceRegistration.createRegisterFile(
       this.conf.registration_file_path
     )
-    this.endpoints = Router()
-    this.endpoints
-      .route('/_matrix/app/v1/transactions/:txnId')
-      .put(
-        this._middlewares(transaction(this), validation(Endpoints.TRANSACTIONS))
-      )
-      .all(allowCors, methodNotAllowed, errorMiddleware)
-
-    this.endpoints
-      .route('/_matrix/app/v1/users/:userId')
-      .get(this._middlewares(query, validation(Endpoints.USERS)))
-      .all(allowCors, methodNotAllowed, errorMiddleware)
-
-    this.endpoints
-      .route('/_matrix/app/v1/rooms/:roomAlias')
-      .get(this._middlewares(query, validation(Endpoints.ROOMS)))
-      .all(allowCors, methodNotAllowed, errorMiddleware)
-
-    this.endpoints.all(
-      /^\/users|rooms|transactions\/:[a-zA-Z0-9]/g,
-      legacyEndpointHandler
-    )
-  }
-
-  /**
-   * Get an array of middlewares that the request should go through
-   * @param {string} endpoint Request resource endpoint
-   * @return {Array<expressAppHandler | expressAppHandlerError | ValidationChain>} Array of middlewares
-   */
-  protected _middlewares(
-    controller: expressAppHandler,
-    validators: ValidationChain[],
-    authMiddleware = auth(this.appServiceRegistration.hsToken)
-  ): Array<expressAppHandler | expressAppHandlerError | ValidationChain> {
-    return [
-      allowCors,
-      json(),
-      urlencoded({ extended: false }),
-      authMiddleware,
-      ...validators,
-      controller,
-      errorMiddleware
-    ]
+    this.router = new MASRouter(this)
   }
 
   /**

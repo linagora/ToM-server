@@ -69,7 +69,7 @@ describe('MatrixApplicationServer', () => {
     beforeAll(() => {
       app = express()
       appServer = new MatrixApplicationServer(testConfig)
-      app.use(appServer.endpoints)
+      app.use(appServer.router.routes)
     })
 
     it('reject unimplemented endpoint with 404', async () => {

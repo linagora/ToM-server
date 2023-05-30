@@ -22,15 +22,6 @@ const matrixIdentityServerApiPath = path.join(
   'api-doc.ts'
 )
 
-const matrixApplicationServerApiPath = path.join(
-  __dirname,
-  '..',
-  'packages',
-  'matrix-application-server',
-  'src',
-  'api-doc.ts'
-)
-
 const identityServerApiPath = path.join(
   __dirname,
   '..',
@@ -222,8 +213,7 @@ const options = {
     identityServerApiPath,
     vaultApiPath,
     metadataApiPath,
-    '**/routes/*.ts',
-    matrixApplicationServerApiPath
+    '**/routes/*.ts'
   ]
 }
 

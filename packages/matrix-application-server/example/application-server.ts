@@ -3,7 +3,7 @@ import express from 'express'
 import MatrixApplicationServer from '@twake/matrix-application-server'
 
 const appServer = new MatrixApplicationServer({
-  application_server_url: 'https://localhost:3000',
+  base_url: 'https://localhost:3000',
   sender_localpart: 'foobot',
   registration_file_path: 'registration.yaml',
   namespaces: {}
@@ -11,7 +11,7 @@ const appServer = new MatrixApplicationServer({
 
 const app = express()
 
-app.use(appServer.endpoints)
+app.use(appServer.router.routes)
 
 const port = process.argv[2] != null ? parseInt(process.argv[2]) : 3000
 console.log(`Listening on port ${port}`)

@@ -23,7 +23,7 @@ const appServer = new AppServer(config)
 
 const app = express()
 
-app.use(appServer.endpoints)
+app.use(appServer.router.routes)
 app.listen(3000)
 ```
 
