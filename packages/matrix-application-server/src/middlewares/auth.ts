@@ -1,6 +1,5 @@
 import { type NextFunction, type Request, type Response } from 'express'
-import { type expressAppHandler } from '../utils'
-import { AppServerAPIError, ErrCodes } from '../errors'
+import { AppServerAPIError, ErrCodes, type expressAppHandler } from '../utils'
 
 export default (expectedHomeserverToken: string): expressAppHandler => {
   return (req: Request, res: Response, next: NextFunction) => {
@@ -11,6 +10,11 @@ export default (expectedHomeserverToken: string): expressAppHandler => {
       if (re != null) {
         token = re[1]
       }
+    } else {
+      throw new AppServerAPIError({
+        status: 401,
+        code: ErrCodes.M_UNAUTHORIZED
+      })
     }
     if (expectedHomeserverToken === token) {
       next()

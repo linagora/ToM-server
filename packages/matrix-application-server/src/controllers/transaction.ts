@@ -1,10 +1,13 @@
 import type MatrixApplicationServer from '..'
-import { AppServerAPIError } from '../errors'
+import { AppServerAPIError, type expressAppHandler } from '../utils'
 import { type ClientEvent, type TransactionRequestBody } from '../interfaces'
-import { type AppServerController } from './utils'
 import { validationResult, type ValidationError } from 'express-validator'
 
-const transaction: AppServerController = (
+export type TransactionController = (
+  appServer: MatrixApplicationServer
+) => expressAppHandler
+
+export const transaction: TransactionController = (
   appServer: MatrixApplicationServer
 ) => {
   return (req, res, next) => {
@@ -30,18 +33,18 @@ const transaction: AppServerController = (
       res.send()
       return
     }
-    // We check that the event is not a message event but a state event (event which update metadata of a room like topic, name, members, ...)
-    events
-      .filter((event: ClientEvent) => event.state_key != null)
-      .forEach((event: ClientEvent) => {
-        switch (event.type) {
-          default:
-            break
-        }
-      })
+    events.forEach((event: ClientEvent) => {
+      // We check that the event is not a message event but a state event (event which update metadata of a room like topic, name, members, ...)
+      if (event.state_key != null) {
+        appServer.emit(
+          `type: ${event.type} | state_key: ${event.state_key}`,
+          event
+        )
+      } else {
+        appServer.emit(`type: ${event.type}`, event)
+      }
+    })
     appServer.lastProcessedTxnId = txnId
     res.send()
   }
 }
-
-export default transaction

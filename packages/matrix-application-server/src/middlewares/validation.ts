@@ -10,6 +10,12 @@ export default (endpointId: string): ValidationChain[] => {
         body('events').exists().isArray()
       ]
       break
+    case Endpoints.USERS:
+      validators = [param('userId').exists().isString()]
+      break
+    case Endpoints.ROOMS:
+      validators = [param('roomAlias').exists().isString()]
+      break
     default:
       break
   }

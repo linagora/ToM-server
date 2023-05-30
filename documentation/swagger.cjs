@@ -22,15 +22,6 @@ const matrixIdentityServerApiPath = path.join(
   'api-doc.ts'
 )
 
-const matrixApplicationServerApiPath = path.join(
-  __dirname,
-  '..',
-  'packages',
-  'matrix-application-server',
-  'src',
-  'api-doc.ts'
-)
-
 const identityServerApiPath = path.join(
   __dirname,
   '..',
@@ -81,6 +72,30 @@ const options = {
                     description: 'The message describing the internal error'
                   }
                 }
+              }
+            }
+          }
+        },
+        MatrixUnauthorized: {
+          description: 'Unauthorized',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  errcode: {
+                    type: 'string',
+                    description: 'A Matrix error code'
+                  },
+                  error: {
+                    type: 'string',
+                    description: 'A human-readable error message'
+                  }
+                }
+              },
+              example: {
+                errcode: 'M_UNAUTHORIZED',
+                error: 'Unauthorized'
               }
             }
           }
@@ -198,8 +213,7 @@ const options = {
     identityServerApiPath,
     vaultApiPath,
     metadataApiPath,
-    '**/routes/*.ts',
-    matrixApplicationServerApiPath
+    '**/routes/*.ts'
   ]
 }
 

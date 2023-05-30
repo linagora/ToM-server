@@ -1,32 +1,47 @@
-import {
-  allowCors,
-  type expressAppHandlerError,
-  type expressAppHandler,
-  legacyEndpointHandler,
-  methodNotAllowed,
-  Endpoints
-} from './utils'
-import transaction from './controllers/transaction'
-import { Router, json, urlencoded } from 'express'
-import { type AppServerController } from './controllers/utils'
-import { errorMiddleware } from './errors'
 import fs from 'fs'
 import configParser, { type ConfigDescription } from '@twake/config-parser'
 import defaultConfDesc from './config.json'
-import AppServiceRegistration, { type Namespaces } from './utils/registration'
-import auth from './middlewares/auth'
-import validation from './middlewares/validation'
-import { type ValidationChain } from 'express-validator'
+import { AppServiceRegistration, type Namespaces } from './utils'
+import { EventEmitter } from 'events'
+import MASRouter from './routes'
 
 export interface Config {
-  application_server_url: string
-  sender_localpart: string
+  base_url: string
+  sender_localpart?: string
   registration_file_path: string
-  namespaces: Namespaces
+  namespaces?: Namespaces
 }
 
-export default class MatrixApplicationServer {
-  endpoints: Router
+export declare interface AppService {
+  /**
+   * Emitted when an event is pushed to the appservice.
+   * The format of the event object is documented at
+   * https://matrix.org/docs/spec/application_service/r0.1.2#put-matrix-app-v1-transactions-txnid
+   * @event
+   * @example
+   * appService.on("event", function(ev) {
+   *   console.log("ID: %s", ev.event_id);
+   * });
+   */
+  // eslint-disable-next-line @typescript-eslint/method-signature-style
+  on(event: 'event', cb: (event: Record<string, unknown>) => void): this
+  /**
+   * Emitted when an event of a particular type is pushed
+   * to the appservice. This will be emitted *in addition*
+   * to "event"
+   * @event
+   * @param event Should start with "type:"
+   * @example
+   * appService.on("type:m.room.message", function(event) {
+   *   console.log("ID: %s", ev.content.body);
+   * });
+   */
+  // eslint-disable-next-line @typescript-eslint/method-signature-style
+  on(event: string, cb: (event: Record<string, unknown>) => void): this
+}
+
+export default class MatrixApplicationServer extends EventEmitter {
+  router: MASRouter
   conf: Config
   appServiceRegistration: AppServiceRegistration
   lastProcessedTxnId = ''
@@ -38,6 +53,7 @@ export default class MatrixApplicationServer {
    * @param {ConfigDescription} confDesc The default configuration object
    */
   constructor(conf?: Partial<Config>, confDesc?: ConfigDescription) {
+    super()
     if (confDesc == null) confDesc = defaultConfDesc as ConfigDescription
     this.conf = configParser(
       confDesc,
@@ -47,36 +63,7 @@ export default class MatrixApplicationServer {
     this.appServiceRegistration.createRegisterFile(
       this.conf.registration_file_path
     )
-    this.endpoints = Router()
-    this.endpoints
-      .route('/_matrix/app/v1/transactions/:txnId')
-      .put(this._middlewares(transaction, Endpoints.TRANSACTIONS))
-      .all(allowCors, methodNotAllowed, errorMiddleware)
-
-    this.endpoints.all(
-      /^\/users|rooms|transactions\/:[a-zA-Z0-9]/g,
-      legacyEndpointHandler
-    )
-  }
-
-  /**
-   * Get an array of middlewares that the request should go through
-   * @param {AppServerController} controller Endpoint main middleware
-   * @return {Array<expressAppHandler | expressAppHandlerError>} Array of middlewares
-   */
-  private _middlewares(
-    controller: AppServerController,
-    endpoint: string
-  ): Array<expressAppHandler | expressAppHandlerError | ValidationChain> {
-    return [
-      allowCors,
-      json(),
-      urlencoded({ extended: false }),
-      auth(this.appServiceRegistration.hsToken),
-      ...validation(endpoint),
-      controller(this),
-      errorMiddleware
-    ]
+    this.router = new MASRouter(this)
   }
 
   /**

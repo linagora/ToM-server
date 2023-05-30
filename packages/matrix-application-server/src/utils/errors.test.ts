@@ -8,14 +8,15 @@ import {
 
 describe('Errors', () => {
   let mockRequest: Partial<Request>
-  const mockResponse: Partial<Response> = {
-    status: jest.fn(),
-    json: jest.fn()
-  }
-  const nextFunction: NextFunction = jest.fn()
+  let mockResponse: Partial<Response>
+  let nextFunction: NextFunction
 
   beforeEach(() => {
-    jest.clearAllMocks()
+    mockResponse = {
+      status: jest.fn(),
+      json: jest.fn()
+    }
+    nextFunction = jest.fn()
   })
 
   it('should send a response containing the custom catched error message', async () => {
@@ -26,7 +27,9 @@ describe('Errors', () => {
       mockResponse as Response,
       nextFunction
     )
+    expect(mockResponse.status).toHaveBeenCalledTimes(1)
     expect(mockResponse.status).toHaveBeenCalledWith(500)
+    expect(mockResponse.json).toHaveBeenCalledTimes(1)
     expect(mockResponse.json).toHaveBeenCalledWith({ error: errorMsg })
   })
 
@@ -41,7 +44,9 @@ describe('Errors', () => {
       mockResponse as Response,
       nextFunction
     )
+    expect(mockResponse.status).toHaveBeenCalledTimes(1)
     expect(mockResponse.status).toHaveBeenCalledWith(404)
+    expect(mockResponse.json).toHaveBeenCalledTimes(1)
     expect(mockResponse.json).toHaveBeenCalledWith({
       error: error.message,
       errcode: error.errcode
@@ -56,7 +61,9 @@ describe('Errors', () => {
       mockResponse as Response,
       nextFunction
     )
+    expect(mockResponse.status).toHaveBeenCalledTimes(1)
     expect(mockResponse.status).toHaveBeenCalledWith(500)
+    expect(mockResponse.json).toHaveBeenCalledTimes(1)
     expect(mockResponse.json).toHaveBeenCalledWith({
       error: defaultErrorMsg
     })

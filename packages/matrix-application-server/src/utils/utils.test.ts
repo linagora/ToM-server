@@ -4,24 +4,25 @@ import { AppServerAPIError, ErrCodes } from './errors'
 
 describe('Utils methods', () => {
   let mockRequest: Partial<Request>
-  const mockResponse: Partial<Response> = {
-    setHeader: jest.fn().mockImplementation(() => {
-      return mockResponse
-    }),
-    status: jest.fn().mockImplementation(() => {
-      return mockResponse
-    }),
-    json: jest.fn().mockImplementation(() => {
-      return mockResponse
-    }),
-    location: jest.fn().mockImplementation(() => {
-      return mockResponse
-    })
-  }
-  const nextFunction: NextFunction = jest.fn()
+  let mockResponse: Partial<Response>
+  let nextFunction: NextFunction
 
   beforeEach(() => {
-    jest.clearAllMocks()
+    mockResponse = {
+      setHeader: jest.fn().mockImplementation(() => {
+        return mockResponse
+      }),
+      status: jest.fn().mockImplementation(() => {
+        return mockResponse
+      }),
+      json: jest.fn().mockImplementation(() => {
+        return mockResponse
+      }),
+      location: jest.fn().mockImplementation(() => {
+        return mockResponse
+      })
+    }
+    nextFunction = jest.fn()
     mockRequest = {}
   })
 
@@ -40,15 +41,18 @@ describe('Utils methods', () => {
   it('allowCors: should set header in response to avoid CORS error', async () => {
     allowCors(mockRequest as Request, mockResponse as Response, nextFunction)
     expect(mockResponse.setHeader).toHaveBeenCalledTimes(3)
-    expect(mockResponse.setHeader).toHaveBeenCalledWith(
+    expect(mockResponse.setHeader).toHaveBeenNthCalledWith(
+      1,
       'Access-Control-Allow-Origin',
       '*'
     )
-    expect(mockResponse.setHeader).toHaveBeenCalledWith(
+    expect(mockResponse.setHeader).toHaveBeenNthCalledWith(
+      2,
       'Access-Control-Allow-Methods',
       'GET, POST, PUT, DELETE, OPTIONS'
     )
-    expect(mockResponse.setHeader).toHaveBeenCalledWith(
+    expect(mockResponse.setHeader).toHaveBeenNthCalledWith(
+      3,
       'Access-Control-Allow-Headers',
       'Origin, X-Requested-With, Content-Type, Accept, Authorization'
     )
@@ -64,10 +68,13 @@ describe('Utils methods', () => {
       mockResponse as Response,
       nextFunction
     )
+    expect(mockResponse.status).toHaveBeenCalledTimes(1)
     expect(mockResponse.status).toHaveBeenCalledWith(308)
+    expect(mockResponse.location).toHaveBeenCalledTimes(1)
     expect(mockResponse.location).toHaveBeenCalledWith(
       `/_matrix/app/v1${mockRequest.originalUrl as string}`
     )
+    expect(mockResponse.json).toHaveBeenCalledTimes(1)
     expect(mockResponse.json).toHaveBeenCalledWith({
       errcode: ErrCodes.M_UNKNOWN,
       error: 'This non-standard endpoint has been removed'

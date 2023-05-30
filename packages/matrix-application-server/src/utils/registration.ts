@@ -25,7 +25,7 @@ export interface AppServiceOutput {
   url: string
 }
 
-class AppServiceRegistration {
+export class AppServiceRegistration {
   asToken: string
   hsToken: string
   id: string
@@ -53,9 +53,9 @@ class AppServiceRegistration {
         as_token: randomString(64),
         hs_token: randomString(64),
         id: randomString(64), // Maybe this id should be part of config file
-        sender_localpart: conf.sender_localpart,
-        url: conf.application_server_url,
-        namespaces: conf.namespaces
+        sender_localpart: conf.sender_localpart ?? '',
+        url: conf.base_url,
+        namespaces: conf.namespaces ?? {}
       }
     }
     this.asToken = appServiceConfig.as_token
@@ -259,5 +259,3 @@ class AppServiceRegistration {
     return false
   }
 }
-
-export default AppServiceRegistration

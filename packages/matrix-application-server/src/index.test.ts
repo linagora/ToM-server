@@ -17,7 +17,6 @@ describe('MatrixApplicationServer', () => {
 
   describe('getConfigurationFile', () => {
     afterEach(() => {
-      jest.restoreAllMocks()
       if (fs.existsSync(registrationFilePath)) {
         fs.unlinkSync(registrationFilePath)
       }
@@ -45,6 +44,7 @@ describe('MatrixApplicationServer', () => {
         .spyOn(jest.requireActual('@twake/config-parser'), 'default')
         .mockImplementation(() => defaultConfig)
       appServer = new MatrixApplicationServer()
+      expect(spyOnConfigParser).toHaveBeenCalledTimes(1)
       expect(spyOnConfigParser).toHaveBeenCalledWith(
         defaultConfig,
         '/etc/twake/as-server.conf'
@@ -53,7 +53,7 @@ describe('MatrixApplicationServer', () => {
 
     it('should return config from parameter', async () => {
       const config: Config = {
-        application_server_url: 'http://localhost:8080',
+        base_url: 'http://localhost:8080',
         sender_localpart: 'matrix',
         registration_file_path: 'registration.yaml',
         namespaces: { users: [] }
@@ -69,11 +69,7 @@ describe('MatrixApplicationServer', () => {
     beforeAll(() => {
       app = express()
       appServer = new MatrixApplicationServer(testConfig)
-      app.use(appServer.endpoints)
-    })
-
-    beforeEach(() => {
-      jest.clearAllMocks()
+      app.use(appServer.router.routes)
     })
 
     it('reject unimplemented endpoint with 404', async () => {
@@ -90,6 +86,15 @@ describe('MatrixApplicationServer', () => {
         error: 'This non-standard endpoint has been removed'
       })
       expect(response.get('Location')).toEqual(endpointPrefix + testEndpoint)
+    })
+
+    it('error on request without authorization header', async () => {
+      const response = await request(app).put(transactionEndpoint)
+      expect(response.statusCode).toBe(401)
+      expect(response.body).toStrictEqual({
+        errcode: 'M_UNAUTHORIZED',
+        error: 'Unauthorized'
+      })
     })
 
     it('error on request with invalid token', async () => {
@@ -164,6 +169,50 @@ describe('MatrixApplicationServer', () => {
         expect(response.body).toEqual({
           error: 'Error field: Invalid value (property: events)'
         })
+      })
+    })
+
+    describe('Users endpoint', () => {
+      const userEndpoint = endpointPrefix + '/users/1'
+
+      it('reject not allowed method with 405', async () => {
+        const response = await request(app).put(userEndpoint)
+        expect(response.statusCode).toBe(405)
+        expect(response.body).toStrictEqual({
+          errcode: 'M_UNRECOGNIZED',
+          error: 'Unrecognized'
+        })
+      })
+
+      it('should send a response with 200', async () => {
+        const response = await request(app)
+          .get(userEndpoint)
+          .set('Authorization', `Bearer ${homeserverToken}`)
+          .send()
+        expect(response.statusCode).toBe(200)
+        expect(response.body).toEqual({})
+      })
+    })
+
+    describe('Rooms endpoint', () => {
+      const roomEndpoint = endpointPrefix + '/rooms/1'
+
+      it('reject not allowed method with 405', async () => {
+        const response = await request(app).put(roomEndpoint)
+        expect(response.statusCode).toBe(405)
+        expect(response.body).toStrictEqual({
+          errcode: 'M_UNRECOGNIZED',
+          error: 'Unrecognized'
+        })
+      })
+
+      it('should send a response with 200', async () => {
+        const response = await request(app)
+          .get(roomEndpoint)
+          .set('Authorization', `Bearer ${homeserverToken}`)
+          .send()
+        expect(response.statusCode).toBe(200)
+        expect(response.body).toEqual({})
       })
     })
   })

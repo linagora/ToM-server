@@ -1,6 +1,6 @@
 {
     "registration_file_path": "src/__testData__/registration.yaml",
-    "application_server_url": "http://localhost:3000",
+    "base_url": "http://localhost:3000",
     "sender_localpart": "sender_localpart_test",
     "namespaces": {
       "users": [

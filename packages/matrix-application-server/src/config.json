@@ -1,5 +1,5 @@
 {
-    "application_server_url": "http://localhost:3000",
+    "base_url": "http://localhost:3000",
     "sender_localpart": "twake",
     "registration_file_path": "registration.yaml",
     "namespaces": { "users": [] }

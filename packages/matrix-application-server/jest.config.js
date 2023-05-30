@@ -15,4 +15,6 @@ export default {
   moduleNameMapper: {
     "@twake/(.*)$": "<rootDir>/../$1/src",
   },
+  clearMocks: true,
+  restoreMocks: true
 }

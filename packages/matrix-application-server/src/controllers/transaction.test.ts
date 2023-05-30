@@ -1,7 +1,7 @@
 import type MatrixApplicationServer from '..'
-import { AppServerAPIError } from '../errors'
-import { type expressAppHandler } from '../utils'
-import transaction from './transaction'
+import { type ClientEvent } from '../interfaces'
+import { AppServerAPIError, type expressAppHandler } from '../utils'
+import { transaction } from './transaction'
 import { type Request, type Response, type NextFunction } from 'express'
 import { Result } from 'express-validator'
 
@@ -10,14 +10,18 @@ const lastProcessedTxnId = 'transaction_0'
 
 describe('Transaction', () => {
   let appServer: Partial<MatrixApplicationServer>
-  const spyOnFilter = jest.spyOn(Array.prototype, 'filter')
   let mockRequest: Partial<Request>
-  const mockResponse: Partial<Response> = {
-    send: jest.fn().mockImplementation(() => mockResponse)
-  }
-  const nextFunction: NextFunction = jest.fn()
+  let mockResponse: Partial<Response>
+  let nextFunction: NextFunction
+
   beforeEach(() => {
-    jest.clearAllMocks()
+    jest.spyOn(Result.prototype, 'isEmpty').mockImplementation(() => {
+      return true
+    })
+    mockResponse = {
+      send: jest.fn().mockImplementation(() => mockResponse)
+    }
+    nextFunction = jest.fn()
     mockRequest = {
       params: {
         txnId: transactionId
@@ -25,17 +29,44 @@ describe('Transaction', () => {
       body: {
         events: [
           {
-            state_key: 'test',
-            type: 'm.room.member'
+            content: {
+              avatar_url: 'mxc://example.org/SEsfnsuifSDFSSEF',
+              displayname: 'Alice Margatroid',
+              membership: 'join',
+              reason: 'Looking for support'
+            },
+            event_id: '$143273582443PhrSn:example.org',
+            origin_server_ts: 1432735824653,
+            room_id: '!jEsUZKDJdhlrceRyVU:example.org',
+            sender: '@example:example.org',
+            state_key: '@alice:example.org',
+            type: 'm.room.member',
+            unsigned: {
+              age: 1234
+            }
           },
           {
-            type: 'm.room.message'
+            content: {
+              body: 'This is an example text message',
+              format: 'org.matrix.custom.html',
+              formatted_body: '<b>This is an example text message</b>',
+              msgtype: 'm.text'
+            },
+            event_id: '$143273582443PhrSn:example.org',
+            origin_server_ts: 1432735824653,
+            room_id: '!jEsUZKDJdhlrceRyVU:example.org',
+            sender: '@example:example.org',
+            type: 'm.room.message',
+            unsigned: {
+              age: 1234
+            }
           }
         ]
       }
     }
     appServer = {
-      lastProcessedTxnId
+      lastProcessedTxnId,
+      emit: jest.fn()
     }
   })
 
@@ -44,33 +75,20 @@ describe('Transaction', () => {
       appServer as MatrixApplicationServer
     )
     handler(mockRequest as Request, mockResponse as Response, nextFunction)
-    expect(spyOnFilter).toHaveReturnedWith([
-      {
-        state_key: 'test',
-        type: 'm.room.member'
-      }
-    ])
+    expect(mockResponse.send).toHaveBeenCalledTimes(1)
     expect(mockResponse.send).toHaveBeenCalledWith()
-    expect(appServer.lastProcessedTxnId).toEqual(transactionId)
-  })
-
-  it('should browse request body events, filter should return empty array if no state events and send a response', () => {
-    mockRequest.body = {
-      events: [
-        {
-          type: 'm.room.message'
-        },
-        {
-          type: 'm.room.message'
-        }
-      ]
-    }
-    const handler: expressAppHandler = transaction(
-      appServer as MatrixApplicationServer
+    expect(appServer.emit).toHaveBeenCalledTimes(2)
+    const events: ClientEvent[] = mockRequest.body.events
+    expect(appServer.emit).toHaveBeenNthCalledWith(
+      1,
+      'type: m.room.member | state_key: @alice:example.org',
+      events[0]
     )
-    handler(mockRequest as Request, mockResponse as Response, nextFunction)
-    expect(spyOnFilter).toHaveReturnedWith([])
-    expect(mockResponse.send).toHaveBeenCalledWith()
+    expect(appServer.emit).toHaveBeenNthCalledWith(
+      2,
+      'type: m.room.message',
+      events[1]
+    )
     expect(appServer.lastProcessedTxnId).toEqual(transactionId)
   })
 
@@ -82,7 +100,7 @@ describe('Transaction', () => {
       appServer as MatrixApplicationServer
     )
     handler(mockRequest as Request, mockResponse as Response, nextFunction)
-    expect(spyOnFilter).not.toHaveBeenCalled()
+    expect(mockResponse.send).toHaveBeenCalledTimes(1)
     expect(mockResponse.send).toHaveBeenCalledWith()
     expect(appServer.lastProcessedTxnId).toEqual(lastProcessedTxnId)
   })

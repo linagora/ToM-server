@@ -12,6 +12,18 @@ describe('Validation', () => {
     )
   })
 
+  it('should return array containing param validator if it is "users" endpoint', () => {
+    expect(JSON.stringify(validation(Endpoints.USERS))).toEqual(
+      JSON.stringify([param('userId').exists().isString()])
+    )
+  })
+
+  it('should return array containing param validator if it is "rooms" endpoint', () => {
+    expect(JSON.stringify(validation(Endpoints.ROOMS))).toEqual(
+      JSON.stringify([param('aliasRoom').exists().isString()])
+    )
+  })
+
   it('should return empty array for any other endpoint', () => {
     expect(validation('falsy_endpoint')).toEqual([])
   })
