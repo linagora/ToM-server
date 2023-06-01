@@ -7,7 +7,7 @@ export default (db: IdentityServerDb, conf: Config): RequestHandler => {
   return (req: AuthRequest, res: Response, next: NextFunction): void => {
     const authenticator = Authenticate(db, conf)
 
-    authenticator(req, res, (data: tokenContent, token: string | undefined) => {
+    authenticator(req, res, (data: tokenContent, token: string | null) => {
       try {
         if (token === undefined) {
           throw new Error('Missing token')
@@ -19,7 +19,9 @@ export default (db: IdentityServerDb, conf: Config): RequestHandler => {
         }
 
         req.userId = data.sub
-        req.accessToken = token
+        if (token != null) {
+          req.accessToken = token
+        }
         next()
 
         return

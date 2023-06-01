@@ -18,7 +18,7 @@ const Authenticate = (
 ): AuthenticationFunction => {
   const tokenRe = /^Bearer (\S+)$/
   return (req, res, callback) => {
-    let token: string = ''
+    let token: string | null = null
     if (req.headers?.authorization != null) {
       const re = req.headers.authorization.match(tokenRe)
       if (re != null) {
@@ -29,7 +29,7 @@ const Authenticate = (
       // @ts-expect-error req.query.access_token may be null
       token = req.query.access_token
     }
-    if (token != null && token.length > 0) {
+    if (token != null) {
       // @ts-expect-error matrixTokens not in Collections
       db.get('matrixTokens', ['data'], { id: token })
         .then((rows) => {
