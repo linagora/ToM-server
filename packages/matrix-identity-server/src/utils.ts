@@ -51,7 +51,7 @@ export const Authenticate = (db: IdentityServerDb): AuthenticationFunction => {
       token = req.query.access_token
     }
     if (token != null) {
-      db.get('accessTokens', ['data'], 'id', token)
+      db.get('accessTokens', ['data'], { id: token })
         .then((rows) => {
           // @ts-expect-error token is defined
           callback(JSON.parse(rows[0].data as string), token)

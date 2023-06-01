@@ -28,7 +28,7 @@ export const getRecoveryWords = (db: TwakeDB): expressAppHandler => {
   return (req, res, next) => {
     const userId: string = req.token.content.sub
     // @ts-expect-error recoveryWords isn't declared in Collections
-    db.get('recoveryWords', ['words'], 'userId', userId)
+    db.get('recoveryWords', ['words'], { userId })
       .then((data) => {
         if (data.length === 0) {
           const error = new VaultAPIError('User has no recovery sentence', 404)
@@ -54,7 +54,7 @@ export const deleteRecoveryWords = (db: TwakeDB): expressAppHandler => {
     const userId: string = req.token.content.sub
 
     // @ts-expect-error recoveryWords isn't declared in Collections
-    db.get('recoveryWords', ['words'], 'userId', userId)
+    db.get('recoveryWords', ['words'], { userId })
       .then((data) => {
         if (data.length === 0) {
           const error = new VaultAPIError('User has no recovery sentence', 404)

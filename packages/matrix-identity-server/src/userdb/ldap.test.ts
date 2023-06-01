@@ -12,7 +12,8 @@ beforeAll((done) => {
       dn: req.dn.toString(),
       attributes: {
         objectclass: ['inetOrgPerson'],
-        uid: 'dwho'
+        uid: 'dwho',
+        sn: 'doctor'
       }
     }
     // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
@@ -45,16 +46,16 @@ describe('LDAP', () => {
     userDB.ready
       .then(() => {
         userDB
-          .get('', [], 'uid', 'dwho')
+          .get('', [], { uid: 'dwho', sn: ['doctor'] })
           .then((list) => {
             expect(list[0].dn).toBe('ou=users,o=example')
             // userDB.client.destroy()
             userDB
-              .get('', ['uid'], 'uid', 'dwho')
+              .get('', ['uid'], { uid: 'dwho' })
               .then((list) => {
                 expect(list[0]).toEqual({ uid: 'dwho' })
                 userDB
-                  .get('', [], 'uid', 'zz')
+                  .get('', [], { uid: 'zz' })
                   .then((list) => {
                     done()
                   })

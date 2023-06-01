@@ -78,7 +78,7 @@ const _search = (tomServer: TwakeServer): SearchFunction => {
              * See https://spec.matrix.org/v1.6/application-service-api/#get_matrixappv1usersuserid
              */
             tomServer.matrixDb
-              .get('users', ['*'], 'name', mUid)
+              .get('users', ['*'], { name: mUid })
               .then((matrixRows) => {
                 const mUids: Record<string, true> = {}
                 const matches: typeof rows = []

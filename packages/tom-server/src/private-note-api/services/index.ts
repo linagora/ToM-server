@@ -19,8 +19,7 @@ class PrivateNoteService implements IPrivateNoteService {
       const notes = (await this.db.get(
         'privateNotes' as Collections,
         ['content'],
-        'authorId',
-        authorId
+        { authorId }
       )) as unknown as Note[]
 
       const note = notes.find((note) => note.targetId === targetId)
@@ -52,8 +51,7 @@ class PrivateNoteService implements IPrivateNoteService {
       const notes = (await this.db.get(
         'privateNotes' as Collections,
         ['content'],
-        'authorId',
-        authorId
+        { authorId }
       )) as unknown as Note[]
 
       const existingNote = notes.find((note) => note.targetId === targetId)

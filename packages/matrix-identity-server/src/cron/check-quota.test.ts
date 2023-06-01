@@ -134,12 +134,9 @@ describe('the checkQuota cron job', () => {
   it('should collect the user usage and save the result', async () => {
     await checkQuota(conf, db)
 
-    const result = (await db.get(
-      'userQuotas',
-      ['size'],
-      'user_id',
-      '@user:matrix.org'
-    )) as unknown as UserQuota[]
+    const result = (await db.get('userQuotas', ['size'], {
+      user_id: '@user:matrix.org'
+    })) as unknown as UserQuota[]
 
     expect(result[0].size).toBe(700)
   })

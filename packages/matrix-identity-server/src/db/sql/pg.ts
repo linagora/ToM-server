@@ -157,8 +157,7 @@ class Pg extends SQL implements IdDbBackend {
     op: string,
     table: string,
     fields?: string[],
-    field?: string,
-    value?: string | number | Array<string | number>,
+    filterFields?: Record<string, string | number | Array<string | number>>,
     order?: string
   ): Promise<DbGetResult> {
     return new Promise((resolve, reject) => {
@@ -167,26 +166,41 @@ class Pg extends SQL implements IdDbBackend {
         reject(new Error('Wait for database to be ready'))
       } else {
         let condition: string = ''
+        const values: string[] = []
         if (fields == null || fields.length === 0) {
           fields = ['*']
         }
-        if (field != null && value != null) {
-          if (typeof value === 'object') {
-            if (value.length > 0)
-              condition =
-                'WHERE ' +
-                value.map((val, i) => `${field}${op}$${i + 1}`).join(' OR ')
-          } else {
-            value = value != null ? [value] : []
-            if (value.length > 0) condition = 'WHERE ' + `${field}${op}$1`
-          }
+        if (filterFields != null) {
+          let index = 0
+          Object.keys(filterFields)
+            .filter(
+              (key) =>
+                filterFields[key] != null &&
+                filterFields[key].toString() !== [].toString()
+            )
+            .forEach((key) => {
+              condition += condition === '' ? 'WHERE ' : ' OR '
+              if (Array.isArray(filterFields[key])) {
+                condition += `${(filterFields[key] as Array<string | number>)
+                  .map((val) => {
+                    index++
+                    values.push(val.toString())
+                    return `${key}${op}$${index}`
+                  })
+                  .join(' OR ')}`
+              } else {
+                index++
+                values.push(filterFields[key].toString())
+                condition += `${key}${op}$${index}`
+              }
+            })
         }
 
         if (order != null) condition += ` ORDER BY ${order}`
 
         this.db.query(
           `SELECT ${fields.join(',')} FROM ${table} ${condition}`,
-          value as string[],
+          values,
           (err, rows) => {
             // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
             err ? reject(err) : resolve(rows.rows)
@@ -199,21 +213,19 @@ class Pg extends SQL implements IdDbBackend {
   get(
     table: string,
     fields?: string[],
-    field?: string,
-    value?: string | number | Array<string | number>,
+    filterFields?: Record<string, string | number | Array<string | number>>,
     order?: string
   ): Promise<DbGetResult> {
-    return this._get('=', table, fields, field, value, order)
+    return this._get('=', table, fields, filterFields, order)
   }
 
   getHigherThan(
     table: string,
     fields?: string[],
-    field?: string,
-    value?: string | number | Array<string | number>,
+    filterFields?: Record<string, string | number | Array<string | number>>,
     order?: string
   ): Promise<DbGetResult> {
-    return this._get('>', table, fields, field, value, order)
+    return this._get('>', table, fields, filterFields, order)
   }
 
   match(

@@ -20,12 +20,9 @@ const diff = (tomServer: TwakeServer): expressAppHandler => {
       Utils.jsonContent(req, res, (obj) => {
         Utils.validateParameters(res, schema, obj, (data) => {
           tomServer.idServer.db
-            .getHigherThan(
-              'userHistory',
-              ['address', 'active'],
-              'timestamp',
-              (data as { since: number }).since
-            )
+            .getHigherThan('userHistory', ['address', 'active'], {
+              timestamp: (data as { since: number }).since
+            })
             .then((rows) => {
               const uids = rows.map((row) => {
                 return (row.address as string).replace(/^@(.*?):.*$/, '$1')
@@ -33,7 +30,7 @@ const diff = (tomServer: TwakeServer): expressAppHandler => {
               const fields = (data as { fields: string[] }).fields ?? []
               if (!fields.includes('uid')) fields.push('uid')
               tomServer.idServer.userDB
-                .get('users', fields, 'uid', uids)
+                .get('users', fields, { uid: uids })
                 .then((userRows) => {
                   const newUsers: object[] = []
                   const deleted: object[] = []

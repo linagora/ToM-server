@@ -15,11 +15,11 @@ describe('the mutual rooms service', () => {
       async (
         table: string,
         _content: any,
-        _selector: any,
-        search: string
+        search: Record<string, string>
       ): Promise<any> => {
+        const firstKey = Object.keys(search)[0]
         if (table === 'room_memberships') {
-          if (search === 'user1') {
+          if (search[firstKey] === 'user1') {
             return [
               {
                 room_id: 'room1',
@@ -47,8 +47,8 @@ describe('the mutual rooms service', () => {
         if (table === 'room_stats_state') {
           return [
             {
-              room_id: search,
-              name: `room ${search}`,
+              room_id: search[firstKey],
+              name: `room ${search[firstKey]}`,
               topic: 'test',
               room_type: 'test'
             }
@@ -73,11 +73,11 @@ describe('the mutual rooms service', () => {
       async (
         table: string,
         _content: any,
-        _selector: any,
-        search: string
+        search: Record<string, string>
       ): Promise<any> => {
+        const firstKey = Object.keys(search)[0]
         if (table === 'room_memberships') {
-          if (search === 'user1') {
+          if (search[firstKey] === 'user1') {
             return [
               {
                 room_id: 'room1',
@@ -97,8 +97,8 @@ describe('the mutual rooms service', () => {
         if (table === 'room_stats_state') {
           return [
             {
-              room_id: search,
-              name: `room ${search}`,
+              room_id: search[firstKey],
+              name: `room ${search[firstKey]}`,
               topic: 'test',
               room_type: 'test'
             }
@@ -116,11 +116,11 @@ describe('the mutual rooms service', () => {
       async (
         table: string,
         _content: any,
-        _selector: any,
-        search: string
+        search: Record<string, string>
       ): Promise<any> => {
+        const firstKey = Object.keys(search)[0]
         if (table === 'room_memberships') {
-          if (search === 'user1') {
+          if (search[firstKey] === 'user1') {
             return [
               {
                 room_id: 'room1',
@@ -160,11 +160,11 @@ describe('the mutual rooms service', () => {
       async (
         table: string,
         _content: any,
-        _selector: any,
-        search: string
+        search: Record<string, string>
       ): Promise<any> => {
+        const firstKey = Object.keys(search)[0]
         if (table === 'room_memberships') {
-          if (search === 'user1') {
+          if (search[firstKey] === 'user1') {
             return [
               {
                 room_id: 'room1',

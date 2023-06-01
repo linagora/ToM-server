@@ -114,12 +114,9 @@ const updateUsers = async (idServer: MatrixIdentityServer): Promise<void> => {
 
   const setInactive = async (address: string): Promise<void> => {
     console.log(`User ${address} becomes inactive`)
-    const res = await idServer.db.get(
-      'userHistory',
-      ['active'],
-      'address',
+    const res = await idServer.db.get('userHistory', ['active'], {
       address
-    )
+    })
     /* istanbul ignore else */
     if (res == null || res.length === 0) {
       await idServer.db.insert('userHistory', { address, active: 0, timestamp })

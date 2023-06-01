@@ -17,8 +17,7 @@ class RoomTagsService implements IRoomTagsService {
       const userTags = await this.db.get(
         'roomTags',
         ['roomId', 'content', 'authorId'],
-        'authorId',
-        authorId
+        { authorId }
       )
 
       const roomTag = userTags.find((tag) => tag.roomId === roomId)

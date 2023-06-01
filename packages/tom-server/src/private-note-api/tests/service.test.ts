@@ -44,12 +44,9 @@ describe('the Private Note Service', () => {
       'something'
     )
 
-    expect(dbMock.get).toHaveBeenCalledWith(
-      'privateNotes',
-      ['content'],
-      'authorId',
-      'test'
-    )
+    expect(dbMock.get).toHaveBeenCalledWith('privateNotes', ['content'], {
+      authorId: 'test'
+    })
   })
 
   it('should update a note', async () => {

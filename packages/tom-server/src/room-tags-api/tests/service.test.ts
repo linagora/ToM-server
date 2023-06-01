@@ -30,8 +30,7 @@ describe('the room tags API service', () => {
     expect(dbMock.get).toHaveBeenCalledWith(
       'roomTags',
       ['roomId', 'content', 'authorId'],
-      'authorId',
-      'testauthor'
+      { authorId: 'testauthor' }
     )
   })
 

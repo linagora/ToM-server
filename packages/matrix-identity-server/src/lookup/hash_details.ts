@@ -7,7 +7,7 @@ const hashDetails = (idServer: MatrixIdentityServer): expressAppHandler => {
   return (req, res) => {
     idServer.authenticate(req, res, (tokenContent, id) => {
       idServer.db
-        .get('keys', ['data'], 'name', 'pepper')
+        .get('keys', ['data'], { name: 'pepper' })
         .then((rows) => {
           send(res, 200, {
             algorithms: supportedHashes,

@@ -93,8 +93,7 @@ export default class PrivateNoteApiValidationMiddleware
       const ExistingNotes = (await this.db.get(
         'PrivateNotes' as Collections,
         ['authorId'],
-        'id',
-        id
+        { id }
       )) as unknown as Note[]
 
       /* istanbul ignore if */
@@ -143,8 +142,7 @@ export default class PrivateNoteApiValidationMiddleware
       const existingNotes = (await this.db.get(
         'PrivateNotes' as Collections,
         ['authorId'],
-        'id',
-        itemId
+        { id: itemId }
       )) as unknown as Note[]
 
       /* istanbul ignore if */

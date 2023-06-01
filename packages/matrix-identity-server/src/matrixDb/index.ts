@@ -11,8 +11,7 @@ type Collections =
 type Get = (
   table: Collections,
   fields?: string[],
-  field?: string,
-  value?: string | number | Array<string | number>
+  filterFields?: Record<string, string | number | Array<string | number>>
 ) => Promise<DbGetResult>
 /*
 type Match = (
@@ -75,10 +74,9 @@ class MatrixDB implements MatrixDBBackend {
   get = async (
     table: Collections,
     fields?: string[],
-    field?: string,
-    value?: string | number | Array<string | number>
+    filterFields?: Record<string, string | number | Array<string | number>>
   ): Promise<DbGetResult> => {
-    return await this.db.get(table, fields, field, value)
+    return await this.db.get(table, fields, filterFields)
   }
 
   close(): void {

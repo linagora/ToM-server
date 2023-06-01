@@ -30,8 +30,8 @@ const Authenticate = (
       token = req.query.access_token
     }
     if (token != null && token.length > 0) {
-      // @ts-expect-error recoveryWords not in Collections
-      db.get('matrixTokens', ['data'], 'id', token)
+      // @ts-expect-error matrixTokens not in Collections
+      db.get('matrixTokens', ['data'], { id: token })
         .then((rows) => {
           if (rows.length === 0) {
             throw Error()

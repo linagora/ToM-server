@@ -85,8 +85,7 @@ const getUserUsage = async (
     const userMedia = (await db.get(
       'local_media_repository',
       ['media_length'],
-      'user_id',
-      userId
+      { user_id: userId }
     )) as unknown as LocalMediaRepository[]
 
     return userMedia

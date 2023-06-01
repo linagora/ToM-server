@@ -19,15 +19,13 @@ export default class MutualRoomsService implements IMutualRoomsService {
       const userRooms = (await this.db.get(
         'room_memberships',
         ['room_id', 'user_id'],
-        'user_id',
-        userId
+        { user_id: userId }
       )) as unknown as Room[]
 
       const targetUserRooms = (await this.db.get(
         'room_memberships',
         ['room_id', 'user_id'],
-        'user_id',
-        targetUserId
+        { user_id: targetUserId }
       )) as unknown as Room[]
 
       const mutualRooms = userRooms.filter((room) =>
@@ -41,8 +39,7 @@ export default class MutualRoomsService implements IMutualRoomsService {
           const information = (await this.db.get(
             'room_stats_state',
             ['room_id', 'name', 'topic', 'room_type'],
-            'room_id',
-            room.room_id
+            { room_id: room.room_id }
           )) as unknown as RoomInformation[]
 
           return information?.[0]
