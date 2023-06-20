@@ -42,6 +42,10 @@ export { default as updateUsers } from './cron/updateUsers'
 export const errMsg = _errMsg
 export const validateMatrixToken = _validateMatrixToken
 export const defaultConfig = defaultConfDesc
+export {
+  default as userDB,
+  type Collections as userDbCollections
+} from './userdb'
 
 type IdServerAPI = Record<string, expressAppHandler>
 
