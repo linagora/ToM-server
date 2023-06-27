@@ -1,4 +1,9 @@
-import { getRecoveryWords, methodNotAllowed, saveRecoveryWords } from './vault'
+import {
+  getRecoveryWords,
+  methodNotAllowed,
+  saveRecoveryWords,
+  deleteRecoveryWords
+} from './vault'
 import { type Request, type Response, type NextFunction } from 'express'
 import { type expressAppHandler, VaultAPIError } from '../utils'
 import { type tokenDetail } from '../middlewares/auth'
@@ -13,7 +18,8 @@ interface ITestRequest extends Partial<Request> {
 describe('Vault controllers', () => {
   const dbManager: Partial<TwakeDB> = {
     get: jest.fn(),
-    insert: jest.fn()
+    insert: jest.fn(),
+    deleteWhere: jest.fn()
   }
   let mockRequest: ITestRequest
   let mockResponse: Partial<Response>
@@ -32,6 +38,7 @@ describe('Vault controllers', () => {
         words
       }
     }
+
     mockResponse = {
       statusCode: undefined,
       status: jest.fn().mockImplementation((code: number) => {
@@ -64,6 +71,7 @@ describe('Vault controllers', () => {
     }).toThrow(new VaultAPIError('Method not allowed', 405))
   })
 
+  // Testing saveRecoveryWords
   it('should return response with status code 201 on save success', async () => {
     jest.spyOn(dbManager, 'insert').mockResolvedValue()
     const handler: expressAppHandler = saveRecoveryWords(dbManager as TwakeDB)
@@ -80,6 +88,8 @@ describe('Vault controllers', () => {
     await new Promise(process.nextTick)
     expect(nextFunction).toHaveBeenCalledWith(new Error(errorMsg))
   })
+
+  // Testing getRecoveryWords
 
   it('should return response with status code 200 on get success', async () => {
     jest.spyOn(dbManager, 'get').mockResolvedValue([{ words }])

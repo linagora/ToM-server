@@ -12,7 +12,8 @@ import {
   type VaultController,
   getRecoveryWords,
   methodNotAllowed,
-  saveRecoveryWords
+  saveRecoveryWords,
+  deleteRecoveryWords
 } from './controllers/vault'
 import { type Config } from '../types'
 import { type TwakeDB } from '../db'
@@ -128,6 +129,34 @@ export default class TwakeVaultAPI {
        *        $ref: '#/components/responses/InternalServerError'
        */
       .post(...this._middlewares(saveRecoveryWords))
+      /**
+       * @openapi
+       * '/_twake/recoveryWords':
+       *  delete:
+       *    tags:
+       *    - Vault API
+       *    description: Delete the user recovery words in the database
+       *    responses:
+       *      204:
+       *        description: Delete success
+       *      404:
+       *        description: Not found
+       *        content:
+       *          application/json:
+       *            schema:
+       *              type: object
+       *              properties:
+       *                error:
+       *                  type: string
+       *                  description: Connected user has no recovery sentence
+       *            example:
+       *              error: User has no recovery sentence
+       *      401:
+       *        $ref: '#/components/responses/Unauthorized'
+       *      500:
+       *        $ref: '#/components/responses/InternalServerError'
+       */
+      .delete(...this._middlewares(deleteRecoveryWords))
       .all(allowCors, methodNotAllowed, errorMiddleware)
   }
 

@@ -21,6 +21,7 @@ const accessToken =
 delete defaultConfig.policies
 
 const unsavedToken = accessToken.replace('accessToken', 'unsavedToken')
+const unsavedToken2 = accessToken.replace('accessToken', 'unsavedT2ken')
 
 const matrixServerResponseBody = {
   user_id: 'test',
@@ -132,7 +133,7 @@ describe('Vault API server', () => {
     })
   })
 
-  it('insert words in dabase for the connected user', async () => {
+  it('insert words in database for the connected user', async () => {
     const response = await request(app)
       .post(endpoint)
       .send({ words })
@@ -143,7 +144,7 @@ describe('Vault API server', () => {
     })
   })
 
-  it('get words in dabase for the connected user', async () => {
+  it('get words in database for the connected user', async () => {
     const response = await request(app)
       .get(endpoint)
       .set('Authorization', `Bearer ${accessToken}`)
@@ -204,6 +205,30 @@ describe('Vault API server', () => {
     })
     await removeUserInAccessTokenTable(unsavedToken)
     await removeUserInRecoveryWordsTable(matrixServerResponseBody.user_id)
+  })
+
+  // Delete words from database for connected user whose recovery sentence is previously saved
+  it('delete words in database for the connected user whose recovery sentence is previously saved', async () => {
+    await request(app)
+      .post(endpoint)
+      .send({ words })
+      .set('Authorization', `Bearer ${unsavedToken2}`)
+    const response = await request(app)
+      .delete(endpoint)
+      .set('Authorization', `Bearer ${unsavedToken2}`)
+    expect(response.statusCode).toBe(204)
+  })
+
+  // Delete words from database for connected user whose doesn't have a recovery sentence associated to his access_token
+  // It returns 201 even if there weren't any words saved : depends on the behaviour we would like to have.
+  it('delete words in database for the connected user whose recovery sentence is not saved saved', async () => {
+    const response = await request(app)
+      .delete(endpoint)
+      .set('Authorization', `Bearer ${unsavedToken}`)
+    expect(response.statusCode).toBe(404)
+    expect(response.body).toStrictEqual({
+      error: 'User has no recovery sentence'
+    })
   })
 
   const removeUserInAccessTokenTable = async (
