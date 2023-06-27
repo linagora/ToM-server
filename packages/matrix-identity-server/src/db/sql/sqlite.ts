@@ -60,7 +60,7 @@ class SQLite extends SQL implements IdDbBackend {
   insert(
     table: string,
     values: Record<string, string | number>
-  ): Promise<void> {
+  ): Promise<DbGetResult> {
     return new Promise((resolve, reject) => {
       /* istanbul ignore if */
       if (this.db == null) {
@@ -75,10 +75,21 @@ class SQLite extends SQL implements IdDbBackend {
       const stmt = this.db.prepare(
         `INSERT INTO ${table}(${names.join(',')}) VALUES(${names
           .map((v) => '?')
-          .join(',')})`
+          .join(',')}) RETURNING *;`
       )
-      stmt.run(vals).finalize(() => {
-        resolve()
+      stmt.all(
+        vals,
+        (err: string, rows: Array<Record<string, string | number>>) => {
+          /* istanbul ignore if */
+          if (err != null) {
+            reject(err)
+          } else {
+            resolve(rows)
+          }
+        }
+      )
+      stmt.finalize((err) => {
+        reject(err)
       })
     })
   }
@@ -88,7 +99,7 @@ class SQLite extends SQL implements IdDbBackend {
     values: Record<string, string | number>,
     field: string,
     value: string | number
-  ): Promise<void> {
+  ): Promise<DbGetResult> {
     return new Promise((resolve, reject) => {
       /* istanbul ignore if */
       if (this.db == null) {
@@ -102,10 +113,23 @@ class SQLite extends SQL implements IdDbBackend {
       })
       vals.push(value)
       const stmt = this.db.prepare(
-        `UPDATE ${table} SET ${names.join('=?,')}=? WHERE ${field}=?`
+        `UPDATE ${table} SET ${names.join(
+          '=?,'
+        )}=? WHERE ${field}=? RETURNING *;`
       )
-      stmt.run(vals).finalize(() => {
-        resolve()
+      stmt.all(
+        vals,
+        (err: string, rows: Array<Record<string, string | number>>) => {
+          /* istanbul ignore if */
+          if (err != null) {
+            reject(err)
+          } else {
+            resolve(rows)
+          }
+        }
+      )
+      stmt.finalize((err) => {
+        reject(err)
       })
     })
   }
@@ -228,13 +252,16 @@ class SQLite extends SQL implements IdDbBackend {
         reject(new Error('Wait for database to be ready'))
       } else {
         const stmt = this.db.prepare(`DELETE FROM ${table} WHERE ${field}=?`)
-        stmt.run(value).finalize((err) => {
+        stmt.all([value], (err, rows) => {
           /* istanbul ignore if */
           if (err != null) {
             reject(err)
           } else {
             resolve()
           }
+        })
+        stmt.finalize((err) => {
+          reject(err)
         })
       }
     })
@@ -251,7 +278,7 @@ class SQLite extends SQL implements IdDbBackend {
         throw new Error('Wait for database to be ready')
       }
       const stmt = this.db.prepare(`DELETE FROM ${table} WHERE ${field}<?`)
-      stmt.run(value).finalize((err) => {
+      stmt.all([value], (err) => {
         /* istanbul ignore if */
         if (err != null) {
           reject(err)
@@ -259,6 +286,58 @@ class SQLite extends SQL implements IdDbBackend {
           resolve()
         }
       })
+      stmt.finalize((err) => {
+        reject(err)
+      })
+    })
+  }
+
+  deleteWhere(
+    table: string,
+    filters: string | string[],
+    values: string | number | Array<string | number>
+  ): Promise<void> {
+    // Adaptation of the method get, with the delete keyword, 'AND' instead of 'OR', and with filters instead of fields
+    return new Promise((resolve, reject) => {
+      if (typeof values !== 'object') {
+        values = [values] // Transform values into a list
+      }
+
+      if (typeof filters !== 'object') {
+        filters = [filters] // Transform filters into a list
+      }
+
+      if (this.db == null) {
+        reject(new Error('Wait for database to be ready'))
+      } else {
+        let condition: string = ''
+        if (
+          values != null &&
+          values.length > 0 &&
+          filters.length === values.length
+        ) {
+          // Verifies that values have at least one element, and as much filter names
+          condition =
+            'WHERE ' + filters.map((filt) => `${filt}=?`).join(' AND ')
+        }
+
+        const stmt = this.db.prepare(`DELETE FROM ${table} ${condition}`)
+
+        stmt.all(
+          values, // The statement fills the values properly.
+          (err: string) => {
+            /* istanbul ignore if */
+            if (err != null) {
+              reject(err)
+            } else {
+              resolve()
+            }
+          }
+        )
+        stmt.finalize((err) => {
+          reject(err)
+        })
+      }
     })
   }
 

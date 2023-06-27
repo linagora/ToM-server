@@ -50,7 +50,7 @@ const updateUsers = async (idServer: MatrixIdentityServer): Promise<void> => {
     )
   }
   const res = await Promise.all(promises)
-  const updates: Array<Promise<void>> = []
+  const updates: Array<Promise<void> | Promise<DbGetResult>> = []
   // res[0] is the result of userDB.getAll('users', ['uid', 'mail', 'mobile'])
   const users = res[0] as DbGetResult
   // res[1] is the result of db.getAll('hashes', ['value', 'active'])
