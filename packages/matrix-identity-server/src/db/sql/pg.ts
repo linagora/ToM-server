@@ -96,7 +96,7 @@ class Pg extends SQL implements IdDbBackend {
   insert(
     table: string,
     values: Record<string, string | number>
-  ): Promise<void> {
+  ): Promise<DbGetResult> {
     return new Promise((resolve, reject) => {
       /* istanbul ignore if */
       if (this.db == null) {
@@ -111,11 +111,11 @@ class Pg extends SQL implements IdDbBackend {
       this.db.query(
         `INSERT INTO ${table}(${names.join(',')}) VALUES(${names
           .map((v, i) => `$${i + 1}`)
-          .join(',')})`,
+          .join(',')}) RETURNING *;`,
         vals,
-        (err) => {
+        (err, rows) => {
           // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
-          err ? reject(err) : resolve()
+          err ? reject(err) : resolve(rows.rows)
         }
       )
     })
@@ -126,7 +126,7 @@ class Pg extends SQL implements IdDbBackend {
     values: Record<string, string | number>,
     field: string,
     value: string | number
-  ): Promise<void> {
+  ): Promise<DbGetResult> {
     return new Promise((resolve, reject) => {
       /* istanbul ignore if */
       if (this.db == null) {
@@ -142,11 +142,11 @@ class Pg extends SQL implements IdDbBackend {
         this.db.query(
           `UPDATE ${table} SET ${names
             .map((name, i) => `${name}=$${i + 1}`)
-            .join(',')} WHERE ${field}=$${vals.length}`,
+            .join(',')} WHERE ${field}=$${vals.length} RETURNING *;`,
           vals,
-          (err) => {
+          (err, rows) => {
             // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
-            err ? reject(err) : resolve()
+            err ? reject(err) : resolve(rows.rows)
           }
         )
       }
@@ -252,10 +252,20 @@ class Pg extends SQL implements IdDbBackend {
     field: string,
     value: string | number
   ): Promise<void> {
-    if (this.db == null) return Promise.reject(new Error('DB not ready'))
-    return this.db.query(`DELETE FROM ${table} WHERE ${field}=$1`, [
-      value
-    ]) as unknown as Promise<void>
+    return new Promise((resolve, reject) => {
+      if (this.db == null) {
+        reject(new Error('DB not ready'))
+      } else {
+        this.db.query(
+          `DELETE FROM ${table} WHERE ${field}=$1`,
+          [value],
+          (err, rows) => {
+            // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+            err ? reject(err) : resolve()
+          }
+        )
+      }
+    })
   }
 
   deleteLowerThan(
@@ -263,10 +273,59 @@ class Pg extends SQL implements IdDbBackend {
     field: string,
     value: string | number
   ): Promise<void> {
-    if (this.db == null) return Promise.reject(new Error('DB not ready'))
-    return this.db.query(`DELETE FROM ${table} WHERE ${field}<$1`, [
-      value
-    ]) as unknown as Promise<void>
+    return new Promise((resolve, reject) => {
+      if (this.db == null) {
+        reject(new Error('Database not ready'))
+      } else {
+        this.db.query(
+          `DELETE FROM ${table} WHERE ${field}<$1`,
+          [value],
+          (err) => {
+            // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+            err ? reject(err) : resolve()
+          }
+        )
+      }
+    })
+  }
+
+  deleteWhere(
+    table: string,
+    filters: string | string[],
+    values: string | number | Array<string | number>
+  ): Promise<void> {
+    return new Promise((resolve, reject) => {
+      if (this.db == null) {
+        reject(new Error('Database not ready'))
+      } else {
+        if (typeof values !== 'object') {
+          values = [values] // Transform values into a list
+        }
+        if (typeof filters !== 'object') {
+          filters = [filters] // Transform filters into a list
+        }
+
+        let condition: string = ''
+        if (
+          values != null &&
+          values.length > 0 &&
+          filters.length === values.length
+        ) {
+          // Verifies that values have at least one element, and as much filter names
+          condition =
+            'WHERE ' + filters.map((filt) => `${filt}=?`).join(' AND ')
+        }
+
+        this.db.query(
+          `DELETE FROM ${table} WHERE ${condition}`,
+          values,
+          (err) => {
+            // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+            err ? reject(err) : resolve()
+          }
+        )
+      }
+    })
   }
 
   close(): void {

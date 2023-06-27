@@ -65,7 +65,7 @@ describe('Vault controllers', () => {
   })
 
   it('should return response with status code 201 on save success', async () => {
-    jest.spyOn(dbManager, 'insert').mockResolvedValue()
+    jest.spyOn(dbManager, 'insert').mockResolvedValue([{ words }])
     const handler: expressAppHandler = saveRecoveryWords(dbManager as TwakeDB)
     handler(mockRequest as Request, mockResponse as Response, nextFunction)
     await new Promise(process.nextTick)

@@ -1,7 +1,7 @@
 import IdDb from './index'
 import { randomString } from '@twake/crypto'
 import fs from 'fs'
-import { type Config } from '../types'
+import { DbGetResult, type Config } from '../types'
 
 import DefaultConfig from '../config.json'
 
@@ -145,6 +145,49 @@ describe('Id Server DB', () => {
       .catch((e) => done(e))
   })
 
+  it('should return entry on update', (done) => {
+    const idDb = new IdDb(baseConf)
+    idDb.ready
+      .then(() => {
+        idDb
+          .createOneTimeToken({ a: 1 })
+          .then((token) => {
+            idDb
+              .update('oneTimeTokens', { data: '{"a": 2}' }, 'id', token)
+              .then((rows) => {
+                expect(rows.length).toBe(1)
+                expect(rows[0].data).toEqual('{"a": 2}') // [OMH] Same as the test from get but directly from update.
+                clearTimeout(idDb.cleanJob)
+                done()
+              })
+              .catch((e) => done(e))
+          })
+          .catch((e) => done(e))
+      })
+      .catch((e) => done(e))
+  })
+
+  it('should return entry on insert', (done) => {
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises
+    const idDb = new IdDb(baseConf)
+    idDb.ready
+      .then(() => {
+        const id = randomString(64)
+        idDb
+          .insert('accessTokens', { id, data: '{}' })
+          .then((rows) => {
+            expect(rows.length).toBe(1)
+            expect(rows[0].id).toEqual(id)
+            expect(rows[0].data).toEqual('{}')
+            clearTimeout(idDb.cleanJob)
+            idDb.close()
+            done()
+          })
+          .catch((e) => done(e))
+      })
+      .catch((e) => done(e))
+  })
+
   it('should return count without value', (done) => {
     const idDb = new IdDb(baseConf)
     idDb.ready
@@ -232,6 +275,45 @@ describe('Id Server DB', () => {
       })
       .catch((e) => done(e))
   })
+})
+
+it('should delete lines with specified filters', (done) => {
+  const idDb = new IdDb(baseConf)
+  idDb.ready
+    .then(() => {
+      const idsNumber = 8
+      const ids: string[] = []
+      const insertsPromises: Array<Promise<DbGetResult>> = []
+
+      for (let index = 0; index < idsNumber; index++) {
+        ids[index] = randomString(64)
+        insertsPromises[index] = idDb.insert('accessTokens', {
+          id: ids[index],
+          data: `{${index % 2}}`
+        })
+      }
+
+      Promise.all(insertsPromises)
+        .then(() => {
+          idDb
+            .deleteWhere('accessTokens', 'data', '{0}')
+            .then(() => {
+              idDb
+                .getAll('accessTokens', ['id', 'data'])
+                .then((rows) => {
+                  expect(rows.length).toBe(Math.floor(idsNumber / 2))
+                  expect(rows[0].data).toEqual('{1}')
+                  clearTimeout(idDb.cleanJob)
+                  idDb.close()
+                  done()
+                })
+                .catch((e) => done(e))
+            })
+            .catch((e) => done(e))
+        })
+        .catch((e) => done(e))
+    })
+    .catch((e) => done(e))
 })
 
 test('OneTimeToken timeout', (done) => {

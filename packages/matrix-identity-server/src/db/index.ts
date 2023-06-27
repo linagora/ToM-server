@@ -22,13 +22,13 @@ const cleanByExpires: Collections[] = ['oneTimeTokens', 'attempts']
 type Insert = (
   table: Collections,
   values: Record<string, string | number>
-) => Promise<void>
+) => Promise<DbGetResult>
 type Update = (
   table: Collections,
   values: Record<string, string | number>,
   field: string,
   value: string | number
-) => Promise<void>
+) => Promise<DbGetResult>
 type Get = (
   table: Collections,
   fields: string[],
@@ -61,6 +61,11 @@ type DeleteLowerThan = (
   field: string,
   value: string | number
 ) => Promise<void>
+type DeleteWhere = (
+  table: string, // table to delete from.
+  filters: string | string[], // search fields, or filters
+  values: string | number | Array<string | number> // Respective values of search fields
+) => Promise<void>
 
 export interface IdDbBackend {
   ready: Promise<void>
@@ -74,6 +79,7 @@ export interface IdDbBackend {
   update: Update
   deleteEqual: DeleteEqual
   deleteLowerThan: DeleteLowerThan
+  deleteWhere: DeleteWhere
   close: () => void
 }
 export type InsertType = (
@@ -212,6 +218,17 @@ class IdentityServerDb implements IdDbBackend {
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
   deleteLowerThan(table: Collections, field: string, value: string | number) {
     return this.db.deleteLowerThan(table, field, value)
+  }
+
+  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
+  deleteWhere(
+    table: string,
+    filters: string | string[],
+    values: string | number | Array<string | number>
+  ) {
+    // Deletes from table where filters correspond to values
+    // Size of filters and values must be the same
+    return this.db.deleteWhere(table, filters, values)
   }
 
   // eslint-disable-next-line @typescript-eslint/promise-function-async
