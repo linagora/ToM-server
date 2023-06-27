@@ -328,34 +328,6 @@ class Pg extends SQL implements IdDbBackend {
     })
   }
 
-  deleteWhere(
-    table: string,
-    filters: string | string[],
-    values: string | number | Array<string | number>
-  ): Promise<void> {
-    if (this.db == null) return Promise.reject(new Error('DB not ready'))
-    if (typeof values !== 'object') {
-      values = [values] // Transform values into a list
-    }
-    if (typeof filters !== 'object') {
-      filters = [filters] // Transform filters into a list
-    }
-
-    let condition: string = ''
-    if (
-      values != null &&
-      values.length > 0 &&
-      filters.length === values.length
-    ) {
-      // Verifies that values have at least one element, and as much filter names
-      condition = 'WHERE ' + filters.map((filt) => `${filt}=?`).join(' AND ')
-    }
-    return this.db.query(
-      `DELETE FROM ${table} WHERE ${condition}`,
-      values
-    ) as unknown as Promise<void>
-  }
-
   close(): void {
     void this.db?.end()
   }

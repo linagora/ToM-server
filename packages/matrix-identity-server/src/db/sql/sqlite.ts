@@ -292,55 +292,6 @@ class SQLite extends SQL implements IdDbBackend {
     })
   }
 
-  deleteWhere(
-    table: string,
-    filters: string | string[],
-    values: string | number | Array<string | number>
-  ): Promise<void> {
-    // Adaptation of the method get, with the delete keyword, 'AND' instead of 'OR', and with filters instead of fields
-    return new Promise((resolve, reject) => {
-      if (typeof values !== 'object') {
-        values = [values] // Transform values into a list
-      }
-
-      if (typeof filters !== 'object') {
-        filters = [filters] // Transform filters into a list
-      }
-
-      if (this.db == null) {
-        reject(new Error('Wait for database to be ready'))
-      } else {
-        let condition: string = ''
-        if (
-          values != null &&
-          values.length > 0 &&
-          filters.length === values.length
-        ) {
-          // Verifies that values have at least one element, and as much filter names
-          condition =
-            'WHERE ' + filters.map((filt) => `${filt}=?`).join(' AND ')
-        }
-
-        const stmt = this.db.prepare(`DELETE FROM ${table} ${condition}`)
-
-        stmt.all(
-          values, // The statement fills the values properly.
-          (err: string) => {
-            /* istanbul ignore if */
-            if (err != null) {
-              reject(err)
-            } else {
-              resolve()
-            }
-          }
-        )
-        stmt.finalize((err) => {
-          reject(err)
-        })
-      }
-    })
-  }
-
   /**
    * Delete from a table when a condition is met.
    *

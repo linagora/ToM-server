@@ -61,11 +61,6 @@ type DeleteLowerThan = (
   field: string,
   value: string | number
 ) => Promise<void>
-type DeleteWhere = (
-  table: string, // table to delete from.
-  filters: string | string[], // search fields, or filters
-  values: string | number | Array<string | number> // Respective values of search fields
-) => Promise<void>
 
 type DeleteWhere = (
   table: string,

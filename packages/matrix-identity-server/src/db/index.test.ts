@@ -282,7 +282,7 @@ describe('Id Server DB', () => {
       .then(() => {
         const idsNumber = 8
         const ids: string[] = []
-        const insertsPromises: Array<Promise<void>> = []
+        const insertsPromises: Array<Promise<DbGetResult>> = []
 
         for (let index = 0; index < idsNumber; index++) {
           ids[index] = randomString(64)
