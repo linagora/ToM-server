@@ -47,3 +47,32 @@ export const getRecoveryWords = (db: TwakeDB): expressAppHandler => {
       })
   }
 }
+
+// Delete recovery words from database
+export const deleteRecoveryWords = (db: TwakeDB): expressAppHandler => {
+  return (req, res, next) => {
+    const userId: string = req.token.content.sub
+    console.log(db)
+
+    // @ts-expect-error recoveryWords isn't declared in Collections
+    db.get('recoveryWords', ['words'], 'userId', userId)
+      .then((data) => {
+        if (data.length === 0) {
+          const error = new VaultAPIError('User has no recovery sentence', 404)
+          throw error
+        }
+
+        db.deleteWhere('recoveryWords', 'userId', userId)
+          .then((_) => {
+            // 204 requires no content to be sent
+            res.status(204).json()
+          })
+          .catch((err) => {
+            next(err)
+          })
+      })
+      .catch((err) => {
+        next(err)
+      })
+  }
+}

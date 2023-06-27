@@ -67,6 +67,12 @@ type DeleteWhere = (
   values: string | number | Array<string | number> // Respective values of search fields
 ) => Promise<void>
 
+type DeleteWhere = (
+  table: string,
+  filters: string | string[],
+  values: string | number | Array<string | number>
+) => Promise<void>
+
 export interface IdDbBackend {
   ready: Promise<void>
   createDatabases: (conf: Config, ...args: any) => Promise<void>
