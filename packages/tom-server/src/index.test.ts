@@ -50,7 +50,7 @@ beforeAll((done) => {
           done()
         })
         .catch((e) => {
-          console.error('HERE')
+          console.error('Error', e)
           done(e)
         })
     })
