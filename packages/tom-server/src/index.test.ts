@@ -9,6 +9,7 @@ import path from 'path'
 import JEST_PROCESS_ROOT_PATH from '../jest.globals'
 
 const testDb = path.join(JEST_PROCESS_ROOT_PATH, 'global.db')
+const userDb = path.join(JEST_PROCESS_ROOT_PATH, 'users.db')
 const matrixTestDb = path.join(JEST_PROCESS_ROOT_PATH, 'matrix.global.db')
 
 let idServer: TwakeServer
@@ -24,7 +25,7 @@ beforeAll((done) => {
     matrix_database_host: matrixTestDb,
     oidc_issuer: 'https://auth.example.com',
     userdb_engine: 'sqlite',
-    userdb_host: testDb
+    userdb_host: userDb
   }
   if (process.env.TEST_PG === 'yes') {
     conf.database_engine = 'pg'
@@ -38,6 +39,10 @@ beforeAll((done) => {
     conf.matrix_database_user = process.env.PG_USER ?? 'twake'
     conf.matrix_database_password = process.env.PG_PASSWORD ?? 'twake'
     conf.matrix_database_name = process.env.PG_DATABASE ?? 'test'
+    conf.userdb_host = process.env.PG_HOST ?? 'localhost'
+    conf.userdb_user = process.env.PG_USER ?? 'twake'
+    conf.userdb_password = process.env.PG_PASSWORD ?? 'twake'
+    conf.userdb_name = process.env.PG_DATABASE ?? 'test'
   }
   buildUserDB(conf)
     .then(() => {
@@ -60,11 +65,12 @@ beforeAll((done) => {
 })
 
 afterAll(() => {
-  idServer.cleanJobs()
   if (process.env.TEST_PG !== 'yes') {
     fs.unlinkSync(testDb)
+    fs.unlinkSync(userDb)
     fs.unlinkSync(matrixTestDb)
   }
+  idServer.cleanJobs()
 })
 
 test('/.well-known/matrix/client', async () => {

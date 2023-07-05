@@ -26,6 +26,7 @@ const pathToTestDataFolder = path.join(
 )
 
 const db = path.join(pathToTestDataFolder, 'test-cache.db')
+const userDb = path.join(pathToTestDataFolder, 'users-cache.test.db')
 const matrixDb = path.join(pathToTestDataFolder, 'test.matrix-cache.db')
 
 process.env.TWAKE_IDENTITY_SERVER_CONF = path.join(
@@ -46,7 +47,7 @@ beforeAll((done) => {
     database_host: db,
     base_url: 'http://example.com/',
     userdb_engine: 'sqlite',
-    userdb_host: db,
+    userdb_host: userDb,
     matrix_database_engine: 'sqlite',
     matrix_database_host: matrixDb
   }
@@ -62,6 +63,10 @@ beforeAll((done) => {
     conf.matrix_database_user = process.env.PG_USER ?? 'twake'
     conf.matrix_database_password = process.env.PG_PASSWORD ?? 'twake'
     conf.matrix_database_name = process.env.PG_DATABASE ?? 'test'
+    conf.userdb_host = process.env.PG_HOST ?? 'localhost'
+    conf.userdb_user = process.env.PG_USER ?? 'twake'
+    conf.userdb_password = process.env.PG_PASSWORD ?? 'twake'
+    conf.userdb_name = process.env.PG_DATABASE ?? 'test'
   }
   buildUserDB(conf)
     .then(() => {
@@ -98,6 +103,7 @@ afterEach(() => {
 afterAll(() => {
   if (process.env.TEST_PG !== 'yes') {
     fs.unlinkSync(db)
+    fs.unlinkSync(userDb)
     fs.unlinkSync(matrixDb)
   }
   twakeServer.cleanJobs()

@@ -28,43 +28,52 @@ const buildUserDB = (conf: Config): Promise<void> => {
             if (err != null) {
               reject(err)
             } else {
-              const userDb = new sqlite3.Database(conf.database_host)
-              userDb.run(createQuery, (err) => {
-                if (err != null) {
+              matrixDb.close((err) => {
+                /* istanbul ignore if */
+                if(err != null) {
+                  console.error(err)
                   reject(err)
                 } else {
-                  Promise.all(
-                    // eslint-disable-next-line @typescript-eslint/promise-function-async
-                      Array.from(Array(31).keys()).map((v: string | number) => {
-                        // @ts-ignore v is first a number
-                        if (v < 10) v = `0${v}`
-                        return new Promise((_resolve, _reject) => {
-                          userDb.run(`INSERT INTO users VALUES('user${v}', '', 'user${v}@example.com')`, (err) => {
-                            err != null ? _reject(err) : _resolve(true)
+                  const userDb = new sqlite3.Database(conf.userdb_host)
+                  userDb.run(createQuery, (err) => {
+                    if (err != null) {
+                      reject(err)
+                    } else {
+                      Promise.all(
+                        // eslint-disable-next-line @typescript-eslint/promise-function-async
+                          Array.from(Array(31).keys()).map((v: string | number) => {
+                            // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
+                            // @ts-ignore v is first a number
+                            if (v < 10) v = `0${v}`
+                            return new Promise((_resolve, _reject) => {
+                              userDb.run(`INSERT INTO users VALUES('user${v}', '', 'user${v}@example.com')`, (err) => {
+                                err != null ? _reject(err) : _resolve(true)
+                              })
+                            })
                           })
-                        })
-                      })
-                    )
-                    .then(() => {
-                      userDb.run(insertQuery, (err) => {
-                        if (err != null) {
-                          reject(err)
-                        } else {
-                          userDb.close((err) => {
-                            /* istanbul ignore if */
-                            if(err != null) {
-                              console.error(err)
+                        )
+                        .then(() => {
+                          userDb.run(insertQuery, (err) => {
+                            if (err != null) {
                               reject(err)
                             } else {
-                              created = true
-                              resolve()
-                            }
-                          })
-                       }
-                      })    
-                    })
-                    .catch(reject)
-                }
+                              userDb.close((err) => {
+                                /* istanbul ignore if */
+                                if(err != null) {
+                                  console.error(err)
+                                  reject(err)
+                                } else {
+                                  created = true
+                                  resolve()
+                                }
+                              })
+                           }
+                          })    
+                        })
+                        .catch(reject)
+                    }
+                  })
+                    }
               })
             }
           })
@@ -73,10 +82,10 @@ const buildUserDB = (conf: Config): Promise<void> => {
       
     } else {
       const userDb = new Pg.Client({
-        host: conf.database_host,
-        user: conf.database_user,
-        password: conf.database_password,
-        database: conf.database_name
+        host: conf.userdb_host,
+        user: conf.userdb_user,
+        password: conf.userdb_password,
+        database: conf.userdb_name
       })
       userDb.connect().then(() => {
         console.error('CONNECT')

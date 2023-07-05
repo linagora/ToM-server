@@ -52,7 +52,6 @@ export const getRecoveryWords = (db: TwakeDB): expressAppHandler => {
 export const deleteRecoveryWords = (db: TwakeDB): expressAppHandler => {
   return (req, res, next) => {
     const userId: string = req.token.content.sub
-    console.log(db)
 
     // @ts-expect-error recoveryWords isn't declared in Collections
     db.get('recoveryWords', ['words'], 'userId', userId)
