@@ -1,14 +1,16 @@
-import fs from 'fs'
-import type { ConfigurationFile, Config } from './types'
 import configParser, { type ConfigDescription } from '@twake/config-parser'
 import { Router } from 'express'
-import IdServer from './identity-server'
-import VaultServer from './vault-api'
-import WellKnown from './wellKnown'
+import fs from 'fs'
+import AppServiceAPI from './application-server'
 import defaultConfig from './config.json'
 import initializeDb, { type TwakeDB } from './db'
-import privateNoteApiRouter from './private-note-api'
+import IdServer from './identity-server'
 import mutualRoomsAPIRouter from './mutual-rooms-api'
+import privateNoteApiRouter from './private-note-api'
+import type { Config, ConfigurationFile } from './types'
+import VaultServer from './vault-api'
+import WellKnown from './wellKnown'
+
 import { MatrixDB } from '@twake/matrix-identity-server'
 import roomTagsAPIRouter from './room-tags-api'
 import userInfoAPIRouter from './user-info-api'
@@ -79,12 +81,14 @@ export default class TwakeServer {
         this.conf
       )
       const userInfoApi = userInfoAPIRouter(this.idServer, this.conf)
+      const appServericeApi = new AppServiceAPI(this)
 
       this.endpoints.use(privateNoteApi)
       this.endpoints.use(mutualRoolsApi)
       this.endpoints.use(vaultServer.endpoints)
       this.endpoints.use(roomTagsApi)
       this.endpoints.use(userInfoApi)
+      this.endpoints.use(appServericeApi.router.routes)
 
       Object.keys(this.idServer.api.get).forEach((k) => {
         this.endpoints.get(k, this.idServer.api.get[k])

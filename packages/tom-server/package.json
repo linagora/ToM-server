@@ -45,6 +45,7 @@
     "sqlite3": "^5.1.6"
   },
   "dependencies": {
+    "@twake/matrix-application-server": "*",
     "@twake/matrix-identity-server": "*",
     "redis": "^4.6.6"
   },
