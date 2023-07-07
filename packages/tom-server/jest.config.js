@@ -12,7 +12,7 @@ export default {
       statements: 90
     }
   },
-  setupFiles: ['<rootDir>/jest.setup.ts'],
+  setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
   moduleNameMapper: {
     "@twake/(.*)$": "<rootDir>/../$1/src",
   },

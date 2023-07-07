@@ -1,4 +1,5 @@
 {
+  "base_url": "http://example.com",
   "cron_service": true,
   "database_engine": "sqlite",
   "database_host": "./src/identity-server/__testData__/test.db",
@@ -18,5 +19,7 @@
   "smtp_server": "localhost",
   "template_dir": "./templates",
   "userdb_engine": "sqlite",
-  "userdb_host": "./src/identity-server/__testData__/users.test.db"
+  "userdb_host": "./src/identity-server/__testData__/users.test.db",
+  "registration_file_path": "registration.yaml",
+  "sender_localpart": "twake"
 }
