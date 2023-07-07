@@ -7,7 +7,7 @@ import { AppServiceRegistration, type Namespaces } from './utils'
 
 export interface Config {
   base_url: string
-  sender_localpart?: string
+  sender_localpart: string
   registration_file_path: string
   namespaces?: Namespaces
   push_ephemeral?: boolean

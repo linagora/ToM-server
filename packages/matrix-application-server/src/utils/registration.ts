@@ -56,7 +56,7 @@ export class AppServiceRegistration {
         as_token: randomString(64),
         hs_token: randomString(64),
         id: randomString(64), // Maybe this id should be part of config file
-        sender_localpart: conf.sender_localpart ?? '',
+        sender_localpart: conf.sender_localpart,
         url: conf.base_url,
         namespaces: conf.namespaces ?? {},
         [AppServiceRegistration.PUSH_EPHEMERAL]: conf.push_ephemeral ?? false

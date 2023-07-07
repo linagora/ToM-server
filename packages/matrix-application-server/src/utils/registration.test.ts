@@ -64,7 +64,6 @@ describe('Registration', () => {
     it('should create a class instance based on config with some default values', () => {
       const appServiceRegistration = new AppServiceRegistration({
         ...testConfig,
-        sender_localpart: undefined,
         namespaces: undefined,
         push_ephemeral: undefined
       })
@@ -75,7 +74,9 @@ describe('Registration', () => {
       expect(appServiceRegistration.hsToken).not.toBeUndefined()
       expect(appServiceRegistration.id).not.toBeNull()
       expect(appServiceRegistration.id).not.toBeUndefined()
-      expect(appServiceRegistration.senderLocalpart).toEqual('')
+      expect(appServiceRegistration.senderLocalpart).toEqual(
+        testConfig.sender_localpart
+      )
       expect(appServiceRegistration.url).toEqual(testConfig.base_url)
       expect(appServiceRegistration.namespaces).toStrictEqual({})
       expect(appServiceRegistration.pushEphemeral).toEqual(false)
