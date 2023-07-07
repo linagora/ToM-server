@@ -14,6 +14,7 @@ import {
   type StartedDockerComposeEnvironment,
   type StartedTestContainer
 } from 'testcontainers'
+import AppServiceAPI from '.'
 import TwakeServer from '..'
 import JEST_PROCESS_ROOT_PATH from '../../jest.globals'
 import { allMatrixErrorCodes, type Collections, type Config } from '../types'
@@ -46,6 +47,72 @@ describe('ApplicationServer', () => {
   let startedLdap: StartedTestContainer
   let startedCompose: StartedDockerComposeEnvironment
   let testConfig = defaultConfig as Partial<Config>
+
+  const simulationConnection = async (
+    username: string,
+    password: string
+  ): Promise<string | undefined> => {
+    try {
+      let response = await fetch.default(
+        encodeURI(
+          // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+          `https://${twakeServer.conf.matrix_server}/_matrix/client/v3/login`
+        )
+      )
+      let body = (await response.json()) as any
+      const providerId = body.flows[0].identity_providers[0].id
+      response = await fetch.default(
+        encodeURI(
+          // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+          `https://${twakeServer.conf.matrix_server}/_matrix/client/r0/login/sso/redirect/${providerId}?redirectUrl=http://localhost:9876`
+        ),
+        {
+          redirect: 'manual'
+        }
+      )
+      let location = response.headers.get('location') as string
+      const matrixCookies = response.headers.get('set-cookie')
+      response = await fetch.default(location)
+      body = await response.text()
+      const hiddenInputFieldsWithValue = [
+        ...(body as string).matchAll(/<input.*name="(\S+?)".*value="(\S+?)"/g)
+      ]
+        .map((matchElt) => `${matchElt[1]}=${matchElt[2]}&`)
+        .join('')
+      const formWithToken = `${hiddenInputFieldsWithValue}user=${username}&password=${password}`
+      response = await fetch.default(location, {
+        method: 'POST',
+        body: new URLSearchParams(formWithToken),
+        redirect: 'manual'
+      })
+      location = response.headers.get('location') as string
+      response = await fetch.default(location, {
+        headers: {
+          cookie: matrixCookies as string
+        }
+      })
+      body = await response.text()
+      const loginTokenValue = [
+        ...(body as string).matchAll(/loginToken=(\S+?)"/g)
+      ][0][1]
+      response = await fetch.default(
+        encodeURI(
+          `https://${twakeServer.conf.matrix_server}/_matrix/client/v3/login`
+        ),
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            initial_device_display_name: 'Jest Test Client',
+            token: loginTokenValue,
+            type: 'm.login.token'
+          })
+        }
+      )
+      return ((await response.json()) as any).access_token as string
+    } catch (e) {
+      console.log(e)
+    }
+  }
 
   beforeAll((done) => {
     GenericContainer.fromDockerfile(path.join(pathToTestDataFolder, 'ldap'))
@@ -230,6 +297,100 @@ describe('ApplicationServer', () => {
       expect(membersIds[1].user_id).toEqual('@dwho:example.com')
     })
 
+    it('should force user to join room on login', (done) => {
+      let newRoomId: string
+      request(app)
+        .post('/_twake/app/v1/rooms')
+        .set('Accept', 'application/json')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({
+          name: 'room2',
+          visibility: 'public',
+          aliasName: 'r2',
+          topic: 'test room',
+          ldapFilter: {
+            mail: 'bb8@example.com'
+          }
+        })
+        // eslint-disable-next-line @typescript-eslint/promise-function-async
+        .then(() => {
+          return twakeServer.matrixDb?.get('room_aliases', ['room_id'], {
+            room_alias: '#_twake_r2:example.com'
+          })
+        })
+        // eslint-disable-next-line @typescript-eslint/promise-function-async
+        .then((roomId) => {
+          newRoomId = roomId[0].room_id as string
+          return twakeServer.matrixDb.get('room_memberships', ['user_id'], {
+            room_id: newRoomId
+          })
+        })
+        // eslint-disable-next-line @typescript-eslint/promise-function-async
+        .then((membersIds) => {
+          expect(membersIds.length).toEqual(1)
+          expect(membersIds[0].user_id).toEqual('@twake:example.com')
+          const client = ldapjs.createClient({
+            url: `ldap://${startedLdap.getHost()}:${ldapHostPort}/`
+          })
+          client.bind('cn=admin,dc=example,dc=com', 'admin', (err) => {
+            if (err != null) {
+              console.error(err)
+            }
+          })
+          client.add(
+            'uid=bb8,ou=users,dc=example,dc=com',
+            {
+              objectClass: 'inetOrgPerson',
+              uid: 'bb8',
+              cn: 'BB8',
+              sn: 'BB8',
+              mail: 'bb8@example.com',
+              userPassword: 'bb8'
+            },
+            (err) => {
+              if (err != null) {
+                console.error(err)
+              }
+            }
+          )
+          return simulationConnection('bb8', 'bb8')
+        })
+        // eslint-disable-next-line @typescript-eslint/promise-function-async
+        .then((token) => {
+          return fetch.default(
+            encodeURI(
+              `https://${twakeServer.conf.matrix_server}/_matrix/client/v3/sync`
+            ),
+            {
+              headers: {
+                // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+                Authorization: `Bearer ${token}`
+              }
+            }
+          )
+        })
+        .then(() => {
+          setTimeout(() => {
+            twakeServer.matrixDb
+              .get('room_memberships', ['user_id'], {
+                room_id: newRoomId
+              })
+              .then((membersIds) => {
+                expect(membersIds.length).toEqual(2)
+                expect(membersIds[1].user_id).toEqual('@bb8:example.com')
+                done()
+              })
+              .catch((e) => {
+                console.log(e)
+                done(e)
+              })
+          }, 3000)
+        })
+        .catch((e) => {
+          console.log(e)
+          done(e)
+        })
+    })
   })
 
   describe('Tests with mocks', () => {
@@ -683,6 +844,148 @@ describe('ApplicationServer', () => {
             error: { ...new Error() }
           }
         ])
+      })
+    })
+
+    describe('on login', () => {
+      it('should log an error when m.presence event sender is not found in user database', (done) => {
+        const ldapUid = 'test'
+        const appService = new AppServiceAPI(twakeServer)
+        const spyOnConsole = jest.spyOn(console, 'error')
+        jest.spyOn(twakeServer.idServer.userDB, 'get').mockResolvedValue([])
+        jest.spyOn(TwakeRoom, 'getAllRooms').mockResolvedValue([])
+        jest.spyOn(twakeServer.matrixDb, 'get').mockResolvedValue([])
+        appService.emit('ephemeral_type: m.presence', {
+          content: {
+            avatar_url: 'mxc://localhost/wefuiwegh8742w',
+            currently_active: false,
+            last_active_ago: 2478593,
+            presence: 'online',
+            status_msg: 'Making cupcakes'
+          },
+          sender: '@test:localhost',
+          type: 'm.presence'
+        })
+        setTimeout(() => {
+          expect(spyOnConsole).toHaveBeenCalledTimes(1)
+          expect(spyOnConsole).toHaveBeenCalledWith(
+            new Error(
+              `User with ${
+                twakeServer.conf.ldap_uid_field as string
+              } ${ldapUid} not found`
+            )
+          )
+          done()
+        }, 3000)
+      })
+
+      it('should complete all join requests even if an error occurs', (done) => {
+        const appService = new AppServiceAPI(twakeServer)
+        const spyOnConsole = jest.spyOn(console, 'error')
+        jest
+          .spyOn(fetch, 'default')
+          .mockResolvedValueOnce(new fetch.Response())
+          .mockRejectedValueOnce(new Error())
+          .mockResolvedValueOnce(new fetch.Response())
+        jest.spyOn(twakeServer.idServer.userDB, 'get').mockResolvedValue([
+          {
+            objectClass: 'inetOrgPerson',
+            uid: 'bb8',
+            cn: 'BB8',
+            sn: 'BB8',
+            mail: 'bb8@example.com',
+            userPassword: 'bb8'
+          }
+        ])
+        jest
+          .spyOn(TwakeRoom, 'getAllRooms')
+          .mockResolvedValue([
+            new TwakeRoom('room1', { mail: 'bb8@example.com' }),
+            new TwakeRoom('room2', { cn: 'BB8' }),
+            new TwakeRoom('room3', { uid: 'bb8' })
+          ])
+        jest.spyOn(twakeServer.matrixDb, 'get').mockResolvedValue([])
+        appService.emit('ephemeral_type: m.presence', {
+          content: {
+            avatar_url: 'mxc://localhost/wefuiwegh8742w',
+            currently_active: false,
+            last_active_ago: 2478593,
+            presence: 'online',
+            status_msg: 'Making cupcakes'
+          },
+          sender: '@test:localhost',
+          type: 'm.presence'
+        })
+        setTimeout(() => {
+          expect(spyOnConsole).not.toHaveBeenCalled()
+          done()
+        }, 3000)
+      })
+
+      it('should force join only to rooms whose sender is not member yet', (done) => {
+        const appService = new AppServiceAPI(twakeServer)
+        const spyOnFetch = jest
+          .spyOn(fetch, 'default')
+          .mockResolvedValue(new fetch.Response())
+        jest.spyOn(twakeServer.idServer.userDB, 'get').mockResolvedValue([
+          {
+            objectClass: 'inetOrgPerson',
+            uid: 'bb8',
+            cn: 'BB8',
+            sn: 'BB8',
+            mail: 'bb8@example.com',
+            userPassword: 'bb8'
+          }
+        ])
+        jest
+          .spyOn(TwakeRoom, 'getAllRooms')
+          .mockResolvedValue([
+            new TwakeRoom('room1', { mail: 'bb8@example.com' }),
+            new TwakeRoom('room2', { cn: 'BB8' }),
+            new TwakeRoom('room3', { mail: 'bb1@example.com' }),
+            new TwakeRoom('room4', { uid: 'bb8' })
+          ])
+        jest.spyOn(twakeServer.matrixDb, 'get').mockResolvedValue([
+          {
+            room_id: 'room1',
+            membership: 'join'
+          },
+          {
+            room_id: 'room2',
+            membership: 'invite'
+          }
+        ])
+        appService.emit('ephemeral_type: m.presence', {
+          content: {
+            avatar_url: 'mxc://localhost/wefuiwegh8742w',
+            currently_active: false,
+            last_active_ago: 2478593,
+            presence: 'online',
+            status_msg: 'Making cupcakes'
+          },
+          sender: '@test:localhost',
+          type: 'm.presence'
+        })
+        setTimeout(() => {
+          expect(spyOnFetch).toHaveBeenCalledTimes(2)
+          expect(spyOnFetch).toHaveBeenNthCalledWith(
+            1,
+            encodeURI(
+              // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+              `https://${twakeServer.conf.matrix_server}/_matrix/client/v3/join/room2?user_id=@test:localhost`
+            ),
+            expect.anything()
+          )
+          expect(spyOnFetch).toHaveBeenNthCalledWith(
+            2,
+            encodeURI(
+              // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+              `https://${twakeServer.conf.matrix_server}/_matrix/client/v3/join/room4?user_id=@test:localhost`
+            ),
+            expect.anything()
+          )
+          done()
+        }, 3000)
       })
     })
   })
