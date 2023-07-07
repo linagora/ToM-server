@@ -32,10 +32,20 @@ test:
   tags:
     - docker
   stage: test
-  image: mcr.microsoft.com/playwright:v1.34.1-focal
+  image: mcr.microsoft.com/playwright:v1.35.1-focal
+  variables:
+    DOCKER_HOST: "tcp://docker:2375"
+    DOCKER_TLS_CERTDIR: ""
+    DOCKER_DRIVER: overlay2
+  services:
+    - docker:dind
   dependencies:
     - npm
   script:
+    - cp /etc/hosts ~/hosts.new
+    - sed -i "s#\tdocker#\tdocker auth.example.com matrix.example.com#g" ~/hosts.new
+    - cp -f ~/hosts.new /etc/hosts
+    - apt-get update && apt-get --assume-yes install docker-compose
     - npm test
 
 invite_build:
