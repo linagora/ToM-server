@@ -1,16 +1,31 @@
+import fs from 'fs'
+import path from 'path'
 import MASRouter, { EHttpMethod } from '.'
 import MatrixApplicationServer from '..'
+
+const registrationFilePath = path.join(
+  __dirname,
+  '..',
+  '..',
+  'registration.yaml'
+)
 
 describe('MASRouter', () => {
   const appServer = new MatrixApplicationServer()
   const router = new MASRouter(appServer)
+
+  afterAll(() => {
+    if (fs.existsSync(registrationFilePath)) {
+      fs.unlinkSync(registrationFilePath)
+    }
+  })
 
   it('should return basic application server routes on create an instance', () => {
     const expectedRoutes: Record<string, object> = {
       '/_matrix/app/v1/transactions/:txnId': { put: true, _all: true },
       '/_matrix/app/v1/users/:userId': { get: true, _all: true },
       '/_matrix/app/v1/rooms/:roomAlias': { get: true, _all: true },
-      '/^/users|rooms|transactions/:[a-zA-Z0-9]/g': { _all: true }
+      '/^/(users|rooms|transactions)/[a-zA-Z0-9]*/g': { _all: true }
     }
     const expectedPaths = Object.keys(expectedRoutes)
     expect(router.routes).toBeDefined()
@@ -24,7 +39,7 @@ describe('MASRouter', () => {
       )
     }
     expect(stack[3].route.path.toString()).toEqual(
-      '/^\\/users|rooms|transactions\\/:[a-zA-Z0-9]/g'
+      '/^\\/(users|rooms|transactions)\\/[a-zA-Z0-9]*/g'
     )
     expect(stack[3].route.methods).toStrictEqual({ _all: true })
   })
