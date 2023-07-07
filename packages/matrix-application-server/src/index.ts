@@ -1,15 +1,16 @@
-import fs from 'fs'
 import configParser, { type ConfigDescription } from '@twake/config-parser'
-import defaultConfDesc from './config.json'
-import { AppServiceRegistration, type Namespaces } from './utils'
 import { EventEmitter } from 'events'
+import fs from 'fs'
+import defaultConfDesc from './config.json'
 import MASRouter from './routes'
+import { AppServiceRegistration, type Namespaces } from './utils'
 
 export interface Config {
   base_url: string
   sender_localpart?: string
   registration_file_path: string
   namespaces?: Namespaces
+  push_ephemeral?: boolean
 }
 
 export declare interface AppService {
@@ -25,6 +26,18 @@ export declare interface AppService {
    */
   // eslint-disable-next-line @typescript-eslint/method-signature-style
   on(event: 'event', cb: (event: Record<string, unknown>) => void): this
+  /**
+   * Emitted when an ephemeral event is pushed to the appservice.
+   * The format of the event object is documented at
+   * https://github.com/matrix-org/matrix-doc/pull/2409
+   * @event
+   * @example
+   * appService.on("ephemeral", function(ev) {
+   *   console.log("ID: %s", ev.type);
+   * });
+   */
+  // eslint-disable-next-line @typescript-eslint/method-signature-style
+  on(event: 'ephemeral', cb: (event: Record<string, unknown>) => void): this
   /**
    * Emitted when an event of a particular type is pushed
    * to the appservice. This will be emitted *in addition*

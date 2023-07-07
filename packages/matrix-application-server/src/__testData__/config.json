@@ -9,5 +9,6 @@
           "regex": "@_irc_bridge_.*"
         }
       ]
-    }
+    },
+    "push_ephemeral": true
 }

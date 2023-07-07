@@ -29,6 +29,7 @@ export const transaction: TransactionController = (
     }
     const txnId = req.params.txnId
     const events = (req.body as TransactionRequestBody).events
+    const ephemeral = req.body['de.sorunome.msc2409.ephemeral'] ?? []
     if (appServer.lastProcessedTxnId === txnId) {
       res.send({})
       return
@@ -42,6 +43,13 @@ export const transaction: TransactionController = (
         )
       } else {
         appServer.emit(`type: ${event.type}`, event)
+      }
+    })
+    ephemeral.forEach((event: ClientEvent) => {
+      if (event.type != null) {
+        appServer.emit('ephemeral_type: ' + event.type, event)
+      } else {
+        appServer.emit('ephemeral', event)
       }
     })
     appServer.lastProcessedTxnId = txnId

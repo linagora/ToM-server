@@ -1,9 +1,9 @@
+import fs from 'fs'
+import yaml from 'js-yaml'
+import path from 'path'
 import { type Config } from '..'
 import defaultConfig from '../config.json'
 import { AppServiceRegistration, type AppServiceOutput } from './registration'
-import yaml from 'js-yaml'
-import path from 'path'
-import fs from 'fs'
 
 const testDataFolderPath = path.join(__dirname, '..', '__testData__')
 const yamlFalsyTestFilePath = path.join(
@@ -56,13 +56,17 @@ describe('Registration', () => {
       expect(appServiceRegistration.namespaces).toStrictEqual(
         testConfig.namespaces
       )
+      expect(appServiceRegistration.pushEphemeral).toEqual(
+        testConfig.push_ephemeral
+      )
     })
 
     it('should create a class instance based on config with some default values', () => {
       const appServiceRegistration = new AppServiceRegistration({
         ...testConfig,
         sender_localpart: undefined,
-        namespaces: undefined
+        namespaces: undefined,
+        push_ephemeral: undefined
       })
       expect(spyOnLoad).not.toHaveBeenCalled()
       expect(appServiceRegistration.asToken).not.toBeNull()
@@ -74,6 +78,7 @@ describe('Registration', () => {
       expect(appServiceRegistration.senderLocalpart).toEqual('')
       expect(appServiceRegistration.url).toEqual(testConfig.base_url)
       expect(appServiceRegistration.namespaces).toStrictEqual({})
+      expect(appServiceRegistration.pushEphemeral).toEqual(false)
     })
 
     it('should create a class instance based on registration.yaml file', () => {
@@ -100,6 +105,7 @@ describe('Registration', () => {
           }
         ]
       })
+      expect(appServiceRegistration.pushEphemeral).toEqual(true)
     })
 
     it('should throw YAMLException if there is an error in yaml file', () => {
@@ -147,6 +153,18 @@ describe('Registration', () => {
       expect(() => new AppServiceRegistration(config)).toThrowError(
         new Error(
           'The value of "sender_localpart" field in configuration must be a string'
+        )
+      )
+    })
+
+    it('should throw error if push_ephemeral is not a boolean', () => {
+      const config: any = {
+        ...testConfig,
+        push_ephemeral: 'falsy'
+      }
+      expect(() => new AppServiceRegistration(config)).toThrowError(
+        new Error(
+          'The value of "push_ephemeral" field in configuration must be a boolean'
         )
       )
     })
@@ -245,7 +263,9 @@ describe('Registration', () => {
         sender_localpart: appServiceRegistration.senderLocalpart,
         namespaces: appServiceRegistration.namespaces,
         rate_limited: false,
-        protocols: ['test']
+        protocols: ['test'],
+        'de.sorunome.msc2409.push_ephemeral':
+          appServiceRegistration.pushEphemeral
       }
 
       expect(fs.existsSync(testConfig.registration_file_path)).toEqual(false)
@@ -286,7 +306,9 @@ describe('Registration', () => {
         as_token: appServiceRegistration.asToken,
         url: appServiceRegistration.url,
         sender_localpart: appServiceRegistration.senderLocalpart,
-        namespaces: appServiceRegistration.namespaces
+        namespaces: appServiceRegistration.namespaces,
+        'de.sorunome.msc2409.push_ephemeral':
+          appServiceRegistration.pushEphemeral
       }
 
       expect(spyOnInfo).toHaveBeenCalledTimes(1)
