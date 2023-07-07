@@ -36,6 +36,19 @@ export class TwakeRoom implements ITwakeRoomModel {
     return undefined
   }
 
+  static async getAllRooms(db: TwakeDB): Promise<TwakeRoom[]> {
+    const roomsfromDb = (await db.getAll('rooms' as Collections, [])) as Array<{
+      id: string
+      filter: string
+    }>
+    if (roomsfromDb != null && roomsfromDb.length > 0) {
+      return roomsfromDb.map(
+        (room) => new TwakeRoom(room.id, JSON.parse(room.filter))
+      )
+    }
+    return []
+  }
+
   public async updateRoom(
     db: TwakeDB,
     filter: Record<string, string | number | string[]>
@@ -46,5 +59,24 @@ export class TwakeRoom implements ITwakeRoomModel {
       'id',
       this.id
     )
+  }
+
+  public userDataMatchRoomFilter(user: any): boolean {
+    const ldapFilter = new OrFilter({
+      filters: [
+        new EqualityFilter({
+          attribute: 'objectClass',
+          value: '*'
+        }),
+        ...Object.keys(this.filter).map(
+          (key: string) =>
+            new EqualityFilter({
+              attribute: key,
+              value: this.filter[key].toString()
+            })
+        )
+      ]
+    })
+    return ldapFilter.matches(user)
   }
 }

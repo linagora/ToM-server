@@ -13,6 +13,7 @@ export interface Config {
   push_ephemeral?: boolean
 }
 
+export { type ClientEvent } from './interfaces'
 export { EHttpMethod } from './routes'
 export {
   AppServerAPIError,

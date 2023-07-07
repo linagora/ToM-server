@@ -8,4 +8,5 @@ export interface ITwakeRoomModel {
     db: TwakeDB,
     filter: Record<string, string | number | string[]>
   ) => Promise<void>
+  userDataMatchRoomFilter: (user: any) => boolean
 }
