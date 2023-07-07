@@ -76,7 +76,7 @@ describe('Transaction', () => {
     )
     handler(mockRequest as Request, mockResponse as Response, nextFunction)
     expect(mockResponse.send).toHaveBeenCalledTimes(1)
-    expect(mockResponse.send).toHaveBeenCalledWith()
+    expect(mockResponse.send).toHaveBeenCalledWith({})
     expect(appServer.emit).toHaveBeenCalledTimes(2)
     const events: ClientEvent[] = mockRequest.body.events
     expect(appServer.emit).toHaveBeenNthCalledWith(
@@ -101,7 +101,7 @@ describe('Transaction', () => {
     )
     handler(mockRequest as Request, mockResponse as Response, nextFunction)
     expect(mockResponse.send).toHaveBeenCalledTimes(1)
-    expect(mockResponse.send).toHaveBeenCalledWith()
+    expect(mockResponse.send).toHaveBeenCalledWith({})
     expect(appServer.lastProcessedTxnId).toEqual(lastProcessedTxnId)
   })
 

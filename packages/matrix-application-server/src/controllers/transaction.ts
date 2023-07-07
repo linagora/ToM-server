@@ -30,7 +30,7 @@ export const transaction: TransactionController = (
     const txnId = req.params.txnId
     const events = (req.body as TransactionRequestBody).events
     if (appServer.lastProcessedTxnId === txnId) {
-      res.send()
+      res.send({})
       return
     }
     events.forEach((event: ClientEvent) => {
@@ -45,6 +45,6 @@ export const transaction: TransactionController = (
       }
     })
     appServer.lastProcessedTxnId = txnId
-    res.send()
+    res.send({})
   }
 }
