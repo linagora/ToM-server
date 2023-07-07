@@ -1,5 +1,5 @@
 import { type NextFunction, type Request, type Response } from 'express'
-import { AppServerAPIError, ErrCodes, type expressAppHandler } from '../utils'
+import { AppServerAPIError, errCodes, type expressAppHandler } from '../utils'
 
 export default (expectedHomeserverToken: string): expressAppHandler => {
   return (req: Request, res: Response, next: NextFunction) => {
@@ -13,7 +13,7 @@ export default (expectedHomeserverToken: string): expressAppHandler => {
     } else {
       throw new AppServerAPIError({
         status: 401,
-        code: ErrCodes.M_UNAUTHORIZED
+        code: errCodes.unauthorized
       })
     }
     if (expectedHomeserverToken === token) {
@@ -21,7 +21,7 @@ export default (expectedHomeserverToken: string): expressAppHandler => {
     } else {
       throw new AppServerAPIError({
         status: 403,
-        code: ErrCodes.M_FORBIDDEN
+        code: errCodes.forbidden
       })
     }
   }

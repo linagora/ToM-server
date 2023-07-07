@@ -1,18 +1,18 @@
-import { AppServerAPIError, ErrCodes, type expressAppHandler } from '../utils'
+import { type NextFunction, type Request, type Response } from 'express'
+import { AppServerAPIError, errCodes, type expressAppHandler } from '../utils'
 import auth from './auth'
-import { type Request, type Response, type NextFunction } from 'express'
 
 const homeserverToken =
   'hsTokenTestwdakZQunWWNe3DZitAerw9aNqJ2a6HVp0sJtg7qTJWXcHnBjgN0NL'
 
 const unauthorizedError = new AppServerAPIError({
   status: 401,
-  code: ErrCodes.M_UNAUTHORIZED
+  code: errCodes.unauthorized
 })
 
 const forbiddenError = new AppServerAPIError({
   status: 403,
-  code: ErrCodes.M_FORBIDDEN
+  code: errCodes.forbidden
 })
 
 describe('Authentication', () => {
