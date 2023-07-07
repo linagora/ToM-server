@@ -13,6 +13,11 @@ export interface Config {
   push_ephemeral?: boolean
 }
 
+export {
+  AppServerAPIError,
+  type expressAppHandler
+} from './utils'
+
 export declare interface AppService {
   /**
    * Emitted when an event is pushed to the appservice.
