@@ -1,0 +1,44 @@
+version: '3'
+
+services:
+  synapse:
+    image: matrixdotorg/synapse
+    hostname: matrix.example.com
+    volumes:
+      - ./synapse-data:/data
+      - ./nginx/ssl/auth.example.com.crt:/etc/ssl/certs/ca-certificates.crt
+    depends_on:
+      - auth
+    environment: 
+      - UID=${MYUID}
+      - VIRTUAL_PORT=8008
+      - VIRTUAL_HOST=matrix.example.com
+    healthcheck:
+      test: ["CMD", "curl", "-fSs", "http://localhost:8008/health"]
+      interval: 10s
+      timeout: 10s
+      retries: 3
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  auth:
+    image: yadd/lemonldap-ng-portal
+    hostname: auth.example.com
+    volumes:
+      - ./llng/lmConf-1.json:/var/lib/lemonldap-ng/conf/lmConf-1.json
+      - ./llng/ssl.conf:/etc/nginx/sites-enabled/0000default.conf
+      - ./nginx/ssl/auth.example.com.crt:/etc/nginx/ssl/auth.example.com.crt
+      - ./nginx/ssl/auth.example.com.key:/etc/nginx/ssl/auth.example.com.key
+    environment:
+      - PORTAL=https://auth.example.com
+      - VIRTUAL_HOST=auth.example.com
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  nginx-proxy:
+    image: jwilder/nginx-proxy
+    ports:
+      - 443:443
+    volumes:
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+      - ./nginx/ssl:/etc/nginx/certs
