@@ -7,6 +7,7 @@ type Collections =
   | 'room_memberships'
   | 'room_stats_state'
   | 'local_media_repository'
+  | 'room_aliases'
 
 type Get = (
   table: Collections,

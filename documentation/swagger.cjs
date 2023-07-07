@@ -59,6 +59,36 @@ const options = {
           bearerFormat: 'JWT'
         }
       },
+      schemas: {
+        BadRequest: {
+          type: 'object',
+          properties: {
+            errcode: {
+              type: 'string',
+              description: 'A Matrix error code'
+            },
+            error: {
+              type: 'string',
+              description: 'A human-readable error message'
+            }
+          },
+          required: ['error']
+        },
+        Conflict: {
+          type: 'object',
+          properties: {
+            errcode: {
+              type: 'string',
+              description: 'A Matrix error code'
+            },
+            error: {
+              type: 'string',
+              description: 'A human-readable error message'
+            }
+          },
+          required: ['error']
+        }
+      },
       responses: {
         InternalServerError: {
           description: 'Internal server error',
@@ -76,7 +106,7 @@ const options = {
             }
           }
         },
-        MatrixUnauthorized: {
+        Unauthorized: {
           description: 'Unauthorized',
           content: {
             'application/json': {
@@ -91,31 +121,12 @@ const options = {
                     type: 'string',
                     description: 'A human-readable error message'
                   }
-                }
+                },
+                required: ['error']
               },
               example: {
                 errcode: 'M_UNAUTHORIZED',
                 error: 'Unauthorized'
-              }
-            }
-          }
-        },
-        Unauthorized: {
-          description: 'Unauthorized',
-          content: {
-            'application/json': {
-              schema: {
-                type: 'object',
-                properties: {
-                  error: {
-                    type: 'string',
-                    description:
-                      'The user who sent the request is not authenticated'
-                  }
-                }
-              },
-              example: {
-                error: 'Not Authorized'
               }
             }
           }
@@ -125,17 +136,7 @@ const options = {
           content: {
             'application/json': {
               schema: {
-                type: 'object',
-                properties: {
-                  errcode: {
-                    type: 'string',
-                    description: 'A Matrix error code'
-                  },
-                  error: {
-                    type: 'string',
-                    description: 'A human-readable error message'
-                  }
-                }
+                $ref: '#/components/schemas/BadRequest'
               },
               example: {
                 errcode: 'M_MISSING_PARAMS',
@@ -159,11 +160,25 @@ const options = {
                     type: 'string',
                     description: 'A human-readable error message'
                   }
-                }
+                },
+                required: ['error']
               },
               example: {
                 errcode: 'M_FORBIDDEN',
                 error: 'Forbidden'
+              }
+            }
+          }
+        },
+        Conflict: {
+          description: 'Conflict',
+          content: {
+            'application/json': {
+              schema: {
+                $ref: '#/components/schemas/Conflict'
+              },
+              example: {
+                error: 'Conflict'
               }
             }
           }

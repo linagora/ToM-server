@@ -51,7 +51,7 @@ export default class MASRouter {
      *      400:
      *        $ref: '#/components/responses/BadRequest'
      *      401:
-     *        $ref: '#/components/responses/MatrixUnauthorized'
+     *        $ref: '#/components/responses/Unauthorized'
      *      403:
      *        $ref: '#/components/responses/Forbidden'
      *      404:
@@ -97,7 +97,7 @@ export default class MASRouter {
      *      400:
      *        $ref: '#/components/responses/BadRequest'
      *      401:
-     *        $ref: '#/components/responses/MatrixUnauthorized'
+     *        $ref: '#/components/responses/Unauthorized'
      *      403:
      *        $ref: '#/components/responses/Forbidden'
      *      500:
@@ -132,7 +132,7 @@ export default class MASRouter {
      *      400:
      *        $ref: '#/components/responses/BadRequest'
      *      401:
-     *        $ref: '#/components/responses/MatrixUnauthorized'
+     *        $ref: '#/components/responses/Unauthorized'
      *      403:
      *        $ref: '#/components/responses/Forbidden'
      *      500:

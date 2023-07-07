@@ -13,8 +13,10 @@ export interface Config {
   push_ephemeral?: boolean
 }
 
+export { EHttpMethod } from './routes'
 export {
   AppServerAPIError,
+  validationErrorHandler,
   type expressAppHandler
 } from './utils'
 
