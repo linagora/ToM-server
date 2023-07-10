@@ -1,6 +1,6 @@
+import ldapjs, { type Client, type SearchOptions } from 'ldapjs'
+import { type Config, type DbGetResult } from '../types'
 import { type UserDBBackend } from './index'
-import { type DbGetResult, type Config } from '../types'
-import ldapjs, { type SearchOptions, type Client } from 'ldapjs'
 
 class UserDBLDAP implements UserDBBackend {
   base: string
@@ -34,7 +34,47 @@ class UserDBLDAP implements UserDBBackend {
         }
       })
     }
-    this.ready = Promise.resolve()
+    this.ready = new Promise((resolve, _reject) => {
+      const handleConnectionError = (
+        error: any,
+        client?: ldapjs.Client
+      ): void => {
+        if (client != null) {
+          client.destroy()
+        }
+        console.error('Connection to LDAP failed', error)
+        resolve()
+      }
+
+      this.ldap()
+        .then((client) => {
+          client.on('connect', () => {
+            client.destroy()
+            resolve()
+          })
+          client.on('connectError', (error) => {
+            handleConnectionError(error, client)
+          })
+          client.on('connectTimeout', (error) => {
+            handleConnectionError(error, client)
+          })
+          client.on('connectRefused', (error) => {
+            handleConnectionError(error, client)
+          })
+          client.on('setupError', (error) => {
+            handleConnectionError(error, client)
+          })
+          client.on('socketTimeout', (error) => {
+            handleConnectionError(error, client)
+          })
+          client.on('error', (error) => {
+            handleConnectionError(error, client)
+          })
+        })
+        .catch((error) => {
+          handleConnectionError(error)
+        })
+    })
   }
 
   // eslint-disable-next-line @typescript-eslint/promise-function-async

@@ -351,6 +351,7 @@ describe('ApplicationServer', () => {
               if (err != null) {
                 console.error(err)
               }
+              client.destroy()
             }
           )
           return simulationConnection('bb8', 'bb8')

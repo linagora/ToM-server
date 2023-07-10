@@ -1,6 +1,6 @@
 import ldapjs from 'ldapjs'
-import UserDBLDAP from './ldap'
 import defaultConfig from '../config.json'
+import UserDBLDAP from './ldap'
 
 const server = ldapjs.createServer()
 
@@ -68,6 +68,23 @@ describe('LDAP', () => {
           .catch(done)
       })
       .catch(done)
+  })
+
+  it('should display error message on connection error', async () => {
+    const userDB = new UserDBLDAP({
+      ...defaultConfig,
+      database_engine: 'sqlite',
+      userdb_engine: 'ldap',
+      ldap_uri: 'ldap://falsy:63389',
+      ldap_base: 'ou=users,o=example'
+    })
+    const consoleErrorSpy = jest.spyOn(console, 'error')
+    await userDB.ready
+    expect(consoleErrorSpy).toHaveBeenCalledTimes(1)
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      'Connection to LDAP failed',
+      expect.anything()
+    )
   })
 
   it('should provide match', (done) => {
