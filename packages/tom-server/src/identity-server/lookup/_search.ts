@@ -13,7 +13,15 @@ export interface Query {
   val?: string
 }
 
-export const SearchFields = new Set<string>(['mail', 'mobile', 'uid'])
+export const SearchFields = new Set<string>([
+  'mail',
+  'mobile',
+  'uid',
+  'displayName',
+  'givenName',
+  'cn',
+  'sn'
+])
 
 const _search = (tomServer: TwakeServer): SearchFunction => {
   return (res, data) => {

@@ -47,7 +47,7 @@ export default class TwakeIdentityServer extends MatrixIdentityServer {
            *                type: array
            *                items:
            *                  type: string
-           *                  description: List of fields to return for matching users
+           *                  description: List of fields to return for matching users (uid, mail, mobile, displayName, givenName, cn, sn)
            *              val:
            *                type: string
            *                description: Optional value to search
@@ -62,7 +62,7 @@ export default class TwakeIdentityServer extends MatrixIdentityServer {
            *              - fields
            *          example:
            *            scope: [mail, uid]
-           *            fields: [uid]
+           *            fields: [uid, displayName, sn, givenName, mobile]
            *            val: rtyler
            *            limit: 3
            *    responses:
