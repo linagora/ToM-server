@@ -20,6 +20,7 @@ export interface Config {
 export interface LoggerConfig {
   levels?: Record<string, number>
   silent?: boolean
+  format?: FormatConf | FormatConf[]
   logLevel?: string
   logFile?: string
   logger?: string
@@ -162,4 +163,163 @@ interface DailyRotateFileTransportOptions extends DefaultTransportOptions {
   createSymlink?: boolean
   symlinkName?: string
   auditHashType?: string
+}
+
+// see details on https://github.com/winstonjs/logform/blob/master/README.md
+
+export type FormatConf =
+  | Align
+  | CLI
+  | Colorize
+  | Errors
+  | JSON
+  | Label
+  | Logstash
+  | Metadata
+  | PadLevels
+  | PrettyPrint
+  | Printf
+  | Simple
+  | Splat
+  | Timestamp
+  | Uncolorize
+
+export enum EFormatType {
+  ALIGN = 'align',
+  CLI = 'cli',
+  COLORIZE = 'colorize',
+  ERRORS = 'errors',
+  JSON = 'json',
+  LABEL = 'label',
+  LOGSTASH = 'logstash',
+  METADATA = 'metadata',
+  PAD_LEVELS = 'padLevels',
+  PRETTY_PRINT = 'prettyPrint',
+  PRINTF = 'printf',
+  SIMPLE = 'simple',
+  SPLAT = 'splat',
+  TIMESTAMP = 'timestamp',
+  UNCOLORIZE = 'uncolorize'
+}
+
+interface Align {
+  type: EFormatType.ALIGN
+}
+
+interface CLI {
+  type: EFormatType.CLI
+  options?: ColorizeOptions & PadLevelsOptions
+}
+
+interface Colorize {
+  type: EFormatType.COLORIZE
+  options?: ColorizeOptions
+}
+
+interface Errors {
+  type: EFormatType.ERRORS
+  options?: ErrorsOptions
+}
+
+interface JSON {
+  type: EFormatType.JSON
+  options?: JSONOptions
+}
+
+interface Label {
+  type: EFormatType.LABEL
+  options?: LabelOptions
+}
+
+interface Logstash {
+  type: EFormatType.LOGSTASH
+}
+
+interface Metadata {
+  type: EFormatType.METADATA
+  options?: MetadataOptions
+}
+
+interface PadLevels {
+  type: EFormatType.PAD_LEVELS
+  options?: PadLevelsOptions
+}
+
+interface PrettyPrint {
+  type: EFormatType.PRETTY_PRINT
+  options?: PrettyPrintOptions
+}
+
+interface Printf {
+  type: EFormatType.PRINTF
+  options: PrintfOptions
+}
+
+interface Simple {
+  type: EFormatType.SIMPLE
+}
+
+interface Splat {
+  type: EFormatType.SPLAT
+}
+
+interface Timestamp {
+  type: EFormatType.TIMESTAMP
+  options?: TimestampOptions
+}
+
+interface Uncolorize {
+  type: EFormatType.UNCOLORIZE
+  options?: UncolorizeOptions
+}
+
+interface ColorizeOptions {
+  level?: boolean
+  all?: boolean
+  message?: boolean
+  colors?: Record<string, string>
+}
+
+interface ErrorsOptions {
+  stack?: boolean
+}
+
+interface JSONOptions {
+  space?: number
+}
+
+interface LabelOptions {
+  label?: string
+  message?: boolean
+}
+
+interface MetadataOptions {
+  key?: string
+  fillExcept?: string[]
+  fillWith?: string[]
+}
+
+interface PadLevelsOptions {
+  levels?: Record<string, number>
+  filler?: string
+}
+
+interface PrettyPrintOptions {
+  depth?: number
+  colorize?: boolean
+}
+
+interface PrintfOptions {
+  template: string
+}
+
+interface TimestampOptions {
+  format?: string
+  alias?: string
+}
+
+interface UncolorizeOptions {
+  level?: boolean
+  message?: boolean
+  raw?: boolean
 }

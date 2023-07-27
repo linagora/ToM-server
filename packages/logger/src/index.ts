@@ -1,13 +1,16 @@
 import configParser, { type ConfigDescription } from '@twake/config-parser'
 import fs from 'fs'
+import { type Format } from 'logform'
 import path from 'path'
 import { config, createLogger, format, transports, type Logger } from 'winston'
 import DailyRotateFile from 'winston-daily-rotate-file'
 import defaultConfDesc from './config.json'
 import {
+  EFormatType,
   ELoggerConfigFields,
   ETransportType,
   type Config,
+  type FormatConf,
   type LoggerConfig,
   type TransportConf,
   type TransportInstance
@@ -30,6 +33,7 @@ export const getLogger = (
   return createLogger({
     levels: loggingConf.levels,
     level: loggingConf.logLevel,
+    format: getFormatFromConfig(loggingConf.format),
     defaultMeta: loggingConf.defaultMeta,
     transports:
       getTransportsFromEnvVariables(loggingConf) ??
@@ -129,6 +133,75 @@ const getTransportsFromConfig = (
   return transportConf.map((conf) => getTransport(conf))
 }
 
+const getFormatFromConfig = (
+  formatConf: FormatConf | FormatConf[] | null | undefined
+): Format => {
+  const getFormat = (conf: FormatConf): Format => {
+    let loggerFormat: Format
+    switch (conf.type) {
+      case EFormatType.ALIGN:
+      case EFormatType.LOGSTASH:
+      case EFormatType.SIMPLE:
+      case EFormatType.SPLAT:
+        loggerFormat = format[conf.type]()
+        break
+      case EFormatType.CLI:
+      case EFormatType.COLORIZE:
+      case EFormatType.ERRORS:
+      case EFormatType.JSON:
+      case EFormatType.LABEL:
+      case EFormatType.METADATA:
+      case EFormatType.PAD_LEVELS:
+      case EFormatType.PRETTY_PRINT:
+      case EFormatType.TIMESTAMP:
+      case EFormatType.UNCOLORIZE:
+        loggerFormat = format[conf.type](conf.options)
+        break
+      case EFormatType.PRINTF:
+        {
+          const template = conf.options.template
+          const infoLevelRegex = /\$\{info\.level\}/g
+          const infoMsgRegex = /\$\{info\.message\}/g
+          const infoLvlMatch = infoLevelRegex.exec(template)
+          const infoMsgMatch = infoMsgRegex.exec(template)
+          if (infoLvlMatch == null || infoMsgMatch == null) {
+            throw new Error(
+              // eslint-disable-next-line no-template-curly-in-string
+              '${info.level} and ${info.message} must be in your template'
+            )
+          }
+          loggerFormat = format.printf((info) => {
+            const infoLvl = { match: infoLvlMatch, value: info.level }
+            const infoMsg = { match: infoMsgMatch, value: info.message }
+            const sortedInfo =
+              infoLvlMatch.index < infoMsgMatch.index
+                ? [infoLvl, infoMsg]
+                : [infoMsg, infoLvl] // check this case
+            return `${template.substring(0, sortedInfo[0].match.index)}${String(
+              sortedInfo[0].value
+            )}${template.substring(
+              sortedInfo[0].match.index + sortedInfo[0].match[0].length,
+              sortedInfo[1].match.index
+            )}${String(sortedInfo[1].value)}${template.substring(
+              sortedInfo[1].match.index + sortedInfo[1].match[0].length,
+              template.length
+            )}`
+          })
+        }
+        break
+    }
+    return loggerFormat
+  }
+
+  if (formatConf == null) {
+    return format.simple()
+  }
+
+  return Array.isArray(formatConf)
+    ? format.combine(...formatConf.map((conf) => getFormat(conf)))
+    : getFormat(formatConf)
+}
+
 const checkLoggerConfig = (conf: any, filename: string): void => {
   if (typeof conf !== 'object') {
     throw new Error(
@@ -169,6 +242,9 @@ const checkLoggerConfig = (conf: any, filename: string): void => {
           break
         case ELoggerConfigFields.LOG_LEVEL:
           checkLogLevelField(conf[key], conf[ELoggerConfigFields.LEVELS])
+          break
+        case ELoggerConfigFields.FORMAT:
+          checkFormatField(conf[key])
           break
         case ELoggerConfigFields.TRANSPORTS:
         case ELoggerConfigFields.EXCEPTION_HANDLERS:
@@ -255,6 +331,48 @@ const checkLogLevelField = (value: any, levelsValue: any): void => {
       `${ELoggerConfigFields.LOG_LEVEL} in error: value must equal to one of ${ELoggerConfigFields.LEVELS} keys`
     )
   }
+}
+
+const checkFormatField = (value: any): void => {
+  const checkOptionsField = (element: FormatConf): void => {
+    switch (element.type) {
+      case EFormatType.ALIGN:
+      case EFormatType.LOGSTASH:
+      case EFormatType.SIMPLE:
+      case EFormatType.SPLAT:
+        if ('options' in element) {
+          throw new Error(
+            `${ELoggerConfigFields.FORMAT} in error: "options" should not be defined for ${element.type} format`
+          )
+        }
+        break
+      case EFormatType.PRINTF:
+        if (element.options == null || element.options.template == null) {
+          throw new Error(
+            `${ELoggerConfigFields.FORMAT} in error: "template" in "options" should be defined for "${element.type}" format`
+          )
+        }
+        break
+    }
+  }
+
+  const checkFormat = (element: any): void => {
+    if (element != null) {
+      if (
+        typeof element !== 'object' ||
+        element.type == null ||
+        !Object.values(EFormatType).includes(element.type)
+      ) {
+        throw new Error(
+          `${ELoggerConfigFields.FORMAT} in error: value should be an object or an array of objects which have a "type" property whose value must be one of the listed format in documentation`
+        )
+      }
+
+      checkOptionsField(element)
+    }
+  }
+
+  Array.isArray(value) ? value.forEach(checkFormat) : checkFormat(value)
 }
 
 const checkTransportsArrayField = (

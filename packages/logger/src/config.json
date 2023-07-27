@@ -3,6 +3,9 @@
     "logger": null,
     "logLevel": "info",
     "logFile": null,
+    "format": {
+      "type": "simple"
+    },
     "transports": [{
       "type":"DailyRotateFile",
       "options": {
