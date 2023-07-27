@@ -11,3 +11,17 @@ export interface LoggerConfig {
   exitOnError?: boolean
   defaultMeta?: Record<string, any>
 }
+
+export enum ELoggerConfigFields {
+  DEFAULT_META = 'defaultMeta',
+  EXCEPTION_HANDLERS = 'exceptionHandlers',
+  EXIT_ON_ERROR = 'exitOnError',
+  FORMAT = 'format',
+  LEVELS = 'levels',
+  LOG_FILE = 'logFile',
+  LOG_LEVEL = 'logLevel',
+  LOGGER = 'logger',
+  REJECTION_HANDLERS = 'rejectionHandlers',
+  SILENT = 'silent',
+  TRANSPORTS = 'transports'
+}
