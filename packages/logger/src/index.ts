@@ -1,13 +1,19 @@
 import configParser, { type ConfigDescription } from '@twake/config-parser'
 import fs from 'fs'
 import path from 'path'
-import { config, createLogger, type Logger } from 'winston'
+import { config, createLogger, format, transports, type Logger } from 'winston'
+import DailyRotateFile from 'winston-daily-rotate-file'
 import defaultConfDesc from './config.json'
 import {
   ELoggerConfigFields,
+  ETransportType,
   type Config,
   type LoggerConfig,
+  type TransportConf,
+  type TransportInstance
 } from './types'
+
+const defaultFileName = 'twake.log'
 
 export const getLogger = (
   conf?: Partial<Config>,
@@ -25,8 +31,13 @@ export const getLogger = (
     levels: loggingConf.levels,
     level: loggingConf.logLevel,
     defaultMeta: loggingConf.defaultMeta,
+    transports:
+      getTransportsFromEnvVariables(loggingConf) ??
+      getTransportsFromConfig(loggingConf.transports),
     silent: loggingConf.silent,
     exitOnError: loggingConf.exitOnError,
+    exceptionHandlers: getTransportsFromConfig(loggingConf.exceptionHandlers),
+    rejectionHandlers: getTransportsFromConfig(loggingConf.rejectionHandlers)
   })
 }
 
@@ -50,6 +61,72 @@ const getConfigurationFile = (
     return res.logging
   }
   return undefined
+}
+
+const getTransportsFromEnvVariables = (
+  conf: LoggerConfig
+): TransportInstance[] | undefined => {
+  if (conf.logger === ETransportType.CONSOLE) {
+    return [
+      new transports.Console({
+        format: format.cli()
+      })
+    ]
+  } else if (conf.logger === ETransportType.FILE) {
+    return [
+      new transports.File({
+        filename: conf.logFile ?? defaultFileName,
+        format: format.align()
+      })
+    ]
+  }
+}
+
+const getTransportsFromConfig = (
+  transportConf: TransportConf[] | null | undefined
+): TransportInstance[] => {
+  const getTransport = (conf: TransportConf): TransportInstance => {
+    let transportFormat: Format | undefined
+    if (conf.options?.format != null) {
+      transportFormat = getFormatFromConfig(conf.options.format)
+    }
+    switch (conf.type) {
+      case ETransportType.CONSOLE:
+      case ETransportType.FILE:
+      case ETransportType.HTTP:
+        return new transports[conf.type]({
+          ...conf.options,
+          format: transportFormat
+        })
+      case ETransportType.DAILY_ROTATE_FILE:
+        return new DailyRotateFile({
+          ...conf.options,
+          format: transportFormat
+        })
+      case ETransportType.STREAM: {
+        const dirname =
+          conf.options?.parentDirPath ?? path.join(__dirname, 'logger')
+        delete conf.options?.parentDirPath
+        fs.mkdirSync(dirname, { recursive: true })
+        const filePath = path.join(
+          dirname,
+          conf.options?.filename ?? defaultFileName
+        )
+        delete conf.options?.filename
+        return new transports.Stream({
+          ...conf.options,
+          stream: fs.createWriteStream(filePath),
+          format: transportFormat
+        })
+      }
+    }
+  }
+
+  if (transportConf == null) {
+    return []
+  }
+
+  return transportConf.map((conf) => getTransport(conf))
 }
 
 const checkLoggerConfig = (conf: any, filename: string): void => {
@@ -92,6 +169,11 @@ const checkLoggerConfig = (conf: any, filename: string): void => {
           break
         case ELoggerConfigFields.LOG_LEVEL:
           checkLogLevelField(conf[key], conf[ELoggerConfigFields.LEVELS])
+          break
+        case ELoggerConfigFields.TRANSPORTS:
+        case ELoggerConfigFields.EXCEPTION_HANDLERS:
+        case ELoggerConfigFields.REJECTION_HANDLERS:
+          checkTransportsArrayField(key, conf[key])
           break
       }
     } catch (e) {
@@ -175,3 +257,35 @@ const checkLogLevelField = (value: any, levelsValue: any): void => {
   }
 }
 
+const checkTransportsArrayField = (
+  key: ELoggerConfigFields,
+  value: any
+): void => {
+  const checkTransport = (element: any): void => {
+    if (element != null) {
+      if (
+        typeof element !== 'object' ||
+        element.type == null ||
+        !Object.values(ETransportType).includes(element.type)
+      ) {
+        throw new Error(
+          `${key} in error: array must contain objects which have a "type" property whose value must be one of the listed transports in documentation`
+        )
+      } else if (
+        element.options != null &&
+        typeof element.options !== 'object'
+      ) {
+        throw new Error(
+          `${key} in error: array must contain objects which have an optional "options" property whose value must be an object`
+        )
+      }
+    }
+  }
+
+  if (value != null) {
+    if (!Array.isArray(value)) {
+      throw new Error(`${key} in error: value should be an array of objects`)
+    }
+    value.map(checkTransport)
+  }
+}

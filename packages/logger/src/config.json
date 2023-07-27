@@ -3,9 +3,21 @@
     "logger": null,
     "logLevel": "info",
     "logFile": null,
+    "transports": [{
+      "type":"DailyRotateFile",
+      "options": {
+        "zippedArchive": true,
+        "dirname":"./logs",
+        "filename": "twake-%DATE%.log",
+        "maxSize": "10m",
+        "maxFiles": "5d"
+      }
+    }],
     "levels": null,
     "silent": false,
     "exitOnError": true,
     "defaultMeta": null,
+    "exceptionHandlers": [],
+    "rejectionHandlers": []
   }
 }
