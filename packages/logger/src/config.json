@@ -1,0 +1,11 @@
+{
+  "logging": {
+    "logger": null,
+    "logLevel": "info",
+    "logFile": null,
+    "levels": null,
+    "silent": false,
+    "exitOnError": true,
+    "defaultMeta": null,
+  }
+}
