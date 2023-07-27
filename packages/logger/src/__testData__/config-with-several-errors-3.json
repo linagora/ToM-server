@@ -1,0 +1,15 @@
+{
+  "logging": {
+    "defaultMeta": {},
+    "logger": "File",
+    "silent": false,
+    "exitOnError":false,
+    "logFile": "./test",
+    "levels": null,
+    "logLevel": "error",
+    "transports": "falsy",
+    "format": {
+      "falsy": "falsy"
+    } 
+  }
+}

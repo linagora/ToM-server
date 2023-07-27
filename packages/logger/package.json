@@ -43,5 +43,8 @@
     "@twake/config-parser": "*",
     "winston": "^3.10.0",
     "winston-daily-rotate-file": "^4.7.1"
+  },
+  "devDependencies": {
+    "moment": "^2.29.4"
   }
 }
