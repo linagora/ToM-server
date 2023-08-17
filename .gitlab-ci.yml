@@ -32,7 +32,7 @@ test:
   tags:
     - docker
   stage: test
-  image: mcr.microsoft.com/playwright:v1.36.1-focal
+  image: mcr.microsoft.com/playwright:v1.37.0-focal
   variables:
     DOCKER_HOST: "tcp://docker:2375"
     DOCKER_TLS_CERTDIR: ""

@@ -18,4 +18,5 @@ export default {
     "node-fetch": "<rootDir>/../../node_modules/node-fetch-jest"
   },
   clearMocks: true,
+  globalTeardown: '<rootDir>/jest.global-teardown.ts'
 }
