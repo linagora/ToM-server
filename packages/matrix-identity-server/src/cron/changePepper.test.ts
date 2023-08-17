@@ -1,6 +1,7 @@
+import { getLogger, type TwakeLogger } from '@twake/logger'
 import fs from 'fs'
-import IdentityServerDB from '../db'
 import defaultConfig from '../config.json'
+import IdentityServerDB from '../db'
 import { type Config } from '../types'
 import UserDB from '../userdb'
 import updateHashes from './changePepper'
@@ -15,8 +16,10 @@ const conf: Config = {
 }
 
 let db: IdentityServerDB, userDB: UserDB
+let logger: TwakeLogger
 
 beforeAll((done) => {
+  logger = getLogger()
   db = new IdentityServerDB(conf)
   userDB = new UserDB(conf)
   Promise.all([userDB.ready, db.ready])
@@ -50,7 +53,7 @@ afterAll(() => {
 describe('updateHashes', () => {
   it('should be able to generate new hashes without previous values', (done) => {
     // @ts-expect-error equivalent to MatrixIdentityServer here
-    updateHashes({ conf, db, userDB }).catch((e) => {
+    updateHashes({ conf, db, userDB, logger }).catch((e) => {
       done(e)
     })
     setTimeout(() => {
