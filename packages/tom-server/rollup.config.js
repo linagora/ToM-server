@@ -5,5 +5,7 @@ export default config([
   'fs',
   'node-fetch',
   '@twake/config-parser',
-  '@twake/matrix-identity-server'
+  '@twake/matrix-identity-server',
+  '@twake/matrix-application-server',
+  '@twake/logger'
 ])
