@@ -294,14 +294,14 @@ describe('Logger', () => {
     const logFile = path.join(JEST_PROCESS_ROOT_PATH, 'logs.txt')
     const logger = loggerModule.getLogger(conf)
     expect(logger).toBeDefined()
+    logger.error('test message')
     setTimeout(() => {
       expect(fs.existsSync(logFile)).toEqual(true)
-      logger.error('test message')
       const data = fs.readFileSync(logFile, 'utf8')
       expect(data).toEqual('This is the level error for the log test message\n')
       fs.unlinkSync(logFile)
       done()
-    }, 1000)
+    }, 100)
   })
 
   test('should create a file logger with a custom template where message is before level', (done) => {
@@ -330,16 +330,35 @@ describe('Logger', () => {
     const logFile = path.join(JEST_PROCESS_ROOT_PATH, 'logs.txt')
     const logger = loggerModule.getLogger(conf)
     expect(logger).toBeDefined()
-    setTimeout(() => {
+    // eslint-disable-next-line @typescript-eslint/no-misused-promises
+    logger.on('finish', async () => {
+      const logFileCreated = async (logFilePath: string): Promise<void> => {
+        let timer: NodeJS.Timeout | null = null
+        await new Promise<void>((resolve, reject) => {
+          timer = setInterval(() => {
+            try {
+              if (fs.existsSync(logFilePath)) {
+                resolve()
+              }
+            } catch (e) {
+              reject(e)
+            }
+          }, 1000)
+        })
+        if (timer != null) clearInterval(timer)
+      }
+
+      await logFileCreated(logFile)
       expect(fs.existsSync(logFile)).toEqual(true)
-      logger.error('test message')
       const data = fs.readFileSync(logFile, 'utf8')
       expect(data).toEqual(
         'This is the log test message with the level error\n'
       )
       fs.unlinkSync(logFile)
       done()
-    }, 1000)
+    })
+    logger.error('test message')
+    logger.end()
   })
 
   // eslint-disable-next-line no-template-curly-in-string
