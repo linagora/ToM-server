@@ -16,7 +16,8 @@ import {
   type TransportInstance
 } from './types'
 
-export { EFormatType, ETransportType } from './types'
+export type TwakeLogger = Logger
+export { EFormatType, ETransportType, type Config } from './types'
 
 const defaultFileName = 'twake.log'
 

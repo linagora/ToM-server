@@ -43,6 +43,7 @@
   "dependencies": {
     "@twake/config-parser": "*",
     "@twake/crypto": "*",
+    "@twake/logger": "*",
     "events": "^3.3.0",
     "express-validator": "^7.0.1",
     "js-yaml": "^4.1.0"
