@@ -1,5 +1,5 @@
 import type MatrixIdentityServer from '../..'
-import { type expressAppHandler, send, jsonContent } from '../../utils'
+import { jsonContent, send, type expressAppHandler } from '../../utils'
 import { errMsg } from '../../utils/errors'
 
 interface parameters {
@@ -42,7 +42,7 @@ const SubmitToken = (idServer: MatrixIdentityServer): expressAppHandler => {
             }
           })
           .catch((e) => {
-            console.error('Token error', e)
+            idServer.logger.error('Token error', e)
             send(
               res,
               400,
@@ -58,7 +58,7 @@ const SubmitToken = (idServer: MatrixIdentityServer): expressAppHandler => {
       // @ts-ignore
       realMethod(req.query as parameters)
     } else if (req.method === 'POST') {
-      jsonContent(req, res, (data) => {
+      jsonContent(req, res, idServer.logger, (data) => {
         realMethod(data as parameters)
       })
     } else {

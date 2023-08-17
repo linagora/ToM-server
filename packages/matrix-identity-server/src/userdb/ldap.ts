@@ -1,3 +1,8 @@
+import {
+  getLogger,
+  type Config as LoggerConfig,
+  type TwakeLogger
+} from '@twake/logger'
 import ldapjs, { type Client, type SearchOptions } from 'ldapjs'
 import { type Config, type DbGetResult } from '../types'
 import { type UserDBBackend } from './index'
@@ -6,7 +11,14 @@ class UserDBLDAP implements UserDBBackend {
   base: string
   ready: Promise<void>
   ldap: () => Promise<Client>
-  constructor(conf: Config) {
+  private readonly _logger: TwakeLogger
+  get logger(): TwakeLogger {
+    return this._logger
+  }
+
+  constructor(conf: Config, logger?: TwakeLogger) {
+    this._logger = logger ?? getLogger(conf as unknown as LoggerConfig)
+
     this.base = conf.ldap_base != null ? conf.ldap_base : ''
     const ldapjsOpts = conf.ldapjs_opts != null ? conf.ldapjs_opts : {}
     // eslint-disable-next-line @typescript-eslint/promise-function-async
@@ -25,15 +37,15 @@ class UserDBLDAP implements UserDBBackend {
           client.on('error', reject)
           client.bind(conf.ldap_user, conf.ldap_password, (err) => {
             if (err == null) {
-              client.on('error', console.error)
+              client.on('error', this.logger.error)
               resolve(client)
             } else {
-              console.error('Connexion to LDAP failed', err)
+              this.logger.error('Connexion to LDAP failed', err)
               reject(err)
             }
           })
         } else {
-          client.on('error', console.error)
+          client.on('error', this.logger.error)
           resolve(client)
         }
       })

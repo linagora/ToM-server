@@ -1,9 +1,10 @@
 /* eslint-disable @typescript-eslint/promise-function-async */
+import { type TwakeLogger } from '@twake/logger'
 import { type Database, type Statement } from 'sqlite3'
+import { type Config, type DbGetResult } from '../../types'
 import { type Collections, type IdDbBackend } from '../index'
-import SQL from './sql'
 import createTables from './_createTables'
-import { type DbGetResult, type Config } from '../../types'
+import SQL from './sql'
 
 export type SQLiteDatabase = Database
 
@@ -17,7 +18,8 @@ class SQLite extends SQL implements IdDbBackend {
     indexes: Partial<Record<Collections, string[]>>,
     initializeValues: Partial<
       Record<Collections, Array<Record<string, string | number>>>
-    >
+    >,
+    logger: TwakeLogger
   ): Promise<void> {
     return new Promise((resolve, reject) => {
       import('sqlite3')
@@ -30,7 +32,15 @@ class SQLite extends SQL implements IdDbBackend {
           if (db == null) {
             throw new Error('Database not created')
           }
-          createTables(this, tables, indexes, initializeValues, resolve, reject)
+          createTables(
+            this,
+            tables,
+            indexes,
+            initializeValues,
+            logger,
+            resolve,
+            reject
+          )
         })
         .catch((e) => {
           /* istanbul ignore next */

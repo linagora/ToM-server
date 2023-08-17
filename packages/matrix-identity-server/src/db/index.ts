@@ -1,4 +1,9 @@
 import { randomString } from '@twake/crypto'
+import {
+  getLogger,
+  type Config as LoggerConfig,
+  type TwakeLogger
+} from '@twake/logger'
 import { type Config, type DbGetResult } from '../types'
 import { epoch } from '../utils'
 import Pg from './sql/pg'
@@ -92,7 +97,13 @@ class IdentityServerDb implements IdDbBackend {
   db: IdDbBackend
   cleanJob?: NodeJS.Timeout
   cleanByExpires: Collections[]
-  constructor(conf: Config) {
+  private readonly _logger: TwakeLogger
+  get logger(): TwakeLogger {
+    return this._logger
+  }
+
+  constructor(conf: Config, logger?: TwakeLogger) {
+    this._logger = logger ?? getLogger(conf as unknown as LoggerConfig)
     this.cleanByExpires = cleanByExpires
     let Module
     /* istanbul ignore next */
@@ -110,7 +121,7 @@ class IdentityServerDb implements IdDbBackend {
         throw new Error(`Unsupported database type ${conf.database_engine}`)
       }
     }
-    this.db = new Module(conf)
+    this.db = new Module(conf, this.logger)
     this.ready = new Promise((resolve, reject) => {
       this.db.ready
         .then(() => {
@@ -120,14 +131,14 @@ class IdentityServerDb implements IdDbBackend {
             })
             .catch((e) => {
               /* istanbul ignore next */
-              console.error('initialization failed')
+              this.logger.error('initialization failed')
               /* istanbul ignore next */
               reject(e)
             })
         })
         .catch((e) => {
           /* istanbul ignore next */
-          console.error('Database initialization failed')
+          this.logger.error('Database initialization failed')
           /* istanbul ignore next */
           reject(e)
         })
@@ -138,7 +149,7 @@ class IdentityServerDb implements IdDbBackend {
       })
       .catch((e) => {
         /* istanbul ignore next */
-        console.error('DB maintenance error', e)
+        this.logger.error('DB maintenance error', e)
       })
   }
 
@@ -251,7 +262,7 @@ class IdentityServerDb implements IdDbBackend {
         })
         .catch((err) => {
           /* istanbul ignore next */
-          console.error('Failed to insert token', err)
+          this.logger.error('Failed to insert token', err)
         })
     })
   }
@@ -326,7 +337,7 @@ class IdentityServerDb implements IdDbBackend {
         })
         .catch((e) => {
           /* istanbul ignore next */
-          console.info(`Token ${id} already deleted`, e)
+          this.logger.info(`Token ${id} already deleted`, e)
           /* istanbul ignore next */
           resolve()
         })

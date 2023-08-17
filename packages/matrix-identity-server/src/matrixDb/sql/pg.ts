@@ -1,8 +1,9 @@
+import { type TwakeLogger } from '@twake/logger'
 import { type ClientConfig } from 'pg'
-import { type Collections } from '../../db'
 import { type MatrixDBBackend } from '../'
-import { type Config } from '../../types'
+import { type Collections } from '../../db'
 import Pg, { type PgDatabase } from '../../db/sql/pg'
+import { type Config } from '../../types'
 
 class MatrixDBPg extends Pg implements MatrixDBBackend {
   // eslint-disable-next-line @typescript-eslint/promise-function-async
@@ -12,7 +13,8 @@ class MatrixDBPg extends Pg implements MatrixDBBackend {
     indexes: Partial<Record<Collections, string[]>>,
     initializeValues: Partial<
       Record<Collections, Array<Record<string, string | number>>>
-    >
+    >,
+    logger: TwakeLogger
   ): Promise<void> {
     return new Promise((resolve, reject) => {
       import('pg')
@@ -48,12 +50,12 @@ class MatrixDBPg extends Pg implements MatrixDBBackend {
               resolve()
             })
             .catch((e: any) => {
-              console.error('Unable to connect to Pg database')
+              logger.error('Unable to connect to Pg database')
               reject(e)
             })
         })
         .catch((e) => {
-          console.error('Unable to load pg module')
+          logger.error('Unable to load pg module')
           reject(e)
         })
     })

@@ -1,10 +1,11 @@
 /* eslint-disable @typescript-eslint/promise-function-async */
 /* istanbul ignore file */
+import { type TwakeLogger } from '@twake/logger'
+import { type ClientConfig, type Client as PgClient } from 'pg'
 import { type Collections, type IdDbBackend } from '..'
-import { type DbGetResult, type Config } from '../../types'
+import { type Config, type DbGetResult } from '../../types'
 import createTables from './_createTables'
 import SQL from './sql'
-import { type ClientConfig, type Client as PgClient } from 'pg'
 
 export type PgDatabase = PgClient
 
@@ -16,7 +17,8 @@ class Pg extends SQL implements IdDbBackend {
     indexes: Partial<Record<Collections, string[]>>,
     initializeValues: Partial<
       Record<Collections, Array<Record<string, string | number>>>
-    >
+    >,
+    logger: TwakeLogger
   ): Promise<void> {
     return new Promise((resolve, reject) => {
       import('pg')
@@ -54,17 +56,18 @@ class Pg extends SQL implements IdDbBackend {
                 tables,
                 indexes,
                 initializeValues,
+                logger,
                 resolve,
                 reject
               )
             })
             .catch((e) => {
-              console.error('Unable to create tables', e)
+              logger.error('Unable to create tables', e)
               reject(e)
             })
         })
         .catch((e) => {
-          console.error('Unable to load pg module', e)
+          logger.error('Unable to load pg module', e)
           reject(e)
         })
     })

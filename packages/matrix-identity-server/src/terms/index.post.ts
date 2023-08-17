@@ -32,29 +32,38 @@ const getUrlsFromPolicies = (policies: Policies): UrlsFromPolicies => {
 }
 
 const PostTerms = (idServer: MatrixIdentityServer): expressAppHandler => {
-  const urlsFromPolicies = getUrlsFromPolicies(computePolicy(idServer.conf))
+  const urlsFromPolicies = getUrlsFromPolicies(
+    computePolicy(idServer.conf, idServer.logger)
+  )
   return (req, res) => {
     idServer.authenticate(req, res, (data, id) => {
-      jsonContent(req, res, (data) => {
-        validateParameters(res, { user_accepts: true }, data, (data) => {
-          let urls = (data as { user_accepts: string[] | string }).user_accepts
-          const done: string[] = []
-          /* istanbul ignore if */
-          if (typeof urls === 'string') urls = [urls]
-          Object.keys(urlsFromPolicies).forEach((policyName) => {
-            ;(urls as string[]).forEach((url) => {
-              if (urlsFromPolicies[policyName].includes(url)) {
-                done.push(policyName)
-              }
+      jsonContent(req, res, idServer.logger, (data) => {
+        validateParameters(
+          res,
+          { user_accepts: true },
+          data,
+          idServer.logger,
+          (data) => {
+            let urls = (data as { user_accepts: string[] | string })
+              .user_accepts
+            const done: string[] = []
+            /* istanbul ignore if */
+            if (typeof urls === 'string') urls = [urls]
+            Object.keys(urlsFromPolicies).forEach((policyName) => {
+              ;(urls as string[]).forEach((url) => {
+                if (urlsFromPolicies[policyName].includes(url)) {
+                  done.push(policyName)
+                }
+              })
             })
-          })
-          if (done.length > 0) {
-            // TODO register validation
-            send(res, 200, {})
-          } else {
-            send(res, 400, errMsg('unrecognized', 'Unknown policy'))
+            if (done.length > 0) {
+              // TODO register validation
+              send(res, 200, {})
+            } else {
+              send(res, 400, errMsg('unrecognized', 'Unknown policy'))
+            }
           }
-        })
+        )
       })
     })
     // send(res, 200, {})

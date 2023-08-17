@@ -1,8 +1,8 @@
 import type MatrixIdentityServer from '..'
 import {
   jsonContent,
-  validateParameters,
   send,
+  validateParameters,
   type expressAppHandler
 } from '../utils'
 import { errMsg } from '../utils/errors'
@@ -16,8 +16,8 @@ const schema = {
 const lookup = (idServer: MatrixIdentityServer): expressAppHandler => {
   return (req, res) => {
     idServer.authenticate(req, res, (data, id) => {
-      jsonContent(req, res, (obj) => {
-        validateParameters(res, schema, obj, (obj) => {
+      jsonContent(req, res, idServer.logger, (obj) => {
+        validateParameters(res, schema, obj, idServer.logger, (obj) => {
           if (typeof (obj as { addresses: string[] }).addresses !== 'object') {
             /* istanbul ignore next */
             send(res, 400, errMsg('invalidParam'))

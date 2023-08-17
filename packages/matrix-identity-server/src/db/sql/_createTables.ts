@@ -1,3 +1,4 @@
+import { type TwakeLogger } from '@twake/logger'
 import { type Collections } from '..'
 import type Pg from './pg'
 import type SQLite from './sqlite'
@@ -9,6 +10,7 @@ const createTables = (
   initializeValues: Partial<
     Record<Collections, Array<Record<string, string | number>>>
   >,
+  logger: TwakeLogger,
   resolve: () => void,
   reject: (e: Error) => void
 ): void => {
@@ -42,7 +44,7 @@ const createTables = (
                       `CREATE INDEX i_${table}_${index} ON ${table} (${index})`
                     ).catch((e) => {
                       /* istanbul ignore next */
-                      console.error(`Index ${index}`, e)
+                      logger.error(`Index ${index}`, e)
                     })
                   })
                 })

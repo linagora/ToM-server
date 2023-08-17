@@ -1,10 +1,11 @@
+import { type TwakeLogger } from '@twake/logger'
+import fs from 'fs'
 import { type Policies } from '.'
 import { type Config } from '../types'
-import fs from 'fs'
 
 let policies: Policies = {}
 
-const computePolicy = (conf: Config): Policies => {
+const computePolicy = (conf: Config, logger: TwakeLogger): Policies => {
   if (Object.keys(policies).length > 0) return policies
   if (conf.policies != null) {
     if (typeof conf.policies === 'string') {
@@ -14,7 +15,7 @@ const computePolicy = (conf: Config): Policies => {
         ) as Policies
       } catch (e) {
         /* istanbul ignore next */
-        console.error('Error:', e)
+        logger.error('Error:', e)
         /* istanbul ignore next */
         throw new Error('Unable to parse policies file')
       }

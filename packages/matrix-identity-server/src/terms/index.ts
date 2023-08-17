@@ -1,5 +1,6 @@
+import { type TwakeLogger } from '@twake/logger'
 import { type Config } from '../types'
-import { type expressAppHandler, send } from '../utils'
+import { send, type expressAppHandler } from '../utils'
 import computePolicy from './_computePolicies'
 
 export interface Policy {
@@ -12,8 +13,8 @@ export interface Policies {
   terms_of_service?: Policy
 }
 
-const Terms = (conf: Config): expressAppHandler => {
-  const policies = computePolicy(conf)
+const Terms = (conf: Config, logger: TwakeLogger): expressAppHandler => {
+  const policies = computePolicy(conf, logger)
   return (req, res) => {
     send(res, 200, { policies })
   }
