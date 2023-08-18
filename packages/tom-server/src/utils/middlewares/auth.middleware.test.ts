@@ -1,4 +1,5 @@
 /* eslint-disable n/no-callback-literal */
+import { type TwakeLogger } from '@twake/logger'
 import type { NextFunction, Request, Response } from 'express'
 import type { AuthRequest, Config, IdentityServerDb } from '../../types'
 import authMiddleware from './auth.middleware'
@@ -40,7 +41,8 @@ beforeEach(() => {
 
   authMock = authMiddleware(
     {} as unknown as IdentityServerDb,
-    {} as unknown as Config
+    {} as unknown as Config,
+    { error: jest.fn() } as unknown as TwakeLogger
   ) as any
 })
 

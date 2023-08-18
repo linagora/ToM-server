@@ -1,14 +1,17 @@
-import express, { type NextFunction, type Response } from 'express'
-import type { AuthRequest, Config, IdentityServerDb } from '../../types'
-import router, { PATH } from '../routes'
-import supertest from 'supertest'
-import bodyParser from 'body-parser'
-import errorMiddleware from '../../utils/middlewares/error.middleware'
+import { type TwakeLogger } from '@twake/logger'
 import { type MatrixDBBackend } from '@twake/matrix-identity-server'
+import bodyParser from 'body-parser'
+import express, { type NextFunction, type Response } from 'express'
+import supertest from 'supertest'
+import type { AuthRequest, Config, IdentityServerDb } from '../../types'
+import errorMiddleware from '../../utils/middlewares/error.middleware'
+import router, { PATH } from '../routes'
 
-beforeEach(() => {
-  jest.spyOn(console, 'warn').mockImplementation(() => {})
-})
+const mockLogger: Partial<TwakeLogger> = {
+  debug: jest.fn(),
+  error: jest.fn(),
+  warn: jest.fn()
+}
 
 const app = express()
 
@@ -47,7 +50,8 @@ jest.mock('../controllers/index.ts', () => {
 })
 
 const dbMock = {
-  get: async () => [{ data: '"test"' }]
+  get: async () => [{ data: '"test"' }],
+  logger: mockLogger as TwakeLogger
 }
 
 const matrixDbMock = {
@@ -60,10 +64,11 @@ app.use(
   router(
     dbMock as unknown as IdentityServerDb,
     matrixDbMock as unknown as MatrixDBBackend,
-    {} as unknown as Config
+    {} as unknown as Config,
+    mockLogger as TwakeLogger
   )
 )
-app.use(errorMiddleware)
+app.use(errorMiddleware(mockLogger as TwakeLogger))
 
 describe('the Room tags API Router', () => {
   it('should not call the validation middleware if Bearer token is not set', async () => {
@@ -71,7 +76,7 @@ describe('the Room tags API Router', () => {
 
     expect(middlewareSpy).not.toHaveBeenCalled()
     expect(response.status).toBe(401)
-    expect(console.warn).toHaveBeenCalledWith(
+    expect(mockLogger.warn).toHaveBeenCalledWith(
       'Access tried without token',
       expect.anything()
     )

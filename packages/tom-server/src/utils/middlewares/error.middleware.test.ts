@@ -1,9 +1,20 @@
+import { type TwakeLogger } from '@twake/logger'
+import { type NextFunction, type Request, type Response } from 'express'
 import errorMiddleware from './error.middleware'
-import { type Request, type Response, type NextFunction } from 'express'
 
 describe('Error middleware', () => {
   let mockRequest: Partial<Request>
   let mockResponse: Partial<Response>
+  const mockLogger: Partial<TwakeLogger> = {
+    error: jest.fn()
+  }
+  let errorMock: (
+    error: Error & { status?: number },
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ) => void
+
   const nextFunction: NextFunction = jest.fn()
 
   beforeEach(() => {
@@ -13,7 +24,7 @@ describe('Error middleware', () => {
       status: jest.fn().mockReturnThis()
     }
 
-    jest.spyOn(console, 'error').mockImplementation(() => {})
+    errorMock = errorMiddleware(mockLogger as TwakeLogger)
   })
 
   it('should return the specified error message', () => {
@@ -21,7 +32,7 @@ describe('Error middleware', () => {
       message: 'Error message'
     }
 
-    errorMiddleware(
+    errorMock(
       { message: 'Error message', name: 'some error', status: 123 },
       mockRequest as Request,
       mockResponse as Response,
@@ -36,7 +47,7 @@ describe('Error middleware', () => {
       message: 'Something went wrong'
     }
 
-    errorMiddleware(
+    errorMock(
       { name: 'idk' } as unknown as Error,
       mockRequest as Request,
       mockResponse as Response,
@@ -52,7 +63,7 @@ describe('Error middleware', () => {
       throw Error('something unexpected')
     }
 
-    errorMiddleware(
+    errorMock(
       { name: 'idk' } as unknown as Error,
       mockRequest as Request,
       mockResponse as Response,
