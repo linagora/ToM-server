@@ -1,9 +1,14 @@
-import type { NextFunction, RequestHandler, Response } from 'express'
-import type { Config, IdentityServerDb, AuthRequest } from '../../types'
-import Authenticate from '../../identity-server/utils/authenticate'
+import { type TwakeLogger } from '@twake/logger'
 import { type tokenContent } from '@twake/matrix-identity-server'
+import type { NextFunction, RequestHandler, Response } from 'express'
+import Authenticate from '../../identity-server/utils/authenticate'
+import type { AuthRequest, Config, IdentityServerDb } from '../../types'
 
-export default (db: IdentityServerDb, conf: Config): RequestHandler => {
+export default (
+  db: IdentityServerDb,
+  conf: Config,
+  logger: TwakeLogger
+): RequestHandler => {
   return (req: AuthRequest, res: Response, next: NextFunction): void => {
     const authenticator = Authenticate(db, conf)
 
@@ -26,7 +31,7 @@ export default (db: IdentityServerDb, conf: Config): RequestHandler => {
 
         return
       } catch (error) {
-        console.error('Auth error', error)
+        logger.error('Auth error', error)
         return res.status(401).json({ error: 'Unauthorized' })
       }
     })

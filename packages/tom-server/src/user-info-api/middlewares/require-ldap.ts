@@ -1,5 +1,6 @@
 import type { NextFunction, Request, RequestHandler, Response } from 'express'
 import type { Config } from '../../types'
+import { type TwakeLogger } from '@twake/logger'
 
 /**
  * a Middleware to check if LDAP userdb is enabled.
@@ -7,10 +8,10 @@ import type { Config } from '../../types'
  * @param {Config} conf the server configuration
  * @returns {RequestHandler} an express middleware function.
  */
-export default (conf: Config): RequestHandler => {
+export default (conf: Config, logger: TwakeLogger): RequestHandler => {
   return (_req: Request, res: Response, next: NextFunction) => {
     if (conf.userdb_engine !== 'ldap') {
-      console.error('Only LDAP userdb is supported')
+      logger.error('Only LDAP userdb is supported')
       res.status(500).send('Not supported')
       return
     }

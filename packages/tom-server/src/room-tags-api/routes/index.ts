@@ -1,7 +1,12 @@
 /* eslint-disable @typescript-eslint/no-misused-promises */
+import {
+  getLogger,
+  type Config as LoggerConfig,
+  type TwakeLogger
+} from '@twake/logger'
 import type { MatrixDBBackend } from '@twake/matrix-identity-server'
-import type { Config, IdentityServerDb } from '../../types'
 import { Router } from 'express'
+import type { Config, IdentityServerDb } from '../../types'
 import authMiddleware from '../../utils/middlewares/auth.middleware'
 import RoomTagsController from '../controllers'
 import RoomTagsMiddleware from '../middlewares'
@@ -11,10 +16,12 @@ export const PATH = '/_twake/v1/room_tags'
 export default (
   db: IdentityServerDb,
   maxtrixDb: MatrixDBBackend,
-  config: Config
+  config: Config,
+  defaultLogger?: TwakeLogger
 ): Router => {
+  const logger = defaultLogger ?? getLogger(config as unknown as LoggerConfig)
   const router = Router()
-  const authenticator = authMiddleware(db, config)
+  const authenticator = authMiddleware(db, config, logger)
   const roomTagsController = new RoomTagsController(db)
   const roomTagsMiddleware = new RoomTagsMiddleware(db, maxtrixDb)
 

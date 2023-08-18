@@ -1,15 +1,25 @@
 /* eslint-disable @typescript-eslint/no-misused-promises */
+import {
+  getLogger,
+  type Config as LoggerConfig,
+  type TwakeLogger
+} from '@twake/logger'
 import { Router } from 'express'
-import PrivateNoteApiController from '../controllers'
-import type { IdentityServerDb, Config } from '../../types'
+import type { Config, IdentityServerDb } from '../../types'
 import authMiddleware from '../../utils/middlewares/auth.middleware'
+import PrivateNoteApiController from '../controllers'
 import PrivateNoteApiValidationMiddleware from '../middlewares/validation.middleware'
 
 export const PATH = '/_twake/private_note'
 
-export default (db: IdentityServerDb, config: Config): Router => {
+export default (
+  db: IdentityServerDb,
+  config: Config,
+  defaultLogger?: TwakeLogger
+): Router => {
+  const logger = defaultLogger ?? getLogger(config as unknown as LoggerConfig)
   const router = Router()
-  const authenticate = authMiddleware(db, config)
+  const authenticate = authMiddleware(db, config, logger)
   const privateNoteApiController = new PrivateNoteApiController(db)
   const validationMiddleware = new PrivateNoteApiValidationMiddleware(db)
 

@@ -69,26 +69,26 @@ const Authenticate = (
                   data: JSON.stringify(data)
                 }).catch((e) => {
                   /* istanbul ignore next */
-                  console.error('Unable to insert a token', e)
+                  db.logger.error('Unable to insert a token', e)
                 })
                 // eslint-disable-next-line n/no-callback-literal
                 // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
                 // @ts-ignore token is defined
                 callback(data, token)
               } else {
-                console.warn('Bad token', userInfo)
+                db.logger.warn('Bad token', userInfo)
                 Utils.send(res, 401, errMsg('unAuthorized'))
               }
             })
             .catch((e) => {
               /* istanbul ignore next */
-              console.debug('Fetch error', e)
+              db.logger.debug('Fetch error', e)
               /* istanbul ignore next */
               Utils.send(res, 401, errMsg('unAuthorized'))
             })
         })
     } else {
-      console.warn('Access tried without token', req.headers)
+      db.logger.warn('Access tried without token', req.headers)
       Utils.send(res, 401, errMsg('unAuthorized'))
     }
   }

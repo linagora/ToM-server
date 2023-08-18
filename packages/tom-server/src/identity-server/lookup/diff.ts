@@ -1,3 +1,4 @@
+import { type TwakeLogger } from '@twake/logger'
 import { Utils, errMsg } from '@twake/matrix-identity-server'
 import type TwakeServer from '../..'
 import { type expressAppHandler } from '../../types'
@@ -7,18 +8,21 @@ const schema = {
   fields: false
 }
 
-const diff = (tomServer: TwakeServer): expressAppHandler => {
+const diff = (
+  tomServer: TwakeServer,
+  logger: TwakeLogger
+): expressAppHandler => {
   return (req, res) => {
     const error = (e: any): void => {
       /* istanbul ignore next */
-      console.error('lookup/diff error', e)
+      logger.error('lookup/diff error', e)
       /* istanbul ignore next */
       Utils.send(res, 500, errMsg('unknown'))
     }
     tomServer.idServer.authenticate(req, res, (token) => {
       const timestamp = Utils.epoch()
-      Utils.jsonContent(req, res, (obj) => {
-        Utils.validateParameters(res, schema, obj, (data) => {
+      Utils.jsonContent(req, res, logger, (obj) => {
+        Utils.validateParameters(res, schema, obj, logger, (data) => {
           tomServer.idServer.db
             .getHigherThan('userHistory', ['address', 'active'], {
               timestamp: (data as { since: number }).since

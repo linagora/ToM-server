@@ -1,6 +1,7 @@
+import { type TwakeLogger } from '@twake/logger'
+import { errMsg, Utils } from '@twake/matrix-identity-server'
 import { type Response } from 'express'
 import type http from 'http'
-import { errMsg, Utils } from '@twake/matrix-identity-server'
 import type TwakeServer from '../..'
 
 type SearchFunction = (res: Response | http.ServerResponse, data: Query) => void
@@ -23,11 +24,14 @@ export const SearchFields = new Set<string>([
   'sn'
 ])
 
-const _search = (tomServer: TwakeServer): SearchFunction => {
+const _search = (
+  tomServer: TwakeServer,
+  logger: TwakeLogger
+): SearchFunction => {
   return (res, data) => {
     const sendError = (e: string): void => {
       /* istanbul ignore next */
-      console.error('Autocompletion error', e)
+      logger.error('Autocompletion error', e)
       /* istanbul ignore next */
       Utils.send(res, 500, errMsg('unknown', e))
     }
