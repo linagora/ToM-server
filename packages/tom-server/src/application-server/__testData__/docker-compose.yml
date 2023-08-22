@@ -2,7 +2,7 @@ version: '3'
 
 services:
   synapse:
-    image: matrixdotorg/synapse
+    image: matrixdotorg/synapse:v1.89.0
     hostname: matrix.example.com
     volumes:
       - ./synapse-data:/data
