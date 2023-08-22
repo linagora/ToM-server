@@ -1,0 +1,21 @@
+{
+    "logging": {
+      "defaultMeta": {},
+      "logger": "File",
+      "silent": false,
+      "exitOnError":false,
+      "logFile": false,
+      "levels": null,
+      "logLevel": "falsy",
+      "transports": [{
+        "type": "File",
+        "options": "falsy"
+      }],
+      "format": {
+        "type": "align",
+        "options": {
+          "falsy": "falsy"
+        }
+      } 
+    }
+  }
