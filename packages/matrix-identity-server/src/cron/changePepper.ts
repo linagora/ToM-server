@@ -61,7 +61,7 @@ const updateHashes = (idServer: MatrixIdentityServer): Promise<void> => {
      *  - drop old-old hashes
      *  - get current pepper
      */
-    db.get('keys', ['data'], 'name', 'previousPepper')
+    db.get('keys', ['data'], { name: 'previousPepper' })
       .then((rows) => {
         db.deleteEqual('hashes', 'pepper', rows[0].data as string).catch(
           (e) => {
@@ -73,7 +73,7 @@ const updateHashes = (idServer: MatrixIdentityServer): Promise<void> => {
       .catch((e) => {
         // Previous value may not exist
       })
-    db.get('keys', ['data'], 'name', 'pepper')
+    db.get('keys', ['data'], { name: 'pepper' })
       .then((values: unknown[]) => {
         /**
          * Step 2:

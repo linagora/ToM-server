@@ -1,6 +1,6 @@
-import { type Request, type Response, type NextFunction } from 'express'
+import { type NextFunction, type Request, type Response } from 'express'
+import { AppServerAPIError, errCodes } from './errors'
 import { allowCors, legacyEndpointHandler, methodNotAllowed } from './utils'
-import { AppServerAPIError, ErrCodes } from './errors'
 
 describe('Utils methods', () => {
   let mockRequest: Partial<Request>
@@ -34,7 +34,7 @@ describe('Utils methods', () => {
         nextFunction
       )
     }).toThrow(
-      new AppServerAPIError({ status: 405, code: ErrCodes.M_UNRECOGNIZED })
+      new AppServerAPIError({ status: 405, code: errCodes.unrecognized })
     )
   })
 
@@ -76,7 +76,7 @@ describe('Utils methods', () => {
     )
     expect(mockResponse.json).toHaveBeenCalledTimes(1)
     expect(mockResponse.json).toHaveBeenCalledWith({
-      errcode: ErrCodes.M_UNKNOWN,
+      errcode: errCodes.unknown,
       error: 'This non-standard endpoint has been removed'
     })
   })

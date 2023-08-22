@@ -11,8 +11,7 @@ export type Collections = 'users' | 'groups'
 type Get = (
   table: Collections,
   fields?: string[],
-  field?: string,
-  value?: string | number | string[]
+  filterFields?: Record<string, string | number | string[]>
 ) => Promise<DbGetResult>
 type GetAll = (
   table: Collections,
@@ -77,10 +76,9 @@ class UserDB implements UserDBBackend {
   get(
     table: Collections,
     fields?: string[],
-    field?: string,
-    value?: string | number | string[]
+    filterFields?: Record<string, string | number | string[]>
   ) {
-    return this.db.get(table, fields, field, value)
+    return this.db.get(table, fields, filterFields)
   }
 
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async

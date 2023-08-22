@@ -45,10 +45,13 @@
     "sqlite3": "^5.1.6"
   },
   "dependencies": {
+    "@twake/matrix-application-server": "*",
     "@twake/matrix-identity-server": "*",
     "redis": "^4.6.6"
   },
   "devDependencies": {
-    "jest-mock-extended": "^2.0.4"
+    "@small-tech/syswide-cas": "^6.0.2",
+    "node-fetch-jest": "npm:node-fetch@^2.6.9",
+    "testcontainers": "^9.8.0"
   }
 }

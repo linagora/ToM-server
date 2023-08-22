@@ -16,7 +16,7 @@ export default (db: TwakeDB, conf: Config): expressAppHandler => {
   return (req: Request, res: Response, next: NextFunction): void => {
     const authenticator = Authenticate(db, conf)
 
-    authenticator(req, res, (data: tokenContent, token: string | undefined) => {
+    authenticator(req, res, (data: tokenContent, token: string | null) => {
       /* istanbul ignore if */
       if (token == null) {
         throw unauthorizedError

@@ -35,7 +35,7 @@ describe('Id Server DB', () => {
           .insert('accessTokens', { id, data: '{}' })
           .then(() => {
             idDb
-              .get('accessTokens', ['id', 'data'], 'id', id)
+              .get('accessTokens', ['id', 'data'], { id })
               .then((rows) => {
                 expect(rows.length).toBe(1)
                 expect(rows[0].id).toEqual(id)

@@ -23,12 +23,9 @@ const lookup = (idServer: MatrixIdentityServer): expressAppHandler => {
             send(res, 400, errMsg('invalidParam'))
           } else {
             idServer.db
-              .get(
-                'hashes',
-                ['value', 'hash', 'active'],
-                'hash',
-                (obj as { addresses: string[] }).addresses
-              )
+              .get('hashes', ['value', 'hash', 'active'], {
+                hash: (obj as { addresses: string[] }).addresses
+              })
               .then((rows) => {
                 // send(res, 200, rows)
                 const mappings: Record<string, string> = {}

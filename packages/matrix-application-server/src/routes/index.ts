@@ -51,7 +51,7 @@ export default class MASRouter {
      *      400:
      *        $ref: '#/components/responses/BadRequest'
      *      401:
-     *        $ref: '#/components/responses/MatrixUnauthorized'
+     *        $ref: '#/components/responses/Unauthorized'
      *      403:
      *        $ref: '#/components/responses/Forbidden'
      *      404:
@@ -97,7 +97,7 @@ export default class MASRouter {
      *      400:
      *        $ref: '#/components/responses/BadRequest'
      *      401:
-     *        $ref: '#/components/responses/MatrixUnauthorized'
+     *        $ref: '#/components/responses/Unauthorized'
      *      403:
      *        $ref: '#/components/responses/Forbidden'
      *      500:
@@ -132,7 +132,7 @@ export default class MASRouter {
      *      400:
      *        $ref: '#/components/responses/BadRequest'
      *      401:
-     *        $ref: '#/components/responses/MatrixUnauthorized'
+     *        $ref: '#/components/responses/Unauthorized'
      *      403:
      *        $ref: '#/components/responses/Forbidden'
      *      500:
@@ -143,10 +143,9 @@ export default class MASRouter {
       .get(this._middlewares(query, validation(Endpoints.ROOMS)))
       .all(allowCors, methodNotAllowed, errorMiddleware)
 
-    this.routes.all(
-      /^\/users|rooms|transactions\/:[a-zA-Z0-9]/g,
-      legacyEndpointHandler
-    )
+    this.routes
+      .route(/^\/(users|rooms|transactions)\/[a-zA-Z0-9]*/g)
+      .all(legacyEndpointHandler)
   }
 
   /**

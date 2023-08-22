@@ -1,8 +1,8 @@
-import { type Request, type Response, type NextFunction } from 'express'
+import { type NextFunction, type Request, type Response } from 'express'
 import {
   AppServerAPIError,
-  ErrCodes,
   defaultErrorMsg,
+  errCodes,
   errorMiddleware
 } from './errors'
 
@@ -36,7 +36,7 @@ describe('Errors', () => {
   it('should send a response containing the matrix error message', async () => {
     const error = new AppServerAPIError({
       status: 404,
-      code: ErrCodes.M_FORBIDDEN
+      code: errCodes.forbidden
     })
     errorMiddleware(
       error,

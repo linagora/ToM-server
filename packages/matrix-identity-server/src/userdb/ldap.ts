@@ -1,6 +1,6 @@
+import ldapjs, { type Client, type SearchOptions } from 'ldapjs'
+import { type Config, type DbGetResult } from '../types'
 import { type UserDBBackend } from './index'
-import { type DbGetResult, type Config } from '../types'
-import ldapjs, { type SearchOptions, type Client } from 'ldapjs'
 
 class UserDBLDAP implements UserDBBackend {
   base: string
@@ -34,7 +34,47 @@ class UserDBLDAP implements UserDBBackend {
         }
       })
     }
-    this.ready = Promise.resolve()
+    this.ready = new Promise((resolve, _reject) => {
+      const handleConnectionError = (
+        error: any,
+        client?: ldapjs.Client
+      ): void => {
+        if (client != null) {
+          client.destroy()
+        }
+        console.error('Connection to LDAP failed', error)
+        resolve()
+      }
+
+      this.ldap()
+        .then((client) => {
+          client.on('connect', () => {
+            client.destroy()
+            resolve()
+          })
+          client.on('connectError', (error) => {
+            handleConnectionError(error, client)
+          })
+          client.on('connectTimeout', (error) => {
+            handleConnectionError(error, client)
+          })
+          client.on('connectRefused', (error) => {
+            handleConnectionError(error, client)
+          })
+          client.on('setupError', (error) => {
+            handleConnectionError(error, client)
+          })
+          client.on('socketTimeout', (error) => {
+            handleConnectionError(error, client)
+          })
+          client.on('error', (error) => {
+            handleConnectionError(error, client)
+          })
+        })
+        .catch((error) => {
+          handleConnectionError(error)
+        })
+    })
   }
 
   // eslint-disable-next-line @typescript-eslint/promise-function-async
@@ -110,20 +150,30 @@ class UserDBLDAP implements UserDBBackend {
   get(
     table: string,
     fields?: string[],
-    field?: string,
-    value?: string | number | Array<string | number>,
+    filterFields?: Record<string, string | number | string[]>,
     order?: string
   ): Promise<DbGetResult> {
-    let filter: string
-    if (field == null || value == null) {
+    let filter: string = ''
+    if (filterFields == null) {
       /* istanbul ignore next */
       filter = '(objectClass=*)'
     } else {
-      if (typeof value !== 'object') value = [value]
-      filter = value.reduce((prev, current) => {
-        return `${prev}(${field}=${current})`
-      }, '') as string
-      if (value.length > 1) filter = `(|${filter})`
+      Object.keys(filterFields)
+        .filter(
+          (key) =>
+            filterFields[key] != null &&
+            filterFields[key].toString() !== [].toString()
+        )
+        .forEach((key) => {
+          if (Array.isArray(filterFields[key])) {
+            filter += `${(filterFields[key] as string[]).reduce((prev, val) => {
+              return `${prev}(${key}=${val})`
+            }, '')}`
+          } else {
+            filter += `(${key}=${filterFields[key].toString()})`
+          }
+        })
+      if (filter !== '') filter = `(|${filter})`
     }
 
     return this._get(table, filter, fields, order)
@@ -150,7 +200,7 @@ class UserDBLDAP implements UserDBBackend {
     fields: string[],
     order?: string
   ): Promise<DbGetResult> {
-    return this.get(table, fields, 'objectClass', '*', order)
+    return this.get(table, fields, undefined, order)
   }
 
   close(): void {}

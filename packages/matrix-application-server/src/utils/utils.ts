@@ -1,5 +1,5 @@
 import { type NextFunction, type Request, type Response } from 'express'
-import { ErrCodes, AppServerAPIError } from './errors'
+import { AppServerAPIError, errCodes } from './errors'
 
 export type expressAppHandler = (
   req: Request,
@@ -42,11 +42,11 @@ export const legacyEndpointHandler: expressAppHandler = (
     .status(308)
     .location('/_matrix/app/v1' + req.originalUrl)
     .json({
-      errcode: ErrCodes.M_UNKNOWN,
+      errcode: errCodes.unknown,
       error: 'This non-standard endpoint has been removed'
     })
 }
 
 export const methodNotAllowed: expressAppHandler = (req, res, next) => {
-  throw new AppServerAPIError({ status: 405, code: ErrCodes.M_UNRECOGNIZED })
+  throw new AppServerAPIError({ status: 405, code: errCodes.unrecognized })
 }

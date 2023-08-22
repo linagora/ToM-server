@@ -1,9 +1,9 @@
+import { type NextFunction, type Request, type Response } from 'express'
+import { Result } from 'express-validator'
 import type MatrixApplicationServer from '..'
 import { type ClientEvent } from '../interfaces'
 import { AppServerAPIError, type expressAppHandler } from '../utils'
 import { transaction } from './transaction'
-import { type Request, type Response, type NextFunction } from 'express'
-import { Result } from 'express-validator'
 
 const transactionId = 'transaction_1'
 const lastProcessedTxnId = 'transaction_0'
@@ -76,7 +76,7 @@ describe('Transaction', () => {
     )
     handler(mockRequest as Request, mockResponse as Response, nextFunction)
     expect(mockResponse.send).toHaveBeenCalledTimes(1)
-    expect(mockResponse.send).toHaveBeenCalledWith()
+    expect(mockResponse.send).toHaveBeenCalledWith({})
     expect(appServer.emit).toHaveBeenCalledTimes(2)
     const events: ClientEvent[] = mockRequest.body.events
     expect(appServer.emit).toHaveBeenNthCalledWith(
@@ -92,6 +92,67 @@ describe('Transaction', () => {
     expect(appServer.lastProcessedTxnId).toEqual(transactionId)
   })
 
+  it('should browse request body events and ephemerals then send a response', () => {
+    mockRequest = {
+      ...mockRequest,
+      body: {
+        ...mockRequest.body,
+        'de.sorunome.msc2409.ephemeral': [
+          {
+            content: {
+              avatar_url: 'mxc://localhost/wefuiwegh8742w',
+              currently_active: false,
+              last_active_ago: 2478593,
+              presence: 'online',
+              status_msg: 'Making cupcakes'
+            },
+            sender: '@example:localhost',
+            type: 'm.presence'
+          },
+          {
+            content: {
+              body: 'This is an example event without type'
+            },
+            event_id: '$143273582443PhrSn:example.org',
+            origin_server_ts: 1432735824653,
+            sender: '@example:example.org'
+          }
+        ]
+      }
+    }
+    const handler: expressAppHandler = transaction(
+      appServer as MatrixApplicationServer
+    )
+    handler(mockRequest as Request, mockResponse as Response, nextFunction)
+    expect(mockResponse.send).toHaveBeenCalledTimes(1)
+    expect(mockResponse.send).toHaveBeenCalledWith({})
+    expect(appServer.emit).toHaveBeenCalledTimes(4)
+    const events: ClientEvent[] = mockRequest.body.events
+    const ephemerals: ClientEvent[] =
+      mockRequest.body['de.sorunome.msc2409.ephemeral']
+    expect(appServer.emit).toHaveBeenNthCalledWith(
+      1,
+      'type: m.room.member | state_key: @alice:example.org',
+      events[0]
+    )
+    expect(appServer.emit).toHaveBeenNthCalledWith(
+      2,
+      'type: m.room.message',
+      events[1]
+    )
+    expect(appServer.emit).toHaveBeenNthCalledWith(
+      3,
+      'ephemeral_type: m.presence',
+      ephemerals[0]
+    )
+    expect(appServer.emit).toHaveBeenNthCalledWith(
+      4,
+      'ephemeral',
+      ephemerals[1]
+    )
+    expect(appServer.lastProcessedTxnId).toEqual(transactionId)
+  })
+
   it('should send a response if transaction has already been processed', () => {
     mockRequest.params = {
       txnId: lastProcessedTxnId
@@ -101,7 +162,7 @@ describe('Transaction', () => {
     )
     handler(mockRequest as Request, mockResponse as Response, nextFunction)
     expect(mockResponse.send).toHaveBeenCalledTimes(1)
-    expect(mockResponse.send).toHaveBeenCalledWith()
+    expect(mockResponse.send).toHaveBeenCalledWith({})
     expect(appServer.lastProcessedTxnId).toEqual(lastProcessedTxnId)
   })
 

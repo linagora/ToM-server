@@ -1,7 +1,6 @@
 import type MatrixApplicationServer from '..'
-import { AppServerAPIError, type expressAppHandler } from '../utils'
 import { type ClientEvent, type TransactionRequestBody } from '../interfaces'
-import { validationResult, type ValidationError } from 'express-validator'
+import { validationErrorHandler, type expressAppHandler } from '../utils'
 
 export type TransactionController = (
   appServer: MatrixApplicationServer
@@ -11,26 +10,12 @@ export const transaction: TransactionController = (
   appServer: MatrixApplicationServer
 ) => {
   return (req, res, next) => {
-    const errors = validationResult(req)
-    if (!errors.isEmpty()) {
-      const errorMessage = errors
-        .array({ onlyFirstError: true })
-        .map(
-          (error: ValidationError) =>
-            `Error ${error.type}: ${String(error.msg)}${
-              'path' in error ? ` (property: ${error.path})` : ''
-            }`
-        )
-        .join(', ')
-      throw new AppServerAPIError({
-        status: 400,
-        message: errorMessage
-      })
-    }
+    validationErrorHandler(req)
     const txnId = req.params.txnId
     const events = (req.body as TransactionRequestBody).events
+    const ephemeral = req.body['de.sorunome.msc2409.ephemeral'] ?? []
     if (appServer.lastProcessedTxnId === txnId) {
-      res.send()
+      res.send({})
       return
     }
     events.forEach((event: ClientEvent) => {
@@ -44,7 +29,14 @@ export const transaction: TransactionController = (
         appServer.emit(`type: ${event.type}`, event)
       }
     })
+    ephemeral.forEach((event: ClientEvent) => {
+      if (event.type != null) {
+        appServer.emit('ephemeral_type: ' + event.type, event)
+      } else {
+        appServer.emit('ephemeral', event)
+      }
+    })
     appServer.lastProcessedTxnId = txnId
-    res.send()
+    res.send({})
   }
 }

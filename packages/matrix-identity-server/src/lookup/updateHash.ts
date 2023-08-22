@@ -51,12 +51,9 @@ const updateHash = (
         ): Promise<void> => {
           if (pepper == null || pepper.length === 0) {
             pepper = (
-              (await idServer.db.get(
-                'keys',
-                ['data'],
-                'name',
-                'pepper'
-              )) as unknown as Array<{ data: string }>
+              (await idServer.db.get('keys', ['data'], {
+                name: 'pepper'
+              })) as unknown as Array<{ data: string }>
             )[0].data
           }
           // console.debug('pepper + hash', [pepper, hash[method as 'sha256'](`${value} ${field} ${pepper}`)])

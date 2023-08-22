@@ -138,68 +138,85 @@ class SQLite extends SQL implements IdDbBackend {
     op: string,
     table: string,
     fields?: string[],
-    field?: string,
-    value?: string | number | Array<string | number>,
+    filterFields?: Record<string, string | number | Array<string | number>>,
     order?: string
   ): Promise<DbGetResult> {
     return new Promise((resolve, reject) => {
       /* istanbul ignore if */
-      if (typeof value !== 'object') {
-        value = value != null ? [value] : []
-      }
-      /* istanbul ignore if */
       if (this.db == null) {
         reject(new Error('Wait for database to be ready'))
-      }
-      let condition: string = ''
-      if (fields == null || fields.length === 0) {
-        fields = ['*']
-      }
-      if (field != null && value != null && value.length > 0) {
-        condition = 'WHERE ' + value.map((val) => `${field}${op}?`).join(' OR ')
-      }
-      if (order != null) condition += `ORDER BY ${order}`
-
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
-      // @ts-ignore never undefined
-      const stmt = this.db.prepare(
-        `SELECT ${fields.join(',')} FROM ${table} ${condition}`
-      )
-      stmt.all(
-        value,
-        (err: string, rows: Array<Record<string, string | number>>) => {
-          /* istanbul ignore if */
-          if (err != null) {
-            reject(err)
-          } else {
-            resolve(rows)
-          }
+      } else {
+        let condition: string = ''
+        const values: string[] = []
+        if (fields == null || fields.length === 0) {
+          fields = ['*']
         }
-      )
-      stmt.finalize((err) => {
-        reject(err)
-      })
+        if (filterFields != null) {
+          let index = 0
+          Object.keys(filterFields)
+            .filter(
+              (key) =>
+                filterFields[key] != null &&
+                filterFields[key].toString() !== [].toString()
+            )
+            .forEach((key) => {
+              condition += condition === '' ? 'WHERE ' : ' OR '
+              if (Array.isArray(filterFields[key])) {
+                condition += `${(filterFields[key] as Array<string | number>)
+                  .map((val) => {
+                    index++
+                    values.push(val.toString())
+                    return `${key}${op}$${index}`
+                  })
+                  .join(' OR ')}`
+              } else {
+                index++
+                values.push(filterFields[key].toString())
+                condition += `${key}${op}$${index}`
+              }
+            })
+        }
+        if (order != null) condition += ` ORDER BY ${order}`
+
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
+        // @ts-ignore never undefined
+        const stmt = this.db.prepare(
+          `SELECT ${fields.join(',')} FROM ${table} ${condition}`
+        )
+        stmt.all(
+          values,
+          (err: string, rows: Array<Record<string, string | number>>) => {
+            /* istanbul ignore if */
+            if (err != null) {
+              reject(err)
+            } else {
+              resolve(rows)
+            }
+          }
+        )
+        stmt.finalize((err) => {
+          reject(err)
+        })
+      }
     })
   }
 
   get(
     table: string,
     fields?: string[],
-    field?: string,
-    value?: string | number | Array<string | number>,
+    filterFields?: Record<string, string | number | Array<string | number>>,
     order?: string
   ): Promise<DbGetResult> {
-    return this._get('=', table, fields, field, value, order)
+    return this._get('=', table, fields, filterFields, order)
   }
 
   getHigherThan(
     table: Collections,
     fields: string[],
-    field: string,
-    value: string | number | string[],
+    filterFields: Record<string, string | number | Array<string | number>>,
     order?: string
   ): Promise<DbGetResult> {
-    return this._get('>', table, fields, field, value, order)
+    return this._get('>', table, fields, filterFields, order)
   }
 
   match(

@@ -32,8 +32,7 @@ type Update = (
 type Get = (
   table: Collections,
   fields: string[],
-  field: string,
-  value: string | number | string[]
+  filterFields: Record<string, string | number | Array<string | number>>
 ) => Promise<DbGetResult>
 type GetCount = (
   table: Collections,
@@ -171,10 +170,9 @@ class IdentityServerDb implements IdDbBackend {
   get(
     table: Collections,
     fields: string[],
-    field: string,
-    value: string | number | string[]
+    filterFields: Record<string, string | number | Array<string | number>>
   ) {
-    return this.db.get(table, fields, field, value)
+    return this.db.get(table, fields, filterFields)
   }
 
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
@@ -195,10 +193,9 @@ class IdentityServerDb implements IdDbBackend {
   getHigherThan(
     table: Collections,
     fields: string[],
-    field: string,
-    value: string | number | string[]
+    filterFields: Record<string, string | number | Array<string | number>>
   ): Promise<DbGetResult> {
-    return this.db.getHigherThan(table, fields, field, value)
+    return this.db.getHigherThan(table, fields, filterFields)
   }
 
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
@@ -273,7 +270,7 @@ class IdentityServerDb implements IdDbBackend {
     }
     return new Promise((resolve, reject) => {
       this.db
-        .get('oneTimeTokens', ['data', 'expires'], 'id', id)
+        .get('oneTimeTokens', ['data', 'expires'], { id })
         .then((rows) => {
           /* istanbul ignore else */
           if (rows.length > 0 && (rows[0].expires as number) >= epoch()) {

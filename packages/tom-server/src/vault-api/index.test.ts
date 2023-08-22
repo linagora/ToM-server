@@ -1,13 +1,13 @@
 import express from 'express'
-import request from 'supertest'
 import fs from 'fs'
-import buildTokenTable from './__testData__/buildTokenTable'
-import defaultConfig from '../config.json'
 import fetch from 'node-fetch'
 import path from 'path'
-import JEST_PROCESS_ROOT_PATH from '../../jest.globals'
+import request from 'supertest'
 import TwakeServer from '..'
+import JEST_PROCESS_ROOT_PATH from '../../jest.globals'
+import defaultConfig from '../config.json'
 import { type Config } from '../types'
+import buildTokenTable from './__testData__/buildTokenTable'
 
 const endpoint = '/_twake/recoveryWords'
 const testFilePath = path.join(JEST_PROCESS_ROOT_PATH, 'vault.db')
@@ -221,7 +221,7 @@ describe('Vault API server', () => {
 
   // Delete words from database for connected user whose doesn't have a recovery sentence associated to his access_token
   // It returns 201 even if there weren't any words saved : depends on the behaviour we would like to have.
-  it('delete words in database for the connected user whose recovery sentence is not saved saved', async () => {
+  it('delete words in database for the connected user whose recovery sentence is not saved', async () => {
     const response = await request(app)
       .delete(endpoint)
       .set('Authorization', `Bearer ${unsavedToken}`)

@@ -21,6 +21,7 @@ export interface Config {
   ldap_password?: string
   ldap_uri?: string
   ldap_user?: string
+  ldap_uid_field?: string
   ldapjs_opts?: Record<string, any>
   mail_link_delay: number
   matrix_database_engine?: SupportedDatabases | null

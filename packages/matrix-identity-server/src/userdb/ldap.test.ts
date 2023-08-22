@@ -1,6 +1,6 @@
 import ldapjs from 'ldapjs'
-import UserDBLDAP from './ldap'
 import defaultConfig from '../config.json'
+import UserDBLDAP from './ldap'
 
 const server = ldapjs.createServer()
 
@@ -12,7 +12,8 @@ beforeAll((done) => {
       dn: req.dn.toString(),
       attributes: {
         objectclass: ['inetOrgPerson'],
-        uid: 'dwho'
+        uid: 'dwho',
+        sn: 'doctor'
       }
     }
     // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
@@ -45,16 +46,16 @@ describe('LDAP', () => {
     userDB.ready
       .then(() => {
         userDB
-          .get('', [], 'uid', 'dwho')
+          .get('', [], { uid: 'dwho', sn: ['doctor'] })
           .then((list) => {
             expect(list[0].dn).toBe('ou=users,o=example')
             // userDB.client.destroy()
             userDB
-              .get('', ['uid'], 'uid', 'dwho')
+              .get('', ['uid'], { uid: 'dwho' })
               .then((list) => {
                 expect(list[0]).toEqual({ uid: 'dwho' })
                 userDB
-                  .get('', [], 'uid', 'zz')
+                  .get('', [], { uid: 'zz' })
                   .then((list) => {
                     done()
                   })
@@ -67,6 +68,23 @@ describe('LDAP', () => {
           .catch(done)
       })
       .catch(done)
+  })
+
+  it('should display error message on connection error', async () => {
+    const userDB = new UserDBLDAP({
+      ...defaultConfig,
+      database_engine: 'sqlite',
+      userdb_engine: 'ldap',
+      ldap_uri: 'ldap://falsy:63389',
+      ldap_base: 'ou=users,o=example'
+    })
+    const consoleErrorSpy = jest.spyOn(console, 'error')
+    await userDB.ready
+    expect(consoleErrorSpy).toHaveBeenCalledTimes(1)
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      'Connection to LDAP failed',
+      expect.anything()
+    )
   })
 
   it('should provide match', (done) => {

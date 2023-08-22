@@ -40,7 +40,7 @@ describe('UserDB', () => {
     userDB.ready
       .then(() => {
         userDB
-          .get('users', ['uid'], 'uid', 'dwho')
+          .get('users', ['uid'], { uid: 'dwho' })
           .then((list) => {
             expect(list[0].uid).toBe('dwho')
             done()

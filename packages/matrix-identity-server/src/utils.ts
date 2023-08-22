@@ -33,13 +33,13 @@ export const send = (
 export type AuthenticationFunction = (
   req: Request | http.IncomingMessage,
   res: Response | http.ServerResponse,
-  callback: (data: tokenContent, id?: string) => void
+  callback: (data: tokenContent, id: string | null) => void
 ) => void
 
 export const Authenticate = (db: IdentityServerDb): AuthenticationFunction => {
   const tokenRe = /^Bearer ([a-zA-Z0-9]{64})$/
   return (req, res, callback) => {
-    let token: string | null = ''
+    let token: string | null = null
     if (req.headers.authorization != null) {
       const re = req.headers.authorization.match(tokenRe)
       if (re != null) {
@@ -51,9 +51,8 @@ export const Authenticate = (db: IdentityServerDb): AuthenticationFunction => {
       token = req.query.access_token
     }
     if (token != null) {
-      db.get('accessTokens', ['data'], 'id', token)
+      db.get('accessTokens', ['data'], { id: token })
         .then((rows) => {
-          // @ts-expect-error token is defined
           callback(JSON.parse(rows[0].data as string), token)
         })
         .catch((e) => {

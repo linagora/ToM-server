@@ -1,5 +1,5 @@
 export default {
-  testTimeout: 20000,
+  testTimeout: 40000,
   testEnvironment: 'node',
   preset: 'ts-jest',
   collectCoverage: true,
@@ -12,9 +12,10 @@ export default {
       statements: 90
     }
   },
-  setupFiles: ['<rootDir>/jest.setup.ts'],
+  setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
   moduleNameMapper: {
     "@twake/(.*)$": "<rootDir>/../$1/src",
+    "node-fetch": "<rootDir>/../../node_modules/node-fetch-jest"
   },
   clearMocks: true,
 }

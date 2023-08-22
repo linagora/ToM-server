@@ -15,12 +15,9 @@ export const isMemberOfRoom = async (
   userId: string,
   roomId: string
 ): Promise<boolean> => {
-  const memberships = (await db.get(
-    'room_memberships',
-    ['room_id'],
-    'user_id',
-    userId
-  )) as unknown as Array<Partial<RoomMembership>>
+  const memberships = (await db.get('room_memberships', ['room_id'], {
+    user_id: userId
+  })) as unknown as Array<Partial<RoomMembership>>
 
   return memberships.some((m) => m.room_id === roomId)
 }
@@ -54,12 +51,9 @@ export const getRoomTagId = async (
   userId: string,
   roomId: string
 ): Promise<string | null> => {
-  const userTags = (await db.get(
-    'roomTags',
-    ['id', 'roomId'],
-    'authorId',
-    userId
-  )) as unknown as RoomTag[]
+  const userTags = (await db.get('roomTags', ['id', 'roomId'], {
+    authorId: userId
+  })) as unknown as RoomTag[]
 
   const roomTag = userTags.find((t) => t.roomId === roomId)
 

@@ -60,7 +60,7 @@ abstract class SQL {
   ): Promise<number> {
     return new Promise((resolve, reject) => {
       const args: any[] = [table, [`count(${field}) as count`]]
-      if (value != null) args.push(field, value)
+      if (value != null) args.push({ [field]: value })
       // @ts-expect-error implemented later
       this.get(...args)
         .then((rows: Array<Record<string, string>>) => {
@@ -80,7 +80,7 @@ abstract class SQL {
     order?: string
   ): Promise<DbGetResult> {
     // @ts-expect-error implemented later
-    return this.get(table, fields, undefined, undefined, order)
+    return this.get(table, fields, undefined, order)
   }
 }
 

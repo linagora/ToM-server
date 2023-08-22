@@ -1,7 +1,7 @@
+import { randomString } from '@twake/crypto'
 import fs from 'fs'
 import { dump, load } from 'js-yaml'
 import { type Config } from '..'
-import { randomString } from '@twake/crypto'
 
 interface Namespace {
   exclusive: boolean
@@ -23,6 +23,7 @@ export interface AppServiceOutput {
   rate_limited?: boolean
   sender_localpart: string
   url: string
+  'de.sorunome.msc2409.push_ephemeral': boolean
 }
 
 export class AppServiceRegistration {
@@ -32,8 +33,10 @@ export class AppServiceRegistration {
   private _namespaces!: Namespaces
   protocols?: string[]
   rateLimited?: boolean
+  private _pushEphemeral!: boolean
   private _senderLocalpart!: string
   private _url!: string
+  private static readonly PUSH_EPHEMERAL = 'de.sorunome.msc2409.push_ephemeral'
 
   private _cachedRegex: Record<string, RegExp> = {}
 
@@ -53,9 +56,10 @@ export class AppServiceRegistration {
         as_token: randomString(64),
         hs_token: randomString(64),
         id: randomString(64), // Maybe this id should be part of config file
-        sender_localpart: conf.sender_localpart ?? '',
+        sender_localpart: conf.sender_localpart,
         url: conf.base_url,
-        namespaces: conf.namespaces ?? {}
+        namespaces: conf.namespaces ?? {},
+        [AppServiceRegistration.PUSH_EPHEMERAL]: conf.push_ephemeral ?? false
       }
     }
     this.asToken = appServiceConfig.as_token
@@ -64,6 +68,7 @@ export class AppServiceRegistration {
     this.url = appServiceConfig.url
     this.senderLocalpart = appServiceConfig.sender_localpart
     this.namespaces = appServiceConfig.namespaces
+    this.pushEphemeral = appServiceConfig[AppServiceRegistration.PUSH_EPHEMERAL]
   }
 
   /**
@@ -115,6 +120,25 @@ export class AppServiceRegistration {
 
   get senderLocalpart(): string {
     return this._senderLocalpart
+  }
+
+  /**
+   * Related to https://github.com/matrix-org/synapse/pull/8437
+   * Signal to the homeserver that this appservice will accept ephemeral events.
+   * @param {boolean} pushEphemeral
+   * @throws If parameter is not a boolean
+   */
+  private set pushEphemeral(pushEphemeral: boolean) {
+    if (typeof pushEphemeral !== 'boolean') {
+      throw new Error(
+        'The value of "push_ephemeral" field in configuration must be a boolean'
+      )
+    }
+    this._pushEphemeral = pushEphemeral
+  }
+
+  get pushEphemeral(): boolean {
+    return this._pushEphemeral
   }
 
   /**
@@ -190,7 +214,8 @@ export class AppServiceRegistration {
       as_token: this.asToken,
       url: this.url,
       sender_localpart: this.senderLocalpart,
-      namespaces: this.namespaces
+      namespaces: this.namespaces,
+      [AppServiceRegistration.PUSH_EPHEMERAL]: this.pushEphemeral
     }
     if (this.protocols != null) {
       fileContent.protocols = this.protocols

@@ -56,7 +56,8 @@ describe('MatrixApplicationServer', () => {
         base_url: 'http://localhost:8080',
         sender_localpart: 'matrix',
         registration_file_path: 'registration.yaml',
-        namespaces: { users: [] }
+        namespaces: { users: [] },
+        push_ephemeral: true
       }
       appServer = new MatrixApplicationServer(config)
       expect(appServer.conf).toStrictEqual(config)
