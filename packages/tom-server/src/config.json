@@ -56,5 +56,6 @@
   "sender_localpart": "twake",
   "registration_file_path": "registration.yaml",
   "namespaces": { "users": [] },
-  "push_ephemeral": true
+  "push_ephemeral": true,
+  "enable_company_features": false
 }

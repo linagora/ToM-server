@@ -13,7 +13,7 @@ import Authenticate from './utils/authenticate'
 
 export type { WhoAmIResponse } from './utils/authenticate'
 
-export default class TwakeIdentityServer extends MatrixIdentityServer {
+export default class AugmentedIdentityServer extends MatrixIdentityServer {
   declare conf: Config
   constructor(
     parent: TwakeServer,

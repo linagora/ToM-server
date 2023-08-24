@@ -1,4 +1,5 @@
 import { type Config as MASConfig } from '@twake/matrix-application-server'
+import type MatrixIdentityServer from '@twake/matrix-identity-server'
 import {
   MatrixErrors,
   type Config as MConfig,
@@ -6,7 +7,7 @@ import {
   type Utils as MUtils
 } from '@twake/matrix-identity-server'
 import type { PathOrFileDescriptor } from 'fs'
-
+import type AugmentedIdentityServer from './identity-server'
 import { type Request } from 'express'
 
 export type expressAppHandler = MUtils.expressAppHandler
@@ -23,6 +24,7 @@ export type Config = MConfig &
     matrix_server: string
     matrix_database_host: string
     oidc_issuer?: string
+    enable_company_features?: boolean
   }
 
 export type IdentityServerDb = MIdentityServerDb.default
@@ -34,6 +36,8 @@ export interface AuthRequest extends Request {
 }
 
 export type ConfigurationFile = object | PathOrFileDescriptor | undefined
+
+export type TwakeIdentityServer = AugmentedIdentityServer | MatrixIdentityServer
 
 export const allMatrixErrorCodes = {
   ...MatrixErrors.errCodes,

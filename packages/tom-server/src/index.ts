@@ -4,7 +4,7 @@ import {
   type Config as LoggerConfig,
   type TwakeLogger
 } from '@twake/logger'
-import { MatrixDB } from '@twake/matrix-identity-server'
+import MatrixIdentityServer, { MatrixDB } from '@twake/matrix-identity-server'
 import { Router } from 'express'
 import fs from 'fs'
 import AppServiceAPI from './application-server'
@@ -14,74 +14,35 @@ import IdServer from './identity-server'
 import mutualRoomsAPIRouter from './mutual-rooms-api'
 import privateNoteApiRouter from './private-note-api'
 import roomTagsAPIRouter from './room-tags-api'
-import type { Config, ConfigurationFile } from './types'
+import type { Config, ConfigurationFile, TwakeIdentityServer } from './types'
 import userInfoAPIRouter from './user-info-api'
 import VaultServer from './vault-api'
 import WellKnown from './wellKnown'
 
-export default class TwakeServer {
+abstract class AbstractTwakeServerPublic {
   endpoints: Router
-  ready: Promise<boolean>
-  idServer: IdServer
-  conf: Config
   db?: TwakeDB
   matrixDb: MatrixDB
-  private readonly _logger: TwakeLogger
+  ready!: Promise<boolean>
+  idServer!: TwakeIdentityServer
 
-  get logger(): TwakeLogger {
-    return this._logger
-  }
-
-  constructor(
-    conf?: Partial<Config>,
-    confDesc?: ConfigDescription,
-    logger?: TwakeLogger
-  ) {
-    if (confDesc == null) confDesc = defaultConfig as ConfigDescription
-    this.conf = configParser(
-      confDesc,
-      this._getConfigurationFile(conf)
-    ) as Config
-    this._logger = logger ?? getLogger(this.conf as unknown as LoggerConfig)
-    this.endpoints = Router()
-    this.idServer = new IdServer(this, undefined, this.logger)
+  constructor(public conf: Config, public readonly logger: TwakeLogger) {
     this.matrixDb = new MatrixDB(this.conf, this.logger)
-
-    this.ready = this.initServer()
-  }
-
-  private readonly _getConfigurationFile = (
-    conf: Partial<Config> | undefined
-  ): ConfigurationFile => {
-    if (conf != null) {
-      return conf
-    }
-
-    if (process.env.TWAKE_SERVER_CONF != null) {
-      return process.env.TWAKE_SERVER_CONF
-    }
-
-    /* istanbul ignore if */
-    if (fs.existsSync('/etc/twake/server.conf')) {
-      return '/etc/twake/server.conf'
-    }
-
-    /* istanbul ignore next */
-    return undefined
+    this.endpoints = Router()
   }
 
   cleanJobs(): void {
     this.idServer.cleanJobs()
   }
 
-  private readonly initServer = async (): Promise<boolean> => {
+  protected readonly initServer = async (): Promise<boolean> => {
     try {
       await this.idServer.ready
       await this.matrixDb.ready
       await initializeDb(this)
 
       const vaultServer = new VaultServer(this.conf, this)
-      const wellKnown = new WellKnown(this.idServer.conf)
+      const wellKnown = new WellKnown(this.conf)
       const privateNoteApi = privateNoteApiRouter(
         this.idServer.db,
         this.conf,
@@ -104,14 +65,12 @@ export default class TwakeServer {
         this.conf,
         this.logger
       )
-      const appServericeApi = new AppServiceAPI(this, undefined, this.logger)
 
       this.endpoints.use(privateNoteApi)
       this.endpoints.use(mutualRoolsApi)
       this.endpoints.use(vaultServer.endpoints)
       this.endpoints.use(roomTagsApi)
       this.endpoints.use(userInfoApi)
-      this.endpoints.use(appServericeApi.router.routes)
 
       Object.keys(this.idServer.api.get).forEach((k) => {
         this.endpoints.get(k, this.idServer.api.get[k])
@@ -131,5 +90,110 @@ export default class TwakeServer {
       /* istanbul ignore next */
       throw Error('Unable to initialize server', { cause: error })
     }
+  }
+}
+
+class TwakeServerPublicImpl extends AbstractTwakeServerPublic {
+  constructor(
+    public conf: Config,
+    public readonly logger: TwakeLogger,
+    confDesc: ConfigDescription
+  ) {
+    super(conf, logger)
+    this.idServer = new MatrixIdentityServer(this.conf, confDesc, this.logger)
+    this.ready = this.initServer()
+  }
+}
+
+class TwakeServerEnterprise extends AbstractTwakeServerPublic {
+  constructor(
+    public conf: Config,
+    public readonly logger: TwakeLogger,
+    confDesc: ConfigDescription
+  ) {
+    super(conf, logger)
+    this.idServer = new IdServer(this, confDesc, logger)
+
+    this.ready = new Promise<boolean>((resolve, reject) => {
+      this.initServer()
+        .then(() => {
+          const appServiceApi = new AppServiceAPI(this, confDesc, this.logger)
+          this.endpoints.use(appServiceApi.router.routes)
+          resolve(true)
+        })
+        .catch((error) => {
+          /* istanbul ignore next */
+          this.logger.error('Unable to initialize server')
+          /* istanbul ignore next */
+          reject(new Error('Unable to initialize server', { cause: error }))
+        })
+    })
+  }
+}
+
+export default class TwakeServer {
+  conf: Config
+  readonly logger: TwakeLogger
+  db?: TwakeDB
+
+  get idServer(): TwakeIdentityServer {
+    return this.idServer
+  }
+
+  get matrixDb(): MatrixDB {
+    return this.matrixDb
+  }
+
+  get endpoints(): Router {
+    return this.endpoints
+  }
+
+  get ready(): Promise<boolean> {
+    return this.ready
+  }
+
+  constructor(
+    conf?: Partial<Config>,
+    confDesc?: ConfigDescription,
+    logger?: TwakeLogger
+  ) {
+    if (confDesc == null) confDesc = defaultConfig as ConfigDescription
+    this.conf = configParser(
+      confDesc,
+      TwakeServer._getConfigurationFile(conf)
+    ) as Config
+    this.logger = logger ?? getLogger(this.conf as unknown as LoggerConfig)
+    if (
+      process.env.ENABLE_COMPANY_FEATURES === 'true' ||
+      (this.conf.enable_company_features as boolean)
+    ) {
+      return new TwakeServerEnterprise(this.conf, this.logger, confDesc)
+    } else {
+      return new TwakeServerPublicImpl(this.conf, this.logger, confDesc)
+    }
+  }
+
+  cleanJobs(): void {
+    this.cleanJobs()
+  }
+
+  private static readonly _getConfigurationFile = (
+    conf: Partial<Config> | undefined
+  ): ConfigurationFile => {
+    if (conf != null) {
+      return conf
+    }
+
+    if (process.env.TWAKE_SERVER_CONF != null) {
+      return process.env.TWAKE_SERVER_CONF
+    }
+
+    /* istanbul ignore if */
+    if (fs.existsSync('/etc/twake/server.conf')) {
+      return '/etc/twake/server.conf'
+    }
+
+    /* istanbul ignore next */
+    return undefined
   }
 }

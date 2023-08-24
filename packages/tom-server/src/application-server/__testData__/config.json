@@ -21,5 +21,6 @@
     "aliases": [{ "exclusive": false, "regex": "#_twake_.*" }],
     "users": [{ "exclusive": false, "regex": "@.*" }]
   },
-  "push_ephemeral": true
+  "push_ephemeral": true,
+  "enable_company_features": true
 }
