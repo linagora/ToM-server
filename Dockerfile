@@ -1,4 +1,4 @@
-FROM node:latest
+FROM node:18
 
 env BASE_URL= \
     CRON_SERVICE= \

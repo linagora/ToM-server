@@ -1,7 +1,8 @@
-import { EqualityFilter, OrFilter } from 'ldapjs'
+import ldapjs from 'ldapjs'
 import { type TwakeDB } from '../../db'
 import { type Collections } from '../../types'
 import { type ITwakeRoomModel } from '../types'
+const { EqualityFilter, OrFilter } = ldapjs
 
 export class TwakeRoom implements ITwakeRoomModel {
   constructor(
