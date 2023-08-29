@@ -31,6 +31,7 @@ export const createRoom = (
       if (!hostnameRe.test(twakeServer.conf.matrix_server)) {
         throw Error('Bad matrix_server_name')
       }
+      const appServiceMatrixId = `@${appServer.appServiceRegistration.senderLocalpart}:${twakeServer.conf.server_name}`
       // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
       const roomAliasName = `_twake_${req.body.aliasName}`
       const rooms = await twakeServer.matrixDb.get('room_aliases', undefined, {
@@ -43,10 +44,7 @@ export const createRoom = (
             'Critical error: several rooms have the same alias in Matrix database'
         })
       } else if (rooms.length === 1) {
-        if (
-          rooms[0].creator !==
-          `@${appServer.appServiceRegistration.senderLocalpart}:${twakeServer.conf.server_name}`
-        ) {
+        if (rooms[0].creator !== appServiceMatrixId) {
           throw new AppServerAPIError<typeof allMatrixErrorCodes>({
             status: 409,
             code: allMatrixErrorCodes.roomInUse,
@@ -74,7 +72,18 @@ export const createRoom = (
               name: req.body.name,
               visibility: req.body.visibility,
               room_alias_name: roomAliasName,
-              topic: req.body.topic
+              topic: req.body.topic,
+              power_level_content_override: {
+                ban: 100,
+                invite: 100,
+                kick: 100,
+                redact: 100,
+                state_default: 100,
+                users: {
+                  [appServiceMatrixId]: 100
+                },
+                users_default: 0
+              }
             })
           }
         )
@@ -165,7 +174,7 @@ export const createRoom = (
                 index
               ][twakeServer.conf.ldap_uid_field as string] as string,
               errcode: allMatrixErrorCodes.unknown,
-              error: response.reason || 'Internal server error'
+              error: response.reason ?? 'Internal server error'
             })
             break
           default:
