@@ -4,11 +4,15 @@ import MatrixApplicationServer, {
   type AppService,
   type ClientEvent
 } from '@twake/matrix-application-server'
+import { type DbGetResult } from '@twake/matrix-identity-server'
+import lodash from 'lodash'
 import fetch from 'node-fetch'
 import type TwakeServer from '..'
 import defaultConfig from '../config.json'
 import { TwakeRoom } from './models/room'
 import { extendRoutes } from './routes'
+const { groupBy } = lodash
+
 export default class TwakeApplicationServer
   extends MatrixApplicationServer
   implements AppService
@@ -55,18 +59,35 @@ export default class TwakeApplicationServer
                   } not found`
                 )
               }
-              const joinedRoomsIds = roomMemberships
-                .filter(
-                  (roomMembership) => roomMembership.membership === 'join'
+
+              const membershipsByRoomId = groupBy(
+                roomMemberships,
+                'room_id'
+              ) as Record<string, DbGetResult>
+
+              const forbiddenRooms = Object.keys(membershipsByRoomId)
+                .map(
+                  (key) =>
+                    membershipsByRoomId[key].pop() as Record<
+                      string,
+                      string | number | Array<string | number>
+                    >
                 )
-                .map((roomMembership) => roomMembership.room_id)
+                .filter(
+                  (membership) =>
+                    membership.membership === 'join' ||
+                    (membership.membership === 'leave' &&
+                      membership.sender !== matrixUserId) ||
+                    membership.membership === 'ban'
+                )
+                .map((membership) => membership.room_id as string)
 
               return Promise.allSettled(
                 rooms
                   .filter(
                     (room) =>
                       room.userDataMatchRoomFilter(user[0]) &&
-                      !joinedRoomsIds.includes(room.id)
+                      !forbiddenRooms.includes(room.id)
                   )
                   // eslint-disable-next-line @typescript-eslint/promise-function-async
                   .map((room) => {
@@ -88,6 +109,37 @@ export default class TwakeApplicationServer
             .catch((e) => {
               this.logger.error(e)
             })
+        }
+      }
+    })
+
+    this.on('state event | type: m.room.member', (event: ClientEvent) => {
+      if (
+        event.type === 'm.room.member' &&
+        'membership' in event.content &&
+        event.content.membership === 'leave'
+      ) {
+        const matrixUserId = event.sender
+        const targetUserId = event.state_key
+        if (
+          matrixUserId != null &&
+          targetUserId != null &&
+          targetUserId === matrixUserId
+        ) {
+          fetch(
+            encodeURI(
+              // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+              `https://${parent.conf.matrix_server}/_matrix/client/v3/join/${event.room_id}?user_id=${matrixUserId}`
+            ),
+            {
+              method: 'POST',
+              headers: {
+                Authorization: `Bearer ${this.appServiceRegistration.asToken}`
+              }
+            }
+          ).catch((e) => {
+            this.logger.error(e)
+          })
         }
       }
     })
