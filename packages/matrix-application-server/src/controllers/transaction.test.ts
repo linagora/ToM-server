@@ -81,7 +81,7 @@ describe('Transaction', () => {
     const events: ClientEvent[] = mockRequest.body.events
     expect(appServer.emit).toHaveBeenNthCalledWith(
       1,
-      'type: m.room.member | state_key: @alice:example.org',
+      'state event | type: m.room.member',
       events[0]
     )
     expect(appServer.emit).toHaveBeenNthCalledWith(
@@ -132,7 +132,7 @@ describe('Transaction', () => {
       mockRequest.body['de.sorunome.msc2409.ephemeral']
     expect(appServer.emit).toHaveBeenNthCalledWith(
       1,
-      'type: m.room.member | state_key: @alice:example.org',
+      'state event | type: m.room.member',
       events[0]
     )
     expect(appServer.emit).toHaveBeenNthCalledWith(
