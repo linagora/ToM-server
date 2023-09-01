@@ -18,7 +18,7 @@
     }],
     "levels": null,
     "silent": false,
-    "exitOnError": true,
+    "exitOnError": false,
     "defaultMeta": null,
     "exceptionHandlers": [],
     "rejectionHandlers": []

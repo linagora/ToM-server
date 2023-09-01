@@ -23,7 +23,7 @@ describe('Logger', () => {
       defaultMeta: undefined,
       transports: expect.anything(),
       silent: false,
-      exitOnError: true,
+      exitOnError: false,
       exceptionHandlers: [],
       rejectionHandlers: []
     })
@@ -54,7 +54,7 @@ describe('Logger', () => {
       defaultMeta: undefined,
       transports: expect.anything(),
       silent: false,
-      exitOnError: true,
+      exitOnError: false,
       exceptionHandlers: [],
       rejectionHandlers: []
     })
@@ -102,7 +102,7 @@ describe('Logger', () => {
       defaultMeta: undefined,
       transports: expect.anything(),
       silent: false,
-      exitOnError: true,
+      exitOnError: false,
       exceptionHandlers: [],
       rejectionHandlers: []
     })
@@ -140,7 +140,7 @@ describe('Logger', () => {
       defaultMeta: undefined,
       transports: expect.anything(),
       silent: false,
-      exitOnError: true,
+      exitOnError: false,
       exceptionHandlers: [],
       rejectionHandlers: []
     })
@@ -191,7 +191,7 @@ describe('Logger', () => {
       defaultMeta: undefined,
       transports: expect.anything(),
       silent: false,
-      exitOnError: true,
+      exitOnError: false,
       exceptionHandlers: [],
       rejectionHandlers: []
     })
@@ -237,7 +237,7 @@ describe('Logger', () => {
       defaultMeta: undefined,
       transports: expect.anything(),
       silent: false,
-      exitOnError: true,
+      exitOnError: false,
       exceptionHandlers: [],
       rejectionHandlers: []
     })
@@ -403,7 +403,7 @@ describe('Logger', () => {
       defaultMeta: undefined,
       transports: [],
       silent: false,
-      exitOnError: true,
+      exitOnError: false,
       exceptionHandlers: [],
       rejectionHandlers: []
     })
@@ -437,7 +437,7 @@ describe('Logger', () => {
       defaultMeta: undefined,
       transports: expect.anything(),
       silent: false,
-      exitOnError: true,
+      exitOnError: false,
       exceptionHandlers: [],
       rejectionHandlers: []
     })
@@ -480,7 +480,7 @@ describe('Logger', () => {
       defaultMeta: undefined,
       transports: expect.anything(),
       silent: false,
-      exitOnError: true,
+      exitOnError: false,
       exceptionHandlers: [],
       rejectionHandlers: []
     })
@@ -531,7 +531,7 @@ describe('Logger', () => {
       defaultMeta: undefined,
       transports: expect.anything(),
       silent: false,
-      exitOnError: true,
+      exitOnError: false,
       exceptionHandlers: [],
       rejectionHandlers: []
     })
