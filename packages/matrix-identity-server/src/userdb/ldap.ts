@@ -48,28 +48,8 @@ class UserDBLDAP implements UserDBBackend {
 
       this.ldap()
         .then((client) => {
-          client.on('connect', () => {
-            client.destroy()
-            resolve()
-          })
-          client.on('connectError', (error) => {
-            handleConnectionError(error, client)
-          })
-          client.on('connectTimeout', (error) => {
-            handleConnectionError(error, client)
-          })
-          client.on('connectRefused', (error) => {
-            handleConnectionError(error, client)
-          })
-          client.on('setupError', (error) => {
-            handleConnectionError(error, client)
-          })
-          client.on('socketTimeout', (error) => {
-            handleConnectionError(error, client)
-          })
-          client.on('error', (error) => {
-            handleConnectionError(error, client)
-          })
+          client.destroy()
+          resolve()
         })
         .catch((error) => {
           handleConnectionError(error)
