@@ -268,6 +268,17 @@ class Pg extends SQL implements IdDbBackend {
       if (this.db == null) {
         reject(new Error('DB not ready'))
       } else {
+        if (
+          !field ||
+          field.length === 0 ||
+          !value ||
+          value.toString().length === 0
+        ) {
+          reject(
+            new Error(`Bad deleteEqual call, field: ${field}, value: ${value}`)
+          )
+          return
+        }
         this.db.query(
           `DELETE FROM ${table} WHERE ${field}=$1`,
           [value],
@@ -289,6 +300,19 @@ class Pg extends SQL implements IdDbBackend {
       if (this.db == null) {
         reject(new Error('Database not ready'))
       } else {
+        if (
+          !field ||
+          field.length === 0 ||
+          !value ||
+          value.toString().length === 0
+        ) {
+          reject(
+            new Error(
+              `Bad deleteLowerThan call, field: ${field}, value: ${value}`
+            )
+          )
+          return
+        }
         this.db.query(
           `DELETE FROM ${table} WHERE ${field}<$1`,
           [value],
@@ -324,14 +348,26 @@ class Pg extends SQL implements IdDbBackend {
           filters.length === values.length
         ) {
           // Verifies that values have at least one element, and as much filter names
-          condition =
-            'WHERE ' + filters.map((filt) => `${filt}=?`).join(' AND ')
+          let i = 0
+          condition = filters
+            .map((filt) => {
+              i++
+              return `${filt}=$${i}`
+            })
+            .join(' AND ')
         }
 
         this.db.query(
           `DELETE FROM ${table} WHERE ${condition}`,
           values,
           (err) => {
+            if (err) {
+              console.error(
+                `Error with: DELETE FROM ${table} WHERE ${condition}`,
+                values
+              )
+              console.error('Error', err)
+            }
             // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
             err ? reject(err) : resolve()
           }

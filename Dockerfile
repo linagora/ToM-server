@@ -28,6 +28,8 @@ env BASE_URL= \
     SERVER_NAME= \
     TEMPLATE_DIR=
 
+RUN apt update && apt -y dist-upgrade
+
 WORKDIR /usr/src/app
 
 COPY package*.json ./

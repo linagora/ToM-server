@@ -32,6 +32,7 @@ const updateUsers = async (idServer: MatrixIdentityServer): Promise<void> => {
             matrixDb
               .getAll('users', ['name'])
               .then((rows) => {
+                matrixDb.close()
                 resolve(
                   rows.map((row) =>
                     (row.name as string).replace(/^@(.*?):.*$/, '$1')

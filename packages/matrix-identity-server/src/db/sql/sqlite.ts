@@ -342,12 +342,12 @@ class SQLite extends SQL implements IdDbBackend {
         filters.length === values.length
       ) {
         // Verifies that values have at least one element, and as much filter names
-        condition = 'WHERE ' + filters.map((filt) => `${filt}=?`).join(' AND ')
+        condition = filters.map((filt) => `${filt}=?`).join(' AND ')
       }
 
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
       // @ts-ignore never undefined
-      const stmt = this.db.prepare(`DELETE FROM ${table} ${condition}`)
+      const stmt = this.db.prepare(`DELETE FROM ${table} WHERE ${condition}`)
 
       stmt.all(
         values, // The statement fills the values properly.

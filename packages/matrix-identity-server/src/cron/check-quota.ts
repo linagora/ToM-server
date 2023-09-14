@@ -29,6 +29,7 @@ export default async (conf: Config, db: IdentityServerDb): Promise<void> => {
         }
       })
     )
+    matrixDb.close()
   } catch (error) {
     throw Error('Failed to check users quota', { cause: error })
   }
