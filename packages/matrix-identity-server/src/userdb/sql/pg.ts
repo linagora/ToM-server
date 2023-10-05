@@ -34,7 +34,8 @@ class UserDBPg extends Pg implements UserDBBackend {
             host: conf.userdb_host,
             user: conf.userdb_user,
             password: conf.userdb_password,
-            database: conf.userdb_name
+            database: conf.userdb_name,
+            ssl: conf.userdb_ssl ? true : false
           }
           // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
           if (conf.userdb_host.match(/^(.*):(\d+)/)) {

@@ -34,7 +34,8 @@ class MatrixDBPg extends Pg implements MatrixDBBackend {
             host: conf.matrix_database_host,
             user: conf.matrix_database_user,
             password: conf.matrix_database_password,
-            database: conf.matrix_database_name
+            database: conf.matrix_database_name,
+            ssl: conf.matrix_database_ssl ? true : false
           }
           // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
           if (conf.matrix_database_host.match(/^(.*):(\d+)/)) {
