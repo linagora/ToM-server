@@ -12,7 +12,7 @@ export interface Config {
   database_host: string
   database_name?: string
   database_password?: string
-  database_ssl: boolean | null
+  database_ssl?: boolean | null
   database_user?: string
   database_vacuum_delay: number
   key_delay: number
@@ -29,7 +29,7 @@ export interface Config {
   matrix_database_host?: string | null
   matrix_database_name?: string | null
   matrix_database_password?: string | null
-  matrix_database_ssl: boolean | null
+  matrix_database_ssl?: boolean | null
   matrix_database_user?: string | null
   pepperCron?: string
   policies?: Policies | string | null
@@ -47,7 +47,7 @@ export interface Config {
   userdb_host?: string
   userdb_name?: string
   userdb_password?: string
-  userdb_ssl: boolean | null
+  userdb_ssl?: boolean | null
   userdb_user?: string
   template_dir: string
   check_quota_cron?: string
