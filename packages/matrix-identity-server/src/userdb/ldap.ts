@@ -22,37 +22,30 @@ class UserDBLDAP implements UserDBBackend {
           conf.ldap_user.length > 0 &&
           conf.ldap_password != null
         ) {
+          client.on('error', reject)
           client.bind(conf.ldap_user, conf.ldap_password, (err) => {
             if (err == null) {
+              client.on('error', console.error)
               resolve(client)
             } else {
+              console.error('Connexion to LDAP failed', err)
               reject(err)
             }
           })
         } else {
+          client.on('error', console.error)
           resolve(client)
         }
       })
     }
-    this.ready = new Promise((resolve, _reject) => {
-      const handleConnectionError = (
-        error: any,
-        client?: ldapjs.Client
-      ): void => {
-        if (client != null) {
-          client.destroy()
-        }
-        console.error('Connection to LDAP failed', error)
-        resolve()
-      }
-
+    this.ready = new Promise((resolve, reject) => {
       this.ldap()
         .then((client) => {
           client.destroy()
           resolve()
         })
-        .catch((error) => {
-          handleConnectionError(error)
+        .catch((e) => {
+          resolve()
         })
     })
   }
