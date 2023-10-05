@@ -38,7 +38,8 @@ class Pg extends SQL implements IdDbBackend {
             host: conf.database_host,
             user: conf.database_user,
             password: conf.database_password,
-            database: conf.database_name
+            database: conf.database_name,
+            ssl: conf.database_ssl ? true : false
           }
           // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
           if (conf.database_host.match(/^(.*):(\d+)/)) {
