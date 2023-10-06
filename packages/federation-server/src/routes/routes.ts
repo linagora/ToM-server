@@ -1,5 +1,7 @@
-import { Router } from 'express'
+import { json, Router, urlencoded } from 'express'
 import type FederationServer from '..'
+import { hashDetails } from '../controllers/controllers'
+import { auth } from '../middlewares/auth'
 import { errorMiddleware } from '../middlewares/errors'
 import {
   allowCors,
@@ -16,6 +18,18 @@ const errorMiddlewares = (middleware: expressAppHandler): middlewaresList => [
 
 export default (server: FederationServer): Router => {
   const routes = Router()
+
+  routes
+    .route('/_matrix/identity/v2/hash_details')
+    .get(
+      allowCors,
+      json(),
+      urlencoded({ extended: false }),
+      auth(server.authenticate, server.conf.trusted_servers_addresses),
+      hashDetails(server.db),
+      errorMiddleware
+    )
+    .all(...errorMiddlewares(methodNotAllowed))
 
   const defaultGetEndpoints = Object.keys(server.api.get)
   const defaultPostEndpoints = Object.keys(server.api.post)

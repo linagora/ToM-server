@@ -2,11 +2,12 @@ import configParser, { type ConfigDescription } from '@twake/config-parser'
 import { type TwakeLogger } from '@twake/logger'
 import MatrixIdentityServer from '@twake/matrix-identity-server'
 import { Router } from 'express'
+import fs from 'fs'
 import defaultConfig from './config.json'
 import initializeDb from './db'
+import { Authenticate } from './middlewares/auth'
 import Routes from './routes/routes'
 import { type Config } from './types'
-import fs from 'fs'
 
 export default class FederationServer extends MatrixIdentityServer {
   routes = Router()
@@ -32,6 +33,7 @@ export default class FederationServer extends MatrixIdentityServer {
     this.conf.trusted_servers_addresses =
       process.env.TRUSTED_SERVERS_ADDRESSES?.match(/[^,"'\s[\]]+/g) ??
       this.conf.trusted_servers_addresses
+    this.authenticate = Authenticate(this.db)
     const superReady = this.ready
     this.ready = new Promise((resolve, reject) => {
       superReady

@@ -26,6 +26,7 @@ WORKDIR /usr/src/app
 
 COPY ./packages/federation-server/server.mjs .
 
+COPY ./packages/crypto ./packages/crypto
 COPY ./packages/logger ./packages/logger
 COPY ./packages/matrix-identity-server ./packages/matrix-identity-server
 COPY ./packages/config-parser ./packages/config-parser

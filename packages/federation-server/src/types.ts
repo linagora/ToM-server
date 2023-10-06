@@ -18,6 +18,11 @@ export type expressAppHandlerError = (
   next: NextFunction
 ) => void
 
+export interface AuthRequest extends Request {
+  userId?: string
+  accessToken?: string
+}
+
 export type federationServerErrorCode =
   (typeof MatrixErrors.errCodes)[keyof typeof MatrixErrors.errCodes]
 
