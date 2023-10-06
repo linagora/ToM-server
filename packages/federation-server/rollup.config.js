@@ -6,5 +6,6 @@ export default config([
   '@twake/crypto',
   '@twake/config-parser',
   'express',
+  'express-validator',
   'fs'
 ])

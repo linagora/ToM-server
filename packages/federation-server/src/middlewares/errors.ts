@@ -1,5 +1,6 @@
 import { MatrixErrors } from '@twake/matrix-identity-server'
 import { type Request } from 'express'
+import { validationResult, type ValidationError } from 'express-validator'
 import {
   type ErrorResponseBody,
   type expressAppHandlerError,
@@ -54,3 +55,21 @@ export const errorMiddleware: expressAppHandlerError = (
   res.json(bodyResponse)
 }
 
+export const validationErrorHandler = (req: Request): void => {
+  const errors = validationResult(req)
+  if (!errors.isEmpty()) {
+    const errorMessage = errors
+      .array({ onlyFirstError: true })
+      .map(
+        (error: ValidationError) =>
+          `Error ${error.type}: ${String(error.msg)}${
+            'path' in error ? ` (property: ${error.path})` : ''
+          }`
+      )
+      .join(', ')
+    throw new FederationServerError({
+      status: 400,
+      message: errorMessage
+    })
+  }
+}
