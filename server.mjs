@@ -47,7 +47,7 @@ const conf = {
   pepperCron: process.env.PEPPER_CRON || '9 1 * * *',
   server_name: process.env.SERVER_NAME,
   template_dir:
-    process.env.TEMPLATE_DIR ??
+    process.env.TEMPLATE_DIR ||
     path.join(__dirname, 'node_modules', '@twake', 'server', 'templates'),
   update_users_cron: process.env.UPDATE_USERS_CRON || '*/10 * * * *',
   userdb_engine: 'ldap',
