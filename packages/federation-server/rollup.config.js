@@ -8,5 +8,7 @@ export default config([
   'express',
   'express-validator',
   'lodash',
+  'sqlite3',
+  'pg',
   'fs'
 ])
