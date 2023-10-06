@@ -9,6 +9,7 @@ import { type Config } from '../types'
 import updateHashes from './changePepper'
 import checkQuota from './check-quota'
 import updateUsers from './updateUsers'
+import updateFederationHashes from './update-federation-hashes'
 
 class CronTasks {
   tasks: ScheduledTask[]
@@ -41,10 +42,16 @@ class CronTasks {
     try {
       if (!conf.cron_service) return
 
-      await Promise.all([
+      const cronTasks = [
         this._addUpdateHashesJob(conf, idServer),
         this._addCheckUserQuotaJob(conf, idServer.db)
-      ])
+      ]
+
+      if (conf.federation_server != null) {
+        cronTasks.push(this._addUpdateFederationServerHashesJob(idServer))
+      }
+
+      await Promise.all(cronTasks)
     } catch (error) {
       throw Error('Failed to initialize cron tasks')
     }
@@ -133,6 +140,34 @@ class CronTasks {
       () => {
         checkQuota(conf, db).catch((e) => {
           db.logger.error('User quota check failed', e)
+        })
+      },
+      this.options
+    )
+
+    this.tasks.push(task)
+  }
+
+  /**
+   * Adds the federation server hashes job.
+   *
+   * @param {MatrixIdentityServer} idServer - the matrix identity server instance.
+   */
+  private readonly _addUpdateFederationServerHashesJob = async (
+    idServer: MatrixIdentityServer
+  ): Promise<void> => {
+    const cronString: string =
+      idServer.conf.update_federation_hashes_cron ?? '0 0 0 * * *'
+
+    if (!cron.validate(cronString)) {
+      throw new Error(`Invalid cron line: ${cronString}`)
+    }
+
+    const task = cron.schedule(
+      cronString,
+      () => {
+        updateFederationHashes(idServer).catch((e) => {
+          idServer.db.logger.error('Federation hashes update failed', e)
         })
       },
       this.options

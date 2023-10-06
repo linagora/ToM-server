@@ -22,6 +22,10 @@ const updateUsers = async (idServer: MatrixIdentityServer): Promise<void> => {
   const isMatrixDbAvailable: boolean =
     Boolean(idServer.conf.matrix_database_host) &&
     Boolean(idServer.conf.matrix_database_engine)
+  const isFederationServerSet =
+    idServer.conf.federation_server != null ||
+    idServer.conf.is_federation_server
+
   if (isMatrixDbAvailable) {
     promises.push(
       new Promise((resolve, reject) => {
@@ -72,13 +76,10 @@ const updateUsers = async (idServer: MatrixIdentityServer): Promise<void> => {
     const uid = user.uid as string
     const matrixAddress = `@${uid}:${idServer.conf.server_name}`
     const pos = knownUids.indexOf(uid)
+    const isMatrixUser = matrixUsers.includes(uid)
     if (pos < 0) {
       found = true
-      const active = isMatrixDbAvailable
-        ? matrixUsers.includes(uid)
-          ? 1
-          : 0
-        : 1
+      const active = isMatrixDbAvailable ? (isMatrixUser ? 1 : 0) : 1
       if (active !== 0)
         updates.push(
           idServer.db.insert('userHistory', {
@@ -87,17 +88,19 @@ const updateUsers = async (idServer: MatrixIdentityServer): Promise<void> => {
             active
           })
         )
-      usersToUpdate[matrixAddress] = {
-        email: user.mail as string,
-        phone: user.mobile as string,
-        active
+      if (!isFederationServerSet || isMatrixUser) {
+        usersToUpdate[matrixAddress] = {
+          email: user.mail as string,
+          phone: user.mobile as string,
+          active
+        }
       }
       idServer.logger.debug(
         `New user detected: ${user.uid as string}, status:`,
         active
       )
       // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
-    } else if (matrixUsers.includes(uid) && !knownActiveUsers[pos]) {
+    } else if (isMatrixUser && !knownActiveUsers[pos]) {
       updates.push(
         idServer.db.update('hashes', { active: 1 }, 'value', matrixAddress),
         idServer.db.insert('userHistory', {

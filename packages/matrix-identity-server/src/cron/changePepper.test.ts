@@ -47,7 +47,9 @@ beforeAll((done) => {
 
 afterAll(() => {
   clearTimeout(db.cleanJob)
-  fs.unlinkSync('./src/__testData__/hashes.db')
+  if (fs.existsSync('./src/__testData__/hashes.db')) {
+    fs.unlinkSync('./src/__testData__/hashes.db')
+  }
 })
 
 describe('updateHashes', () => {

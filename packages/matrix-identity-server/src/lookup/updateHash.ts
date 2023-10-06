@@ -2,12 +2,12 @@ import { Hash, supportedHashes } from '@twake/crypto'
 import { createPool } from 'generic-pool'
 import type MatrixIdentityServer from '..'
 
-const fieldsToHash = ['phone', 'email']
+export const fieldsToHash = ['phone', 'email']
 
 // TODO: move this in conf
 const jobs = 5
 
-interface ValueField {
+export interface ValueField {
   active: number
   email?: string
   phone?: string

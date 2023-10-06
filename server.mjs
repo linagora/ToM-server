@@ -25,6 +25,8 @@ const conf = {
   database_user: process.env.DATABASE_USER,
   database_ssl: process.env.DATABASE_SSL ? true : false,
   database_password: process.env.DATABASE_PASSWORD,
+  federation_server: process.env.FEDERATION_SERVER,
+  is_federation_server: false,
   jitsiBaseUrl: process.env.JITSI_BASE_URL,
   jitsiJwtAlgorithm: process.env.JITSI_JWT_ALGORITHM,
   jitsiJwtIssuer: process.env.JITSI_JWT_ISSUER,
@@ -49,6 +51,8 @@ const conf = {
   template_dir:
     process.env.TEMPLATE_DIR ||
     path.join(__dirname, 'node_modules', '@twake', 'server', 'templates'),
+  update_federation_hashes_cron:
+    process.env.UDPATE_FEDERATION_HASHES_CRON || '*/10 * * * *',
   update_users_cron: process.env.UPDATE_USERS_CRON || '*/10 * * * *',
   userdb_engine: 'ldap',
   enable_company_features: process.env.ENABLE_COMPANY_FEATURES || false

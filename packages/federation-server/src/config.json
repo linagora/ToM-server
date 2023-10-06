@@ -9,6 +9,7 @@
   "database_password": "",
   "database_user": "",
   "database_vacuum_delay": 3600,
+  "is_federation_server": true,
   "key_delay": 3600,
   "keys_depth": 5,
   "ldap_base": "",
