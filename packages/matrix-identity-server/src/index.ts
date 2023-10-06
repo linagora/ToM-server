@@ -43,7 +43,7 @@ export * as SQLite from './db/sql/sqlite'
 export { default as MatrixDB, type MatrixDBBackend } from './matrixDb'
 export * from './types'
 export {
-  default as userDB,
+  default as UserDB,
   type Collections as userDbCollections
 } from './userdb'
 export * as Utils from './utils'

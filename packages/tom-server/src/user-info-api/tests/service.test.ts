@@ -1,4 +1,4 @@
-import { userDB as UserDB } from '@twake/matrix-identity-server'
+import { UserDB } from '@twake/matrix-identity-server'
 import { type NextFunction, type Response } from 'express'
 import ldap from 'ldapjs'
 import type { Config } from '../../types'
