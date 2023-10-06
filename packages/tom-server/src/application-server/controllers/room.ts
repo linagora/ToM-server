@@ -93,7 +93,8 @@ export const createRoom = (
         if ('errcode' in body) {
           throw new AppServerAPIError<typeof allMatrixErrorCodes>({
             status: response.status,
-            code: body.errcode,
+            // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+            code: body.errcode as (typeof allMatrixErrorCodes)[keyof typeof allMatrixErrorCodes],
             message: body.error
           })
         }
