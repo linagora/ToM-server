@@ -1,6 +1,6 @@
 import { json, Router, urlencoded } from 'express'
 import type FederationServer from '..'
-import { hashDetails, lookups } from '../controllers/controllers'
+import { hashDetails, lookup, lookups } from '../controllers/controllers'
 import { auth } from '../middlewares/auth'
 import { errorMiddleware } from '../middlewares/errors'
 import {
@@ -8,7 +8,11 @@ import {
   methodNotAllowed,
   methodNotFound
 } from '../middlewares/utils'
-import { commonValidators, lookupsValidator } from '../middlewares/validation'
+import {
+  commonValidators,
+  lookupsValidator,
+  lookupValidator
+} from '../middlewares/validation'
 import { type expressAppHandler, type middlewaresList } from '../types'
 
 const errorMiddlewares = (middleware: expressAppHandler): middlewaresList => [
@@ -19,6 +23,20 @@ const errorMiddlewares = (middleware: expressAppHandler): middlewaresList => [
 
 export default (server: FederationServer): Router => {
   const routes = Router()
+
+  routes
+    .route('/_matrix/identity/v2/lookup')
+    .post(
+      allowCors,
+      json(),
+      urlencoded({ extended: false }),
+      auth(server.authenticate, server.conf.trusted_servers_addresses),
+      ...commonValidators,
+      lookupValidator,
+      lookup(server.conf, server.db),
+      errorMiddleware
+    )
+    .all(...errorMiddlewares(methodNotAllowed))
 
   routes
     .route('/_matrix/identity/v2/hash_details')

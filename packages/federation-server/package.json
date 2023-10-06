@@ -43,6 +43,10 @@
     "@twake/logger": "*",
     "@twake/config-parser": "*",
     "@twake/crypto": "*",
+    "lodash": "^4.17.21",
     "express-validator": "^7.0.1"
+  },
+  "devDependencies": {
+    "@types/lodash": "^4.14.197",
   }
 }

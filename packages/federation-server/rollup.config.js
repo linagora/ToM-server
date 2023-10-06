@@ -7,5 +7,6 @@ export default config([
   '@twake/config-parser',
   'express',
   'express-validator',
+  'lodash',
   'fs'
 ])
