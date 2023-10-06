@@ -7,6 +7,7 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
 const conf = {
+  additional_features: process.env.ADDITIONAL_FEATURES || false,
   base_url: process.env.BASE_URL,
   cron_service: process.env.CRON_SERVICE || true,
   database_engine: process.env.DATABASE_ENGINE,
