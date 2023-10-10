@@ -1,15 +1,16 @@
+import { Hash, supportedHashes } from '@twake/crypto'
 import express from 'express'
-import request from 'supertest'
-import IdServer from './index'
-import { type Config } from './types'
 import fs from 'fs'
 import fetch from 'node-fetch'
-import { Hash, supportedHashes } from '@twake/crypto'
-import defaultConfig from './__testData__/registerConf.json'
-import buildUserDB, { buildMatrixDb } from './__testData__/buildUserDB'
-import type UserDBSQLite from './userdb/sql/sqlite'
-import updateUsers from './cron/updateUsers'
 import sqlite3 from 'sqlite3'
+import request from 'supertest'
+import { logger } from '../jest.globals'
+import buildUserDB, { buildMatrixDb } from './__testData__/buildUserDB'
+import defaultConfig from './__testData__/registerConf.json'
+import updateUsers from './cron/updateUsers'
+import IdServer from './index'
+import { type Config } from './types'
+import type UserDBSQLite from './userdb/sql/sqlite'
 
 jest.mock('node-fetch', () => jest.fn())
 const sendMailMock = jest.fn()
@@ -49,7 +50,7 @@ beforeAll((done) => {
     .then(() => {
       buildMatrixDb(conf)
         .then(() => {
-          idServer = new IdServer(conf)
+          idServer = new IdServer(conf, undefined, logger)
           app = express()
 
           idServer.ready

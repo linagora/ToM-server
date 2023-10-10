@@ -1,5 +1,5 @@
-import { getLogger, type TwakeLogger } from '@twake/logger'
 import fs from 'fs'
+import { logger } from '../../jest.globals'
 import defaultConfig from '../config.json'
 import IdentityServerDB from '../db'
 import { type Config } from '../types'
@@ -16,12 +16,10 @@ const conf: Config = {
 }
 
 let db: IdentityServerDB, userDB: UserDB
-let logger: TwakeLogger
 
 beforeAll((done) => {
-  logger = getLogger()
-  db = new IdentityServerDB(conf)
-  userDB = new UserDB(conf)
+  db = new IdentityServerDB(conf, logger)
+  userDB = new UserDB(conf, undefined, logger)
   Promise.all([userDB.ready, db.ready])
     .then(() => {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error

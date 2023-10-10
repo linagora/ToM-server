@@ -1,10 +1,10 @@
-import { TwakeLogger, getLogger } from '@twake/logger'
 import express from 'express'
 import request from 'supertest'
 import DefaultConfig from '../config.json'
 import { type Config } from '../types'
 import { resetPolicies } from './_computePolicies'
 import Terms from './index'
+import { logger } from '../../jest.globals'
 
 const policies = {
   privacy_policy: {
@@ -32,12 +32,6 @@ const policies = {
 }
 
 describe('Terms', () => {
-  let logger: TwakeLogger
-
-  beforeAll(() => {
-    logger = getLogger()
-  })
-
   describe('Policies directly in configuration', () => {
     const app = express()
 
