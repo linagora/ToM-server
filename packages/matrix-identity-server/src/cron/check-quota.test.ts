@@ -127,6 +127,8 @@ beforeAll(async () => {
 })
 
 afterAll(() => {
+  clearTimeout(db.cleanJob)
+  db.close()
   fs.existsSync(dbPath) && fs.unlinkSync(dbPath)
 })
 
