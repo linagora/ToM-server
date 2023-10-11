@@ -25,30 +25,47 @@ const createTables = (
               db.rawQuery(
                 `CREATE TABLE ${table}(${tables[table as keyof typeof tables]})`
               )
-                .then(() => {
-                  if (initializeValues[table as Collections] != null) {
-                    // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
-                    // @ts-ignore defined
-                    initializeValues[table as Collections].forEach((entry) => {
-                      db.insert(table, entry)
-                        .then(() => {
-                          _resolve()
+                // eslint-disable-next-line @typescript-eslint/promise-function-async
+                .then(() =>
+                  Promise.all(
+                    ((indexes[table as Collections] as string[]) != null
+                      ? (indexes[table as Collections] as string[])
+                      : []
+                    ).map<
+                      Promise<any>
+                      // eslint-disable-next-line @typescript-eslint/promise-function-async
+                    >((index) =>
+                      db
+                        .rawQuery(
+                          `CREATE INDEX i_${table}_${index} ON ${table} (${index})`
+                        )
+                        .catch((e) => {
+                          /* istanbul ignore next */
+                          logger.error(`Index ${index}`, e)
                         })
-                        .catch(_reject)
-                    })
-                  } else {
-                    _resolve()
-                  }
-                  indexes[table as Collections]?.forEach((index) => {
-                    db.rawQuery(
-                      `CREATE INDEX i_${table}_${index} ON ${table} (${index})`
-                    ).catch((e) => {
-                      /* istanbul ignore next */
-                      logger.error(`Index ${index}`, e)
-                    })
-                  })
+                    )
+                  )
+                )
+                // eslint-disable-next-line @typescript-eslint/promise-function-async
+                .then(() =>
+                  Promise.all(
+                    (initializeValues[table as Collections] != null
+                      ? (initializeValues[table as Collections] as Array<
+                          Record<string, string | number>
+                        >)
+                      : []
+                    ).map<
+                      Promise<any>
+                      // eslint-disable-next-line @typescript-eslint/promise-function-async
+                    >((entry) => db.insert(table, entry))
+                  )
+                )
+                .then(() => {
+                  _resolve()
                 })
-                .catch(_reject)
+                .catch((e) => {
+                  _reject(e)
+                })
             } else {
               _resolve()
             }
