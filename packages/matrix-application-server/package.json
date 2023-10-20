@@ -2,44 +2,44 @@
   "name": "@twake/matrix-application-server",
   "version": "0.0.1",
   "description": "Matrix Application Server",
-  "main": "dist/index.js",
-  "type": "module",
-  "types": "./dist/index.d.ts",
-  "exports": {
-    "import": "./dist/index.js"
-  },
-  "scripts": {
-    "build": "npm run build:lib && npm run build:example",
-    "build:lib": "rollup -c",
-    "build:example": "rollup -p @rollup/plugin-typescript -e express,@twake/matrix-application-server -o example/application-server.js example/application-server.ts",
-    "start": "node example/application-server.js",
-    "test": "jest"
+  "keywords": [
+    "matrix",
+    "twake"
+  ],
+  "homepage": "https://ci.linagora.com/publicgroup/oss/twake/tom-server",
+  "bugs": {
+    "url": "https://ci.linagora.com/publicgroup/oss/twake/tom-server/-/issues"
   },
   "repository": {
     "type": "git",
     "url": "https://ci.linagora.com/publicgroup/oss/twake/tom-server.git"
   },
-  "files": [
-    "package.json",
-    "dist",
-    "example/application-server.js",
-    "*.md"
-  ],
-  "keywords": [
-    "matrix",
-    "twake"
-  ],
+  "license": "AGPL-3.0-or-later",
   "author": [
     {
       "name": "Jordy Cabannes",
       "email": "jcabannes@linagora.com"
     }
   ],
-  "license": "AGPL-3.0-or-later",
-  "bugs": {
-    "url": "https://ci.linagora.com/publicgroup/oss/twake/tom-server/-/issues"
+  "type": "module",
+  "exports": {
+    "import": "./dist/index.js"
   },
-  "homepage": "https://ci.linagora.com/publicgroup/oss/twake/tom-server",
+  "main": "dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "package.json",
+    "dist",
+    "example/application-server.js",
+    "*.md"
+  ],
+  "scripts": {
+    "build": "npm run build:lib && npm run build:example",
+    "build:example": "rollup -p @rollup/plugin-typescript -e express,@twake/matrix-application-server -o example/application-server.js example/application-server.ts",
+    "build:lib": "rollup -c",
+    "start": "node example/application-server.js",
+    "test": "jest"
+  },
   "dependencies": {
     "@twake/config-parser": "*",
     "@twake/crypto": "*",

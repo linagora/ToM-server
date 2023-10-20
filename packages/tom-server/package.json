@@ -2,47 +2,42 @@
   "name": "@twake/server",
   "version": "0.0.1",
   "description": "This is the Twake on Matrix server",
-  "main": "dist/index.js",
-  "type": "module",
-  "types": "./dist/index.d.ts",
-  "exports": {
-    "import": "./dist/index.js"
-  },
-  "scripts": {
-    "build": "npm run build:lib && npm run build:example",
-    "build:lib": "rollup -c",
-    "build:example": "rollup -p @rollup/plugin-typescript -e express,@twake/server -m -o example/tom-server.js example/tom-server.ts",
-    "start": "node example/tom-server.js",
-    "test": "jest"
+  "keywords": [
+    "matrix",
+    "twake",
+    "server"
+  ],
+  "homepage": "https://ci.linagora.com/publicgroup/oss/twake/tom-server",
+  "bugs": {
+    "url": "https://ci.linagora.com/publicgroup/oss/twake/tom-server/-/issues"
   },
   "repository": {
     "type": "git",
     "url": "https://ci.linagora.com/publicgroup/oss/twake/tom-server.git"
   },
+  "license": "AGPL-3.0-or-later",
+  "author": {
+    "name": "Jordy Cabannes",
+    "email": "jcabannes@linagora.com"
+  },
+  "type": "module",
+  "exports": {
+    "import": "./dist/index.js"
+  },
+  "main": "dist/index.js",
+  "types": "./dist/index.d.ts",
   "files": [
     "package.json",
     "dist",
     "templates",
     "*.md"
   ],
-  "keywords": [
-    "matrix",
-    "twake",
-    "server"
-  ],
-  "author": {
-    "name": "Jordy Cabannes",
-    "email": "jcabannes@linagora.com"
-  },
-  "license": "AGPL-3.0-or-later",
-  "bugs": {
-    "url": "https://ci.linagora.com/publicgroup/oss/twake/tom-server/-/issues"
-  },
-  "homepage": "https://ci.linagora.com/publicgroup/oss/twake/tom-server",
-  "optionalDependencies": {
-    "ldapjs": "^2.3.3",
-    "pg": "^8.10.0",
-    "sqlite3": "^5.1.6"
+  "scripts": {
+    "build": "npm run build:lib && npm run build:example",
+    "build:example": "rollup -p @rollup/plugin-typescript -e express,@twake/server -m -o example/tom-server.js example/tom-server.ts",
+    "build:lib": "rollup -c",
+    "start": "node example/tom-server.js",
+    "test": "jest"
   },
   "dependencies": {
     "@twake/matrix-application-server": "*",
@@ -53,5 +48,10 @@
     "@small-tech/syswide-cas": "^6.0.2",
     "node-fetch-jest": "npm:node-fetch@^2.6.9",
     "testcontainers": "^9.8.0"
+  },
+  "optionalDependencies": {
+    "ldapjs": "^2.3.3",
+    "pg": "^8.10.0",
+    "sqlite3": "^5.1.6"
   }
 }

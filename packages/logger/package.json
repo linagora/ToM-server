@@ -2,43 +2,43 @@
   "name": "@twake/logger",
   "version": "0.0.1",
   "description": "Logger module",
-  "main": "dist/index.js",
-  "type": "module",
-  "types": "./dist/index.d.ts",
-  "exports": {
-    "import": "./dist/index.js"
-  },
-  "scripts": {
-    "build": "npm run build:lib && npm run build:example",
-    "build:lib": "rollup -c",
-    "build:example": "rollup -p @rollup/plugin-typescript -e @twake/logger -o example/logger.js example/logger.ts",
-    "test": "jest"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://ci.linagora.com/publicgroup/oss/twake/tom-server.git"
-  },
-  "files": [
-    "package.json",
-    "dist",
-    "*.md"
-  ],
   "keywords": [
     "matrix",
     "twake",
     "logger"
   ],
+  "homepage": "https://ci.linagora.com/publicgroup/oss/twake/tom-server",
+  "bugs": {
+    "url": "https://ci.linagora.com/publicgroup/oss/twake/tom-server/-/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://ci.linagora.com/publicgroup/oss/twake/tom-server.git"
+  },
+  "license": "AGPL-3.0-or-later",
   "author": [
     {
       "name": "Jordy Cabannes",
       "email": "jcabannes@linagora.com"
     }
   ],
-  "license": "AGPL-3.0-or-later",
-  "bugs": {
-    "url": "https://ci.linagora.com/publicgroup/oss/twake/tom-server/-/issues"
+  "type": "module",
+  "exports": {
+    "import": "./dist/index.js"
   },
-  "homepage": "https://ci.linagora.com/publicgroup/oss/twake/tom-server",
+  "main": "dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "package.json",
+    "dist",
+    "*.md"
+  ],
+  "scripts": {
+    "build": "npm run build:lib && npm run build:example",
+    "build:example": "rollup -p @rollup/plugin-typescript -e @twake/logger -o example/logger.js example/logger.ts",
+    "build:lib": "rollup -c",
+    "test": "jest"
+  },
   "dependencies": {
     "@twake/config-parser": "*",
     "winston": "^3.10.0",

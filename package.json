@@ -2,35 +2,39 @@
   "name": "tom-server",
   "version": "0.0.1",
   "description": "Identity Server for Twake, compliant with Matrix Identity Server spec",
-  "type": "module",
-  "scripts": {
-    "build": "npm run softClean && lerna run build",
-    "lint": "eslint packages/*/src --ext .ts",
-    "lint-fix": "eslint --fix packages/*/src --ext .ts",
-    "test": "lerna run test",
-    "softClean": "rimraf packages/*/dist",
-    "clean": "rimraf packages/*/dist packages/*/coverage ./node_modules/.cache/nx packages/*/example/*.js*",
-    "format:check": "prettier --check .",
-    "format:check-diff": "prettier --check $(git diff $(git rev-parse --abbrev-ref --symbolic-full-name @{u}) --name-status|grep -E '^M|A'|cut -f2)",
-    "format:fix": "prettier --write .",
-    "format:fix-diff": "prettier --write $(git checkout|grep -E '^(M|A)'|cut -f2)",
-    "postinstall": "chmod u+x .husky/*",
-    "prepare": "husky install",
-    "doc": "node documentation/swagger.cjs"
+  "keywords": [
+    "matrix"
+  ],
+  "homepage": "https://ci.linagora.com/publicgroup/oss/twake/tom-server",
+  "bugs": {
+    "url": "https://ci.linagora.com/publicgroup/oss/twake/tom-server/-/issues"
   },
   "repository": {
     "type": "git",
     "url": "https://ci.linagora.com/publicgroup/oss/twake/tom-server.git"
   },
-  "keywords": [
-    "matrix"
-  ],
-  "author": "Yadd <yadd@debian.org>",
   "license": "AGPL-3.0-or-later",
-  "bugs": {
-    "url": "https://ci.linagora.com/publicgroup/oss/twake/tom-server/-/issues"
+  "author": "Yadd <yadd@debian.org>",
+  "type": "module",
+  "workspaces": [
+    "packages/*",
+    "landing"
+  ],
+  "scripts": {
+    "build": "npm run softClean && lerna run build",
+    "clean": "rimraf packages/*/dist packages/*/coverage ./node_modules/.cache/nx packages/*/example/*.js*",
+    "doc": "node documentation/swagger.cjs",
+    "format:check": "prettier --check .",
+    "format:check-diff": "prettier --check $(git diff $(git rev-parse --abbrev-ref --symbolic-full-name @{u}) --name-status|grep -E '^M|A'|cut -f2)",
+    "format:fix": "prettier --write .",
+    "format:fix-diff": "prettier --write $(git checkout|grep -E '^(M|A)'|cut -f2)",
+    "postinstall": "chmod u+x .husky/*",
+    "lint": "eslint packages/*/src --ext .ts",
+    "lint-fix": "eslint --fix packages/*/src --ext .ts",
+    "prepare": "husky install",
+    "softClean": "rimraf packages/*/dist",
+    "test": "lerna run test"
   },
-  "homepage": "https://ci.linagora.com/publicgroup/oss/twake/tom-server",
   "devDependencies": {
     "@rollup/plugin-commonjs": "^24.0.1",
     "@rollup/plugin-json": "^6.0.0",
@@ -59,6 +63,7 @@
     "lerna": "^7.1.4",
     "node-fetch": "^3.3.0",
     "nx": "^16.5.3",
+    "nx-cloud": "latest",
     "prettier": "2.8.7",
     "prettier-plugin-svelte": "^2.10.0",
     "rimraf": "^4.3.1",
@@ -68,11 +73,6 @@
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-dist": "^4.18.3",
     "ts-jest": "^29.1.0",
-    "typescript": "^4.9.5",
-    "nx-cloud": "latest"
-  },
-  "workspaces": [
-    "packages/*",
-    "landing"
-  ]
+    "typescript": "^4.9.5"
+  }
 }
