@@ -74,7 +74,7 @@ const updateHashes = (idServer: MatrixIdentityServer): Promise<void> => {
         // Previous value may not exist
       })
     db.get('keys', ['data'], { name: 'pepper' })
-      .then((values: unknown[]) => {
+      .then((values: DbGetResult) => {
         /**
          * Step 2:
          *  - generate new pepper
@@ -86,7 +86,7 @@ const updateHashes = (idServer: MatrixIdentityServer): Promise<void> => {
           // move current pepper to 'previousPepper'
           db.update(
             'keys',
-            { data: values[0] as string },
+            { data: values[0].data as string },
             'name',
             'previousPepper'
           ),
