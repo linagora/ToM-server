@@ -23,6 +23,7 @@
   "matrix_database_host": null,
   "matrix_database_name": null,
   "matrix_database_password": null,
+  "matrix_database_ssl": false,
   "matrix_database_user": null,
   "pepperCron": "0 0 * * *",
   "policies": null,
@@ -40,6 +41,7 @@
   "userdb_host": "./tokens.db",
   "userdb_name": "",
   "userdb_password": "",
+  "userdb_ssl": false,
   "userdb_user": "",
   "template_dir": "./templates"
 }
