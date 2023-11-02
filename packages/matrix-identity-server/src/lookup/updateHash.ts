@@ -67,7 +67,7 @@ const updateHash = (
           await idServer.db.insert('hashes', {
             hash: hash[method as 'sha256'](`${value} ${_field} ${pepper}`),
             pepper,
-            type: field,
+            type: _field,
             value: matrixAddress,
             active
           })
