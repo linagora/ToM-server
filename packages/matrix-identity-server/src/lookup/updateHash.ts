@@ -56,9 +56,16 @@ const updateHash = (
               })) as unknown as Array<{ data: string }>
             )[0].data
           }
+
+          // Format phone
+          let _field: string = field
+          if (field === 'phone') {
+            _field = 'msisdn'
+            value = value.replace(/\s/g, '').replace(/^\+/, '')
+          }
           // console.debug('pepper + hash', [pepper, hash[method as 'sha256'](`${value} ${field} ${pepper}`)])
           await idServer.db.insert('hashes', {
-            hash: hash[method as 'sha256'](`${value} ${field} ${pepper}`),
+            hash: hash[method as 'sha256'](`${value} ${_field} ${pepper}`),
             pepper,
             type: field,
             value: matrixAddress,
