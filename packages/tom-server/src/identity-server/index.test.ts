@@ -158,7 +158,7 @@ describe('Using Matrix Token', () => {
         const hash = new Hash()
         await hash.ready
         await twakeServer.idServer.cronTasks?.ready
-        const phoneHash = hash.sha256(`33612345678 phone ${pepper}`)
+        const phoneHash = hash.sha256(`33612345678 msisdn ${pepper}`)
         const response = await request(app)
           .post('/_matrix/identity/v2/lookup')
           .send({

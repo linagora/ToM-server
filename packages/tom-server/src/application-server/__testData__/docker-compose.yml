@@ -22,7 +22,7 @@ services:
       - "host.docker.internal:host-gateway"
 
   auth:
-    image: yadd/lemonldap-ng-portal
+    image: yadd/lemonldap-ng-portal:2.16.1-bullseye
     hostname: auth.example.com
     volumes:
       - ./llng/lmConf-1.json:/var/lib/lemonldap-ng/conf/lmConf-1.json
