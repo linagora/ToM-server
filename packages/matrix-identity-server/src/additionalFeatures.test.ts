@@ -136,8 +136,8 @@ describe('/_matrix/identity/v2/lookup', () => {
       const hash = new Hash()
       await hash.ready
       await idServer.cronTasks?.ready
-      const dwhoPhone = hash.sha256(`33612345678 phone ${pepper}`)
-      const rtylerPhone = hash.sha256(`33687654321 phone ${pepper}`)
+      const dwhoPhone = hash.sha256(`33612345678 msisdn ${pepper}`)
+      const rtylerPhone = hash.sha256(`33687654321 msisdn ${pepper}`)
       const response = await request(app)
         .post('/_matrix/identity/v2/lookup')
         .send({
@@ -169,7 +169,7 @@ describe('/_matrix/identity/v2/lookup', () => {
                   .then(() => {
                     void idServer.db.getAll('hashes', ['*']).catch(done)
                     const okenobiPhone = hash.sha256(
-                      `2301234567 phone ${pepper}`
+                      `2301234567 msisdn ${pepper}`
                     )
                     const okenobiMail = hash.sha256(
                       `okenobi@company.com email ${pepper}`
@@ -223,7 +223,7 @@ describe('/_matrix/identity/v2/lookup', () => {
               if (err) {
                 done(err)
               } else {
-                const rtylerPhone = hash.sha256(`33687654321 phone ${pepper}`)
+                const rtylerPhone = hash.sha256(`33687654321 msisdn ${pepper}`)
                 updateUsers(idServer)
                   .then(() => {
                     request(app)
