@@ -43,7 +43,7 @@ const Register = (db: IdentityServerDb): expressAppHandler => {
               data: JSON.stringify(data)
             })
               .then(() => {
-                send(res, 200, { token, access_token: token })
+                send(res, 200, { token })
               })
               .catch((e) => {
                 /* istanbul ignore next */
