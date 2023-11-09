@@ -1,11 +1,13 @@
 import { Hash } from '@twake/crypto'
+import { type TwakeLogger } from '@twake/logger'
 import fetch from 'node-fetch'
-import type MatrixIdentityServer from '..'
+import type UserDB from '../userdb'
 import {
   fieldsToHash,
   type UpdatableFields,
   type ValueField
 } from '../lookup/updateHash'
+import { type Config } from '../types'
 import { dbFieldsToHash, filter } from './changePepper'
 
 interface HashDetails {
@@ -18,12 +20,16 @@ interface HashDetails {
  *
  * @param {MatrixIdentityServer} idServer - the matrix identity server instance.
  */
-export default async (idServer: MatrixIdentityServer): Promise<void> => {
+export default async (
+  conf: Config,
+  userDB: UserDB,
+  logger: TwakeLogger
+): Promise<void> => {
   try {
     let response = await fetch(
       encodeURI(
         `https://${
-          idServer.conf.federation_server as string
+          conf.federation_server as string
         }/_matrix/identity/v2/hash_details`
       )
     )
@@ -41,17 +47,16 @@ export default async (idServer: MatrixIdentityServer): Promise<void> => {
     const algorithm = body.algorithms[0]
 
     const isMatrixDbAvailable =
-      Boolean(idServer.conf.matrix_database_host) &&
-      Boolean(idServer.conf.matrix_database_engine)
+      Boolean(conf.matrix_database_host) && Boolean(conf.matrix_database_engine)
 
     const usersData = (
       await filter(
-        await idServer.userDB.getAll('users', [...dbFieldsToHash, 'uid']),
-        idServer.conf,
-        idServer.logger
+        await userDB.getAll('users', [...dbFieldsToHash, 'uid']),
+        conf,
+        logger
       )
     ).reduce<UpdatableFields>((acc, row) => {
-      acc[`@${row.uid as string}:${idServer.conf.server_name}`] = {
+      acc[`@${row.uid as string}:${conf.server_name}`] = {
         email: row.mail as string,
         phone: row.mobile as string,
         active: isMatrixDbAvailable ? (row.active as number) : 1
@@ -82,11 +87,11 @@ export default async (idServer: MatrixIdentityServer): Promise<void> => {
       })
     })
 
-    const { hostname } = new URL(idServer.conf.base_url)
+    const { hostname } = new URL(conf.base_url)
     response = await fetch(
       encodeURI(
         `https://${
-          idServer.conf.federation_server as string
+          conf.federation_server as string
         }/_matrix/identity/v2/lookups`
       ),
       {

@@ -4,10 +4,11 @@
 
 import { randomString } from '@twake/crypto'
 import { type TwakeLogger } from '@twake/logger'
-import type MatrixIdentityServer from '..'
+import type IdentityServerDb from '../db'
 import updateHash, { type UpdatableFields } from '../lookup/updateHash'
 import MatrixDB from '../matrixDb'
 import { type Config, type DbGetResult } from '../types'
+import type UserDB from '../userdb'
 
 export const dbFieldsToHash = ['mobile', 'mail']
 
@@ -59,11 +60,12 @@ export const filter = async (
 }
 
 // eslint-disable-next-line @typescript-eslint/promise-function-async
-const updateHashes = (idServer: MatrixIdentityServer): Promise<void> => {
-  const conf = idServer.conf
-  const db = idServer.db
-  const userDB = idServer.userDB
-
+const updateHashes = (
+  conf: Config,
+  db: IdentityServerDb,
+  userDB: UserDB,
+  logger: TwakeLogger
+): Promise<void> => {
   const isMatrixDbAvailable =
     Boolean(conf.matrix_database_host) && Boolean(conf.matrix_database_engine)
 
@@ -71,7 +73,7 @@ const updateHashes = (idServer: MatrixIdentityServer): Promise<void> => {
     const logAndReject = (msg: string) => {
       return (e: any) => {
         /* istanbul ignore next */
-        idServer.logger.error(msg, e)
+        logger.error(msg, e)
         /* istanbul ignore next */
         reject(e)
       }
@@ -92,7 +94,7 @@ const updateHashes = (idServer: MatrixIdentityServer): Promise<void> => {
         db.deleteEqual('hashes', 'pepper', rows[0].data as string).catch(
           (e) => {
             /* istanbul ignore next */
-            idServer.logger.error('Unable to clean old hashes', e)
+            logger.error('Unable to clean old hashes', e)
           }
         )
       })
@@ -121,11 +123,12 @@ const updateHashes = (idServer: MatrixIdentityServer): Promise<void> => {
             userDB
               .getAll('users', [...dbFieldsToHash, 'uid'])
               // eslint-disable-next-line @typescript-eslint/promise-function-async
-              .then((rows) => filter(rows, conf, idServer.logger))
+              .then((rows) => filter(rows, conf, logger))
               .then((rows: DbGetResult) => {
                 const init: UpdatableFields = {}
                 updateHash(
-                  idServer,
+                  db,
+                  logger,
                   rows.reduce((res, row) => {
                     res[`@${row.uid as string}:${conf.server_name}`] = {
                       email: row.mail as string,
@@ -145,10 +148,7 @@ const updateHashes = (idServer: MatrixIdentityServer): Promise<void> => {
           .then(() => {
             db.update('keys', { data: newPepper }, 'name', 'pepper')
               .then(() => {
-                idServer.logger.debug(
-                  'Identity server: new pepper published',
-                  newPepper
-                )
+                logger.debug('Identity server: new pepper published', newPepper)
                 resolve()
               })
               .catch(logAndReject('Unable to publish new pepper'))

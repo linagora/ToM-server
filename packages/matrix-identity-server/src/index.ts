@@ -109,7 +109,7 @@ export default class MatrixIdentityServer {
     this.ready = new Promise((resolve, reject) => {
       Promise.all([db.ready, userDB.ready])
         .then(() => {
-          this.cronTasks = new CronTasks(this)
+          this.cronTasks = new CronTasks(this.conf, db, userDB, this._logger)
           this.updateHash = updateHash
           this.cronTasks.ready
             .then(() => {

@@ -272,7 +272,12 @@ describe('Using Matrix Token', () => {
           (err) => {
             // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
             if (err) return done(err)
-            updateUsers(twakeServer.idServer)
+            updateUsers(
+              twakeServer.conf,
+              twakeServer.idServer.db,
+              twakeServer.idServer.userDB,
+              twakeServer.logger
+            )
               .then(async () => {
                 const response = await request(app)
                   .post('/_twake/identity/v1/lookup/diff')

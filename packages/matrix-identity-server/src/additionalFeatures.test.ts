@@ -166,7 +166,7 @@ describe('/_matrix/identity/v2/lookup', () => {
               if (err) {
                 done(err)
               } else {
-                updateUsers(idServer)
+                updateUsers(conf, idServer.db, idServer.userDB, logger)
                   .then(() => {
                     void idServer.db.getAll('hashes', ['*']).catch(done)
                     const okenobiPhone = hash.sha256(
@@ -225,7 +225,7 @@ describe('/_matrix/identity/v2/lookup', () => {
                 done(err)
               } else {
                 const rtylerPhone = hash.sha256(`33687654321 msisdn ${pepper}`)
-                updateUsers(idServer)
+                updateUsers(conf, idServer.db, idServer.userDB, logger)
                   .then(() => {
                     request(app)
                       .post('/_matrix/identity/v2/lookup')

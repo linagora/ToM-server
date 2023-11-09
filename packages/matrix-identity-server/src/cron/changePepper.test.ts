@@ -52,8 +52,7 @@ afterAll(() => {
 
 describe('updateHashes', () => {
   it('should be able to generate new hashes without previous values', (done) => {
-    // @ts-expect-error equivalent to MatrixIdentityServer here
-    updateHashes({ conf, db, userDB, logger }).catch((e) => {
+    updateHashes(conf, db, userDB, logger).catch((e) => {
       done(e)
     })
     setTimeout(() => {

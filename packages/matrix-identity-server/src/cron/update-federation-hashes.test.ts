@@ -57,7 +57,9 @@ beforeAll((done) => {
 })
 
 afterAll(() => {
-  fs.unlinkSync('./src/__testData__/hashes.db')
+  if (fs.existsSync('./src/__testData__/hashes.db')) {
+    fs.unlinkSync('./src/__testData__/hashes.db')
+  }
   clearTimeout(db.cleanJob)
   db.close()
 })
@@ -77,8 +79,7 @@ describe('updateFederationHashes', () => {
         status: 200
       })
 
-    // @ts-expect-error equivalent to MatrixIdentityServer here
-    await updateFederationHashes({ conf, db, userDB, logger })
+    await updateFederationHashes(conf, userDB, logger)
     expect(fetchMock).toHaveBeenCalledTimes(2)
   })
 
