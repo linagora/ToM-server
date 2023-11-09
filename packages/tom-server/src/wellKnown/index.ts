@@ -25,6 +25,12 @@
  *                    base_url:
  *                      type: string
  *                      description: Base URL of Identity server
+ *                m.federation_server:
+ *                  type: object
+ *                  properties:
+ *                    base_url:
+ *                      type: string
+ *                      description: Base URL of Federation server
  *                t.server:
  *                  type: object
  *                  properties:
@@ -72,6 +78,8 @@
  *                base_url: matrix.example.com
  *              m.identity_server:
  *                base_url: global-id-server.twake.app
+ *              m.federation_server:
+ *                base_url: global-federation-server.twake.app
  *              m.integrations:
  *                jitsi:
  *                  baseUrl: https://jitsi.example.com/
@@ -92,6 +100,9 @@ interface WellKnownType {
     base_url: string
   }
   'm.identity_server': {
+    base_url: string
+  }
+  'm.federation_server'?: {
     base_url: string
   }
   't.server'?: {
@@ -142,6 +153,11 @@ class WellKnown {
             baseUrl: conf.jitsiBaseUrl,
             useJwt: conf.jitsiUseJwt
           }
+        }
+      }
+      if (conf.federation_server != null) {
+        wellKnown['m.federation_server'] = {
+          base_url: `https://${conf.federation_server}/`
         }
       }
       /* istanbul ignore if */ // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
