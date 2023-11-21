@@ -84,7 +84,7 @@ export const extendRoutes = (
    *        content:
    *          application/json:
    *            schema:
-   *              $ref: '#/components/schemas/BadRequest'
+   *              $ref: '#/components/schemas/MatrixError'
    *            examples:
    *              example1:
    *                value:
@@ -102,7 +102,7 @@ export const extendRoutes = (
    *        content:
    *          application/json:
    *            schema:
-   *              $ref: '#/components/schemas/Conflict'
+   *              $ref: '#/components/schemas/MatrixError'
    *            examples:
    *              example1:
    *                value:

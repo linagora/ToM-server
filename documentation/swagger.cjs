@@ -60,21 +60,7 @@ const options = {
         }
       },
       schemas: {
-        BadRequest: {
-          type: 'object',
-          properties: {
-            errcode: {
-              type: 'string',
-              description: 'A Matrix error code'
-            },
-            error: {
-              type: 'string',
-              description: 'A human-readable error message'
-            }
-          },
-          required: ['error']
-        },
-        Conflict: {
+        MatrixError: {
           type: 'object',
           properties: {
             errcode: {
@@ -111,18 +97,7 @@ const options = {
           content: {
             'application/json': {
               schema: {
-                type: 'object',
-                properties: {
-                  errcode: {
-                    type: 'string',
-                    description: 'A Matrix error code'
-                  },
-                  error: {
-                    type: 'string',
-                    description: 'A human-readable error message'
-                  }
-                },
-                required: ['error']
+                $ref: '#/components/schemas/MatrixError'
               },
               example: {
                 errcode: 'M_UNAUTHORIZED',
@@ -136,7 +111,7 @@ const options = {
           content: {
             'application/json': {
               schema: {
-                $ref: '#/components/schemas/BadRequest'
+                $ref: '#/components/schemas/MatrixError'
               },
               example: {
                 errcode: 'M_MISSING_PARAMS',
@@ -150,18 +125,7 @@ const options = {
           content: {
             'application/json': {
               schema: {
-                type: 'object',
-                properties: {
-                  errcode: {
-                    type: 'string',
-                    description: 'A Matrix error code'
-                  },
-                  error: {
-                    type: 'string',
-                    description: 'A human-readable error message'
-                  }
-                },
-                required: ['error']
+                $ref: '#/components/schemas/MatrixError'
               },
               example: {
                 errcode: 'M_FORBIDDEN',
@@ -175,7 +139,7 @@ const options = {
           content: {
             'application/json': {
               schema: {
-                $ref: '#/components/schemas/Conflict'
+                $ref: '#/components/schemas/MatrixError'
               },
               example: {
                 error: 'Conflict'
@@ -196,22 +160,30 @@ const options = {
           content: {
             'application/json': {
               schema: {
-                type: 'object',
-                properties: {
-                  errcode: {
-                    type: 'string',
-                    description: 'A Matrix error code'
-                  },
-                  error: {
-                    type: 'string',
-                    description: 'A human-readable error message'
-                  }
-                }
+                $ref: '#/components/schemas/MatrixError'
               },
               example: {
                 errcode: 'M_UNKNOWN',
                 error: 'This non-standard endpoint has been removed'
               }
+            }
+          }
+        },
+        NotFound: {
+          description: 'Not Found',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/MatrixError' },
+              example: { errcode: 'M_NOT_FOUND', error: 'Not Found' }
+            }
+          }
+        },
+        Unrecognized: {
+          description: 'Unrecognized',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/MatrixError' },
+              example: { errcode: 'M_UNRECOGNIZED', error: 'Unrecognized' }
             }
           }
         }
