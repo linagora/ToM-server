@@ -19,7 +19,10 @@ const twakeConfig = (
   // Parse wanted keys
   Object.keys(desc).forEach((key: string) => {
     // If environment variable exists, it overrides current value
-    if (process.env[key.toUpperCase()] != null) {
+    if (
+      process.env[key.toUpperCase()] != null &&
+      process.env[key.toUpperCase()] !== ''
+    ) {
       res[key] = process.env[key.toUpperCase()]
     } else {
       // if default value exists use it

@@ -21,12 +21,12 @@ export default class FederationServer extends MatrixIdentityServer {
     const serverConf = configParser(
       confDesc,
       /* istanbul ignore next */
-      conf != null
-        ? conf
+      fs.existsSync('/etc/twake/federation-server.conf')
+        ? '/etc/twake/federation-server.conf'
         : process.env.TWAKE_FEDERATION_SERVER_CONF != null
         ? process.env.TWAKE_FEDERATION_SERVER_CONF
-        : fs.existsSync('/etc/twake/federation-server.conf')
-        ? '/etc/twake/federation-server.conf'
+        : conf != null
+        ? conf
         : undefined
     ) as Config
     super(serverConf, confDesc, logger)
