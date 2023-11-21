@@ -345,8 +345,14 @@ describe('ApplicationServer', () => {
       )
       expect(membersIds).not.toBeUndefined()
       expect(membersIds.length).toEqual(3)
-      expect(membersIds[1].user_id).toEqual('@dwho:example.com')
-      expect(membersIds[2].user_id).toEqual('@askywalker:example.com')
+      const userIds = membersIds.map((ids) => ids.user_id)
+      expect(userIds).toEqual(
+        expect.arrayContaining([
+          '@twake:example.com',
+          '@dwho:example.com',
+          '@askywalker:example.com'
+        ])
+      )
     })
 
     it('should force user to join room on login', (done) => {
@@ -357,9 +363,14 @@ describe('ApplicationServer', () => {
         // eslint-disable-next-line @typescript-eslint/promise-function-async
         .then((membersIds) => {
           expect(membersIds.length).toEqual(3)
-          expect(membersIds[0].user_id).toEqual('@twake:example.com')
-          expect(membersIds[1].user_id).toEqual('@dwho:example.com')
-          expect(membersIds[2].user_id).toEqual('@askywalker:example.com')
+          const userIds = membersIds.map((ids) => ids.user_id)
+          expect(userIds).toEqual(
+            expect.arrayContaining([
+              '@twake:example.com',
+              '@dwho:example.com',
+              '@askywalker:example.com'
+            ])
+          )
           const client = ldapjs.createClient({
             url: `ldap://${startedLdap.getHost()}:${ldapHostPort}/`
           })
