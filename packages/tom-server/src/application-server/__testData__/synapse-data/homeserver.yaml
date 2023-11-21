@@ -10,7 +10,7 @@
 # each option, go to docs/usage/configuration/config_documentation.md or
 # https://matrix-org.github.io/synapse/latest/usage/configuration/config_documentation.html
 server_name: "example.com"
-public_baseurl: "https://matrix.example.com/"
+public_baseurl: "https://matrix.example.com:30443/"
 pid_file: /data/homeserver.pid
 listeners:
   - port: 8008

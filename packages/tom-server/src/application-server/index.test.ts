@@ -50,7 +50,7 @@ const mockLogger: Partial<TwakeLogger> = {
 
 describe('ApplicationServer', () => {
   const ldapHostPort = 21389
-  const twakeServerPort = 3000
+  const twakeServerPort = 3001
   let twakeServer: TwakeServer
   let app: express.Application
   let expressTwakeServer: http.Server
@@ -81,6 +81,10 @@ describe('ApplicationServer', () => {
         }
       )
       let location = response.headers.get('location') as string
+      location = location.replace(
+        /auth\.example\.com/,
+        'auth.example.com:30443'
+      )
       const matrixCookies = response.headers.get('set-cookie')
       response = await fetch.default(location)
       body = await response.text()
@@ -240,7 +244,7 @@ describe('ApplicationServer', () => {
             'docker-compose.yml'
           )
             .withEnvironment({ MYUID: os.userInfo().uid.toString() })
-            .withWaitStrategy('synapse_1', Wait.forHealthCheck())
+            .withWaitStrategy('synapse-1', Wait.forHealthCheck())
             .up()
         })
         // eslint-disable-next-line @typescript-eslint/promise-function-async

@@ -1,9 +1,8 @@
-version: '3'
+version: '3.8'
 
 services:
   synapse:
     image: matrixdotorg/synapse:v1.89.0
-    hostname: matrix.example.com
     volumes:
       - ./synapse-data:/data
       - ./nginx/ssl/auth.example.com.crt:/etc/ssl/certs/ca-certificates.crt
@@ -38,7 +37,7 @@ services:
   nginx-proxy:
     image: jwilder/nginx-proxy
     ports:
-      - 443:443
+      - 30443:443
     volumes:
       - /var/run/docker.sock:/tmp/docker.sock:ro
       - ./nginx/ssl:/etc/nginx/certs
