@@ -38,7 +38,11 @@ const conf = {
       'templates'
     ),
   update_users_cron: process.env.UPDATE_USERS_CRON || '*/10 * * * *',
-  userdb_engine: 'ldap',
+  userdb_engine: process.env.USERDB_ENGINE,
+  userdb_host: process.env.USERDB_HOST,
+  userdb_name: process.env.USERDB_NAME,
+  userdb_user: process.env.USERDB_USER,
+  userdb_password: process.env.USERDB_PASSWORD,
   trusted_servers_addresses: process.env.TRUSTED_SERVERS_ADDRESSES
 }
 

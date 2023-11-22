@@ -46,7 +46,7 @@ export interface Config {
   smtp_verify_certificate?: boolean
   update_federation_hashes_cron?: string
   update_users_cron?: string
-  userdb_engine: SupportedUserDatabases
+  userdb_engine?: SupportedUserDatabases
   userdb_host?: string
   userdb_name?: string
   userdb_password?: string
