@@ -3,7 +3,7 @@ export interface TransactionRequestBody {
 }
 
 export interface ClientEvent {
-  content: object
+  content: Record<string, string | number | boolean>
   event_id: string
   origin_server_ts: number
   room_id: string

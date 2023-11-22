@@ -69,13 +69,24 @@ export class TwakeRoom implements ITwakeRoomModel {
           attribute: 'objectClass',
           value: '*'
         }),
-        ...Object.keys(this.filter).map(
-          (key: string) =>
-            new EqualityFilter({
-              attribute: key,
-              value: this.filter[key].toString()
-            })
-        )
+        ...Object.keys(this.filter)
+          .map((key: string) => {
+            if (Array.isArray(this.filter[key])) {
+              return (this.filter[key] as string[]).map(
+                (value) =>
+                  new EqualityFilter({
+                    attribute: key,
+                    value
+                  })
+              )
+            } else {
+              return new EqualityFilter({
+                attribute: key,
+                value: this.filter[key].toString()
+              })
+            }
+          })
+          .flat()
       ]
     })
     return ldapFilter.matches(user)

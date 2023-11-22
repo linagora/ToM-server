@@ -170,7 +170,7 @@ class SQLite extends SQL implements IdDbBackend {
                 filterFields[key].toString() !== [].toString()
             )
             .forEach((key) => {
-              condition += condition === '' ? 'WHERE ' : ' OR '
+              condition += condition === '' ? 'WHERE ' : ' AND '
               if (Array.isArray(filterFields[key])) {
                 condition += `${(filterFields[key] as Array<string | number>)
                   .map((val) => {

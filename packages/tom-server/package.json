@@ -42,10 +42,12 @@
   "dependencies": {
     "@twake/matrix-application-server": "*",
     "@twake/matrix-identity-server": "*",
+    "lodash": "^4.17.21",
     "redis": "^4.6.6"
   },
   "devDependencies": {
     "@small-tech/syswide-cas": "^6.0.2",
+    "@types/lodash": "^4.14.197",
     "node-fetch-jest": "npm:node-fetch@^2.6.9",
     "testcontainers": "^9.8.0"
   },
