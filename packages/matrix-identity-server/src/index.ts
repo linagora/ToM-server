@@ -39,11 +39,13 @@ import SubmitToken from './validate/email/submitToken'
 export { type tokenContent } from './account/register'
 export { default as updateUsers } from './cron/updateUsers'
 export * as IdentityServerDb from './db'
+export { default as createTables } from './db/sql/_createTables'
+export { default as Pg } from './db/sql/pg'
 export * as SQLite from './db/sql/sqlite'
 export { default as MatrixDB, type MatrixDBBackend } from './matrixDb'
 export * from './types'
 export {
-  default as userDB,
+  default as UserDB,
   type Collections as userDbCollections
 } from './userdb'
 export * as Utils from './utils'
@@ -107,7 +109,7 @@ export default class MatrixIdentityServer {
     this.ready = new Promise((resolve, reject) => {
       Promise.all([db.ready, userDB.ready])
         .then(() => {
-          this.cronTasks = new CronTasks(this)
+          this.cronTasks = new CronTasks(this.conf, db, userDB, this._logger)
           this.updateHash = updateHash
           this.cronTasks.ready
             .then(() => {

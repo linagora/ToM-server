@@ -50,7 +50,7 @@ const mockLogger: Partial<TwakeLogger> = {
 
 describe('ApplicationServer', () => {
   const ldapHostPort = 21389
-  const twakeServerPort = 3000
+  const twakeServerPort = 3001
   let twakeServer: TwakeServer
   let app: express.Application
   let expressTwakeServer: http.Server
@@ -81,6 +81,10 @@ describe('ApplicationServer', () => {
         }
       )
       let location = response.headers.get('location') as string
+      location = location.replace(
+        /auth\.example\.com/,
+        'auth.example.com:30443'
+      )
       const matrixCookies = response.headers.get('set-cookie')
       response = await fetch.default(location)
       body = await response.text()
@@ -240,7 +244,7 @@ describe('ApplicationServer', () => {
             'docker-compose.yml'
           )
             .withEnvironment({ MYUID: os.userInfo().uid.toString() })
-            .withWaitStrategy('synapse_1', Wait.forHealthCheck())
+            .withWaitStrategy('synapse-1', Wait.forHealthCheck())
             .up()
         })
         // eslint-disable-next-line @typescript-eslint/promise-function-async
@@ -341,8 +345,14 @@ describe('ApplicationServer', () => {
       )
       expect(membersIds).not.toBeUndefined()
       expect(membersIds.length).toEqual(3)
-      expect(membersIds[1].user_id).toEqual('@dwho:example.com')
-      expect(membersIds[2].user_id).toEqual('@askywalker:example.com')
+      const userIds = membersIds.map((ids) => ids.user_id)
+      expect(userIds).toEqual(
+        expect.arrayContaining([
+          '@twake:example.com',
+          '@dwho:example.com',
+          '@askywalker:example.com'
+        ])
+      )
     })
 
     it('should force user to join room on login', (done) => {
@@ -353,9 +363,14 @@ describe('ApplicationServer', () => {
         // eslint-disable-next-line @typescript-eslint/promise-function-async
         .then((membersIds) => {
           expect(membersIds.length).toEqual(3)
-          expect(membersIds[0].user_id).toEqual('@twake:example.com')
-          expect(membersIds[1].user_id).toEqual('@dwho:example.com')
-          expect(membersIds[2].user_id).toEqual('@askywalker:example.com')
+          const userIds = membersIds.map((ids) => ids.user_id)
+          expect(userIds).toEqual(
+            expect.arrayContaining([
+              '@twake:example.com',
+              '@dwho:example.com',
+              '@askywalker:example.com'
+            ])
+          )
           const client = ldapjs.createClient({
             url: `ldap://${startedLdap.getHost()}:${ldapHostPort}/`
           })

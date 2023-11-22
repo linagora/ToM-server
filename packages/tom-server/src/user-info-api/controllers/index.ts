@@ -1,4 +1,4 @@
-import type { userDB } from '@twake/matrix-identity-server'
+import type { UserDB } from '@twake/matrix-identity-server'
 import type { IUserInfoService, IUserInfoController } from '../types'
 import type { Response, NextFunction } from 'express'
 import { type AuthRequest } from '../../types'
@@ -7,7 +7,7 @@ import UserInfoService from '../services'
 class UserInfoController implements IUserInfoController {
   private readonly userInfoService: IUserInfoService
 
-  constructor(private readonly userdb: userDB) {
+  constructor(private readonly userdb: UserDB) {
     this.userInfoService = new UserInfoService(userdb)
   }
 

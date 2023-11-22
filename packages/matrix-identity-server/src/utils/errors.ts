@@ -47,9 +47,9 @@ export const errCodes = {
 
   // Server requires some policies
   termsNotSigned: 'M_TERMS_NOT_SIGNED'
-}
+} as const
 
-const defaultMsg = (s: string): string => {
+export const defaultMsg = (s: string): string => {
   return s
     .replace(/^M_/, '')
     .split('_')

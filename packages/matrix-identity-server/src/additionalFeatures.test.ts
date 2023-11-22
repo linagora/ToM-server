@@ -1,15 +1,16 @@
+import { Hash, supportedHashes } from '@twake/crypto'
 import express from 'express'
-import request from 'supertest'
-import IdServer from './index'
-import { type Config } from './types'
 import fs from 'fs'
 import fetch from 'node-fetch'
-import { Hash, supportedHashes } from '@twake/crypto'
-import defaultConfig from './__testData__/registerConf.json'
-import buildUserDB, { buildMatrixDb } from './__testData__/buildUserDB'
-import type UserDBSQLite from './userdb/sql/sqlite'
-import updateUsers from './cron/updateUsers'
 import sqlite3 from 'sqlite3'
+import request from 'supertest'
+import { logger } from '../jest.globals'
+import buildUserDB, { buildMatrixDb } from './__testData__/buildUserDB'
+import defaultConfig from './__testData__/registerConf.json'
+import updateUsers from './cron/updateUsers'
+import IdServer from './index'
+import { type Config } from './types'
+import type UserDBSQLite from './userdb/sql/sqlite'
 
 jest.mock('node-fetch', () => jest.fn())
 const sendMailMock = jest.fn()
@@ -49,7 +50,7 @@ beforeAll((done) => {
     .then(() => {
       buildMatrixDb(conf)
         .then(() => {
-          idServer = new IdServer(conf)
+          idServer = new IdServer(conf, undefined, logger)
           app = express()
 
           idServer.ready
@@ -165,7 +166,7 @@ describe('/_matrix/identity/v2/lookup', () => {
               if (err) {
                 done(err)
               } else {
-                updateUsers(idServer)
+                updateUsers(conf, idServer.db, idServer.userDB, logger)
                   .then(() => {
                     void idServer.db.getAll('hashes', ['*']).catch(done)
                     const okenobiPhone = hash.sha256(
@@ -224,7 +225,7 @@ describe('/_matrix/identity/v2/lookup', () => {
                 done(err)
               } else {
                 const rtylerPhone = hash.sha256(`33687654321 msisdn ${pepper}`)
-                updateUsers(idServer)
+                updateUsers(conf, idServer.db, idServer.userDB, logger)
                   .then(() => {
                     request(app)
                       .post('/_matrix/identity/v2/lookup')

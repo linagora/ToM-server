@@ -15,6 +15,8 @@ export interface Config {
   database_ssl?: boolean | null
   database_user?: string
   database_vacuum_delay: number
+  federation_server?: string | null
+  is_federation_server: boolean
   key_delay: number
   keys_depth: number
   ldap_filter?: string
@@ -42,6 +44,7 @@ export interface Config {
   smtp_tls?: boolean
   smtp_user?: string
   smtp_verify_certificate?: boolean
+  update_federation_hashes_cron?: string
   update_users_cron?: string
   userdb_engine: SupportedUserDatabases
   userdb_host?: string

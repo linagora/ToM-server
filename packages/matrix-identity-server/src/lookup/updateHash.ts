@@ -1,13 +1,14 @@
 import { Hash, supportedHashes } from '@twake/crypto'
+import { type TwakeLogger } from '@twake/logger'
 import { createPool } from 'generic-pool'
-import type MatrixIdentityServer from '..'
+import type IdentityServerDb from '../db'
 
-const fieldsToHash = ['phone', 'email']
+export const fieldsToHash = ['phone', 'email']
 
 // TODO: move this in conf
 const jobs = 5
 
-interface ValueField {
+export interface ValueField {
   active: number
   email?: string
   phone?: string
@@ -32,7 +33,8 @@ type _Update = (
 
 // eslint-disable-next-line @typescript-eslint/promise-function-async
 const updateHash = (
-  idServer: MatrixIdentityServer,
+  db: IdentityServerDb,
+  logger: TwakeLogger,
   data: UpdatableFields,
   pepper?: string
 ): Promise<void> => {
@@ -51,7 +53,7 @@ const updateHash = (
         ): Promise<void> => {
           if (pepper == null || pepper.length === 0) {
             pepper = (
-              (await idServer.db.get('keys', ['data'], {
+              (await db.get('keys', ['data'], {
                 name: 'pepper'
               })) as unknown as Array<{ data: string }>
             )[0].data
@@ -64,7 +66,7 @@ const updateHash = (
             value = value.replace(/\s/g, '').replace(/^\+/, '')
           }
           // console.debug('pepper + hash', [pepper, hash[method as 'sha256'](`${value} ${field} ${pepper}`)])
-          await idServer.db.insert('hashes', {
+          await db.insert('hashes', {
             hash: hash[method as 'sha256'](`${value} ${_field} ${pepper}`),
             pepper,
             type: _field,
@@ -117,7 +119,7 @@ const updateHash = (
                     return worker.update(...param)
                   })
                   .then((res) => {
-                    pool.release(worker).catch(idServer.logger.error)
+                    pool.release(worker).catch(logger.error)
                     return res
                   })
               )

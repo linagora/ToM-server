@@ -1,7 +1,7 @@
 /* istanbul ignore file */
-import { type CacheType } from '.'
-import { type DbGetResult, type Config } from '../types'
 import { type RedisClientType } from 'redis'
+import { type CacheType } from '.'
+import { type Config, type DbGetResult } from '../types'
 
 class RedisCache implements CacheType {
   client?: RedisClientType
@@ -19,7 +19,12 @@ class RedisCache implements CacheType {
           this.client = (mod.default ?? mod).createClient({
             url: conf.redis_uri
           })
-          this.client.connect().then(resolve).catch(reject)
+          this.client
+            .connect()
+            .then((_) => {
+              resolve()
+            })
+            .catch(reject)
         })
         .catch(reject)
     })

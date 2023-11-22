@@ -1,4 +1,5 @@
 import ldapjs from 'ldapjs'
+import { logger } from '../../jest.globals'
 import defaultConfig from '../config.json'
 import UserDBLDAP from './ldap'
 
@@ -35,13 +36,16 @@ afterAll((done) => {
 
 describe('LDAP', () => {
   it('should return result', (done) => {
-    const userDB = new UserDBLDAP({
-      ...defaultConfig,
-      database_engine: 'sqlite',
-      userdb_engine: 'sqlite',
-      ldap_uri: 'ldap://localhost:63389',
-      ldap_base: 'ou=users,o=example'
-    })
+    const userDB = new UserDBLDAP(
+      {
+        ...defaultConfig,
+        database_engine: 'sqlite',
+        userdb_engine: 'sqlite',
+        ldap_uri: 'ldap://localhost:63389',
+        ldap_base: 'ou=users,o=example'
+      },
+      logger
+    )
     userDB.ready
       .then(() => {
         userDB
@@ -70,28 +74,34 @@ describe('LDAP', () => {
   })
 
   it('should display error message on connection error', async () => {
-    const userDB = new UserDBLDAP({
-      ...defaultConfig,
-      database_engine: 'sqlite',
-      userdb_engine: 'ldap',
-      ldap_uri: 'ldap://falsy:63389',
-      ldap_user: 'cn=admin',
-      ldap_password: 'root',
-      ldap_base: 'ou=users,o=example'
-    })
+    const userDB = new UserDBLDAP(
+      {
+        ...defaultConfig,
+        database_engine: 'sqlite',
+        userdb_engine: 'ldap',
+        ldap_uri: 'ldap://falsy:63389',
+        ldap_user: 'cn=admin',
+        ldap_password: 'root',
+        ldap_base: 'ou=users,o=example'
+      },
+      logger
+    )
     const loggerErrorSpy = jest.spyOn(userDB.logger, 'error')
     await userDB.ready
     expect(loggerErrorSpy).toHaveBeenCalled()
   })
 
   it('should provide match', (done) => {
-    const userDB = new UserDBLDAP({
-      ...defaultConfig,
-      database_engine: 'sqlite',
-      userdb_engine: 'sqlite',
-      ldap_uri: 'ldap://localhost:63389',
-      ldap_base: 'ou=users,o=example'
-    })
+    const userDB = new UserDBLDAP(
+      {
+        ...defaultConfig,
+        database_engine: 'sqlite',
+        userdb_engine: 'sqlite',
+        ldap_uri: 'ldap://localhost:63389',
+        ldap_base: 'ou=users,o=example'
+      },
+      logger
+    )
     userDB.ready
       .then(() => {
         userDB
@@ -106,13 +116,16 @@ describe('LDAP', () => {
   })
 
   it('should provide getAll', (done) => {
-    const userDB = new UserDBLDAP({
-      ...defaultConfig,
-      database_engine: 'sqlite',
-      userdb_engine: 'sqlite',
-      ldap_uri: 'ldap://localhost:63389',
-      ldap_base: 'ou=users,o=example'
-    })
+    const userDB = new UserDBLDAP(
+      {
+        ...defaultConfig,
+        database_engine: 'sqlite',
+        userdb_engine: 'sqlite',
+        ldap_uri: 'ldap://localhost:63389',
+        ldap_base: 'ou=users,o=example'
+      },
+      logger
+    )
     userDB.ready
       .then(() => {
         userDB
@@ -127,13 +140,16 @@ describe('LDAP', () => {
   })
 
   it('should provide getAll with order', (done) => {
-    const userDB = new UserDBLDAP({
-      ...defaultConfig,
-      database_engine: 'sqlite',
-      userdb_engine: 'sqlite',
-      ldap_uri: 'ldap://localhost:63389',
-      ldap_base: 'ou=users,o=example'
-    })
+    const userDB = new UserDBLDAP(
+      {
+        ...defaultConfig,
+        database_engine: 'sqlite',
+        userdb_engine: 'sqlite',
+        ldap_uri: 'ldap://localhost:63389',
+        ldap_base: 'ou=users,o=example'
+      },
+      logger
+    )
     userDB.ready
       .then(() => {
         userDB

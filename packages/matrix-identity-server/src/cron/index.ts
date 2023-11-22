@@ -2,12 +2,14 @@
  * Scheduler
  */
 
+import { type TwakeLogger } from '@twake/logger'
 import cron, { type ScheduledTask } from 'node-cron'
-import type MatrixIdentityServer from '..'
+import type UserDB from '../userdb'
 import type IdentityServerDb from '../db'
 import { type Config } from '../types'
 import updateHashes from './changePepper'
 import checkQuota from './check-quota'
+import updateFederationHashes from './update-federation-hashes'
 import updateUsers from './updateUsers'
 
 class CronTasks {
@@ -15,11 +17,14 @@ class CronTasks {
   ready: Promise<void>
   readonly options: Record<string, string | number> = { timezone: 'GMT' }
 
-  constructor(idServer: MatrixIdentityServer) {
-    const conf = idServer.conf
-
+  constructor(
+    conf: Config,
+    db: IdentityServerDb,
+    userDB: UserDB,
+    logger: TwakeLogger
+  ) {
     this.tasks = []
-    this.ready = this.init(conf, idServer)
+    this.ready = this.init(conf, db, userDB, logger)
   }
 
   stop(): void {
@@ -32,19 +37,30 @@ class CronTasks {
    * Initializes the cron tasks
    *
    * @param {Config} conf - the config
-   * @param {MatrixIdentityServer} idServer - the identity server db
+   * @param {IdentityServerDb} db - the identity server db instance
+   * @param {UserDB} userDB - the user db instance
+   * @param {TwakeLogger} logger - the logger
    */
   private readonly init = async (
     conf: Config,
-    idServer: MatrixIdentityServer
+    db: IdentityServerDb,
+    userDB: UserDB,
+    logger: TwakeLogger
   ): Promise<void> => {
     try {
       if (!conf.cron_service) return
 
-      await Promise.all([
-        this._addUpdateHashesJob(conf, idServer),
-        this._addCheckUserQuotaJob(conf, idServer.db)
-      ])
+      const cronTasks = [
+        this._addUpdateHashesJob(conf, db, userDB, logger),
+        this._addCheckUserQuotaJob(conf, db)
+      ]
+
+      if (conf.federation_server != null) {
+        cronTasks.push(
+          this._addUpdateFederationServerHashesJob(conf, db, userDB, logger)
+        )
+      }
+      await Promise.all(cronTasks)
     } catch (error) {
       throw Error('Failed to initialize cron tasks')
     }
@@ -53,12 +69,16 @@ class CronTasks {
   /**
    * Update the hashes job.
    *
-   * @param {Config} conf - the configuration
-   * @param {MatrixIdentityServer} idServer - the matrix identity server instance.
+   * @param {Config} conf - the config
+   * @param {IdentityServerDb} db - the identity server db instance
+   * @param {UserDB} userDB - the user db instance
+   * @param {TwakeLogger} logger - the logger
    */
   private readonly _addUpdateHashesJob = async (
     conf: Config,
-    idServer: MatrixIdentityServer
+    db: IdentityServerDb,
+    userDB: UserDB,
+    logger: TwakeLogger
   ): Promise<void> => {
     const cronString: string = conf.update_users_cron ?? '0 0 0 * * *'
     const pepperCron: string = conf.pepperCron ?? '0 0 0 * * *'
@@ -75,8 +95,8 @@ class CronTasks {
       const updateHashesTask = cron.schedule(
         pepperCron,
         () => {
-          updateHashes(idServer).catch((e) => {
-            idServer.logger.error('Pepper update failed', e)
+          updateHashes(conf, db, userDB, logger).catch((e) => {
+            logger.error('Pepper update failed', e)
           })
         },
         this.options
@@ -85,8 +105,8 @@ class CronTasks {
       const updateUsersTask = cron.schedule(
         cronString,
         () => {
-          updateUsers(idServer).catch((e) => {
-            idServer.logger.error('Users update failed', e)
+          updateUsers(conf, db, userDB, logger).catch((e) => {
+            logger.error('Users update failed', e)
           })
         },
         this.options
@@ -99,12 +119,12 @@ class CronTasks {
     try {
       if (!conf.cron_service) return
 
-      const count = await idServer.db.getCount('hashes', 'hash')
+      const count = await db.getCount('hashes', 'hash')
 
       if (count > 0) {
         _addJob()
       } else {
-        await updateHashes(idServer)
+        await updateHashes(conf, db, userDB, logger)
         _addJob()
       }
     } catch (error) {
@@ -133,6 +153,40 @@ class CronTasks {
       () => {
         checkQuota(conf, db).catch((e) => {
           db.logger.error('User quota check failed', e)
+        })
+      },
+      this.options
+    )
+
+    this.tasks.push(task)
+  }
+
+  /**
+   * Adds the federation server hashes job.
+   *
+   * @param {Config} conf - the config
+   * @param {IdentityServerDb} db - the identity server db instance
+   * @param {UserDB} userDB - the user db instance
+   * @param {TwakeLogger} logger - the logger
+   */
+  private readonly _addUpdateFederationServerHashesJob = async (
+    conf: Config,
+    db: IdentityServerDb,
+    userDB: UserDB,
+    logger: TwakeLogger
+  ): Promise<void> => {
+    const cronString: string =
+      conf.update_federation_hashes_cron ?? '0 0 0 * * *'
+
+    if (!cron.validate(cronString)) {
+      throw new Error(`Invalid cron line: ${cronString}`)
+    }
+
+    const task = cron.schedule(
+      cronString,
+      () => {
+        updateFederationHashes(conf, userDB, logger).catch((e) => {
+          db.logger.error('Federation hashes update failed', e)
         })
       },
       this.options

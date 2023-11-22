@@ -1,11 +1,12 @@
 /* eslint-disable @typescript-eslint/no-misused-promises */
-import type { Config, UserQuota } from '../types'
-import defaultConfig from '../config.json'
-import IdentityServerDb from '../db'
-import checkQuota from './check-quota'
+import fs from 'fs'
 import path from 'path'
 import sqlite3 from 'sqlite3'
-import fs from 'fs'
+import { logger } from '../../jest.globals'
+import defaultConfig from '../config.json'
+import IdentityServerDb from '../db'
+import type { Config, UserQuota } from '../types'
+import checkQuota from './check-quota'
 
 const dbPath = path.join(__dirname, 'check-quota.test.db')
 
@@ -117,8 +118,7 @@ beforeAll(async () => {
         }
       })
     })
-
-    db = new IdentityServerDb(conf)
+    db = new IdentityServerDb(conf, logger)
     await db.ready
   } catch (error) {
     console.log(error)
@@ -127,6 +127,8 @@ beforeAll(async () => {
 })
 
 afterAll(() => {
+  clearTimeout(db.cleanJob)
+  db.close()
   fs.existsSync(dbPath) && fs.unlinkSync(dbPath)
 })
 

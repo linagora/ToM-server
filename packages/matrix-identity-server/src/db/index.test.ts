@@ -1,8 +1,9 @@
-import IdDb from './index'
 import { randomString } from '@twake/crypto'
 import fs from 'fs'
-import { DbGetResult, type Config } from '../types'
+import { type Config, type DbGetResult } from '../types'
+import IdDb from './index'
 
+import { logger } from '../../jest.globals'
 import DefaultConfig from '../config.json'
 
 afterEach(() => {
@@ -27,7 +28,7 @@ if (process.env.TEST_PG === 'yes') {
 describe('Id Server DB', () => {
   it('should have SQLite database initialized', (done) => {
     // eslint-disable-next-line @typescript-eslint/no-floating-promises
-    const idDb = new IdDb(baseConf)
+    const idDb = new IdDb(baseConf, logger)
     idDb.ready
       .then(() => {
         const id = randomString(64)
@@ -52,7 +53,7 @@ describe('Id Server DB', () => {
   })
 
   it('should provide one-time-token', (done) => {
-    const idDb = new IdDb(baseConf)
+    const idDb = new IdDb(baseConf, logger)
     idDb.ready
       .then(() => {
         idDb
@@ -84,7 +85,7 @@ describe('Id Server DB', () => {
   })
 
   it('should provide match()', (done) => {
-    const idDb = new IdDb(baseConf)
+    const idDb = new IdDb(baseConf, logger)
     idDb.ready
       .then(() => {
         idDb
@@ -117,7 +118,7 @@ describe('Id Server DB', () => {
   })
 
   it('should update', (done) => {
-    const idDb = new IdDb(baseConf)
+    const idDb = new IdDb(baseConf, logger)
     idDb.ready
       .then(() => {
         idDb
@@ -146,7 +147,7 @@ describe('Id Server DB', () => {
   })
 
   it('should return entry on update', (done) => {
-    const idDb = new IdDb(baseConf)
+    const idDb = new IdDb(baseConf, logger)
     idDb.ready
       .then(() => {
         idDb
@@ -169,7 +170,7 @@ describe('Id Server DB', () => {
 
   it('should return entry on insert', (done) => {
     // eslint-disable-next-line @typescript-eslint/no-floating-promises
-    const idDb = new IdDb(baseConf)
+    const idDb = new IdDb(baseConf, logger)
     idDb.ready
       .then(() => {
         const id = randomString(64)
@@ -189,7 +190,7 @@ describe('Id Server DB', () => {
   })
 
   it('should return count without value', (done) => {
-    const idDb = new IdDb(baseConf)
+    const idDb = new IdDb(baseConf, logger)
     idDb.ready
       .then(() => {
         idDb
@@ -216,7 +217,7 @@ describe('Id Server DB', () => {
   })
 
   it('should return count with value', (done) => {
-    const idDb = new IdDb(baseConf)
+    const idDb = new IdDb(baseConf, logger)
     idDb.ready
       .then(() => {
         idDb
@@ -250,7 +251,7 @@ describe('Id Server DB', () => {
   })
 
   it('should delete lower than value', (done) => {
-    const idDb = new IdDb(baseConf)
+    const idDb = new IdDb(baseConf, logger)
     idDb.ready
       .then(() => {
         idDb
@@ -277,7 +278,7 @@ describe('Id Server DB', () => {
   })
 
   it('should delete lines with specified filters', (done) => {
-    const idDb = new IdDb(baseConf)
+    const idDb = new IdDb(baseConf, logger)
     idDb.ready
       .then(() => {
         const idsNumber = 8
@@ -317,7 +318,7 @@ describe('Id Server DB', () => {
 })
 
 it('should delete lines with specified filters', (done) => {
-  const idDb = new IdDb(baseConf)
+  const idDb = new IdDb(baseConf, logger)
   idDb.ready
     .then(() => {
       const idsNumber = 8
@@ -356,7 +357,7 @@ it('should delete lines with specified filters', (done) => {
 })
 
 test('OneTimeToken timeout', (done) => {
-  const idDb = new IdDb({ ...baseConf, database_vacuum_delay: 3 })
+  const idDb = new IdDb({ ...baseConf, database_vacuum_delay: 3 }, logger)
   idDb.ready
     .then(() => {
       idDb

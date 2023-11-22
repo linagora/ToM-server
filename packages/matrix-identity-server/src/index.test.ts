@@ -1,5 +1,4 @@
 import { Hash, randomString, supportedHashes } from '@twake/crypto'
-import { getLogger, type TwakeLogger } from '@twake/logger'
 import express from 'express'
 import fs from 'fs'
 import fetch from 'node-fetch'
@@ -9,6 +8,7 @@ import buildUserDB from './__testData__/buildUserDB'
 import defaultConfig from './__testData__/registerConf.json'
 import IdServer from './index'
 import { type Config } from './types'
+import { logger } from '../jest.globals'
 
 jest.mock('node-fetch', () => jest.fn())
 const sendMailMock = jest.fn()
@@ -23,10 +23,8 @@ process.env.TWAKE_IDENTITY_SERVER_CONF = './src/__testData__/registerConf.json'
 let idServer: IdServer
 let app: express.Application
 let validToken: string
-let logger: TwakeLogger
 
 beforeAll((done) => {
-  logger = getLogger()
   const conf: Config = {
     ...defaultConfig,
     database_engine: 'sqlite',

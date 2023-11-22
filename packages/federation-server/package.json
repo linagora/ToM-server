@@ -1,0 +1,55 @@
+{
+  "name": "@twake/federation-server",
+  "version": "0.0.1",
+  "description": "This is the Twake Federation server",
+  "main": "dist/index.js",
+  "type": "module",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    "import": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "npm run build:lib && npm run build:example",
+    "build:lib": "rollup -c",
+    "build:example": "rollup -p @rollup/plugin-typescript -e express,@twake/federation-server -m -o example/federation-server.js example/federation-server.ts",
+    "start": "node example/federation-server.js",
+    "test": "jest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://ci.linagora.com/publicgroup/oss/twake/tom-server.git"
+  },
+  "files": [
+    "package.json",
+    "dist",
+    "*.md"
+  ],
+  "keywords": [
+    "federation",
+    "twake",
+    "server"
+  ],
+  "author": {
+    "name": "Jordy Cabannes",
+    "email": "jcabannes@linagora.com"
+  },
+  "license": "AGPL-3.0-or-later",
+  "bugs": {
+    "url": "https://ci.linagora.com/publicgroup/oss/twake/tom-server/-/issues"
+  },
+  "homepage": "https://ci.linagora.com/publicgroup/oss/twake/tom-server",
+  "dependencies": {
+    "@twake/matrix-identity-server": "*",
+    "@twake/logger": "*",
+    "@twake/config-parser": "*",
+    "@twake/crypto": "*",
+    "lodash": "^4.17.21",
+    "express-validator": "^7.0.1"
+  },
+  "devDependencies": {
+    "@small-tech/syswide-cas": "^6.0.2",
+    "@types/lodash": "^4.14.197",
+    "node-fetch-jest": "npm:node-fetch@^2.6.9",
+    "testcontainers": "^9.8.0"
+  }
+}

@@ -1,12 +1,13 @@
 import express from 'express'
-import request from 'supertest'
-import IdServer from './index'
-import { type Config } from './types'
 import fs from 'fs'
 import fetch from 'node-fetch'
-import { type Policies } from './terms'
-import defaultConfig from './__testData__/termsConf.json'
+import request from 'supertest'
+import { logger } from '../jest.globals'
 import buildUserDB from './__testData__/buildUserDB'
+import defaultConfig from './__testData__/termsConf.json'
+import IdServer from './index'
+import { type Policies } from './terms'
+import { type Config } from './types'
 
 jest.mock('node-fetch', () => jest.fn())
 const sendMailMock = jest.fn()
@@ -31,7 +32,7 @@ beforeAll((done) => {
   }
   buildUserDB(conf)
     .then(() => {
-      idServer = new IdServer()
+      idServer = new IdServer(undefined, undefined, logger)
       app = express()
 
       idServer.ready

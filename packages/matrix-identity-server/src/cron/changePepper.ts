@@ -2,56 +2,78 @@
  * Change pepper and update hashes
  */
 
-import { type DbGetResult } from '../types'
-import type MatrixIdentityServer from '..'
 import { randomString } from '@twake/crypto'
-import MatrixDB from '../matrixDb'
+import { type TwakeLogger } from '@twake/logger'
+import type IdentityServerDb from '../db'
 import updateHash, { type UpdatableFields } from '../lookup/updateHash'
+import MatrixDB from '../matrixDb'
+import { type Config, type DbGetResult } from '../types'
+import type UserDB from '../userdb'
 
-const dbFieldsToHash = ['mobile', 'mail']
+export const dbFieldsToHash = ['mobile', 'mail']
 
-// eslint-disable-next-line @typescript-eslint/promise-function-async
-const updateHashes = (idServer: MatrixIdentityServer): Promise<void> => {
-  const conf = idServer.conf
-  const db = idServer.db
-  const userDB = idServer.userDB
+// If Matrix DB is available, this function filter inactive users
+export const filter = async (
+  rows: DbGetResult,
+  conf: Config,
+  logger: TwakeLogger
+): Promise<DbGetResult> => {
   const isMatrixDbAvailable =
     Boolean(conf.matrix_database_host) && Boolean(conf.matrix_database_engine)
 
-  // If Matrix DB is available, this function filter inactive users
-  const _filter = async (rows: DbGetResult): Promise<DbGetResult> => {
-    if (isMatrixDbAvailable) {
-      const matrixDb = new MatrixDB(conf)
-      await matrixDb.ready
-      const entries = await matrixDb.getAll('users', ['name']).catch((e) => {
-        /* istanbul ignore if */
-        if (/relation "users" does not exist/.test(e)) {
-          idServer.logger.debug('Matrix DB seems not ready')
-        } else {
-          idServer.logger.error('Unable to query Matrix DB', e)
-        }
-      })
-      matrixDb.close()
+  if (isMatrixDbAvailable) {
+    const matrixDb = new MatrixDB(conf)
+    await matrixDb.ready
+    const entries = await matrixDb.getAll('users', ['name']).catch((e) => {
       /* istanbul ignore if */
-      if (entries == null || entries.length === 0) {
-        return rows
+      if (/relation "users" does not exist/.test(e)) {
+        logger.debug('Matrix DB seems not ready')
+      } else {
+        logger.error('Unable to query Matrix DB', e)
       }
-      const names: string[] = []
-      entries.forEach((row) => {
-        names.push((row.name as string).replace(/^@(.*?):(?:.*)$/, '$1'))
-      })
+    })
+    matrixDb.close()
+    /* istanbul ignore if */
+    if (entries == null || entries.length === 0) {
+      return conf.federation_server == null && !conf.is_federation_server
+        ? rows
+        : []
+    }
+    const names: string[] = []
+    entries.forEach((row) => {
+      names.push((row.name as string).replace(/^@(.*?):(?:.*)$/, '$1'))
+    })
+    if (conf.federation_server != null || conf.is_federation_server) {
+      rows = rows
+        .filter((row) => names.includes(row.uid as string))
+        .map((row) => {
+          row.active = 1
+          return row
+        })
+    } else {
       for (let i = 0; i < rows.length; i++) {
         if (names.includes(rows[i].uid as string)) rows[i].active = 1
       }
     }
-    return rows
   }
+  return rows
+}
+
+// eslint-disable-next-line @typescript-eslint/promise-function-async
+const updateHashes = (
+  conf: Config,
+  db: IdentityServerDb,
+  userDB: UserDB,
+  logger: TwakeLogger
+): Promise<void> => {
+  const isMatrixDbAvailable =
+    Boolean(conf.matrix_database_host) && Boolean(conf.matrix_database_engine)
 
   return new Promise((resolve, reject) => {
     const logAndReject = (msg: string) => {
       return (e: any) => {
         /* istanbul ignore next */
-        idServer.logger.error(msg, e)
+        logger.error(msg, e)
         /* istanbul ignore next */
         reject(e)
       }
@@ -63,10 +85,16 @@ const updateHashes = (idServer: MatrixIdentityServer): Promise<void> => {
      */
     db.get('keys', ['data'], { name: 'previousPepper' })
       .then((rows) => {
+        if (rows == null || !Array.isArray(rows) || rows.length === 0) {
+          throw Error('No previousPepper found')
+        }
+        if (rows[0].data?.toString()?.length !== 32) {
+          throw Error('previousPepper value is not valid')
+        }
         db.deleteEqual('hashes', 'pepper', rows[0].data as string).catch(
           (e) => {
             /* istanbul ignore next */
-            idServer.logger.error('Unable to clean old hashes', e)
+            logger.error('Unable to clean old hashes', e)
           }
         )
       })
@@ -94,11 +122,13 @@ const updateHashes = (idServer: MatrixIdentityServer): Promise<void> => {
           new Promise((_resolve, _reject) => {
             userDB
               .getAll('users', [...dbFieldsToHash, 'uid'])
-              .then(_filter)
+              // eslint-disable-next-line @typescript-eslint/promise-function-async
+              .then((rows) => filter(rows, conf, logger))
               .then((rows: DbGetResult) => {
                 const init: UpdatableFields = {}
                 updateHash(
-                  idServer,
+                  db,
+                  logger,
                   rows.reduce((res, row) => {
                     res[`@${row.uid as string}:${conf.server_name}`] = {
                       email: row.mail as string,
@@ -112,22 +142,13 @@ const updateHashes = (idServer: MatrixIdentityServer): Promise<void> => {
                   .then(_resolve)
                   .catch(_reject)
               })
-              .catch((e) => {
-                /* istanbul ignore next */
-                idServer.logger.error('Unable to parse user DB', e)
-                /* istanbul ignore next */
-                reject(e)
-              })
               .catch(logAndReject('Unable to parse user DB'))
           })
         ])
           .then(() => {
             db.update('keys', { data: newPepper }, 'name', 'pepper')
               .then(() => {
-                idServer.logger.debug(
-                  'Identity server: new pepper published',
-                  newPepper
-                )
+                logger.debug('Identity server: new pepper published', newPepper)
                 resolve()
               })
               .catch(logAndReject('Unable to publish new pepper'))

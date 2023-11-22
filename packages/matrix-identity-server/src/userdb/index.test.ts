@@ -4,6 +4,7 @@ import UserDB from './index'
 import defaultConfig from '../config.json'
 import Cache from '../cache'
 import { type Config } from '../types'
+import { logger } from '../../jest.globals'
 
 const dbName = './testldap.db'
 
@@ -30,13 +31,17 @@ afterAll(() => {
 
 describe('UserDB', () => {
   it('should find user', (done) => {
-    const userDB = new UserDB({
-      ...defaultConfig,
-      userdb_engine: 'sqlite',
-      userdb_host: dbName,
-      database_host: dbName,
-      database_engine: 'sqlite'
-    })
+    const userDB = new UserDB(
+      {
+        ...defaultConfig,
+        userdb_engine: 'sqlite',
+        userdb_host: dbName,
+        database_host: dbName,
+        database_engine: 'sqlite'
+      },
+      undefined,
+      logger
+    )
     userDB.ready
       .then(() => {
         userDB
@@ -53,13 +58,17 @@ describe('UserDB', () => {
   })
 
   it('should provide match', (done) => {
-    const userDB = new UserDB({
-      ...defaultConfig,
-      userdb_engine: 'sqlite',
-      userdb_host: dbName,
-      database_host: dbName,
-      database_engine: 'sqlite'
-    })
+    const userDB = new UserDB(
+      {
+        ...defaultConfig,
+        userdb_engine: 'sqlite',
+        userdb_host: dbName,
+        database_host: dbName,
+        database_engine: 'sqlite'
+      },
+      undefined,
+      logger
+    )
     userDB.ready
       .then(() => {
         userDB
@@ -84,7 +93,7 @@ describe('UserDB', () => {
       database_host: dbName,
       database_engine: 'sqlite'
     }
-    const userDB = new UserDB(conf, new Cache(conf))
+    const userDB = new UserDB(conf, new Cache(conf), logger)
     userDB.ready
       .then(() => {
         userDB

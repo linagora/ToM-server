@@ -1,8 +1,8 @@
-import type { userDB } from '@twake/matrix-identity-server'
+import type { UserDB } from '@twake/matrix-identity-server'
 import type { IUserInfoService, UserInformation } from '../types'
 
 class UserInfoService implements IUserInfoService {
-  constructor(private readonly userDb: userDB) {}
+  constructor(private readonly userDb: UserDB) {}
 
   /**
    * Retrieves the user information from the database
