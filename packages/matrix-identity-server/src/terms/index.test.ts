@@ -1,9 +1,10 @@
-import Terms from './index'
+import { TwakeLogger, getLogger } from '@twake/logger'
 import express from 'express'
 import request from 'supertest'
 import DefaultConfig from '../config.json'
 import { type Config } from '../types'
 import { resetPolicies } from './_computePolicies'
+import Terms from './index'
 
 const policies = {
   privacy_policy: {
@@ -31,6 +32,12 @@ const policies = {
 }
 
 describe('Terms', () => {
+  let logger: TwakeLogger
+
+  beforeAll(() => {
+    logger = getLogger()
+  })
+
   describe('Policies directly in configuration', () => {
     const app = express()
 
@@ -42,7 +49,9 @@ describe('Terms', () => {
       policies
     }
 
-    app.get('/_matrix/identity/v2/terms', Terms(baseConf))
+    beforeAll(() => {
+      app.get('/_matrix/identity/v2/terms', Terms(baseConf, logger))
+    })
 
     describe('/_matrix/identity/v2/terms', () => {
       it('should return policies', async () => {
@@ -63,7 +72,7 @@ describe('Terms', () => {
       policies: './src/terms/__testData__/policies.json'
     }
 
-    app.get('/_matrix/identity/v2/terms', Terms(baseConf))
+    app.get('/_matrix/identity/v2/terms', Terms(baseConf, logger))
 
     describe('/_matrix/identity/v2/terms', () => {
       it('should return policies', async () => {

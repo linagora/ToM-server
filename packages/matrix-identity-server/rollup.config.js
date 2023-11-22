@@ -14,5 +14,6 @@ export default config([
   'node-fetch',
   'redis',
   '@twake/config-parser',
-  '@twake/crypto'
+  '@twake/crypto',
+  "@twake/logger"
 ])

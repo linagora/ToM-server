@@ -1,5 +1,10 @@
+import {
+  getLogger,
+  type Config as LoggerConfig,
+  type TwakeLogger
+} from '@twake/logger'
 import type Cache from '../cache'
-import { type DbGetResult, type Config } from '../types'
+import { type Config, type DbGetResult } from '../types'
 import UserDBLDAP from './ldap'
 import UserDBPg from './sql/pg'
 import UserDBSQLite from './sql/sqlite'
@@ -38,7 +43,13 @@ class UserDB implements UserDBBackend {
   ready: Promise<void>
   db: UserDBBackend
   cache?: Cache
-  constructor(conf: Config, cache?: Cache) {
+  private readonly _logger: TwakeLogger
+  get logger(): TwakeLogger {
+    return this._logger
+  }
+
+  constructor(conf: Config, cache?: Cache, logger?: TwakeLogger) {
+    this._logger = logger ?? getLogger(conf as unknown as LoggerConfig)
     this.cache = cache
     let Module
     /* istanbul ignore next */
@@ -60,7 +71,7 @@ class UserDB implements UserDBBackend {
         throw new Error(`Unsupported user-database type ${conf.userdb_engine}`)
       }
     }
-    this.db = new Module(conf)
+    this.db = new Module(conf, this.logger)
     this.ready = new Promise((resolve, reject) => {
       this.db.ready
         .then(() => {
@@ -114,7 +125,7 @@ class UserDB implements UserDBBackend {
             this.db
               .getAll(table, fields, order)
               .then((res) => {
-                ;(this.cache as Cache).set(key, res).catch(console.error)
+                ;(this.cache as Cache).set(key, res).catch(this.logger.error)
                 resolve(res)
               })
               .catch(reject)

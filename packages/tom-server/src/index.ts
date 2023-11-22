@@ -1,4 +1,10 @@
 import configParser, { type ConfigDescription } from '@twake/config-parser'
+import {
+  getLogger,
+  type Config as LoggerConfig,
+  type TwakeLogger
+} from '@twake/logger'
+import { MatrixDB } from '@twake/matrix-identity-server'
 import { Router } from 'express'
 import fs from 'fs'
 import AppServiceAPI from './application-server'
@@ -7,13 +13,11 @@ import initializeDb, { type TwakeDB } from './db'
 import IdServer from './identity-server'
 import mutualRoomsAPIRouter from './mutual-rooms-api'
 import privateNoteApiRouter from './private-note-api'
+import roomTagsAPIRouter from './room-tags-api'
 import type { Config, ConfigurationFile } from './types'
+import userInfoAPIRouter from './user-info-api'
 import VaultServer from './vault-api'
 import WellKnown from './wellKnown'
-
-import { MatrixDB } from '@twake/matrix-identity-server'
-import roomTagsAPIRouter from './room-tags-api'
-import userInfoAPIRouter from './user-info-api'
 
 export default class TwakeServer {
   endpoints: Router
@@ -22,17 +26,26 @@ export default class TwakeServer {
   conf: Config
   db?: TwakeDB
   matrixDb: MatrixDB
+  private readonly _logger: TwakeLogger
 
-  constructor(conf?: Partial<Config>, confDesc?: ConfigDescription) {
+  get logger(): TwakeLogger {
+    return this._logger
+  }
+
+  constructor(
+    conf?: Partial<Config>,
+    confDesc?: ConfigDescription,
+    logger?: TwakeLogger
+  ) {
     if (confDesc == null) confDesc = defaultConfig as ConfigDescription
     this.conf = configParser(
       confDesc,
       this._getConfigurationFile(conf)
     ) as Config
-
+    this._logger = logger ?? getLogger(this.conf as unknown as LoggerConfig)
     this.endpoints = Router()
-    this.idServer = new IdServer(this)
-    this.matrixDb = new MatrixDB(this.conf)
+    this.idServer = new IdServer(this, undefined, this.logger)
+    this.matrixDb = new MatrixDB(this.conf, this.logger)
 
     this.ready = this.initServer()
   }
@@ -69,19 +82,29 @@ export default class TwakeServer {
 
       const vaultServer = new VaultServer(this.conf, this)
       const wellKnown = new WellKnown(this.idServer.conf)
-      const privateNoteApi = privateNoteApiRouter(this.idServer.db, this.conf)
+      const privateNoteApi = privateNoteApiRouter(
+        this.idServer.db,
+        this.conf,
+        this.logger
+      )
       const mutualRoolsApi = mutualRoomsAPIRouter(
         this.idServer.db,
         this.conf,
-        this.matrixDb.db
+        this.matrixDb.db,
+        this.logger
       )
       const roomTagsApi = roomTagsAPIRouter(
         this.idServer.db,
         this.matrixDb.db,
-        this.conf
+        this.conf,
+        this.logger
       )
-      const userInfoApi = userInfoAPIRouter(this.idServer, this.conf)
-      const appServericeApi = new AppServiceAPI(this)
+      const userInfoApi = userInfoAPIRouter(
+        this.idServer,
+        this.conf,
+        this.logger
+      )
+      const appServericeApi = new AppServiceAPI(this, undefined, this.logger)
 
       this.endpoints.use(privateNoteApi)
       this.endpoints.use(mutualRoolsApi)
@@ -104,7 +127,7 @@ export default class TwakeServer {
       return true
     } catch (error) {
       /* istanbul ignore next */
-      console.error('Unable to initialize server')
+      this.logger.error('Unable to initialize server')
       /* istanbul ignore next */
       throw Error('Unable to initialize server', { cause: error })
     }

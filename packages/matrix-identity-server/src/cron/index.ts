@@ -3,12 +3,12 @@
  */
 
 import cron, { type ScheduledTask } from 'node-cron'
-import { type Config } from '../types'
-import type IdentityServerDb from '../db'
-import checkQuota from './check-quota'
-import updateHashes from './changePepper'
-import updateUsers from './updateUsers'
 import type MatrixIdentityServer from '..'
+import type IdentityServerDb from '../db'
+import { type Config } from '../types'
+import updateHashes from './changePepper'
+import checkQuota from './check-quota'
+import updateUsers from './updateUsers'
 
 class CronTasks {
   tasks: ScheduledTask[]
@@ -45,8 +45,6 @@ class CronTasks {
         this._addUpdateHashesJob(conf, idServer),
         this._addCheckUserQuotaJob(conf, idServer.db)
       ])
-
-      return
     } catch (error) {
       throw Error('Failed to initialize cron tasks')
     }
@@ -78,7 +76,7 @@ class CronTasks {
         pepperCron,
         () => {
           updateHashes(idServer).catch((e) => {
-            console.error('Pepper update failed', e)
+            idServer.logger.error('Pepper update failed', e)
           })
         },
         this.options
@@ -88,7 +86,7 @@ class CronTasks {
         cronString,
         () => {
           updateUsers(idServer).catch((e) => {
-            console.error('Users update failed', e)
+            idServer.logger.error('Users update failed', e)
           })
         },
         this.options
@@ -134,7 +132,7 @@ class CronTasks {
       cronString,
       () => {
         checkQuota(conf, db).catch((e) => {
-          console.error('User quota check failed', e)
+          db.logger.error('User quota check failed', e)
         })
       },
       this.options

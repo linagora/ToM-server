@@ -1,51 +1,56 @@
-import fs from 'fs'
 import configParser, { type ConfigDescription } from '@twake/config-parser'
+import fs from 'fs'
 
 // Internal libraries
-import CronTasks from './cron'
-import versions from './versions'
 import defaultConfDesc from './config.json'
+import CronTasks from './cron'
 import {
+  Authenticate,
   send,
-  type expressAppHandler,
   type AuthenticationFunction,
-  Authenticate
+  type expressAppHandler
 } from './utils'
 import { errMsg as _errMsg } from './utils/errors'
+import versions from './versions'
 
 // Endpoints
-import register from './account/register'
-import IdentityServerDb from './db'
+import {
+  getLogger,
+  type Config as LoggerConfig,
+  type TwakeLogger
+} from '@twake/logger'
 import account from './account'
 import logout from './account/logout'
+import register from './account/register'
+import Cache from './cache'
+import IdentityServerDb from './db'
+import lookup from './lookup'
+import hashDetails from './lookup/hash_details'
+import updateHash from './lookup/updateHash'
 import status from './status'
 import Terms from './terms'
+import PostTerms from './terms/index.post'
+import { type Config } from './types'
+import UserDB from './userdb'
+import _validateMatrixToken from './utils/validateMatrixToken'
 import RequestToken from './validate/email/requestToken'
 import SubmitToken from './validate/email/submitToken'
-import PostTerms from './terms/index.post'
-import hashDetails from './lookup/hash_details'
-import UserDB from './userdb'
-import lookup from './lookup'
-import _validateMatrixToken from './utils/validateMatrixToken'
-import { type Config } from './types'
-import Cache from './cache'
-import updateHash from './lookup/updateHash'
 
-export * from './types'
-export * as SQLite from './db/sql/sqlite'
-export * as IdentityServerDb from './db'
 export { type tokenContent } from './account/register'
-export * as Utils from './utils'
-export * as MatrixErrors from './utils/errors'
-export { default as MatrixDB, type MatrixDBBackend } from './matrixDb'
 export { default as updateUsers } from './cron/updateUsers'
-export const errMsg = _errMsg
-export const validateMatrixToken = _validateMatrixToken
-export const defaultConfig = defaultConfDesc
+export * as IdentityServerDb from './db'
+export * as SQLite from './db/sql/sqlite'
+export { default as MatrixDB, type MatrixDBBackend } from './matrixDb'
+export * from './types'
 export {
   default as userDB,
   type Collections as userDbCollections
 } from './userdb'
+export * as Utils from './utils'
+export * as MatrixErrors from './utils/errors'
+export const errMsg = _errMsg
+export const validateMatrixToken = _validateMatrixToken
+export const defaultConfig = defaultConfDesc
 
 type IdServerAPI = Record<string, expressAppHandler>
 
@@ -65,8 +70,17 @@ export default class MatrixIdentityServer {
   updateHash?: typeof updateHash
 
   authenticate: AuthenticationFunction
+  private readonly _logger: TwakeLogger
 
-  constructor(conf?: Partial<Config>, confDesc?: ConfigDescription) {
+  get logger(): TwakeLogger {
+    return this._logger
+  }
+
+  constructor(
+    conf?: Partial<Config>,
+    confDesc?: ConfigDescription,
+    logger?: TwakeLogger
+  ) {
     this.api = { get: {}, post: {} }
     if (confDesc == null) confDesc = defaultConfDesc
     this.conf = configParser(
@@ -80,10 +94,15 @@ export default class MatrixIdentityServer {
         ? '/etc/twake/identity-server.conf'
         : undefined
     ) as Config
+    this._logger = logger ?? getLogger(this.conf as unknown as LoggerConfig)
     // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
     this.cache = this.conf.cache_engine ? new Cache(this.conf) : undefined
-    const db = (this.db = new IdentityServerDb(this.conf))
-    const userDB = (this.userDB = new UserDB(this.conf, this.cache))
+    const db = (this.db = new IdentityServerDb(this.conf, this.logger))
+    const userDB = (this.userDB = new UserDB(
+      this.conf,
+      this.cache,
+      this.logger
+    ))
     this.authenticate = Authenticate(db)
     this.ready = new Promise((resolve, reject) => {
       Promise.all([db.ready, userDB.ready])
@@ -107,7 +126,7 @@ export default class MatrixIdentityServer {
                   '/_matrix/identity/v2/account/register': badMethod,
                   '/_matrix/identity/v2/account/logout': badMethod,
                   '/_matrix/identity/v2/hash_details': hashDetails(this),
-                  '/_matrix/identity/v2/terms': Terms(this.conf),
+                  '/_matrix/identity/v2/terms': Terms(this.conf, this.logger),
                   '/_matrix/identity/v2/validate/email/requestToken': badMethod,
                   '/_matrix/identity/v2/validate/email/submitToken':
                     SubmitToken(this)

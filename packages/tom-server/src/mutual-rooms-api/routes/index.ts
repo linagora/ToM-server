@@ -1,20 +1,27 @@
 /* eslint-disable @typescript-eslint/no-misused-promises */
+import {
+  getLogger,
+  type Config as LoggerConfig,
+  type TwakeLogger
+} from '@twake/logger'
+import type { MatrixDBBackend } from '@twake/matrix-identity-server'
 import { Router } from 'express'
 import type { Config, IdentityServerDb } from '../../types'
 import authMiddleware from '../../utils/middlewares/auth.middleware'
-import MutualRoomsApiController from '../controllers'
 import errorMiddleware from '../../utils/middlewares/error.middleware'
-import type { MatrixDBBackend } from '@twake/matrix-identity-server'
+import MutualRoomsApiController from '../controllers'
 
 export const PATH = '/_twake/mutual_rooms'
 
 export default (
   db: IdentityServerDb,
   config: Config,
-  matrixdb: MatrixDBBackend
+  matrixdb: MatrixDBBackend,
+  defaultLogger?: TwakeLogger
 ): Router => {
+  const logger = defaultLogger ?? getLogger(config as unknown as LoggerConfig)
   const router = Router()
-  const authenticate = authMiddleware(db, config)
+  const authenticate = authMiddleware(db, config, logger)
   const controller = new MutualRoomsApiController(matrixdb)
 
   /**
@@ -74,7 +81,7 @@ export default (
    *       description: Bad request
    */
   router.get(`${PATH}/:id`, authenticate, controller.get)
-  router.use(errorMiddleware)
+  router.use(errorMiddleware(logger))
 
   return router
 }

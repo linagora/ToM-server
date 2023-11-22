@@ -174,7 +174,7 @@ export const createRoom = (
       }
       joinErrors.length > 0 ? res.json(joinErrors) : res.send()
     } catch (error) {
-      console.error(error)
+      appServer.logger.error(error)
       next(error)
     }
   }

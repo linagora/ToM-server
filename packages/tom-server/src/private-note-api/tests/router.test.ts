@@ -1,14 +1,17 @@
 /* eslint-disable @typescript-eslint/consistent-type-assertions */
-import express, { type NextFunction, type Response } from 'express'
-import router, { PATH } from '../routes'
-import supertest from 'supertest'
+import { type TwakeLogger } from '@twake/logger'
 import bodyParser from 'body-parser'
-import type { Config, IdentityServerDb, AuthRequest } from '../../types'
+import express, { type NextFunction, type Response } from 'express'
+import supertest from 'supertest'
+import type { AuthRequest, Config, IdentityServerDb } from '../../types'
 import errorMiddleware from '../../utils/middlewares/error.middleware'
+import router, { PATH } from '../routes'
 
-beforeEach(() => {
-  jest.spyOn(console, 'warn').mockImplementation(() => {})
-})
+const mockLogger: Partial<TwakeLogger> = {
+  debug: jest.fn(),
+  error: jest.fn(),
+  warn: jest.fn()
+}
 
 const app = express()
 
@@ -47,13 +50,20 @@ jest.mock('../../private-note-api/controllers/index.ts', () => {
 })
 
 const dbMock = {
-  get: async () => [{ data: '"test"' }]
+  get: async () => [{ data: '"test"' }],
+  logger: mockLogger as TwakeLogger
 }
 
 app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({ extended: true }))
-app.use(router(dbMock as unknown as IdentityServerDb, {} as Config))
-app.use(errorMiddleware)
+app.use(
+  router(
+    dbMock as unknown as IdentityServerDb,
+    {} as Config,
+    mockLogger as TwakeLogger
+  )
+)
+app.use(errorMiddleware(mockLogger as TwakeLogger))
 
 describe('Private Note API Router', () => {
   it('should not call the validation middleware if Bearer token is not set', async () => {
@@ -61,7 +71,7 @@ describe('Private Note API Router', () => {
 
     expect(middlewareSpy).not.toHaveBeenCalled()
     expect(response.status).toBe(401)
-    expect(console.warn).toHaveBeenCalledWith(
+    expect(mockLogger.warn).toHaveBeenCalledWith(
       'Access tried without token',
       expect.anything()
     )

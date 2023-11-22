@@ -1,13 +1,16 @@
-import express from 'express'
-import router, { PATH } from '../routes'
-import supertest from 'supertest'
-import bodyParser from 'body-parser'
-import type { Config, IdentityServerDb } from '../../types'
+import { type TwakeLogger } from '@twake/logger'
 import { type MatrixDBBackend } from '@twake/matrix-identity-server'
+import bodyParser from 'body-parser'
+import express from 'express'
+import supertest from 'supertest'
+import type { Config, IdentityServerDb } from '../../types'
+import router, { PATH } from '../routes'
 
-beforeEach(() => {
-  jest.spyOn(console, 'warn').mockImplementation(() => {})
-})
+const mockLogger: Partial<TwakeLogger> = {
+  debug: jest.fn(),
+  error: jest.fn(),
+  warn: jest.fn()
+}
 
 const controllerSpy = jest.fn().mockImplementation((_req, _res, next) => {
   next()
@@ -22,7 +25,8 @@ jest.mock('../../mutual-rooms-api/controllers/index.ts', () => {
 })
 
 const dbMock = {
-  get: async () => [{ data: '"test"' }]
+  get: async () => [{ data: '"test"' }],
+  logger: mockLogger as TwakeLogger
 }
 
 const matrixDbMock = {
@@ -36,7 +40,8 @@ app.use(
   router(
     dbMock as unknown as IdentityServerDb,
     {} as unknown as Config,
-    matrixDbMock as unknown as MatrixDBBackend
+    matrixDbMock as unknown as MatrixDBBackend,
+    mockLogger as TwakeLogger
   )
 )
 

@@ -1,6 +1,6 @@
 import { Hash, supportedHashes } from '@twake/crypto'
-import type MatrixIdentityServer from '..'
 import { createPool } from 'generic-pool'
+import type MatrixIdentityServer from '..'
 
 const fieldsToHash = ['phone', 'email']
 
@@ -117,7 +117,7 @@ const updateHash = (
                     return worker.update(...param)
                   })
                   .then((res) => {
-                    pool.release(worker).catch(console.error)
+                    pool.release(worker).catch(idServer.logger.error)
                     return res
                   })
               )

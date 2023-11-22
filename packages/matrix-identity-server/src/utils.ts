@@ -1,9 +1,10 @@
+import { type TwakeLogger } from '@twake/logger'
+import { type NextFunction, type Request, type Response } from 'express'
 import type http from 'http'
-import { type Request, type Response, type NextFunction } from 'express'
-import { errMsg } from './utils/errors'
+import querystring from 'querystring'
 import { type tokenContent } from './account/register'
 import type IdentityServerDb from './db'
-import querystring from 'querystring'
+import { errMsg } from './utils/errors'
 
 export type expressAppHandler = (
   req: Request | http.IncomingMessage,
@@ -67,6 +68,7 @@ export const Authenticate = (db: IdentityServerDb): AuthenticationFunction => {
 export const jsonContent = (
   req: Request | http.IncomingMessage,
   res: Response | http.ServerResponse,
+  logger: TwakeLogger,
   callback: (obj: Record<string, string>) => void
 ): void => {
   let content = ''
@@ -93,7 +95,7 @@ export const jsonContent = (
         obj = JSON.parse(content)
       }
     } catch (err) {
-      console.error('JSON error', err)
+      logger.error('JSON error', err)
       send(res, 400, errMsg('unknown', err as string))
       accept = false
     }
@@ -107,6 +109,7 @@ type validateParametersType = (
   res: Response | http.ServerResponse,
   desc: validateParametersSchema,
   content: Record<string, string>,
+  logger: TwakeLogger,
   callback: (obj: object) => void
 ) => void
 
@@ -114,6 +117,7 @@ export const validateParameters: validateParametersType = (
   res,
   desc,
   content,
+  logger,
   callback
 ) => {
   const missingParameters: string[] = []
@@ -141,7 +145,7 @@ export const validateParameters: validateParametersType = (
     })
     if (additionalParameters.length > 0) {
       // TODO: for now, accept additional params
-      console.warn('Additional parameters', additionalParameters)
+      logger.warn('Additional parameters', additionalParameters)
     }
     callback(content)
   }

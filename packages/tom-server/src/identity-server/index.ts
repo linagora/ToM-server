@@ -1,22 +1,27 @@
 // import MatrixIdentityServer, {
 // defaultConfig as MdefaultConfig
 // } from '@twake/matrix-identity-server'
-import autocompletion from './lookup/autocompletion'
 import { type ConfigDescription } from '@twake/config-parser'
-import Authenticate from './utils/authenticate'
-import { type Config } from '../types'
+import { type TwakeLogger } from '@twake/logger'
 import MatrixIdentityServer from '@twake/matrix-identity-server'
-import defaultConfig from '../config.json'
 import type TwakeServer from '..'
+import defaultConfig from '../config.json'
+import { type Config } from '../types'
+import autocompletion from './lookup/autocompletion'
 import diff from './lookup/diff'
+import Authenticate from './utils/authenticate'
 
 export type { WhoAmIResponse } from './utils/authenticate'
 
 export default class TwakeIdentityServer extends MatrixIdentityServer {
   declare conf: Config
-  constructor(parent: TwakeServer, confDesc?: ConfigDescription) {
+  constructor(
+    parent: TwakeServer,
+    confDesc?: ConfigDescription,
+    logger?: TwakeLogger
+  ) {
     if (confDesc == null) confDesc = defaultConfig
-    super(parent.conf, confDesc)
+    super(parent.conf, confDesc, logger)
     this.authenticate = Authenticate(this.db, this.conf)
     const superReady = this.ready
     this.ready = new Promise((resolve, reject) => {
@@ -148,9 +153,14 @@ export default class TwakeIdentityServer extends MatrixIdentityServer {
            *            example:
            *              matches: [{uid: dwho, mail: dwho@badwolf.com}]
            */
-          this.api.post['/_twake/identity/v1/lookup/match'] =
-            autocompletion(parent)
-          this.api.post['/_twake/identity/v1/lookup/diff'] = diff(parent)
+          this.api.post['/_twake/identity/v1/lookup/match'] = autocompletion(
+            parent,
+            this.logger
+          )
+          this.api.post['/_twake/identity/v1/lookup/diff'] = diff(
+            parent,
+            this.logger
+          )
           resolve(true)
         })
         /* istanbul ignore next */

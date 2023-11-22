@@ -1,4 +1,5 @@
 import { type ConfigDescription } from '@twake/config-parser'
+import { type TwakeLogger } from '@twake/logger'
 import MatrixApplicationServer, {
   type AppService,
   type ClientEvent
@@ -8,14 +9,17 @@ import type TwakeServer from '..'
 import defaultConfig from '../config.json'
 import { TwakeRoom } from './models/room'
 import { extendRoutes } from './routes'
-
 export default class TwakeApplicationServer
   extends MatrixApplicationServer
   implements AppService
 {
-  constructor(parent: TwakeServer, confDesc?: ConfigDescription) {
+  constructor(
+    parent: TwakeServer,
+    confDesc?: ConfigDescription,
+    logger?: TwakeLogger
+  ) {
     if (confDesc == null) confDesc = defaultConfig
-    super(parent.conf, confDesc)
+    super(parent.conf, confDesc, logger)
     extendRoutes(this, parent)
 
     this.on('ephemeral_type: m.presence', (event: ClientEvent) => {
@@ -82,7 +86,7 @@ export default class TwakeApplicationServer
               )
             })
             .catch((e) => {
-              console.error(e)
+              this.logger.error(e)
             })
         }
       }

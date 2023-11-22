@@ -1,19 +1,49 @@
-import MatrixApplicationServer, { type Config } from '.'
-import defaultConfig from './config.json'
+import { ETransportType, getLogger, type TwakeLogger } from '@twake/logger'
+import express from 'express'
 import fs from 'fs'
 import path from 'path'
-import testConfig from './__testData__/config.json'
-import express from 'express'
 import request from 'supertest'
+import MatrixApplicationServer, { type Config } from '.'
+import { JEST_PROCESS_ROOT_PATH, removeLogFile } from '../jest.globals'
+import testConfig from './__testData__/config.json'
+import defaultConfig from './config.json'
 
 const endpointPrefix = '/_matrix/app/v1'
 const transactionEndpoint = endpointPrefix + '/transactions/1'
 const homeserverToken =
   'hsTokenTestwdakZQunWWNe3DZitAerw9aNqJ2a6HVp0sJtg7qTJWXcHnBjgN0NL'
 const registrationFilePath = path.join(__dirname, '..', 'registration.yaml')
+const logsDir = path.join(JEST_PROCESS_ROOT_PATH, 'logs')
+const logsFilename = 'app-server-test.log'
 
 describe('MatrixApplicationServer', () => {
   let appServer: MatrixApplicationServer
+  let logger: TwakeLogger
+
+  beforeAll(() => {
+    logger = getLogger({
+      logging: {
+        transports: [
+          {
+            type: ETransportType.FILE,
+            options: {
+              dirname: logsDir,
+              filename: logsFilename
+            }
+          }
+        ]
+      }
+    })
+  })
+
+  afterAll((done) => {
+    // eslint-disable-next-line @typescript-eslint/no-misused-promises
+    logger.on('finish', async () => {
+      await removeLogFile(path.join(logsDir, logsFilename))
+      done()
+    })
+    logger.end()
+  })
 
   describe('getConfigurationFile', () => {
     afterEach(() => {
@@ -28,13 +58,13 @@ describe('MatrixApplicationServer', () => {
         '__testData__',
         'config.json'
       )
-      appServer = new MatrixApplicationServer()
+      appServer = new MatrixApplicationServer(undefined, undefined, logger)
       expect(appServer.conf).toStrictEqual(testConfig)
     })
 
     it('should return default config', async () => {
       delete process.env.TWAKE_AS_SERVER_CONF
-      appServer = new MatrixApplicationServer()
+      appServer = new MatrixApplicationServer(undefined, undefined, logger)
       expect(appServer.conf).toStrictEqual(defaultConfig)
     })
 
@@ -43,7 +73,7 @@ describe('MatrixApplicationServer', () => {
       const spyOnConfigParser = jest
         .spyOn(jest.requireActual('@twake/config-parser'), 'default')
         .mockImplementation(() => defaultConfig)
-      appServer = new MatrixApplicationServer()
+      appServer = new MatrixApplicationServer(undefined, undefined, logger)
       expect(spyOnConfigParser).toHaveBeenCalledTimes(1)
       expect(spyOnConfigParser).toHaveBeenCalledWith(
         defaultConfig,
@@ -59,7 +89,7 @@ describe('MatrixApplicationServer', () => {
         namespaces: { users: [] },
         push_ephemeral: true
       }
-      appServer = new MatrixApplicationServer(config)
+      appServer = new MatrixApplicationServer(config, undefined, logger)
       expect(appServer.conf).toStrictEqual(config)
     })
   })
@@ -69,7 +99,7 @@ describe('MatrixApplicationServer', () => {
 
     beforeAll(() => {
       app = express()
-      appServer = new MatrixApplicationServer(testConfig)
+      appServer = new MatrixApplicationServer(testConfig, undefined, logger)
       app.use(appServer.router.routes)
     })
 

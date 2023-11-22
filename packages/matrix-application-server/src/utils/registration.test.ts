@@ -1,7 +1,10 @@
+import { getLogger, type TwakeLogger } from '@twake/logger'
 import fs from 'fs'
 import yaml from 'js-yaml'
+import moment from 'moment'
 import path from 'path'
 import { type Config } from '..'
+import { JEST_PROCESS_ROOT_PATH } from '../../jest.globals'
 import defaultConfig from '../config.json'
 import { AppServiceRegistration, type AppServiceOutput } from './registration'
 
@@ -33,6 +36,12 @@ const testConfig = {
 }
 
 describe('Registration', () => {
+  let logger: TwakeLogger
+
+  beforeAll(() => {
+    logger = getLogger()
+  })
+
   describe('Class constructor (with setter and getter)', () => {
     let spyOnLoad: jest.SpyInstance
 
@@ -41,7 +50,10 @@ describe('Registration', () => {
     })
 
     it('should create a class instance based on config', () => {
-      const appServiceRegistration = new AppServiceRegistration(testConfig)
+      const appServiceRegistration = new AppServiceRegistration(
+        testConfig,
+        logger
+      )
       expect(spyOnLoad).not.toHaveBeenCalled()
       expect(appServiceRegistration.asToken).not.toBeNull()
       expect(appServiceRegistration.asToken).not.toBeUndefined()
@@ -62,11 +74,14 @@ describe('Registration', () => {
     })
 
     it('should create a class instance based on config with some default values', () => {
-      const appServiceRegistration = new AppServiceRegistration({
-        ...testConfig,
-        namespaces: undefined,
-        push_ephemeral: undefined
-      })
+      const appServiceRegistration = new AppServiceRegistration(
+        {
+          ...testConfig,
+          namespaces: undefined,
+          push_ephemeral: undefined
+        },
+        logger
+      )
       expect(spyOnLoad).not.toHaveBeenCalled()
       expect(appServiceRegistration.asToken).not.toBeNull()
       expect(appServiceRegistration.asToken).not.toBeUndefined()
@@ -87,7 +102,7 @@ describe('Registration', () => {
         ...testConfig,
         registration_file_path: yamlTestFilePath
       }
-      const appServiceRegistration = new AppServiceRegistration(config)
+      const appServiceRegistration = new AppServiceRegistration(config, logger)
       expect(spyOnLoad).toHaveBeenCalledTimes(1)
       expect(appServiceRegistration.asToken).toEqual('as_token_test')
       expect(appServiceRegistration.hsToken).toEqual(
@@ -116,7 +131,7 @@ describe('Registration', () => {
       }
       let appServiceRegistration: AppServiceRegistration | undefined
       try {
-        appServiceRegistration = new AppServiceRegistration(config)
+        appServiceRegistration = new AppServiceRegistration(config, logger)
       } catch (e) {
         expect(spyOnLoad).toHaveBeenCalledTimes(1)
         expect(e).toBeInstanceOf(yaml.YAMLException)
@@ -129,7 +144,7 @@ describe('Registration', () => {
         ...testConfig,
         base_url: false
       }
-      expect(() => new AppServiceRegistration(config)).toThrowError(
+      expect(() => new AppServiceRegistration(config, logger)).toThrowError(
         new Error('The value of "url" field in configuration must be a string')
       )
     })
@@ -139,7 +154,7 @@ describe('Registration', () => {
         ...testConfig,
         base_url: 'falsy_url'
       }
-      expect(() => new AppServiceRegistration(config)).toThrowError(
+      expect(() => new AppServiceRegistration(config, logger)).toThrowError(
         new Error(
           'The value of "url" field in configuration is not a correct url'
         )
@@ -151,7 +166,7 @@ describe('Registration', () => {
         ...testConfig,
         sender_localpart: false
       }
-      expect(() => new AppServiceRegistration(config)).toThrowError(
+      expect(() => new AppServiceRegistration(config, logger)).toThrowError(
         new Error(
           'The value of "sender_localpart" field in configuration must be a string'
         )
@@ -163,7 +178,7 @@ describe('Registration', () => {
         ...testConfig,
         push_ephemeral: 'falsy'
       }
-      expect(() => new AppServiceRegistration(config)).toThrowError(
+      expect(() => new AppServiceRegistration(config, logger)).toThrowError(
         new Error(
           'The value of "push_ephemeral" field in configuration must be a boolean'
         )
@@ -175,7 +190,7 @@ describe('Registration', () => {
         ...testConfig,
         namespaces: false
       }
-      expect(() => new AppServiceRegistration(config)).toThrowError(
+      expect(() => new AppServiceRegistration(config, logger)).toThrowError(
         new Error(
           'The value of "namespaces" field in configuration must be an object'
         )
@@ -189,7 +204,7 @@ describe('Registration', () => {
           falsyField: null
         }
       }
-      expect(() => new AppServiceRegistration(config)).toThrowError(
+      expect(() => new AppServiceRegistration(config, logger)).toThrowError(
         new Error(
           'The field "falsyField" does not belong to the authorized fields: users, rooms, aliases'
         )
@@ -203,7 +218,7 @@ describe('Registration', () => {
           users: false
         }
       }
-      expect(() => new AppServiceRegistration(config)).toThrowError(
+      expect(() => new AppServiceRegistration(config, logger)).toThrowError(
         new Error('The value of field "users" should be an array')
       )
     })
@@ -219,7 +234,7 @@ describe('Registration', () => {
           ]
         }
       }
-      expect(() => new AppServiceRegistration(config)).toThrowError(
+      expect(() => new AppServiceRegistration(config, logger)).toThrowError(
         new Error('regex field is not defined for "users" field at index 0')
       )
     })
@@ -236,7 +251,7 @@ describe('Registration', () => {
           ]
         }
       }
-      expect(() => new AppServiceRegistration(config)).toThrowError(
+      expect(() => new AppServiceRegistration(config, logger)).toThrowError(
         new Error('regex field should be a string for "users" field at index 0')
       )
     })
@@ -252,7 +267,10 @@ describe('Registration', () => {
     })
 
     it('createRegisterFile: should create registration.yaml file', () => {
-      const appServiceRegistration = new AppServiceRegistration(testConfig)
+      const appServiceRegistration = new AppServiceRegistration(
+        testConfig,
+        logger
+      )
       appServiceRegistration.protocols = ['test']
       appServiceRegistration.rateLimited = false
 
@@ -277,26 +295,22 @@ describe('Registration', () => {
 
       expect(spyOnDump).toHaveBeenCalledTimes(1)
       expect(spyOnDump).toHaveBeenCalledWith(expectedFileContent)
-      expect(spyOnWriteFileSync).toHaveBeenCalledTimes(1)
       expect(fs.existsSync(testConfig.registration_file_path)).toEqual(true)
       fs.unlinkSync(testConfig.registration_file_path)
     })
 
-    it('createRegisterFile: should keep yaml file if already exists', () => {
+    it('createRegisterFile: should keep yaml file if already exists', (done) => {
       const config: Config = {
         ...testConfig,
         registration_file_path: yamlTestFilePath
       }
-      const appServiceRegistration = new AppServiceRegistration(config)
+      const appServiceRegistration = new AppServiceRegistration(config, logger)
       appServiceRegistration.protocols = ['test']
       appServiceRegistration.rateLimited = false
-
-      const spyOnInfo = jest.spyOn(console, 'info')
 
       expect(fs.existsSync(config.registration_file_path)).toEqual(true)
 
       appServiceRegistration.createRegisterFile(config.registration_file_path)
-
       const fileContent = yaml.load(
         fs.readFileSync(config.registration_file_path, { encoding: 'utf8' })
       ) as AppServiceOutput
@@ -312,25 +326,63 @@ describe('Registration', () => {
           appServiceRegistration.pushEphemeral
       }
 
-      expect(spyOnInfo).toHaveBeenCalledTimes(1)
-      expect(spyOnInfo).toHaveBeenCalledWith(
-        'Application service registration file already exists'
-      )
       expect(fileContent).toStrictEqual(expectedFileContent)
       expect(fileContent.protocols).toBeUndefined()
       expect(fileContent.rate_limited).toBeUndefined()
       expect(spyOnDump).not.toHaveBeenCalled()
       expect(spyOnWriteFileSync).not.toHaveBeenCalled()
       expect(fs.existsSync(config.registration_file_path)).toEqual(true)
+
+      // eslint-disable-next-line @typescript-eslint/no-misused-promises
+      logger.on('finish', async () => {
+        const logFileFulfilled = async (logFilePath: string): Promise<void> => {
+          let timer: NodeJS.Timeout | null = null
+          await new Promise<void>((resolve, reject) => {
+            timer = setInterval(() => {
+              try {
+                if (fs.existsSync(logFilePath)) {
+                  const content = fs.readFileSync(logFilePath, 'utf-8')
+                  if (content != null && content.length > 0) {
+                    resolve()
+                  }
+                }
+              } catch (e) {
+                reject(e)
+              }
+            }, 1000)
+          })
+          if (timer != null) clearInterval(timer)
+        }
+
+        const rootLogsDir = path.join(JEST_PROCESS_ROOT_PATH, 'logs')
+        const logFilePath = path.join(
+          rootLogsDir,
+          `twake-${moment().format('YYYY-MM-DD')}.log`
+        )
+        await logFileFulfilled(logFilePath)
+        expect(fs.existsSync(logFilePath)).toEqual(true)
+        expect(fs.readFileSync(logFilePath, 'utf-8')).toEqual(
+          'info: Application service registration file already exists\n'
+        )
+        fs.unlinkSync(logFilePath)
+        done()
+      })
+      logger.end()
     })
 
     it('isRateLimited: should return true if rateLimited property is undefined', () => {
-      const appServiceRegistration = new AppServiceRegistration(testConfig)
+      const appServiceRegistration = new AppServiceRegistration(
+        testConfig,
+        logger
+      )
       expect(appServiceRegistration.isRateLimited()).toEqual(true)
     })
 
     it('isRateLimited: should return rateLimited property value if defined', () => {
-      const appServiceRegistration = new AppServiceRegistration(testConfig)
+      const appServiceRegistration = new AppServiceRegistration(
+        testConfig,
+        logger
+      )
       appServiceRegistration.rateLimited = false
       expect(appServiceRegistration.isRateLimited()).toEqual(false)
     })
@@ -343,7 +395,7 @@ describe('Registration', () => {
           aliases: []
         }
       }
-      const appServiceRegistration = new AppServiceRegistration(config)
+      const appServiceRegistration = new AppServiceRegistration(config, logger)
       expect(appServiceRegistration.isUserMatch('test', false)).toEqual(false)
     })
 
@@ -354,33 +406,45 @@ describe('Registration', () => {
           users: []
         }
       }
-      const appServiceRegistration = new AppServiceRegistration(config)
+      const appServiceRegistration = new AppServiceRegistration(config, logger)
       expect(appServiceRegistration.isUserMatch('test', false)).toEqual(false)
     })
 
     it('isUserMatch: should return false if sample does not match a regex', () => {
-      const appServiceRegistration = new AppServiceRegistration(testConfig)
+      const appServiceRegistration = new AppServiceRegistration(
+        testConfig,
+        logger
+      )
       expect(appServiceRegistration.isUserMatch('falsyUserId', false)).toEqual(
         false
       )
     })
 
     it('isUserMatch: should return true if sample matches a regex', () => {
-      const appServiceRegistration = new AppServiceRegistration(testConfig)
+      const appServiceRegistration = new AppServiceRegistration(
+        testConfig,
+        logger
+      )
       expect(
         appServiceRegistration.isUserMatch('@_irc_bridge_test', false)
       ).toEqual(true)
     })
 
     it('isUserMatch: should return true if sample matches a regex and restricting match to only exclusive regex', () => {
-      const appServiceRegistration = new AppServiceRegistration(testConfig)
+      const appServiceRegistration = new AppServiceRegistration(
+        testConfig,
+        logger
+      )
       expect(appServiceRegistration.isUserMatch('@_twake_test', true)).toEqual(
         true
       )
     })
 
     it('isUserMatch: should return false if sample matches a not exclusive regex and restricting match to only exclusive regex', () => {
-      const appServiceRegistration = new AppServiceRegistration(testConfig)
+      const appServiceRegistration = new AppServiceRegistration(
+        testConfig,
+        logger
+      )
       expect(
         appServiceRegistration.isUserMatch('@_irc_bridge_test', true)
       ).toEqual(false)
@@ -399,7 +463,7 @@ describe('Registration', () => {
         }
       }
 
-      const appServiceRegistration = new AppServiceRegistration(config)
+      const appServiceRegistration = new AppServiceRegistration(config, logger)
       expect(appServiceRegistration.isRoomMatch('@_twake_test', false)).toEqual(
         true
       )
@@ -418,7 +482,7 @@ describe('Registration', () => {
         }
       }
 
-      const appServiceRegistration = new AppServiceRegistration(config)
+      const appServiceRegistration = new AppServiceRegistration(config, logger)
       expect(
         appServiceRegistration.isAliasMatch('@_twake_test', false)
       ).toEqual(true)

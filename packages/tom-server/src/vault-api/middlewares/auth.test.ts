@@ -1,9 +1,10 @@
+import { type NextFunction, type Request, type Response } from 'express'
+import fetch from 'node-fetch'
 import { type TwakeDB } from '../../db'
 import { type Config } from '../../types'
 import { type expressAppHandler } from '../utils'
 import isAuth, { type tokenDetail } from './auth'
-import { type Request, type Response, type NextFunction } from 'express'
-import fetch from 'node-fetch'
+import { type TwakeLogger } from '@twake/logger'
 
 interface ITestRequest extends Partial<Request> {
   token?: tokenDetail
@@ -36,7 +37,12 @@ describe('Auth middleware', () => {
       .fn()
       .mockResolvedValue([
         { id: token.value, data: JSON.stringify(token.content) }
-      ])
+      ]),
+    logger: {
+      debug: jest.fn(),
+      error: jest.fn(),
+      warn: jest.fn()
+    } as unknown as TwakeLogger
   }
   const conf: Partial<Config> = {
     matrix_server: 'localhost'
@@ -44,10 +50,6 @@ describe('Auth middleware', () => {
   let mockRequest: ITestRequest
   let mockResponse: Partial<Response>
   const nextFunction: NextFunction = jest.fn()
-  jest.spyOn(console, 'error').mockImplementation(() => {})
-  jest.spyOn(console, 'debug').mockImplementation(() => {})
-  jest.spyOn(console, 'log').mockImplementation(() => {})
-  let spyConsoleWarn: jest.SpyInstance
   beforeAll(() => {
     mockResponse = {
       writeHead: jest.fn(),
@@ -55,7 +57,6 @@ describe('Auth middleware', () => {
       send: jest.fn(),
       end: jest.fn()
     }
-    spyConsoleWarn = jest.spyOn(console, 'warn').mockImplementation(() => {})
   })
 
   beforeEach(() => {
@@ -125,9 +126,12 @@ describe('Auth middleware', () => {
     }
     const handler: expressAppHandler = isAuth(db as TwakeDB, conf as Config)
     handler(mockRequest as Request, mockResponse as Response, nextFunction)
-    expect(spyConsoleWarn).toHaveBeenCalledWith('Access tried without token', {
-      authorization: 'falsy_token'
-    })
+    expect((db as TwakeDB).logger.warn).toHaveBeenCalledWith(
+      'Access tried without token',
+      {
+        authorization: 'falsy_token'
+      }
+    )
     expect(mockResponse.write).toHaveBeenCalledWith(
       JSON.stringify(matrixUnauthorizedError)
     )
@@ -143,7 +147,7 @@ describe('Auth middleware', () => {
     }
     const handler: expressAppHandler = isAuth(db as TwakeDB, conf as Config)
     handler(mockRequest as Request, mockResponse as Response, nextFunction)
-    expect(spyConsoleWarn).toHaveBeenCalledWith(
+    expect((db as TwakeDB).logger.warn).toHaveBeenCalledWith(
       'Access tried without token',
       {}
     )
@@ -160,7 +164,7 @@ describe('Auth middleware', () => {
     }
     const handler: expressAppHandler = isAuth(db as TwakeDB, conf as Config)
     handler(mockRequest as Request, mockResponse as Response, nextFunction)
-    expect(spyConsoleWarn).toHaveBeenCalledWith(
+    expect((db as TwakeDB).logger.warn).toHaveBeenCalledWith(
       'Access tried without token',
       {}
     )
@@ -189,12 +193,11 @@ describe('Auth middleware', () => {
     ;(fetch as jest.Mock<any, any, any>).mockResolvedValue({
       json: jest.fn().mockRejectedValue(errorMatrixServer)
     })
-    const spyConsoleDebug = jest.spyOn(console, 'debug')
     const handler: expressAppHandler = isAuth(db as TwakeDB, conf as Config)
     handler(mockRequest as Request, mockResponse as Response, nextFunction)
     await new Promise(process.nextTick)
     expect(db.insert).not.toHaveBeenCalled()
-    expect(spyConsoleDebug).toHaveBeenCalledWith(
+    expect((db as TwakeDB).logger.debug).toHaveBeenCalledWith(
       'Fetch error',
       errorMatrixServer
     )
@@ -214,7 +217,10 @@ describe('Auth middleware', () => {
     handler(mockRequest as Request, mockResponse as Response, nextFunction)
     await new Promise(process.nextTick)
     expect(db.insert).not.toHaveBeenCalled()
-    expect(spyConsoleWarn).toHaveBeenCalledWith('Bad token', userInfo)
+    expect((db as TwakeDB).logger.warn).toHaveBeenCalledWith(
+      'Bad token',
+      userInfo
+    )
     expect(mockResponse.write).toHaveBeenCalledWith(
       JSON.stringify(matrixUnauthorizedError)
     )
@@ -225,11 +231,10 @@ describe('Auth middleware', () => {
     const errorDb = new Error('An error occured in the database')
     jest.spyOn(db, 'get').mockResolvedValue([])
     jest.spyOn(db, 'insert').mockRejectedValue(errorDb)
-    const spyConsoleError = jest.spyOn(console, 'error')
     const handler: expressAppHandler = isAuth(db as TwakeDB, conf as Config)
     handler(mockRequest as Request, mockResponse as Response, nextFunction)
     await new Promise(process.nextTick)
-    expect(spyConsoleError).toHaveBeenCalledWith(
+    expect((db as TwakeDB).logger.error).toHaveBeenCalledWith(
       'Unable to insert a token',
       errorDb
     )

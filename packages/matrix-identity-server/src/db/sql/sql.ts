@@ -1,7 +1,8 @@
-import { type PgDatabase } from './pg'
+import { type TwakeLogger } from '@twake/logger'
 import { type Collections } from '..'
+import { type Config, type DbGetResult } from '../../types'
+import { type PgDatabase } from './pg'
 import { type SQLiteDatabase } from './sqlite'
-import { type DbGetResult, type Config } from '../../types'
 
 export type CreateDbMethod = (
   conf: Config,
@@ -47,9 +48,15 @@ abstract class SQL {
   ready: Promise<void>
   cleanJob?: NodeJS.Timeout
 
-  constructor(conf: Config) {
+  constructor(conf: Config, logger: TwakeLogger) {
     // @ts-expect-error method is defined in child class
-    this.ready = this.createDatabases(conf, tables, indexes, initializeValues)
+    this.ready = this.createDatabases(
+      conf,
+      tables,
+      indexes,
+      initializeValues,
+      logger
+    )
   }
 
   // eslint-disable-next-line @typescript-eslint/promise-function-async

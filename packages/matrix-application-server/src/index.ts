@@ -1,4 +1,9 @@
 import configParser, { type ConfigDescription } from '@twake/config-parser'
+import {
+  getLogger,
+  type Config as LoggerConfig,
+  type TwakeLogger
+} from '@twake/logger'
 import { EventEmitter } from 'events'
 import fs from 'fs'
 import defaultConfDesc from './config.json'
@@ -66,6 +71,11 @@ export default class MatrixApplicationServer extends EventEmitter {
   conf: Config
   appServiceRegistration: AppServiceRegistration
   lastProcessedTxnId = ''
+  private readonly _logger: TwakeLogger
+
+  get logger(): TwakeLogger {
+    return this._logger
+  }
 
   /**
    * Construct a new application service.
@@ -73,14 +83,22 @@ export default class MatrixApplicationServer extends EventEmitter {
    * @param {Partial<Config>} conf The configuration object for the service
    * @param {ConfigDescription} confDesc The default configuration object
    */
-  constructor(conf?: Partial<Config>, confDesc?: ConfigDescription) {
+  constructor(
+    conf?: Partial<Config>,
+    confDesc?: ConfigDescription,
+    logger?: TwakeLogger
+  ) {
     super()
     if (confDesc == null) confDesc = defaultConfDesc as ConfigDescription
     this.conf = configParser(
       confDesc,
       this._getConfigurationFile(conf)
     ) as Config
-    this.appServiceRegistration = new AppServiceRegistration(this.conf)
+    this._logger = logger ?? getLogger(this.conf as unknown as LoggerConfig)
+    this.appServiceRegistration = new AppServiceRegistration(
+      this.conf,
+      this._logger
+    )
     this.appServiceRegistration.createRegisterFile(
       this.conf.registration_file_path
     )

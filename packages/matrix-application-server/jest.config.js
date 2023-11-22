@@ -16,5 +16,6 @@ export default {
     "@twake/(.*)$": "<rootDir>/../$1/src",
   },
   clearMocks: true,
-  restoreMocks: true
+  restoreMocks: true,
+  globalTeardown: '<rootDir>/jest.global-teardown.ts'
 }

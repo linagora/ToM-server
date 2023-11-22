@@ -43,12 +43,14 @@
   "dependencies": {
     "@twake/config-parser": "*",
     "@twake/crypto": "*",
+    "@twake/logger": "*",
     "events": "^3.3.0",
     "express-validator": "^7.0.1",
     "js-yaml": "^4.1.0"
   },
   "devDependencies": {
     "@types/events": "^3.0.0",
-    "@types/js-yaml": "^4.0.5"
+    "@types/js-yaml": "^4.0.5",
+    "moment": "^2.29.4"
   }
 }

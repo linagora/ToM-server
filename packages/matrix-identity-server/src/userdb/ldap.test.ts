@@ -79,9 +79,9 @@ describe('LDAP', () => {
       ldap_password: 'root',
       ldap_base: 'ou=users,o=example'
     })
-    const consoleErrorSpy = jest.spyOn(console, 'error')
+    const loggerErrorSpy = jest.spyOn(userDB.logger, 'error')
     await userDB.ready
-    expect(consoleErrorSpy).toHaveBeenCalled()
+    expect(loggerErrorSpy).toHaveBeenCalled()
   })
 
   it('should provide match', (done) => {

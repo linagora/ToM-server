@@ -23,7 +23,8 @@ const initializeDb = (server: TwakeServer): Promise<void> => {
               rooms: 'id varchar(64) PRIMARY KEY, filter varchar(64)'
             },
             {},
-            {}
+            {},
+            server.logger
           )
           .then(() => {
             server.db = server.idServer.db // as TwakeDB

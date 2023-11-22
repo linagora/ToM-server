@@ -1,6 +1,5 @@
 import type MatrixIdentityServer from '..'
-import { MatrixDB } from '..'
-import { type DbGetResult } from '..'
+import { MatrixDB, type DbGetResult } from '..'
 import updateHash, { type UpdatableFields } from '../lookup/updateHash'
 import { epoch } from '../utils'
 
@@ -43,7 +42,7 @@ const updateUsers = async (idServer: MatrixIdentityServer): Promise<void> => {
           })
           .catch((e) => {
             /* istanbul ignore next */
-            console.error('Unable to query Matrix DB', e)
+            idServer.logger.error('Unable to query Matrix DB', e)
             /* istanbul ignore next */
             resolve([])
           })
@@ -93,7 +92,10 @@ const updateUsers = async (idServer: MatrixIdentityServer): Promise<void> => {
         phone: user.mobile as string,
         active
       }
-      console.log(`New user detected: ${user.uid as string}, status:`, active)
+      idServer.logger.debug(
+        `New user detected: ${user.uid as string}, status:`,
+        active
+      )
       // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
     } else if (matrixUsers.includes(uid) && !knownActiveUsers[pos]) {
       updates.push(
@@ -104,7 +106,7 @@ const updateUsers = async (idServer: MatrixIdentityServer): Promise<void> => {
           active: 1
         })
       )
-      console.log(`User ${user.uid as string} becomes active`)
+      idServer.logger.debug(`User ${user.uid as string} becomes active`)
     }
   })
 
@@ -114,7 +116,7 @@ const updateUsers = async (idServer: MatrixIdentityServer): Promise<void> => {
   const uids = users.map((user) => user.uid)
 
   const setInactive = async (address: string): Promise<void> => {
-    console.log(`User ${address} becomes inactive`)
+    idServer.logger.debug(`User ${address} becomes inactive`)
     const res = await idServer.db.get('userHistory', ['active'], {
       address
     })
@@ -140,7 +142,7 @@ const updateUsers = async (idServer: MatrixIdentityServer): Promise<void> => {
   if (updates.length > 0)
     await Promise.all(updates).catch((e) => {
       /* istanbul ignore next */
-      console.error('Error during user updates', e)
+      idServer.logger.error('Error during user updates', e)
     })
 }
 

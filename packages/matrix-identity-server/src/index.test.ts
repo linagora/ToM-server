@@ -1,13 +1,14 @@
+import { Hash, randomString, supportedHashes } from '@twake/crypto'
+import { getLogger, type TwakeLogger } from '@twake/logger'
 import express from 'express'
+import fs from 'fs'
+import fetch from 'node-fetch'
+import querystring from 'querystring'
 import request from 'supertest'
+import buildUserDB from './__testData__/buildUserDB'
+import defaultConfig from './__testData__/registerConf.json'
 import IdServer from './index'
 import { type Config } from './types'
-import fs from 'fs'
-import querystring from 'querystring'
-import fetch from 'node-fetch'
-import { Hash, randomString, supportedHashes } from '@twake/crypto'
-import defaultConfig from './__testData__/registerConf.json'
-import buildUserDB from './__testData__/buildUserDB'
 
 jest.mock('node-fetch', () => jest.fn())
 const sendMailMock = jest.fn()
@@ -22,8 +23,10 @@ process.env.TWAKE_IDENTITY_SERVER_CONF = './src/__testData__/registerConf.json'
 let idServer: IdServer
 let app: express.Application
 let validToken: string
+let logger: TwakeLogger
 
 beforeAll((done) => {
+  logger = getLogger()
   const conf: Config = {
     ...defaultConfig,
     database_engine: 'sqlite',
@@ -40,7 +43,7 @@ beforeAll((done) => {
   }
   buildUserDB(conf)
     .then(() => {
-      idServer = new IdServer()
+      idServer = new IdServer(undefined, undefined, logger)
       app = express()
 
       idServer.ready
@@ -114,15 +117,17 @@ describe('/_matrix/identity/v2/account/register', () => {
     expect(response.body.errcode).toEqual('M_MISSING_PARAMS')
   })
   it('should reject bad json', async () => {
-    console.error = jest.fn()
+    const spyOnLoggerError = jest.spyOn(idServer.logger, 'error')
     const response = await request(app)
       .post('/_matrix/identity/v2/account/register')
       .send('{"access_token": "bar"')
       .set('Content-Type', 'application/json')
       .set('Accept', 'application/json')
     expect(response.statusCode).toBe(400)
-    // @ts-expect-error mock is unknown
-    expect(console.error.mock.calls[0][0]).toMatch(/JSON error/i)
+    expect(spyOnLoggerError).toHaveBeenCalledWith(
+      'JSON error',
+      expect.anything()
+    )
   })
   it('should accept valid request', async () => {
     const mockResponse = Promise.resolve({
@@ -151,7 +156,7 @@ describe('/_matrix/identity/v2/account/register', () => {
     validToken = response.body.token
   })
   it('should log additional parameters', async () => {
-    console.warn = jest.fn()
+    const spyOnLoggerWarn = jest.spyOn(idServer.logger, 'warn')
     const response = await request(app)
       .post('/_matrix/identity/v2/account/register')
       .set('Content-Type', 'application/x-www-form-urlencoded')
@@ -166,8 +171,9 @@ describe('/_matrix/identity/v2/account/register', () => {
       )
       .set('Accept', 'application/json')
     expect(response.statusCode).toBe(200)
-    // @ts-expect-error mock is unknown
-    expect(console.warn.mock.calls[0][1][0]).toMatch(/\badditional_param\b/i)
+    expect(spyOnLoggerWarn).toHaveBeenCalledWith('Additional parameters', [
+      'additional_param'
+    ])
   })
   it('should reject missing "sub" from server', async () => {
     const mockResponse = Promise.resolve({

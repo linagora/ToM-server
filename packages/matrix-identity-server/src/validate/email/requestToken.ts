@@ -1,15 +1,15 @@
+import { randomString } from '@twake/crypto'
+import fs from 'fs'
+import { type tokenContent } from '../../account/register'
+import type MatrixIdentityServer from '../../index'
+import { type Config } from '../../types'
 import {
   jsonContent,
   send,
   validateParameters,
   type expressAppHandler
 } from '../../utils'
-import { type tokenContent } from '../../account/register'
 import { errMsg } from '../../utils/errors'
-import type MatrixIdentityServer from '../../index'
-import { type Config } from '../../types'
-import fs from 'fs'
-import { randomString } from '@twake/crypto'
 import Mailer from '../../utils/mailer'
 
 interface RequestTokenArgs {
@@ -91,8 +91,8 @@ const RequestToken = (idServer: MatrixIdentityServer): expressAppHandler => {
   )
   return (req, res) => {
     idServer.authenticate(req, res, (idToken: tokenContent) => {
-      jsonContent(req, res, (obj) => {
-        validateParameters(res, schema, obj, (obj) => {
+      jsonContent(req, res, idServer.logger, (obj) => {
+        validateParameters(res, schema, obj, idServer.logger, (obj) => {
           const dst = (obj as RequestTokenArgs).email
           if (!clientSecretRe.test((obj as RequestTokenArgs).client_secret)) {
             send(res, 400, errMsg('invalidParam', 'invalid client_secret'))
@@ -137,7 +137,7 @@ const RequestToken = (idServer: MatrixIdentityServer): expressAppHandler => {
                 })
                 .catch((err) => {
                   /* istanbul ignore next */
-                  console.error('Token error', err)
+                  idServer.logger.error('Token error', err)
                   /* istanbul ignore next */
                   send(res, 400, errMsg('unknown', err))
                 })

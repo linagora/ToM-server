@@ -26,9 +26,9 @@ const updateHashes = (idServer: MatrixIdentityServer): Promise<void> => {
       const entries = await matrixDb.getAll('users', ['name']).catch((e) => {
         /* istanbul ignore if */
         if (/relation "users" does not exist/.test(e)) {
-          console.log('Matrix DB seems not ready')
+          idServer.logger.debug('Matrix DB seems not ready')
         } else {
-          console.error('Unable to query Matrix DB', e)
+          idServer.logger.error('Unable to query Matrix DB', e)
         }
       })
       matrixDb.close()
@@ -51,7 +51,7 @@ const updateHashes = (idServer: MatrixIdentityServer): Promise<void> => {
     const logAndReject = (msg: string) => {
       return (e: any) => {
         /* istanbul ignore next */
-        console.error(msg, e)
+        idServer.logger.error(msg, e)
         /* istanbul ignore next */
         reject(e)
       }
@@ -66,7 +66,7 @@ const updateHashes = (idServer: MatrixIdentityServer): Promise<void> => {
         db.deleteEqual('hashes', 'pepper', rows[0].data as string).catch(
           (e) => {
             /* istanbul ignore next */
-            console.error('Unable to clean old hashes', e)
+            idServer.logger.error('Unable to clean old hashes', e)
           }
         )
       })
@@ -114,7 +114,7 @@ const updateHashes = (idServer: MatrixIdentityServer): Promise<void> => {
               })
               .catch((e) => {
                 /* istanbul ignore next */
-                console.error('Unable to parse user DB', e)
+                idServer.logger.error('Unable to parse user DB', e)
                 /* istanbul ignore next */
                 reject(e)
               })
@@ -124,7 +124,10 @@ const updateHashes = (idServer: MatrixIdentityServer): Promise<void> => {
           .then(() => {
             db.update('keys', { data: newPepper }, 'name', 'pepper')
               .then(() => {
-                console.log('Identity server: new pepper published', newPepper)
+                idServer.logger.debug(
+                  'Identity server: new pepper published',
+                  newPepper
+                )
                 resolve()
               })
               .catch(logAndReject('Unable to publish new pepper'))

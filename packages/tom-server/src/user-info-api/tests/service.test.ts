@@ -1,13 +1,13 @@
-import type { NextFunction, Request, Response } from 'express'
+import { userDB as UserDB } from '@twake/matrix-identity-server'
+import { type NextFunction, type Response } from 'express'
 import ldap from 'ldapjs'
 import type { Config } from '../../types'
-import { userDB as UserDB } from '@twake/matrix-identity-server'
 import UserInfoService from '../services'
 import type { UserInformation } from '../types'
 
 const server = ldap.createServer()
 
-interface FilterRequest extends Request {
+interface LDAPRequest extends ldap.SearchRequest {
   filter: ldap.Filter
   dn: string
 }
@@ -21,7 +21,7 @@ const config = {
 beforeAll((done) => {
   server.search(
     'ou=users, o=example',
-    (req: FilterRequest, res: Response, _next: NextFunction) => {
+    (req: LDAPRequest, res: Response, _next: NextFunction) => {
       const obj = {
         dn: req.dn.toString(),
         attributes: {

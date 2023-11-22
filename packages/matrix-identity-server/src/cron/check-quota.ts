@@ -25,7 +25,7 @@ export default async (conf: Config, db: IdentityServerDb): Promise<void> => {
 
           await saveUserUsage(db, user, usage)
         } catch (error) {
-          console.warn('Failed to save user usage', error)
+          db.logger.warn('Failed to save user usage', error)
         }
       })
     )

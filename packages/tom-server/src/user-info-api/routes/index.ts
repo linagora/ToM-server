@@ -5,14 +5,23 @@ import authMiddleware from '../../utils/middlewares/auth.middleware'
 import UserInfoController from '../controllers'
 import type TwakeIdentityServer from '../../identity-server'
 import checkLdapMiddleware from '../middlewares/require-ldap'
-
+import {
+  type TwakeLogger,
+  getLogger,
+  type Config as LoggerConfig
+} from '@twake/logger'
 export const PATH = '/_twake/v1/user_info'
 
-export default (idServer: TwakeIdentityServer, config: Config): Router => {
+export default (
+  idServer: TwakeIdentityServer,
+  config: Config,
+  defaultLogger?: TwakeLogger
+): Router => {
+  const logger = defaultLogger ?? getLogger(config as unknown as LoggerConfig)
   const router = Router()
-  const authenticator = authMiddleware(idServer.db, config)
+  const authenticator = authMiddleware(idServer.db, config, logger)
   const userInfoController = new UserInfoController(idServer.userDB)
-  const requireLdap = checkLdapMiddleware(config)
+  const requireLdap = checkLdapMiddleware(config, logger)
 
   /**
    * @openapi

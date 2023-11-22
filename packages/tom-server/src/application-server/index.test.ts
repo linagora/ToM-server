@@ -1,3 +1,4 @@
+import { type TwakeLogger } from '@twake/logger'
 import { type DbGetResult } from '@twake/matrix-identity-server'
 import express from 'express'
 import fs from 'fs'
@@ -37,6 +38,13 @@ const authToken =
   'authTokenddddddddddddddddddddddddddddddddddddddddddddddddddddddd'
 
 jest.unmock('node-fetch')
+
+const mockLogger: Partial<TwakeLogger> = {
+  debug: jest.fn(),
+  error: jest.fn(),
+  warn: jest.fn(),
+  info: jest.fn()
+}
 
 describe('ApplicationServer', () => {
   const ldapHostPort = 21389
@@ -851,8 +859,11 @@ describe('ApplicationServer', () => {
     describe('on login', () => {
       it('should log an error when m.presence event sender is not found in user database', (done) => {
         const ldapUid = 'test'
-        const appService = new AppServiceAPI(twakeServer)
-        const spyOnConsole = jest.spyOn(console, 'error')
+        const appService = new AppServiceAPI(
+          twakeServer,
+          undefined,
+          mockLogger as TwakeLogger
+        )
         jest.spyOn(twakeServer.idServer.userDB, 'get').mockResolvedValue([])
         jest.spyOn(TwakeRoom, 'getAllRooms').mockResolvedValue([])
         jest.spyOn(twakeServer.matrixDb, 'get').mockResolvedValue([])
@@ -868,8 +879,8 @@ describe('ApplicationServer', () => {
           type: 'm.presence'
         })
         setTimeout(() => {
-          expect(spyOnConsole).toHaveBeenCalledTimes(1)
-          expect(spyOnConsole).toHaveBeenCalledWith(
+          expect(mockLogger.error).toHaveBeenCalledTimes(1)
+          expect(mockLogger.error).toHaveBeenCalledWith(
             new Error(
               `User with ${
                 twakeServer.conf.ldap_uid_field as string
@@ -881,8 +892,11 @@ describe('ApplicationServer', () => {
       })
 
       it('should complete all join requests even if an error occurs', (done) => {
-        const appService = new AppServiceAPI(twakeServer)
-        const spyOnConsole = jest.spyOn(console, 'error')
+        const appService = new AppServiceAPI(
+          twakeServer,
+          undefined,
+          mockLogger as TwakeLogger
+        )
         jest
           .spyOn(fetch, 'default')
           .mockResolvedValueOnce(new fetch.Response())
@@ -918,7 +932,7 @@ describe('ApplicationServer', () => {
           type: 'm.presence'
         })
         setTimeout(() => {
-          expect(spyOnConsole).not.toHaveBeenCalled()
+          expect(mockLogger.error).not.toHaveBeenCalled()
           done()
         }, 3000)
       })
