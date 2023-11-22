@@ -71,7 +71,8 @@ describe('Vault API server', () => {
       userdb_engine: 'sqlite',
       userdb_host: testFilePath,
       matrix_database_engine: 'sqlite',
-      matrix_database_host: matrixTestFilePath
+      matrix_database_host: matrixTestFilePath,
+      enable_company_features: true
     }
     buildTokenTable(conf as Config)
       .then(() => {

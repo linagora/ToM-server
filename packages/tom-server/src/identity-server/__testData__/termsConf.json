@@ -44,5 +44,6 @@
   "userdb_engine": "sqlite",
   "userdb_host": "./src/identity-server/__testData__/terms.db",
   "registration_file_path": "registration.yaml",
-  "sender_localpart": "twake"
+  "sender_localpart": "twake",
+  "enable_company_features": true
 }
