@@ -185,6 +185,17 @@ describe('Registration', () => {
       )
     })
 
+    it('should use PUSH_EPHEMERAL environment variable if it is defined', () => {
+      process.env.PUSH_EPHEMERAL = 'true'
+      const config: any = {
+        ...testConfig,
+        push_ephemeral: 'falsy'
+      }
+      const appServiceRegistration = new AppServiceRegistration(config, logger)
+      expect(appServiceRegistration.pushEphemeral).toEqual(true)
+      delete process.env.PUSH_EPHEMERAL
+    })
+
     it('should throw error if namespaces is not an object', () => {
       const config: any = {
         ...testConfig,
@@ -254,6 +265,21 @@ describe('Registration', () => {
       expect(() => new AppServiceRegistration(config, logger)).toThrowError(
         new Error('regex field should be a string for "users" field at index 0')
       )
+    })
+
+    it('should use NAMESPACES environment variable if it is defined', () => {
+      process.env.NAMESPACES = JSON.stringify(testConfig.namespaces)
+      const config: any = {
+        ...testConfig,
+        namespaces: {
+          users: false
+        }
+      }
+      const appServiceRegistration = new AppServiceRegistration(config, logger)
+      expect(appServiceRegistration.namespaces).toStrictEqual(
+        testConfig.namespaces
+      )
+      delete process.env.NAMESPACES
     })
   })
 

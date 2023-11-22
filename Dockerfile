@@ -28,7 +28,7 @@ env BASE_URL= \
     MATRIX_DATABASE_USER= \
     OIDC_ISSUER= \
     SERVER_NAME= \
-    TEMPLATE_DIR=
+    TEMPLATE_DIR= 
 
 RUN apt update && apt -y dist-upgrade
 

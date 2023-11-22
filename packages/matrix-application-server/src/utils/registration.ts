@@ -1,8 +1,8 @@
 import { randomString } from '@twake/crypto'
 import {
   getLogger,
-  type TwakeLogger,
-  type Config as LoggerConfig
+  type Config as LoggerConfig,
+  type TwakeLogger
 } from '@twake/logger'
 import fs from 'fs'
 import { dump, load } from 'js-yaml'
@@ -138,12 +138,16 @@ export class AppServiceRegistration {
    * @throws If parameter is not a boolean
    */
   private set pushEphemeral(pushEphemeral: boolean) {
-    if (typeof pushEphemeral !== 'boolean') {
-      throw new Error(
-        'The value of "push_ephemeral" field in configuration must be a boolean'
-      )
+    if (process.env.PUSH_EPHEMERAL != null) {
+      this._pushEphemeral = process.env.PUSH_EPHEMERAL === 'true'
+    } else {
+      if (typeof pushEphemeral !== 'boolean') {
+        throw new Error(
+          'The value of "push_ephemeral" field in configuration must be a boolean'
+        )
+      }
+      this._pushEphemeral = pushEphemeral
     }
-    this._pushEphemeral = pushEphemeral
   }
 
   get pushEphemeral(): boolean {
@@ -156,23 +160,28 @@ export class AppServiceRegistration {
    * @throws If parameter does not respect the Namespaces interface structure
    */
   private set namespaces(namespaces: Namespaces) {
-    if (typeof namespaces !== 'object') {
+    const namespacesToSet: Namespaces =
+      process.env.NAMESPACES != null
+        ? JSON.parse(process.env.NAMESPACES)
+        : namespaces
+
+    if (typeof namespacesToSet !== 'object') {
       throw new Error(
-        'The value of "namespaces" field in configuration must be an object'
+        `The value of "namespaces" field in configuration must be an object`
       )
     }
     // TODO missing test for left side
     this._namespaces = this.namespaces ?? {}
-    const keys: string[] = Object.keys(namespaces)
+    const keys: string[] = Object.keys(namespacesToSet)
     const authorizedKeys = ['users', 'rooms', 'aliases']
     for (const key of keys) {
       if (authorizedKeys.includes(key)) {
-        if (Array.isArray(namespaces[key as keyof Namespaces])) {
+        if (Array.isArray(namespacesToSet[key as keyof Namespaces])) {
           if (this._namespaces[key as keyof Namespaces] == null) {
             this._namespaces[key as keyof Namespaces] = []
           }
           // @ts-expect-error namespaces[key] is defined
-          namespaces[key as keyof Namespaces].forEach(
+          namespacesToSet[key as keyof Namespaces].forEach(
             (namespace: Namespace, index: number) => {
               if (namespace.regex == null) {
                 throw new Error(

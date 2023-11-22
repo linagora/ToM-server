@@ -1,5 +1,5 @@
 import { type TwakeLogger } from '@twake/logger'
-import { AppServiceOutput } from '@twake/matrix-application-server/src/utils'
+import { type AppServiceOutput } from '@twake/matrix-application-server/src/utils'
 import { type DbGetResult } from '@twake/matrix-identity-server'
 import express from 'express'
 import fs from 'fs'
@@ -212,7 +212,7 @@ describe('ApplicationServer', () => {
   describe('Integration tests', () => {
     let appServiceToken: string
     let newRoomId: string
-    let bb8MatrixToken: string
+    let rSkywalkerMatrixToken: string
     beforeAll((done) => {
       syswideCas.addCAs(
         path.join(
@@ -246,7 +246,10 @@ describe('ApplicationServer', () => {
         // eslint-disable-next-line @typescript-eslint/promise-function-async
         .then((upResult) => {
           startedCompose = upResult
-          return addUser(testConfig, '@dwho:example.com')
+          return addUser(testConfig, [
+            '@askywalker:example.com',
+            '@dwho:example.com'
+          ])
         })
         .then(done)
         .catch((e) => {
@@ -313,7 +316,7 @@ describe('ApplicationServer', () => {
           aliasName: 'r1',
           topic: 'test room',
           ldapFilter: {
-            mail: ['dwho@example.com', 'bb8@example.com']
+            mail: ['*skywalker@example.com', 'dwho@example.com']
           }
         })
       expect(response.statusCode).toBe(200)
@@ -328,7 +331,7 @@ describe('ApplicationServer', () => {
       newRoomId = newRoom.id as string
       expect(newRoom.filter).toEqual(
         JSON.stringify({
-          mail: ['dwho@example.com', 'bb8@example.com']
+          mail: ['*skywalker@example.com', 'dwho@example.com']
         })
       )
       const membersIds = await twakeServer.matrixDb.get(
@@ -337,8 +340,9 @@ describe('ApplicationServer', () => {
         { room_id: newRoomId }
       )
       expect(membersIds).not.toBeUndefined()
-      expect(membersIds.length).toEqual(2)
+      expect(membersIds.length).toEqual(3)
       expect(membersIds[1].user_id).toEqual('@dwho:example.com')
+      expect(membersIds[2].user_id).toEqual('@askywalker:example.com')
     })
 
     it('should force user to join room on login', (done) => {
@@ -348,9 +352,10 @@ describe('ApplicationServer', () => {
         })
         // eslint-disable-next-line @typescript-eslint/promise-function-async
         .then((membersIds) => {
-          expect(membersIds.length).toEqual(2)
+          expect(membersIds.length).toEqual(3)
           expect(membersIds[0].user_id).toEqual('@twake:example.com')
           expect(membersIds[1].user_id).toEqual('@dwho:example.com')
+          expect(membersIds[2].user_id).toEqual('@askywalker:example.com')
           const client = ldapjs.createClient({
             url: `ldap://${startedLdap.getHost()}:${ldapHostPort}/`
           })
@@ -360,14 +365,14 @@ describe('ApplicationServer', () => {
             }
           })
           client.add(
-            'uid=bb8,ou=users,dc=example,dc=com',
+            'uid=rskywalker,ou=users,dc=example,dc=com',
             {
               objectClass: 'inetOrgPerson',
-              uid: 'bb8',
-              cn: 'BB8',
-              sn: 'BB8',
-              mail: 'bb8@example.com',
-              userPassword: 'bb8'
+              uid: 'rskywalker',
+              cn: 'Rey Skywalker',
+              sn: 'Rskywalker',
+              mail: 'rskywalker@example.com',
+              userPassword: 'rskywalker'
             },
             (err) => {
               if (err != null) {
@@ -376,11 +381,11 @@ describe('ApplicationServer', () => {
               client.destroy()
             }
           )
-          return simulationConnection('bb8', 'bb8')
+          return simulationConnection('rskywalker', 'rskywalker')
         })
         // eslint-disable-next-line @typescript-eslint/promise-function-async
         .then((token) => {
-          bb8MatrixToken = token as string
+          rSkywalkerMatrixToken = token as string
           return fetch.default(
             encodeURI(
               `https://${twakeServer.conf.matrix_server}/_matrix/client/v3/sync`
@@ -412,8 +417,8 @@ describe('ApplicationServer', () => {
           })
         })
         .then((membersIds) => {
-          expect(membersIds.length).toEqual(3)
-          expect(membersIds[2].user_id).toEqual('@bb8:example.com')
+          expect(membersIds.length).toEqual(4)
+          expect(membersIds[3].user_id).toEqual('@rskywalker:example.com')
           done()
         })
         .catch((e) => {
@@ -432,13 +437,13 @@ describe('ApplicationServer', () => {
             method: 'POST',
             headers: {
               // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-              Authorization: `Bearer ${bb8MatrixToken}`
+              Authorization: `Bearer ${rSkywalkerMatrixToken}`
             }
           }
         )
         // eslint-disable-next-line @typescript-eslint/promise-function-async
         .then(() => {
-          return getUserRoomMembership(newRoomId, '@bb8:example.com')
+          return getUserRoomMembership(newRoomId, '@rskywalker:example.com')
         })
         .then((memberships) => {
           expect(memberships.length).toEqual(3)
@@ -463,16 +468,16 @@ describe('ApplicationServer', () => {
             method: 'POST',
             headers: {
               // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-              Authorization: `Bearer ${bb8MatrixToken}`
+              Authorization: `Bearer ${rSkywalkerMatrixToken}`
             },
             body: JSON.stringify({
-              user_id: '@dwho:example.com'
+              user_id: '@askywalker:example.com'
             })
           }
         )
         // eslint-disable-next-line @typescript-eslint/promise-function-async
         .then(() => {
-          return getUserRoomMembership(newRoomId, '@dwho:example.com')
+          return getUserRoomMembership(newRoomId, '@askywalker:example.com')
         })
         .then((memberships) => {
           expect(memberships.length).toEqual(1)
@@ -498,13 +503,13 @@ describe('ApplicationServer', () => {
               Authorization: `Bearer ${appServiceToken}`
             },
             body: JSON.stringify({
-              user_id: '@bb8:example.com'
+              user_id: '@rskywalker:example.com'
             })
           }
         )
         // eslint-disable-next-line @typescript-eslint/promise-function-async
         .then(() => {
-          return getUserRoomMembership(newRoomId, '@bb8:example.com')
+          return getUserRoomMembership(newRoomId, '@rskywalker:example.com')
         })
         .then((memberships) => {
           expect(memberships.length).toEqual(4)
@@ -522,14 +527,14 @@ describe('ApplicationServer', () => {
             {
               headers: {
                 // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-                Authorization: `Bearer ${bb8MatrixToken}`
+                Authorization: `Bearer ${rSkywalkerMatrixToken}`
               }
             }
           )
         })
         // eslint-disable-next-line @typescript-eslint/promise-function-async
         .then(() => {
-          return getUserRoomMembership(newRoomId, '@bb8:example.com')
+          return getUserRoomMembership(newRoomId, '@rskywalker:example.com')
         })
         .then((memberships) => {
           expect(memberships.length).toEqual(4)
@@ -558,13 +563,13 @@ describe('ApplicationServer', () => {
               Authorization: `Bearer ${appServiceToken}`
             },
             body: JSON.stringify({
-              user_id: '@dwho:example.com'
+              user_id: '@askywalker:example.com'
             })
           }
         )
         // eslint-disable-next-line @typescript-eslint/promise-function-async
         .then(() => {
-          return getUserRoomMembership(newRoomId, '@dwho:example.com')
+          return getUserRoomMembership(newRoomId, '@askywalker:example.com')
         })
         .then((memberships) => {
           expect(memberships.length).toEqual(2)
@@ -572,7 +577,7 @@ describe('ApplicationServer', () => {
           expect(memberships[1].membership).toEqual('ban')
         })
         // eslint-disable-next-line @typescript-eslint/promise-function-async
-        .then(() => simulationConnection('dwho', 'dwho'))
+        .then(() => simulationConnection('askywalker', 'askywalker'))
         // eslint-disable-next-line @typescript-eslint/promise-function-async
         .then((token) => {
           return fetch.default(
@@ -589,7 +594,7 @@ describe('ApplicationServer', () => {
         })
         // eslint-disable-next-line @typescript-eslint/promise-function-async
         .then(() => {
-          return getUserRoomMembership(newRoomId, '@dwho:example.com')
+          return getUserRoomMembership(newRoomId, '@askywalker:example.com')
         })
         .then((memberships) => {
           expect(memberships.length).toEqual(2)
@@ -971,6 +976,65 @@ describe('ApplicationServer', () => {
         })
       })
 
+      it('should send an error when getting all matrix users throws an error', async () => {
+        const errorOnGettingUsers = 'error on getting users'
+        jest.spyOn(twakeServer.matrixDb, 'get').mockResolvedValue([])
+        jest.spyOn(fetch, 'default').mockResolvedValue({
+          json: async () => ({
+            room_id: 'room2'
+          }),
+          status: 200
+        } as unknown as fetch.Response)
+        jest.spyOn(twakeServer.idServer.userDB, 'get').mockResolvedValue([])
+        jest
+          .spyOn(twakeServer.matrixDb, 'getAll')
+          .mockRejectedValue(new Error(errorOnGettingUsers))
+        const response = await request(app)
+          .post('/_twake/app/v1/rooms')
+          .set('Accept', 'application/json')
+          .set('Authorization', `Bearer ${authToken}`)
+          .send({
+            name: 'room2',
+            visibility: 'public',
+            aliasName: '_twake_r2',
+            topic: 'test room',
+            ldapFilter: {
+              email: 'dwho@example.com'
+            }
+          })
+        expect(response.statusCode).toBe(500)
+        expect(response.body).toEqual({
+          error: errorOnGettingUsers
+        })
+      })
+
+      it('should not send force join request if there is no shared user between LDAP and Matrix users', async () => {
+        jest.spyOn(twakeServer.matrixDb, 'get').mockResolvedValue([])
+        const spyOnFetch = jest.spyOn(fetch, 'default').mockResolvedValue({
+          json: async () => ({
+            room_id: 'room2'
+          }),
+          status: 200
+        } as unknown as fetch.Response)
+        jest.spyOn(twakeServer.idServer.userDB, 'get').mockResolvedValue([])
+        jest.spyOn(twakeServer.matrixDb, 'getAll').mockResolvedValue([])
+        const response = await request(app)
+          .post('/_twake/app/v1/rooms')
+          .set('Accept', 'application/json')
+          .set('Authorization', `Bearer ${authToken}`)
+          .send({
+            name: 'room2',
+            visibility: 'public',
+            aliasName: '_twake_r2',
+            topic: 'test room',
+            ldapFilter: {
+              email: 'dwho@example.com'
+            }
+          })
+        expect(spyOnFetch).toHaveBeenCalledTimes(1)
+        expect(response.statusCode).toBe(200)
+      })
+
       it('should not send an error when optional fields are missing in request body', async () => {
         jest.spyOn(twakeServer.matrixDb, 'get').mockResolvedValue([])
         jest.spyOn(fetch, 'default').mockResolvedValueOnce({
@@ -979,7 +1043,15 @@ describe('ApplicationServer', () => {
           }),
           status: 200
         } as unknown as fetch.Response)
-        jest.spyOn(twakeServer.idServer.userDB, 'get').mockResolvedValue([])
+        jest
+          .spyOn(twakeServer.idServer.userDB, 'get')
+          .mockResolvedValue([
+            { uid: 'user1' },
+            { uid: 'user2' },
+            { uid: 'user3' },
+            { uid: 'user4' }
+          ])
+        jest.spyOn(twakeServer.matrixDb, 'getAll').mockResolvedValue([])
         const response = await request(app)
           .post('/_twake/app/v1/rooms')
           .set('Accept', 'application/json')
@@ -1028,6 +1100,14 @@ describe('ApplicationServer', () => {
             { uid: 'user3' },
             { uid: 'user4' }
           ])
+        jest
+          .spyOn(twakeServer.matrixDb, 'getAll')
+          .mockResolvedValue([
+            { name: '@user1:example.com' },
+            { name: '@user2:example.com' },
+            { name: '@user3:example.com' },
+            { name: '@user4:example.com' }
+          ])
         const response = await request(app)
           .post('/_twake/app/v1/rooms')
           .set('Accept', 'application/json')
@@ -1044,13 +1124,13 @@ describe('ApplicationServer', () => {
         expect(response.statusCode).toBe(200)
         expect(response.body).toEqual([
           {
-            uid: 'user2',
+            uid: '@user2:example.com',
             errcode: allMatrixErrorCodes.unknown,
             error: { ...matrixServerError }
           },
-          { uid: 'user3', ...errorOnForcingJoin },
+          { uid: '@user3:example.com', ...errorOnForcingJoin },
           {
-            uid: 'user4',
+            uid: '@user4:example.com',
             errcode: allMatrixErrorCodes.unknown,
             error: { ...new Error() }
           }

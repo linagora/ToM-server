@@ -5,12 +5,14 @@ import {
 } from '@twake/matrix-application-server'
 import { type DbGetResult } from '@twake/matrix-identity-server'
 import { type NextFunction, type Request, type Response } from 'express'
+import lodash from 'lodash'
 import fetch, { type Response as FetchResponse } from 'node-fetch'
 import type TwakeApplicationServer from '..'
 import type TwakeServer from '../..'
 import { type TwakeDB } from '../../db'
 import { allMatrixErrorCodes } from '../../types'
 import { TwakeRoom } from '../models/room'
+const { intersection } = lodash
 
 const hostnameRe =
   /^(([a-zA-Z]|[a-zA-Z][a-zA-Z0-9-]*[a-zA-Z0-9])\.)*([A-Za-z]|[A-Za-z][A-Za-z0-9-]*[A-Za-z0-9])$/i
@@ -116,22 +118,31 @@ export const createRoom = (
           twakeServer.db as TwakeDB
         )
       }
-      const usersMatchingFilter: DbGetResult =
-        await twakeServer.idServer.userDB.get(
+      const [ldapUsers, matrixUsers] = await Promise.all<
+        Array<Promise<DbGetResult>>
+      >([
+        twakeServer.idServer.userDB.get(
           'users',
           [twakeServer.conf.ldap_uid_field as string],
           req.body.ldapFilter
-        )
+        ),
+        twakeServer.matrixDb.getAll('users', ['name'])
+      ])
+
+      const ldapUsersIds = ldapUsers.map(
+        (user) =>
+          `@${user[twakeServer.conf.ldap_uid_field as string] as string}:${
+            twakeServer.conf.server_name
+          }`
+      )
+      const matrixUsersIds = matrixUsers.map((user) => user.name as string)
+
+      const usersIdsMatchingFilter = intersection(ldapUsersIds, matrixUsersIds)
+
       const joinResponses = await Promise.allSettled<
         Array<Promise<FetchResponse>>
       >(
-        usersMatchingFilter
-          .map(
-            (user) =>
-              `@${user[twakeServer.conf.ldap_uid_field as string] as string}:${
-                twakeServer.conf.server_name
-              }`
-          )
+        usersIdsMatchingFilter
           // eslint-disable-next-line @typescript-eslint/promise-function-async
           .map((id) => {
             return fetch(
@@ -160,9 +171,7 @@ export const createRoom = (
             if ('errcode' in body) {
               joinErrors.push({
                 [twakeServer.conf.ldap_uid_field as string]:
-                  usersMatchingFilter[index][
-                    twakeServer.conf.ldap_uid_field as string
-                  ] as string,
+                  usersIdsMatchingFilter[index],
                 ...body
               })
             }
@@ -170,9 +179,8 @@ export const createRoom = (
           }
           case 'rejected':
             joinErrors.push({
-              [twakeServer.conf.ldap_uid_field as string]: usersMatchingFilter[
-                index
-              ][twakeServer.conf.ldap_uid_field as string] as string,
+              [twakeServer.conf.ldap_uid_field as string]:
+                usersIdsMatchingFilter[index],
               errcode: allMatrixErrorCodes.unknown,
               error: response.reason ?? 'Internal server error'
             })

@@ -1,15 +1,24 @@
-import express from 'express'
+import { createRequestHandler } from '@remix-run/express'
+import AppServer from '@twake/matrix-application-server'
 import TomServer from '@twake/server'
+import express from 'express'
 import path from 'node:path'
 import { fileURLToPath } from 'url'
-import { createRequestHandler } from '@remix-run/express'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
-const conf = {
+const appServerConf = {
   base_url: process.env.BASE_URL,
-  cron_service: process.env.CRON_SERVICE ?? true,
+  sender_localpart: process.env.SENDER_LOCALPART,
+  registration_file_path: process.env.REGISTRATION_FILE_PATH,
+  namespaces: process.env.NAMESPACES,
+  push_ephemeral: process.env.PUSH_EPHEMERAL || true
+}
+
+const conf = {
+  ...appServerConf,
+  cron_service: process.env.CRON_SERVICE || true,
   database_engine: process.env.DATABASE_ENGINE,
   database_host: process.env.DATABASE_HOST,
   database_name: process.env.DATABASE_NAME,
@@ -41,41 +50,48 @@ const conf = {
     process.env.TEMPLATE_DIR ??
     path.join(__dirname, 'node_modules', '@twake', 'server', 'templates'),
   update_users_cron: process.env.UPDATE_USERS_CRON || '*/10 * * * *',
-  userdb_engine: 'ldap'
+  userdb_engine: 'ldap',
+  enable_company_features: process.env.ENABLE_COMPANY_FEATURES || false
 }
-const tomServer = new TomServer(conf)
-const app = express()
 
-app.use(
-  '/build',
-  express.static(path.join(process.cwd(), 'landing', 'public', 'build'), {
-    immutable: true,
-    maxAge: '1y'
-  })
-)
+if (process.argv[2] === 'generate') {
+  // eslint-disable-next-line no-unused-vars
+  const appServer = new AppServer(appServerConf)
+} else {
+  const tomServer = new TomServer(conf)
+  const app = express()
 
-app.use(
-  express.static(path.join(process.cwd(), 'landing', 'public'), {
-    maxAge: '1h'
-  })
-)
+  app.use(
+    '/build',
+    express.static(path.join(process.cwd(), 'landing', 'public', 'build'), {
+      immutable: true,
+      maxAge: '1y'
+    })
+  )
 
-app.get(
-  '/',
-  createRequestHandler({
-    build: await import(
-      path.join(process.cwd(), 'landing', 'build', 'index.js')
-    )
-  })
-)
+  app.use(
+    express.static(path.join(process.cwd(), 'landing', 'public'), {
+      maxAge: '1h'
+    })
+  )
 
-tomServer.ready
-  .then(() => {
-    app.use(tomServer.endpoints)
-    const port = process.argv[2] != null ? parseInt(process.argv[2]) : 3000
-    console.log(`Listening on port ${port}`)
-    app.listen(port)
-  })
-  .catch((e) => {
-    throw e
-  })
+  app.get(
+    '/',
+    createRequestHandler({
+      build: await import(
+        path.join(process.cwd(), 'landing', 'build', 'index.js')
+      )
+    })
+  )
+
+  tomServer.ready
+    .then(() => {
+      app.use(tomServer.endpoints)
+      const port = process.argv[2] != null ? parseInt(process.argv[2]) : 3000
+      console.log(`Listening on port ${port}`)
+      app.listen(port)
+    })
+    .catch((e) => {
+      throw e
+    })
+}
