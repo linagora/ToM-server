@@ -2,7 +2,7 @@ import ldapjs from 'ldapjs'
 import { type TwakeDB } from '../../db'
 import { type Collections } from '../../types'
 import { type ITwakeRoomModel } from '../types'
-const { EqualityFilter, OrFilter } = ldapjs
+const { EqualityFilter, OrFilter, SubstringFilter } = ldapjs
 
 export class TwakeRoom implements ITwakeRoomModel {
   constructor(
@@ -65,30 +65,38 @@ export class TwakeRoom implements ITwakeRoomModel {
   public userDataMatchRoomFilter(user: any): boolean {
     const ldapFilter = new OrFilter({
       filters: [
-        new EqualityFilter({
-          attribute: 'objectClass',
-          value: '*'
-        }),
         ...Object.keys(this.filter)
           .map((key: string) => {
             if (Array.isArray(this.filter[key])) {
-              return (this.filter[key] as string[]).map(
-                (value) =>
-                  new EqualityFilter({
-                    attribute: key,
-                    value
-                  })
+              return (this.filter[key] as string[]).map((value) =>
+                TwakeRoom._getLdapFilter(key, value)
               )
             } else {
-              return new EqualityFilter({
-                attribute: key,
-                value: this.filter[key].toString()
-              })
+              return TwakeRoom._getLdapFilter(key, this.filter[key].toString())
             }
           })
           .flat()
       ]
     })
     return ldapFilter.matches(user)
+  }
+
+  private static _getLdapFilter(
+    attribute: string,
+    value: string
+  ): ldapjs.Filter {
+    if (value.includes('*')) {
+      const filterValues = value.split('*')
+      return new SubstringFilter({
+        attribute,
+        initial: filterValues[0] ?? '',
+        any: filterValues.slice(1, -1) ?? [],
+        final: filterValues.pop() ?? ''
+      })
+    }
+    return new EqualityFilter({
+      attribute,
+      value
+    })
   }
 }
