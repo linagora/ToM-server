@@ -8,8 +8,15 @@ import { type Config, type DbGetResult } from '../types'
 import UserDBLDAP from './ldap'
 import UserDBPg from './sql/pg'
 import UserDBSQLite from './sql/sqlite'
+import UserDBEmpty from './empty'
 
-export type SupportedUserDatabases = 'sqlite' | 'pg' | 'ldap'
+export type SupportedUserDatabases =
+  | 'sqlite'
+  | 'pg'
+  | 'ldap'
+  | ''
+  | null
+  | undefined
 
 export type Collections = 'users' | 'groups'
 
@@ -64,6 +71,12 @@ class UserDB implements UserDBBackend {
       }
       case 'ldap': {
         Module = UserDBLDAP
+        break
+      }
+      case null:
+      case undefined:
+      case '': {
+        Module = UserDBEmpty
         break
       }
       default: {
