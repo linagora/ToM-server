@@ -156,6 +156,7 @@ describe('ApplicationServer', () => {
         startedLdap = startedContainer
         testConfig = {
           ...testConfig,
+          userdb_engine: 'sqlite',
           base_url: `http://${hostNetworkInterface.address}:${twakeServerPort}/`,
           ldap_uri: `ldap://${startedLdap.getHost()}:${ldapHostPort}/`
         }
