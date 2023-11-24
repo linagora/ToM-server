@@ -62,7 +62,7 @@ class CronTasks {
       }
       await Promise.all(cronTasks)
     } catch (error) {
-      throw Error('Failed to initialize cron tasks')
+      throw Error(`Failed to initialize cron tasks: ${error}`)
     }
   }
 

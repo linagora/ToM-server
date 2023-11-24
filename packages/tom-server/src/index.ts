@@ -86,7 +86,7 @@ abstract class AbstractTwakeServerPublic {
       return true
     } catch (error) {
       /* istanbul ignore next */
-      this.logger.error('Unable to initialize server')
+      this.logger.error(`Unable to initialize server: ${error}`)
       /* istanbul ignore next */
       throw Error('Unable to initialize server', { cause: error })
     }
@@ -123,7 +123,7 @@ class TwakeServerEnterprise extends AbstractTwakeServerPublic {
         })
         .catch((error) => {
           /* istanbul ignore next */
-          this.logger.error('Unable to initialize server')
+          this.logger.error(`Unable to initialize server: ${error}`)
           /* istanbul ignore next */
           reject(new Error('Unable to initialize server', { cause: error }))
         })
