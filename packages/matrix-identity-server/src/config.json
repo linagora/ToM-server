@@ -38,7 +38,7 @@
   "smtp_sender": "",
   "smtp_server": "localhost",
   "smtp_port": 25,
-  "update_federation_hashes_cron": "*/10 * * * *",
+  "update_federation_hashes_cron": "3 3 * * *",
   "update_users_cron": "*/10 * * * *",
   "userdb_engine": "sqlite",
   "userdb_host": "./tokens.db",
