@@ -175,7 +175,8 @@ class CronTasks {
     userDB: UserDB,
     logger: TwakeLogger
   ): Promise<void> => {
-    const cronString: string = conf.update_federation_hashes_cron ?? '3 3 * * *'
+    const cronString: string =
+      conf.update_federation_hashes_cron ?? '3 3 3 * * *'
 
     if (!cron.validate(cronString)) {
       throw new Error(`Invalid cron line: ${cronString}`)
