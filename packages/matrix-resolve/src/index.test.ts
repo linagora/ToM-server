@@ -90,10 +90,28 @@ describe('resolve', () => {
           json: Promise.reject
         })
       })
+
       it('should try _matrix-fed._tcp when no .well-knwon', async () => {
         expect(await resolve('matrix.org')).toBe(
           'https://matrix-federation.matrix.org.cdn.cloudflare.net:8443/'
         )
+      })
+
+      it('should return name:8448 when SRV fields not available but host exists', async () => {
+        expect(await resolve('goodtech.info')).toBe(
+          'https://goodtech.info:8448/'
+        )
+      })
+
+      it('should fail when SRV fields not available and host does not exist', (done) => {
+        resolve('matrix.noexist')
+          .then((res) => {
+            done(`matrix.noexist should not have a value, get ${res}`)
+          })
+          .catch((e) => {
+            expect(e instanceof Error)
+            done()
+          })
       })
     })
   })
