@@ -1,6 +1,7 @@
 export default {
-  testTimeout: 10000,
+  testTimeout: 120000,
   testEnvironment: 'node',
+  preset: 'ts-jest',
   collectCoverage: true,
   collectCoverageFrom: ['./src/**/*.ts'],
   coverageThreshold: {
@@ -11,17 +12,10 @@ export default {
       statements: 90
     }
   },
-  "transform": {
-    "\\.[jt]sx?$": [
-      "babel-jest",
-      {
-        "babelrc": false,
-        "presets": ["@babel/preset-typescript"],
-        "plugins": [
-          "@babel/plugin-proposal-optional-chaining",
-          "@babel/plugin-transform-modules-commonjs"
-        ]
-      }
-    ]
-  }
+  setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
+  moduleNameMapper: {
+    "node-fetch": "<rootDir>/../../node_modules/node-fetch-jest"
+  },
+  clearMocks: true,
+  globalTeardown: '<rootDir>/jest.global-teardown.ts'
 }

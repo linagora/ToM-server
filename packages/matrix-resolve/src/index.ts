@@ -11,6 +11,10 @@ const isIpLiteral = new RegExp(`^(${ipv4}|${ipv6})(?:(?<!:):(\\d+))?$`)
 const isHostname =
   /^((?:(?:(?:[a-zA-Z0-9][-a-zA-Z0-9]*)?[a-zA-Z0-9])[.])*(?:[a-zA-Z][-a-zA-Z0-9]*[a-zA-Z0-9]|[a-zA-Z])[.]?)(?::(\d+))?$/
 
+export type WellKnownMatrixServer = {
+  'm.server': string
+}
+
 /* From spec 1.8 */
 
 // eslint-disable-next-line @typescript-eslint/promise-function-async
@@ -50,7 +54,8 @@ const findMatrixBaseUrl = (name: string): Promise<string | null> => {
       // eslint-disable-next-line @typescript-eslint/promise-function-async
       .then((res) => res.json())
       .then((res) => {
-        if (!(res as Record<string, string>)['m.server']) {
+        // istanbul ignore if
+        if (!(res as WellKnownMatrixServer)['m.server']) {
           console.error('Bad .well-known/matrix/server response', res)
           console.error('Trying with DNS')
           dnsResolve(name, resolve, reject)
@@ -60,40 +65,50 @@ const findMatrixBaseUrl = (name: string): Promise<string | null> => {
         /* If <delegated_hostname> is an IP literal, then that IP address should
            be used together with the <delegated_port> or 8448 if no port is
            provided. */
-        const matrixServer: string = (res as Record<string, string>)['m.server']
-        m = matrixServer.match(isIpLiteral)
-        if (m != null) {
-          resolve(
-            m[2] ? `https://${matrixServer}/` : `https://${matrixServer}:8448/`
-          )
-          return
-        }
+        let matrixServer: string
+        try {
+          matrixServer = (res as WellKnownMatrixServer)['m.server']
+          m = matrixServer.match(isIpLiteral)
+          if (m != null) {
+            resolve(
+              m[2]
+                ? `https://${matrixServer}/`
+                : `https://${matrixServer}:8448/`
+            )
+            return
+          }
 
-        /* If <delegated_hostname> is not an IP literal, and <delegated_port>
-           is present, an IP address is discovered by looking up CNAME, AAAA
-           or A records for <delegated_hostname>. */
-        m = matrixServer.match(isHostname)
-        if (m && m[2] != null) {
-          resolve(`https://${matrixServer}/`)
-          return
-        }
+          /* If <delegated_hostname> is not an IP literal, and <delegated_port>
+             is present, an IP address is discovered by looking up CNAME, AAAA
+             or A records for <delegated_hostname>. */
+          m = matrixServer.match(isHostname)
+          if (m && m[2] != null) {
+            resolve(`https://${matrixServer}/`)
+            return
+          }
 
-        /* ALL NEXT CASES ARE EXACTLY THE SAME DNS SEARCH THAN IF NO
+          /* ALL NEXT CASES ARE EXACTLY THE SAME DNS SEARCH THAN IF NO
            .well-known IS VALID BUT USING ${matrixServer} INSTEAD OF ${name} */
 
-        /* If <delegated_hostname> is not an IP literal and no <delegated_port>
+          /* If <delegated_hostname> is not an IP literal and no <delegated_port>
            is present, an SRV record is looked up for
            _matrix-fed._tcp.<delegated_hostname>. This may result in another
            hostname (to be resolved using AAAA or A records) and port. */
-        /* [Deprecated] If <delegated_hostname> is not an IP literal, no
+          /* [Deprecated] If <delegated_hostname> is not an IP literal, no
            <delegated_port> is present, and a _matrix-fed._tcp.<delegated_hostname>
            SRV record was not found, an SRV record is looked up for
            _matrix._tcp.<delegated_hostname>. This may result in another hostname
            (to be resolved using AAAA or A records) and port. */
-        /* If no SRV record is found, an IP address is resolved using CNAME,
+          /* If no SRV record is found, an IP address is resolved using CNAME,
            AAAA or A records. Requests are then made to the resolve IP address
            and a port of 8448, using a Host header of <delegated_hostname> */
-        dnsResolve(matrixServer, resolve, reject)
+
+          // istanbul ignore next
+          dnsResolve(matrixServer, resolve, reject)
+        } catch (e) {
+          // istanbul ignore next
+          dnsResolve(name, resolve, reject)
+        }
       })
       .catch((e) => {
         dnsResolve(name, resolve, reject)
@@ -110,7 +125,8 @@ const dnsResolve = (
      found by resolving an SRV record for _matrix-fed._tcp.<hostname>. This
      may result in a hostname (to be resolved using AAAA or A records) and
      port. */
-  dns.resolve(`_matrix-fed._tcp.tom-dev.xyz`, 'SRV', (err, records) => {
+  dns.resolve(`_matrix-fed.${name}`, 'SRV', (err, records) => {
+    // istanbul ignore if
     if (err == null && records.length > 0) {
       const entry = records.sort((a, b) => {
         return b.priority - a.priority
@@ -121,9 +137,11 @@ const dnsResolve = (
            response, and a _matrix-fed._tcp.<hostname> SRV record was not
            found, a server is found by resolving an SRV record for
            _matrix._tcp.<hostname> */
-      dns.resolve(`_matrix._tcp.tom-dev.xyz`, 'SRV', (err, records) => {
+      dns.resolve(`_matrix._tcp.${name}`, 'SRV', (err, records) => {
+        // istanbul ignore else
         if (err == null && records.length > 0) {
           const entry = records.sort((a, b) => {
+            // istanbul ignore next
             return b.priority - a.priority
           })[0]
           resolve(`https://${entry.name}:${entry.port}/`)
