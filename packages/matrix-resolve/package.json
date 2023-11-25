@@ -1,0 +1,42 @@
+{
+  "name": "@twake/matrix-resolve",
+  "version": "0.0.1",
+  "description": "Find matrix server with a domain name",
+  "keywords": [
+    "matrix",
+    "twake"
+  ],
+  "homepage": "https://ci.linagora.com/publicgroup/oss/twake/tom-server",
+  "bugs": {
+    "url": "https://ci.linagora.com/publicgroup/oss/twake/tom-server/-/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://ci.linagora.com/publicgroup/oss/twake/tom-server.git"
+  },
+  "license": "AGPL-3.0-or-later",
+  "author": [
+    {
+      "name": "Xavier Guimard",
+      "email": "yadd@debian.org"
+    }
+  ],
+  "type": "module",
+  "exports": {
+    "import": "./dist/index.js"
+  },
+  "main": "dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "package.json",
+    "dist",
+    "*.md"
+  ],
+  "scripts": {
+    "build": "rollup -c",
+    "test": "jest"
+  },
+  "dependencies": {
+    "node-fetch": "^3.3.0"
+  }
+}
