@@ -1,6 +1,6 @@
 {
-  "name": "@twake/matrix-resolve",
-  "version": "0.0.1",
+  "name": "matrix-resolve",
+  "version": "1.0.0",
   "description": "Find matrix server with a domain name",
   "keywords": [
     "matrix",

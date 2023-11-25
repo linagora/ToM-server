@@ -1,18 +1,18 @@
-# @twake/matrix-resolve
+# matrix-resolve
 
 Find matrix server with a domain name
 
 # Synopsis
 
 ```js
-import { matrixResolve } from '@twake/matrix-resolve'
+import { matrixResolve } from 'matrix-resolve'
 
 const baseUrl = await matrixResolve('mydomain.com')
 ```
 
 # Description
 
-**@twake/matrix-resolve** permits to find the base URL of a [Matrix](https://matrix.org)
+**matrix-resolve** permits to find the base URL of a [Matrix](https://matrix.org)
 "**server name**". Following the specification it tries to resolve the url in
 the following order:
 
