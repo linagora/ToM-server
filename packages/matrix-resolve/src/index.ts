@@ -16,35 +16,13 @@ export type WellKnownMatrixServer = {
   'm.server': string
 }
 
-const dnsSrvResolve = (name: string): Promise<string | string[]> => {
-  const prioritySort = (a: SrvRecord, b: SrvRecord) => {
-    // istanbul ignore next
-    return b.priority - a.priority
-  }
-  return new Promise((resolve, reject) => {
-    dns.resolve(name, 'SRV', (err, records) => {
-      if (err == null && records.length > 0) {
-        const res = records.map(
-          (entry) => `https://${entry.name}:${entry.port}/`
-        )
-        resolve(res.length > 1 ? res : res[0])
-      } else {
-        reject(false)
-      }
-    })
-  })
-}
-
 /* From spec 1.8 */
 
 // eslint-disable-next-line @typescript-eslint/promise-function-async
-const findMatrixBaseUrl = (name: string): Promise<string | string[]> => {
+export const matrixResolve = (name: string): Promise<string | string[]> => {
   return new Promise((resolve, reject) => {
     /* If the hostname is an IP literal, then that IP address should be used,
-     * together with the given port number, or 8448 if no port is given. The
-     * target server must present a valid certificate for the IP address. The
-     * Host header in the request should be set to the server name, including
-     * the port if the server name included one. */
+     * together with the given port number, or 8448 if no port is given. */
     let m = name.match(isIpLiteral)
     if (m != null) {
       resolve(m[2] ? `https://${name}/` : `https://${name}:8448/`)
@@ -59,9 +37,7 @@ const findMatrixBaseUrl = (name: string): Promise<string | string[]> => {
 
     /* If the hostname is not an IP literal, and the server name includes an
      * explicit port, resolve the hostname to an IP address using CNAME, AAAA
-     * or A records. Requests are made to the resolved IP address and given
-     * port with a Host header of the original server name (with port). The
-     * target server must present a valid certificate for the hostname. */
+     * or A records. */
     if (m[2]) {
       resolve(`https://${name}/`)
       return
@@ -173,4 +149,21 @@ const dnsResolve = (
     })
 }
 
-export default findMatrixBaseUrl
+const dnsSrvResolve = (name: string): Promise<string | string[]> => {
+  const prioritySort = (a: SrvRecord, b: SrvRecord) => {
+    // istanbul ignore next
+    return b.priority - a.priority
+  }
+  return new Promise((resolve, reject) => {
+    dns.resolve(name, 'SRV', (err, records) => {
+      if (err == null && records.length > 0) {
+        const res = records.map(
+          (entry) => `https://${entry.name}:${entry.port}/`
+        )
+        resolve(res.length > 1 ? res : res[0])
+      } else {
+        reject(false)
+      }
+    })
+  })
+}

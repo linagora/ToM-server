@@ -1,6 +1,6 @@
 import fetch from 'node-fetch'
 import { resolve as dnsResolve, lookup } from 'node:dns'
-import resolve from './index'
+import { matrixResolve } from './index'
 import { type WellKnownMatrixServer } from './index'
 
 type DnsResolve = (
@@ -12,23 +12,25 @@ type DnsResolve = (
   ) => void
 ) => void
 
-describe('resolve', () => {
+describe('matrixResolve', () => {
   afterEach(() => jest.clearAllMocks())
 
   it('should accept ip with port', async () => {
-    expect(await resolve('1.2.3.4:567')).toBe('https://1.2.3.4:567/')
+    expect(await matrixResolve('1.2.3.4:567')).toBe('https://1.2.3.4:567/')
   })
 
   it('should accept ip without port', async () => {
-    expect(await resolve('1.2.3.4')).toBe('https://1.2.3.4:8448/')
+    expect(await matrixResolve('1.2.3.4')).toBe('https://1.2.3.4:8448/')
   })
 
   it('should accept a hostname with port', async () => {
-    expect(await resolve('example.com:1234')).toBe('https://example.com:1234/')
+    expect(await matrixResolve('example.com:1234')).toBe(
+      'https://example.com:1234/'
+    )
   })
 
   it('should reject non fqdn names without port', (done) => {
-    resolve('{}')
+    matrixResolve('{}')
       .then((m) => {
         done(`Receive ${m} instead of error`)
       })
@@ -39,7 +41,7 @@ describe('resolve', () => {
   })
 
   it('should reject non fqdn names with port', (done) => {
-    resolve('{}:234')
+    matrixResolve('{}:234')
       .then((m) => {
         done(`Receive ${m} instead of error`)
       })
@@ -58,7 +60,7 @@ describe('resolve', () => {
         ;(fetch as jest.Mock<any, any, any>).mockResolvedValue({
           json: jest.fn().mockResolvedValue(wellKnown)
         })
-        expect(await resolve('matrix.org')).toBe('https://1.2.3.5:678/')
+        expect(await matrixResolve('matrix.org')).toBe('https://1.2.3.5:678/')
       })
 
       it('should accept IP address without port', async () => {
@@ -68,7 +70,7 @@ describe('resolve', () => {
         ;(fetch as jest.Mock<any, any, any>).mockResolvedValue({
           json: jest.fn().mockResolvedValue(wellKnown)
         })
-        expect(await resolve('matrix.org')).toBe('https://1.2.3.5:8448/')
+        expect(await matrixResolve('matrix.org')).toBe('https://1.2.3.5:8448/')
       })
 
       it('should accept hostname with port', async () => {
@@ -78,7 +80,7 @@ describe('resolve', () => {
         ;(fetch as jest.Mock<any, any, any>).mockResolvedValue({
           json: jest.fn().mockResolvedValue(wellKnown)
         })
-        expect(await resolve('matrix.org')).toBe(
+        expect(await matrixResolve('matrix.org')).toBe(
           'https://matrix-federation.matrix.org:443/'
         )
       })
@@ -92,19 +94,19 @@ describe('resolve', () => {
       })
 
       it('should try _matrix-fed._tcp when no .well-knwon', async () => {
-        expect(await resolve('matrix.org')).toBe(
+        expect(await matrixResolve('matrix.org')).toBe(
           'https://matrix-federation.matrix.org.cdn.cloudflare.net:8443/'
         )
       })
 
       it('should return name:8448 when SRV fields not available but host exists', async () => {
-        expect(await resolve('goodtech.info')).toBe(
+        expect(await matrixResolve('goodtech.info')).toBe(
           'https://goodtech.info:8448/'
         )
       })
 
       it('should fail when SRV fields not available and host does not exist', (done) => {
-        resolve('matrix.noexist')
+        matrixResolve('matrix.noexist')
           .then((res) => {
             done(`matrix.noexist should not have a value, get ${res}`)
           })
