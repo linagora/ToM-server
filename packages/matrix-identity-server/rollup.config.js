@@ -5,6 +5,7 @@ export default config([
   'fs',
   'generic-pool',
   'ldapjs',
+  'matrix-resolve',
   'node-cron',
   'querystring',
   'sqlite3',
