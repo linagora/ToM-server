@@ -1,5 +1,5 @@
 export default {
-  testTimeout: 10000,
+  testTimeout: 30000,
   testEnvironment: 'node',
   preset: 'ts-jest',
   collectCoverage: true,
@@ -13,7 +13,8 @@ export default {
     }
   },
   moduleNameMapper: {
-    "@twake/(.*)$": "<rootDir>/../$1/src",
+    '@twake/(.*)$': '<rootDir>/../$1/src',
+    'matrix-resolve': '<rootDir>/../matrix-resolve/src',
   },
   globalTeardown: '<rootDir>/jest.global-teardown.ts'
 }

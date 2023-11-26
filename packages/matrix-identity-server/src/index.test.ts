@@ -133,7 +133,8 @@ describe('/_matrix/identity/v2/account/register', () => {
       status: 200,
       json: () => {
         return {
-          sub: '@dwho:example.com'
+          sub: '@dwho:example.com',
+          'm.server': 'matrix.example.com:8448'
         }
       }
     })
@@ -179,7 +180,8 @@ describe('/_matrix/identity/v2/account/register', () => {
       status: 200,
       json: () => {
         return {
-          email: 'dwho@example.com'
+          email: 'dwho@example.com',
+          'm.server': 'matrix.example.com:8448'
         }
       }
     })
@@ -203,7 +205,8 @@ describe('/_matrix/identity/v2/account/register', () => {
       status: 200,
       json: () => {
         return {
-          sub: 'dwho@example.com'
+          sub: 'dwho@example.com',
+          'm.server': 'matrix.example.com:8448'
         }
       }
     })

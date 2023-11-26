@@ -75,7 +75,8 @@ test('Get authentication token', async () => {
     status: 200,
     json: () => {
       return {
-        sub: '@dwho:example.com'
+        sub: '@dwho:example.com',
+        'm.server': 'matrix.example.com:8448'
       }
     }
   })
