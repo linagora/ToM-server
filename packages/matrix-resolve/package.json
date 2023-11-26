@@ -1,6 +1,6 @@
 {
   "name": "matrix-resolve",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Find matrix server with a domain name",
   "keywords": [
     "matrix",

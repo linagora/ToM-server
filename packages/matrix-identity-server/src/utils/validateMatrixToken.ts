@@ -1,10 +1,14 @@
 /* eslint-disable prefer-promise-reject-errors */
 import fetch from 'node-fetch'
-import { matrixResolve } from 'matrix-resolve'
+import { MatrixResolve } from 'matrix-resolve'
 
 interface userInfoResponse {
   sub: string
 }
+
+const matrixResolve = new MatrixResolve({
+  cache: 'toad-cache'
+})
 
 const hostnameRe =
   /^(([a-zA-Z]|[a-zA-Z][a-zA-Z0-9-]*[a-zA-Z0-9])\.)*([A-Za-z]|[A-Za-z][A-Za-z0-9-]*[A-Za-z0-9])$/i
@@ -18,7 +22,8 @@ const validateMatrixToken = (
   if (!hostnameRe.test(matrixServer))
     return Promise.reject('Bad matrix_server_name')
   return new Promise((resolve, reject) => {
-    matrixResolve(matrixServer)
+    matrixResolve
+      .resolve(matrixServer)
       .then((baseUrl) => {
         fetch(
           encodeURI(
