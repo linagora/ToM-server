@@ -22,7 +22,7 @@ const validateMatrixToken = (
       .then((baseUrl) => {
         fetch(
           encodeURI(
-            `https://${matrixServer}/_matrix/federation/v1/openid/userinfo?access_token=${accessToken}`
+            `${baseUrl}_matrix/federation/v1/openid/userinfo?access_token=${accessToken}`
           )
         )
           // eslint-disable-next-line @typescript-eslint/promise-function-async
