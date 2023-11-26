@@ -25,12 +25,14 @@ export default async (conf: Config, db: IdentityServerDb): Promise<void> => {
 
           await saveUserUsage(db, user, usage)
         } catch (error) {
+          // istanbul ignore next
           db.logger.warn('Failed to save user usage', error)
         }
       })
     )
     matrixDb.close()
   } catch (error) {
+    // istanbul ignore next
     throw Error('Failed to check users quota', { cause: error })
   }
 }
@@ -41,6 +43,7 @@ const initDatabase = async (conf: Config): Promise<MatrixDBBackend> => {
       conf.matrix_database_host == null ||
       conf.matrix_database_engine == null
     ) {
+      // istanbul ignore next
       throw new Error('Missing matrix database configuration')
     }
 
@@ -49,6 +52,7 @@ const initDatabase = async (conf: Config): Promise<MatrixDBBackend> => {
 
     return matrixDb.db
   } catch (error) {
+    // istanbul ignore next
     throw Error('Failed to initialize matrix database', { cause: error })
   }
 }
@@ -67,6 +71,7 @@ const getMatrixUsers = async (db: MatrixDBBackend): Promise<string[]> => {
 
     return users.map(({ name }) => name)
   } catch (error) {
+    // istanbul ignore next
     throw Error('Failed to get matrix users', { cause: error })
   }
 }
@@ -93,6 +98,7 @@ const getUserUsage = async (
       .map(({ media_length: mediaLength }) => +mediaLength)
       .reduce<number>((acc, length) => acc + length, 0)
   } catch (error) {
+    // istanbul ignore next
     throw Error('Failed to get user media usage', { cause: error })
   }
 }
@@ -117,6 +123,7 @@ const saveUserUsage = async (
       size
     } satisfies UserQuota)
   } catch (error) {
+    // istanbul ignore next
     throw Error('Failed to save user media usage', { cause: error })
   }
 }

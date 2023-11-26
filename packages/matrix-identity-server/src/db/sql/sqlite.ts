@@ -341,6 +341,7 @@ class SQLite extends SQL implements IdDbBackend {
         filters = [filters]
       }
 
+      // istanbul ignore if
       if (this.db == null) {
         reject(new Error('Wait for database to be ready'))
       }

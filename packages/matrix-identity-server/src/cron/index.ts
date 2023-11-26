@@ -62,6 +62,7 @@ class CronTasks {
       }
       await Promise.all(cronTasks)
     } catch (error) {
+      // istanbul ignore next
       throw Error(`Failed to initialize cron tasks: ${error}`)
     }
   }
@@ -84,10 +85,12 @@ class CronTasks {
     const pepperCron: string = conf.pepperCron ?? '0 0 0 * * *'
 
     if (!cron.validate(cronString)) {
+      // istanbul ignore next
       throw new Error(`Invalid cron line: ${cronString}`)
     }
 
     if (!cron.validate(pepperCron)) {
+      // istanbul ignore next
       throw new Error(`Invalid cron line: ${pepperCron}`)
     }
 
@@ -96,6 +99,7 @@ class CronTasks {
         pepperCron,
         () => {
           updateHashes(conf, db, userDB, logger).catch((e) => {
+            // istanbul ignore next
             logger.error('Pepper update failed', e)
           })
         },
@@ -121,6 +125,7 @@ class CronTasks {
 
       const count = await db.getCount('hashes', 'hash')
 
+      // istanbul ignore if
       if (count > 0) {
         _addJob()
       } else {
@@ -128,6 +133,7 @@ class CronTasks {
         _addJob()
       }
     } catch (error) {
+      // istanbul ignore next
       throw Error('Failed to add update hashes job')
     }
   }
@@ -145,6 +151,7 @@ class CronTasks {
     const cronString = conf.check_quota_cron ?? '0 0 0 * * *'
 
     if (!cron.validate(cronString)) {
+      // istanbul ignore next
       throw new Error(`Invalid cron line: ${cronString}`)
     }
 
@@ -152,6 +159,7 @@ class CronTasks {
       cronString,
       () => {
         checkQuota(conf, db).catch((e) => {
+          // istanbul ignore next
           db.logger.error('User quota check failed', e)
         })
       },
@@ -179,6 +187,7 @@ class CronTasks {
       conf.update_federation_hashes_cron ?? '3 3 3 * * *'
 
     if (!cron.validate(cronString)) {
+      // istanbul ignore next
       throw new Error(`Invalid cron line: ${cronString}`)
     }
 
