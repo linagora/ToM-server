@@ -1,6 +1,7 @@
 import fetch from 'node-fetch'
 import dns from 'node:dns'
 import { type SrvRecord } from 'node:dns'
+import { type ToadCache } from 'toad-cache'
 
 // Imported form Perl modules (Regex::Common::*)
 const ipv4 =
@@ -15,6 +16,14 @@ const isHostname =
 export type WellKnownMatrixServer = {
   'm.server': string
 }
+
+export type MatrixResolveArgs = {
+  cache?: CacheType
+  cacheTtl?: number
+  cacheSize?: number
+}
+
+export type CacheType = 'toad-cache'
 
 /* From spec 1.8 */
 
@@ -166,4 +175,52 @@ const dnsSrvResolve = (name: string): Promise<string | string[]> => {
       }
     })
   })
+}
+
+export class MatrixResolve {
+  cache?: ToadCache<string | string[]>
+  cacheReady: Promise<void>
+
+  constructor(args?: MatrixResolveArgs) {
+    this.cacheReady = new Promise((resolve, reject) => {
+      if (args && args.cache) {
+        args.cacheTtl ||= 600
+        args.cacheSize ||= 500
+        switch (args.cache) {
+          case 'toad-cache':
+            import('toad-cache')
+              .then((toadCache) => {
+                this.cache = new toadCache.Lru(args.cacheSize)
+                // @ts-ignore: args.cacheTtl is set
+                this.cache.ttl = args.cacheTtl * 1000
+                resolve()
+              })
+              .catch((e) => {
+                // istanbul ignore next
+                console.error('Unable to load toad-cache', e)
+                // istanbul ignore next
+                reject(e)
+              })
+            break
+          default:
+            // istanbul ignore next
+            throw new Error(`Unknown cache type ${args.cache}`)
+        }
+      } else {
+        resolve()
+      }
+    })
+  }
+
+  async resolve(name: string) {
+    if (this.cache) {
+      const cachedValue = this.cache.get(name)
+      if (cachedValue) return cachedValue
+    }
+    const response = await matrixResolve(name)
+    if (this.cache) {
+      this.cache.set(name, response)
+    }
+    return response
+  }
 }

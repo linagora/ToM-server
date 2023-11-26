@@ -10,6 +10,21 @@ import { matrixResolve } from 'matrix-resolve'
 const baseUrl = await matrixResolve('mydomain.com')
 ```
 
+or using Object interface:
+
+```js
+import { MatrixResolve } from 'matrix-resolve'
+
+const matrixResolve = new MatrixResolve({
+  // optional cache
+  cache: 'toad-cache',
+  cacheSize: 100,
+  cacheTtl: 300,
+})
+
+const baseUrl = await matrixResolve.resolve('mydomain.com')
+```
+
 # Description
 
 **matrix-resolve** permits to find the base URL of a [Matrix](https://matrix.org)
@@ -39,6 +54,18 @@ the following order:
    **Returns an array if more than one entry is found**, sorted by priority
 6. Verifies that hostname exists in DNS and builds URL using hostname and
    port 8448
+
+## Object interface
+
+You can use either the simple interface or the Object one. With the Object
+interface, you can add a cache _(only [toad-cache](https://www.npmjs.com/package/toad-cache)
+is supported for now)_.
+
+The constructor take an optional object argument. Constructor argument keys:
+
+* **cache**: cache type. For now, only **toad-cache** is accepted
+* **cacheSize**: the max number of responses to store. Default: **500**
+* **cacheTtl**: the time-to-live in seconds. Default: **600**
 
 ## Copyright and license
 

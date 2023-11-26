@@ -1,6 +1,6 @@
 import fetch from 'node-fetch'
 import { resolve as dnsResolve, lookup } from 'node:dns'
-import { matrixResolve } from './index'
+import { matrixResolve, MatrixResolve } from './index'
 import { type WellKnownMatrixServer } from './index'
 
 type DnsResolve = (
@@ -12,9 +12,9 @@ type DnsResolve = (
   ) => void
 ) => void
 
-describe('matrixResolve', () => {
-  afterEach(() => jest.clearAllMocks())
+afterEach(() => jest.clearAllMocks())
 
+describe('matrixResolve', () => {
   it('should accept ip with port', async () => {
     expect(await matrixResolve('1.2.3.4:567')).toBe('https://1.2.3.4:567/')
   })
@@ -116,5 +116,36 @@ describe('matrixResolve', () => {
           })
       })
     })
+  })
+})
+
+describe('MatrixResolve', () => {
+  it('should work without cache', async () => {
+    const wellKnown: WellKnownMatrixServer = {
+      'm.server': '1.2.3.5'
+    }
+    ;(fetch as jest.Mock<any, any, any>).mockResolvedValue({
+      json: jest.fn().mockResolvedValue(wellKnown)
+    })
+    const m = new MatrixResolve()
+    expect(await m.resolve('matrix.noexist')).toBe('https://1.2.3.5:8448/')
+  })
+
+  it('should work with cache', async () => {
+    const wellKnown: WellKnownMatrixServer = {
+      'm.server': '1.2.3.5'
+    }
+    ;(fetch as jest.Mock<any, any, any>).mockResolvedValue({
+      json: jest.fn().mockResolvedValue(wellKnown)
+    })
+    const m = new MatrixResolve({
+      cache: 'toad-cache'
+    })
+    await m.cacheReady
+    expect(await m.resolve('matrix.noexist')).toBe('https://1.2.3.5:8448/')
+    ;(fetch as jest.Mock<any, any, any>).mockResolvedValue({
+      json: jest.fn().mockResolvedValue({})
+    })
+    expect(await m.resolve('matrix.noexist')).toBe('https://1.2.3.5:8448/')
   })
 })

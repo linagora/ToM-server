@@ -72,6 +72,7 @@
     "supertest": "^6.3.3",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-dist": "^4.18.3",
+    "toad-cache": "^3.3.0",
     "ts-jest": "^29.1.0",
     "typescript": "^4.9.5"
   }
