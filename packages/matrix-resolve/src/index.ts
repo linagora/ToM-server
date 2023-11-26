@@ -52,8 +52,8 @@ export const matrixResolve = (name: string): Promise<string | string[]> => {
       .then((res) => {
         // istanbul ignore if
         if (!(res as WellKnownMatrixServer)['m.server']) {
-          console.error('Bad .well-known/matrix/server response', res)
-          console.error('Trying with DNS')
+          console.info('Bad .well-known/matrix/server response', res)
+          console.debug('Trying with DNS')
           dnsResolve(name, resolve, reject)
           return
         }
