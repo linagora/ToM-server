@@ -1,14 +1,14 @@
+import { Hash, supportedHashes } from '@twake/crypto'
 import express from 'express'
-import request from 'supertest'
-import { type Config } from '../types'
 import fs from 'fs'
 import fetch from 'node-fetch'
-import { Hash, supportedHashes } from '@twake/crypto'
-import defaultConfig from './__testData__/registerConf.json'
-import buildUserDB from './__testData__/buildUserDB'
-import TwakeServer from '..'
 import path from 'path'
+import request from 'supertest'
+import TwakeServer from '..'
 import JEST_PROCESS_ROOT_PATH from '../../jest.globals'
+import { type Config } from '../types'
+import buildUserDB from './__testData__/buildUserDB'
+import defaultConfig from './__testData__/registerConf.json'
 
 jest.mock('node-fetch', () => jest.fn())
 const sendMailMock = jest.fn()
@@ -176,6 +176,23 @@ describe('Using Matrix Token', () => {
       expect(response.status).toBe(200)
       expect(response.body).toEqual({
         matches: [{ uid: 'dwho', address: '@dwho:example.com' }],
+        inactive_matches: []
+      })
+    })
+
+    it('should find user when searching by matrix address', async () => {
+      const response = await request(app)
+        .post('/_twake/identity/v1/lookup/match')
+        .set('Authorization', `Bearer ${validToken}`)
+        .set('Accept', 'application/json')
+        .send({
+          scope: ['matrixAddress'],
+          fields: ['sn'],
+          val: '@dwho:example.com'
+        })
+      expect(response.status).toBe(200)
+      expect(response.body).toEqual({
+        matches: [{ uid: 'dwho', address: '@dwho:example.com', sn: 'Dwho' }],
         inactive_matches: []
       })
     })
