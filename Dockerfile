@@ -8,6 +8,8 @@ env BASE_URL= \
     DATABASE_USER= \
     DATABASE_PASSWORD= \
     DATABASE_SSL= \
+    ENABLE_COMPANY_FEATURES= \
+    FEDERATION_SERVER= \
     LDAP_BASE= \
     LDAP_FILTER= \
     LDAP_USER= \
@@ -28,7 +30,9 @@ env BASE_URL= \
     MATRIX_DATABASE_USER= \
     OIDC_ISSUER= \
     SERVER_NAME= \
-    TEMPLATE_DIR= 
+    TEMPLATE_DIR= \
+    UDPATE_FEDERATION_HASHES_CRON="3 3 * * *" \
+    UPDATE_USERS_CRON="*/15 * * * *"
 
 RUN apt update && apt -y dist-upgrade
 
