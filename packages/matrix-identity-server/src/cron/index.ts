@@ -56,11 +56,15 @@ class CronTasks {
       ]
 
       if (conf.federation_server != null) {
+        logger.debug(
+          `federation_server set to ${conf.federation_server}, add task`
+        )
         cronTasks.push(
           this._addUpdateFederationServerHashesJob(conf, db, userDB, logger)
         )
       }
       await Promise.all(cronTasks)
+      logger.debug('Cron tasks initialized')
     } catch (error) {
       // istanbul ignore next
       throw Error(`Failed to initialize cron tasks: ${error}`)
@@ -98,10 +102,12 @@ class CronTasks {
       const updateHashesTask = cron.schedule(
         pepperCron,
         () => {
-          updateHashes(conf, db, userDB, logger).catch((e) => {
-            // istanbul ignore next
-            logger.error('Pepper update failed', e)
-          })
+          updateHashes(conf, db, userDB, logger)
+            .then(() => logger.debug('Pepper update succeeded'))
+            .catch((e) => {
+              // istanbul ignore next
+              logger.error('Pepper update failed', e)
+            })
         },
         this.options
       )
@@ -109,13 +115,16 @@ class CronTasks {
       const updateUsersTask = cron.schedule(
         cronString,
         () => {
-          updateUsers(conf, db, userDB, logger).catch((e) => {
-            logger.error('Users update failed', e)
-          })
+          updateUsers(conf, db, userDB, logger)
+            .then(() => logger.debug('Users update succeeded'))
+            .catch((e) => {
+              logger.error('Users update failed', e)
+            })
         },
         this.options
       )
 
+      logger.debug('Add tasks: updateHashesTask updateUsersTask')
       this.tasks.push(updateHashesTask)
       this.tasks.push(updateUsersTask)
     }
@@ -127,8 +136,10 @@ class CronTasks {
 
       // istanbul ignore if
       if (count > 0) {
+        logger.debug('Previous hashes detected')
         _addJob()
       } else {
+        logger.debug('No previous hashes detected, launching an update')
         await updateHashes(conf, db, userDB, logger)
         _addJob()
       }
@@ -158,14 +169,17 @@ class CronTasks {
     const task = cron.schedule(
       cronString,
       () => {
-        checkQuota(conf, db).catch((e) => {
-          // istanbul ignore next
-          db.logger.error('User quota check failed', e)
-        })
+        checkQuota(conf, db)
+          .then(() => db.logger.debug('User quota check succeeded'))
+          .catch((e) => {
+            // istanbul ignore next
+            db.logger.error('User quota check failed', e)
+          })
       },
       this.options
     )
 
+    db.logger.debug('Add task userQuotas')
     this.tasks.push(task)
   }
 
@@ -194,13 +208,16 @@ class CronTasks {
     const task = cron.schedule(
       cronString,
       () => {
-        updateFederationHashes(conf, userDB, logger).catch((e) => {
-          db.logger.error('Federation hashes update failed', e)
-        })
+        updateFederationHashes(conf, userDB, logger)
+          .then(() => db.logger.debug('Federation hashes update succeeded'))
+          .catch((e) => {
+            db.logger.error('Federation hashes update failed', e)
+          })
       },
       this.options
     )
 
+    logger.debug('Add task federationUpdates')
     this.tasks.push(task)
   }
 }
