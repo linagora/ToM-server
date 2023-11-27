@@ -43,14 +43,21 @@ const validateMatrixToken = (logger: TwakeLogger) => {
                   reject('Invalid response from Matrix Server')
                 }
               } else {
-                reject(
-                  "The Matrix homeserver did not include 'sub' in its response"
+                logger.warn(
+                  `The Matrix homeserver ${matrixServer} did not include 'sub' in its response`
                 )
+                reject('Invalid server')
               }
             })
-            .catch(reject)
+            .catch((e) => {
+              logger.warn('Token rejected', e)
+              reject('Token rejected')
+            })
         })
-        .catch(reject)
+        .catch((e) => {
+          logger.warn(`Unable to resolve matrix server ${matrixServer}`, e)
+          reject('Invalid server')
+        })
     })
   }
 }

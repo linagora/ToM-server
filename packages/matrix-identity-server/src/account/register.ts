@@ -48,17 +48,21 @@ const Register = (
               data: JSON.stringify(data)
             })
               .then(() => {
+                logger.info(
+                  `${req.socket.remoteAddress} successfully registered`
+                )
                 send(res, 200, { token })
               })
               .catch((e) => {
                 /* istanbul ignore next */
-                db.logger.error('Unable to create session', e)
+                logger.error('Unable to create session', e)
                 /* istanbul ignore next */
                 send(res, 500, errMsg('unknown', 'Unable to create session'))
               })
           })
           .catch((e) => {
-            send(res, 400, errMsg('unknown', e))
+            logger.warn(`Unable to validate token ${JSON.stringify(obj)}`, e)
+            send(res, 400, errMsg('sessionNotValidated', e))
           })
       })
     })
