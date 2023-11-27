@@ -16,7 +16,7 @@ const Logout = (idServer: MatrixIdentityServer): expressAppHandler => {
           /* istanbul ignore next */
           idServer.logger.warn(`Unable to delete token ${id}`, e)
           /* istanbul ignore next */
-          send(res, 500, errMsg('unknown', 'Unable to delete session'))
+          send(res, 401, errMsg('unknownToken'))
         })
     })
   }

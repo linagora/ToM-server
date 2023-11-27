@@ -35,9 +35,8 @@ export const errCodes = {
   // There was an error sending a notification. Typically seen when attempting to verify ownership of a given third party address.
   sendError: 'M_SEND_ERROR',
 
-  // The request contained an unrecognised value, such as an unknown token or medium.
-  // This is also used as the response if a server did not understand the request. This is expected to be returned with a 404 HTTP status code if the endpoint is not implemented or a 405 HTTP status code if the endpoint is implemented, but the incorrect HTTP method is used.
-  unrecognized: 'M_UNRECOGNIZED',
+  // Server requires some policies
+  termsNotSigned: 'M_TERMS_NOT_SIGNED',
 
   // The third party identifier is already in use by another user. Typically this error will have an additional mxid property to indicate who owns the third party identifier.
   threepidInUse: 'M_THREEPID_IN_USE',
@@ -45,8 +44,12 @@ export const errCodes = {
   // An unknown error has occurred.
   unknown: 'M_UNKNOWN',
 
-  // Server requires some policies
-  termsNotSigned: 'M_TERMS_NOT_SIGNED'
+  // Invalid access token
+  unknownToken: 'Unrecognised access token',
+
+  // The request contained an unrecognised value, such as an unknown token or medium.
+  // This is also used as the response if a server did not understand the request. This is expected to be returned with a 404 HTTP status code if the endpoint is not implemented or a 405 HTTP status code if the endpoint is implemented, but the incorrect HTTP method is used.
+  unrecognized: 'M_UNRECOGNIZED'
 } as const
 
 export const defaultMsg = (s: string): string => {
