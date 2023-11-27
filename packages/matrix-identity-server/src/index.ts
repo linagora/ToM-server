@@ -137,7 +137,10 @@ export default class MatrixIdentityServer {
                   '/_matrix/identity/v2': badMethod,
                   '/_matrix/identity/versions': badMethod,
                   '/_matrix/identity/v2/account': badMethod,
-                  '/_matrix/identity/v2/account/register': register(db),
+                  '/_matrix/identity/v2/account/register': register(
+                    db,
+                    this.logger
+                  ),
                   '/_matrix/identity/v2/account/logout': logout(this),
                   '/_matrix/identity/v2/lookup': lookup(this),
                   '/_matrix/identity/v2/terms': PostTerms(this),

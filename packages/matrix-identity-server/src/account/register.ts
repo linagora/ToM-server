@@ -9,6 +9,7 @@ import {
 } from '../utils'
 import { errMsg } from '../utils/errors'
 import validateMatrixToken from '../utils/validateMatrixToken'
+import { TwakeLogger } from '@twake/logger'
 
 const schema = {
   access_token: true,
@@ -24,11 +25,15 @@ export interface tokenContent {
   epoch: number
 }
 
-const Register = (db: IdentityServerDb): expressAppHandler => {
+const Register = (
+  db: IdentityServerDb,
+  logger: TwakeLogger
+): expressAppHandler => {
+  const validateToken = validateMatrixToken(logger)
   return (req, res) => {
     jsonContent(req, res, db.logger, (obj) => {
       validateParameters(res, schema, obj, db.logger, (obj) => {
-        validateMatrixToken(
+        validateToken(
           (obj as registerArgs).matrix_server_name,
           (obj as registerArgs).access_token
         )
