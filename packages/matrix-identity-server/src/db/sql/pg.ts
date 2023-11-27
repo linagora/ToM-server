@@ -1,13 +1,13 @@
 /* eslint-disable @typescript-eslint/promise-function-async */
 /* istanbul ignore file */
 import { type TwakeLogger } from '@twake/logger'
-import { type ClientConfig, type Client as PgClient } from 'pg'
+import { type ClientConfig, type Pool as PgPool } from 'pg'
 import { type Collections, type IdDbBackend } from '..'
 import { type Config, type DbGetResult } from '../../types'
 import createTables from './_createTables'
 import SQL from './sql'
 
-export type PgDatabase = PgClient
+export type PgDatabase = PgPool
 
 class Pg extends SQL implements IdDbBackend {
   declare db?: PgDatabase
@@ -48,23 +48,21 @@ class Pg extends SQL implements IdDbBackend {
             opts.host = RegExp.$1
             opts.port = parseInt(RegExp.$2)
           }
-          const db: PgClient = (this.db = new pg.Client(opts))
-          db.connect()
-            .then(() => {
-              createTables(
-                this,
-                tables,
-                indexes,
-                initializeValues,
-                logger,
-                resolve,
-                reject
-              )
-            })
-            .catch((e) => {
-              logger.error('Unable to create tables', e)
-              reject(e)
-            })
+          try {
+            this.db = new pg.Pool(opts)
+            createTables(
+              this,
+              tables,
+              indexes,
+              initializeValues,
+              logger,
+              resolve,
+              reject
+            )
+          } catch (e) {
+            logger.error('Unable to connect to Pg database')
+            reject(e)
+          }
         })
         .catch((e) => {
           logger.error('Unable to load pg module', e)
