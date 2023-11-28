@@ -145,7 +145,10 @@ describe('Federation server', () => {
           ),
           {
             method: 'POST',
-            body: JSON.stringify({ ...body, matrix_server_name: matrixServer })
+            body: JSON.stringify({
+              ...body,
+              matrix_server_name: `${matrixServer}:443`
+            })
           }
         )
         body = await response.json()

@@ -1,7 +1,7 @@
 /* eslint-disable prefer-promise-reject-errors */
-import fetch from 'node-fetch'
-import { MatrixResolve } from 'matrix-resolve'
 import { TwakeLogger } from '@twake/logger'
+import { MatrixResolve } from 'matrix-resolve'
+import fetch from 'node-fetch'
 
 interface userInfoResponse {
   sub: string
@@ -12,7 +12,7 @@ const matrixResolve = new MatrixResolve({
 })
 
 const hostnameRe =
-  /^(([a-zA-Z]|[a-zA-Z][a-zA-Z0-9-]*[a-zA-Z0-9])\.)*([A-Za-z]|[A-Za-z][A-Za-z0-9-]*[A-Za-z0-9])$/i
+  /^((([a-zA-Z0-9][-a-zA-Z0-9]*)?[a-zA-Z0-9])[.])*([a-zA-Z][-a-zA-Z0-9]*[a-zA-Z0-9]|[a-zA-Z])(:(\d+))?$/
 
 // eslint-disable-next-line @typescript-eslint/promise-function-async
 

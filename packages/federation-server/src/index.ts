@@ -31,9 +31,11 @@ export default class FederationServer extends MatrixIdentityServer {
     ) as Config
     super(serverConf, confDesc, logger)
     this.conf.trusted_servers_addresses =
-      process.env.TRUSTED_SERVERS_ADDRESSES?.split(/[,\s]+/).filter((addr) =>
-        addr.match(/\./)
-      ) ?? this.conf.trusted_servers_addresses
+      typeof this.conf.trusted_servers_addresses === 'string'
+        ? (this.conf.trusted_servers_addresses as string)
+            .split(/[,\s]+/)
+            .filter((addr) => addr.match(/\./))
+        : this.conf.trusted_servers_addresses
     this.authenticate = Authenticate(this.db)
     const superReady = this.ready
     this.ready = new Promise((resolve, reject) => {

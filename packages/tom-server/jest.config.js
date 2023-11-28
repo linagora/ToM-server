@@ -15,7 +15,8 @@ export default {
   setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
   moduleNameMapper: {
     "@twake/(.*)$": "<rootDir>/../$1/src",
-    "node-fetch": "<rootDir>/../../node_modules/node-fetch-jest"
+    "node-fetch": "<rootDir>/../../node_modules/node-fetch-jest",
+    'matrix-resolve': '<rootDir>/../matrix-resolve/src'
   },
   clearMocks: true,
   globalTeardown: '<rootDir>/jest.global-teardown.ts'
