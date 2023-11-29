@@ -10,8 +10,8 @@ interface Config {
 let created = false
 
 
-const createQuery = 'CREATE TABLE users (uid varchar(8), mobile varchar(12), mail varchar(32))'
-const insertQuery = "INSERT INTO users VALUES('dwho', '33612345678', 'dwho@example.com')"
+const createQuery = 'CREATE TABLE users (uid varchar(8), mobile varchar(12), mail varchar(32), sn varchar(32))'
+const insertQuery = "INSERT INTO users VALUES('dwho', '33612345678', 'dwho@example.com', 'Dwho')"
 
 // eslint-disable-next-line @typescript-eslint/promise-function-async
 const buildUserDB = (conf: Config, recreate?: boolean): Promise<void> => {
@@ -46,7 +46,7 @@ const buildUserDB = (conf: Config, recreate?: boolean): Promise<void> => {
                             // @ts-ignore v is first a number
                             if (v < 10) v = `0${v}`
                             return new Promise((_resolve, _reject) => {
-                              userDb.run(`INSERT INTO users VALUES('user${v}', '', 'user${v}@example.com')`, (err) => {
+                              userDb.run(`INSERT INTO users VALUES('user${v}', '', 'user${v}@example.com', 'User${v}')`, (err) => {
                                 err != null ? _reject(err) : _resolve(true)
                               })
                             })

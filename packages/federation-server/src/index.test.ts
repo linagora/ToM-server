@@ -1,4 +1,5 @@
 import { Hash } from '@twake/crypto'
+import dockerComposeV1, { v2 as dockerComposeV2 } from 'docker-compose'
 import express from 'express'
 import fs from 'fs'
 import type * as http from 'http'
@@ -54,6 +55,7 @@ describe('Federation server', () => {
   })
 
   describe('Integration tests', () => {
+    let containerNameSuffix: string
     let startedCompose: StartedDockerComposeEnvironment
     let identity1IPAddress: string
     let identity2IPAddress: string
@@ -143,7 +145,10 @@ describe('Federation server', () => {
           ),
           {
             method: 'POST',
-            body: JSON.stringify({ ...body, matrix_server_name: matrixServer })
+            body: JSON.stringify({
+              ...body,
+              matrix_server_name: `${matrixServer}:443`
+            })
           }
         )
         body = await response.json()
@@ -158,18 +163,43 @@ describe('Federation server', () => {
       syswideCas.addCAs(
         path.join(pathToTestDataFolder, 'nginx', 'ssl', 'ca.pem')
       )
-
-      new DockerComposeEnvironment(
-        path.join(pathToTestDataFolder),
-        'docker-compose.yml'
-      )
-        .withEnvironment({ MYUID: os.userInfo().uid.toString() })
-        .withWaitStrategy('postgresql-1', Wait.forHealthCheck())
-        .withWaitStrategy('synapse-federation-1', Wait.forHealthCheck())
-        .withWaitStrategy('synapse-1-1', Wait.forHealthCheck())
-        .withWaitStrategy('synapse-2-1', Wait.forHealthCheck())
-        .withWaitStrategy('synapse-3-1', Wait.forHealthCheck())
-        .up()
+      Promise.allSettled([dockerComposeV1.version(), dockerComposeV2.version()])
+        // eslint-disable-next-line @typescript-eslint/promise-function-async
+        .then((results) => {
+          const promiseSucceededIndex = results.findIndex(
+            (res) => res.status === 'fulfilled'
+          )
+          if (promiseSucceededIndex === -1) {
+            throw new Error('Docker compose is not installed')
+          }
+          containerNameSuffix = promiseSucceededIndex === 0 ? '_' : '-'
+          return new DockerComposeEnvironment(
+            path.join(pathToTestDataFolder),
+            'docker-compose.yml'
+          )
+            .withEnvironment({ MYUID: os.userInfo().uid.toString() })
+            .withWaitStrategy(
+              `postgresql${containerNameSuffix}1`,
+              Wait.forHealthCheck()
+            )
+            .withWaitStrategy(
+              `synapse-federation${containerNameSuffix}1`,
+              Wait.forHealthCheck()
+            )
+            .withWaitStrategy(
+              `synapse-1${containerNameSuffix}1`,
+              Wait.forHealthCheck()
+            )
+            .withWaitStrategy(
+              `synapse-2${containerNameSuffix}1`,
+              Wait.forHealthCheck()
+            )
+            .withWaitStrategy(
+              `synapse-3${containerNameSuffix}1`,
+              Wait.forHealthCheck()
+            )
+            .up()
+        })
         // eslint-disable-next-line @typescript-eslint/promise-function-async
         .then((upResult) => {
           startedCompose = upResult
@@ -255,10 +285,10 @@ describe('Federation server', () => {
 
       beforeAll((done) => {
         identity1IPAddress = startedCompose
-          .getContainer('identity-server-1-1')
+          .getContainer(`identity-server-1${containerNameSuffix}1`)
           .getIpAddress('test')
         identity2IPAddress = startedCompose
-          .getContainer('identity-server-2-1')
+          .getContainer(`identity-server-2${containerNameSuffix}1`)
           .getIpAddress('test')
 
         confOriginalContent = fs.readFileSync(
@@ -276,7 +306,7 @@ describe('Federation server', () => {
         )
 
         federationServerContainer = startedCompose.getContainer(
-          'federation-server-1'
+          `federation-server${containerNameSuffix}1`
         )
 
         federationServerContainer
@@ -735,19 +765,25 @@ describe('Federation server', () => {
                 'Certificates files for federation server has not been created'
               )
             return Promise.all([
-              startedCompose.getContainer('identity-server-1-1').restart(),
-              startedCompose.getContainer('identity-server-2-1').restart(),
-              startedCompose.getContainer('identity-server-3-1').restart()
+              startedCompose
+                .getContainer(`identity-server-1${containerNameSuffix}1`)
+                .restart(),
+              startedCompose
+                .getContainer(`identity-server-2${containerNameSuffix}1`)
+                .restart(),
+              startedCompose
+                .getContainer(`identity-server-3${containerNameSuffix}1`)
+                .restart()
             ])
           })
           // eslint-disable-next-line @typescript-eslint/promise-function-async
           .then(() => {
             identity1IPAddress = startedCompose
-              .getContainer('identity-server-1-1')
+              .getContainer(`identity-server-1${containerNameSuffix}1`)
               .getIpAddress('test')
 
             identity2IPAddress = startedCompose
-              .getContainer('identity-server-2-1')
+              .getContainer(`identity-server-2${containerNameSuffix}1`)
               .getIpAddress('test')
 
             const testConfig: Config = {
@@ -759,16 +795,16 @@ describe('Federation server', () => {
               database_user: 'twake',
               database_password: 'twake!1',
               database_host: `${startedCompose
-                .getContainer('postgresql-1')
+                .getContainer(`postgresql${containerNameSuffix}1`)
                 .getHost()}:5432`,
               database_name: 'federation',
               ldap_base: 'dc=example,dc=com',
               ldap_uri: `ldap://${startedCompose
-                .getContainer('postgresql-1')
+                .getContainer(`postgresql${containerNameSuffix}1`)
                 .getHost()}:389`,
               matrix_database_engine: 'pg',
               matrix_database_host: `${startedCompose
-                .getContainer('postgresql-1')
+                .getContainer(`postgresql${containerNameSuffix}1`)
                 .getHost()}:5432`,
               matrix_database_name: 'synapsefederation',
               matrix_database_user: 'synapse',

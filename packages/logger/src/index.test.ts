@@ -1,5 +1,4 @@
 import fs from 'fs'
-import moment from 'moment'
 import path from 'path'
 import winston from 'winston'
 import * as loggerModule from '.'
@@ -513,7 +512,7 @@ describe('Logger', () => {
     delete process.env.TWAKE_LOGGER_CONF
   })
 
-  test('should create a logger based on description file if there is no logging field in config', (done) => {
+  test('should create a logger based on description file if there is no logging field in config', () => {
     process.env.TWAKE_LOGGER_CONF = path.join(
       JEST_PROCESS_ROOT_PATH,
       'src',
@@ -538,24 +537,10 @@ describe('Logger', () => {
     const transportsField = createLoggerSpy.mock.calls[0][0]
       ?.transports as TransportInstance[]
     expect(transportsField).toHaveLength(1)
-    expect(transportsField[0]).toBeInstanceOf(
-      winston.transports.DailyRotateFile
-    )
+    expect(transportsField[0]).toBeInstanceOf(winston.transports.Console)
     createLoggerSpy.mockRestore()
     const logger = loggerModule.getLogger()
     expect(logger).toBeDefined()
-    setTimeout(() => {
-      const rootDirPath = path.join(JEST_PROCESS_ROOT_PATH, 'logs')
-      // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-      const logFilePath = path.join(
-        rootDirPath,
-        `twake-${moment().format('YYYY-MM-DD')}.log`
-      )
-      expect(fs.existsSync(logFilePath)).toEqual(true)
-      fs.rmSync(rootDirPath, { recursive: true })
-      delete process.env.TWAKE_LOGGER_CONF
-      done()
-    }, 1000)
   })
 
   test('should throw an error if description file has not allowed property', () => {

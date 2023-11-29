@@ -21,7 +21,8 @@ export const SearchFields = new Set<string>([
   'displayName',
   'givenName',
   'cn',
-  'sn'
+  'sn',
+  'matrixAddress'
 ])
 
 const _search = (
@@ -53,13 +54,15 @@ const _search = (
     /* istanbul ignore else */
     if (!error) {
       const _fields = fields.includes('uid') ? fields : [...fields, 'uid']
+      const _scope = scope.map((f) => (f === 'matrixAddress' ? 'uid' : f))
+      const value = data.val?.replace(/^@(.*?):(?:.*)$/, '$1')
       const request =
-        typeof data.val === 'string' && data.val.length > 0
+        typeof value === 'string' && value.length > 0
           ? tomServer.idServer.userDB.match(
               'users',
               _fields,
-              scope,
-              data.val,
+              _scope,
+              value,
               _fields[0]
             )
           : tomServer.idServer.userDB.getAll('users', _fields, _fields[0])

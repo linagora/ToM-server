@@ -1,4 +1,4 @@
-import { getLogger, type TwakeLogger } from '@twake/logger'
+import { ETransportType, getLogger, type TwakeLogger } from '@twake/logger'
 import fs from 'fs'
 import yaml from 'js-yaml'
 import moment from 'moment'
@@ -39,7 +39,23 @@ describe('Registration', () => {
   let logger: TwakeLogger
 
   beforeAll(() => {
-    logger = getLogger()
+    logger = getLogger({
+      ...(testConfig as Config),
+      logging: {
+        transports: [
+          {
+            type: ETransportType.DAILY_ROTATE_FILE,
+            options: {
+              zippedArchive: true,
+              dirname: './logs',
+              filename: 'twake-%DATE%.log',
+              maxSize: '10m',
+              maxFiles: '5d'
+            }
+          }
+        ]
+      }
+    })
   })
 
   describe('Class constructor (with setter and getter)', () => {

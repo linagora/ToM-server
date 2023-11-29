@@ -2,7 +2,7 @@ import { type TwakeLogger } from '@twake/logger'
 import { type ClientConfig } from 'pg'
 import { type UserDBBackend } from '../'
 import { type Collections } from '../../db'
-import Pg, { type PgDatabase } from '../../db/sql/pg'
+import Pg from '../../db/sql/pg'
 import { type Config } from '../../types'
 
 class UserDBPg extends Pg implements UserDBBackend {
@@ -44,15 +44,13 @@ class UserDBPg extends Pg implements UserDBBackend {
             opts.host = RegExp.$1
             opts.port = parseInt(RegExp.$2)
           }
-          const db: PgDatabase = (this.db = new pg.Client(opts))
-          db.connect()
-            .then(() => {
-              resolve()
-            })
-            .catch((e: any) => {
-              logger.error('Unable to connect to Pg database')
-              reject(e)
-            })
+          try {
+            this.db = new pg.Pool(opts)
+            resolve()
+          } catch (e) {
+            logger.error('Unable to connect to Pg database')
+            reject(e)
+          }
         })
         .catch((e) => {
           logger.error('Unable to load pg module')

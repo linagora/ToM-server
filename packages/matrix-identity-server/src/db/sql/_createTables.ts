@@ -79,7 +79,10 @@ const createTables = (
     .then(() => {
       resolve()
     })
-    .catch(reject)
+    .catch((e) => {
+      logger.error('Unable to create tables', e)
+      reject(e)
+    })
 }
 
 export default createTables
