@@ -1554,6 +1554,7 @@ describe('Federation server', () => {
           expect(response.statusCode).toEqual(400)
           expect(JSON.stringify(response.body)).toEqual(
             JSON.stringify({
+              errcode: 'M_INVALID_PARAM',
               error: 'Error field: Invalid value (property: algorithm)'
             })
           )
@@ -1573,6 +1574,7 @@ describe('Federation server', () => {
           expect(response.statusCode).toEqual(400)
           expect(JSON.stringify(response.body)).toEqual(
             JSON.stringify({
+              errcode: 'M_INVALID_PARAM',
               error: 'Error field: Invalid value (property: algorithm)'
             })
           )
@@ -1591,6 +1593,7 @@ describe('Federation server', () => {
           expect(response.statusCode).toEqual(400)
           expect(JSON.stringify(response.body)).toEqual(
             JSON.stringify({
+              errcode: 'M_INVALID_PARAM',
               error: 'Error field: Invalid value (property: pepper)'
             })
           )
@@ -1610,6 +1613,7 @@ describe('Federation server', () => {
           expect(response.statusCode).toEqual(400)
           expect(JSON.stringify(response.body)).toEqual(
             JSON.stringify({
+              errcode: 'M_INVALID_PARAM',
               error: 'Error field: Invalid value (property: pepper)'
             })
           )
@@ -1628,6 +1632,7 @@ describe('Federation server', () => {
           expect(response.statusCode).toEqual(400)
           expect(JSON.stringify(response.body)).toEqual(
             JSON.stringify({
+              errcode: 'M_INVALID_PARAM',
               error: 'Error field: Invalid value (property: addresses)'
             })
           )
@@ -1647,6 +1652,7 @@ describe('Federation server', () => {
           expect(response.statusCode).toEqual(400)
           expect(JSON.stringify(response.body)).toEqual(
             JSON.stringify({
+              errcode: 'M_INVALID_PARAM',
               error: 'Error field: Invalid value (property: addresses)'
             })
           )
@@ -1671,6 +1677,7 @@ describe('Federation server', () => {
           expect(response.statusCode).toEqual(400)
           expect(JSON.stringify(response.body)).toEqual(
             JSON.stringify({
+              errcode: 'M_INVALID_PARAM',
               error:
                 'Error field: One of the address is not a string (property: addresses)'
             })
@@ -1805,6 +1812,7 @@ describe('Federation server', () => {
           expect(response.statusCode).toEqual(400)
           expect(JSON.stringify(response.body)).toEqual(
             JSON.stringify({
+              errcode: 'M_INVALID_PARAM',
               error: 'Error field: Invalid value (property: mappings)'
             })
           )
@@ -1824,6 +1832,7 @@ describe('Federation server', () => {
           expect(response.statusCode).toEqual(400)
           expect(JSON.stringify(response.body)).toEqual(
             JSON.stringify({
+              errcode: 'M_INVALID_PARAM',
               error: 'Error field: Invalid value (property: mappings)'
             })
           )
@@ -1843,6 +1852,7 @@ describe('Federation server', () => {
           expect(response.statusCode).toEqual(400)
           expect(JSON.stringify(response.body)).toEqual(
             JSON.stringify({
+              errcode: 'M_INVALID_PARAM',
               error:
                 'Error field: Only one server address is allowed (property: mappings)'
             })

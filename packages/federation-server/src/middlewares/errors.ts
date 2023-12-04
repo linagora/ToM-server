@@ -69,7 +69,8 @@ export const validationErrorHandler = (req: Request): void => {
       .join(', ')
     throw new FederationServerError({
       status: 400,
-      message: errorMessage
+      message: errorMessage,
+      code: MatrixErrors.errCodes.invalidParam
     })
   }
 }
