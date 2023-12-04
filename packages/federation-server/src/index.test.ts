@@ -1091,9 +1091,15 @@ describe('Federation server', () => {
     const testConfig = {
       ...(defaultConfig as Partial<Config>),
       additional_features: true,
-      cron_service: true
+      cron_service: true,
+      trusted_servers_addresses: [
+        '192.168.1.1',
+        '192.168.200.4/30',
+        '2001:db8:3333:4444:5555:6666:7777:8888'
+      ]
     }
     const trustedIpAddress = '192.168.1.1'
+    const trustedIpv6Address = '2001:db8:3333:4444:5555:6666:7777:8888'
 
     beforeAll((done) => {
       Promise.all([
@@ -1158,6 +1164,7 @@ describe('Federation server', () => {
       let askywalkerHash: string
       let lskywalkerHash: string
       let okenobiHash: string
+      let lorganaHash: string
 
       beforeAll((done) => {
         request(app)
@@ -1176,8 +1183,14 @@ describe('Federation server', () => {
             lskywalkerHash = hash.sha256(
               `lskywalker@example.com email ${hashDetails.lookup_pepper}`
             )
+            lorganaHash = hash.sha256(
+              `lorgana@example.com email ${hashDetails.lookup_pepper}`
+            )
             okenobiHash = hash.sha256(
               `okenobi@example.com email ${hashDetails.lookup_pepper}`
+            )
+            const pamidalaHash = hash.sha256(
+              `pamidala@example.com email ${hashDetails.lookup_pepper}`
             )
 
             return Promise.all([
@@ -1200,7 +1213,7 @@ describe('Federation server', () => {
               request(app)
                 .post('/_matrix/identity/v2/lookups')
                 .set('Accept', 'application/json')
-                .set('X-forwarded-for', trustedIpAddress)
+                .set('X-forwarded-for', '192.168.200.5')
                 .send({
                   algorithm: hashDetails.algorithms[0],
                   pepper: hashDetails.lookup_pepper,
@@ -1216,12 +1229,32 @@ describe('Federation server', () => {
               request(app)
                 .post('/_matrix/identity/v2/lookups')
                 .set('Accept', 'application/json')
-                .set('X-forwarded-for', 'falsy_ip_address')
+                .set('X-forwarded-for', trustedIpv6Address)
                 .send({
                   algorithm: hashDetails.algorithms[0],
                   pepper: hashDetails.lookup_pepper,
                   mappings: {
                     'identity3.example.com': [
+                      {
+                        hash: lorganaHash,
+                        active: 1
+                      },
+                      {
+                        hash: pamidalaHash,
+                        active: 0
+                      }
+                    ]
+                  }
+                }),
+              request(app)
+                .post('/_matrix/identity/v2/lookups')
+                .set('Accept', 'application/json')
+                .set('X-forwarded-for', 'falsy_ip_address')
+                .send({
+                  algorithm: hashDetails.algorithms[0],
+                  pepper: hashDetails.lookup_pepper,
+                  mappings: {
+                    'identity4.example.com': [
                       {
                         hash: okenobiHash,
                         active: 1
@@ -1416,6 +1449,7 @@ describe('Federation server', () => {
             pepper: hashDetails.lookup_pepper,
             addresses: [
               lskywalkerHash,
+              lorganaHash,
               chewbaccaHash,
               qjinnHash,
               okenobiHash,
@@ -1433,7 +1467,8 @@ describe('Federation server', () => {
         expect(Object.keys(response.body.third_party_mappings)).toEqual(
           expect.arrayContaining([
             'identity1.example.com',
-            'identity2.example.com'
+            'identity2.example.com',
+            'identity3.example.com'
           ])
         )
         expect(
@@ -1456,6 +1491,15 @@ describe('Federation server', () => {
             inactives: []
           })
         )
+        expect(
+          response.body.third_party_mappings['identity3.example.com']
+        ).toHaveProperty('inactives', [])
+        expect(
+          response.body.third_party_mappings['identity3.example.com']
+        ).toHaveProperty('actives')
+        expect(
+          response.body.third_party_mappings['identity3.example.com'].actives
+        ).toEqual(expect.arrayContaining([lorganaHash]))
       })
     })
 
@@ -1517,7 +1561,7 @@ describe('Federation server', () => {
           )
         })
 
-        it('should send an error if token data in accessTokens table are invalid', async () => {
+        it('should send an error if token data in accessTokens table does not contain "sub" field', async () => {
           jest
             .spyOn(federationServer.db, 'get')
             .mockResolvedValue([{ data: JSON.stringify({}) }])
@@ -1783,6 +1827,23 @@ describe('Federation server', () => {
         })
 
         it('should send an error if requester ip does not belong to trusted ip addresses', async () => {
+          const response = await request(app)
+            .post('/_matrix/identity/v2/lookups')
+            .set('Accept', 'application/json')
+            .set('X-forwarded-for', '192.168.1.25')
+            .send({
+              mappings: {},
+              algorithm: 'sha256',
+              pepper: 'test_pepper'
+            })
+
+          expect(response.statusCode).toEqual(401)
+          expect(JSON.stringify(response.body)).toEqual(
+            JSON.stringify({ errcode: 'M_UNAUTHORIZED', error: 'Unauthorized' })
+          )
+        })
+
+        it('should send an error if requester ip is not a valid address', async () => {
           const response = await request(app)
             .post('/_matrix/identity/v2/lookups')
             .set('Accept', 'application/json')
