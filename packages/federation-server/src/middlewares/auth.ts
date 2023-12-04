@@ -1,3 +1,4 @@
+import { type TwakeLogger } from '@twake/logger'
 import {
   MatrixErrors,
   Utils,
@@ -5,6 +6,7 @@ import {
 } from '@twake/matrix-identity-server'
 import { type NextFunction, type RequestHandler, type Response } from 'express'
 import { type AuthRequest, type IdentityServerDb } from '../types'
+import { convertToIPv6 } from '../utils/ip-address'
 import { FederationServerError } from './errors'
 
 export const Authenticate = (
@@ -42,19 +44,32 @@ export const Authenticate = (
 
 export const auth = (
   authenticator: Utils.AuthenticationFunction,
-  trustedServersList: string[]
+  trustedServersList: string[],
+  logger: TwakeLogger
 ): RequestHandler => {
+  const trustedServersListAsIPv6 = trustedServersList.map((ip) =>
+    convertToIPv6(ip)
+  )
   return (req: AuthRequest, res: Response, next: NextFunction): void => {
-    let requesterIPAddress =
+    const date = new Date()
+    const originalRequesterIPAddress =
       // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
       (req.headers['x-forwarded-for'] as string) ||
       (req.socket.remoteAddress as string)
-    requesterIPAddress = requesterIPAddress.replace(/^::ffff:/, '')
-    if (trustedServersList.includes(requesterIPAddress)) {
-      next()
-    } else {
-      authenticator(req, res, (data: tokenContent, token: string | null) => {
-        try {
+    logger.info(
+      `${date.toUTCString()} Received ${req.method} to ${
+        req.originalUrl
+      } from ${originalRequesterIPAddress}`
+    )
+    try {
+      const requesterIPAddress = convertToIPv6(originalRequesterIPAddress)
+      if (
+        trustedServersListAsIPv6.includes(requesterIPAddress) ||
+        trustedServersListAsIPv6.some((ip) => requesterIPAddress.isInSubnet(ip))
+      ) {
+        next()
+      } else {
+        authenticator(req, res, (data: tokenContent, token: string | null) => {
           /* istanbul ignore if */
           if (data.sub === undefined) {
             throw new Error('Invalid data')
@@ -65,12 +80,17 @@ export const auth = (
             req.accessToken = token
           }
           next()
-        } catch (error) {
-          throw new FederationServerError({
-            status: 401,
-            code: MatrixErrors.errCodes.unAuthorized
-          })
-        }
+        })
+      }
+    } catch (error) {
+      logger.error(
+        `${date.toUTCString()} Unauthorized ${req.method} to ${
+          req.originalUrl
+        } from ${originalRequesterIPAddress}`
+      )
+      throw new FederationServerError({
+        status: 401,
+        code: MatrixErrors.errCodes.unAuthorized
       })
     }
   }

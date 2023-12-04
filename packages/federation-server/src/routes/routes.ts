@@ -1,3 +1,4 @@
+import { type TwakeLogger } from '@twake/logger'
 import { type IdServerAPI, type Utils } from '@twake/matrix-identity-server'
 import { Router, json, urlencoded } from 'express'
 import { hashDetails, lookup, lookups } from '../controllers/controllers'
@@ -34,7 +35,8 @@ export default (
   },
   db: IdentityServerDb,
   authenticate: Utils.AuthenticationFunction,
-  conf: Config
+  conf: Config,
+  logger: TwakeLogger
 ): Router => {
   const routes = Router()
   /**
@@ -130,7 +132,7 @@ export default (
       allowCors,
       json(),
       urlencoded({ extended: false }),
-      auth(authenticate, conf.trusted_servers_addresses),
+      auth(authenticate, conf.trusted_servers_addresses, logger),
       ...commonValidators,
       lookupValidator,
       lookup(conf, db),
@@ -152,7 +154,7 @@ export default (
       allowCors,
       json(),
       urlencoded({ extended: false }),
-      auth(authenticate, conf.trusted_servers_addresses),
+      auth(authenticate, conf.trusted_servers_addresses, logger),
       hashDetails(db),
       errorMiddleware
     )
@@ -239,7 +241,7 @@ export default (
       allowCors,
       json(),
       urlencoded({ extended: false }),
-      auth(authenticate, conf.trusted_servers_addresses),
+      auth(authenticate, conf.trusted_servers_addresses, logger),
       ...commonValidators,
       lookupsValidator,
       lookups(db),

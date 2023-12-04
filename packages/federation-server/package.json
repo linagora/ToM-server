@@ -44,6 +44,7 @@
     "@twake/logger": "*",
     "@twake/matrix-identity-server": "*",
     "express-validator": "^7.0.1",
+    "ip-address": "^9.0.5",
     "lodash": "^4.17.21"
   },
   "devDependencies": {

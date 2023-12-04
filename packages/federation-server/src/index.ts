@@ -49,7 +49,8 @@ export default class FederationServer extends MatrixIdentityServer {
             this.api,
             this.db,
             this.authenticate,
-            this.conf
+            this.conf,
+            this.logger
           )
           resolve(true)
         })

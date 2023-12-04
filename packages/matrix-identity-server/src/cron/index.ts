@@ -210,8 +210,8 @@ class CronTasks {
       () => {
         updateFederationHashes(conf, userDB, logger)
           .then(() => db.logger.debug('Federation hashes update succeeded'))
-          .catch((e) => {
-            db.logger.error('Federation hashes update failed', e)
+          .catch((e: Error) => {
+            db.logger.error(`${e.message}. Reason: ${e.cause as string}`)
           })
       },
       this.options
