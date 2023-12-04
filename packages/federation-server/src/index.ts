@@ -45,7 +45,12 @@ export default class FederationServer extends MatrixIdentityServer {
           return initializeDb(this.db, this.conf, this.logger)
         })
         .then(() => {
-          this.routes = Routes(this)
+          this.routes = Routes(
+            this.api,
+            this.db,
+            this.authenticate,
+            this.conf
+          )
           resolve(true)
         })
         /* istanbul ignore next */

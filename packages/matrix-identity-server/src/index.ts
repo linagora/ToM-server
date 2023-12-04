@@ -54,7 +54,7 @@ export const errMsg = _errMsg
 export const validateMatrixToken = _validateMatrixToken
 export const defaultConfig = defaultConfDesc
 
-type IdServerAPI = Record<string, expressAppHandler>
+export type IdServerAPI = Record<string, expressAppHandler>
 
 export default class MatrixIdentityServer {
   api: {

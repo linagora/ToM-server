@@ -1,5 +1,5 @@
-import { json, Router, urlencoded } from 'express'
-import type FederationServer from '..'
+import { type IdServerAPI, type Utils } from '@twake/matrix-identity-server'
+import { Router, json, urlencoded } from 'express'
 import { hashDetails, lookup, lookups } from '../controllers/controllers'
 import { auth } from '../middlewares/auth'
 import { errorMiddleware } from '../middlewares/errors'
@@ -10,10 +10,15 @@ import {
 } from '../middlewares/utils'
 import {
   commonValidators,
-  lookupsValidator,
-  lookupValidator
+  lookupValidator,
+  lookupsValidator
 } from '../middlewares/validation'
-import { type expressAppHandler, type middlewaresList } from '../types'
+import {
+  type Config,
+  type IdentityServerDb,
+  type expressAppHandler,
+  type middlewaresList
+} from '../types'
 
 const errorMiddlewares = (middleware: expressAppHandler): middlewaresList => [
   allowCors,
@@ -21,7 +26,16 @@ const errorMiddlewares = (middleware: expressAppHandler): middlewaresList => [
   errorMiddleware
 ]
 
-export default (server: FederationServer): Router => {
+export default (
+  api: {
+    get: IdServerAPI
+    post: IdServerAPI
+    put?: IdServerAPI
+  },
+  db: IdentityServerDb,
+  authenticate: Utils.AuthenticationFunction,
+  conf: Config
+): Router => {
   const routes = Router()
   /**
    * @openapi
@@ -116,10 +130,10 @@ export default (server: FederationServer): Router => {
       allowCors,
       json(),
       urlencoded({ extended: false }),
-      auth(server.authenticate, server.conf.trusted_servers_addresses),
+      auth(authenticate, conf.trusted_servers_addresses),
       ...commonValidators,
       lookupValidator,
-      lookup(server.conf, server.db),
+      lookup(conf, db),
       errorMiddleware
     )
     .all(...errorMiddlewares(methodNotAllowed))
@@ -138,20 +152,20 @@ export default (server: FederationServer): Router => {
       allowCors,
       json(),
       urlencoded({ extended: false }),
-      auth(server.authenticate, server.conf.trusted_servers_addresses),
-      hashDetails(server.db),
+      auth(authenticate, conf.trusted_servers_addresses),
+      hashDetails(db),
       errorMiddleware
     )
     .all(...errorMiddlewares(methodNotAllowed))
 
-  const defaultGetEndpoints = Object.keys(server.api.get)
-  const defaultPostEndpoints = Object.keys(server.api.post)
+  const defaultGetEndpoints = Object.keys(api.get)
+  const defaultPostEndpoints = Object.keys(api.post)
 
   defaultGetEndpoints.forEach((k) => {
-    routes.route(k).get(server.api.get[k])
+    routes.route(k).get(api.get[k])
   })
   defaultPostEndpoints.forEach((k) => {
-    routes.route(k).post(server.api.post[k])
+    routes.route(k).post(api.post[k])
   })
 
   const allDefaultEndpoints = [
@@ -225,10 +239,10 @@ export default (server: FederationServer): Router => {
       allowCors,
       json(),
       urlencoded({ extended: false }),
-      auth(server.authenticate, server.conf.trusted_servers_addresses),
+      auth(authenticate, conf.trusted_servers_addresses),
       ...commonValidators,
       lookupsValidator,
-      lookups(server.db),
+      lookups(db),
       errorMiddleware
     )
     .all(...errorMiddlewares(methodNotAllowed))
