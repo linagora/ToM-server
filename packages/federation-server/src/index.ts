@@ -8,6 +8,7 @@ import initializeDb from './db'
 import { Authenticate } from './middlewares/auth'
 import Routes from './routes/routes'
 import { type Config } from './types'
+import { isIpLiteral } from './utils/ip-address'
 
 export default class FederationServer extends MatrixIdentityServer {
   routes = Router()
@@ -34,7 +35,7 @@ export default class FederationServer extends MatrixIdentityServer {
       typeof this.conf.trusted_servers_addresses === 'string'
         ? (this.conf.trusted_servers_addresses as string)
             .split(/[,\s]+/)
-            .filter((addr) => addr.match(/\./))
+            .filter((addr) => addr.match(isIpLiteral))
         : this.conf.trusted_servers_addresses
     this.authenticate = Authenticate(this.db)
     const superReady = this.ready
