@@ -22,7 +22,7 @@ const conf: Config = {
   userdb_engine: 'sqlite',
   userdb_host: ':memory:',
   server_name: 'company.com',
-  federation_server: 'federation.example.com'
+  federation_servers: ['federation.example.com']
 }
 
 let db: IdentityServerDB, userDB: UserDB, cronTasks: CronTasks
