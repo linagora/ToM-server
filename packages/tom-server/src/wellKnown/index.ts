@@ -25,12 +25,15 @@
  *                    base_url:
  *                      type: string
  *                      description: Base URL of Identity server
- *                m.federation_server:
+ *                m.federation_servers:
  *                  type: object
  *                  properties:
- *                    base_url:
- *                      type: string
- *                      description: Base URL of Federation server
+ *                    base_urls:
+ *                      type: array
+ *                      items:
+ *                        type: string
+ *                        description: Base URL of Federation server
+ *                      description: Available Federation servers Base URL list
  *                t.server:
  *                  type: object
  *                  properties:
@@ -78,8 +81,8 @@
  *                base_url: matrix.example.com
  *              m.identity_server:
  *                base_url: global-id-server.twake.app
- *              m.federation_server:
- *                base_url: global-federation-server.twake.app
+ *              m.federation_servers:
+ *                base_urls: ["global-federation-server.twake.app", "other-federation-server.twake.app"]
  *              m.integrations:
  *                jitsi:
  *                  baseUrl: https://jitsi.example.com/
@@ -102,8 +105,8 @@ interface WellKnownType {
   'm.identity_server': {
     base_url: string
   }
-  'm.federation_server'?: {
-    base_url: string
+  'm.federation_servers'?: {
+    base_urls: string[]
   }
   't.server'?: {
     base_url: string
@@ -155,9 +158,14 @@ class WellKnown {
           }
         }
       }
-      if (conf.federation_server != null) {
-        wellKnown['m.federation_server'] = {
-          base_url: `https://${conf.federation_server}/`
+      if (
+        conf.federation_servers != null &&
+        conf.federation_servers.length > 0
+      ) {
+        wellKnown['m.federation_servers'] = {
+          base_urls: conf.federation_servers.map(
+            (address) => `https://${address}/`
+          )
         }
       }
       /* istanbul ignore if */ // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions

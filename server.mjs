@@ -26,7 +26,7 @@ const conf = {
   database_user: process.env.DATABASE_USER,
   database_ssl: process.env.DATABASE_SSL ? true : false,
   database_password: process.env.DATABASE_PASSWORD,
-  federation_server: process.env.FEDERATION_SERVER,
+  federation_server: process.env.FEDERATION_SERVERS,
   is_federation_server: false,
   jitsiBaseUrl: process.env.JITSI_BASE_URL,
   jitsiJwtAlgorithm: process.env.JITSI_JWT_ALGORITHM,
