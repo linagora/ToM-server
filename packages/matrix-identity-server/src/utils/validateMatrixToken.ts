@@ -2,6 +2,7 @@
 import { TwakeLogger } from '@twake/logger'
 import { MatrixResolve } from 'matrix-resolve'
 import fetch from 'node-fetch'
+import { hostnameRe } from '../utils'
 
 interface userInfoResponse {
   sub: string
@@ -10,9 +11,6 @@ interface userInfoResponse {
 const matrixResolve = new MatrixResolve({
   cache: 'toad-cache'
 })
-
-const hostnameRe =
-  /^((([a-zA-Z0-9][-a-zA-Z0-9]*)?[a-zA-Z0-9])[.])*([a-zA-Z][-a-zA-Z0-9]*[a-zA-Z0-9]|[a-zA-Z])(:(\d+))?$/
 
 // eslint-disable-next-line @typescript-eslint/promise-function-async
 

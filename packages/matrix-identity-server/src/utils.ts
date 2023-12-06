@@ -6,6 +6,9 @@ import { type tokenContent } from './account/register'
 import type IdentityServerDb from './db'
 import { errMsg } from './utils/errors'
 
+export const hostnameRe =
+  /^((([a-zA-Z0-9][-a-zA-Z0-9]*)?[a-zA-Z0-9])[.])*([a-zA-Z][-a-zA-Z0-9]*[a-zA-Z0-9]|[a-zA-Z])(:(\d+))?$/
+
 export type expressAppHandler = (
   req: Request | http.IncomingMessage,
   res: Response | http.ServerResponse,

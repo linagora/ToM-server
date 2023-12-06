@@ -35,7 +35,9 @@ export const filter = async (
     matrixDb.close()
     /* istanbul ignore if */
     if (entries == null || entries.length === 0) {
-      return conf.federation_server == null && !conf.is_federation_server
+      return (conf.federation_servers == null ||
+        conf.federation_servers.length === 0) &&
+        !conf.is_federation_server
         ? rows
         : []
     }
@@ -43,7 +45,10 @@ export const filter = async (
     entries.forEach((row) => {
       names.push((row.name as string).replace(/^@(.*?):(?:.*)$/, '$1'))
     })
-    if (conf.federation_server != null || conf.is_federation_server) {
+    if (
+      (conf.federation_servers != null && conf.federation_servers.length > 0) ||
+      conf.is_federation_server
+    ) {
       rows = rows
         .filter((row) => names.includes(row.uid as string))
         .map((row) => {

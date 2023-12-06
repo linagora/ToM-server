@@ -10,7 +10,7 @@
   "database_ssl": false,
   "database_user": "",
   "database_vacuum_delay": 3600,
-  "federation_server": null,
+  "federation_servers": null,
   "is_federation_server": false,
   "key_delay": 3600,
   "keys_depth": 5,

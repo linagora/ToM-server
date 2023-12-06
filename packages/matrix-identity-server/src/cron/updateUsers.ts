@@ -30,7 +30,8 @@ const updateUsers = async (
   const isMatrixDbAvailable: boolean =
     Boolean(conf.matrix_database_host) && Boolean(conf.matrix_database_engine)
   const isFederationServerSet =
-    conf.federation_server != null || conf.is_federation_server
+    (conf.federation_servers != null && conf.federation_servers?.length > 0) ||
+    conf.is_federation_server
 
   if (isMatrixDbAvailable) {
     promises.push(

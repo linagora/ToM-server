@@ -55,9 +55,14 @@ class CronTasks {
         this._addCheckUserQuotaJob(conf, db)
       ]
 
-      if (conf.federation_server != null) {
+      if (
+        conf.federation_servers != null &&
+        conf.federation_servers.length > 0
+      ) {
         logger.debug(
-          `federation_server set to ${conf.federation_server}, add task`
+          `Federation_servers set to [${conf.federation_servers.join(
+            ', '
+          )}], add task`
         )
         cronTasks.push(
           this._addUpdateFederationServerHashesJob(conf, db, userDB, logger)

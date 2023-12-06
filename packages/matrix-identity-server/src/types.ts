@@ -15,7 +15,7 @@ export interface Config {
   database_ssl?: boolean | null
   database_user?: string
   database_vacuum_delay: number
-  federation_server?: string | null
+  federation_servers?: string[] | null
   is_federation_server: boolean
   key_delay: number
   keys_depth: number

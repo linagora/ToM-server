@@ -8,7 +8,8 @@ import {
   Authenticate,
   send,
   type AuthenticationFunction,
-  type expressAppHandler
+  type expressAppHandler,
+  hostnameRe
 } from './utils'
 import { errMsg as _errMsg } from './utils/errors'
 import versions from './versions'
@@ -96,6 +97,12 @@ export default class MatrixIdentityServer {
         ? '/etc/twake/identity-server.conf'
         : undefined
     ) as Config
+    this.conf.federation_servers =
+      typeof this.conf.federation_servers === 'string'
+        ? (this.conf.federation_servers as string)
+            .split(/[,\s]+/)
+            .filter((addr) => addr.match(hostnameRe))
+        : this.conf.federation_servers
     this._logger = logger ?? getLogger(this.conf as unknown as LoggerConfig)
     // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
     this.cache = this.conf.cache_engine ? new Cache(this.conf) : undefined
