@@ -43,6 +43,7 @@ const conf = {
   userdb_name: process.env.USERDB_NAME,
   userdb_user: process.env.USERDB_USER,
   userdb_password: process.env.USERDB_PASSWORD,
+  trust_x_forwarded_for: process.env.TRUST_X_FORWARDED_FOR || false,
   trusted_servers_addresses: process.env.TRUSTED_SERVERS_ADDRESSES
 }
 

@@ -42,5 +42,6 @@
   "userdb_password": "",
   "userdb_user": "",
   "template_dir": "./templates",
+  "trust_x_forwarded_for": false,
   "trusted_servers_addresses": []
 }

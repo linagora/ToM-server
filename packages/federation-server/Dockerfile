@@ -1,6 +1,6 @@
 FROM node:18
 
-env BASE_URL= \
+ENV BASE_URL= \
     DATABASE_ENGINE= \
     DATABASE_HOST= \
     DATABASE_NAME= \
@@ -18,6 +18,7 @@ env BASE_URL= \
     MATRIX_DATABASE_USER= \
     SERVER_NAME= \
     TEMPLATE_DIR= \
+    TRUST_X_FORWARDED_FOR= \
     TRUSTED_SERVERS_ADDRESSES=
 
 RUN apt update && apt -y dist-upgrade

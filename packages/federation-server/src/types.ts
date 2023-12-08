@@ -34,6 +34,7 @@ export interface ErrorResponseBody {
 export type middlewaresList = Array<expressAppHandler | expressAppHandlerError>
 
 export type Config = MConfig & {
+  trust_x_forwarded_for: boolean
   trusted_servers_addresses: string[]
 }
 

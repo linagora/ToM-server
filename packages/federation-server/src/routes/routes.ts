@@ -132,7 +132,12 @@ export default (
       allowCors,
       json(),
       urlencoded({ extended: false }),
-      auth(authenticate, conf.trusted_servers_addresses, logger),
+      auth(
+        authenticate,
+        conf.trusted_servers_addresses,
+        conf.trust_x_forwarded_for,
+        logger
+      ),
       ...commonValidators,
       lookupValidator,
       lookup(conf, db),
@@ -154,7 +159,12 @@ export default (
       allowCors,
       json(),
       urlencoded({ extended: false }),
-      auth(authenticate, conf.trusted_servers_addresses, logger),
+      auth(
+        authenticate,
+        conf.trusted_servers_addresses,
+        conf.trust_x_forwarded_for,
+        logger
+      ),
       hashDetails(db),
       errorMiddleware
     )
@@ -241,7 +251,12 @@ export default (
       allowCors,
       json(),
       urlencoded({ extended: false }),
-      auth(authenticate, conf.trusted_servers_addresses, logger),
+      auth(
+        authenticate,
+        conf.trusted_servers_addresses,
+        conf.trust_x_forwarded_for,
+        logger
+      ),
       ...commonValidators,
       lookupsValidator,
       lookups(db),

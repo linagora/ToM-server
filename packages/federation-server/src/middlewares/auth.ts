@@ -45,6 +45,7 @@ export const Authenticate = (
 export const auth = (
   authenticator: Utils.AuthenticationFunction,
   trustedServersList: string[],
+  trustXForwardedForHeader: boolean,
   logger: TwakeLogger
 ): RequestHandler => {
   const trustedServersListAsIPv6 = trustedServersList.map((ip) =>
@@ -52,10 +53,11 @@ export const auth = (
   )
   return (req: AuthRequest, res: Response, next: NextFunction): void => {
     const date = new Date()
-    const originalRequesterIPAddress =
-      // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
-      (req.headers['x-forwarded-for'] as string) ||
-      (req.socket.remoteAddress as string)
+    const originalRequesterIPAddress = trustXForwardedForHeader
+      ? // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+        (req.headers['x-forwarded-for'] as string) ||
+        (req.socket.remoteAddress as string)
+      : (req.socket.remoteAddress as string)
     logger.info(
       `${date.toUTCString()} Received ${req.method} to ${
         req.originalUrl
