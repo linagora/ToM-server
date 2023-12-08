@@ -7,6 +7,7 @@ export default config([
   '@twake/config-parser',
   'express',
   'express-validator',
+  'ip-address',
   'lodash',
   'sqlite3',
   'pg',
