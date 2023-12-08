@@ -28,5 +28,6 @@
   "userdb_engine": "sqlite",
   "userdb_host": "./src/__testData__/user.db",
   "template_dir": "./templates",
+  "trust_x_forwarded_for": true,
   "trusted_servers_addresses": ["192.168.1.1"]
 }
