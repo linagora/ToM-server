@@ -8,7 +8,7 @@ import initializeDb from './db'
 import { Authenticate } from './middlewares/auth'
 import Routes from './routes/routes'
 import { type Config } from './types'
-import { isIpLiteral } from './utils/ip-address'
+import { isIpLiteral, isNetwork } from './utils/ip-address'
 
 export default class FederationServer extends MatrixIdentityServer {
   routes = Router()
@@ -36,7 +36,7 @@ export default class FederationServer extends MatrixIdentityServer {
         ? (this.conf.trusted_servers_addresses as string)
             .split(/[,\s]+/)
             .filter((addr) => {
-              if (addr.match(isIpLiteral)) {
+              if (addr.match(isIpLiteral) || addr.match(isNetwork)) {
                 return true
               } else {
                 ;(logger as TwakeLogger).warn(`${addr} rejected`)
