@@ -65,11 +65,17 @@ export const auth = (
     )
     try {
       const requesterIPAddress = convertToIPv6(originalRequesterIPAddress)
-      if (
-        trustedServersListAsIPv6.includes(requesterIPAddress) ||
-        trustedServersListAsIPv6.some((ip) => requesterIPAddress.isInSubnet(ip))
+      logger.debug(`Authenticated request from ${originalRequesterIPAddress}`)
+      if (trustedServersListAsIPv6.includes(requesterIPAddress)) {
+        logger.debug('IP is in list')
+        next()
+      } else if (
+        trustedServersListAsIPv6.some((ip) => {
+          const res = requesterIPAddress.isInSubnet(ip)
+          if (res) logger.debug(`IP is in ${ip.address}`)
+          return res
+        })
       ) {
-        logger.info(`${originalRequesterIPAddress} is in white list`)
         next()
       } else {
         logger.debug(`${originalRequesterIPAddress} isn't in white list`)
