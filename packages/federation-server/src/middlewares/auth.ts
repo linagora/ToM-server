@@ -69,8 +69,10 @@ export const auth = (
         trustedServersListAsIPv6.includes(requesterIPAddress) ||
         trustedServersListAsIPv6.some((ip) => requesterIPAddress.isInSubnet(ip))
       ) {
+        logger.info(`${originalRequesterIPAddress} is in white list`)
         next()
       } else {
+        logger.debug(`${originalRequesterIPAddress} isn't in white list`)
         authenticator(req, res, (data: tokenContent, token: string | null) => {
           /* istanbul ignore if */
           if (data.sub === undefined) {
@@ -85,6 +87,10 @@ export const auth = (
         })
       }
     } catch (error) {
+      logger.debug(
+        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+        `Real error: ${error instanceof Error ? error.message : error}`
+      )
       logger.error(
         `${date.toUTCString()} Unauthorized ${req.method} to ${
           req.originalUrl

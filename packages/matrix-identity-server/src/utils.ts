@@ -61,14 +61,14 @@ export const Authenticate = (db: IdentityServerDb): AuthenticationFunction => {
         })
         .catch((e) => {
           db.logger.error(
-            `${req.socket.remoteAddress} sent an invalid token`,
+            `${req.socket.remoteAddress as string} sent an invalid token`,
             e
           )
           send(res, 401, errMsg('unAuthorized'))
         })
     } else {
       db.logger.error(
-        `${req.socket.remoteAddress} tried to logout without token`
+        `${req.socket.remoteAddress as string} tried to access without token`
       )
       send(res, 401, errMsg('unAuthorized'))
     }
