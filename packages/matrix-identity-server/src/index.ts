@@ -102,7 +102,7 @@ export default class MatrixIdentityServer {
         ? (this.conf.federation_servers as string)
             .split(/[,\s]+/)
             .filter((addr) => addr.match(hostnameRe))
-        : this.conf.federation_servers
+        : this.conf.federation_servers || []
     this._logger = logger ?? getLogger(this.conf as unknown as LoggerConfig)
     // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
     this.cache = this.conf.cache_engine ? new Cache(this.conf) : undefined
