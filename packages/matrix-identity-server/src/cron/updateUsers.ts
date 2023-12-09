@@ -1,9 +1,9 @@
 import { type TwakeLogger } from '@twake/logger'
-import { MatrixDB, type DbGetResult } from '..'
+import MatrixDB from '../matrixDb'
 import type UserDB from '../userdb'
 import type IdentityServerDb from '../db'
 import updateHash, { type UpdatableFields } from '../lookup/updateHash'
-import { type Config } from '../types'
+import { type Config, type DbGetResult } from '../types'
 import { epoch } from '../utils'
 
 /**
