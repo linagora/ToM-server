@@ -27,7 +27,12 @@ export default async (
 ): Promise<void> => {
   const prefixErrorMessage = '[Update federation server hashes]'
 
-  let federationServersAddresses = [...(conf.federation_servers as string[])]
+  let federationServersAddresses =
+    typeof conf.federation_servers === 'object'
+      ? (conf.federation_servers as string[])
+      : conf.federation_servers
+      ? (conf.federation_servers as string).split(/[,\s]+/)
+      : []
 
   let serversIndexFail: number[] = []
 

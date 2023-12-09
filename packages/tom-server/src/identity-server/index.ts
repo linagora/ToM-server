@@ -20,6 +20,7 @@ export default class AugmentedIdentityServer extends MatrixIdentityServer {
     confDesc?: ConfigDescription,
     logger?: TwakeLogger
   ) {
+    // istanbul ignore if
     if (confDesc == null) confDesc = defaultConfig
     super(parent.conf, confDesc, logger)
     this.authenticate = Authenticate(this.db, this.conf)

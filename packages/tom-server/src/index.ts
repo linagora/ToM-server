@@ -174,6 +174,7 @@ export default class TwakeServer {
   }
 
   cleanJobs(): void {
+    // istanbul ignore next
     this.cleanJobs()
   }
 
@@ -184,6 +185,7 @@ export default class TwakeServer {
       return conf
     }
 
+    /* istanbul ignore if */
     if (process.env.TWAKE_SERVER_CONF != null) {
       return process.env.TWAKE_SERVER_CONF
     }

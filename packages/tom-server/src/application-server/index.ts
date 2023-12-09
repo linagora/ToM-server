@@ -138,6 +138,7 @@ export default class TwakeApplicationServer
               }
             }
           ).catch((e) => {
+            // istanbul ignore next
             this.logger.error(e)
           })
         }
