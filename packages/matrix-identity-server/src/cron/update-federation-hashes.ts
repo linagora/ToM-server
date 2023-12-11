@@ -159,6 +159,7 @@ export default async (
           _field = 'msisdn'
           value = value.replace(/\s/g, '').replace(/^\+/, '')
         }
+        logger.debug(`Prepare ${_field} hash for ${value}`)
         federationServersAddresses.forEach((address) => {
           updatedHashes[address].push({
             hash: hash[federationServersDetail[address].algorithm as 'sha256'](
@@ -199,6 +200,7 @@ export default async (
         )
         return false
       }
+      logger.debug(`Hashes pushed to ${federationServersAddresses[index]}`)
       return true
     })
     .map((result) => (result as PromiseFulfilledResult<Response>).value)
