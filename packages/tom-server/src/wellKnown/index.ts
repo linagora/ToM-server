@@ -158,6 +158,12 @@ class WellKnown {
           }
         }
       }
+      conf.federation_servers =
+        typeof conf.federation_servers === 'object'
+          ? conf.federation_servers
+          : typeof conf.federation_servers === 'string'
+          ? (conf.federation_servers as string).split(/[,\s]+/)
+          : []
       if (
         conf.federation_servers != null &&
         conf.federation_servers.length > 0
