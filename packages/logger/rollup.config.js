@@ -6,6 +6,5 @@ export default config([
   'path',
   '@twake/config-parser',
   'winston',
-  'winston-daily-rotate-file',
-  'winston/lib/winston/transports'
+  'winston-daily-rotate-file'
 ])
