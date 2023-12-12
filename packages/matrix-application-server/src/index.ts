@@ -124,4 +124,8 @@ export default class MatrixApplicationServer extends EventEmitter {
       return undefined
     }
   }
+
+  public clean(): void {
+    this.logger.close()
+  }
 }

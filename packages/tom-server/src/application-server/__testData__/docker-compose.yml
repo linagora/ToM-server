@@ -35,7 +35,7 @@ services:
       - "host.docker.internal:host-gateway"
 
   nginx-proxy:
-    image: jwilder/nginx-proxy
+    image: nginxproxy/nginx-proxy
     ports:
       - 443:443
     volumes:
