@@ -37,7 +37,7 @@ services:
   nginx-proxy:
     image: jwilder/nginx-proxy
     ports:
-      - 30443:443
+      - 443:443
     volumes:
       - /var/run/docker.sock:/tmp/docker.sock:ro
       - ./nginx/ssl:/etc/nginx/certs

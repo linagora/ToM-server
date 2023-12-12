@@ -250,7 +250,7 @@
        "oidcRPMetaDataOptionsLogoutSessionRequired": 1,
        "oidcRPMetaDataOptionsLogoutType": "back",
        "oidcRPMetaDataOptionsPublic": 0,
-       "oidcRPMetaDataOptionsRedirectUris": "https://matrix.example.com:30443/_synapse/client/oidc/callback",
+       "oidcRPMetaDataOptionsRedirectUris": "https://matrix.example.com/_synapse/client/oidc/callback",
        "oidcRPMetaDataOptionsRefreshToken": 0,
        "oidcRPMetaDataOptionsRequirePKCE": 0
      }
