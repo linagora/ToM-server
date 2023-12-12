@@ -187,9 +187,6 @@ services:
           - matrix3.example.com
           - auth.example.com
           - federation.example.com
-          - identity1.example.com
-          - identity2.example.com
-          - identity3.example.com
 
 networks:
   test:
