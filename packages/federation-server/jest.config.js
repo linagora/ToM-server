@@ -1,5 +1,5 @@
 export default {
-  testTimeout: 2400000,
+  testTimeout: 240000,
   testEnvironment: 'node',
   preset: 'ts-jest',
   collectCoverage: true,

@@ -1088,54 +1088,28 @@ describe('Federation server', () => {
     let federationServer: FederationServer
     let app: express.Application
     let expressFederationServer: http.Server
+    const trustedIpAddress = '192.168.1.1'
+    const trustedIpv6Address = '2001:db8:3333:4444:5555:6666:7777:8888'
+    const trustedNetwork = '192.168.200.4/30'
     const testConfig = {
       ...(defaultConfig as Partial<Config>),
       additional_features: true,
       cron_service: true,
       trusted_servers_addresses: [
-        '192.168.1.1',
-        '192.168.200.4/30',
-        '2001:db8:3333:4444:5555:6666:7777:8888'
+        trustedIpAddress,
+        trustedNetwork,
+        trustedIpv6Address
       ]
     }
-    const trustedIpAddress = '192.168.1.1'
-    const trustedIpv6Address = '2001:db8:3333:4444:5555:6666:7777:8888'
 
-    beforeAll((done) => {
-      Promise.all([
-        buildUserDB(testConfig as Config),
-        buildMatrixDb(testConfig as Config)
-      ])
-        // eslint-disable-next-line @typescript-eslint/promise-function-async
-        .then(() => {
-          federationServer = new FederationServer(testConfig)
-          app = express()
-          return federationServer.ready
-        })
-        // eslint-disable-next-line @typescript-eslint/promise-function-async
-        .then(() =>
-          federationServer.db.insert('accessTokens', {
-            id: authToken,
-            data: '{"sub": "@test:example.com"}'
-          })
-        )
-        .then(() => {
-          app.use(federationServer.routes)
-          expressFederationServer = app.listen(3000, () => {
-            done()
-          })
-        })
-        .catch((e) => {
-          done(e)
-        })
-    })
-
-    afterAll((done) => {
-      const filesToDelete: string[] = [
+    const stopFederationServer = (
+      done: jest.DoneCallback,
+      filesToDelete = [
         path.join(pathToTestDataFolder, 'database.db'),
         path.join(pathToTestDataFolder, 'matrix.db'),
         path.join(pathToTestDataFolder, 'user.db')
       ]
+    ): void => {
       filesToDelete.forEach((path: string) => {
         if (fs.existsSync(path)) fs.unlinkSync(path)
       })
@@ -1150,6 +1124,24 @@ describe('Federation server', () => {
       } else {
         done()
       }
+    }
+
+    beforeAll((done) => {
+      Promise.all([
+        buildUserDB(testConfig as Config),
+        buildMatrixDb(testConfig as Config)
+      ])
+        // eslint-disable-next-line @typescript-eslint/promise-function-async
+        .then(() => {
+          done()
+        })
+        .catch((e) => {
+          done(e)
+        })
+    })
+
+    afterAll((done) => {
+      stopFederationServer(done)
     })
 
     beforeEach(() => {
@@ -1166,340 +1158,630 @@ describe('Federation server', () => {
       let okenobiHash: string
       let lorganaHash: string
 
-      beforeAll((done) => {
-        request(app)
+      const setFederationServerDataAndRoutes = async (): Promise<void> => {
+        await federationServer.db.insert('accessTokens', {
+          id: authToken,
+          data: '{"sub": "@test:example.com"}'
+        })
+        await new Promise<void>((resolve, _reject) => {
+          app.use(federationServer.routes)
+          expressFederationServer = app.listen(3000, () => {
+            console.log('federation server set')
+            resolve()
+          })
+        })
+      }
+
+      const pushHashesToFederationServer = async (): Promise<void> => {
+        const response = await request(app)
           .get('/_matrix/identity/v2/hash_details')
           .set('Accept', 'application/json')
           .set('Authorization', `Bearer ${authToken}`)
-          // eslint-disable-next-line @typescript-eslint/promise-function-async
-          .then((response) => {
-            hashDetails = response.body as {
-              algorithms: ['sha256']
-              lookup_pepper: string
-            }
-            askywalkerHash = hash.sha256(
-              `askywalker@example.com email ${hashDetails.lookup_pepper}`
-            )
-            lskywalkerHash = hash.sha256(
-              `lskywalker@example.com email ${hashDetails.lookup_pepper}`
-            )
-            lorganaHash = hash.sha256(
-              `lorgana@example.com email ${hashDetails.lookup_pepper}`
-            )
-            okenobiHash = hash.sha256(
-              `okenobi@example.com email ${hashDetails.lookup_pepper}`
-            )
-            const pamidalaHash = hash.sha256(
-              `pamidala@example.com email ${hashDetails.lookup_pepper}`
-            )
 
-            return Promise.all([
-              request(app)
-                .post('/_matrix/identity/v2/lookups')
-                .set('Accept', 'application/json')
-                .set('X-forwarded-for', trustedIpAddress)
-                .send({
-                  algorithm: hashDetails.algorithms[0],
-                  pepper: hashDetails.lookup_pepper,
-                  mappings: {
-                    'identity1.example.com': [
-                      {
-                        hash: askywalkerHash,
-                        active: 1
-                      }
-                    ]
-                  }
-                }),
-              request(app)
-                .post('/_matrix/identity/v2/lookups')
-                .set('Accept', 'application/json')
-                .set('X-forwarded-for', '192.168.200.5')
-                .send({
-                  algorithm: hashDetails.algorithms[0],
-                  pepper: hashDetails.lookup_pepper,
-                  mappings: {
-                    'identity2.example.com': [
-                      {
-                        hash: lskywalkerHash,
-                        active: 1
-                      }
-                    ]
-                  }
-                }),
-              request(app)
-                .post('/_matrix/identity/v2/lookups')
-                .set('Accept', 'application/json')
-                .set('X-forwarded-for', trustedIpv6Address)
-                .send({
-                  algorithm: hashDetails.algorithms[0],
-                  pepper: hashDetails.lookup_pepper,
-                  mappings: {
-                    'identity3.example.com': [
-                      {
-                        hash: lorganaHash,
-                        active: 1
-                      },
-                      {
-                        hash: pamidalaHash,
-                        active: 0
-                      }
-                    ]
-                  }
-                }),
-              request(app)
-                .post('/_matrix/identity/v2/lookups')
-                .set('Accept', 'application/json')
-                .set('X-forwarded-for', 'falsy_ip_address')
-                .send({
-                  algorithm: hashDetails.algorithms[0],
-                  pepper: hashDetails.lookup_pepper,
-                  mappings: {
-                    'identity4.example.com': [
-                      {
-                        hash: okenobiHash,
-                        active: 1
-                      }
-                    ]
-                  }
-                })
-            ])
-          })
-          .then(() => {
-            done()
-          })
-          .catch((e) => {
-            done(e)
-          })
-      })
+        hashDetails = response.body as {
+          algorithms: ['sha256']
+          lookup_pepper: string
+        }
+        askywalkerHash = hash.sha256(
+          `askywalker@example.com email ${hashDetails.lookup_pepper}`
+        )
+        lskywalkerHash = hash.sha256(
+          `lskywalker@example.com email ${hashDetails.lookup_pepper}`
+        )
+        lorganaHash = hash.sha256(
+          `lorgana@example.com email ${hashDetails.lookup_pepper}`
+        )
+        okenobiHash = hash.sha256(
+          `okenobi@example.com email ${hashDetails.lookup_pepper}`
+        )
+        const pamidalaHash = hash.sha256(
+          `pamidala@example.com email ${hashDetails.lookup_pepper}`
+        )
 
-      it('should get server in which third party user is registered on lookup', async () => {
-        const response = await request(app)
-          .post('/_matrix/identity/v2/lookup')
-          .set('Accept', 'application/json')
-          .set('Authorization', `Bearer ${authToken}`)
-          .send({
-            algorithm: hashDetails.algorithms[0],
-            pepper: hashDetails.lookup_pepper,
-            addresses: [lskywalkerHash]
-          })
-        expect(response.body).toHaveProperty('mappings', {})
-        expect(response.body).toHaveProperty('inactive_mappings', {})
-        expect(response.body).toHaveProperty('third_party_mappings')
-        expect(response.body.third_party_mappings).toHaveProperty([
-          'identity2.example.com'
+        await Promise.all([
+          request(app)
+            .post('/_matrix/identity/v2/lookups')
+            .set('Accept', 'application/json')
+            .set('X-forwarded-for', trustedIpAddress)
+            .send({
+              algorithm: hashDetails.algorithms[0],
+              pepper: hashDetails.lookup_pepper,
+              mappings: {
+                'identity1.example.com': [
+                  {
+                    hash: askywalkerHash,
+                    active: 1
+                  }
+                ]
+              }
+            }),
+          request(app)
+            .post('/_matrix/identity/v2/lookups')
+            .set('Accept', 'application/json')
+            .set('X-forwarded-for', '192.168.200.5')
+            .send({
+              algorithm: hashDetails.algorithms[0],
+              pepper: hashDetails.lookup_pepper,
+              mappings: {
+                'identity2.example.com': [
+                  {
+                    hash: lskywalkerHash,
+                    active: 1
+                  }
+                ]
+              }
+            }),
+          request(app)
+            .post('/_matrix/identity/v2/lookups')
+            .set('Accept', 'application/json')
+            .set('X-forwarded-for', trustedIpv6Address)
+            .send({
+              algorithm: hashDetails.algorithms[0],
+              pepper: hashDetails.lookup_pepper,
+              mappings: {
+                'identity3.example.com': [
+                  {
+                    hash: lorganaHash,
+                    active: 1
+                  },
+                  {
+                    hash: pamidalaHash,
+                    active: 0
+                  }
+                ]
+              }
+            }),
+          request(app)
+            .post('/_matrix/identity/v2/lookups')
+            .set('Accept', 'application/json')
+            .set('X-forwarded-for', 'falsy_ip_address')
+            .send({
+              algorithm: hashDetails.algorithms[0],
+              pepper: hashDetails.lookup_pepper,
+              mappings: {
+                'identity4.example.com': [
+                  {
+                    hash: okenobiHash,
+                    active: 1
+                  }
+                ]
+              }
+            })
         ])
-        expect(
-          response.body.third_party_mappings['identity2.example.com']
-        ).toHaveProperty('inactives', [])
-        expect(
-          response.body.third_party_mappings['identity2.example.com']
-        ).toHaveProperty('actives')
-        expect(
-          response.body.third_party_mappings['identity2.example.com'].actives
-        ).toEqual(expect.arrayContaining([lskywalkerHash]))
-      })
+      }
 
-      it('should get user of federation server environment on lookup', async () => {
-        let response = await request(app)
-          .get('/_matrix/identity/v2/hash_details')
-          .set('Accept', 'application/json')
-          .set('Authorization', `Bearer ${authToken}`)
-        const hashDetails = response.body as {
-          algorithms: ['sha256']
-          lookup_pepper: string
-        }
-        const chewbaccaHash = hash.sha256(
-          `chewbacca@example.com email ${hashDetails.lookup_pepper}`
-        )
-        response = await request(app)
-          .post('/_matrix/identity/v2/lookup')
-          .set('Accept', 'application/json')
-          .set('Authorization', `Bearer ${authToken}`)
-          .send({
-            algorithm: hashDetails.algorithms[0],
-            pepper: hashDetails.lookup_pepper,
-            addresses: [chewbaccaHash]
-          })
-        expect(response.body).toHaveProperty('inactive_mappings', {})
-        expect(response.body).toHaveProperty('third_party_mappings', {})
-        expect(response.body).toHaveProperty('mappings')
-        expect(response.body.mappings).toHaveProperty(
-          chewbaccaHash,
-          '@chewbacca:example.com'
-        )
-      })
+      describe('Use environment variables', () => {
+        const {
+          trust_x_forwarded_for: trustXForwardedFor,
+          trusted_servers_addresses: trustedServersAddresses,
+          ...mIdentityServerConfig
+        } = testConfig
 
-      it('should not find user from not trusted identity server on lookup', async () => {
-        const response = await request(app)
-          .post('/_matrix/identity/v2/lookup')
-          .set('Accept', 'application/json')
-          .set('Authorization', `Bearer ${authToken}`)
-          .send({
-            algorithm: hashDetails.algorithms[0],
-            pepper: hashDetails.lookup_pepper,
-            addresses: [okenobiHash]
-          })
-        expect(response.body).toHaveProperty('inactive_mappings', {})
-        expect(response.body).toHaveProperty('third_party_mappings', {})
-        expect(response.body).toHaveProperty('mappings', {})
-      })
+        beforeAll((done) => {
+          process.env.TRUSTED_SERVERS_ADDRESSES = trustedServersAddresses
+            .join(',')
+            .concat(',invalid_ip')
+          process.env.TRUST_X_FORWARDED_FOR = String(trustXForwardedFor)
+          federationServer = new FederationServer(mIdentityServerConfig)
+          app = express()
+          federationServer.ready
+            // eslint-disable-next-line @typescript-eslint/promise-function-async
+            .then(() => setFederationServerDataAndRoutes())
+            // eslint-disable-next-line @typescript-eslint/promise-function-async
+            .then(() => pushHashesToFederationServer())
+            .then(() => {
+              done()
+            })
+            .catch((e) => {
+              done(e)
+            })
+        })
 
-      it('should not find user not connected on any matrix server on lookup', async () => {
-        let response = await request(app)
-          .get('/_matrix/identity/v2/hash_details')
-          .set('Accept', 'application/json')
-          .set('Authorization', `Bearer ${authToken}`)
-        const hashDetails = response.body as {
-          algorithms: ['sha256']
-          lookup_pepper: string
-        }
-        const qjinnHash = hash.sha256(
-          `qjinn@example.com email ${hashDetails.lookup_pepper}`
-        )
-        response = await request(app)
-          .post('/_matrix/identity/v2/lookup')
-          .set('Accept', 'application/json')
-          .set('Authorization', `Bearer ${authToken}`)
-          .send({
-            algorithm: hashDetails.algorithms[0],
-            pepper: hashDetails.lookup_pepper,
-            addresses: [qjinnHash]
-          })
-        expect(response.body).toHaveProperty('inactive_mappings', {})
-        expect(response.body).toHaveProperty('third_party_mappings', {})
-        expect(response.body).toHaveProperty('mappings', {})
-      })
+        afterAll((done) => {
+          delete process.env.TRUSTED_SERVERS_ADDRESSES
+          delete process.env.TRUST_X_FORWARDED_FOR
+          stopFederationServer(done, [
+            path.join(pathToTestDataFolder, 'database.db')
+          ])
+        })
 
-      it('should find all servers on which a third party user is connected on lookup', async () => {
-        await request(app)
-          .post('/_matrix/identity/v2/lookups')
-          .set('Accept', 'application/json')
-          .set('X-forwarded-for', trustedIpAddress)
-          .send({
-            algorithm: hashDetails.algorithms[0],
-            pepper: hashDetails.lookup_pepper,
-            mappings: {
-              'identity1.example.com': [
-                {
-                  hash: lskywalkerHash,
-                  active: 1
-                },
-                {
-                  hash: askywalkerHash,
-                  active: 1
-                }
-              ]
-            }
-          })
-        const response = await request(app)
-          .post('/_matrix/identity/v2/lookup')
-          .set('Accept', 'application/json')
-          .set('Authorization', `Bearer ${authToken}`)
-          .send({
-            algorithm: hashDetails.algorithms[0],
-            pepper: hashDetails.lookup_pepper,
-            addresses: [lskywalkerHash]
-          })
-        expect(response.body).toHaveProperty('mappings', {})
-        expect(response.body).toHaveProperty('inactive_mappings', {})
-        expect(response.body).toHaveProperty('third_party_mappings')
-        expect(Object.keys(response.body.third_party_mappings)).toEqual(
-          expect.arrayContaining([
-            'identity1.example.com',
+        it('should get server in which third party user is registered on lookup', async () => {
+          const response = await request(app)
+            .post('/_matrix/identity/v2/lookup')
+            .set('Accept', 'application/json')
+            .set('Authorization', `Bearer ${authToken}`)
+            .send({
+              algorithm: hashDetails.algorithms[0],
+              pepper: hashDetails.lookup_pepper,
+              addresses: [lskywalkerHash]
+            })
+          expect(response.body).toHaveProperty('mappings', {})
+          expect(response.body).toHaveProperty('inactive_mappings', {})
+          expect(response.body).toHaveProperty('third_party_mappings')
+          expect(response.body.third_party_mappings).toHaveProperty([
             'identity2.example.com'
           ])
-        )
-        const expected3PIDData = {
-          actives: [lskywalkerHash],
-          inactives: []
-        }
-        expect(
-          JSON.stringify(
-            response.body.third_party_mappings['identity1.example.com']
-          )
-        ).toEqual(JSON.stringify(expected3PIDData))
-        expect(
-          JSON.stringify(
+          expect(
             response.body.third_party_mappings['identity2.example.com']
-          )
-        ).toEqual(JSON.stringify(expected3PIDData))
-      })
-
-      it('should find all federation users and servers address of third party users on lookup', async () => {
-        let response = await request(app)
-          .get('/_matrix/identity/v2/hash_details')
-          .set('Accept', 'application/json')
-          .set('Authorization', `Bearer ${authToken}`)
-        const hashDetails = response.body as {
-          algorithms: ['sha256']
-          lookup_pepper: string
-        }
-        const chewbaccaHash = hash.sha256(
-          `chewbacca@example.com email ${hashDetails.lookup_pepper}`
-        )
-        const qjinnHash = hash.sha256(
-          `qjinn@example.com email ${hashDetails.lookup_pepper}`
-        )
-        response = await request(app)
-          .post('/_matrix/identity/v2/lookup')
-          .set('Accept', 'application/json')
-          .set('Authorization', `Bearer ${authToken}`)
-          .send({
-            algorithm: hashDetails.algorithms[0],
-            pepper: hashDetails.lookup_pepper,
-            addresses: [
-              lskywalkerHash,
-              lorganaHash,
-              chewbaccaHash,
-              qjinnHash,
-              okenobiHash,
-              askywalkerHash
-            ]
-          })
-        expect(response.body).toHaveProperty('inactive_mappings', {})
-        expect(response.body).toHaveProperty('mappings')
-        expect(response.body).toHaveProperty('third_party_mappings')
-        expect(JSON.stringify(response.body.mappings)).toEqual(
-          JSON.stringify({
-            [chewbaccaHash]: '@chewbacca:example.com'
-          })
-        )
-        expect(Object.keys(response.body.third_party_mappings)).toEqual(
-          expect.arrayContaining([
-            'identity1.example.com',
-            'identity2.example.com',
-            'identity3.example.com'
-          ])
-        )
-        expect(
-          response.body.third_party_mappings['identity1.example.com']
-        ).toHaveProperty('inactives', [])
-        expect(
-          response.body.third_party_mappings['identity1.example.com']
-        ).toHaveProperty('actives')
-        expect(
-          response.body.third_party_mappings['identity1.example.com'].actives
-        ).toEqual(expect.arrayContaining([askywalkerHash, lskywalkerHash]))
-
-        expect(
-          JSON.stringify(
+          ).toHaveProperty('inactives', [])
+          expect(
             response.body.third_party_mappings['identity2.example.com']
+          ).toHaveProperty('actives')
+          expect(
+            response.body.third_party_mappings['identity2.example.com'].actives
+          ).toEqual(expect.arrayContaining([lskywalkerHash]))
+        })
+
+        it('should get user of federation server environment on lookup', async () => {
+          let response = await request(app)
+            .get('/_matrix/identity/v2/hash_details')
+            .set('Accept', 'application/json')
+            .set('Authorization', `Bearer ${authToken}`)
+          const hashDetails = response.body as {
+            algorithms: ['sha256']
+            lookup_pepper: string
+          }
+          const chewbaccaHash = hash.sha256(
+            `chewbacca@example.com email ${hashDetails.lookup_pepper}`
           )
-        ).toEqual(
-          JSON.stringify({
+          response = await request(app)
+            .post('/_matrix/identity/v2/lookup')
+            .set('Accept', 'application/json')
+            .set('Authorization', `Bearer ${authToken}`)
+            .send({
+              algorithm: hashDetails.algorithms[0],
+              pepper: hashDetails.lookup_pepper,
+              addresses: [chewbaccaHash]
+            })
+          expect(response.body).toHaveProperty('inactive_mappings', {})
+          expect(response.body).toHaveProperty('third_party_mappings', {})
+          expect(response.body).toHaveProperty('mappings')
+          expect(response.body.mappings).toHaveProperty(
+            chewbaccaHash,
+            '@chewbacca:example.com'
+          )
+        })
+
+        it('should not find user from not trusted identity server on lookup', async () => {
+          const response = await request(app)
+            .post('/_matrix/identity/v2/lookup')
+            .set('Accept', 'application/json')
+            .set('Authorization', `Bearer ${authToken}`)
+            .send({
+              algorithm: hashDetails.algorithms[0],
+              pepper: hashDetails.lookup_pepper,
+              addresses: [okenobiHash]
+            })
+          expect(response.body).toHaveProperty('inactive_mappings', {})
+          expect(response.body).toHaveProperty('third_party_mappings', {})
+          expect(response.body).toHaveProperty('mappings', {})
+        })
+
+        it('should not find user not connected on any matrix server on lookup', async () => {
+          let response = await request(app)
+            .get('/_matrix/identity/v2/hash_details')
+            .set('Accept', 'application/json')
+            .set('Authorization', `Bearer ${authToken}`)
+          const hashDetails = response.body as {
+            algorithms: ['sha256']
+            lookup_pepper: string
+          }
+          const qjinnHash = hash.sha256(
+            `qjinn@example.com email ${hashDetails.lookup_pepper}`
+          )
+          response = await request(app)
+            .post('/_matrix/identity/v2/lookup')
+            .set('Accept', 'application/json')
+            .set('Authorization', `Bearer ${authToken}`)
+            .send({
+              algorithm: hashDetails.algorithms[0],
+              pepper: hashDetails.lookup_pepper,
+              addresses: [qjinnHash]
+            })
+          expect(response.body).toHaveProperty('inactive_mappings', {})
+          expect(response.body).toHaveProperty('third_party_mappings', {})
+          expect(response.body).toHaveProperty('mappings', {})
+        })
+
+        it('should find all servers on which a third party user is connected on lookup', async () => {
+          await request(app)
+            .post('/_matrix/identity/v2/lookups')
+            .set('Accept', 'application/json')
+            .set('X-forwarded-for', trustedIpAddress)
+            .send({
+              algorithm: hashDetails.algorithms[0],
+              pepper: hashDetails.lookup_pepper,
+              mappings: {
+                'identity1.example.com': [
+                  {
+                    hash: lskywalkerHash,
+                    active: 1
+                  },
+                  {
+                    hash: askywalkerHash,
+                    active: 1
+                  }
+                ]
+              }
+            })
+          const response = await request(app)
+            .post('/_matrix/identity/v2/lookup')
+            .set('Accept', 'application/json')
+            .set('Authorization', `Bearer ${authToken}`)
+            .send({
+              algorithm: hashDetails.algorithms[0],
+              pepper: hashDetails.lookup_pepper,
+              addresses: [lskywalkerHash]
+            })
+          expect(response.body).toHaveProperty('mappings', {})
+          expect(response.body).toHaveProperty('inactive_mappings', {})
+          expect(response.body).toHaveProperty('third_party_mappings')
+          expect(Object.keys(response.body.third_party_mappings)).toEqual(
+            expect.arrayContaining([
+              'identity1.example.com',
+              'identity2.example.com'
+            ])
+          )
+          const expected3PIDData = {
             actives: [lskywalkerHash],
             inactives: []
-          })
-        )
-        expect(
-          response.body.third_party_mappings['identity3.example.com']
-        ).toHaveProperty('inactives', [])
-        expect(
-          response.body.third_party_mappings['identity3.example.com']
-        ).toHaveProperty('actives')
-        expect(
-          response.body.third_party_mappings['identity3.example.com'].actives
-        ).toEqual(expect.arrayContaining([lorganaHash]))
+          }
+          expect(
+            JSON.stringify(
+              response.body.third_party_mappings['identity1.example.com']
+            )
+          ).toEqual(JSON.stringify(expected3PIDData))
+          expect(
+            JSON.stringify(
+              response.body.third_party_mappings['identity2.example.com']
+            )
+          ).toEqual(JSON.stringify(expected3PIDData))
+        })
+
+        it('should find all federation users and servers address of third party users on lookup', async () => {
+          let response = await request(app)
+            .get('/_matrix/identity/v2/hash_details')
+            .set('Accept', 'application/json')
+            .set('Authorization', `Bearer ${authToken}`)
+          const hashDetails = response.body as {
+            algorithms: ['sha256']
+            lookup_pepper: string
+          }
+          const chewbaccaHash = hash.sha256(
+            `chewbacca@example.com email ${hashDetails.lookup_pepper}`
+          )
+          const qjinnHash = hash.sha256(
+            `qjinn@example.com email ${hashDetails.lookup_pepper}`
+          )
+          response = await request(app)
+            .post('/_matrix/identity/v2/lookup')
+            .set('Accept', 'application/json')
+            .set('Authorization', `Bearer ${authToken}`)
+            .send({
+              algorithm: hashDetails.algorithms[0],
+              pepper: hashDetails.lookup_pepper,
+              addresses: [
+                lskywalkerHash,
+                lorganaHash,
+                chewbaccaHash,
+                qjinnHash,
+                okenobiHash,
+                askywalkerHash
+              ]
+            })
+          expect(response.body).toHaveProperty('inactive_mappings', {})
+          expect(response.body).toHaveProperty('mappings')
+          expect(response.body).toHaveProperty('third_party_mappings')
+          expect(JSON.stringify(response.body.mappings)).toEqual(
+            JSON.stringify({
+              [chewbaccaHash]: '@chewbacca:example.com'
+            })
+          )
+          expect(Object.keys(response.body.third_party_mappings)).toEqual(
+            expect.arrayContaining([
+              'identity1.example.com',
+              'identity2.example.com',
+              'identity3.example.com'
+            ])
+          )
+          expect(
+            response.body.third_party_mappings['identity1.example.com']
+          ).toHaveProperty('inactives', [])
+          expect(
+            response.body.third_party_mappings['identity1.example.com']
+          ).toHaveProperty('actives')
+          expect(
+            response.body.third_party_mappings['identity1.example.com'].actives
+          ).toEqual(expect.arrayContaining([askywalkerHash, lskywalkerHash]))
+
+          expect(
+            JSON.stringify(
+              response.body.third_party_mappings['identity2.example.com']
+            )
+          ).toEqual(
+            JSON.stringify({
+              actives: [lskywalkerHash],
+              inactives: []
+            })
+          )
+          expect(
+            response.body.third_party_mappings['identity3.example.com']
+          ).toHaveProperty('inactives', [])
+          expect(
+            response.body.third_party_mappings['identity3.example.com']
+          ).toHaveProperty('actives')
+          expect(
+            response.body.third_party_mappings['identity3.example.com'].actives
+          ).toEqual(expect.arrayContaining([lorganaHash]))
+        })
+      })
+
+      describe('Use JSON configuration object', () => {
+        beforeAll((done) => {
+          federationServer = new FederationServer(testConfig)
+          app = express()
+          federationServer.ready
+            // eslint-disable-next-line @typescript-eslint/promise-function-async
+            .then(() => setFederationServerDataAndRoutes())
+            // eslint-disable-next-line @typescript-eslint/promise-function-async
+            .then(() => pushHashesToFederationServer())
+            .then(() => {
+              done()
+            })
+            .catch((e) => {
+              done(e)
+            })
+        })
+
+        it('should get server in which third party user is registered on lookup', async () => {
+          const response = await request(app)
+            .post('/_matrix/identity/v2/lookup')
+            .set('Accept', 'application/json')
+            .set('Authorization', `Bearer ${authToken}`)
+            .send({
+              algorithm: hashDetails.algorithms[0],
+              pepper: hashDetails.lookup_pepper,
+              addresses: [lskywalkerHash]
+            })
+          expect(response.body).toHaveProperty('mappings', {})
+          expect(response.body).toHaveProperty('inactive_mappings', {})
+          expect(response.body).toHaveProperty('third_party_mappings')
+          expect(response.body.third_party_mappings).toHaveProperty([
+            'identity2.example.com'
+          ])
+          expect(
+            response.body.third_party_mappings['identity2.example.com']
+          ).toHaveProperty('inactives', [])
+          expect(
+            response.body.third_party_mappings['identity2.example.com']
+          ).toHaveProperty('actives')
+          expect(
+            response.body.third_party_mappings['identity2.example.com'].actives
+          ).toEqual(expect.arrayContaining([lskywalkerHash]))
+        })
+
+        it('should get user of federation server environment on lookup', async () => {
+          let response = await request(app)
+            .get('/_matrix/identity/v2/hash_details')
+            .set('Accept', 'application/json')
+            .set('Authorization', `Bearer ${authToken}`)
+          const hashDetails = response.body as {
+            algorithms: ['sha256']
+            lookup_pepper: string
+          }
+          const chewbaccaHash = hash.sha256(
+            `chewbacca@example.com email ${hashDetails.lookup_pepper}`
+          )
+          response = await request(app)
+            .post('/_matrix/identity/v2/lookup')
+            .set('Accept', 'application/json')
+            .set('Authorization', `Bearer ${authToken}`)
+            .send({
+              algorithm: hashDetails.algorithms[0],
+              pepper: hashDetails.lookup_pepper,
+              addresses: [chewbaccaHash]
+            })
+          expect(response.body).toHaveProperty('inactive_mappings', {})
+          expect(response.body).toHaveProperty('third_party_mappings', {})
+          expect(response.body).toHaveProperty('mappings')
+          expect(response.body.mappings).toHaveProperty(
+            chewbaccaHash,
+            '@chewbacca:example.com'
+          )
+        })
+
+        it('should not find user from not trusted identity server on lookup', async () => {
+          const response = await request(app)
+            .post('/_matrix/identity/v2/lookup')
+            .set('Accept', 'application/json')
+            .set('Authorization', `Bearer ${authToken}`)
+            .send({
+              algorithm: hashDetails.algorithms[0],
+              pepper: hashDetails.lookup_pepper,
+              addresses: [okenobiHash]
+            })
+          expect(response.body).toHaveProperty('inactive_mappings', {})
+          expect(response.body).toHaveProperty('third_party_mappings', {})
+          expect(response.body).toHaveProperty('mappings', {})
+        })
+
+        it('should not find user not connected on any matrix server on lookup', async () => {
+          let response = await request(app)
+            .get('/_matrix/identity/v2/hash_details')
+            .set('Accept', 'application/json')
+            .set('Authorization', `Bearer ${authToken}`)
+          const hashDetails = response.body as {
+            algorithms: ['sha256']
+            lookup_pepper: string
+          }
+          const qjinnHash = hash.sha256(
+            `qjinn@example.com email ${hashDetails.lookup_pepper}`
+          )
+          response = await request(app)
+            .post('/_matrix/identity/v2/lookup')
+            .set('Accept', 'application/json')
+            .set('Authorization', `Bearer ${authToken}`)
+            .send({
+              algorithm: hashDetails.algorithms[0],
+              pepper: hashDetails.lookup_pepper,
+              addresses: [qjinnHash]
+            })
+          expect(response.body).toHaveProperty('inactive_mappings', {})
+          expect(response.body).toHaveProperty('third_party_mappings', {})
+          expect(response.body).toHaveProperty('mappings', {})
+        })
+
+        it('should find all servers on which a third party user is connected on lookup', async () => {
+          await request(app)
+            .post('/_matrix/identity/v2/lookups')
+            .set('Accept', 'application/json')
+            .set('X-forwarded-for', trustedIpAddress)
+            .send({
+              algorithm: hashDetails.algorithms[0],
+              pepper: hashDetails.lookup_pepper,
+              mappings: {
+                'identity1.example.com': [
+                  {
+                    hash: lskywalkerHash,
+                    active: 1
+                  },
+                  {
+                    hash: askywalkerHash,
+                    active: 1
+                  }
+                ]
+              }
+            })
+          const response = await request(app)
+            .post('/_matrix/identity/v2/lookup')
+            .set('Accept', 'application/json')
+            .set('Authorization', `Bearer ${authToken}`)
+            .send({
+              algorithm: hashDetails.algorithms[0],
+              pepper: hashDetails.lookup_pepper,
+              addresses: [lskywalkerHash]
+            })
+          expect(response.body).toHaveProperty('mappings', {})
+          expect(response.body).toHaveProperty('inactive_mappings', {})
+          expect(response.body).toHaveProperty('third_party_mappings')
+          expect(Object.keys(response.body.third_party_mappings)).toEqual(
+            expect.arrayContaining([
+              'identity1.example.com',
+              'identity2.example.com'
+            ])
+          )
+          const expected3PIDData = {
+            actives: [lskywalkerHash],
+            inactives: []
+          }
+          expect(
+            JSON.stringify(
+              response.body.third_party_mappings['identity1.example.com']
+            )
+          ).toEqual(JSON.stringify(expected3PIDData))
+          expect(
+            JSON.stringify(
+              response.body.third_party_mappings['identity2.example.com']
+            )
+          ).toEqual(JSON.stringify(expected3PIDData))
+        })
+
+        it('should find all federation users and servers address of third party users on lookup', async () => {
+          let response = await request(app)
+            .get('/_matrix/identity/v2/hash_details')
+            .set('Accept', 'application/json')
+            .set('Authorization', `Bearer ${authToken}`)
+          const hashDetails = response.body as {
+            algorithms: ['sha256']
+            lookup_pepper: string
+          }
+          const chewbaccaHash = hash.sha256(
+            `chewbacca@example.com email ${hashDetails.lookup_pepper}`
+          )
+          const qjinnHash = hash.sha256(
+            `qjinn@example.com email ${hashDetails.lookup_pepper}`
+          )
+          response = await request(app)
+            .post('/_matrix/identity/v2/lookup')
+            .set('Accept', 'application/json')
+            .set('Authorization', `Bearer ${authToken}`)
+            .send({
+              algorithm: hashDetails.algorithms[0],
+              pepper: hashDetails.lookup_pepper,
+              addresses: [
+                lskywalkerHash,
+                lorganaHash,
+                chewbaccaHash,
+                qjinnHash,
+                okenobiHash,
+                askywalkerHash
+              ]
+            })
+          expect(response.body).toHaveProperty('inactive_mappings', {})
+          expect(response.body).toHaveProperty('mappings')
+          expect(response.body).toHaveProperty('third_party_mappings')
+          expect(JSON.stringify(response.body.mappings)).toEqual(
+            JSON.stringify({
+              [chewbaccaHash]: '@chewbacca:example.com'
+            })
+          )
+          expect(Object.keys(response.body.third_party_mappings)).toEqual(
+            expect.arrayContaining([
+              'identity1.example.com',
+              'identity2.example.com',
+              'identity3.example.com'
+            ])
+          )
+          expect(
+            response.body.third_party_mappings['identity1.example.com']
+          ).toHaveProperty('inactives', [])
+          expect(
+            response.body.third_party_mappings['identity1.example.com']
+          ).toHaveProperty('actives')
+          expect(
+            response.body.third_party_mappings['identity1.example.com'].actives
+          ).toEqual(expect.arrayContaining([askywalkerHash, lskywalkerHash]))
+
+          expect(
+            JSON.stringify(
+              response.body.third_party_mappings['identity2.example.com']
+            )
+          ).toEqual(
+            JSON.stringify({
+              actives: [lskywalkerHash],
+              inactives: []
+            })
+          )
+          expect(
+            response.body.third_party_mappings['identity3.example.com']
+          ).toHaveProperty('inactives', [])
+          expect(
+            response.body.third_party_mappings['identity3.example.com']
+          ).toHaveProperty('actives')
+          expect(
+            response.body.third_party_mappings['identity3.example.com'].actives
+          ).toEqual(expect.arrayContaining([lorganaHash]))
+        })
       })
     })
 
@@ -1523,7 +1805,10 @@ describe('Federation server', () => {
 
           expect(response.statusCode).toBe(405)
           expect(JSON.stringify(response.body)).toEqual(
-            JSON.stringify({ errcode: 'M_UNRECOGNIZED', error: 'Unrecognized' })
+            JSON.stringify({
+              errcode: 'M_UNRECOGNIZED',
+              error: 'Unrecognized'
+            })
           )
         })
 
@@ -1540,7 +1825,10 @@ describe('Federation server', () => {
 
           expect(response.statusCode).toEqual(401)
           expect(JSON.stringify(response.body)).toEqual(
-            JSON.stringify({ errcode: 'M_UNAUTHORIZED', error: 'Unauthorized' })
+            JSON.stringify({
+              errcode: 'M_UNAUTHORIZED',
+              error: 'Unauthorized'
+            })
           )
         })
 
@@ -1557,7 +1845,10 @@ describe('Federation server', () => {
 
           expect(response.statusCode).toEqual(401)
           expect(JSON.stringify(response.body)).toEqual(
-            JSON.stringify({ errcode: 'M_UNAUTHORIZED', error: 'Unauthorized' })
+            JSON.stringify({
+              errcode: 'M_UNAUTHORIZED',
+              error: 'Unauthorized'
+            })
           )
         })
 
@@ -1581,7 +1872,10 @@ describe('Federation server', () => {
           expect(jsonParseSpy).toHaveBeenNthCalledWith(2, '{}')
           expect(response.statusCode).toEqual(401)
           expect(JSON.stringify(response.body)).toEqual(
-            JSON.stringify({ errcode: 'M_UNAUTHORIZED', error: 'Unauthorized' })
+            JSON.stringify({
+              errcode: 'M_UNAUTHORIZED',
+              error: 'Unauthorized'
+            })
           )
         })
 
@@ -1822,7 +2116,10 @@ describe('Federation server', () => {
 
           expect(response.statusCode).toBe(405)
           expect(JSON.stringify(response.body)).toEqual(
-            JSON.stringify({ errcode: 'M_UNRECOGNIZED', error: 'Unrecognized' })
+            JSON.stringify({
+              errcode: 'M_UNRECOGNIZED',
+              error: 'Unrecognized'
+            })
           )
         })
 
@@ -1839,7 +2136,10 @@ describe('Federation server', () => {
 
           expect(response.statusCode).toEqual(401)
           expect(JSON.stringify(response.body)).toEqual(
-            JSON.stringify({ errcode: 'M_UNAUTHORIZED', error: 'Unauthorized' })
+            JSON.stringify({
+              errcode: 'M_UNAUTHORIZED',
+              error: 'Unauthorized'
+            })
           )
         })
 
@@ -1856,7 +2156,10 @@ describe('Federation server', () => {
 
           expect(response.statusCode).toEqual(401)
           expect(JSON.stringify(response.body)).toEqual(
-            JSON.stringify({ errcode: 'M_UNAUTHORIZED', error: 'Unauthorized' })
+            JSON.stringify({
+              errcode: 'M_UNAUTHORIZED',
+              error: 'Unauthorized'
+            })
           )
         })
 
@@ -1987,7 +2290,10 @@ describe('Federation server', () => {
 
           expect(response.statusCode).toBe(405)
           expect(JSON.stringify(response.body)).toEqual(
-            JSON.stringify({ errcode: 'M_UNRECOGNIZED', error: 'Unrecognized' })
+            JSON.stringify({
+              errcode: 'M_UNRECOGNIZED',
+              error: 'Unrecognized'
+            })
           )
         })
 

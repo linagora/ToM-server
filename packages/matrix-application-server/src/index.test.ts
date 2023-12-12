@@ -23,7 +23,7 @@ describe('MatrixApplicationServer', () => {
   beforeAll(() => {
     logger = getLogger({
       logging: {
-        transports: [
+        log_transports: [
           {
             type: ETransportType.FILE,
             options: {

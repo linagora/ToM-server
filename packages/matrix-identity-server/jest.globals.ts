@@ -6,7 +6,7 @@ const logsFilename = 'identity-server-test.log'
 
 export const logger: TwakeLogger = getLogger({
   logging: {
-    transports: [
+    log_transports: [
       {
         type: ETransportType.FILE,
         options: {
