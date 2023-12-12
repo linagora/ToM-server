@@ -12,9 +12,8 @@ const matrixResolve = new MatrixResolve({
   cache: 'toad-cache'
 })
 
-// eslint-disable-next-line @typescript-eslint/promise-function-async
-
 const validateMatrixToken = (logger: TwakeLogger) => {
+  // eslint-disable-next-line @typescript-eslint/promise-function-async
   return (matrixServer: string, accessToken: string): Promise<string> => {
     /* istanbul ignore if */
     if (!hostnameRe.test(matrixServer))
@@ -23,6 +22,7 @@ const validateMatrixToken = (logger: TwakeLogger) => {
       matrixResolve
         .resolve(matrixServer)
         .then((baseUrl) => {
+          if (typeof baseUrl === 'object') baseUrl = baseUrl[0]
           fetch(
             encodeURI(
               `${baseUrl}_matrix/federation/v1/openid/userinfo?access_token=${accessToken}`
