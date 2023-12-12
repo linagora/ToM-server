@@ -1,19 +1,13 @@
 {
   "logging": {
-    "logger": null,
-    "logLevel": "info",
-    "logFile": null,
-    "format": {
-      "type": "simple"
-    },
-    "transports": [{
+    "log_level": "info",
+    "log_transports": [{
       "type":"Console"
     }],
-    "levels": null,
     "silent": false,
-    "exitOnError": false,
-    "defaultMeta": null,
-    "exceptionHandlers": [],
-    "rejectionHandlers": []
+    "exit_on_error": false,
+    "default_meta": null,
+    "exception_handlers": [],
+    "rejection_handlers": []
   }
 }
