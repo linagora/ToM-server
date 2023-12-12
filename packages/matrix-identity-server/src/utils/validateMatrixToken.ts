@@ -1,5 +1,5 @@
 /* eslint-disable prefer-promise-reject-errors */
-import { TwakeLogger } from '@twake/logger'
+import { type TwakeLogger } from '@twake/logger'
 import { MatrixResolve } from 'matrix-resolve'
 import fetch from 'node-fetch'
 import { hostnameRe } from '../utils'
@@ -21,7 +21,7 @@ const validateMatrixToken = (logger: TwakeLogger) => {
     return new Promise((resolve, reject) => {
       matrixResolve
         .resolve(matrixServer)
-        .then((baseUrl) => {
+        .then((baseUrl: string | string[]) => {
           if (typeof baseUrl === 'object') baseUrl = baseUrl[0]
           fetch(
             encodeURI(
