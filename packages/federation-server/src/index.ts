@@ -39,7 +39,7 @@ export default class FederationServer extends MatrixIdentityServer {
               if ((addr.match(isIpLiteral) ?? addr.match(isNetwork)) != null) {
                 return true
               } else {
-                ;(logger as TwakeLogger).warn(`${addr} rejected`)
+                this.logger.warn(`${addr} rejected`)
                 return false
               }
             })

@@ -1,10 +1,7 @@
 {
   "logging": {
-    "logLevel": "error",
-    "format": {
-      "type": "align"
-    },
-    "transports": [{
+    "log_level": "error",
+    "log_transports": [{
       "type":"falsy"
     }]
   }

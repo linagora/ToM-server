@@ -82,10 +82,6 @@ describe('ApplicationServer', () => {
         }
       )
       let location = response.headers.get('location') as string
-      location = location.replace(
-        /auth\.example\.com/,
-        'auth.example.com:30443'
-      )
       const matrixCookies = response.headers.get('set-cookie')
       response = await fetch.default(location)
       body = await response.text()

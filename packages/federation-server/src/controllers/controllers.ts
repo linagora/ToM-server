@@ -127,14 +127,30 @@ export const lookups = (db: IdentityServerDb): expressAppHandler => {
   }
 }
 
+interface HashDetailsObject {
+  algorithms: string[]
+  lookup_pepper: string
+  alt_lookup_peppers?: string[]
+}
+
 export const hashDetails = (db: IdentityServerDb): expressAppHandler => {
   return (req, res, next) => {
     db.get('keys', ['data'], { name: 'pepper' })
       .then((rows) => {
-        res.json({
+        const resp: HashDetailsObject = {
           algorithms: supportedHashes,
-          lookup_pepper: rows[0].data
-        })
+          lookup_pepper: rows[0].data as string
+        }
+        db.get('keys', ['data'], { name: 'previousPepper' })
+          .then((rows2) => {
+            if (rows2 != null && rows2.length > 0)
+              resp.alt_lookup_peppers = [rows2[0].data as string]
+            res.json(resp)
+          })
+          .catch((e) => {
+            db.logger.debug('No previous pepper')
+            res.json(resp)
+          })
       })
       .catch((e) => {
         next(

@@ -1,19 +1,10 @@
 {
   "logging": {
-    "defaultMeta": {},
-    "logger": "Console",
+    "default_meta": {},
     "silent": "falsy",
-    "exitOnError": "falsy",
-    "logFile": "./test",
-    "levels": {
-      "test": true,
-      "toto": 1
-    },
-    "transports": [{
+    "exit_on_error": "falsy",
+    "log_transports": [{
       "falsy": "falsy"
-    }],
-    "format": {
-      "type": "printf"
-    } 
+    }]
   }
 }

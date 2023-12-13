@@ -42,7 +42,7 @@ describe('Registration', () => {
     logger = getLogger({
       ...(testConfig as Config),
       logging: {
-        transports: [
+        log_transports: [
           {
             type: ETransportType.DAILY_ROTATE_FILE,
             options: {
@@ -403,8 +403,9 @@ describe('Registration', () => {
         )
         await logFileFulfilled(logFilePath)
         expect(fs.existsSync(logFilePath)).toEqual(true)
-        expect(fs.readFileSync(logFilePath, 'utf-8')).toEqual(
-          'info: Application service registration file already exists\n'
+        // (\d{4}\-\d\d\-\d\d([tT][\d:\.]*)?)([zZ]|([+\-])(\d\d):?(\d\d))? is regular expression for ISO Date
+        expect(fs.readFileSync(logFilePath, 'utf-8')).toMatch(
+          /^INFO \| (\d{4}\-\d\d\-\d\d([tT][\d:\.]*)?)([zZ]|([+\-])(\d\d):?(\d\d))? \| Application service registration file already exists\n$/
         )
         fs.unlinkSync(logFilePath)
         done()

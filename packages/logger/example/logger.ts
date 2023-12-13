@@ -2,11 +2,8 @@ import { EFormatType, ETransportType, getLogger } from '@twake/logger'
 
 const logger = getLogger({
   logging: {
-    logLevel: 'error',
-    format: {
-      type: EFormatType.CLI
-    },
-    transports: [
+    log_level: 'error',
+    log_transports: [
       {
         type: ETransportType.FILE,
         options: {

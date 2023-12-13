@@ -97,11 +97,11 @@ export const auth = (
         // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
         `Real error: ${error instanceof Error ? error.message : error}`
       )
-      logger.error(
-        `${date.toUTCString()} Unauthorized ${req.method} to ${
-          req.originalUrl
-        } from ${originalRequesterIPAddress}`
-      )
+      logger.error(`Unauthorized`, {
+        ip: originalRequesterIPAddress,
+        httpMethod: req.method,
+        endpointPath: req.originalUrl
+      })
       throw new FederationServerError({
         status: 401,
         code: MatrixErrors.errCodes.unAuthorized

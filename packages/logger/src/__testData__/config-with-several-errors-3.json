@@ -1,15 +1,9 @@
 {
   "logging": {
-    "defaultMeta": {},
-    "logger": "File",
+    "default_meta": {},
     "silent": false,
-    "exitOnError":false,
-    "logFile": "./test",
-    "levels": null,
-    "logLevel": "error",
-    "transports": "falsy",
-    "format": {
-      "falsy": "falsy"
-    } 
+    "exit_on_error":false,
+    "log_level": "error",
+    "log_lransports": "falsy"
   }
 }

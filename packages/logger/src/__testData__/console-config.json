@@ -1,14 +1,8 @@
 {
   "logging": {
-    "logLevel": "warn",
-    "format": {
-      "type": "cli"
-    },
-    "transports": [{
-      "type":"Console",
-      "options": {
-        "format": "align"
-      }
+    "log_level": "warn",
+    "log_transports": [{
+      "type":"Console"
     }]
   }
 }

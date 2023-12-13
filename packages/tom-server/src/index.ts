@@ -33,6 +33,7 @@ abstract class AbstractTwakeServerPublic {
 
   cleanJobs(): void {
     this.idServer.cleanJobs()
+    this.logger.close()
   }
 
   protected readonly initServer = async (): Promise<boolean> => {
@@ -106,6 +107,8 @@ class TwakeServerPublicImpl extends AbstractTwakeServerPublic {
 }
 
 class TwakeServerEnterprise extends AbstractTwakeServerPublic {
+  private _appServiceApi: AppServiceAPI | undefined
+
   constructor(
     public conf: Config,
     public readonly logger: TwakeLogger,
@@ -117,8 +120,8 @@ class TwakeServerEnterprise extends AbstractTwakeServerPublic {
     this.ready = new Promise<boolean>((resolve, reject) => {
       this.initServer()
         .then(() => {
-          const appServiceApi = new AppServiceAPI(this, confDesc, this.logger)
-          this.endpoints.use(appServiceApi.router.routes)
+          this._appServiceApi = new AppServiceAPI(this, confDesc, this.logger)
+          this.endpoints.use(this._appServiceApi.router.routes)
           resolve(true)
         })
         .catch((error) => {
@@ -128,6 +131,11 @@ class TwakeServerEnterprise extends AbstractTwakeServerPublic {
           reject(new Error('Unable to initialize server', { cause: error }))
         })
     })
+  }
+
+  cleanJobs(): void {
+    super.cleanJobs()
+    this._appServiceApi?.clean()
   }
 }
 

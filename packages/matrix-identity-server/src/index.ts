@@ -173,5 +173,6 @@ export default class MatrixIdentityServer {
     clearTimeout(this.db?.cleanJob)
     this.cronTasks?.stop()
     this.db?.close()
+    this.logger.close()
   }
 }
