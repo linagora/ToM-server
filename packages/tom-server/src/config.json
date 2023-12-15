@@ -60,5 +60,8 @@
   "registration_file_path": "registration.yaml",
   "namespaces": { "users": [] },
   "push_ephemeral": true,
-  "enable_company_features": false
+  "enable_company_features": false,
+  "sms_api_url": "",
+  "sms_api_login": "",
+  "sms_api_key": ""
 }
