@@ -43,7 +43,8 @@
     "@twake/matrix-application-server": "*",
     "@twake/matrix-identity-server": "*",
     "lodash": "^4.17.21",
-    "redis": "^4.6.6"
+    "redis": "^4.6.6",
+    "validator": "^13.11.0"
   },
   "devDependencies": {
     "@small-tech/syswide-cas": "^6.0.2",

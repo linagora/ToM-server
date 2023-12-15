@@ -18,6 +18,7 @@ import type { Config, ConfigurationFile, TwakeIdentityServer } from './types'
 import userInfoAPIRouter from './user-info-api'
 import VaultServer from './vault-api'
 import WellKnown from './wellKnown'
+import smsApiRouter from './sms-api'
 
 abstract class AbstractTwakeServerPublic {
   endpoints: Router
@@ -67,11 +68,14 @@ abstract class AbstractTwakeServerPublic {
         this.logger
       )
 
+      const smsApi = smsApiRouter(this.idServer.db, this.conf, this.logger)
+
       this.endpoints.use(privateNoteApi)
       this.endpoints.use(mutualRoolsApi)
       this.endpoints.use(vaultServer.endpoints)
       this.endpoints.use(roomTagsApi)
       this.endpoints.use(userInfoApi)
+      this.endpoints.use(smsApi)
 
       Object.keys(this.idServer.api.get).forEach((k) => {
         this.endpoints.get(k, this.idServer.api.get[k])
@@ -87,7 +91,7 @@ abstract class AbstractTwakeServerPublic {
       return true
     } catch (error) {
       /* istanbul ignore next */
-      this.logger.error(`Unable to initialize server: ${error}`)
+      this.logger.error(`Unable to initialize server`, { error })
       /* istanbul ignore next */
       throw Error('Unable to initialize server', { cause: error })
     }
@@ -126,7 +130,7 @@ class TwakeServerEnterprise extends AbstractTwakeServerPublic {
         })
         .catch((error) => {
           /* istanbul ignore next */
-          this.logger.error(`Unable to initialize server: ${error}`)
+          this.logger.error(`Unable to initialize server`, { error })
           /* istanbul ignore next */
           reject(new Error('Unable to initialize server', { cause: error }))
         })
@@ -135,7 +139,7 @@ class TwakeServerEnterprise extends AbstractTwakeServerPublic {
 
   cleanJobs(): void {
     super.cleanJobs()
-    this._appServiceApi?.clean()
+    this._appServiceApi !== undefined && (this._appServiceApi as any).clean()
   }
 }
 

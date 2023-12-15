@@ -32,7 +32,10 @@ env BASE_URL= \
     SERVER_NAME= \
     TEMPLATE_DIR= \
     UDPATE_FEDERATION_HASHES_CRON="3 3 * * *" \
-    UPDATE_USERS_CRON="*/15 * * * *"
+    UPDATE_USERS_CRON="*/15 * * * *" \
+    SMS_API_LOGIN= \
+    SMS_API_URL= \
+    SMS_API_KEY=
 
 RUN apt update && apt -y dist-upgrade
 

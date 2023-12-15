@@ -49,7 +49,10 @@ beforeAll((done) => {
     userdb_engine: 'sqlite',
     userdb_host: userDb,
     matrix_database_engine: 'sqlite',
-    matrix_database_host: matrixDb
+    matrix_database_host: matrixDb,
+    sms_api_key: '',
+    sms_api_login: '',
+    sms_api_url: ''
   }
   if (process.env.TEST_PG === 'yes') {
     conf.database_engine = 'pg'

@@ -72,7 +72,10 @@ describe('Vault API server', () => {
       userdb_host: testFilePath,
       matrix_database_engine: 'sqlite',
       matrix_database_host: matrixTestFilePath,
-      enable_company_features: true
+      enable_company_features: true,
+      sms_api_key: '',
+      sms_api_login: '',
+      sms_api_url: ''
     }
     buildTokenTable(conf as Config)
       .then(() => {
