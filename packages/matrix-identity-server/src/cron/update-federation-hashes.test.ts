@@ -1,3 +1,4 @@
+import { Hash } from '@twake/crypto'
 import fs from 'fs'
 import fetch from 'node-fetch'
 import { logger } from '../../jest.globals'
@@ -19,7 +20,7 @@ const fetchMock = fetch as jest.Mock
 
 const conf: Config = {
   ...defaultConfig,
-  base_url: 'https://matrix.example.com',
+  base_url: 'https://matrix.example.com:8448',
   database_engine: 'sqlite',
   database_host: ':memory:',
   userdb_engine: 'sqlite',
@@ -169,6 +170,9 @@ afterAll(() => {
 
 describe('updateFederationHashes', () => {
   it('should be able to calculate and push hashes to federation server', async () => {
+    const hash = new Hash()
+    await hash.ready
+
     const mocks = [
       [getHashDetailsSuccess, getHashDetailsSuccess, getHashDetailsSuccess],
       [postLookupsSuccess, postLookupsSuccess, postLookupsSuccess]
@@ -178,6 +182,34 @@ describe('updateFederationHashes', () => {
 
     await updateFederationHashes(conf, userDB, logger)
     expect(fetchMock).toHaveBeenCalledTimes(6)
+    for (let i = 4; i <= 6; i++) {
+      expect(fetchMock).toHaveBeenNthCalledWith(
+        i,
+        encodeURI(
+          `https://federation${i - 3}.example.com/_matrix/identity/v2/lookups`
+        ),
+        {
+          method: 'post',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            algorithm: 'sha256',
+            pepper: 'matrixrocks',
+            mappings: {
+              'matrix.example.com:8448': [
+                {
+                  hash: hash.sha256(`33612345678 msisdn matrixrocks`),
+                  active: 1
+                },
+                {
+                  hash: hash.sha256(`dwho@company.com email matrixrocks`),
+                  active: 1
+                }
+              ]
+            }
+          })
+        }
+      )
+    }
   })
 
   describe('Error cases', () => {

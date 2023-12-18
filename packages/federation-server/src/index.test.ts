@@ -391,7 +391,7 @@ describe('Federation server', () => {
               mappings: {},
               inactive_mappings: {},
               third_party_mappings: { 
-                'identity2.example.com': { 
+                'identity2.example.com:443': { 
                   actives: ['gxkUW11GNrH5YASQhG_I7ijwdUBoMpqqSCc_OtbpOm0'],
                   inactives: [] 
                 } 
@@ -406,16 +406,16 @@ describe('Federation server', () => {
         expect(body).toHaveProperty('inactive_mappings', {})
         expect(body).toHaveProperty('third_party_mappings')
         expect(body.third_party_mappings).toHaveProperty([
-          'identity2.example.com'
+          'identity2.example.com:443'
         ])
         expect(
-          body.third_party_mappings['identity2.example.com']
+          body.third_party_mappings['identity2.example.com:443']
         ).toHaveProperty('inactives', [])
         expect(
-          body.third_party_mappings['identity2.example.com']
+          body.third_party_mappings['identity2.example.com:443']
         ).toHaveProperty('actives')
         expect(
-          body.third_party_mappings['identity2.example.com'].actives
+          body.third_party_mappings['identity2.example.com:443'].actives
         ).toEqual(expect.arrayContaining([lskywalkerHash]))
       })
 
@@ -495,8 +495,8 @@ describe('Federation server', () => {
         expect(body).toHaveProperty('third_party_mappings')
         expect(Object.keys(body.third_party_mappings)).toEqual(
           expect.arrayContaining([
-            'identity1.example.com',
-            'identity2.example.com'
+            'identity1.example.com:443',
+            'identity2.example.com:443'
           ])
         )
         const expected3PIDData = {
@@ -504,10 +504,10 @@ describe('Federation server', () => {
           inactives: []
         }
         expect(
-          JSON.stringify(body.third_party_mappings['identity1.example.com'])
+          JSON.stringify(body.third_party_mappings['identity1.example.com:443'])
         ).toEqual(JSON.stringify(expected3PIDData))
         expect(
-          JSON.stringify(body.third_party_mappings['identity2.example.com'])
+          JSON.stringify(body.third_party_mappings['identity2.example.com:443'])
         ).toEqual(JSON.stringify(expected3PIDData))
       })
 
@@ -565,22 +565,22 @@ describe('Federation server', () => {
         )
         expect(Object.keys(body.third_party_mappings)).toEqual(
           expect.arrayContaining([
-            'identity1.example.com',
-            'identity2.example.com'
+            'identity1.example.com:443',
+            'identity2.example.com:443'
           ])
         )
         expect(
-          body.third_party_mappings['identity1.example.com']
+          body.third_party_mappings['identity1.example.com:443']
         ).toHaveProperty('inactives', [])
         expect(
-          body.third_party_mappings['identity1.example.com']
+          body.third_party_mappings['identity1.example.com:443']
         ).toHaveProperty('actives')
         expect(
-          body.third_party_mappings['identity1.example.com'].actives
+          body.third_party_mappings['identity1.example.com:443'].actives
         ).toEqual(expect.arrayContaining([askywalkerHash, lskywalkerHash]))
 
         expect(
-          JSON.stringify(body.third_party_mappings['identity2.example.com'])
+          JSON.stringify(body.third_party_mappings['identity2.example.com:443'])
         ).toEqual(
           JSON.stringify({
             actives: [lskywalkerHash],
@@ -817,6 +817,7 @@ describe('Federation server', () => {
                 'matrix-identity-server',
                 'templates'
               ),
+              trust_x_forwarded_for: true,
               trusted_servers_addresses: [
                 identity1IPAddress,
                 identity2IPAddress
@@ -888,16 +889,17 @@ describe('Federation server', () => {
         expect(response.body).toHaveProperty('inactive_mappings', {})
         expect(response.body).toHaveProperty('third_party_mappings')
         expect(response.body.third_party_mappings).toHaveProperty([
-          'identity2.example.com'
+          'identity2.example.com:443'
         ])
         expect(
-          response.body.third_party_mappings['identity2.example.com']
+          response.body.third_party_mappings['identity2.example.com:443']
         ).toHaveProperty('inactives', [])
         expect(
-          response.body.third_party_mappings['identity2.example.com']
+          response.body.third_party_mappings['identity2.example.com:443']
         ).toHaveProperty('actives')
         expect(
-          response.body.third_party_mappings['identity2.example.com'].actives
+          response.body.third_party_mappings['identity2.example.com:443']
+            .actives
         ).toEqual(expect.arrayContaining([lskywalkerHash]))
       })
 
@@ -994,8 +996,8 @@ describe('Federation server', () => {
         expect(response.body).toHaveProperty('third_party_mappings')
         expect(Object.keys(response.body.third_party_mappings)).toEqual(
           expect.arrayContaining([
-            'identity1.example.com',
-            'identity2.example.com'
+            'identity1.example.com:443',
+            'identity2.example.com:443'
           ])
         )
         const expected3PIDData = {
@@ -1004,12 +1006,12 @@ describe('Federation server', () => {
         }
         expect(
           JSON.stringify(
-            response.body.third_party_mappings['identity1.example.com']
+            response.body.third_party_mappings['identity1.example.com:443']
           )
         ).toEqual(JSON.stringify(expected3PIDData))
         expect(
           JSON.stringify(
-            response.body.third_party_mappings['identity2.example.com']
+            response.body.third_party_mappings['identity2.example.com:443']
           )
         ).toEqual(JSON.stringify(expected3PIDData))
       })
@@ -1056,23 +1058,24 @@ describe('Federation server', () => {
         )
         expect(Object.keys(response.body.third_party_mappings)).toEqual(
           expect.arrayContaining([
-            'identity1.example.com',
-            'identity2.example.com'
+            'identity1.example.com:443',
+            'identity2.example.com:443'
           ])
         )
         expect(
-          response.body.third_party_mappings['identity1.example.com']
+          response.body.third_party_mappings['identity1.example.com:443']
         ).toHaveProperty('inactives', [])
         expect(
-          response.body.third_party_mappings['identity1.example.com']
+          response.body.third_party_mappings['identity1.example.com:443']
         ).toHaveProperty('actives')
         expect(
-          response.body.third_party_mappings['identity1.example.com'].actives
+          response.body.third_party_mappings['identity1.example.com:443']
+            .actives
         ).toEqual(expect.arrayContaining([askywalkerHash, lskywalkerHash]))
 
         expect(
           JSON.stringify(
-            response.body.third_party_mappings['identity2.example.com']
+            response.body.third_party_mappings['identity2.example.com:443']
           )
         ).toEqual(
           JSON.stringify({
@@ -1166,7 +1169,6 @@ describe('Federation server', () => {
         await new Promise<void>((resolve, _reject) => {
           app.use(federationServer.routes)
           expressFederationServer = app.listen(3000, () => {
-            console.log('federation server set')
             resolve()
           })
         })
@@ -1207,7 +1209,7 @@ describe('Federation server', () => {
               algorithm: hashDetails.algorithms[0],
               pepper: hashDetails.lookup_pepper,
               mappings: {
-                'identity1.example.com': [
+                'identity1.example.com:8448': [
                   {
                     hash: askywalkerHash,
                     active: 1
@@ -1223,7 +1225,7 @@ describe('Federation server', () => {
               algorithm: hashDetails.algorithms[0],
               pepper: hashDetails.lookup_pepper,
               mappings: {
-                'identity2.example.com': [
+                'identity2.example.com:443': [
                   {
                     hash: lskywalkerHash,
                     active: 1
@@ -1239,7 +1241,7 @@ describe('Federation server', () => {
               algorithm: hashDetails.algorithms[0],
               pepper: hashDetails.lookup_pepper,
               mappings: {
-                'identity3.example.com': [
+                'identity3.example.com:8448': [
                   {
                     hash: lorganaHash,
                     active: 1
@@ -1259,7 +1261,7 @@ describe('Federation server', () => {
               algorithm: hashDetails.algorithms[0],
               pepper: hashDetails.lookup_pepper,
               mappings: {
-                'identity4.example.com': [
+                'identity4.example.com:443': [
                   {
                     hash: okenobiHash,
                     active: 1
@@ -1319,16 +1321,17 @@ describe('Federation server', () => {
           expect(response.body).toHaveProperty('inactive_mappings', {})
           expect(response.body).toHaveProperty('third_party_mappings')
           expect(response.body.third_party_mappings).toHaveProperty([
-            'identity2.example.com'
+            'identity2.example.com:443'
           ])
           expect(
-            response.body.third_party_mappings['identity2.example.com']
+            response.body.third_party_mappings['identity2.example.com:443']
           ).toHaveProperty('inactives', [])
           expect(
-            response.body.third_party_mappings['identity2.example.com']
+            response.body.third_party_mappings['identity2.example.com:443']
           ).toHaveProperty('actives')
           expect(
-            response.body.third_party_mappings['identity2.example.com'].actives
+            response.body.third_party_mappings['identity2.example.com:443']
+              .actives
           ).toEqual(expect.arrayContaining([lskywalkerHash]))
         })
 
@@ -1412,7 +1415,7 @@ describe('Federation server', () => {
               algorithm: hashDetails.algorithms[0],
               pepper: hashDetails.lookup_pepper,
               mappings: {
-                'identity1.example.com': [
+                'identity1.example.com:8448': [
                   {
                     hash: lskywalkerHash,
                     active: 1
@@ -1438,8 +1441,8 @@ describe('Federation server', () => {
           expect(response.body).toHaveProperty('third_party_mappings')
           expect(Object.keys(response.body.third_party_mappings)).toEqual(
             expect.arrayContaining([
-              'identity1.example.com',
-              'identity2.example.com'
+              'identity1.example.com:8448',
+              'identity2.example.com:443'
             ])
           )
           const expected3PIDData = {
@@ -1448,12 +1451,12 @@ describe('Federation server', () => {
           }
           expect(
             JSON.stringify(
-              response.body.third_party_mappings['identity1.example.com']
+              response.body.third_party_mappings['identity1.example.com:8448']
             )
           ).toEqual(JSON.stringify(expected3PIDData))
           expect(
             JSON.stringify(
-              response.body.third_party_mappings['identity2.example.com']
+              response.body.third_party_mappings['identity2.example.com:443']
             )
           ).toEqual(JSON.stringify(expected3PIDData))
         })
@@ -1499,24 +1502,25 @@ describe('Federation server', () => {
           )
           expect(Object.keys(response.body.third_party_mappings)).toEqual(
             expect.arrayContaining([
-              'identity1.example.com',
-              'identity2.example.com',
-              'identity3.example.com'
+              'identity1.example.com:8448',
+              'identity2.example.com:443',
+              'identity3.example.com:8448'
             ])
           )
           expect(
-            response.body.third_party_mappings['identity1.example.com']
+            response.body.third_party_mappings['identity1.example.com:8448']
           ).toHaveProperty('inactives', [])
           expect(
-            response.body.third_party_mappings['identity1.example.com']
+            response.body.third_party_mappings['identity1.example.com:8448']
           ).toHaveProperty('actives')
           expect(
-            response.body.third_party_mappings['identity1.example.com'].actives
+            response.body.third_party_mappings['identity1.example.com:8448']
+              .actives
           ).toEqual(expect.arrayContaining([askywalkerHash, lskywalkerHash]))
 
           expect(
             JSON.stringify(
-              response.body.third_party_mappings['identity2.example.com']
+              response.body.third_party_mappings['identity2.example.com:443']
             )
           ).toEqual(
             JSON.stringify({
@@ -1525,13 +1529,14 @@ describe('Federation server', () => {
             })
           )
           expect(
-            response.body.third_party_mappings['identity3.example.com']
+            response.body.third_party_mappings['identity3.example.com:8448']
           ).toHaveProperty('inactives', [])
           expect(
-            response.body.third_party_mappings['identity3.example.com']
+            response.body.third_party_mappings['identity3.example.com:8448']
           ).toHaveProperty('actives')
           expect(
-            response.body.third_party_mappings['identity3.example.com'].actives
+            response.body.third_party_mappings['identity3.example.com:8448']
+              .actives
           ).toEqual(expect.arrayContaining([lorganaHash]))
         })
       })
@@ -1567,16 +1572,17 @@ describe('Federation server', () => {
           expect(response.body).toHaveProperty('inactive_mappings', {})
           expect(response.body).toHaveProperty('third_party_mappings')
           expect(response.body.third_party_mappings).toHaveProperty([
-            'identity2.example.com'
+            'identity2.example.com:443'
           ])
           expect(
-            response.body.third_party_mappings['identity2.example.com']
+            response.body.third_party_mappings['identity2.example.com:443']
           ).toHaveProperty('inactives', [])
           expect(
-            response.body.third_party_mappings['identity2.example.com']
+            response.body.third_party_mappings['identity2.example.com:443']
           ).toHaveProperty('actives')
           expect(
-            response.body.third_party_mappings['identity2.example.com'].actives
+            response.body.third_party_mappings['identity2.example.com:443']
+              .actives
           ).toEqual(expect.arrayContaining([lskywalkerHash]))
         })
 
@@ -1660,7 +1666,7 @@ describe('Federation server', () => {
               algorithm: hashDetails.algorithms[0],
               pepper: hashDetails.lookup_pepper,
               mappings: {
-                'identity1.example.com': [
+                'identity1.example.com:8448': [
                   {
                     hash: lskywalkerHash,
                     active: 1
@@ -1686,8 +1692,8 @@ describe('Federation server', () => {
           expect(response.body).toHaveProperty('third_party_mappings')
           expect(Object.keys(response.body.third_party_mappings)).toEqual(
             expect.arrayContaining([
-              'identity1.example.com',
-              'identity2.example.com'
+              'identity1.example.com:8448',
+              'identity2.example.com:443'
             ])
           )
           const expected3PIDData = {
@@ -1696,12 +1702,12 @@ describe('Federation server', () => {
           }
           expect(
             JSON.stringify(
-              response.body.third_party_mappings['identity1.example.com']
+              response.body.third_party_mappings['identity1.example.com:8448']
             )
           ).toEqual(JSON.stringify(expected3PIDData))
           expect(
             JSON.stringify(
-              response.body.third_party_mappings['identity2.example.com']
+              response.body.third_party_mappings['identity2.example.com:443']
             )
           ).toEqual(JSON.stringify(expected3PIDData))
         })
@@ -1747,24 +1753,25 @@ describe('Federation server', () => {
           )
           expect(Object.keys(response.body.third_party_mappings)).toEqual(
             expect.arrayContaining([
-              'identity1.example.com',
-              'identity2.example.com',
-              'identity3.example.com'
+              'identity1.example.com:8448',
+              'identity2.example.com:443',
+              'identity3.example.com:8448'
             ])
           )
           expect(
-            response.body.third_party_mappings['identity1.example.com']
+            response.body.third_party_mappings['identity1.example.com:8448']
           ).toHaveProperty('inactives', [])
           expect(
-            response.body.third_party_mappings['identity1.example.com']
+            response.body.third_party_mappings['identity1.example.com:8448']
           ).toHaveProperty('actives')
           expect(
-            response.body.third_party_mappings['identity1.example.com'].actives
+            response.body.third_party_mappings['identity1.example.com:8448']
+              .actives
           ).toEqual(expect.arrayContaining([askywalkerHash, lskywalkerHash]))
 
           expect(
             JSON.stringify(
-              response.body.third_party_mappings['identity2.example.com']
+              response.body.third_party_mappings['identity2.example.com:443']
             )
           ).toEqual(
             JSON.stringify({
@@ -1773,13 +1780,14 @@ describe('Federation server', () => {
             })
           )
           expect(
-            response.body.third_party_mappings['identity3.example.com']
+            response.body.third_party_mappings['identity3.example.com:8448']
           ).toHaveProperty('inactives', [])
           expect(
-            response.body.third_party_mappings['identity3.example.com']
+            response.body.third_party_mappings['identity3.example.com:8448']
           ).toHaveProperty('actives')
           expect(
-            response.body.third_party_mappings['identity3.example.com'].actives
+            response.body.third_party_mappings['identity3.example.com:8448']
+              .actives
           ).toEqual(expect.arrayContaining([lorganaHash]))
         })
       })

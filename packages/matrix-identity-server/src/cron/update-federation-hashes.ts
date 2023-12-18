@@ -172,7 +172,9 @@ export default async (
     })
   })
 
-  const { hostname } = new URL(conf.base_url)
+  const { hostname, port } = new URL(conf.base_url)
+  // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+  const host = hostname.concat(':', port || '443')
 
   responses = (
     await Promise.allSettled(
@@ -185,7 +187,7 @@ export default async (
             algorithm: federationServersDetail[address].algorithm,
             pepper: federationServersDetail[address].pepper,
             mappings: {
-              [hostname]: updatedHashes[address]
+              [host]: updatedHashes[address]
             }
           })
         })
