@@ -388,36 +388,20 @@ describe('Federation server', () => {
                 mappings: {},
                 inactive_mappings: {},
                 third_party_mappings: { 
-                  'identity2.example.com:443': { 
-                    actives: ['gxkUW11GNrH5YASQhG_I7ijwdUBoMpqqSCc_OtbpOm0'],
-                    inactives: [] 
+                  'identity2.example.com:443': ['gxkUW11GNrH5YASQhG_I7ijwdUBoMpqqSCc_OtbpOm0']
                   } 
                 }
               }
             */
           const body = (await response.json()) as Record<
             string,
-            Record<string, string | Record<string, string[]>>
+            Record<string, string | string[]>
           >
           expect(body).toHaveProperty('mappings', {})
           expect(body).toHaveProperty('inactive_mappings', {})
           expect(body).toHaveProperty('third_party_mappings')
           Object.keys(body.third_party_mappings).forEach((host) =>
             hosts.add(host)
-          )
-          expect(Object.keys(body.third_party_mappings)).toHaveLength(1)
-          expect(body.third_party_mappings).toHaveProperty([
-            'identity2.example.com:443'
-          ])
-          expect(
-            JSON.stringify(
-              body.third_party_mappings['identity2.example.com:443']
-            )
-          ).toEqual(
-            JSON.stringify({
-              actives: [lskywalkerHashes[i]],
-              inactives: []
-            })
           )
         }
         expect(hosts.size).toEqual(1)
@@ -458,7 +442,7 @@ describe('Federation server', () => {
           )
           const body = (await response.json()) as Record<
             string,
-            Record<string, string | Record<string, string[]>>
+            Record<string, string | string[]>
           >
           expect(body).toHaveProperty('inactive_mappings', {})
           expect(body).toHaveProperty('third_party_mappings', {})
@@ -504,7 +488,7 @@ describe('Federation server', () => {
           )
           const body = (await response.json()) as Record<
             string,
-            Record<string, string | Record<string, string[]>>
+            Record<string, string | string[]>
           >
           expect(body).toHaveProperty('mappings', {})
           expect(body).toHaveProperty('inactive_mappings', {})
@@ -566,7 +550,7 @@ describe('Federation server', () => {
           )
           const body = (await response.json()) as Record<
             string,
-            Record<string, string | Record<string, string[]>>
+            Record<string, string | string[]>
           >
           expect(body).toHaveProperty('inactive_mappings', {})
           expect(body).toHaveProperty('mappings')
@@ -575,23 +559,17 @@ describe('Federation server', () => {
           )
           expect(body).toHaveProperty('third_party_mappings')
           Object.keys(body.third_party_mappings).forEach((host) => {
-            Object.keys(
-              body.third_party_mappings[host] as Record<string, string[]>
-            ).forEach((key) => {
-              ;(body.third_party_mappings[host] as Record<string, string[]>)[
-                key
-              ].forEach((hash) => {
-                switch (hash) {
-                  case lskywalkerHashes[i]:
-                    lskywalkerHosts.add(host)
-                    break
-                  case askywalkerHashes[i]:
-                    askywalkerHosts.add(host)
-                    break
-                  default:
-                    break
-                }
-              })
+            ;(body.third_party_mappings[host] as string[]).forEach((hash) => {
+              switch (hash) {
+                case lskywalkerHashes[i]:
+                  lskywalkerHosts.add(host)
+                  break
+                case askywalkerHashes[i]:
+                  askywalkerHosts.add(host)
+                  break
+                default:
+                  break
+              }
             })
           })
         }
@@ -630,7 +608,7 @@ describe('Federation server', () => {
           )
           const body = (await response.json()) as Record<
             string,
-            Record<string, string | Record<string, string[]>>
+            Record<string, string | string[]>
           >
           expect(body).toHaveProperty('inactive_mappings', {})
           expect(body).toHaveProperty('third_party_mappings', {})
@@ -664,7 +642,7 @@ describe('Federation server', () => {
           )
           const body = (await response.json()) as Record<
             string,
-            Record<string, string | Record<string, string[]>>
+            Record<string, string | string[]>
           >
           expect(body).toHaveProperty('inactive_mappings', {})
           expect(body).toHaveProperty('third_party_mappings', {})
@@ -674,7 +652,7 @@ describe('Federation server', () => {
     })
 
     // Does not work on CI when pepper is udpated due to ip addresses in identity servers requests
-    describe.skip('Federation Server as express app', () => {
+    describe('Federation Server as express app', () => {
       let federationServer: FederationServer
       let app: express.Application
       let expressFederationServer: http.Server
@@ -1032,18 +1010,8 @@ describe('Federation server', () => {
           ).forEach((address) => matrixAddresses.add(address))
           expect(response.body).toHaveProperty('third_party_mappings')
           Object.keys(response.body.third_party_mappings).forEach((host) => {
-            Object.keys(
-              response.body.third_party_mappings[host] as Record<
-                string,
-                string[]
-              >
-            ).forEach((key) => {
-              ;(
-                response.body.third_party_mappings[host] as Record<
-                  string,
-                  string[]
-                >
-              )[key].forEach((hash) => {
+            ;(response.body.third_party_mappings[host] as string[]).forEach(
+              (hash) => {
                 switch (hash) {
                   case lskywalkerHashes[i]:
                     lskywalkerHosts.add(host)
@@ -1054,8 +1022,8 @@ describe('Federation server', () => {
                   default:
                     break
                 }
-              })
-            })
+              }
+            )
           })
         }
         expect(askywalkerHosts.size).toEqual(1)
@@ -1139,7 +1107,6 @@ describe('Federation server', () => {
       let askywalkerHashes: string[]
       let lskywalkerHashes: string[]
       let okenobiHashes: string[]
-      let lorganaHashes: string[]
       let chewbaccaHashes: string[]
       let qjinnHashes: string[]
 
@@ -1180,9 +1147,6 @@ describe('Federation server', () => {
         lskywalkerHashes = allPeppers.map((pepper) =>
           hash.sha256(`lskywalker@example.com email ${pepper}`)
         )
-        lorganaHashes = allPeppers.map((pepper) =>
-          hash.sha256(`lorgana@example.com email ${pepper}`)
-        )
         okenobiHashes = allPeppers.map((pepper) =>
           hash.sha256(`okenobi@example.com email ${pepper}`)
         )
@@ -1193,10 +1157,6 @@ describe('Federation server', () => {
 
         qjinnHashes = allPeppers.map((pepper) =>
           hash.sha256(`qjinn@example.com email ${pepper}`)
-        )
-
-        const pamidalaHashes = allPeppers.map((pepper) =>
-          hash.sha256(`pamidala@example.com email ${pepper}`)
         )
 
         await Promise.all([
@@ -1210,12 +1170,7 @@ describe('Federation server', () => {
                 algorithm: hashDetails.algorithms[0],
                 pepper: allPeppers[index],
                 mappings: {
-                  'identity1.example.com:8448': [
-                    {
-                      hash: askywalkerHash,
-                      active: 1
-                    }
-                  ]
+                  'identity1.example.com:8448': [askywalkerHash]
                 }
               })
           ),
@@ -1229,35 +1184,7 @@ describe('Federation server', () => {
                 algorithm: hashDetails.algorithms[0],
                 pepper: allPeppers[index],
                 mappings: {
-                  'identity2.example.com:443': [
-                    {
-                      hash: lskywalkerHash,
-                      active: 1
-                    }
-                  ]
-                }
-              })
-          ),
-          // eslint-disable-next-line @typescript-eslint/promise-function-async
-          ...lorganaHashes.map((lorganaHash, index) =>
-            request(app)
-              .post('/_matrix/identity/v2/lookups')
-              .set('Accept', 'application/json')
-              .set('X-forwarded-for', trustedIpv6Address)
-              .send({
-                algorithm: hashDetails.algorithms[0],
-                pepper: allPeppers[index],
-                mappings: {
-                  'identity3.example.com:8448': [
-                    {
-                      hash: lorganaHash,
-                      active: 1
-                    },
-                    {
-                      hash: pamidalaHashes[index],
-                      active: 0
-                    }
-                  ]
+                  'identity2.example.com:443': [lskywalkerHash]
                 }
               })
           ),
@@ -1271,12 +1198,7 @@ describe('Federation server', () => {
                 algorithm: hashDetails.algorithms[0],
                 pepper: allPeppers[index],
                 mappings: {
-                  'identity4.example.com:443': [
-                    {
-                      hash: okenobiHash,
-                      active: 1
-                    }
-                  ]
+                  'identity4.example.com:443': [okenobiHash]
                 }
               })
           )
@@ -1410,14 +1332,8 @@ describe('Federation server', () => {
                   pepper,
                   mappings: {
                     'identity1.example.com:8448': [
-                      {
-                        hash: lskywalkerHashes[i],
-                        active: 1
-                      },
-                      {
-                        hash: askywalkerHashes[i],
-                        active: 1
-                      }
+                      lskywalkerHashes[i],
+                      askywalkerHashes[i]
                     ]
                   }
                 })
@@ -1451,7 +1367,6 @@ describe('Federation server', () => {
           const matrixAddresses = new Set<string>()
           const askywalkerHosts = new Set<string>()
           const lskywalkerHosts = new Set<string>()
-          const lorganaHosts = new Set<string>()
 
           for (let i = 0; i < allPeppers.length; i++) {
             const response = await request(app)
@@ -1463,7 +1378,6 @@ describe('Federation server', () => {
                 pepper: hashDetails.lookup_pepper,
                 addresses: [
                   lskywalkerHashes[i],
-                  lorganaHashes[i],
                   chewbaccaHashes[i],
                   qjinnHashes[i],
                   okenobiHashes[i],
@@ -1477,18 +1391,8 @@ describe('Federation server', () => {
             ).forEach((address) => matrixAddresses.add(address))
             expect(response.body).toHaveProperty('third_party_mappings')
             Object.keys(response.body.third_party_mappings).forEach((host) => {
-              Object.keys(
-                response.body.third_party_mappings[host] as Record<
-                  string,
-                  string[]
-                >
-              ).forEach((key) => {
-                ;(
-                  response.body.third_party_mappings[host] as Record<
-                    string,
-                    string[]
-                  >
-                )[key].forEach((hash) => {
+              ;(response.body.third_party_mappings[host] as string[]).forEach(
+                (hash) => {
                   switch (hash) {
                     case lskywalkerHashes[i]:
                       lskywalkerHosts.add(host)
@@ -1496,14 +1400,11 @@ describe('Federation server', () => {
                     case askywalkerHashes[i]:
                       askywalkerHosts.add(host)
                       break
-                    case lorganaHashes[i]:
-                      lorganaHosts.add(host)
-                      break
                     default:
                       break
                   }
-                })
-              })
+                }
+              )
             })
           }
           expect(askywalkerHosts.size).toEqual(1)
@@ -1515,8 +1416,6 @@ describe('Federation server', () => {
             true
           )
           expect(lskywalkerHosts.has('identity2.example.com:443')).toEqual(true)
-          expect(lorganaHosts.size).toEqual(1)
-          expect(lorganaHosts.has('identity3.example.com:8448')).toEqual(true)
           expect(matrixAddresses.size).toEqual(1)
           expect(matrixAddresses.has('@chewbacca:example.com')).toEqual(true)
         })
@@ -1631,14 +1530,8 @@ describe('Federation server', () => {
                   pepper,
                   mappings: {
                     'identity1.example.com:8448': [
-                      {
-                        hash: lskywalkerHashes[i],
-                        active: 1
-                      },
-                      {
-                        hash: askywalkerHashes[i],
-                        active: 1
-                      }
+                      lskywalkerHashes[i],
+                      askywalkerHashes[i]
                     ]
                   }
                 })
@@ -1672,7 +1565,6 @@ describe('Federation server', () => {
           const matrixAddresses = new Set<string>()
           const askywalkerHosts = new Set<string>()
           const lskywalkerHosts = new Set<string>()
-          const lorganaHosts = new Set<string>()
 
           for (let i = 0; i < allPeppers.length; i++) {
             const response = await request(app)
@@ -1684,7 +1576,6 @@ describe('Federation server', () => {
                 pepper: hashDetails.lookup_pepper,
                 addresses: [
                   lskywalkerHashes[i],
-                  lorganaHashes[i],
                   chewbaccaHashes[i],
                   qjinnHashes[i],
                   okenobiHashes[i],
@@ -1698,18 +1589,8 @@ describe('Federation server', () => {
             ).forEach((address) => matrixAddresses.add(address))
             expect(response.body).toHaveProperty('third_party_mappings')
             Object.keys(response.body.third_party_mappings).forEach((host) => {
-              Object.keys(
-                response.body.third_party_mappings[host] as Record<
-                  string,
-                  string[]
-                >
-              ).forEach((key) => {
-                ;(
-                  response.body.third_party_mappings[host] as Record<
-                    string,
-                    string[]
-                  >
-                )[key].forEach((hash) => {
+              ;(response.body.third_party_mappings[host] as string[]).forEach(
+                (hash) => {
                   switch (hash) {
                     case lskywalkerHashes[i]:
                       lskywalkerHosts.add(host)
@@ -1717,14 +1598,11 @@ describe('Federation server', () => {
                     case askywalkerHashes[i]:
                       askywalkerHosts.add(host)
                       break
-                    case lorganaHashes[i]:
-                      lorganaHosts.add(host)
-                      break
                     default:
                       break
                   }
-                })
-              })
+                }
+              )
             })
           }
           expect(askywalkerHosts.size).toEqual(1)
@@ -1736,8 +1614,6 @@ describe('Federation server', () => {
             true
           )
           expect(lskywalkerHosts.has('identity2.example.com:443')).toEqual(true)
-          expect(lorganaHosts.size).toEqual(1)
-          expect(lorganaHosts.has('identity3.example.com:8448')).toEqual(true)
           expect(matrixAddresses.size).toEqual(1)
           expect(matrixAddresses.has('@chewbacca:example.com')).toEqual(true)
         })

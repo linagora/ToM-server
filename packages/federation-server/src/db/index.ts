@@ -23,7 +23,7 @@ const initializeDb = (
           // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
           {
             hashByServer:
-              'hash varchar(48), server text, active integer, pepper text, PRIMARY KEY (hash, server, pepper)'
+              'hash varchar(48), server text, pepper text, PRIMARY KEY (hash, server, pepper)'
           } as unknown as Record<Collections, string>,
           {},
           {},

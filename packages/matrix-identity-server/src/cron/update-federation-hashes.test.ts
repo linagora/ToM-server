@@ -214,14 +214,8 @@ describe('updateFederationHashes', () => {
         pepper,
         mappings: {
           'matrix.example.com:8448': [
-            {
-              hash: hash.sha256(`33612345678 msisdn ${pepper}`),
-              active: 1
-            },
-            {
-              hash: hash.sha256(`dwho@company.com email ${pepper}`),
-              active: 1
-            }
+            hash.sha256(`33612345678 msisdn ${pepper}`),
+            hash.sha256(`dwho@company.com email ${pepper}`)
           ]
         }
       })

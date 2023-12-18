@@ -16,16 +16,11 @@ interface HashDetails {
   alt_lookup_peppers?: string[]
 }
 
-interface UpdatedHash {
-  hash: string
-  active: number
-}
-
 interface LookupsDetail {
   address: string
   algorithm: string
   pepper: string
-  updatedHashes: UpdatedHash[]
+  updatedHashes: string[]
 }
 /**
  * update federation server hashes cron job.
@@ -153,12 +148,16 @@ export default async (
   const hash = new Hash()
   await hash.ready
 
-  const getUsersHashes = (algorithm: string, pepper: string): UpdatedHash[] => {
-    const result: UpdatedHash[] = []
+  const getUsersHashes = (algorithm: string, pepper: string): string[] => {
+    const result: string[] = []
     Object.keys(usersData).forEach((matrixAddress) => {
       fieldsToHash.forEach((field) => {
         const v = usersData[matrixAddress][field as keyof ValueField]
-        if (v != null && v.toString().length > 0) {
+        if (
+          v != null &&
+          v.toString().length > 0 &&
+          usersData[matrixAddress].active === 1
+        ) {
           let value = v.toString()
           let _field: string = field
           if (field === 'phone') {
@@ -166,10 +165,9 @@ export default async (
             value = value.replace(/\s/g, '').replace(/^\+/, '')
           }
           logger.debug(`Prepare ${_field} hash for ${value}`)
-          result.push({
-            hash: hash[algorithm as 'sha256'](`${value} ${_field} ${pepper}`),
-            active: usersData[matrixAddress].active
-          })
+          result.push(
+            hash[algorithm as 'sha256'](`${value} ${_field} ${pepper}`)
+          )
         }
       })
     })
