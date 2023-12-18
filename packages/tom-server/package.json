@@ -46,12 +46,6 @@
     "redis": "^4.6.6",
     "validator": "^13.11.0"
   },
-  "devDependencies": {
-    "@small-tech/syswide-cas": "^6.0.2",
-    "@types/lodash": "^4.14.197",
-    "node-fetch-jest": "npm:node-fetch@^2.6.9",
-    "testcontainers": "^9.8.0"
-  },
   "optionalDependencies": {
     "ldapjs": "^2.3.3",
     "pg": "^8.10.0",
