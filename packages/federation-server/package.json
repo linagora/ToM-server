@@ -46,11 +46,5 @@
     "express-validator": "^7.0.1",
     "ip-address": "^9.0.5",
     "lodash": "^4.17.21"
-  },
-  "devDependencies": {
-    "@small-tech/syswide-cas": "^6.0.2",
-    "@types/lodash": "^4.14.197",
-    "node-fetch-jest": "npm:node-fetch@^2.6.9",
-    "testcontainers": "^9.8.0"
   }
 }

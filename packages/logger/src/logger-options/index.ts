@@ -132,17 +132,39 @@ export class TwakeLoggerOptions {
       format: format.printf((info) => {
         const separator = ' | '
         const message = `${info.level.toUpperCase()}${separator}${new Date().toISOString()}${separator}`
-        const addidtionnalDetails = (
-          ...values: Array<string | number>
-        ): string => {
+        const requestDetails = (...values: Array<string | number>): string => {
           const details = values
             .filter((value) => value != null)
             .join(separator)
           return details.length > 0 ? details.concat(separator) : details
         }
 
+        const loggerInfoDefaultKeys = ['level', 'message']
+
+        const requestDetailsKeys = [
+          'ip',
+          'matrixUserId',
+          'httpMethod',
+          'requestUrl',
+          'endpointPath',
+          'status'
+        ]
+
+        const additionnalDetails = (): string => {
+          const details = Object.keys(info)
+            .filter(
+              (key) =>
+                !loggerInfoDefaultKeys.includes(key) &&
+                !requestDetailsKeys.includes(key)
+            )
+            // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+            .map((key) => `${key.toLocaleUpperCase()}: ${info[key]}`)
+            .join(separator)
+          return details.length > 0 ? separator.concat(details) : details
+        }
+
         return message.concat(
-          addidtionnalDetails(
+          requestDetails(
             info.ip,
             info.matrixUserId,
             info.httpMethod,
@@ -150,7 +172,8 @@ export class TwakeLoggerOptions {
             info.endpointPath,
             info.status
           ),
-          info.message
+          info.message,
+          additionnalDetails()
         )
       }),
       defaultMeta: this.defaultMeta,

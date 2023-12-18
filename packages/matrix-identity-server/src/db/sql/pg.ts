@@ -2,7 +2,7 @@
 /* istanbul ignore file */
 import { type TwakeLogger } from '@twake/logger'
 import { type ClientConfig, type Pool as PgPool } from 'pg'
-import { type Collections, type IdDbBackend } from '..'
+import { type Collections, type ISQLCondition, type IdDbBackend } from '..'
 import { type Config, type DbGetResult } from '../../types'
 import createTables from './_createTables'
 import SQL from './sql'
@@ -329,19 +329,17 @@ class Pg extends SQL implements IdDbBackend {
 
   deleteWhere(
     table: string,
-    filters: string | string[],
-    values: string | number | Array<string | number>
+    conditions: ISQLCondition | ISQLCondition[]
   ): Promise<void> {
     return new Promise((resolve, reject) => {
       if (this.db == null) {
         reject(new Error('Database not ready'))
       } else {
-        if (typeof values !== 'object') {
-          values = [values] // Transform values into a list
-        }
-        if (typeof filters !== 'object') {
-          filters = [filters] // Transform filters into a list
-        }
+        if (!Array.isArray(conditions)) conditions = [conditions]
+
+        const values = conditions.map((c) => c.value)
+        const filters = conditions.map((c) => c.field)
+        const operators = conditions.map((c) => c.operator)
 
         let condition: string = ''
         if (
@@ -352,9 +350,9 @@ class Pg extends SQL implements IdDbBackend {
           // Verifies that values have at least one element, and as much filter names
           let i = 0
           condition = filters
-            .map((filt) => {
+            .map((filt, index) => {
               i++
-              return `${filt}=$${i}`
+              return `${filt}${operators[index] ?? '='}$${i}`
             })
             .join(' AND ')
         }

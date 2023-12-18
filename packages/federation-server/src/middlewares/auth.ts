@@ -52,17 +52,16 @@ export const auth = (
     convertToIPv6(ip)
   )
   return (req: AuthRequest, res: Response, next: NextFunction): void => {
-    const date = new Date()
     const originalRequesterIPAddress = trustXForwardedForHeader
       ? // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
         (req.headers['x-forwarded-for'] as string) ||
         (req.socket.remoteAddress as string)
       : (req.socket.remoteAddress as string)
-    logger.info(
-      `${date.toUTCString()} Received ${req.method} to ${
-        req.originalUrl
-      } from ${originalRequesterIPAddress}`
-    )
+    logger.info('', {
+      ip: originalRequesterIPAddress,
+      httpMethod: req.method,
+      endpointPath: req.originalUrl
+    })
     try {
       const requesterIPAddress = convertToIPv6(originalRequesterIPAddress)
       logger.debug(`Authenticated request from ${originalRequesterIPAddress}`)

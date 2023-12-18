@@ -296,7 +296,11 @@ describe('Id Server DB', () => {
         Promise.all(insertsPromises)
           .then(() => {
             idDb
-              .deleteWhere('accessTokens', 'data', '{0}')
+              .deleteWhere('accessTokens', {
+                field: 'data',
+                operator: '=',
+                value: '{0}'
+              })
               .then(() => {
                 idDb
                   .getAll('accessTokens', ['id', 'data'])
@@ -336,7 +340,11 @@ it('should delete lines with specified filters', (done) => {
       Promise.all(insertsPromises)
         .then(() => {
           idDb
-            .deleteWhere('accessTokens', 'data', '{0}')
+            .deleteWhere('accessTokens', {
+              field: 'data',
+              operator: '=',
+              value: '{0}'
+            })
             .then(() => {
               idDb
                 .getAll('accessTokens', ['id', 'data'])

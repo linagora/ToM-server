@@ -15,12 +15,15 @@ export const lookupValidator = body('addresses')
     return true
   })
 
-export const lookupsValidator = body('mappings')
-  .exists()
-  .isObject()
-  .custom((value, { req }) => {
-    if (Object.keys(value).length > 1) {
-      throw new Error('Only one server address is allowed')
-    }
-    return true
-  })
+export const lookupsValidator = [
+  body('pepper').exists().isString(),
+  body('mappings')
+    .exists()
+    .isObject()
+    .custom((value, { req }) => {
+      if (Object.keys(value).length > 1) {
+        throw new Error('Only one server address is allowed')
+      }
+      return true
+    })
+]

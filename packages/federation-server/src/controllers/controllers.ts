@@ -20,7 +20,7 @@ export const lookup = (
   return (req, res, next) => {
     const mappings: Record<string, string> = {}
     const inactives: Record<string, string> = {}
-    let thirdPartyMappings: Record<string, Record<string, string[]>> = {}
+    let thirdPartyMappings: Record<string, string[]> = {}
     validationErrorHandler(req)
     db.get('hashes', ['value', 'hash', 'active'], {
       hash: (req.body as { addresses: string[] }).addresses
@@ -44,32 +44,16 @@ export const lookup = (
           req.body as { addresses: string[] }
         ).addresses.filter((hash) => !allMatchingHashes.includes(hash))
         return thirdPartyHashes.length > 0
-          ? db.get(hashByServer, ['hash', 'server', 'active'], {
+          ? db.get(hashByServer, ['hash', 'server'], {
               hash: thirdPartyHashes
             })
           : Promise.resolve([])
       })
       .then((rows: DbGetResult) => {
         thirdPartyMappings = mapValues(groupBy(rows, 'server'), (items) =>
-          items.reduce<Record<string, string[]>>(
-            (acc, curr) => {
-              return curr.active === 1
-                ? {
-                    actives: [...acc.actives, curr.hash as string],
-                    inactives: acc.inactives
-                  }
-                : {
-                    actives: acc.actives,
-                    inactives: [...acc.inactives, curr.hash as string]
-                  }
-            },
-            { actives: [], inactives: [] }
-          )
+          items.map((item) => item.hash as string)
         )
-        let responseBody: Record<
-          string,
-          Record<string, string | Record<string, string[]>>
-        > = {
+        let responseBody: Record<string, Record<string, string | string[]>> = {
           mappings,
           third_party_mappings: thirdPartyMappings
         }
@@ -95,20 +79,45 @@ export const lookup = (
 export const lookups = (db: IdentityServerDb): expressAppHandler => {
   return (req, res, next) => {
     validationErrorHandler(req)
+    const pepper = req.body.pepper
     const serverAddress = Object.keys(req.body.mappings)[0]
-    const hashes = req.body.mappings[serverAddress] as Array<
-      Record<string, string | number>
-    >
-    db.deleteEqual(hashByServer, 'server', serverAddress)
+    const hashes = req.body.mappings[serverAddress] as string[]
+    let handledPeppers: string[]
+
+    db.get(hashByServer, ['pepper'], { server: serverAddress })
+      // eslint-disable-next-line @typescript-eslint/promise-function-async
+      .then((rows: DbGetResult) => {
+        handledPeppers = [...new Set(rows.map((r) => r.pepper as string))]
+        return db.get('keys', ['data'], { name: ['pepper', 'previousPepper'] })
+      })
+      // eslint-disable-next-line @typescript-eslint/promise-function-async
+      .then((rows: DbGetResult) => {
+        const fedServerPeppers = rows.map((r) => r.data as string)
+        const peppersToDelete = [
+          ...new Set([
+            pepper,
+            ...handledPeppers.filter((p) => !fedServerPeppers.includes(p))
+          ])
+        ]
+        return Promise.all(
+          // eslint-disable-next-line @typescript-eslint/promise-function-async
+          peppersToDelete.map((p) =>
+            db.deleteWhere(hashByServer, [
+              { field: 'server', operator: '=', value: serverAddress },
+              { field: 'pepper', operator: '=', value: p }
+            ])
+          )
+        )
+      })
       // eslint-disable-next-line @typescript-eslint/promise-function-async
       .then((_) => {
         return Promise.all(
           // eslint-disable-next-line @typescript-eslint/promise-function-async
           hashes.map((hash) =>
             db.insert(hashByServer, {
-              hash: hash.hash,
-              active: hash.active,
-              server: serverAddress
+              hash,
+              server: serverAddress,
+              pepper
             })
           )
         )

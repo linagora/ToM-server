@@ -2,7 +2,7 @@
 import { type TwakeLogger } from '@twake/logger'
 import { type Database, type Statement } from 'sqlite3'
 import { type Config, type DbGetResult } from '../../types'
-import { type Collections, type IdDbBackend } from '../index'
+import { ISQLCondition, type Collections, type IdDbBackend } from '../index'
 import createTables from './_createTables'
 import SQL from './sql'
 
@@ -323,57 +323,55 @@ class SQLite extends SQL implements IdDbBackend {
    * Delete from a table when a condition is met.
    *
    * @param {string} table - the table to delete from
-   * @param {string | string[]} filters - the list of filters
-   * @param {string | number | Array<string | number>} values - the filter values
+   * @param {ISQLCondition | ISQLCondition[]} conditions - the list of filters, operators and values for sql conditions
    */
   deleteWhere(
     table: string,
-    filters: string | string[],
-    values: string | number | Array<string | number>
+    conditions: ISQLCondition | ISQLCondition[]
   ): Promise<void> {
     // Adaptation of the method get, with the delete keyword, 'AND' instead of 'OR', and with filters instead of fields
     return new Promise((resolve, reject) => {
-      if (typeof values !== 'object') {
-        values = [values]
-      }
-
-      if (typeof filters !== 'object') {
-        filters = [filters]
-      }
-
       // istanbul ignore if
       if (this.db == null) {
         reject(new Error('Wait for database to be ready'))
-      }
+      } else {
+        if (!Array.isArray(conditions)) conditions = [conditions]
 
-      let condition: string = ''
-      if (
-        values != null &&
-        values.length > 0 &&
-        filters.length === values.length
-      ) {
-        // Verifies that values have at least one element, and as much filter names
-        condition = filters.map((filt) => `${filt}=?`).join(' AND ')
-      }
+        const values = conditions.map((c) => c.value)
+        const filters = conditions.map((c) => c.field)
+        const operators = conditions.map((c) => c.operator)
 
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
-      // @ts-ignore never undefined
-      const stmt = this.db.prepare(`DELETE FROM ${table} WHERE ${condition}`)
-
-      stmt.all(
-        values, // The statement fills the values properly.
-        (err: string) => {
-          /* istanbul ignore if */
-          if (err != null) {
-            reject(err)
-          } else {
-            resolve()
-          }
+        let condition: string = ''
+        if (
+          values != null &&
+          values.length > 0 &&
+          filters.length === values.length
+        ) {
+          // Verifies that values have at least one element, and as much filter names
+          condition = filters
+            .map((filt, i) => `${filt}${operators[i] ?? '='}?`)
+            .join(' AND ')
         }
-      )
-      stmt.finalize((err) => {
-        reject(err)
-      })
+
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
+        // @ts-ignore never undefined
+        const stmt = this.db.prepare(`DELETE FROM ${table} WHERE ${condition}`)
+
+        stmt.all(
+          values, // The statement fills the values properly.
+          (err: string) => {
+            /* istanbul ignore if */
+            if (err != null) {
+              reject(err)
+            } else {
+              resolve()
+            }
+          }
+        )
+        stmt.finalize((err) => {
+          reject(err)
+        })
+      }
     })
   }
 

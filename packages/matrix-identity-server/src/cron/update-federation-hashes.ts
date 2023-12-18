@@ -13,8 +13,15 @@ import { dbFieldsToHash, filter } from './changePepper'
 interface HashDetails {
   algorithms: string[]
   lookup_pepper: string
+  alt_lookup_peppers?: string[]
 }
 
+interface LookupsDetail {
+  address: string
+  algorithm: string
+  pepper: string
+  updatedHashes: string[]
+}
 /**
  * update federation server hashes cron job.
  *
@@ -30,7 +37,7 @@ export default async (
   let federationServersAddresses =
     typeof conf.federation_servers === 'object'
       ? (conf.federation_servers as string[])
-      : conf.federation_servers
+      : conf.federation_servers != null
       ? (conf.federation_servers as string).split(/[,\s]+/)
       : []
 
@@ -103,16 +110,18 @@ export default async (
   federationServersAddresses = federationServersAddresses.filter(
     (_address, index) => !serversIndexFail.includes(index)
   )
-  serversIndexFail = []
 
   const federationServersDetail = federationServersAddresses.reduce<
-    Record<string, { pepper: string; algorithm: string }>
+    Record<string, { algorithm: string; peppers: string[] }>
   >(
     (acc, curr, index) => ({
       ...acc,
       [curr]: {
-        pepper: bodies[index].lookup_pepper,
-        algorithm: bodies[index].algorithms[0]
+        algorithm: bodies[index].algorithms[0],
+        peppers: [
+          bodies[index].lookup_pepper,
+          ...(bodies[index].alt_lookup_peppers ?? [])
+        ]
       }
     }),
     {}
@@ -138,39 +147,50 @@ export default async (
 
   const hash = new Hash()
   await hash.ready
-  const updatedHashes: Record<
-    string,
-    Array<Record<string, string | number>>
-  > = federationServersAddresses.reduce(
-    (acc, curr) => ({
-      ...acc,
-      [curr]: []
-    }),
-    {}
-  )
 
-  Object.keys(usersData).forEach((matrixAddress) => {
-    fieldsToHash.forEach((field) => {
-      const v = usersData[matrixAddress][field as keyof ValueField]
-      if (v != null && v.toString().length > 0) {
-        let value = v.toString()
-        let _field: string = field
-        if (field === 'phone') {
-          _field = 'msisdn'
-          value = value.replace(/\s/g, '').replace(/^\+/, '')
+  const getUsersHashes = (algorithm: string, pepper: string): string[] => {
+    const result: string[] = []
+    Object.keys(usersData).forEach((matrixAddress) => {
+      fieldsToHash.forEach((field) => {
+        const v = usersData[matrixAddress][field as keyof ValueField]
+        if (
+          v != null &&
+          v.toString().length > 0 &&
+          usersData[matrixAddress].active === 1
+        ) {
+          let value = v.toString()
+          let _field: string = field
+          if (field === 'phone') {
+            _field = 'msisdn'
+            value = value.replace(/\s/g, '').replace(/^\+/, '')
+          }
+          logger.debug(`Prepare ${_field} hash for ${value}`)
+          result.push(
+            hash[algorithm as 'sha256'](`${value} ${_field} ${pepper}`)
+          )
         }
-        logger.debug(`Prepare ${_field} hash for ${value}`)
-        federationServersAddresses.forEach((address) => {
-          updatedHashes[address].push({
-            hash: hash[federationServersDetail[address].algorithm as 'sha256'](
-              `${value} ${_field} ${federationServersDetail[address].pepper}`
-            ),
-            active: usersData[matrixAddress].active
-          })
-        })
-      }
+      })
     })
-  })
+    return result
+  }
+
+  const lookupsRequestsDetails = federationServersAddresses.reduce<
+    LookupsDetail[]
+  >(
+    (acc, address) => [
+      ...acc,
+      ...federationServersDetail[address].peppers.map((pepper) => ({
+        address,
+        algorithm: federationServersDetail[address].algorithm,
+        pepper,
+        updatedHashes: getUsersHashes(
+          federationServersDetail[address].algorithm,
+          pepper
+        )
+      }))
+    ],
+    []
+  )
 
   const { hostname, port } = new URL(conf.base_url)
   // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
@@ -179,18 +199,21 @@ export default async (
   responses = (
     await Promise.allSettled(
       // eslint-disable-next-line @typescript-eslint/promise-function-async
-      federationServersAddresses.map((address) =>
-        fetch(encodeURI(`https://${address}/_matrix/identity/v2/lookups`), {
-          method: 'post',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            algorithm: federationServersDetail[address].algorithm,
-            pepper: federationServersDetail[address].pepper,
-            mappings: {
-              [host]: updatedHashes[address]
-            }
-          })
-        })
+      lookupsRequestsDetails.map((detail) =>
+        fetch(
+          encodeURI(`https://${detail.address}/_matrix/identity/v2/lookups`),
+          {
+            method: 'post',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              algorithm: detail.algorithm,
+              pepper: detail.pepper,
+              mappings: {
+                [host]: detail.updatedHashes
+              }
+            })
+          }
+        )
       )
     )
   )

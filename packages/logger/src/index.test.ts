@@ -1637,7 +1637,7 @@ describe('Logger', () => {
       }, 100)
     })
 
-    it('should create a file logger which allows to display message with additionnal details', (done) => {
+    it('should create a file logger which allows to display message with request details', (done) => {
       const conf = {
         logging: {
           log_level: 'error',
@@ -1685,7 +1685,7 @@ describe('Logger', () => {
       }, 100)
     })
 
-    it('should create a file logger which allows to display message with partial additionnal details', (done) => {
+    it('should create a file logger which allows to display message with partial request details', (done) => {
       const conf = {
         logging: {
           log_level: 'error',
@@ -1729,7 +1729,7 @@ describe('Logger', () => {
       }, 100)
     })
 
-    it('should create a file logger which allows to display message with only valid additionnal details', (done) => {
+    it('should create a file logger which allows to display message with request details and additionnal details', (done) => {
       const conf = {
         logging: {
           log_level: 'error',
@@ -1759,7 +1759,8 @@ describe('Logger', () => {
         httpMethod,
         requestUrl,
         status,
-        falsy: 'falsy'
+        cause: 'This is the cause',
+        stack: 'This is the stack'
       })
       setTimeout(() => {
         expect(fs.existsSync(logFile)).toEqual(true)
@@ -1767,7 +1768,7 @@ describe('Logger', () => {
         // (\d{4}\-\d\d\-\d\d([tT][\d:\.]*)?)([zZ]|([+\-])(\d\d):?(\d\d))? is regular expression for ISO Date
         expect(data).toMatch(
           // eslint-disable-next-line no-useless-escape
-          /^ERROR \| (\d{4}\-\d\d\-\d\d([tT][\d:\.]*)?)([zZ]|([+\-])(\d\d):?(\d\d))? \| 192\.168\.0\.1 \| GET \| test_url \| 200 \| test message\n$/
+          /^ERROR \| (\d{4}\-\d\d\-\d\d([tT][\d:\.]*)?)([zZ]|([+\-])(\d\d):?(\d\d))? \| 192\.168\.0\.1 \| GET \| test_url \| 200 \| test message | This is the cause | This is the stack\n$/
         )
         fs.unlinkSync(logFile)
         done()

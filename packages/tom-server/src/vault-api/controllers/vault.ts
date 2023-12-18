@@ -61,7 +61,11 @@ export const deleteRecoveryWords = (db: TwakeDB): expressAppHandler => {
           throw error
         }
 
-        db.deleteWhere('recoveryWords', 'userId', userId)
+        db.deleteWhere('recoveryWords', {
+          field: 'userId',
+          operator: '=',
+          value: userId
+        })
           .then((_) => {
             // 204 requires no content to be sent
             res.status(204).json()
