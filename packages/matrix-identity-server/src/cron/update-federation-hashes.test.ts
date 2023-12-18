@@ -33,12 +33,27 @@ const conf: Config = {
   ]
 }
 
+const defaultPepper = 'matrixrocks'
+const altPeppers = ['altPepper1', 'altPepper2']
+
 const getHashDetailsSuccess = {
   state: 'resolved',
   value: {
     json: async () => ({
       algorithms: ['sha256'],
-      lookup_pepper: 'matrixrocks'
+      lookup_pepper: defaultPepper
+    }),
+    status: 200
+  }
+}
+
+const getHashDetailsSuccessMultiplePeppers = {
+  state: 'resolved',
+  value: {
+    json: async () => ({
+      algorithms: ['sha256'],
+      lookup_pepper: defaultPepper,
+      alt_lookup_peppers: ['altPepper1', 'altPepper2']
     }),
     status: 200
   }
@@ -49,7 +64,7 @@ const getHashDetailsNoAlgorithm = {
   value: {
     json: async () => ({
       algorithms: null,
-      lookup_pepper: 'matrixrocks'
+      lookup_pepper: defaultPepper
     }),
     status: 200
   }
@@ -109,13 +124,12 @@ type mockedRequest =
   | typeof errorOnParsingResponseBody
 
 const mockPromiseAllSettled = (mocks: mockedRequest[]): void => {
-  if (mocks.length !== conf.federation_servers?.length) return
-  conf.federation_servers?.forEach((_val, index) => {
-    const val = mocks[index].value
+  if (mocks.length < (conf.federation_servers as string[]).length) return
+  mocks.forEach((mock, index) => {
     if (mocks[index].state === 'resolved') {
-      fetchMock.mockResolvedValueOnce(val)
+      fetchMock.mockResolvedValueOnce(mock.value)
     } else if (mocks[index].state === 'rejected') {
-      fetchMock.mockRejectedValueOnce(val)
+      fetchMock.mockRejectedValueOnce(mock.value)
     }
   })
 }
@@ -174,42 +188,71 @@ describe('updateFederationHashes', () => {
     await hash.ready
 
     const mocks = [
-      [getHashDetailsSuccess, getHashDetailsSuccess, getHashDetailsSuccess],
-      [postLookupsSuccess, postLookupsSuccess, postLookupsSuccess]
+      [
+        getHashDetailsSuccess,
+        getHashDetailsSuccess,
+        getHashDetailsSuccessMultiplePeppers
+      ],
+      [
+        postLookupsSuccess,
+        postLookupsSuccess,
+        postLookupsSuccess,
+        postLookupsSuccess,
+        postLookupsSuccess
+      ]
     ]
 
     mockRequests(mocks)
 
     await updateFederationHashes(conf, userDB, logger)
-    expect(fetchMock).toHaveBeenCalledTimes(6)
-    for (let i = 4; i <= 6; i++) {
-      expect(fetchMock).toHaveBeenNthCalledWith(
-        i,
-        encodeURI(
-          `https://federation${i - 3}.example.com/_matrix/identity/v2/lookups`
-        ),
-        {
-          method: 'post',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            algorithm: 'sha256',
-            pepper: 'matrixrocks',
-            mappings: {
-              'matrix.example.com:8448': [
-                {
-                  hash: hash.sha256(`33612345678 msisdn matrixrocks`),
-                  active: 1
-                },
-                {
-                  hash: hash.sha256(`dwho@company.com email matrixrocks`),
-                  active: 1
-                }
-              ]
+
+    const getExpectedLookupsRequestBody = (pepper: string): RequestInit => ({
+      method: 'post',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        algorithm: 'sha256',
+        pepper,
+        mappings: {
+          'matrix.example.com:8448': [
+            {
+              hash: hash.sha256(`33612345678 msisdn ${pepper}`),
+              active: 1
+            },
+            {
+              hash: hash.sha256(`dwho@company.com email ${pepper}`),
+              active: 1
             }
-          })
+          ]
         }
-      )
-    }
+      })
+    })
+
+    expect(fetchMock).toHaveBeenCalledTimes(8)
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      4,
+      encodeURI(`https://federation1.example.com/_matrix/identity/v2/lookups`),
+      getExpectedLookupsRequestBody(defaultPepper)
+    )
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      5,
+      encodeURI(`https://federation2.example.com/_matrix/identity/v2/lookups`),
+      getExpectedLookupsRequestBody(defaultPepper)
+    )
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      6,
+      encodeURI(`https://federation3.example.com/_matrix/identity/v2/lookups`),
+      getExpectedLookupsRequestBody(defaultPepper)
+    )
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      7,
+      encodeURI(`https://federation3.example.com/_matrix/identity/v2/lookups`),
+      getExpectedLookupsRequestBody(altPeppers[0])
+    )
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      8,
+      encodeURI(`https://federation3.example.com/_matrix/identity/v2/lookups`),
+      getExpectedLookupsRequestBody(altPeppers[1])
+    )
   })
 
   describe('Error cases', () => {
