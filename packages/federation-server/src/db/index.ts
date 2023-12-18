@@ -1,8 +1,8 @@
 import { type TwakeLogger } from '@twake/logger'
 import {
-  type SQLite,
   createTables,
-  type Pg
+  type Pg,
+  type SQLite
 } from '@twake/matrix-identity-server'
 import { type Collections, type Config, type IdentityServerDb } from '../types'
 
@@ -23,7 +23,7 @@ const initializeDb = (
           // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
           {
             hashByServer:
-              'hash varchar(48), server text, active integer, PRIMARY KEY (hash, server)'
+              'hash varchar(48), server text, active integer, pepper text, PRIMARY KEY (hash, server, pepper)'
           } as unknown as Record<Collections, string>,
           {},
           {},
