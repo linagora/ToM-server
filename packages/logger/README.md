@@ -46,7 +46,7 @@ NB: Winston `level` property is named `log_level`
 This loggger has a predefined format which is:  
 `LEVEL | Date in ISO format | log message`
 
-Between date and log message it is possible to add some details:
+Between date and log message it is possible to add request details:
 * ip: ip address where the request comes from
 * matrixUserId: id of the user which sent the request
 * requestURL: requested url
@@ -54,8 +54,10 @@ Between date and log message it is possible to add some details:
 * httpMethod: http method of the request
 * status: response status
 
+Any other detail can be added and it will be displayed after `log message  `
+
 Aditionnal details are displayed in the following order:  
-`LEVEL | Date in ISO format | ip | matrixUserId | httpMethod | requestURL | endpointPath | status | log message`
+`LEVEL | Date in ISO format | ip | matrixUserId | httpMethod | requestURL | endpointPath | status | log message | additionnal details`
 
 #### Transports
 
@@ -265,13 +267,13 @@ const logger = getLogger(null, {
 ### Use logger methods
 
 The created logger can log messages thanks to the following methods:
-* `error(message: string, additionnalDetails?: Record<string, string| number>)`
-* `warn(message: string, additionnalDetails?: Record<string, string| number>)`
-* `info(message: string, additionnalDetails?: Record<string, string| number>)`
-* `http(message: string, additionnalDetails?: Record<string, string| number>)`
-* `verbose(message: string, additionnalDetails?: Record<string, string| number>)`
-* `debug(message: string, additionnalDetails?: Record<string, string| number>)`
-* `silly(message: string, additionnalDetails?: Record<string, string| number>)`
+* `error(message: string, details?: Record<string, string| number>)`
+* `warn(message: string, details?: Record<string, string| number>)`
+* `info(message: string, details?: Record<string, string| number>)`
+* `http(message: string, details?: Record<string, string| number>)`
+* `verbose(message: string, details?: Record<string, string| number>)`
+* `debug(message: string, details?: Record<string, string| number>)`
+* `silly(message: string, details?: Record<string, string| number>)`
 
 ```ts
 import { getLogger } from '@twake/logger'
@@ -289,10 +291,12 @@ logger.info(
     httpMethod: 'GET',
     requestUrl: 'https://example.com/example/how/to/use/logger',
     endpointPath: '/example/how/to/use/logger',
-    status: 200
+    status: 200,
+    detail1: 'additionnal detail 1',
+    detail2: 'additionnal detail 2'
   }
 )
-// Output: INFO | 2028-12-08T21:36:22.011Z | 127.0.0.1 | @dwho:example.com | GET | https://example.com/example/how/to/use/logger | /example/how/to/use/logger | This is an info message
+// Output: INFO | 2028-12-08T21:36:22.011Z | 127.0.0.1 | @dwho:example.com | GET | https://example.com/example/how/to/use/logger | /example/how/to/use/logger | This is an info message | additionnal detail 1 | additionnal detail 2
 
 // Order of additionnal details does not matter
 logger.debug(
@@ -303,10 +307,12 @@ logger.debug(
     requestUrl: 'https://example.com/example/how/to/use/logger',
     matrixUserId: '@dwho:example.com',
     ip: '127.0.0.1',
-    status: 200
+    status: 200,
+    detail1: 'additionnal detail 1',
+    detail2: 'additionnal detail 2'
   }
 )
-// Output: DEBUG | 2028-12-08T21:36:22.011Z | 127.0.0.1 | @dwho:example.com | GET | https://example.com/example/how/to/use/logger | /example/how/to/use/logger | 200 | This is a debug message
+// Output: DEBUG | 2028-12-08T21:36:22.011Z | 127.0.0.1 | @dwho:example.com | GET | https://example.com/example/how/to/use/logger | /example/how/to/use/logger | 200 | This is a debug message | additionnal detail 1 | additionnal detail 2
 
 logger.silly(
   'This is an info message',
@@ -352,10 +358,12 @@ logger.log(
     httpMethod: 'GET',
     requestUrl: 'https://example.com/example/how/to/use/logger',
     endpointPath: '/example/how/to/use/logger',
-    status: 200
+    status: 200,
+    detail1: 'additionnal detail 1',
+    detail2: 'additionnal detail 2'
   }
 )
-// Output: INFO | 2028-12-08T21:36:22.011Z | 127.0.0.1 | @dwho:example.com | GET | https://example.com/example/how/to/use/logger | /example/how/to/use/logger | This is an info message
+// Output: INFO | 2028-12-08T21:36:22.011Z | 127.0.0.1 | @dwho:example.com | GET | https://example.com/example/how/to/use/logger | /example/how/to/use/logger | This is an info message | additionnal detail 1 | additionnal detail 2
 ```
 
 ## Copyright and license
