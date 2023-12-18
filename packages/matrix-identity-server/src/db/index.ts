@@ -24,6 +24,23 @@ export type Collections =
 
 const cleanByExpires: Collections[] = ['oneTimeTokens', 'attempts']
 
+type sqlComparaisonOperator =
+  | '='
+  | '!='
+  | '>'
+  | '<'
+  | '>='
+  | '<='
+  | '!>'
+  | '!<'
+  | '<>'
+
+export interface ISQLCondition {
+  field: string
+  operator: sqlComparaisonOperator
+  value: string | number
+}
+
 type Insert = (
   table: Collections,
   values: Record<string, string | number>
@@ -68,8 +85,7 @@ type DeleteLowerThan = (
 
 type DeleteWhere = (
   table: string,
-  filters: string | string[],
-  values: string | number | Array<string | number>
+  conditions: ISQLCondition | ISQLCondition[]
 ) => Promise<void>
 
 export interface IdDbBackend {
@@ -230,14 +246,10 @@ class IdentityServerDb implements IdDbBackend {
   }
 
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
-  deleteWhere(
-    table: string,
-    filters: string | string[],
-    values: string | number | Array<string | number>
-  ) {
+  deleteWhere(table: string, conditions: ISQLCondition | ISQLCondition[]) {
     // Deletes from table where filters correspond to values
     // Size of filters and values must be the same
-    return this.db.deleteWhere(table, filters, values)
+    return this.db.deleteWhere(table, conditions)
   }
 
   // eslint-disable-next-line @typescript-eslint/promise-function-async
