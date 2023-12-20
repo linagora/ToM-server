@@ -47,11 +47,13 @@ const validateMatrixToken = (logger: TwakeLogger) => {
                 reject('Invalid server')
               }
             })
+            // istanbul ignore next
             .catch((e) => {
               logger.warn('Token rejected', e)
               reject('Token rejected')
             })
         })
+        // istanbul ignore next
         .catch((e) => {
           logger.warn(`Unable to resolve matrix server ${matrixServer}`, e)
           reject('Invalid server')

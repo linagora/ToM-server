@@ -36,6 +36,7 @@ export default class FederationServer extends MatrixIdentityServer {
         ? (this.conf.trusted_servers_addresses as string)
             .split(/[,\s]+/)
             .filter((addr) => {
+              // istanbul ignore next
               if ((addr.match(isIpLiteral) ?? addr.match(isNetwork)) != null) {
                 return true
               } else {

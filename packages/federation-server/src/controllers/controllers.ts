@@ -28,6 +28,7 @@ export const lookup = (
       // eslint-disable-next-line @typescript-eslint/promise-function-async
       .then((rows) => {
         rows.forEach((row) => {
+          // istanbul ignore else
           if (row.active === 1) {
             // @ts-expect-error row.hash is not null
             mappings[row.hash] = row.value

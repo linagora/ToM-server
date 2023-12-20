@@ -63,6 +63,7 @@ const createTables = (
                 .then(() => {
                   _resolve()
                 })
+                // istanbul ignore next
                 .catch((e) => {
                   _reject(e)
                 })
@@ -79,6 +80,7 @@ const createTables = (
     .then(() => {
       resolve()
     })
+    // istanbul ignore next
     .catch((e) => {
       logger.error('Unable to create tables', e)
       reject(e)

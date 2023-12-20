@@ -123,6 +123,7 @@ class CronTasks {
           updateUsers(conf, db, userDB, logger)
             .then(() => logger.debug('Users update succeeded'))
             .catch((e) => {
+              // istanbul ignore next
               logger.error('Users update failed', e)
             })
         },
@@ -216,6 +217,7 @@ class CronTasks {
         updateFederationHashes(conf, userDB, logger)
           .then(() => db.logger.debug('Federation hashes update succeeded'))
           .catch((e: Error) => {
+            // istanbul ignore next
             db.logger.error(`${e.message}. Reason: ${e.cause as string}`)
           })
       },

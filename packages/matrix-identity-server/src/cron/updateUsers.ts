@@ -25,7 +25,8 @@ const updateUsers = async (
   */
   const promises: Array<Promise<DbGetResult | string[] | null>> = [
     userDB.getAll('users', ['uid', 'mail', 'mobile']),
-    db.getAll('hashes', ['value', 'active'])
+    db.getAll('hashes', ['value', 'active']),
+    db.getAll('userHistory', ['address'])
   ]
   const isMatrixDbAvailable: boolean =
     Boolean(conf.matrix_database_host) && Boolean(conf.matrix_database_engine)
@@ -69,7 +70,12 @@ const updateUsers = async (
     (row.value as string).replace(/^@(.*?):.*$/, '$1')
   )
   const knownActiveUsers = (res[1] as DbGetResult).map((row) => row.active)
-  const matrixUsers = res[2] as string[]
+  const matrixUsers = res[3] as string[]
+  const existingHistory: Record<string, true> = {}
+  if (res[2] != null)
+    (res[2] as DbGetResult).forEach((histEntry) => {
+      existingHistory[(histEntry as Record<string, string>).address] = true
+    })
   const usersToUpdate: UpdatableFields = {}
 
   /*
@@ -84,34 +90,38 @@ const updateUsers = async (
     const matrixAddress = `@${uid}:${conf.server_name}`
     const pos = knownUids.indexOf(uid)
     const isMatrixUser = matrixUsers.includes(uid)
+    const data = {
+      address: matrixAddress,
+      timestamp,
+      active: 1
+    }
     if (pos < 0) {
       found = true
-      const active = isMatrixDbAvailable ? (isMatrixUser ? 1 : 0) : 1
-      if (active !== 0)
+      data.active = isMatrixDbAvailable ? (isMatrixUser ? 1 : 0) : 1
+      if (data.active !== 0)
         updates.push(
-          db.insert('userHistory', {
-            address: matrixAddress,
-            timestamp,
-            active
-          })
+          existingHistory[matrixAddress]
+            ? db.update('userHistory', data, 'address', matrixAddress)
+            : db.insert('userHistory', data)
         )
       if (!isFederationServerSet || isMatrixUser) {
         usersToUpdate[matrixAddress] = {
           email: user.mail as string,
           phone: user.mobile as string,
-          active
+          active: data.active
         }
       }
-      logger.debug(`New user detected: ${user.uid as string}, status:`, active)
+      logger.debug(
+        `New user detected: ${user.uid as string}, status:`,
+        data.active
+      )
       // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
     } else if (isMatrixUser && !knownActiveUsers[pos]) {
       updates.push(
         db.update('hashes', { active: 1 }, 'value', matrixAddress),
-        db.insert('userHistory', {
-          address: matrixAddress,
-          timestamp,
-          active: 1
-        })
+        existingHistory[matrixAddress]
+          ? db.update('userHistory', data, 'address', matrixAddress)
+          : db.insert('userHistory', data)
       )
       logger.debug(`User ${user.uid as string} becomes active`)
     }
