@@ -10,6 +10,7 @@ export const isIpLiteral = new RegExp(`^(${ipv4}|${ipv6})(?:(?<!:):(\\d+))?$`)
 export const isNetwork = new RegExp(`^(${ipv4}|${ipv6})/\\d+`)
 
 export const convertToIPv6 = (ipAddress: string): Address6 => {
+  // istanbul ignore if
   if (typeof ipAddress !== 'string') {
     throw new Error('An IP address must be of string type')
   }

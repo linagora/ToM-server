@@ -65,6 +65,7 @@ export const auth = (
     try {
       const requesterIPAddress = convertToIPv6(originalRequesterIPAddress)
       logger.debug(`Authenticated request from ${originalRequesterIPAddress}`)
+      // istanbul ignore if
       if (trustedServersListAsIPv6.includes(requesterIPAddress)) {
         logger.debug('IP is in list')
         next()

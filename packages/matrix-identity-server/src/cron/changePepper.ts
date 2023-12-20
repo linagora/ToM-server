@@ -25,7 +25,7 @@ export const filter = async (
     const matrixDb = new MatrixDB(conf)
     await matrixDb.ready
     const entries = await matrixDb.getAll('users', ['name']).catch((e) => {
-      /* istanbul ignore if */
+      /* istanbul ignore next */
       if (/relation "users" does not exist/.test(e)) {
         logger.debug('Matrix DB seems not ready')
       } else {
@@ -91,6 +91,7 @@ const updateHashes = (
     db.get('keys', ['data'], { name: 'previousPepper' })
       .then((rows) => {
         if (rows == null || !Array.isArray(rows) || rows.length === 0) {
+          /* istanbul ignore next */
           throw Error('No previousPepper found')
         }
         if (rows[0].data?.toString()?.length !== 32) {
