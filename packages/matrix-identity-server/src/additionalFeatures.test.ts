@@ -4,7 +4,6 @@ import fs from 'fs'
 import fetch from 'node-fetch'
 import sqlite3 from 'sqlite3'
 import request from 'supertest'
-import { logger } from '../jest.globals'
 import buildUserDB, { buildMatrixDb } from './__testData__/buildUserDB'
 import defaultConfig from './__testData__/registerConf.json'
 import updateUsers from './cron/updateUsers'
@@ -50,7 +49,7 @@ beforeAll((done) => {
     .then(() => {
       buildMatrixDb(conf)
         .then(() => {
-          idServer = new IdServer(conf, undefined, logger)
+          idServer = new IdServer(conf)
           app = express()
 
           idServer.ready
@@ -167,7 +166,7 @@ describe('/_matrix/identity/v2/lookup', () => {
               if (err) {
                 done(err)
               } else {
-                updateUsers(conf, idServer.db, idServer.userDB, logger)
+                updateUsers(conf, idServer.db, idServer.userDB, idServer.logger)
                   .then(() => {
                     void idServer.db.getAll('hashes', ['*']).catch(done)
                     const okenobiPhone = hash.sha256(
@@ -226,7 +225,7 @@ describe('/_matrix/identity/v2/lookup', () => {
                 done(err)
               } else {
                 const rtylerPhone = hash.sha256(`33687654321 msisdn ${pepper}`)
-                updateUsers(conf, idServer.db, idServer.userDB, logger)
+                updateUsers(conf, idServer.db, idServer.userDB, idServer.logger)
                   .then(() => {
                     request(app)
                       .post('/_matrix/identity/v2/lookup')

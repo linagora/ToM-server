@@ -1,9 +1,5 @@
 import { randomString } from '@twake/crypto'
-import {
-  getLogger,
-  type Config as LoggerConfig,
-  type TwakeLogger
-} from '@twake/logger'
+import { type TwakeLogger } from '@twake/logger'
 import { type Config, type DbGetResult } from '../types'
 import { epoch } from '../utils'
 import Pg from './sql/pg'
@@ -113,13 +109,8 @@ class IdentityServerDb implements IdDbBackend {
   db: IdDbBackend
   cleanJob?: NodeJS.Timeout
   cleanByExpires: Collections[]
-  private readonly _logger: TwakeLogger
-  get logger(): TwakeLogger {
-    return this._logger
-  }
 
-  constructor(conf: Config, logger?: TwakeLogger) {
-    this._logger = logger ?? getLogger(conf as unknown as LoggerConfig)
+  constructor(conf: Config, private readonly logger: TwakeLogger) {
     this.cleanByExpires = cleanByExpires
     let Module
     /* istanbul ignore next */

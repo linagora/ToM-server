@@ -14,11 +14,11 @@ import IdServer from './identity-server'
 import mutualRoomsAPIRouter from './mutual-rooms-api'
 import privateNoteApiRouter from './private-note-api'
 import roomTagsAPIRouter from './room-tags-api'
+import smsApiRouter from './sms-api'
 import type { Config, ConfigurationFile, TwakeIdentityServer } from './types'
 import userInfoAPIRouter from './user-info-api'
 import VaultServer from './vault-api'
 import WellKnown from './wellKnown'
-import smsApiRouter from './sms-api'
 
 abstract class AbstractTwakeServerPublic {
   endpoints: Router
@@ -34,7 +34,6 @@ abstract class AbstractTwakeServerPublic {
 
   cleanJobs(): void {
     this.idServer.cleanJobs()
-    this.logger.close()
   }
 
   protected readonly initServer = async (): Promise<boolean> => {
@@ -43,7 +42,11 @@ abstract class AbstractTwakeServerPublic {
       await this.matrixDb.ready
       await initializeDb(this)
 
-      const vaultServer = new VaultServer(this.conf, this)
+      const vaultServer = new VaultServer(
+        this.conf,
+        this.idServer.db,
+        this.logger
+      )
       const wellKnown = new WellKnown(this.conf)
       const privateNoteApi = privateNoteApiRouter(
         this.idServer.db,
@@ -136,11 +139,6 @@ class TwakeServerEnterprise extends AbstractTwakeServerPublic {
         })
     })
   }
-
-  cleanJobs(): void {
-    super.cleanJobs()
-    this._appServiceApi !== undefined && (this._appServiceApi as any).clean()
-  }
 }
 
 export default class TwakeServer {
@@ -175,13 +173,18 @@ export default class TwakeServer {
       TwakeServer._getConfigurationFile(conf)
     ) as Config
     this.logger = logger ?? getLogger(this.conf as unknown as LoggerConfig)
-    if (
-      process.env.ENABLE_COMPANY_FEATURES === 'true' ||
-      (this.conf.enable_company_features as boolean)
-    ) {
-      return new TwakeServerEnterprise(this.conf, this.logger, confDesc)
-    } else {
-      return new TwakeServerPublicImpl(this.conf, this.logger, confDesc)
+    try {
+      if (
+        process.env.ENABLE_COMPANY_FEATURES === 'true' ||
+        (this.conf.enable_company_features as boolean)
+      ) {
+        return new TwakeServerEnterprise(this.conf, this.logger, confDesc)
+      } else {
+        return new TwakeServerPublicImpl(this.conf, this.logger, confDesc)
+      }
+    } catch (e) {
+      this.logger.close()
+      throw e
     }
   }
 

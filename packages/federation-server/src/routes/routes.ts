@@ -165,7 +165,7 @@ export default (
         conf.trust_x_forwarded_for,
         logger
       ),
-      hashDetails(db),
+      hashDetails(db, logger),
       errorMiddleware
     )
     .all(...errorMiddlewares(methodNotAllowed))

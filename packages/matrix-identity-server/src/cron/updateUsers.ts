@@ -37,7 +37,7 @@ const updateUsers = async (
   if (isMatrixDbAvailable) {
     promises.push(
       new Promise((resolve, reject) => {
-        const matrixDb = new MatrixDB(conf)
+        const matrixDb = new MatrixDB(conf, logger)
         matrixDb.ready
           .then(() => {
             matrixDb

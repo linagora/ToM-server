@@ -23,7 +23,7 @@ export default class AugmentedIdentityServer extends MatrixIdentityServer {
     // istanbul ignore if
     if (confDesc == null) confDesc = defaultConfig
     super(parent.conf, confDesc, logger)
-    this.authenticate = Authenticate(this.db, this.conf)
+    this.authenticate = Authenticate(this.db, this.conf, this.logger)
     const superReady = this.ready
     this.ready = new Promise((resolve, reject) => {
       superReady

@@ -1,9 +1,11 @@
+import { getLogger, type TwakeLogger } from '@twake/logger'
 import ldapjs from 'ldapjs'
-import { logger } from '../../jest.globals'
 import defaultConfig from '../config.json'
 import UserDBLDAP from './ldap'
 
 const server = ldapjs.createServer()
+
+const logger: TwakeLogger = getLogger()
 
 beforeAll((done) => {
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
@@ -29,14 +31,17 @@ beforeAll((done) => {
 })
 
 afterAll((done) => {
+  logger.close()
   server.close(() => {
     done()
   })
 })
 
 describe('LDAP', () => {
+  let userDB: UserDBLDAP
+
   it('should return result', (done) => {
-    const userDB = new UserDBLDAP(
+    userDB = new UserDBLDAP(
       {
         ...defaultConfig,
         database_engine: 'sqlite',
@@ -74,7 +79,7 @@ describe('LDAP', () => {
   })
 
   it('should display error message on connection error', async () => {
-    const userDB = new UserDBLDAP(
+    userDB = new UserDBLDAP(
       {
         ...defaultConfig,
         database_engine: 'sqlite',
@@ -86,13 +91,13 @@ describe('LDAP', () => {
       },
       logger
     )
-    const loggerErrorSpy = jest.spyOn(userDB.logger, 'error')
+    const loggerErrorSpy = jest.spyOn(logger, 'error')
     await userDB.ready
     expect(loggerErrorSpy).toHaveBeenCalled()
   })
 
   it('should provide match', (done) => {
-    const userDB = new UserDBLDAP(
+    userDB = new UserDBLDAP(
       {
         ...defaultConfig,
         database_engine: 'sqlite',
@@ -116,7 +121,7 @@ describe('LDAP', () => {
   })
 
   it('should provide getAll', (done) => {
-    const userDB = new UserDBLDAP(
+    userDB = new UserDBLDAP(
       {
         ...defaultConfig,
         database_engine: 'sqlite',
@@ -140,7 +145,7 @@ describe('LDAP', () => {
   })
 
   it('should provide getAll with order', (done) => {
-    const userDB = new UserDBLDAP(
+    userDB = new UserDBLDAP(
       {
         ...defaultConfig,
         database_engine: 'sqlite',

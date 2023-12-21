@@ -1,4 +1,5 @@
 import { supportedHashes } from '@twake/crypto'
+import { type TwakeLogger } from '@twake/logger'
 import { MatrixErrors, type DbGetResult } from '@twake/matrix-identity-server'
 import lodash from 'lodash'
 import { hashByServer } from '../db'
@@ -143,7 +144,10 @@ interface HashDetailsObject {
   alt_lookup_peppers?: string[]
 }
 
-export const hashDetails = (db: IdentityServerDb): expressAppHandler => {
+export const hashDetails = (
+  db: IdentityServerDb,
+  logger: TwakeLogger
+): expressAppHandler => {
   return (req, res, next) => {
     db.get('keys', ['data'], { name: 'pepper' })
       .then((rows) => {
@@ -158,7 +162,7 @@ export const hashDetails = (db: IdentityServerDb): expressAppHandler => {
             res.json(resp)
           })
           .catch((e) => {
-            db.logger.debug('No previous pepper')
+            logger.debug('No previous pepper')
             res.json(resp)
           })
       })

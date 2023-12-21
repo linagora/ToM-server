@@ -1,4 +1,5 @@
-import { errMsg, Utils, type tokenContent } from '@twake/matrix-identity-server'
+import { type TwakeLogger } from '@twake/logger'
+import { Utils, errMsg, type tokenContent } from '@twake/matrix-identity-server'
 import fetch from 'node-fetch'
 import {
   type AuthenticationFunction,
@@ -14,7 +15,8 @@ export interface WhoAmIResponse {
 
 const Authenticate = (
   db: IdentityServerDb,
-  conf: Config
+  conf: Config,
+  logger: TwakeLogger
 ): AuthenticationFunction => {
   const tokenRe = /^Bearer (\S+)$/
   return (req, res, callback) => {
@@ -69,26 +71,26 @@ const Authenticate = (
                   data: JSON.stringify(data)
                 }).catch((e) => {
                   /* istanbul ignore next */
-                  db.logger.error('Unable to insert a token', e)
+                  logger.error('Unable to insert a token', e)
                 })
                 // eslint-disable-next-line n/no-callback-literal
                 // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
                 // @ts-ignore token is defined
                 callback(data, token)
               } else {
-                db.logger.warn('Bad token', userInfo)
+                logger.warn('Bad token', userInfo)
                 Utils.send(res, 401, errMsg('unAuthorized'))
               }
             })
             .catch((e) => {
               /* istanbul ignore next */
-              db.logger.debug('Fetch error', e)
+              logger.debug('Fetch error', e)
               /* istanbul ignore next */
               Utils.send(res, 401, errMsg('unAuthorized'))
             })
         })
     } else {
-      db.logger.warn('Access tried without token', req.headers)
+      logger.warn('Access tried without token', req.headers)
       Utils.send(res, 401, errMsg('unAuthorized'))
     }
   }

@@ -1,8 +1,8 @@
+import { getLogger, type TwakeLogger } from '@twake/logger'
 import fs from 'fs'
 import path from 'path'
 import sqlite3 from 'sqlite3'
 import CronTasks from '.'
-import { logger } from '../../jest.globals'
 import defaultConfig from '../config.json'
 import IdentityServerDB from '../db'
 import { type Config } from '../types'
@@ -24,6 +24,8 @@ const conf: Config = {
   server_name: 'company.com',
   federation_servers: ['federation.example.com']
 }
+
+const logger: TwakeLogger = getLogger()
 
 let db: IdentityServerDB, userDB: UserDB, cronTasks: CronTasks
 
@@ -59,7 +61,7 @@ describe('cron tasks', () => {
         })
       })
       db = new IdentityServerDB(conf, logger)
-      userDB = new UserDB(conf, undefined, logger)
+      userDB = new UserDB(conf, logger)
       await Promise.all([userDB.ready, db.ready])
       await new Promise<void>((resolve, reject) => {
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
@@ -83,6 +85,7 @@ describe('cron tasks', () => {
     userDB.close()
     cronTasks.stop()
     fs.existsSync(dbPath) && fs.unlinkSync(dbPath)
+    logger.close()
   })
 
   it('should init all cron tasks', async () => {

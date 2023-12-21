@@ -12,6 +12,7 @@
     "declaration": true
   },
   "exclude": [
+    "**/__testData__",
     "**/*.test.ts"
   ]
 }

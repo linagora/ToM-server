@@ -1,9 +1,12 @@
 /* istanbul ignore file */
-import { type Config } from '../types'
+import { getLogger, type TwakeLogger } from '@twake/logger'
 import sqlite3 from 'sqlite3'
+import { type Config } from '../types'
 import UserDB from '../userdb'
 import type UserDBPg from '../userdb/sql/pg'
 import type UserDBSQLite from '../userdb/sql/sqlite'
+
+const logger: TwakeLogger = getLogger()
 
 let created = false
 let matrixDbCreated = false
@@ -17,7 +20,7 @@ const mInsertQuery = "INSERT INTO users VALUES('@dwho:company.com')"
 // eslint-disable-next-line @typescript-eslint/promise-function-async
 const buildUserDB = (conf: Config): Promise<void> => {
   if (created) return Promise.resolve()
-  const userDb = new UserDB(conf)
+  const userDb = new UserDB(conf, logger)
   return new Promise((resolve, reject) => {
     /* istanbul ignore else */
     if (conf.userdb_engine === 'sqlite') {
@@ -29,6 +32,7 @@ const buildUserDB = (conf: Config): Promise<void> => {
               if(err != null) {
                 reject(err)
               } else {
+                logger.close()
                 created = true
                 resolve()
               }
@@ -39,6 +43,7 @@ const buildUserDB = (conf: Config): Promise<void> => {
     } else {
       (userDb.db as UserDBPg).db?.query(createQuery, () => {
         (userDb.db as UserDBPg).db?.query(insertQuery, () => {
+          logger.close()
           created = true
           resolve()
         })

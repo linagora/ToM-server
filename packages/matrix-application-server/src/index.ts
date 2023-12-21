@@ -95,14 +95,19 @@ export default class MatrixApplicationServer extends EventEmitter {
       this._getConfigurationFile(conf)
     ) as Config
     this._logger = logger ?? getLogger(this.conf as unknown as LoggerConfig)
-    this.appServiceRegistration = new AppServiceRegistration(
-      this.conf,
-      this._logger
-    )
-    this.appServiceRegistration.createRegisterFile(
-      this.conf.registration_file_path
-    )
-    this.router = new MASRouter(this)
+    try {
+      this.appServiceRegistration = new AppServiceRegistration(
+        this.conf,
+        this._logger
+      )
+      this.appServiceRegistration.createRegisterFile(
+        this.conf.registration_file_path
+      )
+      this.router = new MASRouter(this)
+    } catch (e) {
+      this.logger.close()
+      throw e
+    }
   }
 
   /**
@@ -123,9 +128,5 @@ export default class MatrixApplicationServer extends EventEmitter {
     } else {
       return undefined
     }
-  }
-
-  public clean(): void {
-    this.logger.close()
   }
 }

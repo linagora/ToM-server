@@ -1,3 +1,4 @@
+import { type TwakeLogger } from '@twake/logger'
 import type IdentityServerDb from '../db'
 import MatrixDB, { type MatrixDBBackend } from '../matrixDb'
 import type {
@@ -13,9 +14,13 @@ import type {
  * @param {Config} conf - the configuration.
  * @param {IdentityServerDb} db - the identity server database.
  */
-export default async (conf: Config, db: IdentityServerDb): Promise<void> => {
+export default async (
+  conf: Config,
+  db: IdentityServerDb,
+  logger: TwakeLogger
+): Promise<void> => {
   try {
-    const matrixDb: MatrixDBBackend = await initDatabase(conf)
+    const matrixDb: MatrixDBBackend = await initDatabase(conf, logger)
 
     const users = await getMatrixUsers(matrixDb)
     await Promise.all(
@@ -26,7 +31,7 @@ export default async (conf: Config, db: IdentityServerDb): Promise<void> => {
           await saveUserUsage(db, user, usage)
         } catch (error) {
           // istanbul ignore next
-          db.logger.warn('Failed to save user usage', error)
+          logger.warn('Failed to save user usage', error)
         }
       })
     )
@@ -37,7 +42,10 @@ export default async (conf: Config, db: IdentityServerDb): Promise<void> => {
   }
 }
 
-const initDatabase = async (conf: Config): Promise<MatrixDBBackend> => {
+const initDatabase = async (
+  conf: Config,
+  logger: TwakeLogger
+): Promise<MatrixDBBackend> => {
   try {
     if (
       conf.matrix_database_host == null ||
@@ -47,7 +55,7 @@ const initDatabase = async (conf: Config): Promise<MatrixDBBackend> => {
       throw new Error('Missing matrix database configuration')
     }
 
-    const matrixDb = new MatrixDB(conf)
+    const matrixDb = new MatrixDB(conf, logger)
     await matrixDb.ready
 
     return matrixDb.db

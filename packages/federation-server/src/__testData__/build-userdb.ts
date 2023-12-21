@@ -1,6 +1,6 @@
 /* istanbul ignore file */
+import { getLogger, type TwakeLogger } from '@twake/logger'
 import { UserDB } from '@twake/matrix-identity-server'
-import { type Client } from 'pg'
 import sqlite3, { type Database } from 'sqlite3'
 import { type Config } from '../types'
 
@@ -10,6 +10,8 @@ let matrixDbCreated = false
 interface UserDBSQLite {
   db?: Database
 }
+
+const logger: TwakeLogger = getLogger()
 
 const createUsersTable = 'CREATE TABLE users (uid varchar(32), cn varchar(32), sn varchar(32), mail varchar(32), mobile varchar(12))'
 const insertLskywalker = "INSERT INTO users VALUES('lskywalker', 'Luc Skywalker', 'Lskywalker', 'lskywalker@example.com', '')"
@@ -24,7 +26,7 @@ const mInsertChewbacca = "INSERT INTO users VALUES('@chewbacca:example.com')"
 // eslint-disable-next-line @typescript-eslint/promise-function-async
 export const buildUserDB = (conf: Config): Promise<void> => {
   if (created) return Promise.resolve()
-  const userDb = new UserDB(conf)
+  const userDb = new UserDB(conf, logger)
   return new Promise((resolve, reject) => {
     userDb.ready.then(() => {
       (userDb.db as UserDBSQLite).db?.run(createUsersTable, () => {
@@ -37,6 +39,7 @@ export const buildUserDB = (conf: Config): Promise<void> => {
                   if(err != null) {
                     reject(err)
                   } else {
+                    logger.close()
                     created = true
                     resolve()
                   }

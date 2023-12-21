@@ -17,6 +17,5 @@ export default {
     "node-fetch": "<rootDir>/../../node_modules/node-fetch-jest",
     'matrix-resolve': '<rootDir>/../matrix-resolve/src'
   },
-  clearMocks: true,
-  globalTeardown: '<rootDir>/jest.global-teardown.ts'
+  clearMocks: true
 }

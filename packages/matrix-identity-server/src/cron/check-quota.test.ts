@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-misused-promises */
+import { getLogger, type TwakeLogger } from '@twake/logger'
 import fs from 'fs'
 import path from 'path'
 import sqlite3 from 'sqlite3'
-import { logger } from '../../jest.globals'
 import defaultConfig from '../config.json'
 import IdentityServerDb from '../db'
 import type { Config, UserQuota } from '../types'
@@ -21,6 +21,8 @@ const conf: Config = {
 }
 
 let db: IdentityServerDb
+
+const logger: TwakeLogger = getLogger()
 
 beforeAll(async () => {
   try {
@@ -130,11 +132,12 @@ afterAll(() => {
   clearTimeout(db.cleanJob)
   db.close()
   fs.existsSync(dbPath) && fs.unlinkSync(dbPath)
+  logger.close()
 })
 
 describe('the checkQuota cron job', () => {
   it('should collect the user usage and save the result', async () => {
-    await checkQuota(conf, db)
+    await checkQuota(conf, db, logger)
 
     const result = (await db.get('userQuotas', ['size'], {
       user_id: '@user:matrix.org'

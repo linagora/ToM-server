@@ -1,4 +1,4 @@
-import { ETransportType, getLogger, type TwakeLogger } from '@twake/logger'
+import { ETransportType, getLogger } from '@twake/logger'
 import fs from 'fs'
 import yaml from 'js-yaml'
 import moment from 'moment'
@@ -35,27 +35,29 @@ const testConfig = {
   }
 }
 
-describe('Registration', () => {
-  let logger: TwakeLogger
-
-  beforeAll(() => {
-    logger = getLogger({
-      ...(testConfig as Config),
-      logging: {
-        log_transports: [
-          {
-            type: ETransportType.DAILY_ROTATE_FILE,
-            options: {
-              zippedArchive: true,
-              dirname: './logs',
-              filename: 'twake-%DATE%.log',
-              maxSize: '10m',
-              maxFiles: '5d'
-            }
-          }
-        ]
+const logger = getLogger({
+  logging: {
+    log_transports: [
+      {
+        type: ETransportType.DAILY_ROTATE_FILE,
+        options: {
+          dirname: 'logs',
+          filename: 'twake-%DATE%.log',
+          maxSize: '10m',
+          maxFiles: '5d'
+        }
       }
-    })
+    ]
+  }
+})
+
+describe('Registration', () => {
+  afterAll(() => {
+    const logsDir = path.join(JEST_PROCESS_ROOT_PATH, 'logs')
+    if (fs.existsSync(logsDir)) {
+      fs.rmSync(logsDir, { recursive: true })
+    }
+    logger.close()
   })
 
   describe('Class constructor (with setter and getter)', () => {
@@ -341,78 +343,6 @@ describe('Registration', () => {
       fs.unlinkSync(testConfig.registration_file_path)
     })
 
-    it('createRegisterFile: should keep yaml file if already exists', (done) => {
-      const config: Config = {
-        ...testConfig,
-        registration_file_path: yamlTestFilePath
-      }
-      const appServiceRegistration = new AppServiceRegistration(config, logger)
-      appServiceRegistration.protocols = ['test']
-      appServiceRegistration.rateLimited = false
-
-      expect(fs.existsSync(config.registration_file_path)).toEqual(true)
-
-      appServiceRegistration.createRegisterFile(config.registration_file_path)
-      const fileContent = yaml.load(
-        fs.readFileSync(config.registration_file_path, { encoding: 'utf8' })
-      ) as AppServiceOutput
-
-      const expectedFileContent = {
-        id: appServiceRegistration.id,
-        hs_token: appServiceRegistration.hsToken,
-        as_token: appServiceRegistration.asToken,
-        url: appServiceRegistration.url,
-        sender_localpart: appServiceRegistration.senderLocalpart,
-        namespaces: appServiceRegistration.namespaces,
-        'de.sorunome.msc2409.push_ephemeral':
-          appServiceRegistration.pushEphemeral
-      }
-
-      expect(fileContent).toStrictEqual(expectedFileContent)
-      expect(fileContent.protocols).toBeUndefined()
-      expect(fileContent.rate_limited).toBeUndefined()
-      expect(spyOnDump).not.toHaveBeenCalled()
-      expect(spyOnWriteFileSync).not.toHaveBeenCalled()
-      expect(fs.existsSync(config.registration_file_path)).toEqual(true)
-
-      // eslint-disable-next-line @typescript-eslint/no-misused-promises
-      logger.on('finish', async () => {
-        const logFileFulfilled = async (logFilePath: string): Promise<void> => {
-          let timer: NodeJS.Timeout | null = null
-          await new Promise<void>((resolve, reject) => {
-            timer = setInterval(() => {
-              try {
-                if (fs.existsSync(logFilePath)) {
-                  const content = fs.readFileSync(logFilePath, 'utf-8')
-                  if (content != null && content.length > 0) {
-                    resolve()
-                  }
-                }
-              } catch (e) {
-                reject(e)
-              }
-            }, 1000)
-          })
-          if (timer != null) clearInterval(timer)
-        }
-
-        const rootLogsDir = path.join(JEST_PROCESS_ROOT_PATH, 'logs')
-        const logFilePath = path.join(
-          rootLogsDir,
-          `twake-${moment().format('YYYY-MM-DD')}.log`
-        )
-        await logFileFulfilled(logFilePath)
-        expect(fs.existsSync(logFilePath)).toEqual(true)
-        // (\d{4}\-\d\d\-\d\d([tT][\d:\.]*)?)([zZ]|([+\-])(\d\d):?(\d\d))? is regular expression for ISO Date
-        expect(fs.readFileSync(logFilePath, 'utf-8')).toMatch(
-          /^INFO \| (\d{4}\-\d\d\-\d\d([tT][\d:\.]*)?)([zZ]|([+\-])(\d\d):?(\d\d))? \| Application service registration file already exists\n$/
-        )
-        fs.unlinkSync(logFilePath)
-        done()
-      })
-      logger.end()
-    })
-
     it('isRateLimited: should return true if rateLimited property is undefined', () => {
       const appServiceRegistration = new AppServiceRegistration(
         testConfig,
@@ -529,6 +459,85 @@ describe('Registration', () => {
       expect(
         appServiceRegistration.isAliasMatch('@_twake_test', false)
       ).toEqual(true)
+    })
+
+    it('createRegisterFile: should keep yaml file if already exists', (done) => {
+      const config: Config = {
+        ...testConfig,
+        registration_file_path: yamlTestFilePath
+      }
+      const appServiceRegistration = new AppServiceRegistration(config, logger)
+      appServiceRegistration.protocols = ['test']
+      appServiceRegistration.rateLimited = false
+
+      expect(fs.existsSync(config.registration_file_path)).toEqual(true)
+
+      appServiceRegistration.createRegisterFile(config.registration_file_path)
+      const fileContent = yaml.load(
+        fs.readFileSync(config.registration_file_path, { encoding: 'utf8' })
+      ) as AppServiceOutput
+
+      const expectedFileContent = {
+        id: appServiceRegistration.id,
+        hs_token: appServiceRegistration.hsToken,
+        as_token: appServiceRegistration.asToken,
+        url: appServiceRegistration.url,
+        sender_localpart: appServiceRegistration.senderLocalpart,
+        namespaces: appServiceRegistration.namespaces,
+        'de.sorunome.msc2409.push_ephemeral':
+          appServiceRegistration.pushEphemeral
+      }
+
+      expect(fileContent).toStrictEqual(expectedFileContent)
+      expect(fileContent.protocols).toBeUndefined()
+      expect(fileContent.rate_limited).toBeUndefined()
+      expect(spyOnDump).not.toHaveBeenCalled()
+      expect(spyOnWriteFileSync).not.toHaveBeenCalled()
+      expect(fs.existsSync(config.registration_file_path)).toEqual(true)
+
+      const rootLogsDir = path.join(JEST_PROCESS_ROOT_PATH, 'logs')
+      const logFilePath = path.join(
+        rootLogsDir,
+        `twake-${moment().format('YYYY-MM-DD')}.log`
+      )
+
+      const logFileFulfilled = async (logFilePath: string): Promise<void> => {
+        let timer: NodeJS.Timeout | null = null
+        await new Promise<void>((resolve, reject) => {
+          timer = setInterval(() => {
+            try {
+              if (fs.existsSync(logFilePath)) {
+                const content = fs.readFileSync(logFilePath, 'utf-8')
+                if (content != null && content.length > 0) {
+                  resolve()
+                }
+              }
+            } catch (e) {
+              reject(e)
+            }
+          }, 1000)
+        })
+        if (timer != null) clearInterval(timer)
+      }
+
+      logFileFulfilled(logFilePath)
+        .then(() => {
+          // eslint-disable-next-line @typescript-eslint/no-misused-promises
+          logger.on('finish', () => {
+            expect(fs.existsSync(logFilePath)).toEqual(true)
+            // (\d{4}\-\d\d\-\d\d([tT][\d:\.]*)?)([zZ]|([+\-])(\d\d):?(\d\d))? is regular expression for ISO Date
+            expect(fs.readFileSync(logFilePath, 'utf-8')).toMatch(
+              /^INFO \| (\d{4}\-\d\d\-\d\d([tT][\d:\.]*)?)([zZ]|([+\-])(\d\d):?(\d\d))? \| Application service registration file already exists\n$/
+            )
+            fs.unlinkSync(logFilePath)
+            done()
+          })
+
+          logger.end()
+        })
+        .catch((e) => {
+          done(e)
+        })
     })
   })
 })

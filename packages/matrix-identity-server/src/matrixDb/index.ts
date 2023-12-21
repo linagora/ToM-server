@@ -1,8 +1,4 @@
-import {
-  getLogger,
-  type Config as LoggerConfig,
-  type TwakeLogger
-} from '@twake/logger'
+import { type TwakeLogger } from '@twake/logger'
 import { type Config, type DbGetResult } from '../types'
 import MatrixDBPg from './sql/pg'
 import MatrixDBSQLite from './sql/sqlite'
@@ -40,13 +36,7 @@ export interface MatrixDBBackend {
 class MatrixDB implements MatrixDBBackend {
   ready: Promise<void>
   db: MatrixDBBackend
-  private readonly _logger: TwakeLogger
-  get logger(): TwakeLogger {
-    return this._logger
-  }
-
-  constructor(conf: Config, logger?: TwakeLogger) {
-    this._logger = logger ?? getLogger(conf as unknown as LoggerConfig)
+  constructor(conf: Config, private readonly logger: TwakeLogger) {
     let Module
     /* istanbul ignore next */
     switch (conf.matrix_database_engine) {

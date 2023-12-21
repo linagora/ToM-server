@@ -1,3 +1,4 @@
+import { getLogger } from '@twake/logger'
 import { UserDB } from '@twake/matrix-identity-server'
 import { type NextFunction, type Response } from 'express'
 import ldap from 'ldapjs'
@@ -17,6 +18,8 @@ const config = {
   ldap_uri: 'ldap://localhost:63389',
   ldap_base: 'ou=users,o=example'
 }
+
+const logger = getLogger()
 
 beforeAll((done) => {
   server.search(
@@ -45,12 +48,13 @@ beforeAll((done) => {
 })
 
 afterAll((done) => {
+  logger.close()
   server.close(done)
 })
 
 describe('user info service', () => {
   it('should return the user info', async () => {
-    const userDb = new UserDB(config as Config)
+    const userDb = new UserDB(config as Config, logger)
     await userDb.ready
     const service = new UserInfoService(userDb)
     const user = await service.get('dwho')

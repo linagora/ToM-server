@@ -1,14 +1,10 @@
-import {
-  getLogger,
-  type Config as LoggerConfig,
-  type TwakeLogger
-} from '@twake/logger'
+import { type TwakeLogger } from '@twake/logger'
 import type Cache from '../cache'
 import { type Config, type DbGetResult } from '../types'
+import UserDBEmpty from './empty'
 import UserDBLDAP from './ldap'
 import UserDBPg from './sql/pg'
 import UserDBSQLite from './sql/sqlite'
-import UserDBEmpty from './empty'
 
 export type SupportedUserDatabases =
   | 'sqlite'
@@ -50,13 +46,12 @@ class UserDB implements UserDBBackend {
   ready: Promise<void>
   db: UserDBBackend
   cache?: Cache
-  private readonly _logger: TwakeLogger
-  get logger(): TwakeLogger {
-    return this._logger
-  }
 
-  constructor(conf: Config, cache?: Cache, logger?: TwakeLogger) {
-    this._logger = logger ?? getLogger(conf as unknown as LoggerConfig)
+  constructor(
+    conf: Config,
+    private readonly logger: TwakeLogger,
+    cache?: Cache
+  ) {
     this.cache = cache
     let Module
     /* istanbul ignore next */

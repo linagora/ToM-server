@@ -1,5 +1,5 @@
+import { getLogger, type TwakeLogger } from '@twake/logger'
 import fs from 'fs'
-import { logger } from '../../jest.globals'
 import defaultConfig from '../config.json'
 import IdentityServerDB from '../db'
 import { type Config } from '../types'
@@ -15,42 +15,47 @@ const conf: Config = {
   server_name: 'company.com'
 }
 
-let db: IdentityServerDB, userDB: UserDB
-
-beforeAll((done) => {
-  db = new IdentityServerDB(conf, logger)
-  userDB = new UserDB(conf, undefined, logger)
-  Promise.all([userDB.ready, db.ready])
-    .then(() => {
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
-      // @ts-ignore run is a sqlite3 method only
-      userDB.db.db.run(
-        'CREATE TABLE users (uid varchar(8), mobile varchar(12), mail varchar(32))',
-        () => {
-          // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
-          // @ts-ignore same
-          userDB.db.db.run(
-            "INSERT INTO users VALUES('dwho', '33612345678', 'dwho@company.com')",
-            () => {
-              done()
-            }
-          )
-        }
-      )
-    })
-    .catch((e) => {
-      done(e)
-    })
-})
-
-afterAll(() => {
-  clearTimeout(db.cleanJob)
-  if (fs.existsSync('./src/__testData__/hashes.db')) {
-    fs.unlinkSync('./src/__testData__/hashes.db')
-  }
-})
+const logger: TwakeLogger = getLogger()
 
 describe('updateHashes', () => {
+  let db: IdentityServerDB, userDB: UserDB
+
+  beforeAll((done) => {
+    db = new IdentityServerDB(conf, logger)
+    userDB = new UserDB(conf, logger)
+    Promise.all([userDB.ready, db.ready])
+      .then(() => {
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
+        // @ts-ignore run is a sqlite3 method only
+        userDB.db.db.run(
+          'CREATE TABLE users (uid varchar(8), mobile varchar(12), mail varchar(32))',
+          () => {
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
+            // @ts-ignore same
+            userDB.db.db.run(
+              "INSERT INTO users VALUES('dwho', '33612345678', 'dwho@company.com')",
+              () => {
+                done()
+              }
+            )
+          }
+        )
+      })
+      .catch((e) => {
+        done(e)
+      })
+  })
+
+  afterAll(() => {
+    clearTimeout(db.cleanJob)
+    if (fs.existsSync('./src/__testData__/hashes.db')) {
+      fs.unlinkSync('./src/__testData__/hashes.db')
+    }
+    db.close()
+    userDB.close()
+    logger.close()
+  })
+
   it('should be able to generate new hashes without previous values', (done) => {
     updateHashes(conf, db, userDB, logger).catch((e) => {
       done(e)

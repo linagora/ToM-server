@@ -1,14 +1,9 @@
 import { randomString } from '@twake/crypto'
+import { getLogger, type TwakeLogger } from '@twake/logger'
 import fs from 'fs'
+import DefaultConfig from '../config.json'
 import { type Config, type DbGetResult } from '../types'
 import IdDb from './index'
-
-import { logger } from '../../jest.globals'
-import DefaultConfig from '../config.json'
-
-afterEach(() => {
-  process.env.TEST_PG === 'yes' || fs.unlinkSync('./testdb.db')
-})
 
 const baseConf: Config = {
   ...DefaultConfig,
@@ -25,10 +20,23 @@ if (process.env.TEST_PG === 'yes') {
   baseConf.database_name = process.env.PG_DATABASE ?? 'test'
 }
 
+const logger: TwakeLogger = getLogger()
+
 describe('Id Server DB', () => {
+  let idDb: IdDb
+
+  afterEach(() => {
+    process.env.TEST_PG === 'yes' || fs.unlinkSync('./testdb.db')
+  })
+
+  afterAll(() => {
+    idDb.close()
+    logger.close()
+  })
+
   it('should have SQLite database initialized', (done) => {
     // eslint-disable-next-line @typescript-eslint/no-floating-promises
-    const idDb = new IdDb(baseConf, logger)
+    idDb = new IdDb(baseConf, logger)
     idDb.ready
       .then(() => {
         const id = randomString(64)
@@ -53,7 +61,7 @@ describe('Id Server DB', () => {
   })
 
   it('should provide one-time-token', (done) => {
-    const idDb = new IdDb(baseConf, logger)
+    idDb = new IdDb(baseConf, logger)
     idDb.ready
       .then(() => {
         idDb
@@ -85,7 +93,7 @@ describe('Id Server DB', () => {
   })
 
   it('should provide match()', (done) => {
-    const idDb = new IdDb(baseConf, logger)
+    idDb = new IdDb(baseConf, logger)
     idDb.ready
       .then(() => {
         idDb
@@ -118,7 +126,7 @@ describe('Id Server DB', () => {
   })
 
   it('should update', (done) => {
-    const idDb = new IdDb(baseConf, logger)
+    idDb = new IdDb(baseConf, logger)
     idDb.ready
       .then(() => {
         idDb
@@ -147,7 +155,7 @@ describe('Id Server DB', () => {
   })
 
   it('should return entry on update', (done) => {
-    const idDb = new IdDb(baseConf, logger)
+    idDb = new IdDb(baseConf, logger)
     idDb.ready
       .then(() => {
         idDb
@@ -170,7 +178,7 @@ describe('Id Server DB', () => {
 
   it('should return entry on insert', (done) => {
     // eslint-disable-next-line @typescript-eslint/no-floating-promises
-    const idDb = new IdDb(baseConf, logger)
+    idDb = new IdDb(baseConf, logger)
     idDb.ready
       .then(() => {
         const id = randomString(64)
@@ -190,7 +198,7 @@ describe('Id Server DB', () => {
   })
 
   it('should return count without value', (done) => {
-    const idDb = new IdDb(baseConf, logger)
+    idDb = new IdDb(baseConf, logger)
     idDb.ready
       .then(() => {
         idDb
@@ -217,7 +225,7 @@ describe('Id Server DB', () => {
   })
 
   it('should return count with value', (done) => {
-    const idDb = new IdDb(baseConf, logger)
+    idDb = new IdDb(baseConf, logger)
     idDb.ready
       .then(() => {
         idDb
@@ -251,7 +259,7 @@ describe('Id Server DB', () => {
   })
 
   it('should delete lower than value', (done) => {
-    const idDb = new IdDb(baseConf, logger)
+    idDb = new IdDb(baseConf, logger)
     idDb.ready
       .then(() => {
         idDb
@@ -278,7 +286,7 @@ describe('Id Server DB', () => {
   })
 
   it('should delete lines with specified filters', (done) => {
-    const idDb = new IdDb(baseConf, logger)
+    idDb = new IdDb(baseConf, logger)
     idDb.ready
       .then(() => {
         const idsNumber = 8
@@ -319,76 +327,76 @@ describe('Id Server DB', () => {
       })
       .catch((e) => done(e))
   })
-})
 
-it('should delete lines with specified filters', (done) => {
-  const idDb = new IdDb(baseConf, logger)
-  idDb.ready
-    .then(() => {
-      const idsNumber = 8
-      const ids: string[] = []
-      const insertsPromises: Array<Promise<DbGetResult>> = []
+  it('should delete lines with specified filters', (done) => {
+    idDb = new IdDb(baseConf, logger)
+    idDb.ready
+      .then(() => {
+        const idsNumber = 8
+        const ids: string[] = []
+        const insertsPromises: Array<Promise<DbGetResult>> = []
 
-      for (let index = 0; index < idsNumber; index++) {
-        ids[index] = randomString(64)
-        insertsPromises[index] = idDb.insert('accessTokens', {
-          id: ids[index],
-          data: `{${index % 2}}`
-        })
-      }
+        for (let index = 0; index < idsNumber; index++) {
+          ids[index] = randomString(64)
+          insertsPromises[index] = idDb.insert('accessTokens', {
+            id: ids[index],
+            data: `{${index % 2}}`
+          })
+        }
 
-      Promise.all(insertsPromises)
-        .then(() => {
-          idDb
-            .deleteWhere('accessTokens', {
-              field: 'data',
-              operator: '=',
-              value: '{0}'
-            })
-            .then(() => {
+        Promise.all(insertsPromises)
+          .then(() => {
+            idDb
+              .deleteWhere('accessTokens', {
+                field: 'data',
+                operator: '=',
+                value: '{0}'
+              })
+              .then(() => {
+                idDb
+                  .getAll('accessTokens', ['id', 'data'])
+                  .then((rows) => {
+                    expect(rows.length).toBe(Math.floor(idsNumber / 2))
+                    expect(rows[0].data).toEqual('{1}')
+                    clearTimeout(idDb.cleanJob)
+                    idDb.close()
+                    done()
+                  })
+                  .catch((e) => done(e))
+              })
+              .catch((e) => done(e))
+          })
+          .catch((e) => done(e))
+      })
+      .catch((e) => done(e))
+  })
+
+  test('OneTimeToken timeout', (done) => {
+    idDb = new IdDb({ ...baseConf, database_vacuum_delay: 3 }, logger)
+    idDb.ready
+      .then(() => {
+        idDb
+          .createOneTimeToken({ a: 1 }, 1)
+          .then((token) => {
+            setTimeout(() => {
               idDb
-                .getAll('accessTokens', ['id', 'data'])
-                .then((rows) => {
-                  expect(rows.length).toBe(Math.floor(idsNumber / 2))
-                  expect(rows[0].data).toEqual('{1}')
+                .verifyOneTimeToken(token)
+                .then((data) => {
+                  done('Should throw')
+                })
+                .catch((e) => {
                   clearTimeout(idDb.cleanJob)
                   idDb.close()
                   done()
                 })
-                .catch((e) => done(e))
-            })
-            .catch((e) => done(e))
-        })
-        .catch((e) => done(e))
-    })
-    .catch((e) => done(e))
-})
-
-test('OneTimeToken timeout', (done) => {
-  const idDb = new IdDb({ ...baseConf, database_vacuum_delay: 3 }, logger)
-  idDb.ready
-    .then(() => {
-      idDb
-        .createOneTimeToken({ a: 1 }, 1)
-        .then((token) => {
-          setTimeout(() => {
-            idDb
-              .verifyOneTimeToken(token)
-              .then((data) => {
-                done('Should throw')
-              })
-              .catch((e) => {
-                clearTimeout(idDb.cleanJob)
-                idDb.close()
-                done()
-              })
-          }, 6000)
-        })
-        .catch((e) => {
-          done(e)
-        })
-    })
-    .catch((e) => {
-      done(e)
-    })
+            }, 6000)
+          })
+          .catch((e) => {
+            done(e)
+          })
+      })
+      .catch((e) => {
+        done(e)
+      })
+  })
 })
