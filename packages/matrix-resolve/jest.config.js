@@ -12,10 +12,8 @@ export default {
       statements: 90
     }
   },
-  setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
   moduleNameMapper: {
     "node-fetch": "<rootDir>/../../node_modules/node-fetch-jest"
   },
-  clearMocks: true,
-  globalTeardown: '<rootDir>/jest.global-teardown.ts'
+  clearMocks: true
 }

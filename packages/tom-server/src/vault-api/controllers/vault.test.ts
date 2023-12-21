@@ -1,13 +1,8 @@
-import {
-  getRecoveryWords,
-  methodNotAllowed,
-  saveRecoveryWords,
-  deleteRecoveryWords
-} from './vault'
-import { type Request, type Response, type NextFunction } from 'express'
-import { type expressAppHandler, VaultAPIError } from '../utils'
-import { type tokenDetail } from '../middlewares/auth'
+import { type NextFunction, type Request, type Response } from 'express'
 import { type TwakeDB } from '../../db'
+import { type tokenDetail } from '../middlewares/auth'
+import { VaultAPIError, type expressAppHandler } from '../utils'
+import { getRecoveryWords, methodNotAllowed, saveRecoveryWords } from './vault'
 
 const words = 'This is a test sentence'
 

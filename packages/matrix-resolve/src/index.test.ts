@@ -12,6 +12,8 @@ type DnsResolve = (
   ) => void
 ) => void
 
+jest.mock('node-fetch', () => jest.fn())
+
 afterEach(() => jest.clearAllMocks())
 
 describe('matrixResolve', () => {
