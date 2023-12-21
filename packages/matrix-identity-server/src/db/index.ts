@@ -20,16 +20,7 @@ export type Collections =
 
 const cleanByExpires: Collections[] = ['oneTimeTokens', 'attempts']
 
-type sqlComparaisonOperator =
-  | '='
-  | '!='
-  | '>'
-  | '<'
-  | '>='
-  | '<='
-  | '!>'
-  | '!<'
-  | '<>'
+type sqlComparaisonOperator = '=' | '!=' | '>' | '<' | '>=' | '<=' | '<>'
 
 export interface ISQLCondition {
   field: string

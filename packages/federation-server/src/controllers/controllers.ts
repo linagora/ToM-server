@@ -84,32 +84,19 @@ export const lookups = (db: IdentityServerDb): expressAppHandler => {
     const pepper = req.body.pepper
     const serverAddress = Object.keys(req.body.mappings)[0]
     const hashes = req.body.mappings[serverAddress] as string[]
-    let handledPeppers: string[]
 
-    db.get(hashByServer, ['pepper'], { server: serverAddress })
+    db.get('keys', ['data'], { name: ['pepper', 'previousPepper'] })
       // eslint-disable-next-line @typescript-eslint/promise-function-async
       .then((rows: DbGetResult) => {
-        handledPeppers = [...new Set(rows.map((r) => r.pepper as string))]
-        return db.get('keys', ['data'], { name: ['pepper', 'previousPepper'] })
-      })
-      // eslint-disable-next-line @typescript-eslint/promise-function-async
-      .then((rows: DbGetResult) => {
-        const fedServerPeppers = rows.map((r) => r.data as string)
-        const peppersToDelete = [
-          ...new Set([
-            pepper,
-            ...handledPeppers.filter((p) => !fedServerPeppers.includes(p))
-          ])
-        ]
-        return Promise.all(
-          // eslint-disable-next-line @typescript-eslint/promise-function-async
-          peppersToDelete.map((p) =>
-            db.deleteWhere(hashByServer, [
-              { field: 'server', operator: '=', value: serverAddress },
-              { field: 'pepper', operator: '=', value: p }
-            ])
-          )
-        )
+        const currentFedServerPeppers = rows.map((r) => r.data as string)
+        return db.deleteWhere(hashByServer, [
+          { field: 'server', operator: '=', value: serverAddress },
+          ...currentFedServerPeppers.map((p) => ({
+            field: 'pepper',
+            operator: '!=' as const,
+            value: p
+          }))
+        ])
       })
       // eslint-disable-next-line @typescript-eslint/promise-function-async
       .then((_) => {

@@ -19,6 +19,7 @@ import FederationServer from '.'
 import JEST_PROCESS_ROOT_PATH from '../jest.globals'
 import { buildMatrixDb, buildUserDB } from './__testData__/build-userdb'
 import defaultConfig from './__testData__/config.json'
+import { hashByServer } from './db'
 import { type Config } from './types'
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -1128,13 +1129,17 @@ describe('Federation server', () => {
         })
       }
 
-      const pushHashesToFederationServer = async (): Promise<void> => {
-        const response = await request(app)
-          .get('/_matrix/identity/v2/hash_details')
-          .set('Accept', 'application/json')
-          .set('Authorization', `Bearer ${authToken}`)
-
-        hashDetails = response.body as IHashDetails
+      const pushHashesToFederationServer = async (
+        fedServerHashDetails?: IHashDetails
+      ): Promise<void> => {
+        hashDetails =
+          fedServerHashDetails ??
+          ((
+            await request(app)
+              .get('/_matrix/identity/v2/hash_details')
+              .set('Accept', 'application/json')
+              .set('Authorization', `Bearer ${authToken}`)
+          ).body as IHashDetails)
 
         allPeppers = [
           hashDetails.lookup_pepper,
@@ -1617,6 +1622,65 @@ describe('Federation server', () => {
           expect(matrixAddresses.size).toEqual(1)
           expect(matrixAddresses.has('@chewbacca:example.com')).toEqual(true)
         })
+
+        it('should store only hashes based on current peppers', async () => {
+          let response = await request(app)
+            .get('/_matrix/identity/v2/hash_details')
+            .set('Accept', 'application/json')
+            .set('Authorization', `Bearer ${authToken}`)
+
+          const oldHashDetails = response.body as IHashDetails
+
+          const oldPeppers = [
+            oldHashDetails.lookup_pepper,
+            ...(oldHashDetails.alt_lookup_peppers ?? [])
+          ]
+
+          let handledPeppers = [
+            ...new Set<string>(
+              (await federationServer.db.getAll(hashByServer, ['pepper'])).map(
+                (row) => row.pepper as string
+              )
+            )
+          ]
+
+          expect(oldPeppers.length).toEqual(2)
+          expect(handledPeppers.length).toEqual(2)
+          expect(handledPeppers).toEqual(expect.arrayContaining(oldPeppers))
+
+          await new Promise<void>((resolve) =>
+            setTimeout(() => {
+              resolve()
+            }, 33000)
+          )
+
+          response = await request(app)
+            .get('/_matrix/identity/v2/hash_details')
+            .set('Accept', 'application/json')
+            .set('Authorization', `Bearer ${authToken}`)
+
+          const newHashDetails = response.body as IHashDetails
+
+          const newPeppers = [
+            newHashDetails.lookup_pepper,
+            ...(newHashDetails.alt_lookup_peppers ?? [])
+          ]
+
+          await pushHashesToFederationServer(newHashDetails)
+
+          handledPeppers = [
+            ...new Set<string>(
+              (await federationServer.db.getAll(hashByServer, ['pepper'])).map(
+                (row) => row.pepper as string
+              )
+            )
+          ]
+
+          expect(newPeppers.length).toEqual(2)
+          expect(handledPeppers.length).toEqual(2)
+          expect(handledPeppers).toEqual(expect.arrayContaining(newPeppers))
+          expect(handledPeppers).toEqual(expect.not.arrayContaining(oldPeppers))
+        })
       })
     })
 
@@ -2097,35 +2161,9 @@ describe('Federation server', () => {
           )
         })
 
-        it('should send an error if getting pepper in hashbyserver table fails', async () => {
-          const getPeppersSpy = jest
-            .spyOn(federationServer.db, 'get')
-            .mockRejectedValue(new Error(errorMessage))
-
-          const response = await request(app)
-            .post('/_matrix/identity/v2/lookups')
-            .set('Accept', 'application/json')
-            .set('X-forwarded-for', trustedIpAddress)
-            .send({
-              mappings: { 'test.example.com': [] },
-              algorithm: 'sha256',
-              pepper: 'test_pepper'
-            })
-
-          expect(getPeppersSpy).toHaveBeenCalledTimes(1)
-          expect(response.statusCode).toEqual(500)
-          expect(JSON.stringify(response.body)).toEqual(
-            JSON.stringify({
-              errcode: 'M_UNKNOWN',
-              error: `Error: ${errorMessage}`
-            })
-          )
-        })
-
         it('should send an error if getting pepper in keys table fails', async () => {
-          const getPeppersSpy = jest
+          jest
             .spyOn(federationServer.db, 'get')
-            .mockResolvedValueOnce([{ pepper: 'matrixrocks' }])
             .mockRejectedValueOnce(new Error(errorMessage))
 
           const response = await request(app)
@@ -2138,7 +2176,6 @@ describe('Federation server', () => {
               pepper: 'test_pepper'
             })
 
-          expect(getPeppersSpy).toHaveBeenCalledTimes(2)
           expect(response.statusCode).toEqual(500)
           expect(JSON.stringify(response.body)).toEqual(
             JSON.stringify({
@@ -2149,7 +2186,7 @@ describe('Federation server', () => {
         })
 
         it('should send an error if deleting hashes in hashbyserver table fails', async () => {
-          const deleteWhereSpy = jest
+          jest
             .spyOn(federationServer.db, 'deleteWhere')
             .mockRejectedValue(new Error(errorMessage))
 
@@ -2163,7 +2200,6 @@ describe('Federation server', () => {
               pepper: 'test_pepper'
             })
 
-          expect(deleteWhereSpy).toHaveBeenCalledTimes(1)
           expect(response.statusCode).toEqual(500)
           expect(JSON.stringify(response.body)).toEqual(
             JSON.stringify({
