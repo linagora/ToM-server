@@ -1,23 +1,23 @@
-import defaultConfDesc from '../config.json'
+import { type TwakeLogger } from '@twake/logger'
 import { Router } from 'express'
+import defaultConfDesc from '../config.json'
+import { type TwakeDB } from '../db'
+import { type Config } from '../types'
+import {
+  deleteRecoveryWords,
+  getRecoveryWords,
+  methodNotAllowed,
+  saveRecoveryWords,
+  type VaultController
+} from './controllers/vault'
 import isAuth, { type tokenDetail } from './middlewares/auth'
 import parser from './middlewares/parser'
 import {
   allowCors,
+  errorMiddleware,
   type expressAppHandler,
-  type expressAppHandlerError,
-  errorMiddleware
+  type expressAppHandlerError
 } from './utils'
-import {
-  type VaultController,
-  getRecoveryWords,
-  methodNotAllowed,
-  saveRecoveryWords,
-  deleteRecoveryWords
-} from './controllers/vault'
-import { type Config } from '../types'
-import { type TwakeDB } from '../db'
-import type TwakeServer from '..'
 
 declare module 'express-serve-static-core' {
   interface Request {
@@ -29,13 +29,9 @@ export const defaultConfig = defaultConfDesc
 
 export default class TwakeVaultAPI {
   endpoints: Router
-  vaultDb: TwakeDB
-  conf: Config
 
-  constructor(conf: Config, server: TwakeServer) {
-    this.conf = conf
+  constructor(conf: Config, db: TwakeDB, logger: TwakeLogger) {
     this.endpoints = Router()
-    this.vaultDb = server.db as TwakeDB
     this.endpoints
       .route('/_twake/recoveryWords')
       /**
@@ -87,7 +83,7 @@ export default class TwakeVaultAPI {
        *      500:
        *        $ref: '#/components/responses/InternalServerError'
        */
-      .get(...this._middlewares(getRecoveryWords))
+      .get(...this._middlewares(getRecoveryWords, conf, db, logger))
       /**
        * @openapi
        * '/_twake/recoveryWords':
@@ -128,7 +124,7 @@ export default class TwakeVaultAPI {
        *      500:
        *        $ref: '#/components/responses/InternalServerError'
        */
-      .post(...this._middlewares(saveRecoveryWords))
+      .post(...this._middlewares(saveRecoveryWords, conf, db, logger))
       /**
        * @openapi
        * '/_twake/recoveryWords':
@@ -156,18 +152,21 @@ export default class TwakeVaultAPI {
        *      500:
        *        $ref: '#/components/responses/InternalServerError'
        */
-      .delete(...this._middlewares(deleteRecoveryWords))
+      .delete(...this._middlewares(deleteRecoveryWords, conf, db, logger))
       .all(allowCors, methodNotAllowed, errorMiddleware)
   }
 
   private _middlewares(
-    controller: VaultController
+    controller: VaultController,
+    conf: Config,
+    db: TwakeDB,
+    logger: TwakeLogger
   ): Array<expressAppHandler | expressAppHandlerError> {
     return [
       allowCors,
       ...parser,
-      isAuth(this.vaultDb, this.conf),
-      controller(this.vaultDb),
+      isAuth(db, conf, logger),
+      controller(db),
       errorMiddleware
     ]
   }

@@ -40,7 +40,10 @@ export type AuthenticationFunction = (
   callback: (data: tokenContent, id: string | null) => void
 ) => void
 
-export const Authenticate = (db: IdentityServerDb): AuthenticationFunction => {
+export const Authenticate = (
+  db: IdentityServerDb,
+  logger: TwakeLogger
+): AuthenticationFunction => {
   const tokenRe = /^Bearer ([a-zA-Z0-9]{64})$/
   return (req, res, callback) => {
     let token: string | null = null
@@ -60,14 +63,14 @@ export const Authenticate = (db: IdentityServerDb): AuthenticationFunction => {
           callback(JSON.parse(rows[0].data as string), token)
         })
         .catch((e) => {
-          db.logger.error(
+          logger.error(
             `${req.socket.remoteAddress as string} sent an invalid token`,
             e
           )
           send(res, 401, errMsg('unAuthorized'))
         })
     } else {
-      db.logger.error(
+      logger.error(
         `${req.socket.remoteAddress as string} tried to access without token`
       )
       send(res, 401, errMsg('unAuthorized'))

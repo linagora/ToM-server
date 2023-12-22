@@ -1,10 +1,19 @@
-import UserDBEmpty from './empty'
-import { logger } from '../../jest.globals'
+import { getLogger, type TwakeLogger } from '@twake/logger'
 import defaultConfig from '../config.json'
+import UserDBEmpty from './empty'
+
+const logger: TwakeLogger = getLogger()
 
 describe('Empty user DB', () => {
+  let userDB: UserDBEmpty
+
+  afterAll(() => {
+    userDB.close()
+    logger.close()
+  })
+
   it('should return result', (done) => {
-    const userDB = new UserDBEmpty(
+    userDB = new UserDBEmpty(
       {
         ...defaultConfig,
         database_engine: 'sqlite',

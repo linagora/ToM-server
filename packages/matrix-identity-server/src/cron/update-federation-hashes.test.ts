@@ -1,9 +1,8 @@
 import { Hash } from '@twake/crypto'
+import { getLogger, type TwakeLogger } from '@twake/logger'
 import fs from 'fs'
 import fetch from 'node-fetch'
-import { logger } from '../../jest.globals'
 import defaultConfig from '../config.json'
-import IdentityServerDB from '../db'
 import { type Config } from '../types'
 import UserDB from '../userdb'
 import { errCodes } from '../utils/errors'
@@ -15,6 +14,8 @@ jest.mock('node-fetch', () => {
     default: jest.fn()
   }
 })
+
+const logger: TwakeLogger = getLogger()
 
 const fetchMock = fetch as jest.Mock
 
@@ -140,14 +141,13 @@ const mockRequests = (mocks: mockedRequest[][], nbStep: number = 2): void => {
   }
 }
 
-let db: IdentityServerDB, userDB: UserDB
+let userDB: UserDB
 let spyOnLoggerError: jest.SpyInstance
 
 beforeAll((done) => {
+  userDB = new UserDB(conf, logger)
   spyOnLoggerError = jest.spyOn(logger, 'error')
-  db = new IdentityServerDB(conf, logger)
-  userDB = new UserDB(conf, undefined, logger)
-  Promise.all([userDB.ready, db.ready])
+  userDB.ready
     .then(() => {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
       // @ts-ignore run is a sqlite3 method only
@@ -178,8 +178,8 @@ afterAll(() => {
   if (fs.existsSync('./src/__testData__/hashes.db')) {
     fs.unlinkSync('./src/__testData__/hashes.db')
   }
-  clearTimeout(db.cleanJob)
-  db.close()
+  userDB.close()
+  logger.close()
 })
 
 describe('updateFederationHashes', () => {

@@ -2,7 +2,11 @@
 import { type TwakeLogger } from '@twake/logger'
 import { type Database, type Statement } from 'sqlite3'
 import { type Config, type DbGetResult } from '../../types'
-import { ISQLCondition, type Collections, type IdDbBackend } from '../index'
+import {
+  type Collections,
+  type ISQLCondition,
+  type IdDbBackend
+} from '../index'
 import createTables from './_createTables'
 import SQL from './sql'
 

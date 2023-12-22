@@ -8,7 +8,6 @@ import buildUserDB from './__testData__/buildUserDB'
 import defaultConfig from './__testData__/registerConf.json'
 import IdServer from './index'
 import { type Config } from './types'
-import { logger } from '../jest.globals'
 
 jest.mock('node-fetch', () => jest.fn())
 const sendMailMock = jest.fn()
@@ -41,7 +40,7 @@ beforeAll((done) => {
   }
   buildUserDB(conf)
     .then(() => {
-      idServer = new IdServer(undefined, undefined, logger)
+      idServer = new IdServer()
       app = express()
 
       idServer.ready

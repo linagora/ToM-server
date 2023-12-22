@@ -1,7 +1,7 @@
 import {
-  type MatrixErrors,
   type Config as MConfig,
-  type IdentityServerDb as MIdentityServerDb
+  type IdentityServerDb as MIdentityServerDb,
+  type MatrixErrors
 } from '@twake/matrix-identity-server'
 import { type NextFunction, type Request, type Response } from 'express'
 

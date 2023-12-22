@@ -4,9 +4,9 @@
 
 import { type TwakeLogger } from '@twake/logger'
 import cron, { type ScheduledTask } from 'node-cron'
-import type UserDB from '../userdb'
 import type IdentityServerDb from '../db'
 import { type Config } from '../types'
+import type UserDB from '../userdb'
 import updateHashes from './changePepper'
 import checkQuota from './check-quota'
 import updateFederationHashes from './update-federation-hashes'
@@ -52,7 +52,7 @@ class CronTasks {
 
       const cronTasks = [
         this._addUpdateHashesJob(conf, db, userDB, logger),
-        this._addCheckUserQuotaJob(conf, db)
+        this._addCheckUserQuotaJob(conf, db, logger)
       ]
 
       if (
@@ -65,7 +65,7 @@ class CronTasks {
           )}], add task`
         )
         cronTasks.push(
-          this._addUpdateFederationServerHashesJob(conf, db, userDB, logger)
+          this._addUpdateFederationServerHashesJob(conf, userDB, logger)
         )
       }
       await Promise.all(cronTasks)
@@ -160,10 +160,12 @@ class CronTasks {
    *
    * @param {Config} conf - the configuration
    * @param {IdentityServerDb} db - the identity server db instance
+   * @param {TwakeLogger} logger - the logger
    */
   private readonly _addCheckUserQuotaJob = async (
     conf: Config,
-    db: IdentityServerDb
+    db: IdentityServerDb,
+    logger: TwakeLogger
   ): Promise<void> => {
     const cronString = conf.check_quota_cron ?? '0 0 0 * * *'
 
@@ -175,17 +177,17 @@ class CronTasks {
     const task = cron.schedule(
       cronString,
       () => {
-        checkQuota(conf, db)
-          .then(() => db.logger.debug('User quota check succeeded'))
+        checkQuota(conf, db, logger)
+          .then(() => logger.debug('User quota check succeeded'))
           .catch((e) => {
             // istanbul ignore next
-            db.logger.error('User quota check failed', e)
+            logger.error('User quota check failed', e)
           })
       },
       this.options
     )
 
-    db.logger.debug('Add task userQuotas')
+    logger.debug('Add task userQuotas')
     this.tasks.push(task)
   }
 
@@ -193,13 +195,11 @@ class CronTasks {
    * Adds the federation server hashes job.
    *
    * @param {Config} conf - the config
-   * @param {IdentityServerDb} db - the identity server db instance
    * @param {UserDB} userDB - the user db instance
    * @param {TwakeLogger} logger - the logger
    */
   private readonly _addUpdateFederationServerHashesJob = async (
     conf: Config,
-    db: IdentityServerDb,
     userDB: UserDB,
     logger: TwakeLogger
   ): Promise<void> => {
@@ -215,10 +215,10 @@ class CronTasks {
       cronString,
       () => {
         updateFederationHashes(conf, userDB, logger)
-          .then(() => db.logger.debug('Federation hashes update succeeded'))
+          .then(() => logger.debug('Federation hashes update succeeded'))
           .catch((e: Error) => {
             // istanbul ignore next
-            db.logger.error(`${e.message}. Reason: ${e.cause as string}`)
+            logger.error(`${e.message}. Reason: ${e.cause as string}`)
           })
       },
       this.options

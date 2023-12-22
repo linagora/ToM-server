@@ -10,7 +10,7 @@ export default (
   logger: TwakeLogger
 ): RequestHandler => {
   return (req: AuthRequest, res: Response, next: NextFunction): void => {
-    const authenticator = Authenticate(db, conf)
+    const authenticator = Authenticate(db, conf, logger)
 
     authenticator(req, res, (data: tokenContent, token: string | null) => {
       try {

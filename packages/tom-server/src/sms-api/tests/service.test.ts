@@ -1,7 +1,7 @@
-import fetch, { type Response } from 'node-fetch'
-import SmsService from '../services'
-import { type Config } from '../../types'
 import { getLogger } from '@twake/logger'
+import fetch, { type Response } from 'node-fetch'
+import { type Config } from '../../types'
+import SmsService from '../services'
 jest.mock('node-fetch')
 
 beforeEach(() => {
@@ -17,6 +17,10 @@ describe('the SMS service', () => {
   const mockFetch = fetch as jest.MockedFunction<typeof fetch>
   const logger = getLogger()
   const smsService = new SmsService(smsConfig as Config, logger)
+
+  afterAll(() => {
+    logger.close()
+  })
 
   it('should attempt to use the SMS api', async () => {
     mockFetch.mockResolvedValue(

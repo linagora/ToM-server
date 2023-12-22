@@ -1,37 +1,46 @@
-import sqlite3 from 'sqlite3'
+import { getLogger, type TwakeLogger } from '@twake/logger'
 import fs from 'fs'
-import UserDB from './index'
-import defaultConfig from '../config.json'
+import sqlite3 from 'sqlite3'
 import Cache from '../cache'
+import defaultConfig from '../config.json'
 import { type Config } from '../types'
-import { logger } from '../../jest.globals'
+import UserDB from './index'
 
 const dbName = './testldap.db'
 
-beforeAll((done) => {
-  const db = new sqlite3.Database(dbName)
-  db.run('CREATE TABLE users(uid varchar(64) primary key)', (err) => {
-    if (err != null) {
-      done(err)
-    } else {
-      db.run("INSERT INTO users values('dwho')", (err) => {
-        if (err != null) {
-          done(err)
-        } else {
-          done()
-        }
-      })
-    }
-  })
-})
-
-afterAll(() => {
-  fs.unlinkSync(dbName)
-})
+const logger: TwakeLogger = getLogger()
 
 describe('UserDB', () => {
+  let userDB: UserDB
+
+  beforeAll((done) => {
+    const db = new sqlite3.Database(dbName)
+    db.run('CREATE TABLE users(uid varchar(64) primary key)', (err) => {
+      if (err != null) {
+        done(err)
+      } else {
+        db.run("INSERT INTO users values('dwho')", (err) => {
+          if (err != null) {
+            done(err)
+          } else {
+            done()
+          }
+        })
+      }
+    })
+  })
+
+  afterEach(() => {
+    userDB.close()
+  })
+
+  afterAll(() => {
+    fs.unlinkSync(dbName)
+    logger.close()
+  })
+
   it('should find user', (done) => {
-    const userDB = new UserDB(
+    userDB = new UserDB(
       {
         ...defaultConfig,
         userdb_engine: 'sqlite',
@@ -39,7 +48,6 @@ describe('UserDB', () => {
         database_host: dbName,
         database_engine: 'sqlite'
       },
-      undefined,
       logger
     )
     userDB.ready
@@ -58,7 +66,7 @@ describe('UserDB', () => {
   })
 
   it('should provide match', (done) => {
-    const userDB = new UserDB(
+    userDB = new UserDB(
       {
         ...defaultConfig,
         userdb_engine: 'sqlite',
@@ -66,7 +74,6 @@ describe('UserDB', () => {
         database_host: dbName,
         database_engine: 'sqlite'
       },
-      undefined,
       logger
     )
     userDB.ready
@@ -93,7 +100,7 @@ describe('UserDB', () => {
       database_host: dbName,
       database_engine: 'sqlite'
     }
-    const userDB = new UserDB(conf, new Cache(conf), logger)
+    userDB = new UserDB(conf, logger, new Cache(conf))
     userDB.ready
       .then(() => {
         userDB

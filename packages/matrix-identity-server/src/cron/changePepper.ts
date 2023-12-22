@@ -22,7 +22,7 @@ export const filter = async (
     Boolean(conf.matrix_database_host) && Boolean(conf.matrix_database_engine)
 
   if (isMatrixDbAvailable) {
-    const matrixDb = new MatrixDB(conf)
+    const matrixDb = new MatrixDB(conf, logger)
     await matrixDb.ready
     const entries = await matrixDb.getAll('users', ['name']).catch((e) => {
       /* istanbul ignore next */

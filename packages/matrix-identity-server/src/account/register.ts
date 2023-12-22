@@ -1,4 +1,5 @@
 import { randomString } from '@twake/crypto'
+import { type TwakeLogger } from '@twake/logger'
 import type IdentityServerDb from '../db'
 import {
   epoch,
@@ -9,7 +10,6 @@ import {
 } from '../utils'
 import { errMsg } from '../utils/errors'
 import validateMatrixToken from '../utils/validateMatrixToken'
-import { TwakeLogger } from '@twake/logger'
 
 const schema = {
   access_token: true,
@@ -31,8 +31,8 @@ const Register = (
 ): expressAppHandler => {
   const validateToken = validateMatrixToken(logger)
   return (req, res) => {
-    jsonContent(req, res, db.logger, (obj) => {
-      validateParameters(res, schema, obj, db.logger, (obj) => {
+    jsonContent(req, res, logger, (obj) => {
+      validateParameters(res, schema, obj, logger, (obj) => {
         validateToken(
           (obj as registerArgs).matrix_server_name,
           (obj as registerArgs).access_token

@@ -2,7 +2,6 @@ import express from 'express'
 import fs from 'fs'
 import fetch from 'node-fetch'
 import request from 'supertest'
-import { logger } from '../jest.globals'
 import buildUserDB from './__testData__/buildUserDB'
 import defaultConfig from './__testData__/termsConf.json'
 import IdServer from './index'
@@ -32,7 +31,7 @@ beforeAll((done) => {
   }
   buildUserDB(conf)
     .then(() => {
-      idServer = new IdServer(undefined, undefined, logger)
+      idServer = new IdServer()
       app = express()
 
       idServer.ready

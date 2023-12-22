@@ -1,4 +1,5 @@
 import { supportedHashes } from '@twake/crypto'
+import { type TwakeLogger } from '@twake/logger'
 import { MatrixErrors, type DbGetResult } from '@twake/matrix-identity-server'
 import lodash from 'lodash'
 import { hashByServer } from '../db'
@@ -83,32 +84,19 @@ export const lookups = (db: IdentityServerDb): expressAppHandler => {
     const pepper = req.body.pepper
     const serverAddress = Object.keys(req.body.mappings)[0]
     const hashes = req.body.mappings[serverAddress] as string[]
-    let handledPeppers: string[]
 
-    db.get(hashByServer, ['pepper'], { server: serverAddress })
+    db.get('keys', ['data'], { name: ['pepper', 'previousPepper'] })
       // eslint-disable-next-line @typescript-eslint/promise-function-async
       .then((rows: DbGetResult) => {
-        handledPeppers = [...new Set(rows.map((r) => r.pepper as string))]
-        return db.get('keys', ['data'], { name: ['pepper', 'previousPepper'] })
-      })
-      // eslint-disable-next-line @typescript-eslint/promise-function-async
-      .then((rows: DbGetResult) => {
-        const fedServerPeppers = rows.map((r) => r.data as string)
-        const peppersToDelete = [
-          ...new Set([
-            pepper,
-            ...handledPeppers.filter((p) => !fedServerPeppers.includes(p))
-          ])
-        ]
-        return Promise.all(
-          // eslint-disable-next-line @typescript-eslint/promise-function-async
-          peppersToDelete.map((p) =>
-            db.deleteWhere(hashByServer, [
-              { field: 'server', operator: '=', value: serverAddress },
-              { field: 'pepper', operator: '=', value: p }
-            ])
-          )
-        )
+        const currentFedServerPeppers = rows.map((r) => r.data as string)
+        return db.deleteWhere(hashByServer, [
+          { field: 'server', operator: '=', value: serverAddress },
+          ...currentFedServerPeppers.map((p) => ({
+            field: 'pepper',
+            operator: '!=' as const,
+            value: p
+          }))
+        ])
       })
       // eslint-disable-next-line @typescript-eslint/promise-function-async
       .then((_) => {
@@ -143,7 +131,10 @@ interface HashDetailsObject {
   alt_lookup_peppers?: string[]
 }
 
-export const hashDetails = (db: IdentityServerDb): expressAppHandler => {
+export const hashDetails = (
+  db: IdentityServerDb,
+  logger: TwakeLogger
+): expressAppHandler => {
   return (req, res, next) => {
     db.get('keys', ['data'], { name: 'pepper' })
       .then((rows) => {
@@ -158,7 +149,7 @@ export const hashDetails = (db: IdentityServerDb): expressAppHandler => {
             res.json(resp)
           })
           .catch((e) => {
-            db.logger.debug('No previous pepper')
+            logger.debug('No previous pepper')
             res.json(resp)
           })
       })

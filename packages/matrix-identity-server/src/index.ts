@@ -6,10 +6,10 @@ import defaultConfDesc from './config.json'
 import CronTasks from './cron'
 import {
   Authenticate,
+  hostnameRe,
   send,
   type AuthenticationFunction,
-  type expressAppHandler,
-  hostnameRe
+  type expressAppHandler
 } from './utils'
 import { errMsg as _errMsg } from './utils/errors'
 import versions from './versions'
@@ -106,67 +106,73 @@ export default class MatrixIdentityServer {
             .filter((addr) => addr.match(hostnameRe))
         : []
     this._logger = logger ?? getLogger(this.conf as unknown as LoggerConfig)
-    // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
-    this.cache = this.conf.cache_engine ? new Cache(this.conf) : undefined
-    const db = (this.db = new IdentityServerDb(this.conf, this.logger))
-    const userDB = (this.userDB = new UserDB(
-      this.conf,
-      this.cache,
-      this.logger
-    ))
-    this.authenticate = Authenticate(db)
-    this.ready = new Promise((resolve, reject) => {
-      Promise.all([db.ready, userDB.ready])
-        .then(() => {
-          this.cronTasks = new CronTasks(this.conf, db, userDB, this._logger)
-          this.updateHash = updateHash
-          this.cronTasks.ready
-            .then(() => {
-              const badMethod: expressAppHandler = (req, res) => {
-                send(res, 405, errMsg('unrecognized'))
-              }
-              // TODO
-              // const badEndPoint: expressAppHandler = (req, res) => {
-              //   send(res, 404, errMsg('unrecognized'))
-              // }
-              this.api = {
-                get: {
-                  '/_matrix/identity/v2': status,
-                  '/_matrix/identity/versions': versions,
-                  '/_matrix/identity/v2/account': account(this),
-                  '/_matrix/identity/v2/account/register': badMethod,
-                  '/_matrix/identity/v2/account/logout': badMethod,
-                  '/_matrix/identity/v2/hash_details': hashDetails(this),
-                  '/_matrix/identity/v2/terms': Terms(this.conf, this.logger),
-                  '/_matrix/identity/v2/validate/email/requestToken': badMethod,
-                  '/_matrix/identity/v2/validate/email/submitToken':
-                    SubmitToken(this)
-                },
-                post: {
-                  '/_matrix/identity/v2': badMethod,
-                  '/_matrix/identity/versions': badMethod,
-                  '/_matrix/identity/v2/account': badMethod,
-                  '/_matrix/identity/v2/account/register': register(
-                    db,
-                    this.logger
-                  ),
-                  '/_matrix/identity/v2/account/logout': logout(this),
-                  '/_matrix/identity/v2/lookup': lookup(this),
-                  '/_matrix/identity/v2/terms': PostTerms(this),
-                  '/_matrix/identity/v2/validate/email/requestToken':
-                    RequestToken(this),
-                  '/_matrix/identity/v2/validate/email/submitToken':
-                    SubmitToken(this)
+    try {
+      // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+      this.cache = this.conf.cache_engine ? new Cache(this.conf) : undefined
+      const db = (this.db = new IdentityServerDb(this.conf, this.logger))
+      const userDB = (this.userDB = new UserDB(
+        this.conf,
+        this.logger,
+        this.cache
+      ))
+      this.authenticate = Authenticate(db, this.logger)
+      this.ready = new Promise((resolve, reject) => {
+        Promise.all([db.ready, userDB.ready])
+          .then(() => {
+            this.cronTasks = new CronTasks(this.conf, db, userDB, this.logger)
+            this.updateHash = updateHash
+            this.cronTasks.ready
+              .then(() => {
+                const badMethod: expressAppHandler = (req, res) => {
+                  send(res, 405, errMsg('unrecognized'))
                 }
-              }
-              resolve(true)
-            })
-            /* istanbul ignore next */
-            .catch(reject)
-        })
-        /* istanbul ignore next */
-        .catch(reject)
-    })
+                // TODO
+                // const badEndPoint: expressAppHandler = (req, res) => {
+                //   send(res, 404, errMsg('unrecognized'))
+                // }
+                this.api = {
+                  get: {
+                    '/_matrix/identity/v2': status,
+                    '/_matrix/identity/versions': versions,
+                    '/_matrix/identity/v2/account': account(this),
+                    '/_matrix/identity/v2/account/register': badMethod,
+                    '/_matrix/identity/v2/account/logout': badMethod,
+                    '/_matrix/identity/v2/hash_details': hashDetails(this),
+                    '/_matrix/identity/v2/terms': Terms(this.conf, this.logger),
+                    '/_matrix/identity/v2/validate/email/requestToken':
+                      badMethod,
+                    '/_matrix/identity/v2/validate/email/submitToken':
+                      SubmitToken(this)
+                  },
+                  post: {
+                    '/_matrix/identity/v2': badMethod,
+                    '/_matrix/identity/versions': badMethod,
+                    '/_matrix/identity/v2/account': badMethod,
+                    '/_matrix/identity/v2/account/register': register(
+                      db,
+                      this.logger
+                    ),
+                    '/_matrix/identity/v2/account/logout': logout(this),
+                    '/_matrix/identity/v2/lookup': lookup(this),
+                    '/_matrix/identity/v2/terms': PostTerms(this),
+                    '/_matrix/identity/v2/validate/email/requestToken':
+                      RequestToken(this),
+                    '/_matrix/identity/v2/validate/email/submitToken':
+                      SubmitToken(this)
+                  }
+                }
+                resolve(true)
+              })
+              /* istanbul ignore next */
+              .catch(reject)
+          })
+          /* istanbul ignore next */
+          .catch(reject)
+      })
+    } catch (e) {
+      this.logger.close()
+      throw e
+    }
   }
 
   cleanJobs(): void {

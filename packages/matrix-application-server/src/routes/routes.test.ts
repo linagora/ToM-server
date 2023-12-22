@@ -1,51 +1,28 @@
-import { ETransportType, getLogger, type TwakeLogger } from '@twake/logger'
 import fs from 'fs'
 import path from 'path'
 import MASRouter, { EHttpMethod } from '.'
 import MatrixApplicationServer from '..'
-import { JEST_PROCESS_ROOT_PATH, removeLogFile } from '../../jest.globals'
+import { JEST_PROCESS_ROOT_PATH } from '../../jest.globals'
 
 const registrationFilePath = path.join(
   JEST_PROCESS_ROOT_PATH,
   'registration.yaml'
 )
 
-const logsDir = path.join(JEST_PROCESS_ROOT_PATH, 'logs')
-const logsFilename = 'app-server-routes-test.log'
-
 describe('MASRouter', () => {
   let appServer: MatrixApplicationServer
   let router: MASRouter
-  let logger: TwakeLogger
 
   beforeAll(() => {
-    logger = getLogger({
-      logging: {
-        log_transports: [
-          {
-            type: ETransportType.FILE,
-            options: {
-              dirname: logsDir,
-              filename: logsFilename
-            }
-          }
-        ]
-      }
-    })
-    appServer = new MatrixApplicationServer(undefined, undefined, logger)
+    appServer = new MatrixApplicationServer()
     router = new MASRouter(appServer)
     if (fs.existsSync(registrationFilePath)) {
       fs.unlinkSync(registrationFilePath)
     }
   })
 
-  afterAll((done) => {
-    // eslint-disable-next-line @typescript-eslint/no-misused-promises
-    logger.on('finish', async () => {
-      await removeLogFile(path.join(logsDir, logsFilename))
-      done()
-    })
-    logger.end()
+  afterAll(() => {
+    appServer.logger.close()
   })
 
   it('should return basic application server routes on create an instance', () => {

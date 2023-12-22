@@ -1,9 +1,5 @@
 import { randomString } from '@twake/crypto'
-import {
-  getLogger,
-  type Config as LoggerConfig,
-  type TwakeLogger
-} from '@twake/logger'
+import { type TwakeLogger } from '@twake/logger'
 import fs from 'fs'
 import { dump, load } from 'js-yaml'
 import { type Config } from '..'
@@ -45,16 +41,12 @@ export class AppServiceRegistration {
 
   private _cachedRegex: Record<string, RegExp> = {}
 
-  private readonly _logger: TwakeLogger
-
   /**
    * Construct a new application service registration.
    * @constructor
    * @param {AppServiceOutput} conf The configuration of the application service
    */
-  constructor(conf: Config, logger?: TwakeLogger) {
-    this._logger = logger ?? getLogger(conf as unknown as LoggerConfig)
-
+  constructor(conf: Config, private readonly logger: TwakeLogger) {
     let appServiceConfig: AppServiceOutput
     if (fs.existsSync(conf.registration_file_path)) {
       appServiceConfig = load(
@@ -223,7 +215,7 @@ export class AppServiceRegistration {
    */
   public createRegisterFile(filename: string): void {
     if (fs.existsSync(filename)) {
-      this._logger.info('Application service registration file already exists')
+      this.logger.info('Application service registration file already exists')
       return
     }
     const fileContent: AppServiceOutput = {
