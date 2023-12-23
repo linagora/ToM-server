@@ -45,7 +45,7 @@ COPY package*.json ./
 
 COPY . .
 
-RUN npm install && npm run build
+RUN npm install && npm run build && npm cache clean
 
 EXPOSE 3000
 CMD [ "node", "/usr/src/app/server.mjs" ]
