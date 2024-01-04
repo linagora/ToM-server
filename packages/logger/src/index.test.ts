@@ -1496,9 +1496,12 @@ describe('Logger', () => {
         const date = new Date()
         const logFilePath = path.join(
           JEST_PROCESS_ROOT_PATH,
-          `twake-${date.getFullYear()}-${
-            date.getMonth() + 1
-          }-${date.getUTCDate()}.log`
+          `twake-${date.getFullYear()}-${(date.getMonth() + 1)
+            .toString()
+            .padStart(2, '0')}-${date
+            .getUTCDate()
+            .toString()
+            .padStart(2, '0')}.log`
         )
         expect(fs.existsSync(logFilePath)).toEqual(true)
         fs.unlinkSync(logFilePath)
