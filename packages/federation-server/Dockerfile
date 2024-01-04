@@ -39,7 +39,7 @@ COPY tsconfig-build.json ./
 COPY rollup-template.js ./
 COPY package*.json ./
 
-RUN npm install && npm run build && npm cache clean
+RUN npm install && npm run build && npm cache clean --force
 
 EXPOSE 3000
 CMD [ "node", "/usr/src/app/server.mjs" ]
