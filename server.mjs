@@ -29,6 +29,7 @@ const conf = {
   federation_servers: process.env.FEDERATION_SERVERS
     ? process.env.FEDERATION_SERVERS.split(/[,\s]+/)
     : [],
+  hashes_rate_limit: process.env.HASHES_RATE_LIMIT,
   is_federation_server: false,
   jitsiBaseUrl: process.env.JITSI_BASE_URL,
   jitsiJwtAlgorithm: process.env.JITSI_JWT_ALGORITHM,
