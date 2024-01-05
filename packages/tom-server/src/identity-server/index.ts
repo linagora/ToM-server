@@ -37,7 +37,7 @@ export default class AugmentedIdentityServer extends MatrixIdentityServer {
            *    - Identity server
            *    description: Looks up the Organization User IDs which match value sent
            *    requestBody:
-           *      description: Object containing the recovery words of the connected user
+           *      description: Object containing detail for the search and the returned data
            *      required: true
            *      content:
            *        application/json:
@@ -60,7 +60,7 @@ export default class AugmentedIdentityServer extends MatrixIdentityServer {
            *              limit:
            *                type: integer
            *                description:  Optional max number of result to return (default 30)
-           *              offest:
+           *              offset:
            *                type: integer
            *                description: Optional offset for pagination
            *            required:
