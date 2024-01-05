@@ -15,6 +15,7 @@ const conf = {
   database_name: process.env.DATABASE_NAME,
   database_user: process.env.DATABASE_USER,
   database_password: process.env.DATABASE_PASSWORD,
+  hashes_rate_limit: process.env.HASHES_RATE_LIMIT,
   is_federation_server: true,
   ldap_base: process.env.LDAP_BASE,
   ldap_filter: process.env.LDAP_FILTER,

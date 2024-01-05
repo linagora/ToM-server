@@ -1875,7 +1875,7 @@ describe('Federation server', () => {
           )
         })
 
-        it('should send an error if "addresses" is not a string array', async () => {
+        it('should send an error if "addresses" is not an array', async () => {
           const response = await request(app)
             .post('/_matrix/identity/v2/lookup')
             .set('Accept', 'application/json')
@@ -1901,12 +1901,7 @@ describe('Federation server', () => {
             .set('Accept', 'application/json')
             .set('Authorization', `Bearer ${authToken}`)
             .send({
-              addresses: [
-                '@dwho:example.com',
-                '@rtyler:example.com',
-                2,
-                '@msmith:example.com'
-              ],
+              addresses: ['hash1', 'hash2', 2, 'hash3'],
               algorithm: 'sha256',
               pepper: 'test_pepper'
             })
@@ -1917,6 +1912,27 @@ describe('Federation server', () => {
               errcode: 'M_INVALID_PARAM',
               error:
                 'Error field: One of the address is not a string (property: addresses)'
+            })
+          )
+        })
+
+        it('should send an error if exceeds hashes limit', async () => {
+          const response = await request(app)
+            .post('/_matrix/identity/v2/lookup')
+            .set('Accept', 'application/json')
+            .set('Authorization', `Bearer ${authToken}`)
+            .send({
+              addresses: Array.from({ length: 101 }, (_, i) => `hash${i}`),
+              algorithm: 'sha256',
+              pepper: 'test_pepper'
+            })
+
+          expect(response.statusCode).toEqual(400)
+          expect(JSON.stringify(response.body)).toEqual(
+            JSON.stringify({
+              errcode: 'M_INVALID_PARAM',
+              error:
+                'Error field: Adresses limit of 100 exceeded (property: addresses)'
             })
           )
         })
@@ -1934,7 +1950,7 @@ describe('Federation server', () => {
             .set('Accept', 'application/json')
             .set('Authorization', `Bearer ${authToken}`)
             .send({
-              addresses: ['@dwho:example.com', '@rtyler:example.com'],
+              addresses: ['hash1', 'hash2'],
               algorithm: 'sha256',
               pepper: 'test_pepper'
             })
@@ -1961,7 +1977,7 @@ describe('Federation server', () => {
             .set('Accept', 'application/json')
             .set('Authorization', `Bearer ${authToken}`)
             .send({
-              addresses: ['@dwho:example.com', '@rtyler:example.com'],
+              addresses: ['hash1', 'hash2'],
               algorithm: 'sha256',
               pepper: 'test_pepper'
             })
@@ -1990,7 +2006,7 @@ describe('Federation server', () => {
             .set('Accept', 'application/json')
             .set('Authorization', `Bearer ${authToken}`)
             .send({
-              addresses: ['@dwho:example.com', '@rtyler:example.com'],
+              addresses: ['hash1', 'hash2'],
               algorithm: 'sha256',
               pepper: 'test_pepper'
             })
@@ -2157,6 +2173,48 @@ describe('Federation server', () => {
               errcode: 'M_INVALID_PARAM',
               error:
                 'Error field: Only one server address is allowed (property: mappings)'
+            })
+          )
+        })
+
+        it('should send an error if "mappings" values is not an array', async () => {
+          const response = await request(app)
+            .post('/_matrix/identity/v2/lookups')
+            .set('Accept', 'application/json')
+            .set('Authorization', `Bearer ${authToken}`)
+            .send({
+              mappings: { 'test.example.com': 2 },
+              algorithm: 'sha256',
+              pepper: 'test_pepper'
+            })
+
+          expect(response.statusCode).toEqual(400)
+          expect(JSON.stringify(response.body)).toEqual(
+            JSON.stringify({
+              errcode: 'M_INVALID_PARAM',
+              error:
+                'Error field: Mappings object values are not string arrays (property: mappings)'
+            })
+          )
+        })
+
+        it('should send an error if one address is not a string', async () => {
+          const response = await request(app)
+            .post('/_matrix/identity/v2/lookups')
+            .set('Accept', 'application/json')
+            .set('Authorization', `Bearer ${authToken}`)
+            .send({
+              mappings: { 'test.example.com': ['hash1', 'hash2', 2, 'hash3'] },
+              algorithm: 'sha256',
+              pepper: 'test_pepper'
+            })
+
+          expect(response.statusCode).toEqual(400)
+          expect(JSON.stringify(response.body)).toEqual(
+            JSON.stringify({
+              errcode: 'M_INVALID_PARAM',
+              error:
+                'Error field: Mappings object values are not string arrays (property: mappings)'
             })
           )
         })
