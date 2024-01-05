@@ -21,7 +21,7 @@
     "landing"
   ],
   "scripts": {
-    "build": "npm run softClean && lerna run build --skip-nx-cache",
+    "build": "npm run softClean && lerna run build",
     "clean": "rimraf packages/*/dist packages/*/coverage ./node_modules/.cache/nx packages/*/example/*.js*",
     "doc": "node documentation/swagger.cjs",
     "format:check": "prettier --check .",
@@ -33,7 +33,7 @@
     "lint-fix": "eslint --fix packages/*/src --ext .ts",
     "prepare": "husky install",
     "softClean": "rimraf packages/*/dist",
-    "test": "lerna run test --skip-nx-cache"
+    "test": "lerna run test"
   },
   "devDependencies": {
     "@rollup/plugin-commonjs": "^25.0.7",
