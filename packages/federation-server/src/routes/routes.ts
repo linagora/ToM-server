@@ -139,7 +139,7 @@ export default (
         logger
       ),
       ...commonValidators,
-      lookupValidator,
+      lookupValidator(conf.hashes_rate_limit as number),
       lookup(conf, db),
       errorMiddleware
     )

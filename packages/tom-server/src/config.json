@@ -11,6 +11,7 @@
   "database_user": "",
   "database_vacuum_delay": 3600,
   "federation_servers": null,
+  "hashes_rate_limit": 100,
   "is_federation_server": false,
   "jitsiBaseUrl": "",
   "jitsiJwtAlgorithm": "HS256",
