@@ -107,6 +107,17 @@ export default class MatrixIdentityServer {
         : []
     this._logger = logger ?? getLogger(this.conf as unknown as LoggerConfig)
     try {
+      if (
+        this.conf.hashes_rate_limit != null &&
+        typeof this.conf.hashes_rate_limit !== 'number'
+      ) {
+        this.conf.hashes_rate_limit = parseInt(this.conf.hashes_rate_limit)
+        if (Number.isNaN(this.conf.hashes_rate_limit)) {
+          throw new Error(
+            'hashes_rate_limit must be a number or a string representing a number'
+          )
+        }
+      }
       // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
       this.cache = this.conf.cache_engine ? new Cache(this.conf) : undefined
       const db = (this.db = new IdentityServerDb(this.conf, this.logger))
@@ -170,6 +181,7 @@ export default class MatrixIdentityServer {
           .catch(reject)
       })
     } catch (e) {
+      this.logger.error(e)
       this.logger.close()
       throw e
     }

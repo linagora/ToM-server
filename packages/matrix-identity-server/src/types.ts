@@ -16,6 +16,7 @@ export interface Config {
   database_user?: string
   database_vacuum_delay: number
   federation_servers?: string[] | null
+  hashes_rate_limit?: number
   is_federation_server: boolean
   key_delay: number
   keys_depth: number

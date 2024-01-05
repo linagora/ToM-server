@@ -18,7 +18,16 @@ const lookup = (idServer: MatrixIdentityServer): expressAppHandler => {
     idServer.authenticate(req, res, (data, id) => {
       jsonContent(req, res, idServer.logger, (obj) => {
         validateParameters(res, schema, obj, idServer.logger, (obj) => {
-          if (typeof (obj as { addresses: string[] }).addresses !== 'object') {
+          if (
+            !(
+              Array.isArray((obj as { addresses: string[] }).addresses) &&
+              (obj as { addresses: string[] }).addresses.every(
+                (address) => typeof address === 'string'
+              ) &&
+              (obj as { addresses: string[] }).addresses.length <=
+                (idServer.conf.hashes_rate_limit as number)
+            )
+          ) {
             /* istanbul ignore next */
             send(res, 400, errMsg('invalidParam'))
           } else {
