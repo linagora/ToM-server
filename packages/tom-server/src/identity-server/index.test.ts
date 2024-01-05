@@ -328,6 +328,86 @@ describe('Using Matrix Token', () => {
         )
       })
     })
+
+    it('should respect limit and offset', (done) => {
+      const matrixDb = new sqlite3.Database(
+        twakeServer.conf.matrix_database_host
+      )
+      matrixDb.run(
+        "INSERT INTO users VALUES('@user08:example.com', '', 0)",
+        (err1) => {
+          // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+          if (err1) return done(err1)
+          matrixDb.run(
+            "INSERT INTO users VALUES('@user09:example.com', '', 0)",
+            (err2) => {
+              // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+              if (err2) return done(err2)
+              matrixDb.run(
+                "INSERT INTO users VALUES('@user10:example.com', '', 0)",
+                (err3) => {
+                  // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+                  if (err3) return done(err3)
+                  matrixDb.run(
+                    "INSERT INTO users VALUES('@user11:example.com', '', 0)",
+                    (err4) => {
+                      // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+                      if (err4) return done(err4)
+                      updateUsers(
+                        twakeServer.conf,
+                        twakeServer.idServer.db,
+                        twakeServer.idServer.userDB,
+                        twakeServer.logger
+                      )
+                        .then(async () => {
+                          const response = await request(app)
+                            .post('/_twake/identity/v1/lookup/diff')
+                            .set('Authorization', `Bearer ${validToken}`)
+                            .set('Accept', 'application/json')
+                            .send({
+                              since: 1685071800,
+                              fields: ['uid', 'mail'],
+                              limit: 3,
+                              offset: 1
+                            })
+                          expect(response.status).toBe(200)
+                          expect(
+                            response.body.timestamp
+                          ).toBeGreaterThanOrEqual(timestamp)
+                          expect(response.body).toEqual({
+                            deleted: [],
+                            new: [
+                              {
+                                uid: 'user08',
+                                address: '@user08:example.com',
+                                mail: 'user08@example.com'
+                              },
+                              {
+                                uid: 'user09',
+                                address: '@user09:example.com',
+                                mail: 'user09@example.com'
+                              },
+                              {
+                                uid: 'user10',
+                                address: '@user10:example.com',
+                                mail: 'user10@example.com'
+                              }
+                            ],
+                            timestamp: response.body.timestamp
+                          })
+
+                          done()
+                        })
+                        .catch(done)
+                    }
+                  )
+                }
+              )
+            }
+          )
+        }
+      )
+    })
   })
 })
 

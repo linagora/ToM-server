@@ -122,9 +122,16 @@ export default class AugmentedIdentityServer extends MatrixIdentityServer {
            *                items:
            *                  type: string
            *                  description: List of fields to return for matching users
+           *              limit:
+           *                type: integer
+           *                description:  Optional max number of result to return (default 30)
+           *              offset:
+           *                type: integer
+           *                description: Optional offset for pagination
            *          example:
            *            since: 1685074279
            *            fields: [uid, mail]
+           *            limit: 3
            *    responses:
            *      200:
            *        description: Success

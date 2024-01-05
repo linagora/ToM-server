@@ -5,7 +5,16 @@ import { type expressAppHandler } from '../../types'
 
 const schema = {
   since: true,
-  fields: false
+  fields: false,
+  limit: false,
+  offset: false
+}
+
+interface DiffQueryBody {
+  since: number
+  fields?: string[]
+  limit?: number
+  offset?: number
 }
 
 const diff = (
@@ -24,9 +33,14 @@ const diff = (
       Utils.jsonContent(req, res, logger, (obj) => {
         Utils.validateParameters(res, schema, obj, logger, (data) => {
           tomServer.idServer.db
-            .getHigherThan('userHistory', ['address', 'active'], {
-              timestamp: (data as { since: number }).since
-            })
+            .getHigherThan(
+              'userHistory',
+              ['address', 'active'],
+              {
+                timestamp: (data as DiffQueryBody).since
+              },
+              'address'
+            )
             .then((rows) => {
               const uids = rows.map((row) => {
                 return (row.address as string).replace(/^@(.*?):.*$/, '$1')
@@ -54,9 +68,11 @@ const diff = (
                       deleted.push({ uid, address: row.address as string })
                     }
                   })
+                  const start = (data as DiffQueryBody).offset ?? 0
+                  const end = start + ((data as DiffQueryBody).limit ?? 30)
                   Utils.send(res, 200, {
-                    new: newUsers,
-                    deleted,
+                    new: newUsers.slice(start, end),
+                    deleted: deleted.slice(start, end),
                     timestamp
                   })
                 })

@@ -41,7 +41,8 @@ type Update = (
 type Get = (
   table: Collections,
   fields: string[],
-  filterFields: Record<string, string | number | Array<string | number>>
+  filterFields: Record<string, string | number | Array<string | number>>,
+  order?: string
 ) => Promise<DbGetResult>
 type GetCount = (
   table: Collections,
@@ -202,9 +203,10 @@ class IdentityServerDb implements IdDbBackend {
   getHigherThan(
     table: Collections,
     fields: string[],
-    filterFields: Record<string, string | number | Array<string | number>>
+    filterFields: Record<string, string | number | Array<string | number>>,
+    order?: string
   ): Promise<DbGetResult> {
-    return this.db.getHigherThan(table, fields, filterFields)
+    return this.db.getHigherThan(table, fields, filterFields, order)
   }
 
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
