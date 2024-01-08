@@ -46,5 +46,8 @@
     "express-validator": "^7.0.1",
     "ip-address": "^9.0.5",
     "lodash": "^4.17.21"
+  },
+  "optionalDependencies": {
+    "@crowdsec/express-bouncer": "^0.1.0"
   }
 }

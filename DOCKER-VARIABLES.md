@@ -2,6 +2,8 @@
 
  * `BASE_URL`: Base URL of the servce. Example: `https://tom.company.com`
  * `CRON_SERVICE`: Boolean (1 or 0): enable cron tasks or not
+ * `CROWDSEC_URI`: optional URI of local CrowdSec server
+ * `CROWDSEC_KEY`: CrowdSec API key _(required if `CROWDSEC_URI` is set)
  * `DATABASE_ENGINE`: `sqlite` or `pg`
  * `DATABASE_HOST`:
    * case `pg`: hostname

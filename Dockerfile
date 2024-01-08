@@ -2,6 +2,8 @@ FROM node:18
 
 env BASE_URL= \
     CRON_SERVICE= \
+    CROWDSEC_URI= \
+    CROWDSEC_KEY= \
     DATABASE_ENGINE= \
     DATABASE_HOST= \
     DATABASE_NAME= \

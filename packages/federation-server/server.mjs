@@ -50,8 +50,31 @@ const conf = {
 
 const federationServer = new FederationServer(conf)
 const app = express()
+const promises = [federationServer.ready]
 
-federationServer.ready
+if (process.env.CROWDSEC_URI) {
+  if (!process.env.CROWDSEC_KEY) {
+    throw new Error('Missing CROWDSEC_KEY')
+  }
+  promises.push(
+    new Promise((resolve, reject) => {
+      import('@crowdsec/express-bouncer')
+        .then((m) =>
+          m.default({
+            url: process.env.CROWDSEC_URI,
+            apiKey: process.env.CROWDSEC_KEY
+          })
+        )
+        .then((crowdsecMiddleware) => {
+          app.use(crowdsecMiddleware)
+          resolve()
+        })
+        .catch(reject)
+    })
+  )
+}
+
+Promise.all(promises)
   .then(() => {
     app.use(federationServer.routes)
     const port = process.argv[2] != null ? parseInt(process.argv[2]) : 3000

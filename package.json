@@ -36,11 +36,13 @@
     "test": "lerna run test"
   },
   "devDependencies": {
+    "@crowdsec/express-bouncer": "^0.1.0",
     "@rollup/plugin-commonjs": "^25.0.7",
     "@rollup/plugin-json": "^6.0.1",
     "@rollup/plugin-node-resolve": "^15.2.3",
     "@rollup/plugin-terser": "^0.4.4",
     "@rollup/plugin-typescript": "^11.1.5",
+    "@small-tech/syswide-cas": "^6.0.2",
     "@types/events": "^3.0.0",
     "@types/express": "^4.17.17",
     "@types/jest": "^29.4.0",
@@ -76,7 +78,6 @@
     "rimraf": "^4.3.1",
     "rollup": "^3.18.0",
     "rollup-plugin-cleaner": "^1.0.0",
-    "@small-tech/syswide-cas": "^6.0.2",
     "supertest": "^6.3.3",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-dist": "^4.18.3",
