@@ -71,6 +71,29 @@ if (process.argv[2] === 'generate') {
 } else {
   const tomServer = new TomServer(conf)
   const app = express()
+  const promises = [tomServer.ready]
+
+  if (process.env.CROWDSEC_URI) {
+    if (!process.env.CROWDSEC_KEY) {
+      throw new Error('Missing CROWDSEC_KEY')
+    }
+    promises.push(
+      new Promise((resolve, reject) => {
+        import('@crowdsec/express-bouncer')
+          .then((m) =>
+            m.default({
+              url: process.env.CROWDSEC_URI,
+              apiKey: process.env.CROWDSEC_KEY
+            })
+          )
+          .then((crowdsecMiddleware) => {
+            app.use(crowdsecMiddleware)
+            resolve()
+          })
+          .catch(reject)
+      })
+    )
+  }
 
   app.use(
     '/build',
@@ -95,7 +118,7 @@ if (process.argv[2] === 'generate') {
     })
   )
 
-  tomServer.ready
+  Promise.all(promises)
     .then(() => {
       app.use(tomServer.endpoints)
       const port = process.argv[2] != null ? parseInt(process.argv[2]) : 3000
