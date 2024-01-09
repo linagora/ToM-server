@@ -2,6 +2,8 @@
 
 This is a multi-packages repository. See [packages](./packages) directory.
 
+REST API Endpoints documentation is available on https://linagora.github.io/ToM-server/
+
 ## Scripts
 
 * `npm run build`: build all packages
