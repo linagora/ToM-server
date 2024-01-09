@@ -51,7 +51,7 @@ jobs:
         id: changed-files
         uses: tj-actions/changed-files@v41
         with:
-          files: ${{ github.workspace }}/packages/matrix-invite/**/*
+          files: packages/matrix-invite/**/*
       - name: Build and publish matrix-invite docker image
         if: steps.changed-files.outputs.test_any_changed == 'true'  
         uses: philips-software/docker-ci-scripts@v5.1.0
@@ -71,6 +71,8 @@ jobs:
     if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
     steps:
       - uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
       - name: Set up Node LTS
         uses: actions/setup-node@v3
         with:
@@ -80,23 +82,24 @@ jobs:
       - name: Generate Swagger documentation
         run: npm run doc
       - name: Check if documentation files has changed
-        id: changed-files
-        uses: tj-actions/changed-files@v41
+        id: verify-changed-files
+        uses:  tj-actions/verify-changed-files@v17
         with:
-          files: ${{ github.workspace }}/docs/openapi.json
+          files: docs/openapi.json
       - name: Update documentation files
-        if: steps.changed-files.outputs.test_any_changed == 'true'
+        if: steps.verify-changed-files.outputs.files_changed  == 'true'
         env:
           SPEC_TO_DISPLAY: "openapi.json"
           DISABLE_TRY_IT_OUT_JS_METHOD: "const DisableTryItOutPlugin = function() {return {statePlugins:{spec:{wrapSelectors:{allowTryItOutFor:() => () => false}}}}}"
           DISABLE_TRY_IT_OUT_PLUGIN: ", DisableTryItOutPlugin"
         run: |
-          cp -rp node_modules/swagger-ui-dist/* ${{ github.workspace }}/docs
-          sed -i "/window\.onload\s=\sfunction()\s{/a $DISABLE_TRY_IT_OUT_JS_METHOD" ${{ github.workspace }}/docs/swagger-initializer.js
-          sed -i "s#https://petstore\.swagger\.io/v2/swagger\.json#$SPEC_TO_DISPLAY#g" ${{ github.workspace }}/docs/swagger-initializer.js
-          sed -i "/SwaggerUIBundle\.plugins\.DownloadUrl/a $DISABLE_TRY_IT_OUT_PLUGIN" ${{ github.workspace }}/docs/swagger-initializer.js
-      - name: Commit updated documentation files 
+          yes | cp -rf node_modules/swagger-ui-dist/* docs
+          sed -i "/window\.onload\s=\sfunction()\s{/a $DISABLE_TRY_IT_OUT_JS_METHOD" docs/swagger-initializer.js
+          sed -i "s#https://petstore\.swagger\.io/v2/swagger\.json#$SPEC_TO_DISPLAY#g" docs/swagger-initializer.js
+          sed -i "/SwaggerUIBundle\.plugins\.DownloadUrl/a $DISABLE_TRY_IT_OUT_PLUGIN" docs/swagger-initializer.js
+      - name: Commit updated documentation files
+        if: steps.verify-changed-files.outputs.files_changed  == 'true'
         uses: EndBug/add-and-commit@v9
         with:
-          add: ${{ github.workspace }}/docs
+          add: docs
           message: 'chore: update documentation'
