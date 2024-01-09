@@ -44,7 +44,7 @@ jobs:
   publish-docker:
     runs-on: ubuntu-latest
     needs: test
-    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
+    if: github.event_name == 'push'
     steps:
       - uses: actions/checkout@v3
       - name: Get all src files that have changed
@@ -68,7 +68,7 @@ jobs:
   update-doc:
     runs-on: ubuntu-latest
     needs: test
-    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
+    if: github.event_name == 'pull_request'
     steps:
       - uses: actions/checkout@v3
         with:
