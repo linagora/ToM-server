@@ -9,6 +9,14 @@
     "sourceMap": true,
     "noEmitOnError": true,
     "resolveJsonModule":true,
-    "declaration": true
+    "declaration": true,
+    "paths": {
+      "@twake/config-parser": ["./packages/config-parser/src"],
+      "@twake/crypto": ["./packages/crypto/src"],
+      "@twake/logger": ["./packages/logger/src"],
+      "@twake/matrix-application-server": ["./packages/matrix-application-server/src"],
+      "@twake/matrix-identity-server": ["./packages/matrix-identity-server/src"],
+      "matrix-resolve": ["./packages/matrix-resolve/src"]
+    }
   }
 }
