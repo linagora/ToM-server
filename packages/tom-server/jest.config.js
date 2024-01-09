@@ -1,22 +1,12 @@
+import jestConfigBase from '../../jest-base.config.js'
+
 export default {
+  ...jestConfigBase,
   testTimeout: 120000,
-  testEnvironment: 'node',
-  preset: 'ts-jest',
-  collectCoverage: true,
-  collectCoverageFrom: ['./src/**/{!(pg),}.ts'],
-  coverageThreshold: {
-    global: {
-      branches: 80,
-      functions: 50,
-      lines: 90,
-      statements: 90
-    }
-  },
   setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
   moduleNameMapper: {
-    "@twake/(.*)$": "<rootDir>/../$1/src",
+    ...jestConfigBase.moduleNameMapper,
     "node-fetch": "<rootDir>/../../node_modules/node-fetch-jest",
-    'matrix-resolve': '<rootDir>/../matrix-resolve/src'
   },
   clearMocks: true
 }

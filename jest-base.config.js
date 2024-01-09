@@ -1,7 +1,6 @@
 export default {
   testTimeout: 10000,
   testEnvironment: 'node',
-  preset: 'ts-jest',
   collectCoverage: true,
   collectCoverageFrom: ['./src/**/{!(pg|redis),}.ts'],
   coverageThreshold: {
@@ -12,7 +11,16 @@ export default {
       statements: 90
     }
   },
+  transform: {
+    '^.+\\.tsx?$': [
+      'ts-jest',
+      {
+        tsconfig: '<rootDir>/../../tsconfig-test.json'
+      },
+    ]
+  },
   moduleNameMapper: {
     "@twake/(.*)$": "<rootDir>/../$1/src",
-  },
+    'matrix-resolve': '<rootDir>/../matrix-resolve/src'
+  }
 }
