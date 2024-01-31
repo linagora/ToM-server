@@ -13,7 +13,7 @@ jobs:
     secrets: inherit
   publish-tom-server:
     name: Publish ToM Server
-    uses: ./.github/workflows/publish-tom--server.yml
+    uses: ./.github/workflows/publish-tom-server.yml
     secrets: inherit
   publish-matrix-invite:
     name: Publish Matrix Invite
