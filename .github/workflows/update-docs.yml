@@ -1,10 +1,7 @@
 name: update-docs
 
 on:
-  workflow_run:
-    workflows: [build-and-test]
-    types:
-      - completed
+  workflow_call:
 
 jobs:
   update-doc:

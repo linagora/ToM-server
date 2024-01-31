@@ -1,17 +1,14 @@
 # This workflow will do a clean installation of node dependencies, cache/restore them, build the source code and run tests across different versions of node
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-nodejs
 
-name: publish-matrix-invite
+name: publish-tom-federation-server
 
 on:
   workflow_call:
 
 jobs:
-  tests:
-    uses: ./.github/workflows/tests.yml
   publish-docker:
     runs-on: ubuntu-latest
-    needs: test
     if: github.event_name == 'push'
     steps:
       - uses: actions/checkout@v3
@@ -19,7 +16,7 @@ jobs:
         id: changed-files
         uses: tj-actions/changed-files@v41
         with:
-          files: |
+          files: | 
             packages/federation-server/**/*
             .github/workflows/**
       - name: Publish to dockerhub
@@ -28,8 +25,7 @@ jobs:
           name: linagora/tom-federation-server
           username: ${{ secrets.DOCKERHUB_USER }}
           password: ${{ secrets.DOCKERHUB_PASSWORD }}
-          workdir: "${{ github.workspace }}/packages/matrix-invite/"
+          workdir: "${{ github.workspace }}"
           context: .
-          buildoptions: "-t linagora/twake-matrix-invite" -f Dockerfile
+          buildoptions: "-t linagora/tom-federation-server -f Dockerfile"
           tags: "latest"
-
