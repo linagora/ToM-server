@@ -11,16 +11,20 @@ jobs:
   publish-federation-server:
     name: Publish Federation Server
     uses: ./.github/workflows/publish-tom-federation-server.yml
+    needs: [test]
     secrets: inherit
   publish-tom-server:
     name: Publish ToM Server
     uses: ./.github/workflows/publish-tom-server.yml
+    needs: [test]
     secrets: inherit
   publish-matrix-invite:
     name: Publish Matrix Invite
     uses: ./.github/workflows/publish-matrix-invite.yml
+    needs: [test]
     secrets: inherit
   upadte-docs:
     name: Update Docs
     uses: ./.github/workflows/update-docs.yml
+    needs: [test]
     secrets: inherit
