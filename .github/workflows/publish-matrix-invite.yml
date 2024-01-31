@@ -21,11 +21,11 @@ jobs:
       - name: Publish to dockerhub
         uses: elgohr/Publish-Docker-Github-Action@v5
         with:
-          name: linagora/tom-server
+          name: linagora/matrix-invite
           username: ${{ secrets.DOCKERHUB_USER }}
           password: ${{ secrets.DOCKERHUB_PASSWORD }}
-          workdir: "${{ github.workspace }}"
+          workdir: "${{ github.workspace }}/packages/matrix-invite"
           context: .
-          buildoptions: "-t linagora/tom-server -f Dockerfile"
+          buildoptions: "-t linagora/matrix-invite -f Dockerfile"
           tags: "latest"
 
