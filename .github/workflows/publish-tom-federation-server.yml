@@ -27,5 +27,5 @@ jobs:
           password: ${{ secrets.DOCKERHUB_PASSWORD }}
           workdir: "${{ github.workspace }}/packages/federation-server/"
           context: .
-          buildoptions: "-t linagora/tom-federation-server -f packages/federation-server/Dockerfile"
+          buildoptions: "-t linagora/tom-federation-server -f Dockerfile"
           tags: "latest"
