@@ -1,6 +1,7 @@
 on:
   push:
-    branches: [ "tom-builds" ]
+    branches:
+      - main
 
 jobs:
   test:
