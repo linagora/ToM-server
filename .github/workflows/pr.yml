@@ -1,0 +1,14 @@
+name: pr
+
+on:
+  pull_request_target:
+    branches:
+      - tom-builds
+  merge_group:
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Build And Test
+    uses: ./.github/workflows/build-and-test.yml
+    secrets: inherit

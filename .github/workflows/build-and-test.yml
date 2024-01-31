@@ -4,10 +4,7 @@
 name: build-and-test
 
 on:
-  push:
-    branches: [ "tom-builds" ]
-  pull_request:
-    branches: [ "tom-builds" ]
+  workflow_call:
 
 jobs:
   build:

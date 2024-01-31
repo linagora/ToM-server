@@ -1,0 +1,9 @@
+on:
+  push:
+    branches: [ "tom-builds" ]
+
+jobs:
+  test:
+    name: Build And Test
+    uses: ./.github/workflows/build-and-test.yml
+    secrets: inherit
