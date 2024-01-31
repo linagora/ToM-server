@@ -25,7 +25,7 @@ jobs:
           name: linagora/tom-federation-server
           username: ${{ secrets.DOCKERHUB_USER }}
           password: ${{ secrets.DOCKERHUB_PASSWORD }}
-          workdir: "${{ github.workspace }}/packages/federation-server/"
+          workdir: "${{ github.workspace }}"
           context: .
-          buildoptions: "-t linagora/tom-federation-server -f Dockerfile"
+          buildoptions: "-t linagora/tom-federation-server -f packages/federation-server/Dockerfile"
           tags: "latest"
