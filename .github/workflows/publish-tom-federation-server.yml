@@ -8,6 +8,11 @@ on:
     branches: [ "tom-builds" ]
   pull_request:
     branches: [ "tom-builds" ]
+  workflow_run:
+    workflows: [ "Node.js CI" ]
+    branches: [ "tom-builds" ]
+    types:
+      - completed
 
 jobs:
   publish-docker:
