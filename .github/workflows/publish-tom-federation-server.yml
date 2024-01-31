@@ -1,16 +1,11 @@
 # This workflow will do a clean installation of node dependencies, cache/restore them, build the source code and run tests across different versions of node
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-nodejs
 
-name: Publish ToM Federation Server
+name: publish-tom-federation-server
 
 on:
-  push:
-    branches: [ "tom-builds" ]
-  pull_request:
-    branches: [ "tom-builds" ]
   workflow_run:
-    workflows: [ "Node.js CI" ]
-    branches: [ "tom-builds" ]
+    workflows: [build-and-test]
     types:
       - completed
 
