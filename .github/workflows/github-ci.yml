@@ -5,9 +5,9 @@ name: Node.js CI
 
 on:
   push:
-    branches: [ "master" ]
+    branches: [ "tom-builds" ]
   pull_request:
-    branches: [ "master" ]
+    branches: [ "tom-builds" ]
 
 jobs:
   build:
@@ -53,7 +53,7 @@ jobs:
         with:
           files: packages/matrix-invite/**/*
       - name: Build and publish matrix-invite docker image
-        if: steps.changed-files.outputs.test_any_changed == 'true'  
+        if: steps.changed-files.outputs.any_changed == 'true'
         uses: philips-software/docker-ci-scripts@v5.1.0
         with:
           base-dir: "${{ github.workspace }}/packages/matrix-invite/"
