@@ -4,11 +4,7 @@
 name: publish-tom-federation-server
 
 on:
-  workflow_run:
-    branches: [ "tom-builds" ]
-    workflows: [build-and-test]
-    types:
-      - completed
+  workflow_call:
 
 jobs:
   publish-docker:

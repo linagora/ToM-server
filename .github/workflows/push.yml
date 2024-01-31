@@ -7,3 +7,7 @@ jobs:
     name: Build And Test
     uses: ./.github/workflows/build-and-test.yml
     secrets: inherit
+  publish:
+    name: Publish Federation Server
+    uses: ./.github/workflows/publish-tom-federation-server.yml
+    secrets: inherit
