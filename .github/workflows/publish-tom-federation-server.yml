@@ -24,7 +24,10 @@ jobs:
         id: changed-files
         uses: tj-actions/changed-files@v41
         with:
-          files: packages/federation-server/**/*
+          files: | 
+            packages/federation-server/**/*
+            .github/workflows/**
+
       - name: Build and publish matrix-invite docker image
         if: steps.changed-files.outputs.any_changed == 'true'
         uses: philips-software/docker-ci-scripts@v5.1.0
