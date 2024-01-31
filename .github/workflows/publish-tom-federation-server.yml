@@ -22,17 +22,13 @@ jobs:
           files: | 
             packages/federation-server/**/*
             .github/workflows/**
-
-      - name: Build and publish matrix-invite docker image
-        if: steps.changed-files.outputs.any_changed == 'true'
-        uses: philips-software/docker-ci-scripts@v5.1.0
+      - name: Publish to dockerhub
+        uses: elgohr/Publish-Docker-Github-Action@v5
         with:
-          base-dir: "${{ github.workspace }}/packages/federation-server/"
-          dockerfile: "${{ github.workspace }}/packages/federation-server/Dockerfile"
-          image-name: "tom-federation-server"
+          name: linagora/tom-federation-server
+          username: ${{ secrets.DOCKERHUB_USER }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+          workdir: "${{ github.workspace }}/packages/federation-server/"
+          context: .
+          buildoptions: "-t linagora/tom-federation-server -f packages/federation-server/Dockerfile"
           tags: "latest"
-        env:
-          REGISTRY_USERNAME: ${{ secrets.DOCKERHUB_USER }}
-          REGISTRY_TOKEN: "${{ secrets.DOCKERHUB_PASSWORD }}"
-          DOCKER_ORGANIZATION: linagora
-
