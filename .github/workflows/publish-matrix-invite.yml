@@ -18,14 +18,14 @@ jobs:
           files: |
             packages/matrix-invite/**/*
             .github/workflows/**
-#      - name: Publish to dockerhub
-#        uses: elgohr/Publish-Docker-Github-Action@v5
-#        with:
-#          name: linagora/twake-matrix-invite
-#          username: ${{ secrets.DOCKERHUB_USER }}
-#          password: ${{ secrets.DOCKERHUB_PASSWORD }}
-#          workdir: "${{ github.workspace }}/packages/matrix-invite/"
-#          context: .
-#          buildoptions: "-t linagora/twake-matrix-invite" -f Dockerfile
-#          tags: "latest"
+      - name: Publish to dockerhub
+        uses: elgohr/Publish-Docker-Github-Action@v5
+        with:
+          name: linagora/twake-matrix-invite
+          username: ${{ secrets.DOCKERHUB_USER }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+          workdir: "${{ github.workspace }}/packages/matrix-invite/"
+          context: .
+          buildoptions: "-t linagora/twake-matrix-invite" -f Dockerfile
+          tags: "latest"
 
