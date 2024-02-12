@@ -13,6 +13,7 @@ class UserDBSQLite extends SQLite implements UserDBBackend {
       Record<Collections, Array<Record<string, string | number>>>
     >
   ): Promise<void> {
+    if (this.db != null) return Promise.resolve()
     return new Promise((resolve, reject) => {
       import('sqlite3')
         .then((sqlite3) => {

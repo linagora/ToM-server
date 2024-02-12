@@ -21,53 +21,65 @@ class Pg extends SQL implements IdDbBackend {
     logger: TwakeLogger
   ): Promise<void> {
     return new Promise((resolve, reject) => {
-      import('pg')
-        .then((pg) => {
-          // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
-          // @ts-ignore
-          if (pg.Database == null) pg = pg.default
-          if (
-            conf.database_host == null ||
-            conf.database_user == null ||
-            conf.database_password == null ||
-            conf.database_name == null
-          ) {
-            throw new Error(
-              'database_name, database_user and database_password are required when using Postgres'
-            )
-          }
-          const opts: ClientConfig = {
-            host: conf.database_host,
-            user: conf.database_user,
-            password: conf.database_password,
-            database: conf.database_name,
-            ssl: conf.database_ssl
-          }
-          // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
-          if (conf.database_host.match(/^(.*):(\d+)/)) {
-            opts.host = RegExp.$1
-            opts.port = parseInt(RegExp.$2)
-          }
-          try {
-            this.db = new pg.Pool(opts)
-            createTables(
-              this,
-              tables,
-              indexes,
-              initializeValues,
-              logger,
-              resolve,
-              reject
-            )
-          } catch (e) {
-            logger.error('Unable to connect to Pg database')
+      if (this.db != null) {
+        createTables(
+          this,
+          tables,
+          indexes,
+          initializeValues,
+          logger,
+          resolve,
+          reject
+        )
+      } else {
+        import('pg')
+          .then((pg) => {
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
+            // @ts-ignore
+            if (pg.Database == null) pg = pg.default
+            if (
+              conf.database_host == null ||
+              conf.database_user == null ||
+              conf.database_password == null ||
+              conf.database_name == null
+            ) {
+              throw new Error(
+                'database_name, database_user and database_password are required when using Postgres'
+              )
+            }
+            const opts: ClientConfig = {
+              host: conf.database_host,
+              user: conf.database_user,
+              password: conf.database_password,
+              database: conf.database_name,
+              ssl: conf.database_ssl
+            }
+            // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+            if (conf.database_host.match(/^(.*):(\d+)/)) {
+              opts.host = RegExp.$1
+              opts.port = parseInt(RegExp.$2)
+            }
+            try {
+              this.db = new pg.Pool(opts)
+              createTables(
+                this,
+                tables,
+                indexes,
+                initializeValues,
+                logger,
+                resolve,
+                reject
+              )
+            } catch (e) {
+              logger.error('Unable to connect to Pg database')
+              reject(e)
+            }
+          })
+          .catch((e) => {
+            logger.error('Unable to load pg module', e)
             reject(e)
-          }
-        })
-        .catch((e) => {
-          logger.error('Unable to load pg module', e)
-          reject(e)
-        })
+          })
+      }
     })
   }
 
@@ -105,7 +117,9 @@ class Pg extends SQL implements IdDbBackend {
         throw new Error('Wait for database to be ready')
       }
       const names: string[] = []
-      const vals: Array<string | number> = []
+      const vals:
+        | (string[] & Array<string | number>)
+        | (number[] & Array<string | number>) = []
       Object.keys(values).forEach((k) => {
         names.push(k)
         vals.push(values[k])
@@ -135,7 +149,9 @@ class Pg extends SQL implements IdDbBackend {
         reject(new Error('Wait for database to be ready'))
       } else {
         const names: string[] = []
-        const vals: Array<string | number> = []
+        const vals:
+          | (string[] & Array<string | number>)
+          | (number[] & Array<string | number>) = []
         Object.keys(values).forEach((k) => {
           names.push(k)
           vals.push(values[k])
@@ -283,7 +299,9 @@ class Pg extends SQL implements IdDbBackend {
         }
         this.db.query(
           `DELETE FROM ${table} WHERE ${field}=$1`,
-          [value],
+          [value] as
+            | (string[] & Array<string | number>)
+            | (number[] & Array<string | number>),
           (err, rows) => {
             // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
             err ? reject(err) : resolve()
@@ -317,7 +335,9 @@ class Pg extends SQL implements IdDbBackend {
         }
         this.db.query(
           `DELETE FROM ${table} WHERE ${field}<$1`,
-          [value],
+          [value] as
+            | (string[] & Array<string | number>)
+            | (number[] & Array<string | number>),
           (err) => {
             // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
             err ? reject(err) : resolve()
@@ -359,7 +379,9 @@ class Pg extends SQL implements IdDbBackend {
 
         this.db.query(
           `DELETE FROM ${table} WHERE ${condition}`,
-          values,
+          values as
+            | (string[] & Array<string | number>)
+            | (number[] & Array<string | number>),
           (err) => {
             if (err) {
               console.error(

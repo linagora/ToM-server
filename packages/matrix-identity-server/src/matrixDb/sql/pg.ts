@@ -16,6 +16,7 @@ class MatrixDBPg extends Pg implements MatrixDBBackend {
     >,
     logger: TwakeLogger
   ): Promise<void> {
+    if (this.db != null) return Promise.resolve()
     return new Promise((resolve, reject) => {
       import('pg')
         .then((pg) => {
