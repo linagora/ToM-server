@@ -63,7 +63,6 @@ const conf = {
     process.env.UDPATE_FEDERATION_HASHES_CRON || '*/10 * * * *',
   update_users_cron: process.env.UPDATE_USERS_CRON || '*/10 * * * *',
   userdb_engine: 'ldap',
-  enable_company_features: process.env.ENABLE_COMPANY_FEATURES || false,
   sms_api_key: process.env.SMS_API_KEY,
   sms_api_login: process.env.SMS_API_LOGIN,
   sms_api_url: process.env.SMS_API_URL

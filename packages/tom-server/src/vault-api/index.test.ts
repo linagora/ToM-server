@@ -5,7 +5,7 @@ import path from 'path'
 import request from 'supertest'
 import TwakeServer from '..'
 import JEST_PROCESS_ROOT_PATH from '../../jest.globals'
-import defaultConfig from '../config.json'
+import defaultConfig from './__testData__/config.json'
 import { type Config } from '../types'
 import buildTokenTable from './__testData__/buildTokenTable'
 
@@ -72,7 +72,6 @@ describe('Vault API server', () => {
       userdb_host: testFilePath,
       matrix_database_engine: 'sqlite',
       matrix_database_host: matrixTestFilePath,
-      enable_company_features: true,
       sms_api_key: '',
       sms_api_login: '',
       sms_api_url: ''

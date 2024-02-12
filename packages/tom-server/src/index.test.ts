@@ -23,6 +23,7 @@ describe('Tom-server', () => {
   ): void => {
     const conf: Config = {
       ...defaultConfig,
+      additional_features: enableCompanyFeatures,
       base_url: 'http://example.com/',
       database_engine: 'sqlite',
       database_host: testDb,
@@ -31,7 +32,6 @@ describe('Tom-server', () => {
       oidc_issuer: 'https://auth.example.com',
       userdb_engine: 'sqlite',
       userdb_host: userDb,
-      enable_company_features: enableCompanyFeatures,
       sms_api_key: '',
       sms_api_login: '',
       sms_api_url: ''

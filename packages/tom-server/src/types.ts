@@ -24,7 +24,6 @@ export type Config = MConfig &
     matrix_server: string
     matrix_database_host: string
     oidc_issuer?: string
-    enable_company_features?: boolean
     sms_api_key?: string
     sms_api_login?: string
     sms_api_url?: string

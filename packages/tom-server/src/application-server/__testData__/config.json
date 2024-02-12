@@ -1,4 +1,5 @@
 {
+  "additional_features": true,
   "base_url": "http://host.docker.internal:3001/",
   "cron_service": true,
   "database_engine": "sqlite",
@@ -21,6 +22,5 @@
     "aliases": [{ "exclusive": false, "regex": "#_twake_.*" }],
     "users": [{ "exclusive": false, "regex": "@.*" }]
   },
-  "push_ephemeral": true,
-  "enable_company_features": true
+  "push_ephemeral": true
 }
