@@ -27,7 +27,7 @@ class UserDBLDAP implements UserDBBackend {
           client.on('error', reject)
           client.bind(conf.ldap_user, conf.ldap_password, (err) => {
             if (err == null) {
-              client.on('error', this.logger.error)
+              client.on('error', (e) => this.logger.error(e))
               resolve(client)
             } else {
               this.logger.error('Connexion to LDAP failed', err)
@@ -35,7 +35,7 @@ class UserDBLDAP implements UserDBBackend {
             }
           })
         } else {
-          client.on('error', this.logger.error)
+          client.on('error', (e) => this.logger.error(e))
           resolve(client)
         }
       })
