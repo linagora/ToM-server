@@ -27,11 +27,7 @@ export default class TwakeApplicationServer
     extendRoutes(this, parent)
 
     this.on('ephemeral_type: m.presence', (event: ClientEvent) => {
-      if (
-        event.type === 'm.presence' &&
-        'presence' in event.content &&
-        event.content.presence === 'online'
-      ) {
+      if (event.content.presence === 'online') {
         const matrixUserId = event.sender
         let ldapUid: string | null = null
         if (matrixUserId != null) {
@@ -114,11 +110,7 @@ export default class TwakeApplicationServer
     })
 
     this.on('state event | type: m.room.member', (event: ClientEvent) => {
-      if (
-        event.type === 'm.room.member' &&
-        'membership' in event.content &&
-        event.content.membership === 'leave'
-      ) {
+      if (event.content.membership === 'leave') {
         const matrixUserId = event.sender
         const targetUserId = event.state_key
         if (
