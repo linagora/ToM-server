@@ -9,6 +9,8 @@ type Collections =
   | 'room_stats_state'
   | 'local_media_repository'
   | 'room_aliases'
+  | 'room_stats_state'
+  | 'event_json'
 
 type Get = (
   table: Collections,
