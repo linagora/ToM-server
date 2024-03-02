@@ -4,9 +4,9 @@ import MatrixApplicationServer, {
   type AppService,
   type ClientEvent
 } from '@twake/matrix-application-server'
-import { type MatrixDB } from '@twake/matrix-identity-server'
+import { type MatrixDB, type UserDB } from '@twake/matrix-identity-server'
 import { Router } from 'express'
-import { type Config } from '../types'
+import { type Config, type IdentityServerDb } from '../types'
 import { type IMatrixDBRoomsRepository } from './repositories/interfaces/matrix-db-rooms-repository.interface'
 import { type IOpenSearchRepository } from './repositories/interfaces/opensearch-repository.interface'
 import { MatrixDBRoomsRepository } from './repositories/matrix-db-rooms.repository'
@@ -28,6 +28,8 @@ export default class TwakeSearchEngine
   public readonly matrixDBRoomsRepository: IMatrixDBRoomsRepository
 
   constructor(
+    public readonly idDb: IdentityServerDb,
+    public readonly userDB: UserDB,
     matrixDb: MatrixDB,
     conf: Config,
     logger: TwakeLogger,

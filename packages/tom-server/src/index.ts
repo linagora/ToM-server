@@ -140,6 +140,8 @@ export default class TwakeServer {
       this.conf.opensearch_is_activated
     ) {
       const searchEngineApi = new TwakeSearchEngine(
+        this.idServer.db,
+        this.idServer.userDB,
         this.matrixDb,
         this.conf,
         this.logger,
