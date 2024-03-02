@@ -11,6 +11,7 @@ import { type IMatrixDBRoomsRepository } from './repositories/interfaces/matrix-
 import { type IOpenSearchRepository } from './repositories/interfaces/opensearch-repository.interface'
 import { MatrixDBRoomsRepository } from './repositories/matrix-db-rooms.repository'
 import { OpenSearchRepository } from './repositories/opensearch.repository'
+import { extendRoutes } from './routes'
 import { type IOpenSearchService } from './services/interfaces/opensearch-service.interface'
 import { OpenSearchService } from './services/opensearch.service'
 import { formatErrorMessageForLog, logError } from './utils/error'
@@ -44,6 +45,7 @@ export default class TwakeSearchEngine
       this.openSearchService
         .createTomIndexes()
         .then(() => {
+          extendRoutes(this)
           this.on('state event | type: m.room.name', (event: ClientEvent) => {
             this.openSearchService.updateRoomName(event).catch((e: any) => {
               logError(this.logger, e)
