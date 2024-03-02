@@ -23,5 +23,6 @@
     "aliases": [{ "exclusive": false, "regex": "#_twake_.*" }],
     "users": [{ "exclusive": false, "regex": "@.*" }]
   },
+  "opensearch_is_activated": false,
   "push_ephemeral": true
 }

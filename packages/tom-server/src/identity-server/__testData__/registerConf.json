@@ -16,6 +16,7 @@
   "keys_depth": 5,
   "mail_link_delay": 7200,
   "matrix_server": "localhost",
+  "opensearch_is_activated": false,
   "server_name": "example.com",
   "smtp_sender": "yadd@debian.org",
   "smtp_server": "localhost",
