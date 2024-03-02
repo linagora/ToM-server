@@ -1,3 +1,5 @@
+import { type ApiResponse } from '@opensearch-project/opensearch'
+
 export enum EOpenSearchIndexingAction {
   CREATE = 'create',
   INDEX = 'index'
@@ -94,6 +96,12 @@ export interface IErrorOnMultipleDocuments {
     status: number
   }>
 }
+export interface IQuery {
+  operator: string
+  field: string
+}
+
+export type searchRequestBody = Record<string, IQuery | IQuery[]>
 
 export interface IErrorOnSingleDocument {
   _index: string
@@ -130,5 +138,9 @@ export interface IOpenSearchRepository {
     index: string,
     query: Record<string, unknown>
   ) => Promise<void>
+  searchOnMultipleIndexes: (
+    searchValue: string,
+    elements: searchRequestBody
+  ) => Promise<ApiResponse<Record<string, any>, unknown>>
   close: () => void
 }

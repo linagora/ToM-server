@@ -9,7 +9,9 @@ import {
   type IErrorOnMultipleDocuments,
   type IErrorOnSingleDocument,
   type IOpenSearchClientError,
-  type IOpenSearchRepository
+  type IOpenSearchRepository,
+  type IQuery,
+  type searchRequestBody
 } from './interfaces/opensearch-repository.interface'
 
 export class OpenSearchRepository implements IOpenSearchRepository {
@@ -303,6 +305,56 @@ export class OpenSearchRepository implements IOpenSearchRepository {
       )
       this._checkOpenSearchApiResponse(roomsIndexExists, [404])
       return roomsIndexExists?.body
+    } catch (e) {
+      this._checkException(e as Error)
+    }
+  }
+
+  async searchOnMultipleIndexes(
+    searchValue: string,
+    elements: searchRequestBody
+  ): Promise<ApiResponse<Record<string, any>, unknown>> {
+    try {
+      const response = await this._openSearchClient.msearch(
+        {
+          body: Object.keys(elements).reduce<Array<Record<string, any>>>(
+            (acc, index) => [
+              ...acc,
+              {
+                index
+              },
+              {
+                size: 10000,
+                query: Array.isArray(elements[index])
+                  ? {
+                      bool: {
+                        should: (elements[index] as IQuery[]).map((elt) => ({
+                          [elt.operator]: {
+                            [elt.field]: {
+                              value: searchValue,
+                              case_insensitive: true
+                            }
+                          }
+                        }))
+                      }
+                    }
+                  : {
+                      [(elements[index] as IQuery).operator]: {
+                        [(elements[index] as IQuery).field]: {
+                          value: searchValue,
+                          case_insensitive: true
+                        }
+                      }
+                    }
+              }
+            ],
+            []
+          )
+        },
+        this._requestOptions
+      )
+      this._checkOpenSearchApiResponse(response)
+      return response
     } catch (e) {
       this._checkException(e as Error)
     }

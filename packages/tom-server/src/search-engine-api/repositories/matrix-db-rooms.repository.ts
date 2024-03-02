@@ -45,6 +45,18 @@ export class MatrixDBRoomsRepository implements IMatrixDBRoomsRepository {
     return results[0].encryption != null
   }
 
+  async getRoomsDetails(
+    roomsIds: string[]
+  ): Promise<Record<string, IRoomDetail>> {
+    const results = (await this._matrixDb.get('room_stats_state', ['*'], {
+      room_id: roomsIds
+    })) as unknown as IRoomDetail[]
+    return mapValues(
+      groupBy(results, 'room_id'),
+      (res) => res.pop() as IRoomDetail
+    )
+  }
+
   async getRoomDetail(roomId: string): Promise<IRoomDetail> {
     const result = (await this._matrixDb.get('room_stats_state', ['*'], {
       room_id: roomId
@@ -147,5 +159,62 @@ export class MatrixDBRoomsRepository implements IMatrixDBRoomsRepository {
           display_name: displayNameByUserId[event.json.sender] ?? null
         }
       }))
+  }
+
+  async getUserRoomsIds(userId: string): Promise<string[]> {
+    const allUserRooms = (await this._matrixDb.get(
+      'room_memberships',
+      ['room_id', 'membership'],
+      {
+        user_id: userId
+      }
+    )) as Array<{ room_id: string; membership: string }>
+    const roomMembershipsById = mapValues(
+      groupBy(allUserRooms, 'room_id'),
+      (membershipDetails) => membershipDetails.map((m) => m.membership)
+    )
+    return Object.keys(roomMembershipsById).filter(
+      (roomId: string) => roomMembershipsById[roomId].pop() === 'join'
+    )
+  }
+
+  async getDirectRoomsIds(roomsIds: string[]): Promise<string[]> {
+    return (
+      (await this._matrixDb.get('event_json', ['room_id', 'json'], {
+        room_id: roomsIds
+      })) as Array<{ room_id: string; json: string }>
+    )
+      .map((event) => ({
+        room_id: event.room_id,
+        json: JSON.parse(event.json) as ClientEvent
+      }))
+      .filter(
+        (event) =>
+          event.json.type === 'm.room.member' && event.json.content.is_direct
+      )
+      .map((event) => event.room_id)
+  }
+
+  async getDirectRoomsAvatarUrl(
+    roomsIds: string[],
+    userId: string
+  ): Promise<Record<string, string | null>> {
+    const results = (
+      (await this._matrixDb.get(
+        'room_memberships',
+        ['room_id', 'user_id', 'avatar_url'],
+        {
+          room_id: roomsIds
+        }
+      )) as Array<{
+        room_id: string
+        user_id: string
+        avatar_url: string | null
+      }>
+    ).filter((membership) => membership.user_id !== userId)
+    return mapValues(
+      groupBy(results, 'room_id'),
+      (res) => res.map((r) => r.avatar_url).pop() as string | null
+    )
   }
 }
