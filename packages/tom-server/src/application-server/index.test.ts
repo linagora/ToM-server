@@ -81,7 +81,10 @@ describe('ApplicationServer', () => {
           redirect: 'manual'
         }
       )
-      let location = response.headers.get('location') as string
+      let location = (response.headers.get('location') as string).replace(
+        'auth.example.com',
+        'auth.example.com:444'
+      )
       const matrixCookies = response.headers.get('set-cookie')
       response = await fetch.default(location)
       body = await response.text()
