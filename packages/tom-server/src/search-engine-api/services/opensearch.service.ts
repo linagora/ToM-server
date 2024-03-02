@@ -107,7 +107,7 @@ export class OpenSearchService implements IOpenSearchService {
     }
   }
 
-  async createTomIndexes(): Promise<void> {
+  async createTomIndexes(forceRestore = false): Promise<void> {
     const [roomsIndexExists, messagesIndexExists] = await Promise.all([
       this._openSearchRepository.indexExists(tomRoomsIndex),
       this._openSearchRepository.indexExists(tomMessagesIndex)
@@ -121,7 +121,7 @@ export class OpenSearchService implements IOpenSearchService {
 
     const clearRoomsNames =
       await this._matrixDBRoomsRepository.getAllClearRoomsNames()
-    if (clearRoomsNames.length > 0 && !roomsIndexExists) {
+    if (clearRoomsNames.length > 0 && (!roomsIndexExists || forceRestore)) {
       await this._openSearchRepository.indexDocuments({
         [tomRoomsIndex]: clearRoomsNames.map((room) => ({
           id: room.room_id,
@@ -141,7 +141,10 @@ export class OpenSearchService implements IOpenSearchService {
     const clearRoomsMessages =
       await this._matrixDBRoomsRepository.getAllClearRoomsMessages()
 
-    if (clearRoomsMessages.length > 0 && !messagesIndexExists) {
+    if (
+      clearRoomsMessages.length > 0 &&
+      (!messagesIndexExists || forceRestore)
+    ) {
       await this._openSearchRepository.indexDocuments({
         [tomMessagesIndex]: clearRoomsMessages.map((event) => {
           let document: DocumentWithIndexingAction = {

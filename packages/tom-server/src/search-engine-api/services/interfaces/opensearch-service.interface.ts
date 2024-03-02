@@ -6,6 +6,6 @@ export interface IOpenSearchService {
   indexMessage: (event: ClientEvent) => Promise<void>
   updateMessage: (event: ClientEvent) => Promise<void>
   deindexRoom: (event: ClientEvent) => Promise<void>
-  createTomIndexes: () => Promise<void>
+  createTomIndexes: (forceRestore?: boolean) => Promise<void>
   deindexMessage: (event: ClientEvent) => Promise<void>
 }
