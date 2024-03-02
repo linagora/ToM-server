@@ -4,8 +4,10 @@ import { type Config } from '../../types'
 import { OpenSearchConfiguration } from '../conf/opensearch-configuration'
 import { OpenSearchClientException } from '../utils/error'
 import {
+  type Document,
   type DocumentWithIndexingAction,
   type IErrorOnMultipleDocuments,
+  type IErrorOnSingleDocument,
   type IOpenSearchClientError,
   type IOpenSearchRepository
 } from './interfaces/opensearch-repository.interface'
@@ -78,7 +80,11 @@ export class OpenSearchRepository implements IOpenSearchRepository {
   }
 
   private _checkException(
-    e: IOpenSearchClientError<IErrorOnMultipleDocuments> | Error
+    e:
+      | IOpenSearchClientError<
+          IErrorOnMultipleDocuments | IErrorOnSingleDocument
+        >
+      | Error
   ): never {
     if ('meta' in e) {
       throw new OpenSearchClientException(
@@ -118,6 +124,25 @@ export class OpenSearchRepository implements IOpenSearchRepository {
       this.logger.info(`Index ${index} created`)
     } catch (e) {
       this._checkException(e as Error)
+    }
+  }
+
+  async indexDocument(index: string, document: Document): Promise<void> {
+    try {
+      const { id, ...body } = document
+      const response = await this._openSearchClient.index(
+        {
+          id,
+          index,
+          wait_for_active_shards: this._waitForActiveShards,
+          body,
+          refresh: true
+        },
+        this._requestOptions
+      )
+      this._checkOpenSearchApiResponse(response)
+    } catch (e) {
+      this._checkException(e as IOpenSearchClientError<IErrorOnSingleDocument>)
     }
   }
 
@@ -176,6 +201,95 @@ export class OpenSearchRepository implements IOpenSearchRepository {
       this._checkException(
         e as IOpenSearchClientError<IErrorOnMultipleDocuments>
       )
+    }
+  }
+
+  async updateDocument(index: string, document: Document): Promise<void> {
+    try {
+      const { id, ...updatedFields } = document
+
+      const response = await this._openSearchClient.update(
+        {
+          id,
+          index,
+          wait_for_active_shards: this._waitForActiveShards,
+          body: { doc: updatedFields },
+          refresh: true
+        },
+        this._requestOptions
+      )
+      this._checkOpenSearchApiResponse(response)
+    } catch (e) {
+      this._checkException(e as IOpenSearchClientError<IErrorOnSingleDocument>)
+    }
+  }
+
+  async updateDocuments(
+    index: string,
+    script: string,
+    query: Record<string, unknown>
+  ): Promise<void> {
+    try {
+      const response = await this._openSearchClient.update_by_query(
+        {
+          index,
+          refresh: true,
+          conflicts: 'proceed',
+          wait_for_active_shards: this._waitForActiveShards,
+          body: { script: { source: script }, query }
+        },
+        this._requestOptions
+      )
+      this._checkOpenSearchApiResponse(response)
+    } catch (e) {
+      this._checkException(
+        e as IOpenSearchClientError<IErrorOnMultipleDocuments>
+      )
+    }
+  }
+
+  async deleteDocument(index: string, id: string): Promise<void> {
+    try {
+      const documentExists = (
+        await this._openSearchClient.exists({
+          index,
+          id
+        })
+      )?.body
+      if (documentExists) {
+        const response = await this._openSearchClient.delete({
+          index,
+          id,
+          refresh: true,
+          wait_for_active_shards: this._waitForActiveShards
+        })
+        this._checkOpenSearchApiResponse(response)
+      }
+    } catch (e) {
+      this._checkException(e as IOpenSearchClientError<IErrorOnSingleDocument>)
+    }
+  }
+
+  async deleteDocuments(
+    index: string,
+    query: Record<string, unknown>
+  ): Promise<void> {
+    try {
+      const response = await this._openSearchClient.delete_by_query(
+        {
+          index,
+          refresh: true,
+          wait_for_active_shards: this._waitForActiveShards,
+          conflicts: 'proceed',
+          body: {
+            query
+          }
+        },
+        this._requestOptions
+      )
+      this._checkOpenSearchApiResponse(response)
+    } catch (e) {
+      this._checkException(e as IOpenSearchClientError<IErrorOnSingleDocument>)
     }
   }
 

@@ -95,14 +95,40 @@ export interface IErrorOnMultipleDocuments {
   }>
 }
 
+export interface IErrorOnSingleDocument {
+  _index: string
+  _id: string
+  _version: number
+  result: string
+  _shards: {
+    total: number
+    successful: number
+    failed: number
+  }
+  _seq_no: number
+  _primary_term: number
+}
+
 export interface IOpenSearchRepository {
   createIndex: (index: string, mappings: Record<string, any>) => Promise<void>
+  indexDocument: (index: string, document: Document) => Promise<void>
   indexDocuments: (
     documentsByIndex: Record<
       string,
       DocumentWithIndexingAction | DocumentWithIndexingAction[]
     >
   ) => Promise<void>
+  updateDocument: (index: string, document: Document) => Promise<void>
+  updateDocuments: (
+    index: string,
+    script: string,
+    query: Record<string, unknown>
+  ) => Promise<void>
   indexExists: (index: string) => Promise<boolean>
+  deleteDocument: (index: string, id: string) => Promise<void>
+  deleteDocuments: (
+    index: string,
+    query: Record<string, unknown>
+  ) => Promise<void>
   close: () => void
 }

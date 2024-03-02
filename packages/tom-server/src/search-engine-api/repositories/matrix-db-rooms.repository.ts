@@ -1,11 +1,26 @@
 import { type ClientEvent } from '@twake/matrix-application-server'
 import { type MatrixDB } from '@twake/matrix-identity-server'
 import lodash from 'lodash'
-import { type IMatrixDBRoomsRepository } from './interfaces/matrix-db-rooms-repository.interface'
+import {
+  type IMatrixDBRoomsRepository,
+  type IRoomDetail
+} from './interfaces/matrix-db-rooms-repository.interface'
 const { groupBy, mapValues } = lodash
 
 export class MatrixDBRoomsRepository implements IMatrixDBRoomsRepository {
   constructor(private readonly _matrixDb: MatrixDB) {}
+
+  private _checkRoomStatsStateResult(
+    roomId: string,
+    results: Array<Record<string, string | null>> | IRoomDetail[]
+  ): void {
+    if (results.length === 0) {
+      throw new Error(`No room stats state found with id ${roomId}`)
+    }
+    if (results.length > 1) {
+      throw new Error(`More than one room found with id ${roomId}`)
+    }
+  }
 
   async getAllClearRoomsIds(): Promise<string[]> {
     return (
@@ -16,6 +31,52 @@ export class MatrixDBRoomsRepository implements IMatrixDBRoomsRepository {
     )
       .filter((room) => room.encryption == null)
       .map((room) => room.room_id)
+  }
+
+  async isEncryptedRoom(roomId: string): Promise<boolean> {
+    const results = (await this._matrixDb.get(
+      'room_stats_state',
+      ['encryption'],
+      {
+        room_id: roomId
+      }
+    )) as Array<{ encryption: string | null }>
+    this._checkRoomStatsStateResult(roomId, results)
+    return results[0].encryption != null
+  }
+
+  async getRoomDetail(roomId: string): Promise<IRoomDetail> {
+    const result = (await this._matrixDb.get('room_stats_state', ['*'], {
+      room_id: roomId
+    })) as unknown as IRoomDetail[]
+    this._checkRoomStatsStateResult(roomId, result)
+    return result[0]
+  }
+
+  async getUserDisplayName(
+    roomId: string,
+    userId: string
+  ): Promise<string | null> {
+    const memberships = (await this._matrixDb.get(
+      'room_memberships',
+      ['display_name', 'membership'],
+      {
+        room_id: roomId,
+        user_id: userId
+      }
+    )) as Array<{ display_name: string | null; membership: string }>
+    if (memberships.length === 0) {
+      throw new Error(
+        `No memberships found for user ${userId} in room ${roomId}`
+      )
+    }
+    const lastItem = memberships.pop()
+    if (lastItem?.membership !== 'join') {
+      throw new Error(
+        `User ${userId} is not allowed to participate in room ${roomId}`
+      )
+    }
+    return lastItem.display_name
   }
 
   async getAllClearRoomsNames(): Promise<
