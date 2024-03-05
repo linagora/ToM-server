@@ -3,6 +3,7 @@ version: '3.8'
 services:
   synapse:
     image: matrixdotorg/synapse:v1.89.0
+    container_name: synapse-tom-1
     volumes:
       - ./synapse-data:/data
       - ./nginx/ssl/auth.example.com.crt:/etc/ssl/certs/ca-certificates.crt

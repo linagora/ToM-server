@@ -3,6 +3,7 @@ version: '3.8'
 services:
   postgresql:
     image: postgres:13-bullseye
+    container_name: postgresql
     volumes:
       - ./synapse-data/matrix.example.com.log.config:/data/matrix.example.com.log.config
       - ./db/init-synapse-db.sh:/docker-entrypoint-initdb.d/init-synapse-db.sh
@@ -23,6 +24,7 @@ services:
 
   synapse-federation: &synapse_template
     image: matrixdotorg/synapse:v1.89.0
+    container_name: synapse-federation
     volumes:
       - ./synapse-data:/data
       - ./nginx/ssl/ca.pem:/etc/ssl/certs/ca.pem
@@ -44,6 +46,7 @@ services:
 
   synapse-1:
     <<: *synapse_template
+    container_name: synapse-1
     environment: 
       - UID=${MYUID}
       - VIRTUAL_PORT=8008
@@ -52,6 +55,7 @@ services:
 
   synapse-2:
     <<: *synapse_template
+    container_name: synapse-2
     environment: 
       - UID=${MYUID}
       - VIRTUAL_PORT=8008
@@ -60,6 +64,7 @@ services:
 
   synapse-3:
     <<: *synapse_template
+    container_name: synapse-3
     environment: 
       - UID=${MYUID}
       - VIRTUAL_PORT=8008
@@ -93,6 +98,7 @@ services:
 
   federation-server:
     image: federation-server
+    container_name: federation-server
     build:
       context: ../../../..
       dockerfile: ./packages/federation-server/Dockerfile
@@ -117,6 +123,7 @@ services:
 
   identity-server-1: &identity-server-template
     image: identity-server
+    container_name: identity-server-1
     build:
       context: ../../../..
       dockerfile: ./packages/federation-server/src/__testData__/identity-server/Dockerfile
@@ -139,6 +146,7 @@ services:
 
   identity-server-2:
     <<: *identity-server-template
+    container_name: identity-server-2
     depends_on:
       annuaire:
         condition: service_started
@@ -156,6 +164,7 @@ services:
   
   identity-server-3:
     <<: *identity-server-template
+    container_name: identity-server-3
     depends_on:
       annuaire:
         condition: service_started
@@ -173,6 +182,7 @@ services:
 
   nginx-proxy:
     image: nginxproxy/nginx-proxy
+    container_name: nginx-proxy
     ports:
       - 443:443
     volumes:
