@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { type TwakeLogger } from '@twake/logger'
-import dockerComposeV1, { v2 as dockerComposeV2 } from 'docker-compose'
 import express from 'express'
 import fs from 'fs'
 import type * as http from 'http'
@@ -46,7 +45,6 @@ describe('Search engine API - Integration tests', () => {
   const matrixServer = defaultConfig.matrix_server
   let openSearchContainer: GenericContainer
   let openSearchStartedContainer: StartedTestContainer
-  let containerNameSuffix: string
   let startedCompose: StartedDockerComposeEnvironment
   let tokens: Record<string, string> = {
     askywalker: '',
@@ -312,31 +310,14 @@ describe('Search engine API - Integration tests', () => {
 
   beforeAll((done) => {
     syswideCas.addCAs(path.join(pathToTestDataFolder, 'nginx', 'ssl', 'ca.pem'))
-    Promise.allSettled([dockerComposeV1.version(), dockerComposeV2.version()])
-      // eslint-disable-next-line @typescript-eslint/promise-function-async
-      .then((results) => {
-        const promiseSucceededIndex = results.findIndex(
-          (res) => res.status === 'fulfilled'
-        )
-        if (promiseSucceededIndex === -1) {
-          throw new Error('Docker compose is not installed')
-        }
-        containerNameSuffix = promiseSucceededIndex === 0 ? '_' : '-'
-        return new DockerComposeEnvironment(
-          path.join(pathToTestDataFolder),
-          'docker-compose.yml'
-        )
-          .withEnvironment({ MYUID: os.userInfo().uid.toString() })
-          .withWaitStrategy(
-            `postgresql${containerNameSuffix}1`,
-            Wait.forHealthCheck()
-          )
-          .withWaitStrategy(
-            `synapse${containerNameSuffix}1`,
-            Wait.forHealthCheck()
-          )
-          .up()
-      })
+    new DockerComposeEnvironment(
+      path.join(pathToTestDataFolder),
+      'docker-compose.yml'
+    )
+      .withEnvironment({ MYUID: os.userInfo().uid.toString() })
+      .withWaitStrategy('postgresql-tom', Wait.forHealthCheck())
+      .withWaitStrategy('synapse-tom', Wait.forHealthCheck())
+      .up()
       // eslint-disable-next-line @typescript-eslint/promise-function-async
       .then((upResult) => {
         startedCompose = upResult
@@ -357,9 +338,7 @@ describe('Search engine API - Integration tests', () => {
             retries: 3
           })
           .withNetworkMode(
-            startedCompose
-              .getContainer(`nginx-proxy${containerNameSuffix}1`)
-              .getNetworkNames()[0]
+            startedCompose.getContainer('nginx-proxy-tom').getNetworkNames()[0]
           )
           .withEnvironment({
             'discovery.type': 'single-node',
@@ -375,9 +354,7 @@ describe('Search engine API - Integration tests', () => {
       // eslint-disable-next-line @typescript-eslint/promise-function-async
       .then((startedContainer) => {
         openSearchStartedContainer = startedContainer
-        return startedCompose
-          .getContainer(`nginx-proxy${containerNameSuffix}1`)
-          .restart()
+        return startedCompose.getContainer('nginx-proxy-tom').restart()
       })
       // eslint-disable-next-line @typescript-eslint/promise-function-async
       .then(() => {
@@ -985,9 +962,7 @@ describe('Search engine API - Integration tests', () => {
 
     console.info('Server closed. Restarting.')
 
-    await startedCompose
-      .getContainer(`nginx-proxy${containerNameSuffix}1`)
-      .restart()
+    await startedCompose.getContainer('nginx-proxy-tom').restart()
 
     twakeServer = new TwakeServer(testConfig as Config)
     app = express()
