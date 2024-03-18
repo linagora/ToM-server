@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/promise-function-async */
 import { type TwakeLogger } from '@twake/logger'
-import { type Database, type Statement } from 'sqlite3'
+import { Statement, type Database } from 'sqlite3'
 import { type Config, type DbGetResult } from '../../types'
 import {
   type Collections,
@@ -101,7 +101,14 @@ class SQLite extends SQL implements IdDbBackend {
       const stmt = this.db.prepare(
         `INSERT INTO ${table}(${names.join(',')}) VALUES(${names
           .map((v) => '?')
-          .join(',')}) RETURNING *;`
+          .join(',')}) RETURNING *;`,
+        (statement: Statement, err: Error | null) => {
+          if (err != null) {
+            reject(err)
+          } else if (statement != null && !(statement instanceof Statement)) {
+            reject(statement)
+          }
+        }
       )
       stmt.all(
         vals,
@@ -141,7 +148,14 @@ class SQLite extends SQL implements IdDbBackend {
       const stmt = this.db.prepare(
         `UPDATE ${table} SET ${names.join(
           '=?,'
-        )}=? WHERE ${field}=? RETURNING *;`
+        )}=? WHERE ${field}=? RETURNING *;`,
+        (statement: Statement, err: Error | null) => {
+          if (err != null) {
+            reject(err)
+          } else if (statement != null && !(statement instanceof Statement)) {
+            reject(statement)
+          }
+        }
       )
       stmt.all(
         vals,
@@ -207,7 +221,14 @@ class SQLite extends SQL implements IdDbBackend {
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
         // @ts-ignore never undefined
         const stmt = this.db.prepare(
-          `SELECT ${fields.join(',')} FROM ${table} ${condition}`
+          `SELECT ${fields.join(',')} FROM ${table} ${condition}`,
+          (statement: Statement, err: Error | null) => {
+            if (err != null) {
+              reject(err)
+            } else if (statement != null && !(statement instanceof Statement)) {
+              reject(statement)
+            }
+          }
         )
         stmt.all(
           values,
@@ -221,7 +242,9 @@ class SQLite extends SQL implements IdDbBackend {
           }
         )
         stmt.finalize((err) => {
-          reject(err)
+          if (err != null) {
+            reject(err)
+          }
         })
       }
     })
@@ -264,7 +287,14 @@ class SQLite extends SQL implements IdDbBackend {
         let condition = searchFields.map((f) => `${f} LIKE ?`).join(' OR ')
         if (order != null) condition += `ORDER BY ${order}`
         const stmt = this.db.prepare(
-          `SELECT ${fields.join(',')} FROM ${table} WHERE ${condition}`
+          `SELECT ${fields.join(',')} FROM ${table} WHERE ${condition}`,
+          (statement: Statement, err: Error | null) => {
+            if (err != null) {
+              reject(err)
+            } else if (statement != null && !(statement instanceof Statement)) {
+              reject(statement)
+            }
+          }
         )
         stmt.all(
           values,
@@ -294,7 +324,16 @@ class SQLite extends SQL implements IdDbBackend {
       if (this.db == null) {
         reject(new Error('Wait for database to be ready'))
       } else {
-        const stmt = this.db.prepare(`DELETE FROM ${table} WHERE ${field}=?`)
+        const stmt = this.db.prepare(
+          `DELETE FROM ${table} WHERE ${field}=?`,
+          (statement: Statement, err: Error | null) => {
+            if (err != null) {
+              reject(err)
+            } else if (statement != null && !(statement instanceof Statement)) {
+              reject(statement)
+            }
+          }
+        )
         stmt.all([value], (err, rows) => {
           /* istanbul ignore if */
           if (err != null) {
@@ -320,7 +359,16 @@ class SQLite extends SQL implements IdDbBackend {
       if (this.db == null) {
         throw new Error('Wait for database to be ready')
       }
-      const stmt = this.db.prepare(`DELETE FROM ${table} WHERE ${field}<?`)
+      const stmt = this.db.prepare(
+        `DELETE FROM ${table} WHERE ${field}<?`,
+        (statement: Statement, err: Error | null) => {
+          if (err != null) {
+            reject(err)
+          } else if (statement != null && !(statement instanceof Statement)) {
+            reject(statement)
+          }
+        }
+      )
       stmt.all([value], (err) => {
         /* istanbul ignore if */
         if (err != null) {
@@ -371,7 +419,16 @@ class SQLite extends SQL implements IdDbBackend {
 
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
         // @ts-ignore never undefined
-        const stmt = this.db.prepare(`DELETE FROM ${table} WHERE ${condition}`)
+        const stmt = this.db.prepare(
+          `DELETE FROM ${table} WHERE ${condition}`,
+          (statement: Statement, err: Error | null) => {
+            if (err != null) {
+              reject(err)
+            } else if (statement != null && !(statement instanceof Statement)) {
+              reject(statement)
+            }
+          }
+        )
 
         stmt.all(
           values, // The statement fills the values properly.
