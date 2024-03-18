@@ -21,7 +21,7 @@
     "landing"
   ],
   "scripts": {
-    "build": "npm run softClean && lerna run build",
+    "build": "npm run softClean && lerna run build --skip-nx-cache",
     "clean": "rimraf packages/*/dist packages/*/coverage ./node_modules/.cache/nx packages/*/example/*.js*",
     "doc": "node docs/swagger.cjs",
     "format:check": "prettier --check .",
@@ -33,7 +33,7 @@
     "lint-fix": "eslint --fix packages/*/src --ext .ts",
     "prepare": "husky install",
     "softClean": "rimraf packages/*/dist",
-    "test": "lerna run test"
+    "test": "lerna run test --skip-nx-cache"
   },
   "devDependencies": {
     "@crowdsec/express-bouncer": "^0.1.0",

@@ -3,7 +3,7 @@ import { type Config, type DbGetResult } from '../types'
 import MatrixDBPg from './sql/pg'
 import MatrixDBSQLite from './sql/sqlite'
 
-type Collections =
+export type Collections =
   | 'users'
   | 'room_memberships'
   | 'room_stats_state'
@@ -73,12 +73,13 @@ class MatrixDB implements MatrixDBBackend {
     return this.db.getAll(table, fields)
   }
 
-  get = async (
+  // eslint-disable-next-line @typescript-eslint/promise-function-async
+  get(
     table: Collections,
     fields?: string[],
     filterFields?: Record<string, string | number | Array<string | number>>
-  ): Promise<DbGetResult> => {
-    return await this.db.get(table, fields, filterFields)
+  ): Promise<DbGetResult> {
+    return this.db.get(table, fields, filterFields)
   }
 
   close(): void {

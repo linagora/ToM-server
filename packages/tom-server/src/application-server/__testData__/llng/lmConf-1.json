@@ -230,7 +230,15 @@
        "name": "cn",
        "nickname": "uid",
        "preferred_username": "uid"
-     }
+     },
+     "matrix2": {
+      "email": "mail",
+      "family_name": "cn",
+      "given_name": "cn",
+      "name": "cn",
+      "nickname": "uid",
+      "preferred_username": "uid"
+    }
    },
    "oidcRPMetaDataMacros": null,
    "oidcRPMetaDataOptions": {
@@ -253,7 +261,27 @@
        "oidcRPMetaDataOptionsRedirectUris": "https://matrix.example.com:444/_synapse/client/oidc/callback",
        "oidcRPMetaDataOptionsRefreshToken": 0,
        "oidcRPMetaDataOptionsRequirePKCE": 0
-     }
+     },
+     "matrix2": {
+      "oidcRPMetaDataOptionsAccessTokenClaims": 0,
+      "oidcRPMetaDataOptionsAccessTokenJWT": 0,
+      "oidcRPMetaDataOptionsAccessTokenSignAlg": "RS256",
+      "oidcRPMetaDataOptionsAllowClientCredentialsGrant": 0,
+      "oidcRPMetaDataOptionsAllowOffline": 0,
+      "oidcRPMetaDataOptionsAllowPasswordGrant": 0,
+      "oidcRPMetaDataOptionsBypassConsent": 1,
+      "oidcRPMetaDataOptionsClientID": "matrix2",
+      "oidcRPMetaDataOptionsClientSecret": "matrix2*",
+      "oidcRPMetaDataOptionsIDTokenForceClaims": 0,
+      "oidcRPMetaDataOptionsIDTokenSignAlg": "RS256",
+      "oidcRPMetaDataOptionsLogoutBypassConfirm": 0,
+      "oidcRPMetaDataOptionsLogoutSessionRequired": 1,
+      "oidcRPMetaDataOptionsLogoutType": "back",
+      "oidcRPMetaDataOptionsPublic": 0,
+      "oidcRPMetaDataOptionsRedirectUris": "https://matrix.external.com:444/_synapse/client/oidc/callback",
+      "oidcRPMetaDataOptionsRefreshToken": 0,
+      "oidcRPMetaDataOptionsRequirePKCE": 0
+    }
    },
    "oidcRPMetaDataOptionsExtraClaims": null,
    "oidcRPMetaDataScopeRules": null,

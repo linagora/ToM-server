@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  external-synapse:
+    image: matrixdotorg/synapse:v1.89.0
+    container_name: external-synapse
+    volumes:
+      - ./synapse-external:/data
+      - ./nginx/ssl/ca.pem:/etc/ssl/certs/ca.pem
+      - ./nginx/ssl/9da13359.0:/etc/ssl/certs/9da13359.0
+      - ./nginx/ssl/matrix.external.com.crt:/etc/ssl/certs/matrix.external.com.crt
+      - ./nginx/ssl/matrix.external.com.key:/etc/ssl/certs/matrix.external.com.key
+    depends_on:
+      - auth
+    environment: 
+      - UID=${MYUID}
+      - VIRTUAL_PORT=8448
+      - VIRTUAL_HOST=matrix.external.com
+      - VIRTUAL_PROTO=https
+    healthcheck:
+      test: ["CMD", "curl", "-fSsk", "https://localhost:8448/health"]
+      interval: 10s
+      timeout: 10s
+      retries: 3
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      integration-test:
+        aliases:
+          - matrix.external.com
+  
+  nginx-example:
+    image: nginx
+    volumes:
+      - ./nginx/ssl/example.com.ssl.conf:/etc/nginx/nginx.conf
+      - ./nginx/ssl/example.com.crt:/etc/nginx/ssl/example.com.crt
+      - ./nginx/ssl/example.com.key:/etc/nginx/ssl/example.com.key
+    networks:
+      integration-test:
+        aliases:
+          - example.com
+
+  nginx-external:
+    image: nginx
+    volumes:
+      - ./nginx/ssl/external.com.ssl.conf:/etc/nginx/nginx.conf
+      - ./nginx/ssl/external.com.crt:/etc/nginx/ssl/external.com.crt
+      - ./nginx/ssl/external.com.key:/etc/nginx/ssl/external.com.key
+    command: [nginx-debug, '-g', 'daemon off;']
+    networks:
+      integration-test:
+        aliases:
+          - external.com

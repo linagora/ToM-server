@@ -1,9 +1,13 @@
 import { EHttpMethod } from '@twake/matrix-application-server'
 import type TwakeApplicationServer from '..'
 import type TwakeServer from '../..'
+import { blockSender } from '../controllers/block-sender.controller'
 import { createRoom } from '../controllers/room'
 import { auth } from '../middlewares/auth'
-import validation from '../middlewares/validation'
+import {
+  blockSenderValidation,
+  createRoomValidation
+} from '../middlewares/validation'
 
 export const extendRoutes = (
   appServer: TwakeApplicationServer,
@@ -118,7 +122,19 @@ export const extendRoutes = (
     '/_twake/app/v1/rooms',
     EHttpMethod.POST,
     createRoom(appServer, twakeServer),
-    validation(),
+    createRoomValidation(),
+    auth
+  )
+
+  appServer.router.addRoute(
+    '/_twake/app/v1/block-users',
+    EHttpMethod.POST,
+    blockSender(
+      twakeServer.conf,
+      twakeServer.matrixDb,
+      appServer.appServiceRegistration.asToken
+    ),
+    blockSenderValidation(),
     auth
   )
 }

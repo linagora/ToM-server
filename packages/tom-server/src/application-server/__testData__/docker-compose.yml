@@ -1,29 +1,60 @@
 version: '3.8'
 
+networks:
+  integration-test:
+
 services:
+  postgresql:
+    image: postgres:13-bullseye
+    container_name: postgresql-tom
+    volumes:
+      - ./synapse-data/matrix.example.com.log.config:/data/matrix.example.com.log.config
+      - ./db/init-synapse-db.sh:/docker-entrypoint-initdb.d/init-synapse-db.sh
+      - ./db/init-llng-db.sh:/docker-entrypoint-initdb.d/init-llng-db.sh
+      - ./db/init-id-db.sh:/docker-entrypoint-initdb.d/init-id-db.sh
+      - ./llng/lmConf-1.json:/llng-conf/conf.json
+    environment:
+      - POSTGRES_PASSWORD=synapse!!
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    ports:
+      - 5434:5432
+    networks:
+      - integration-test
+
   synapse:
     image: matrixdotorg/synapse:v1.89.0
     container_name: synapse-tom-1
     volumes:
       - ./synapse-data:/data
-      - ./nginx/ssl/auth.example.com.crt:/etc/ssl/certs/ca-certificates.crt
+      - ./nginx/ssl/ca.pem:/etc/ssl/certs/ca.pem
+      - ./nginx/ssl/9da13359.0:/etc/ssl/certs/9da13359.0
+      - ./nginx/ssl/matrix.example.com.crt:/etc/ssl/certs/matrix.example.com.crt
+      - ./nginx/ssl/matrix.example.com.key:/etc/ssl/certs/matrix.example.com.key
     depends_on:
       - auth
     environment: 
       - UID=${MYUID}
-      - VIRTUAL_PORT=8008
+      - VIRTUAL_PORT=8448
       - VIRTUAL_HOST=matrix.example.com
+      - VIRTUAL_PROTO=https
     healthcheck:
-      test: ["CMD", "curl", "-fSs", "http://localhost:8008/health"]
+      test: ["CMD", "curl", "-fSsk", "https://localhost:8448/health"]
       interval: 10s
       timeout: 10s
       retries: 3
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    networks:
+      integration-test:
+        aliases:
+          - matrix.example.com
 
   auth:
     image: yadd/lemonldap-ng-portal:2.18.2-9
-    hostname: auth.example.com
     volumes:
       - ./llng/lmConf-1.json:/var/lib/lemonldap-ng/conf/lmConf-1.json
       - ./llng/ssl.conf:/etc/nginx/sites-enabled/0000default.conf
@@ -32,8 +63,16 @@ services:
     environment:
       - PORTAL=https://auth.example.com
       - VIRTUAL_HOST=auth.example.com
+      - PG_SERVER=postgresql
+    depends_on:
+      postgresql:
+        condition: service_healthy
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    networks:
+      integration-test:
+        aliases:
+          - auth.example.com
 
   nginx-proxy:
     image: nginxproxy/nginx-proxy
@@ -44,3 +83,5 @@ services:
     volumes:
       - /var/run/docker.sock:/tmp/docker.sock:ro
       - ./nginx/ssl:/etc/nginx/certs
+    networks:
+      - integration-test

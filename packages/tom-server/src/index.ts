@@ -31,6 +31,7 @@ export default class TwakeServer {
   private _openSearchClient: IOpenSearchRepository | undefined
   ready!: Promise<boolean>
   idServer!: TwakeIdentityServer
+  private _appServiceApi: AppServiceAPI | undefined
 
   constructor(
     conf?: Partial<Config>,
@@ -53,14 +54,21 @@ export default class TwakeServer {
     this.endpoints = Router()
     this.ready = new Promise<boolean>((resolve, reject) => {
       this._initServer(confDesc)
+        // eslint-disable-next-line @typescript-eslint/promise-function-async
         .then(() => {
           if (
             process.env.ADDITIONAL_FEATURES === 'true' ||
             (this.conf.additional_features as boolean)
           ) {
-            const appServiceApi = new AppServiceAPI(this, confDesc, this.logger)
-            this.endpoints.use(appServiceApi.router.routes)
+            this._appServiceApi = new AppServiceAPI(this, confDesc, this.logger)
+            return this._appServiceApi.ready
           }
+          resolve(true)
+        })
+        .then((_) => {
+          this.endpoints.use(
+            (this._appServiceApi as AppServiceAPI).router.routes
+          )
           resolve(true)
         })
         .catch((error) => {

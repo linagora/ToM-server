@@ -45,7 +45,11 @@ export * as IdentityServerDb from './db'
 export { default as createTables } from './db/sql/_createTables'
 export { default as Pg } from './db/sql/pg'
 export * as SQLite from './db/sql/sqlite'
-export { default as MatrixDB, type MatrixDBBackend } from './matrixDb'
+export {
+  default as MatrixDB,
+  type Collections as MatrixDBCollections,
+  type MatrixDBBackend
+} from './matrixDb'
 export * from './types'
 export {
   default as UserDB,

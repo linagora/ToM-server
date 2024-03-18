@@ -1,6 +1,6 @@
 import { body, type ValidationChain } from 'express-validator'
 
-export default (): ValidationChain[] => {
+export const createRoomValidation = (): ValidationChain[] => {
   const validators: ValidationChain[] = [
     body('name').isString().optional(),
     body('aliasName').exists().isString(),
@@ -17,3 +17,19 @@ export default (): ValidationChain[] => {
   ]
   return validators
 }
+
+export const blockSenderValidation = (): ValidationChain[] => [
+  body('usersIds').custom((value) => {
+    if (
+      !Array.isArray(value) ||
+      value.some(
+        (id) => typeof id !== 'string' || id.match(/^@[^:]*:.*/) == null
+      )
+    ) {
+      throw new Error(
+        'usersIds should be an array of strings representing Matrix users ids'
+      )
+    }
+    return true
+  })
+]

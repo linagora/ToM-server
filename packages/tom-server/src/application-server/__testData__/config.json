@@ -2,8 +2,6 @@
   "additional_features": true,
   "base_url": "http://host.docker.internal:3001/",
   "cron_service": true,
-  "database_engine": "sqlite",
-  "database_host": "./src/application-server/__testData__/test.db",
   "database_vacuum_delay": 7200,
   "key_delay": 3600,
   "keys_depth": 5,
@@ -17,12 +15,20 @@
   "ldap_uri": "ldap://localhost:21389/",
   "matrix_server": "matrix.example.com:444",
   "registration_file_path": "./src/application-server/__testData__/synapse-data/registration.yaml",
-  "matrix_database_engine": "sqlite",
-  "matrix_database_host": "./src/application-server/__testData__/synapse-data/homeserver.db",
   "namespaces": {
     "aliases": [{ "exclusive": false, "regex": "#_twake_.*" }],
     "users": [{ "exclusive": false, "regex": "@.*" }]
   },
   "opensearch_is_activated": false,
-  "push_ephemeral": true
+  "push_ephemeral": true,
+  "database_engine": "pg",
+  "database_host": "localhost:5434",
+  "database_name": "identity",
+  "database_user": "twake",
+  "database_password": "twake!1",
+  "matrix_database_engine": "pg",
+  "matrix_database_host": "localhost:5434",
+  "matrix_database_name": "synapse",
+  "matrix_database_password": "synapse!1",
+  "matrix_database_user": "synapse"
 }
