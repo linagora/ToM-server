@@ -24,7 +24,9 @@ const conf = {
   database_host: process.env.DATABASE_HOST,
   database_name: process.env.DATABASE_NAME,
   database_user: process.env.DATABASE_USER,
-  database_ssl: process.env.DATABASE_SSL ? true : false,
+  database_ssl: process.env.DATABASE_SSL
+    ? JSON.parse(process.env.DATABASE_SSL)
+    : false,
   database_password: process.env.DATABASE_PASSWORD,
   federation_servers: process.env.FEDERATION_SERVERS
     ? process.env.FEDERATION_SERVERS.split(/[,\s]+/)
@@ -48,7 +50,9 @@ const conf = {
   matrix_database_name: process.env.MATRIX_DATABASE_NAME,
   matrix_database_password: process.env.MATRIX_DATABASE_PASSWORD,
   matrix_database_user: process.env.MATRIX_DATABASE_USER,
-  matrix_database_ssl: process.env.MATRIX_DATABASE_SSL ? true : false,
+  matrix_database_ssl: process.env.MATRIX_DATABASE_SSL
+    ? JSON.parse(process.env.MATRIX_DATABASE_SSL)
+    : false,
   oidc_issuer: process.env.OIDC_ISSUER,
   pepperCron: process.env.PEPPER_CRON || '9 1 * * *',
   server_name: process.env.SERVER_NAME,
