@@ -60,7 +60,17 @@ export const Authenticate = (
     if (token != null) {
       db.get('accessTokens', ['data'], { id: token })
         .then((rows) => {
-          callback(JSON.parse(rows[0].data as string), token)
+          // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+          if (!rows || rows.length === 0) {
+            logger.error(
+              `${req.socket.remoteAddress as string} sent an inexistent token ${
+                token as string
+              }`
+            )
+            send(res, 401, errMsg('unAuthorized'))
+          } else {
+            callback(JSON.parse(rows[0].data as string), token)
+          }
         })
         .catch((e) => {
           logger.error(
