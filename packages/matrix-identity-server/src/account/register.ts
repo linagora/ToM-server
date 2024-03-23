@@ -62,8 +62,6 @@ const Register = (
           })
           .catch((e) => {
             logger.warn(`Unable to validate token ${JSON.stringify(obj)}`, e)
-
-            /* TODO: Matrix spec doesn't describe response to use it, check later if fixed */
             send(res, 401, errMsg('sessionNotValidated', e))
           })
       })

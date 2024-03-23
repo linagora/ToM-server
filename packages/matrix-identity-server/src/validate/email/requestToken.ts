@@ -110,7 +110,6 @@ const RequestToken = (idServer: MatrixIdentityServer): expressAppHandler => {
 
               // TODO: check for send_attempt
 
-              // TODO generate sid and token and store them
               const sid = randomString(64)
               idServer.db
                 .createOneTimeToken(

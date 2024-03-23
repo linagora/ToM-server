@@ -59,7 +59,6 @@ class MatrixDB implements MatrixDBBackend {
     this.ready = new Promise((resolve, reject) => {
       this.db.ready
         .then(() => {
-          // TODO: insert here init if needed
           resolve()
         })
         /* istanbul ignore next */

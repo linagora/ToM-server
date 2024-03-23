@@ -167,7 +167,6 @@ export const validateParameters: validateParametersType = (
       }
     })
     if (additionalParameters.length > 0) {
-      // TODO: for now, accept additional params
       logger.warn('Additional parameters', additionalParameters)
     }
     callback(content)

@@ -21,7 +21,6 @@ class Mailer {
       host: conf.smtp_server,
       /* istanbul ignore next */
       port: conf.smtp_port != null ? conf.smtp_port : 25,
-      // TODO: push this to options
       tls: { rejectUnauthorized: conf.smtp_verify_certificate }
     }
     if (conf.smtp_tls != null) {
