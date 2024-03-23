@@ -44,7 +44,7 @@ export const Authenticate = (
   db: IdentityServerDb,
   logger: TwakeLogger
 ): AuthenticationFunction => {
-  const tokenRe = /^Bearer ([a-zA-Z0-9]{64})$/
+  const tokenRe = /^Bearer ([a-zA-Z0-9_]+)$/
   return (req, res, callback) => {
     let token: string | null = null
     if (req.headers.authorization != null) {
