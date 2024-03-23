@@ -28,7 +28,7 @@ const schema = {
 
 const clientSecretRe = /^[0-9a-zA-Z.=_-]{6,255}$/
 
-const validEmailRe = /^\w+([+.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,6})+$/
+const validEmailRe = /^\w[+.-\w]*\w@\w[.-\w]*\w\.\w{2,6}$/
 
 const preConfigureTemplate = (
   template: string,
