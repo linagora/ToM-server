@@ -4,6 +4,8 @@ This is a multi-packages repository. See [packages](./packages) directory.
 
 REST API Endpoints documentation is available on https://linagora.github.io/ToM-server/
 
+[Try it with docker](./docker.md)
+
 ## Scripts
 
 * `npm run build`: build all packages
