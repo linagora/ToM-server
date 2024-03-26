@@ -1,7 +1,6 @@
 import { type TwakeLogger } from '@twake/logger'
 import { type AppServiceOutput } from '@twake/matrix-application-server/src/utils'
 import { type DbGetResult } from '@twake/matrix-identity-server'
-import dockerComposeV1, { v2 as dockerComposeV2 } from 'docker-compose'
 import express from 'express'
 import fs from 'fs'
 import type * as http from 'http'
@@ -81,7 +80,10 @@ describe('ApplicationServer', () => {
           redirect: 'manual'
         }
       )
-      let location = response.headers.get('location') as string
+      let location = (response.headers.get('location') as string).replace(
+        'auth.example.com',
+        'auth.example.com:444'
+      )
       const matrixCookies = response.headers.get('set-cookie')
       response = await fetch.default(location)
       body = await response.text()
@@ -215,7 +217,6 @@ describe('ApplicationServer', () => {
     let appServiceToken: string
     let newRoomId: string
     let rSkywalkerMatrixToken: string
-    let containerNameSuffix: string
 
     beforeAll((done) => {
       syswideCas.addCAs(
@@ -238,30 +239,13 @@ describe('ApplicationServer', () => {
       ).as_token
       deleteUserDB(testConfig)
         // eslint-disable-next-line @typescript-eslint/promise-function-async
-        .then((_) =>
-          Promise.allSettled([
-            dockerComposeV1.version(),
-            dockerComposeV2.version()
-          ])
-        )
-        // eslint-disable-next-line @typescript-eslint/promise-function-async
-        .then((results) => {
-          const promiseSucceededIndex = results.findIndex(
-            (res) => res.status === 'fulfilled'
-          )
-          if (promiseSucceededIndex === -1) {
-            throw new Error('Docker compose is not installed')
-          }
-          containerNameSuffix = promiseSucceededIndex === 0 ? '_' : '-'
+        .then((_) => {
           return new DockerComposeEnvironment(
             path.join(pathToTestDataFolder),
             'docker-compose.yml'
           )
             .withEnvironment({ MYUID: os.userInfo().uid.toString() })
-            .withWaitStrategy(
-              `synapse${containerNameSuffix}1`,
-              Wait.forHealthCheck()
-            )
+            .withWaitStrategy('synapse-tom-1', Wait.forHealthCheck())
             .up()
         })
         // eslint-disable-next-line @typescript-eslint/promise-function-async

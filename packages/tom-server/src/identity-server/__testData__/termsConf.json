@@ -15,6 +15,7 @@
   "key_delay": 3600,
   "keys_depth": 5,
   "mail_link_delay": 7200,
+  "opensearch_is_activated": false,
   "server_name": "example.com",
   "smtp_sender": "yadd@debian.org",
   "smtp_server": "localhost",

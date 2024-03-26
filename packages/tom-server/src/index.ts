@@ -14,6 +14,8 @@ import IdServer from './identity-server'
 import mutualRoomsAPIRouter from './mutual-rooms-api'
 import privateNoteApiRouter from './private-note-api'
 import roomTagsAPIRouter from './room-tags-api'
+import TwakeSearchEngine from './search-engine-api'
+import { type IOpenSearchRepository } from './search-engine-api/repositories/interfaces/opensearch-repository.interface'
 import smsApiRouter from './sms-api'
 import type { Config, ConfigurationFile, TwakeIdentityServer } from './types'
 import userInfoAPIRouter from './user-info-api'
@@ -26,6 +28,7 @@ export default class TwakeServer {
   endpoints: Router
   db?: TwakeDB
   matrixDb: MatrixDB
+  private _openSearchClient: IOpenSearchRepository | undefined
   ready!: Promise<boolean>
   idServer!: TwakeIdentityServer
 
@@ -67,6 +70,9 @@ export default class TwakeServer {
   cleanJobs(): void {
     this.idServer.cleanJobs()
     this.matrixDb.close()
+    if (this._openSearchClient != null) {
+      this._openSearchClient.close()
+    }
   }
 
   private _getConfigurationFile(
@@ -91,66 +97,72 @@ export default class TwakeServer {
   }
 
   private async _initServer(confDesc?: ConfigDescription): Promise<boolean> {
-    try {
-      await this.idServer.ready
-      await this.matrixDb.ready
-      await initializeDb(this)
+    await this.idServer.ready
+    await this.matrixDb.ready
+    await initializeDb(this)
 
-      const vaultServer = new VaultServer(
-        this.conf,
+    const vaultServer = new VaultServer(
+      this.conf,
+      this.idServer.db,
+      this.logger
+    )
+    const wellKnown = new WellKnown(this.conf)
+    const privateNoteApi = privateNoteApiRouter(
+      this.idServer.db,
+      this.conf,
+      this.logger
+    )
+    const mutualRoolsApi = mutualRoomsAPIRouter(
+      this.idServer.db,
+      this.conf,
+      this.matrixDb.db,
+      this.logger
+    )
+    const roomTagsApi = roomTagsAPIRouter(
+      this.idServer.db,
+      this.matrixDb.db,
+      this.conf,
+      this.logger
+    )
+    const userInfoApi = userInfoAPIRouter(this.idServer, this.conf, this.logger)
+
+    const smsApi = smsApiRouter(this.idServer.db, this.conf, this.logger)
+
+    this.endpoints.use(privateNoteApi)
+    this.endpoints.use(mutualRoolsApi)
+    this.endpoints.use(vaultServer.endpoints)
+    this.endpoints.use(roomTagsApi)
+    this.endpoints.use(userInfoApi)
+    this.endpoints.use(smsApi)
+
+    if (
+      this.conf.opensearch_is_activated != null &&
+      this.conf.opensearch_is_activated
+    ) {
+      const searchEngineApi = new TwakeSearchEngine(
         this.idServer.db,
-        this.logger
-      )
-      const wellKnown = new WellKnown(this.conf)
-      const privateNoteApi = privateNoteApiRouter(
-        this.idServer.db,
+        this.idServer.userDB,
+        this.matrixDb,
         this.conf,
-        this.logger
+        this.logger,
+        confDesc
       )
-      const mutualRoolsApi = mutualRoomsAPIRouter(
-        this.idServer.db,
-        this.conf,
-        this.matrixDb.db,
-        this.logger
-      )
-      const roomTagsApi = roomTagsAPIRouter(
-        this.idServer.db,
-        this.matrixDb.db,
-        this.conf,
-        this.logger
-      )
-      const userInfoApi = userInfoAPIRouter(
-        this.idServer,
-        this.conf,
-        this.logger
-      )
-
-      const smsApi = smsApiRouter(this.idServer.db, this.conf, this.logger)
-
-      this.endpoints.use(privateNoteApi)
-      this.endpoints.use(mutualRoolsApi)
-      this.endpoints.use(vaultServer.endpoints)
-      this.endpoints.use(roomTagsApi)
-      this.endpoints.use(userInfoApi)
-      this.endpoints.use(smsApi)
-
-      Object.keys(this.idServer.api.get).forEach((k) => {
-        this.endpoints.get(k, this.idServer.api.get[k])
-      })
-      Object.keys(this.idServer.api.post).forEach((k) => {
-        this.endpoints.post(k, this.idServer.api.post[k])
-      })
-      this.endpoints.use(vaultServer.endpoints)
-      Object.keys(wellKnown.api.get).forEach((k) => {
-        this.endpoints.get(k, wellKnown.api.get[k])
-      })
-
-      return true
-    } catch (error) {
-      /* istanbul ignore next */
-      this.logger.error(`Unable to initialize server`, { error })
-      /* istanbul ignore next */
-      throw Error('Unable to initialize server', { cause: error })
+      await searchEngineApi.ready
+      this._openSearchClient = searchEngineApi.openSearchRepository
+      this.endpoints.use(searchEngineApi.router.routes)
     }
+
+    Object.keys(this.idServer.api.get).forEach((k) => {
+      this.endpoints.get(k, this.idServer.api.get[k])
+    })
+    Object.keys(this.idServer.api.post).forEach((k) => {
+      this.endpoints.post(k, this.idServer.api.post[k])
+    })
+    this.endpoints.use(vaultServer.endpoints)
+    Object.keys(wellKnown.api.get).forEach((k) => {
+      this.endpoints.get(k, wellKnown.api.get[k])
+    })
+
+    return true
   }
 }

@@ -3,7 +3,7 @@ export interface TransactionRequestBody {
 }
 
 export interface ClientEvent {
-  content: Record<string, string | number | boolean>
+  content: Record<string, string | number | boolean | Record<string, string>>
   event_id: string
   origin_server_ts: number
   room_id: string
@@ -11,6 +11,7 @@ export interface ClientEvent {
   state_key?: string
   type: string
   unsigned?: UnsignedData
+  redacts?: string
 }
 
 interface UnsignedData {

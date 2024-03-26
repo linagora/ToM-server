@@ -6,9 +6,9 @@ import {
   type IdentityServerDb as MIdentityServerDb,
   type Utils as MUtils
 } from '@twake/matrix-identity-server'
+import { type Request } from 'express'
 import type { PathOrFileDescriptor } from 'fs'
 import type AugmentedIdentityServer from './identity-server'
-import { type Request } from 'express'
 
 export type expressAppHandler = MUtils.expressAppHandler
 export type AuthenticationFunction = MUtils.AuthenticationFunction
@@ -24,6 +24,16 @@ export type Config = MConfig &
     matrix_server: string
     matrix_database_host: string
     oidc_issuer?: string
+    opensearch_ca_cert_path?: string
+    opensearch_host?: string
+    opensearch_is_activated?: boolean
+    opensearch_max_retries?: number
+    opensearch_number_of_shards?: number
+    opensearch_number_of_replicas?: number
+    opensearch_password?: string
+    opensearch_ssl?: boolean
+    opensearch_user?: string
+    opensearch_wait_for_active_shards?: string
     sms_api_key?: string
     sms_api_login?: string
     sms_api_url?: string

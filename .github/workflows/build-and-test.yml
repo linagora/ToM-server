@@ -25,7 +25,7 @@ jobs:
     needs: build
     steps:
     - name: Add hosts for integration tests
-      run: sudo echo "127.0.0.1 localhost auth.example.com matrix.example.com matrix1.example.com matrix2.example.com matrix3.example.com federation.example.com" | sudo tee -a /etc/hosts
+      run: sudo echo "127.0.0.1 localhost auth.example.com matrix.example.com matrix1.example.com matrix2.example.com matrix3.example.com federation.example.com opensearch.example.com" | sudo tee -a /etc/hosts
     - uses: actions/checkout@v3
     - name: Set up Node LTS
       uses: actions/setup-node@v3

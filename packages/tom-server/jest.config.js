@@ -2,7 +2,7 @@ import jestConfigBase from '../../jest-base.config.js'
 
 export default {
   ...jestConfigBase,
-  testTimeout: 120000,
+  testTimeout: 420000,
   setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
   moduleNameMapper: {
     ...jestConfigBase.moduleNameMapper,

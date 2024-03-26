@@ -1,5 +1,4 @@
 import { Hash } from '@twake/crypto'
-import dockerComposeV1, { v2 as dockerComposeV2 } from 'docker-compose'
 import express from 'express'
 import fs from 'fs'
 import type * as http from 'http'
@@ -57,7 +56,6 @@ describe('Federation server', () => {
   })
 
   describe('Integration tests', () => {
-    let containerNameSuffix: string
     let startedCompose: StartedDockerComposeEnvironment
     let identity1IPAddress: string
     let identity2IPAddress: string
@@ -172,43 +170,18 @@ describe('Federation server', () => {
       syswideCas.addCAs(
         path.join(pathToTestDataFolder, 'nginx', 'ssl', 'ca.pem')
       )
-      Promise.allSettled([dockerComposeV1.version(), dockerComposeV2.version()])
-        // eslint-disable-next-line @typescript-eslint/promise-function-async
-        .then((results) => {
-          const promiseSucceededIndex = results.findIndex(
-            (res) => res.status === 'fulfilled'
-          )
-          if (promiseSucceededIndex === -1) {
-            throw new Error('Docker compose is not installed')
-          }
-          containerNameSuffix = promiseSucceededIndex === 0 ? '_' : '-'
-          return new DockerComposeEnvironment(
-            path.join(pathToTestDataFolder),
-            'docker-compose.yml'
-          )
-            .withEnvironment({ MYUID: os.userInfo().uid.toString() })
-            .withWaitStrategy(
-              `postgresql${containerNameSuffix}1`,
-              Wait.forHealthCheck()
-            )
-            .withWaitStrategy(
-              `synapse-federation${containerNameSuffix}1`,
-              Wait.forHealthCheck()
-            )
-            .withWaitStrategy(
-              `synapse-1${containerNameSuffix}1`,
-              Wait.forHealthCheck()
-            )
-            .withWaitStrategy(
-              `synapse-2${containerNameSuffix}1`,
-              Wait.forHealthCheck()
-            )
-            .withWaitStrategy(
-              `synapse-3${containerNameSuffix}1`,
-              Wait.forHealthCheck()
-            )
-            .up()
-        })
+
+      new DockerComposeEnvironment(
+        path.join(pathToTestDataFolder),
+        'docker-compose.yml'
+      )
+        .withEnvironment({ MYUID: os.userInfo().uid.toString() })
+        .withWaitStrategy('postgresql', Wait.forHealthCheck())
+        .withWaitStrategy('synapse-federation', Wait.forHealthCheck())
+        .withWaitStrategy('synapse-1', Wait.forHealthCheck())
+        .withWaitStrategy('synapse-2', Wait.forHealthCheck())
+        .withWaitStrategy('synapse-3', Wait.forHealthCheck())
+        .up()
         // eslint-disable-next-line @typescript-eslint/promise-function-async
         .then((upResult) => {
           startedCompose = upResult
@@ -275,10 +248,10 @@ describe('Federation server', () => {
 
       beforeAll((done) => {
         identity1IPAddress = startedCompose
-          .getContainer(`identity-server-1${containerNameSuffix}1`)
+          .getContainer(`identity-server-1`)
           .getIpAddress('test')
         identity2IPAddress = startedCompose
-          .getContainer(`identity-server-2${containerNameSuffix}1`)
+          .getContainer(`identity-server-2`)
           .getIpAddress('test')
 
         confOriginalContent = fs.readFileSync(
@@ -295,9 +268,8 @@ describe('Federation server', () => {
           'utf-8'
         )
 
-        federationServerContainer = startedCompose.getContainer(
-          `federation-server${containerNameSuffix}1`
-        )
+        federationServerContainer =
+          startedCompose.getContainer('federation-server')
 
         federationServerContainer
           .restart()
@@ -746,25 +718,19 @@ describe('Federation server', () => {
                 'Certificates files for federation server has not been created'
               )
             return Promise.all([
-              startedCompose
-                .getContainer(`identity-server-1${containerNameSuffix}1`)
-                .restart(),
-              startedCompose
-                .getContainer(`identity-server-2${containerNameSuffix}1`)
-                .restart(),
-              startedCompose
-                .getContainer(`identity-server-3${containerNameSuffix}1`)
-                .restart()
+              startedCompose.getContainer('identity-server-1').restart(),
+              startedCompose.getContainer('identity-server-2').restart(),
+              startedCompose.getContainer('identity-server-3').restart()
             ])
           })
           // eslint-disable-next-line @typescript-eslint/promise-function-async
           .then(() => {
             identity1IPAddress = startedCompose
-              .getContainer(`identity-server-1${containerNameSuffix}1`)
+              .getContainer(`identity-server-1`)
               .getIpAddress('test')
 
             identity2IPAddress = startedCompose
-              .getContainer(`identity-server-2${containerNameSuffix}1`)
+              .getContainer(`identity-server-2`)
               .getIpAddress('test')
 
             const testConfig: Config = {
@@ -776,16 +742,16 @@ describe('Federation server', () => {
               database_user: 'twake',
               database_password: 'twake!1',
               database_host: `${startedCompose
-                .getContainer(`postgresql${containerNameSuffix}1`)
+                .getContainer(`postgresql`)
                 .getHost()}:5432`,
               database_name: 'federation',
               ldap_base: 'dc=example,dc=com',
               ldap_uri: `ldap://${startedCompose
-                .getContainer(`postgresql${containerNameSuffix}1`)
+                .getContainer(`postgresql`)
                 .getHost()}:389`,
               matrix_database_engine: 'pg',
               matrix_database_host: `${startedCompose
-                .getContainer(`postgresql${containerNameSuffix}1`)
+                .getContainer(`postgresql`)
                 .getHost()}:5432`,
               matrix_database_name: 'synapsefederation',
               matrix_database_user: 'synapse',
