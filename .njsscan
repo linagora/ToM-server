@@ -1,0 +1,5 @@
+ignore-paths:
+  - docs
+  - node_modules
+  - .test.ts
+  - __testData__
