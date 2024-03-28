@@ -1,0 +1,32 @@
+name: CodeQL
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+  schedule:
+    - cron: '0 0 * * 1'
+
+jobs:
+  codeql:
+    name: CodeQL code scanning
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Init CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: javascript-typescript
+          config: |
+            paths-ignore: 
+              - docs
+              - '**/__testData__/**'
+              - '**/*.test.ts'
+      
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
