@@ -49,7 +49,7 @@ export class DailyRotateFileTransportOptions
       frequency != null &&
       !(
         typeof frequency === 'string' &&
-        frequency.match(/^[1-9]+[0-9]*[mh]$/g) != null
+        frequency.match(/^[1-9][0-9]*[mh]$/g) != null
       )
     ) {
       throw new Error(
@@ -114,7 +114,7 @@ export class DailyRotateFileTransportOptions
       maxSize != null &&
       !(
         typeof maxSize === 'string' &&
-        maxSize.match(/^[1-9]+[0-9]*[kmg]$/g) != null
+        maxSize.match(/^[1-9][0-9]*[kmg]$/g) != null
       ) &&
       typeof maxSize !== 'number'
     ) {
@@ -135,7 +135,7 @@ export class DailyRotateFileTransportOptions
       maxFiles != null &&
       !(
         typeof maxFiles === 'string' &&
-        maxFiles.match(/^[1-9]+[0-9]*d$/g) != null
+        maxFiles.match(/^[1-9][0-9]*d$/g) != null
       ) &&
       typeof maxFiles !== 'number'
     ) {
