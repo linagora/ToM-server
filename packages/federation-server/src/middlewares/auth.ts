@@ -4,63 +4,33 @@ import {
   Utils,
   type tokenContent
 } from '@twake/matrix-identity-server'
-import { type NextFunction, type RequestHandler, type Response } from 'express'
+import { type NextFunction, type Response } from 'express'
 import { type AuthRequest, type IdentityServerDb } from '../types'
 import { convertToIPv6 } from '../utils/ip-address'
-import { FederationServerError } from './errors'
+
+const tokenTrustedServer = 'TOKEN_TRUSTED_SERVER'
 
 export const Authenticate = (
-  db: IdentityServerDb
-): Utils.AuthenticationFunction => {
-  const tokenRe = /^Bearer (\S+)$/
-  return (req, res, callback) => {
-    let token: string | null = null
-    if (req.headers.authorization != null) {
-      const re = req.headers.authorization.match(tokenRe)
-      if (re != null) {
-        token = re[1]
-      }
-      // @ts-expect-error req.query exists
-    } else if (req.query != null) {
-      // @ts-expect-error req.query.access_token may be null
-      token = req.query.access_token
-    }
-    if (token != null) {
-      db.get('accessTokens', ['data'], { id: token })
-        .then((rows) => {
-          callback(JSON.parse(rows[0].data as string), token)
-        })
-        .catch((e) => {
-          Utils.send(res, 401, MatrixErrors.errMsg('unAuthorized'))
-        })
-    } else {
-      throw new FederationServerError({
-        status: 401,
-        code: MatrixErrors.errCodes.unAuthorized
-      })
-    }
-  }
-}
-
-export const auth = (
-  authenticator: Utils.AuthenticationFunction,
+  db: IdentityServerDb,
   trustedServersList: string[],
   trustXForwardedForHeader: boolean,
   logger: TwakeLogger
-): RequestHandler => {
+): Utils.AuthenticationFunction => {
   const trustedServersListAsIPv6 = trustedServersList.map((ip) =>
     convertToIPv6(ip)
   )
-  return (req: AuthRequest, res: Response, next: NextFunction): void => {
+  const tokenRe = /^Bearer (\S+)$/
+  return (req, res, callbackMethod) => {
+    const request = req as AuthRequest
     const originalRequesterIPAddress = trustXForwardedForHeader
       ? // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
-        (req.headers['x-forwarded-for'] as string) ||
-        (req.socket.remoteAddress as string)
-      : (req.socket.remoteAddress as string)
+        (request.headers['x-forwarded-for'] as string) ||
+        (request.socket.remoteAddress as string)
+      : (request.socket.remoteAddress as string)
     logger.info('', {
       ip: originalRequesterIPAddress,
-      httpMethod: req.method,
-      endpointPath: req.originalUrl
+      httpMethod: request.method,
+      endpointPath: request.originalUrl
     })
     try {
       const requesterIPAddress = convertToIPv6(originalRequesterIPAddress)
@@ -68,7 +38,7 @@ export const auth = (
       // istanbul ignore if
       if (trustedServersListAsIPv6.includes(requesterIPAddress)) {
         logger.debug('IP is in list')
-        next()
+        callbackMethod({ sub: '', epoch: 0 }, tokenTrustedServer)
       } else if (
         trustedServersListAsIPv6.some((ip) => {
           const res = requesterIPAddress.isInSubnet(ip)
@@ -76,21 +46,31 @@ export const auth = (
           return res
         })
       ) {
-        next()
+        callbackMethod({ sub: '', epoch: 0 }, tokenTrustedServer)
       } else {
         logger.debug(`${originalRequesterIPAddress} isn't in white list`)
-        authenticator(req, res, (data: tokenContent, token: string | null) => {
-          /* istanbul ignore if */
-          if (data.sub === undefined) {
-            throw new Error('Invalid data')
+        let token: string | null = null
+        if (req.headers.authorization != null) {
+          const re = req.headers.authorization.match(tokenRe)
+          if (re != null) {
+            token = re[1]
           }
-
-          req.userId = data.sub
-          if (token != null) {
-            req.accessToken = token
-          }
-          next()
-        })
+          // @ts-expect-error req.query exists
+        } else if (req.query != null) {
+          // @ts-expect-error req.query.access_token may be null
+          token = req.query.access_token
+        }
+        if (token != null) {
+          db.get('accessTokens', ['data'], { id: token })
+            .then((rows) => {
+              callbackMethod(JSON.parse(rows[0].data as string), token)
+            })
+            .catch((e) => {
+              Utils.send(res, 401, MatrixErrors.errMsg('unAuthorized'))
+            })
+        } else {
+          Utils.send(res, 401, MatrixErrors.errMsg('unAuthorized'))
+        }
       }
     } catch (error) {
       logger.debug(
@@ -99,13 +79,30 @@ export const auth = (
       )
       logger.error(`Unauthorized`, {
         ip: originalRequesterIPAddress,
-        httpMethod: req.method,
-        endpointPath: req.originalUrl
+        httpMethod: request.method,
+        endpointPath: request.originalUrl
       })
-      throw new FederationServerError({
-        status: 401,
-        code: MatrixErrors.errCodes.unAuthorized
-      })
+      Utils.send(res, 401, MatrixErrors.errMsg('unAuthorized'))
     }
+  }
+}
+
+export const auth = (authenticator: Utils.AuthenticationFunction) => {
+  return (req: AuthRequest, res: Response, next: NextFunction): void => {
+    authenticator(req, res, (data: tokenContent, token: string | null) => {
+      if (token === tokenTrustedServer) {
+        next()
+        return
+      }
+      /* istanbul ignore if */
+      if (data.sub === undefined) {
+        throw new Error('Invalid data')
+      }
+      req.userId = data.sub
+      if (token != null) {
+        req.accessToken = token
+      }
+      next()
+    })
   }
 }

@@ -34,3 +34,5 @@
  * `OIDC_ISSUER`: Lemon URL. Example: `https://auth.company.com`
  * `SERVER_NAME`: Matrix "server name" _(ie domain)_. Example: `company.com`
  * `TEMPLATE_DIR`: Local path to templates dir (mail template).
+ * `RATE_LIMITING_WINDOW`: How long to remember requests for, in milliseconds.
+ * `RATE_LIMITING_NB_REQUESTS`: How many requests to allow.

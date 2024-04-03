@@ -6,7 +6,11 @@ import {
 } from '@twake/logger'
 import type { MatrixDBBackend } from '@twake/matrix-identity-server'
 import { Router } from 'express'
-import type { Config, IdentityServerDb } from '../../types'
+import type {
+  AuthenticationFunction,
+  Config,
+  IdentityServerDb
+} from '../../types'
 import authMiddleware from '../../utils/middlewares/auth.middleware'
 import RoomTagsController from '../controllers'
 import RoomTagsMiddleware from '../middlewares'
@@ -17,11 +21,12 @@ export default (
   db: IdentityServerDb,
   maxtrixDb: MatrixDBBackend,
   config: Config,
+  authenticator: AuthenticationFunction,
   defaultLogger?: TwakeLogger
 ): Router => {
   const logger = defaultLogger ?? getLogger(config as unknown as LoggerConfig)
   const router = Router()
-  const authenticator = authMiddleware(db, config, logger)
+  const auth = authMiddleware(authenticator, logger)
   const roomTagsController = new RoomTagsController(db)
   const roomTagsMiddleware = new RoomTagsMiddleware(db, maxtrixDb)
 
@@ -102,7 +107,7 @@ export default (
    */
   router.get(
     `${PATH}/:roomId`,
-    authenticator,
+    auth,
     roomTagsMiddleware.checkFetchRequirements,
     roomTagsController.get
   )
@@ -131,7 +136,7 @@ export default (
    */
   router.post(
     PATH,
-    authenticator,
+    auth,
     roomTagsMiddleware.checkCreateRequirements,
     roomTagsController.create
   )
@@ -162,7 +167,7 @@ export default (
    */
   router.put(
     `${PATH}/:roomId`,
-    authenticator,
+    auth,
     roomTagsMiddleware.checkUpdateRequirements,
     roomTagsController.update
   )
@@ -188,7 +193,7 @@ export default (
    */
   router.delete(
     `${PATH}/:roomId`,
-    authenticator,
+    auth,
     roomTagsMiddleware.checkDeleteRequirements,
     roomTagsController.delete
   )

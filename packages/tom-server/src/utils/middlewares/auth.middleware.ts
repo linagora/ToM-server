@@ -1,17 +1,13 @@
 import { type TwakeLogger } from '@twake/logger'
 import { type tokenContent } from '@twake/matrix-identity-server'
 import type { NextFunction, RequestHandler, Response } from 'express'
-import Authenticate from '../../identity-server/utils/authenticate'
-import type { AuthRequest, Config, IdentityServerDb } from '../../types'
+import type { AuthRequest, AuthenticationFunction } from '../../types'
 
 export default (
-  db: IdentityServerDb,
-  conf: Config,
+  authenticator: AuthenticationFunction,
   logger: TwakeLogger
 ): RequestHandler => {
   return (req: AuthRequest, res: Response, next: NextFunction): void => {
-    const authenticator = Authenticate(db, conf, logger)
-
     authenticator(req, res, (data: tokenContent, token: string | null) => {
       try {
         if (token === undefined) {

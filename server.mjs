@@ -55,6 +55,8 @@ const conf = {
     : false,
   oidc_issuer: process.env.OIDC_ISSUER,
   pepperCron: process.env.PEPPER_CRON || '9 1 * * *',
+  rate_limiting_window: process.env.RATE_LIMITING_WINDOW || 600000,
+  rate_limiting_nb_requests: process.env.RATE_LIMITING_NB_REQUESTS || 100,
   server_name: process.env.SERVER_NAME,
   template_dir:
     process.env.TEMPLATE_DIR ||

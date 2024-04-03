@@ -37,6 +37,8 @@ export interface Config {
   matrix_database_user?: string | null
   pepperCron?: string
   policies?: Policies | string | null
+  rate_limiting_window?: number
+  rate_limiting_nb_requests?: number
   redis_uri?: string
   server_name: string
   smtp_password?: string
