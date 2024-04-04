@@ -1,7 +1,6 @@
-/* eslint-disable n/no-callback-literal */
 import { type TwakeLogger } from '@twake/logger'
 import type { NextFunction, Request, Response } from 'express'
-import type { AuthRequest, Config, IdentityServerDb } from '../../types'
+import type { AuthRequest } from '../../types'
 import authMiddleware from './auth.middleware'
 
 let mockRequest: Partial<Request>
@@ -16,19 +15,14 @@ let authMock: (
 const authenticatorMock = jest
   .fn()
   .mockImplementation(
-    () =>
-      (
-        req: AuthRequest,
-        res: Response,
-        cb: (data: any, token: string) => void
-      ) => {
-        cb('test', 'test')
-      }
+    (
+      req: AuthRequest,
+      res: Response,
+      callbackMethod: (data: any, token: string) => void
+    ) => {
+      callbackMethod('test', 'test')
+    }
   )
-
-jest.mock('../../identity-server/utils/authenticate.ts', () => {
-  return (db: IdentityServerDb, conf: Config) => authenticatorMock(db, conf)
-})
 
 beforeEach(() => {
   mockRequest = {}
@@ -39,11 +33,9 @@ beforeEach(() => {
 
   jest.spyOn(console, 'error').mockImplementation(() => {})
 
-  authMock = authMiddleware(
-    {} as unknown as IdentityServerDb,
-    {} as unknown as Config,
-    { error: jest.fn() } as unknown as TwakeLogger
-  ) as any
+  authMock = authMiddleware(authenticatorMock, {
+    error: jest.fn()
+  } as unknown as TwakeLogger) as any
 })
 
 describe('the auth middleware', () => {
@@ -55,14 +47,13 @@ describe('the auth middleware', () => {
 
   it('should return a 401 if the user does not authenticate: no token found', () => {
     authenticatorMock.mockImplementation(
-      () =>
-        (
-          req: AuthRequest,
-          res: Response,
-          cb: (data: any, token: any) => void
-        ) => {
-          cb(undefined, undefined)
-        }
+      (
+        req: AuthRequest,
+        res: Response,
+        callbackMethod: (data: any, token: any) => void
+      ) => {
+        callbackMethod(undefined, undefined)
+      }
     )
 
     authMock(mockRequest as Request, mockResponse as Response, nextFunction)
@@ -71,14 +62,13 @@ describe('the auth middleware', () => {
 
   it('should return a 401 if the user does not authenticate: no sub found', () => {
     authenticatorMock.mockImplementation(
-      () =>
-        (
-          req: AuthRequest,
-          res: Response,
-          cb: (data: any, token: any) => void
-        ) => {
-          cb(undefined, 'token')
-        }
+      (
+        req: AuthRequest,
+        res: Response,
+        callbackMethod: (data: any, token: any) => void
+      ) => {
+        callbackMethod(undefined, 'token')
+      }
     )
 
     authMock(mockRequest as Request, mockResponse as Response, nextFunction)

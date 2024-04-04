@@ -17,6 +17,7 @@
   "matrix_database_host": "./src/__testData__/matrix.db",
   "pepperCron": "*/15 * * * * *",
   "policies": null,
+  "rate_limiting_window": 10000,
   "redis_uri": "",
   "server_name": "example.com",
   "smtp_password": "",

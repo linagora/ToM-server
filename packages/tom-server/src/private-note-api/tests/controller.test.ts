@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/consistent-type-assertions */
-import express, { type NextFunction, type Response } from 'express'
-import router, { PATH } from '../routes'
-import supertest from 'supertest'
 import bodyParser from 'body-parser'
-import type { Config, IdentityServerDb, AuthRequest } from '../../types'
+import express, { type NextFunction, type Response } from 'express'
+import supertest from 'supertest'
+import type { AuthRequest, Config, IdentityServerDb } from '../../types'
+import router, { PATH } from '../routes'
 
 const app = express()
 
@@ -15,17 +15,11 @@ const dbMock = {
   getCount: jest.fn()
 }
 
-jest.mock('../../identity-server/utils/authenticate', () => {
-  return (db: IdentityServerDb, conf: Config) =>
-    (
-      req: AuthRequest,
-      res: Response,
-      cb: (data: any, token: string) => void
-    ) => {
-      // eslint-disable-next-line n/no-callback-literal
-      cb('test', 'test')
-    }
-})
+const authenticatorMock = jest
+  .fn()
+  .mockImplementation((req, res, callbackMethod) => {
+    callbackMethod('test', 'test')
+  })
 
 jest.mock('../../private-note-api/middlewares/validation.middleware.ts', () => {
   const passiveMiddlewareMock = (
@@ -48,7 +42,9 @@ jest.mock('../../private-note-api/middlewares/validation.middleware.ts', () => {
 
 app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({ extended: true }))
-app.use(router(dbMock as unknown as IdentityServerDb, {} as Config))
+app.use(
+  router(dbMock as unknown as IdentityServerDb, {} as Config, authenticatorMock)
+)
 
 describe('the private note controller', () => {
   it('should try to fetch a note', async () => {

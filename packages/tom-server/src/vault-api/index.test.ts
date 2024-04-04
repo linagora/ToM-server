@@ -2,12 +2,12 @@ import express from 'express'
 import fs from 'fs'
 import fetch from 'node-fetch'
 import path from 'path'
-import request from 'supertest'
+import request, { type Response } from 'supertest'
 import TwakeServer from '..'
 import JEST_PROCESS_ROOT_PATH from '../../jest.globals'
-import defaultConfig from './__testData__/config.json'
 import { type Config } from '../types'
 import buildTokenTable from './__testData__/buildTokenTable'
+import defaultConfig from './__testData__/config.json'
 
 const endpoint = '/_twake/recoveryWords'
 const testFilePath = path.join(JEST_PROCESS_ROOT_PATH, 'vault.db')
@@ -72,6 +72,8 @@ describe('Vault API server', () => {
       userdb_host: testFilePath,
       matrix_database_engine: 'sqlite',
       matrix_database_host: matrixTestFilePath,
+      rate_limiting_window: 10000,
+      rate_limiting_nb_requests: 100,
       sms_api_key: '',
       sms_api_login: '',
       sms_api_url: ''
@@ -126,7 +128,7 @@ describe('Vault API server', () => {
     })
   })
 
-  it('error on get words in database for connected who did not save words before', async () => {
+  it('error on get words in database for connected user who did not save words before', async () => {
     const response = await request(app)
       .get(endpoint)
       .set('Authorization', `Bearer ${accessToken}`)
@@ -232,6 +234,33 @@ describe('Vault API server', () => {
     expect(response.body).toStrictEqual({
       error: 'User has no recovery sentence'
     })
+  })
+
+  it('should reject if more than 100 requests are done in less than 10 seconds on get words', async () => {
+    let response
+    let token
+    // eslint-disable-next-line @typescript-eslint/no-for-in-array, @typescript-eslint/no-unused-vars
+    for (const i in [...Array(101).keys()]) {
+      token = Number(i) % 2 === 0 ? `Bearer ${accessToken}` : 'falsy_token'
+      response = await request(app).get(endpoint).set('Authorization', token)
+    }
+    expect((response as Response).statusCode).toEqual(429)
+    await new Promise((resolve) => setTimeout(resolve, 11000))
+  })
+
+  it('should reject if more than 100 requests are done in less than 10 seconds on post words', async () => {
+    let response
+    let token
+    // eslint-disable-next-line @typescript-eslint/no-for-in-array, @typescript-eslint/no-unused-vars
+    for (const i in [...Array(101).keys()]) {
+      token = Number(i) % 2 === 0 ? `Bearer ${accessToken}` : 'falsy_token'
+      response = await request(app)
+        .post(endpoint)
+        .send({ words })
+        .set('Authorization', token)
+    }
+    expect((response as Response).statusCode).toEqual(429)
+    await new Promise((resolve) => setTimeout(resolve, 11000))
   })
 
   const removeUserInAccessTokenTable = async (

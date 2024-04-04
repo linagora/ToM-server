@@ -10,7 +10,7 @@ import ldapjs from 'ldapjs'
 import * as fetch from 'node-fetch'
 import os from 'os'
 import path from 'path'
-import request from 'supertest'
+import request, { type Response } from 'supertest'
 import {
   DockerComposeEnvironment,
   GenericContainer,
@@ -648,6 +648,21 @@ describe('ApplicationServer', () => {
 
     describe('On create room', () => {
       const matrixServerErrorMessage = 'error message from Matrix server'
+
+      it('should reject if more than 100 requests are done in less than 10 seconds', async () => {
+        let response
+        let token
+        // eslint-disable-next-line @typescript-eslint/no-for-in-array, @typescript-eslint/no-unused-vars
+        for (const i in [...Array(101).keys()]) {
+          token = Number(i) % 2 === 0 ? `Bearer ${authToken}` : 'falsy_token'
+          response = await request(app)
+            .post('/_twake/app/v1/rooms')
+            .set('Accept', 'application/json')
+            .set('Authorization', token)
+        }
+        expect((response as Response).statusCode).toEqual(429)
+        await new Promise((resolve) => setTimeout(resolve, 11000))
+      })
 
       it('should send an error when request body is malformed', async () => {
         const response = await request(app)
