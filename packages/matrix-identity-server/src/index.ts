@@ -20,6 +20,8 @@ import {
   type Config as LoggerConfig,
   type TwakeLogger
 } from '@twake/logger'
+import { type Request, type Response } from 'express'
+import rateLimit, { type RateLimitRequestHandler } from 'express-rate-limit'
 import account from './account'
 import logout from './account/logout'
 import register from './account/register'
@@ -71,12 +73,25 @@ export default class MatrixIdentityServer {
   ready: Promise<boolean>
   cache?: Cache
   updateHash?: typeof updateHash
+  rateLimiter: RateLimitRequestHandler
 
-  authenticate: AuthenticationFunction
+  private _authenticate!: AuthenticationFunction
   private readonly _logger: TwakeLogger
 
   get logger(): TwakeLogger {
     return this._logger
+  }
+
+  set authenticate(auth: AuthenticationFunction) {
+    this._authenticate = (req, res, cb) => {
+      this.rateLimiter(req as Request, res as Response, () => {
+        auth(req, res, cb)
+      })
+    }
+  }
+
+  get authenticate(): AuthenticationFunction {
+    return this._authenticate
   }
 
   constructor(
@@ -105,6 +120,11 @@ export default class MatrixIdentityServer {
             .split(/[,\s]+/)
             .filter((addr) => addr.match(hostnameRe))
         : []
+    this._convertStringtoNumberInConfig()
+    this.rateLimiter = rateLimit({
+      windowMs: this.conf.rate_limiting_window,
+      limit: this.conf.rate_limiting_nb_requests
+    })
     this._logger = logger ?? getLogger(this.conf as unknown as LoggerConfig)
     try {
       if (
@@ -185,6 +205,16 @@ export default class MatrixIdentityServer {
       this.logger.close()
       throw e
     }
+  }
+
+  private _convertStringtoNumberInConfig(): void {
+    const idfieldsToConvert = [
+      'rate_limiting_window',
+      'rate_limiting_nb_requests'
+    ] as Array<keyof Config>
+    idfieldsToConvert.forEach((id) => {
+      this.conf = { ...this.conf, [id]: Number(this.conf[id]) }
+    })
   }
 
   cleanJobs(): void {

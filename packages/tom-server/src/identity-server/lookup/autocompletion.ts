@@ -1,8 +1,8 @@
 import { type TwakeLogger } from '@twake/logger'
 import { Utils } from '@twake/matrix-identity-server'
-import type TwakeServer from '../..'
 import { type expressAppHandler } from '../../types'
 import _search, { type Query } from './_search'
+import type AugmentedIdentityServer from '..'
 
 const schema = {
   scope: true,
@@ -13,12 +13,12 @@ const schema = {
 }
 
 const autocompletion = (
-  tomServer: TwakeServer,
+  idServer: AugmentedIdentityServer,
   logger: TwakeLogger
 ): expressAppHandler => {
-  const search = _search(tomServer, logger)
+  const search = _search(idServer, logger)
   return (req, res) => {
-    tomServer.idServer.authenticate(req, res, (token, id) => {
+    idServer.authenticate(req, res, (token, id) => {
       Utils.jsonContent(req, res, logger, (obj) => {
         Utils.validateParameters(res, schema, obj, logger, (data) => {
           search(res, data as Query)

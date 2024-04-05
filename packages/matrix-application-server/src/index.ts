@@ -16,6 +16,8 @@ export interface Config {
   registration_file_path: string
   namespaces?: Namespaces
   push_ephemeral?: boolean
+  rate_limiting_window?: number
+  rate_limiting_nb_requests?: number
 }
 
 export { type ClientEvent } from './interfaces'
@@ -94,6 +96,7 @@ export default class MatrixApplicationServer extends EventEmitter {
       confDesc,
       this._getConfigurationFile(conf)
     ) as Config
+    this._convertStringtoNumberInConfig()
     this._logger = logger ?? getLogger(this.conf as unknown as LoggerConfig)
     try {
       this.appServiceRegistration = new AppServiceRegistration(
@@ -128,5 +131,15 @@ export default class MatrixApplicationServer extends EventEmitter {
     } else {
       return undefined
     }
+  }
+
+  private _convertStringtoNumberInConfig(): void {
+    const idfieldsToConvert = [
+      'rate_limiting_window',
+      'rate_limiting_nb_requests'
+    ] as Array<keyof Config>
+    idfieldsToConvert.forEach((id) => {
+      this.conf = { ...this.conf, [id]: Number(this.conf[id]) }
+    })
   }
 }

@@ -3,8 +3,9 @@
 // } from '@twake/matrix-identity-server'
 import { type ConfigDescription } from '@twake/config-parser'
 import { type TwakeLogger } from '@twake/logger'
-import MatrixIdentityServer from '@twake/matrix-identity-server'
-import type TwakeServer from '..'
+import MatrixIdentityServer, {
+  type MatrixDB
+} from '@twake/matrix-identity-server'
 import defaultConfig from '../config.json'
 import { type Config } from '../types'
 import autocompletion from './lookup/autocompletion'
@@ -16,13 +17,14 @@ export type { WhoAmIResponse } from './utils/authenticate'
 export default class AugmentedIdentityServer extends MatrixIdentityServer {
   declare conf: Config
   constructor(
-    parent: TwakeServer,
+    public matrixDb: MatrixDB,
+    conf: Config,
     confDesc?: ConfigDescription,
     logger?: TwakeLogger
   ) {
     // istanbul ignore if
     if (confDesc == null) confDesc = defaultConfig
-    super(parent.conf, confDesc, logger)
+    super(conf, confDesc, logger)
     this.authenticate = Authenticate(this.db, this.conf, this.logger)
     const superReady = this.ready
     this.ready = new Promise((resolve, reject) => {
@@ -166,11 +168,11 @@ export default class AugmentedIdentityServer extends MatrixIdentityServer {
              *              matches: [{uid: dwho, mail: dwho@badwolf.com}]
              */
             this.api.post['/_twake/identity/v1/lookup/match'] = autocompletion(
-              parent,
+              this,
               this.logger
             )
             this.api.post['/_twake/identity/v1/lookup/diff'] = diff(
-              parent,
+              this,
               this.logger
             )
           }

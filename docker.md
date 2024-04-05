@@ -33,4 +33,6 @@ $ docker run -d -p 3000:3000 \
     -e MATRIX_DATABASE_SSL=true \
     -e OIDC_ISSUER=https://auth.example.com/ \
     -e SERVER_NAME=example.com \
+    -e RATE_LIMITING_WINDOW=10
+    -e RATE_LIMITING_NB_REQUESTS=100
     linagora/tom-server

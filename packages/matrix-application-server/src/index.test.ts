@@ -1,7 +1,7 @@
 import express from 'express'
 import fs from 'fs'
 import path from 'path'
-import request from 'supertest'
+import request, { type Response } from 'supertest'
 import MatrixApplicationServer, { type Config } from '.'
 import testConfig from './__testData__/config.json'
 import defaultConfig from './config.json'
@@ -111,6 +111,38 @@ describe('MatrixApplicationServer', () => {
         errcode: 'M_FORBIDDEN',
         error: 'Forbidden'
       })
+    })
+
+    it('should reject if more than 100 requests are done in less than 10 seconds with falsy token', async () => {
+      let response
+      // eslint-disable-next-line @typescript-eslint/no-for-in-array, @typescript-eslint/no-unused-vars
+      for (const i in [...Array(101).keys()]) {
+        response = await request(app)
+          .put(transactionEndpoint)
+          .set('Authorization', 'Bearer falsy_hs_token')
+      }
+      expect((response as Response).statusCode).toEqual(429)
+      await new Promise((resolve) => setTimeout(resolve, 11000))
+    })
+
+    it('should reset rate limiter counter if one request with a correct token is received', async () => {
+      let response
+      // eslint-disable-next-line @typescript-eslint/no-for-in-array, @typescript-eslint/no-unused-vars
+      for (const i in [...Array(80).keys()]) {
+        response = await request(app)
+          .put(transactionEndpoint)
+          .set('Authorization', 'Bearer falsy_hs_token')
+      }
+      response = await request(app)
+        .put(transactionEndpoint)
+        .set('Authorization', `Bearer ${homeserverToken}`)
+      // eslint-disable-next-line @typescript-eslint/no-for-in-array, @typescript-eslint/no-unused-vars
+      for (const i in [...Array(80).keys()]) {
+        response = await request(app)
+          .put(transactionEndpoint)
+          .set('Authorization', 'Bearer falsy_hs_token')
+      }
+      expect((response as Response).statusCode).not.toEqual(429)
     })
 
     describe('Transactions endpoint', () => {

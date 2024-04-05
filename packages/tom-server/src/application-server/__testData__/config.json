@@ -8,6 +8,7 @@
   "key_delay": 3600,
   "keys_depth": 5,
   "mail_link_delay": 7200,
+  "rate_limiting_window": 10000,
   "server_name": "example.com",
   "smtp_server": "localhost",
   "userdb_engine": "ldap",

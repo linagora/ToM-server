@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/consistent-type-assertions */
-import express, { type NextFunction, type Response } from 'express'
-import router, { PATH } from '../routes'
-import supertest from 'supertest'
-import bodyParser from 'body-parser'
-import type { Config, IdentityServerDb, AuthRequest } from '../../types'
 import type { MatrixDBBackend } from '@twake/matrix-identity-server'
+import bodyParser from 'body-parser'
+import express, { type NextFunction, type Response } from 'express'
+import supertest from 'supertest'
+import type { AuthRequest, Config, IdentityServerDb } from '../../types'
+import router, { PATH } from '../routes'
 
 const app = express()
 
@@ -18,17 +18,11 @@ const dbMock = {
 
 const matrixDbMock = { ...dbMock }
 
-jest.mock('../../identity-server/utils/authenticate', () => {
-  return (db: IdentityServerDb, conf: Config) =>
-    (
-      req: AuthRequest,
-      res: Response,
-      cb: (data: any, token: string) => void
-    ) => {
-      // eslint-disable-next-line n/no-callback-literal
-      cb('test', 'test')
-    }
-})
+const authenticatorMock = jest
+  .fn()
+  .mockImplementation((req, res, callbackMethod) => {
+    callbackMethod('test', 'test')
+  })
 
 jest.mock('../middlewares/index.ts', () => {
   const passiveMiddlewareMock = (
@@ -55,7 +49,8 @@ app.use(
   router(
     dbMock as unknown as IdentityServerDb,
     matrixDbMock as unknown as MatrixDBBackend,
-    {} as Config
+    {} as Config,
+    authenticatorMock
   )
 )
 

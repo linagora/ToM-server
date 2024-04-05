@@ -36,7 +36,9 @@ env BASE_URL= \
     UPDATE_USERS_CRON="*/15 * * * *" \
     SMS_API_LOGIN= \
     SMS_API_URL= \
-    SMS_API_KEY=
+    SMS_API_KEY= \
+    RATE_LIMITING_WINDOW= \
+    RATE_LIMITING_NB_REQUESTS=
 
 RUN apt update && apt -y dist-upgrade
 

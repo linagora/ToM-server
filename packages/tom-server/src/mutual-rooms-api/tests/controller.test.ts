@@ -1,35 +1,21 @@
-import express, { type Response } from 'express'
-import type { Config, IdentityServerDb, AuthRequest } from '../../types'
-import router, { PATH } from '../routes'
-import supertest from 'supertest'
-import bodyParser from 'body-parser'
 import type { MatrixDBBackend } from '@twake/matrix-identity-server'
+import bodyParser from 'body-parser'
+import express from 'express'
+import supertest from 'supertest'
+import type { Config } from '../../types'
+import router, { PATH } from '../routes'
 
 const app = express()
-
-const dbMock = {
-  get: jest.fn(),
-  insert: jest.fn(),
-  update: jest.fn(),
-  deleteEqual: jest.fn(),
-  getCount: jest.fn()
-}
 
 const matrixDbMock = {
   get: jest.fn()
 }
 
-jest.mock('../../identity-server/utils/authenticate', () => {
-  return (db: IdentityServerDb, conf: Config) =>
-    (
-      req: AuthRequest,
-      res: Response,
-      cb: (data: any, token: string) => void
-    ) => {
-      // eslint-disable-next-line n/no-callback-literal
-      cb('test', 'test')
-    }
-})
+const authenticatorMock = jest
+  .fn()
+  .mockImplementation((req, res, callbackMethod) => {
+    callbackMethod('test', 'test')
+  })
 
 beforeEach(() => {
   jest.spyOn(console, 'error').mockImplementation(() => {})
@@ -39,9 +25,9 @@ app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({ extended: true }))
 app.use(
   router(
-    dbMock as unknown as IdentityServerDb,
     {} as unknown as Config,
-    matrixDbMock as unknown as MatrixDBBackend
+    matrixDbMock as unknown as MatrixDBBackend,
+    authenticatorMock
   )
 )
 

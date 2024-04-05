@@ -7,6 +7,7 @@
   "key_delay": 3600,
   "keys_depth": 5,
   "mail_link_delay": 7200,
+  "rate_limiting_window": 10000,
   "server_name": "matrix.org",
   "smtp_sender": "yadd@debian.org",
   "smtp_server": "localhost",

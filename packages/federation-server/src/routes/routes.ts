@@ -2,7 +2,6 @@ import { type TwakeLogger } from '@twake/logger'
 import { type IdServerAPI, type Utils } from '@twake/matrix-identity-server'
 import { Router, json, urlencoded } from 'express'
 import { hashDetails, lookup, lookups } from '../controllers/controllers'
-import { auth } from '../middlewares/auth'
 import { errorMiddleware } from '../middlewares/errors'
 import {
   allowCors,
@@ -20,6 +19,7 @@ import {
   type expressAppHandler,
   type middlewaresList
 } from '../types'
+import { auth } from '../middlewares/auth'
 
 const errorMiddlewares = (middleware: expressAppHandler): middlewaresList => [
   allowCors,
@@ -132,12 +132,7 @@ export default (
       allowCors,
       json(),
       urlencoded({ extended: false }),
-      auth(
-        authenticate,
-        conf.trusted_servers_addresses,
-        conf.trust_x_forwarded_for,
-        logger
-      ),
+      auth(authenticate),
       ...commonValidators,
       lookupValidator(conf.hashes_rate_limit as number),
       lookup(conf, db),
@@ -159,12 +154,7 @@ export default (
       allowCors,
       json(),
       urlencoded({ extended: false }),
-      auth(
-        authenticate,
-        conf.trusted_servers_addresses,
-        conf.trust_x_forwarded_for,
-        logger
-      ),
+      auth(authenticate),
       hashDetails(db, logger),
       errorMiddleware
     )
@@ -251,12 +241,7 @@ export default (
       allowCors,
       json(),
       urlencoded({ extended: false }),
-      auth(
-        authenticate,
-        conf.trusted_servers_addresses,
-        conf.trust_x_forwarded_for,
-        logger
-      ),
+      auth(authenticate),
       ...commonValidators,
       lookupsValidator,
       lookups(db),

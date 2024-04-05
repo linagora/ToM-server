@@ -2,7 +2,7 @@ import { type TwakeLogger } from '@twake/logger'
 import { errMsg, Utils } from '@twake/matrix-identity-server'
 import { type Response } from 'express'
 import type http from 'http'
-import type TwakeServer from '../..'
+import type AugmentedIdentityServer from '..'
 
 type SearchFunction = (res: Response | http.ServerResponse, data: Query) => void
 
@@ -26,7 +26,7 @@ export const SearchFields = new Set<string>([
 ])
 
 const _search = (
-  tomServer: TwakeServer,
+  idServer: AugmentedIdentityServer,
   logger: TwakeLogger
 ): SearchFunction => {
   return (res, data) => {
@@ -58,14 +58,8 @@ const _search = (
       const value = data.val?.replace(/^@(.*?):(?:.*)$/, '$1')
       const request =
         typeof value === 'string' && value.length > 0
-          ? tomServer.idServer.userDB.match(
-              'users',
-              _fields,
-              _scope,
-              value,
-              _fields[0]
-            )
-          : tomServer.idServer.userDB.getAll('users', _fields, _fields[0])
+          ? idServer.userDB.match('users', _fields, _scope, value, _fields[0])
+          : idServer.userDB.getAll('users', _fields, _fields[0])
       request
         .then((rows) => {
           if (rows.length === 0) {
@@ -76,7 +70,7 @@ const _search = (
             const end = start + (data.limit ?? 30)
             rows = rows.slice(start, end)
             const mUid = rows.map((v) => {
-              return `@${v.uid as string}:${tomServer.conf.server_name}`
+              return `@${v.uid as string}:${idServer.conf.server_name}`
             })
             /**
              * For the record, this can be replaced by a call to
@@ -84,7 +78,7 @@ const _search = (
              *
              * See https://spec.matrix.org/v1.6/application-service-api/#get_matrixappv1usersuserid
              */
-            tomServer.matrixDb
+            idServer.matrixDb
               .get('users', ['*'], { name: mUid })
               .then((matrixRows) => {
                 const mUids: Record<string, true> = {}
@@ -99,7 +93,7 @@ const _search = (
                 })
                 rows.forEach((row) => {
                   row.address = `@${row.uid as string}:${
-                    tomServer.conf.server_name
+                    idServer.conf.server_name
                   }`
                   if (mUids[row.uid as string]) {
                     matches.push(row)

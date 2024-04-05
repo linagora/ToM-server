@@ -8,7 +8,7 @@ import { execFileSync } from 'node:child_process'
 import { createServer } from 'node:https'
 import os from 'os'
 import path from 'path'
-import request from 'supertest'
+import request, { type Response } from 'supertest'
 import {
   DockerComposeEnvironment,
   Wait,
@@ -1711,6 +1711,26 @@ describe('Federation server', () => {
           )
         })
 
+        it('should reject if more than 100 requests are done in less than 10 seconds', async () => {
+          let response
+          let token
+          // eslint-disable-next-line @typescript-eslint/no-for-in-array, @typescript-eslint/no-unused-vars
+          for (const i in [...Array(101).keys()]) {
+            token = Number(i) % 2 === 0 ? `Bearer ${authToken}` : 'falsy_token'
+            response = await request(app)
+              .post('/_matrix/identity/v2/lookup')
+              .set('Accept', 'application/json')
+              .set('Authorization', token)
+              .send({
+                addresse: [],
+                algorithm: 'sha256',
+                pepper: 'test_pepper'
+              })
+          }
+          expect((response as Response).statusCode).toEqual(429)
+          await new Promise((resolve) => setTimeout(resolve, 11000))
+        })
+
         it('should send an error if auth token is invalid', async () => {
           const response = await request(app)
             .post('/_matrix/identity/v2/lookup')
@@ -2038,6 +2058,26 @@ describe('Federation server', () => {
           )
         })
 
+        it('should reject if more than 100 requests are done in less than 10 seconds', async () => {
+          let response
+          let ipAddress
+          // eslint-disable-next-line @typescript-eslint/no-for-in-array, @typescript-eslint/no-unused-vars
+          for (const i in [...Array(101).keys()]) {
+            ipAddress = Number(i) % 2 === 0 ? trustedIpAddress : '192.168.1.25'
+            response = await request(app)
+              .post('/_matrix/identity/v2/lookups')
+              .set('Accept', 'application/json')
+              .set('X-forwarded-for', ipAddress)
+              .send({
+                mappings: {},
+                algorithm: 'sha256',
+                pepper: 'test_pepper'
+              })
+          }
+          expect((response as Response).statusCode).toEqual(429)
+          await new Promise((resolve) => setTimeout(resolve, 11000))
+        })
+
         it('should send an error if requester ip does not belong to trusted ip addresses', async () => {
           const response = await request(app)
             .post('/_matrix/identity/v2/lookups')
@@ -2312,6 +2352,21 @@ describe('Federation server', () => {
               error: 'Unrecognized'
             })
           )
+        })
+
+        it('should reject if more than 100 requests are done in less than 10 seconds', async () => {
+          let response
+          let token
+          // eslint-disable-next-line @typescript-eslint/no-for-in-array, @typescript-eslint/no-unused-vars
+          for (const i in [...Array(101).keys()]) {
+            token = Number(i) % 2 === 0 ? `Bearer ${authToken}` : 'falsy_token'
+            response = await request(app)
+              .get('/_matrix/identity/v2/hash_details')
+              .set('Accept', 'application/json')
+              .set('Authorization', token)
+          }
+          expect((response as Response).statusCode).toEqual(429)
+          await new Promise((resolve) => setTimeout(resolve, 11000))
         })
 
         it('should send an error if deleting hashes in hashbyserver table fails', async () => {

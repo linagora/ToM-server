@@ -50,6 +50,8 @@
   "oidc_issuer": "",
   "pepperCron": "0 0 * * *",
   "policies": null,
+  "rate_limiting_window": 600000,
+  "rate_limiting_nb_requests": 100,
   "redis_uri": "",
   "server_name": "localhost",
   "smtp_password": "",

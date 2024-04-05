@@ -1,25 +1,25 @@
 /* eslint-disable @typescript-eslint/no-misused-promises */
-import { Router } from 'express'
-import { type Config, type IdentityServerDb } from '../../types'
 import {
   getLogger,
   type Config as LoggerConfig,
   type TwakeLogger
 } from '@twake/logger'
+import { Router } from 'express'
+import { type AuthenticationFunction, type Config } from '../../types'
 import authMiddleware from '../../utils/middlewares/auth.middleware'
-import SmsApiMiddleware from '../middlewares'
 import SmsApiController from '../controllers'
+import SmsApiMiddleware from '../middlewares'
 
 export const PATH = '/_twake/sms'
 
 export default (
-  db: IdentityServerDb,
   config: Config,
+  authenticator: AuthenticationFunction,
   defaultLogger?: TwakeLogger
 ): Router => {
   const logger = defaultLogger ?? getLogger(config as unknown as LoggerConfig)
   const router = Router()
-  const authenticate = authMiddleware(db, config, logger)
+  const authenticate = authMiddleware(authenticator, logger)
   const validationMiddleware = new SmsApiMiddleware(logger)
   const smsApiController = new SmsApiController(config, logger)
 

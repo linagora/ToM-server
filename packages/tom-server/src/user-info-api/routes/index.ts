@@ -1,15 +1,15 @@
 /* eslint-disable @typescript-eslint/no-misused-promises */
-import type { Config } from '../../types'
+import {
+  getLogger,
+  type Config as LoggerConfig,
+  type TwakeLogger
+} from '@twake/logger'
+import type MatrixIdentityServer from '@twake/matrix-identity-server'
 import { Router } from 'express'
+import type { Config } from '../../types'
 import authMiddleware from '../../utils/middlewares/auth.middleware'
 import UserInfoController from '../controllers'
 import checkLdapMiddleware from '../middlewares/require-ldap'
-import {
-  type TwakeLogger,
-  getLogger,
-  type Config as LoggerConfig
-} from '@twake/logger'
-import type MatrixIdentityServer from '@twake/matrix-identity-server'
 export const PATH = '/_twake/v1/user_info'
 
 export default (
@@ -19,7 +19,7 @@ export default (
 ): Router => {
   const logger = defaultLogger ?? getLogger(config as unknown as LoggerConfig)
   const router = Router()
-  const authenticator = authMiddleware(idServer.db, config, logger)
+  const authenticator = authMiddleware(idServer.authenticate, logger)
   const userInfoController = new UserInfoController(idServer.userDB)
   const requireLdap = checkLdapMiddleware(config, logger)
 

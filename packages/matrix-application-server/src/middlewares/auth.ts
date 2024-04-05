@@ -1,7 +1,11 @@
 import { type NextFunction, type Request, type Response } from 'express'
+import { type RateLimitRequestHandler } from 'express-rate-limit'
 import { AppServerAPIError, errCodes, type expressAppHandler } from '../utils'
 
-export default (expectedHomeserverToken: string): expressAppHandler => {
+export default (
+  expectedHomeserverToken: string,
+  rateLimiter: RateLimitRequestHandler
+): expressAppHandler => {
   return (req: Request, res: Response, next: NextFunction) => {
     const tokenRe = /^Bearer ([a-zA-Z0-9]{64})$/
     let token = ''
@@ -17,6 +21,7 @@ export default (expectedHomeserverToken: string): expressAppHandler => {
       })
     }
     if (expectedHomeserverToken === token) {
+      rateLimiter.resetKey(req.ip as string)
       next()
     } else {
       throw new AppServerAPIError({

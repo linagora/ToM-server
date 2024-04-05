@@ -2,6 +2,7 @@ import configParser, { type ConfigDescription } from '@twake/config-parser'
 import { type TwakeLogger } from '@twake/logger'
 import MatrixIdentityServer from '@twake/matrix-identity-server'
 import { Router } from 'express'
+import rateLimit from 'express-rate-limit'
 import fs from 'fs'
 import defaultConfig from './config.json'
 import initializeDb from './db'
@@ -48,7 +49,19 @@ export default class FederationServer extends MatrixIdentityServer {
     this.logger.debug(
       `Trusted servers: ${this.conf.trusted_servers_addresses.join(', ')}`
     )
-    this.authenticate = Authenticate(this.db)
+    this.rateLimiter = rateLimit({
+      windowMs: this.conf.rate_limiting_window,
+      limit: this.conf.rate_limiting_nb_requests,
+      validate: {
+        trustProxy: this.conf.trust_x_forwarded_for
+      }
+    })
+    this.authenticate = Authenticate(
+      this.db,
+      this.conf.trusted_servers_addresses,
+      this.conf.trust_x_forwarded_for,
+      this.logger
+    )
     const superReady = this.ready
     this.ready = new Promise((resolve, reject) => {
       superReady

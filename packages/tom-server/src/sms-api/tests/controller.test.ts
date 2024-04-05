@@ -1,21 +1,13 @@
 /* eslint-disable n/no-callback-literal */
 /* eslint-disable @typescript-eslint/consistent-type-assertions */
-import express, { type NextFunction } from 'express'
-import router, { PATH } from '../routes'
-import supertest from 'supertest'
 import bodyParser from 'body-parser'
-import type { Config, IdentityServerDb, AuthRequest } from '../../types'
+import express, { type NextFunction } from 'express'
 import fetch, { type Response } from 'node-fetch'
+import supertest from 'supertest'
+import type { AuthRequest, Config } from '../../types'
+import router, { PATH } from '../routes'
 
 const app = express()
-
-const dbMock = {
-  get: jest.fn(),
-  insert: jest.fn(),
-  update: jest.fn(),
-  deleteEqual: jest.fn(),
-  getCount: jest.fn()
-}
 
 const smsConfig = {
   sms_api_key: 'test',
@@ -27,16 +19,11 @@ jest.mock('node-fetch')
 
 const mockFetch = fetch as jest.MockedFunction<typeof fetch>
 
-jest.mock('../../identity-server/utils/authenticate', () => {
-  return (db: IdentityServerDb, conf: Config) =>
-    (
-      req: AuthRequest,
-      res: Response,
-      cb: (data: any, token: string) => void
-    ) => {
-      cb('test', 'test')
-    }
-})
+const authenticatorMock = jest
+  .fn()
+  .mockImplementation((req, res, callbackMethod) => {
+    callbackMethod('test', 'test')
+  })
 
 jest.mock('../middlewares/index', () => {
   const passiveMiddlewareMock = (
@@ -61,7 +48,7 @@ beforeEach(() => {
 
 app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({ extended: true }))
-app.use(router(dbMock as unknown as IdentityServerDb, smsConfig as Config))
+app.use(router(smsConfig as Config, authenticatorMock))
 
 describe('the SMS API controller', () => {
   it('should attempt to send sms using the service', async () => {

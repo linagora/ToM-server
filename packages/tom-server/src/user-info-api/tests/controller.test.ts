@@ -1,8 +1,8 @@
 import express, { type NextFunction, type Response } from 'express'
-import type { AuthRequest, Config, IdentityServerDb } from '../../types'
-import router, { PATH } from '../routes'
-import type TwakeIdentityServer from '../../identity-server'
 import supertest from 'supertest'
+import type TwakeIdentityServer from '../../identity-server'
+import type { AuthRequest, Config } from '../../types'
+import router, { PATH } from '../routes'
 import type { UserInformation } from '../types'
 
 const app = express()
@@ -11,18 +11,6 @@ jest.mock('../middlewares/require-ldap.ts', () => {
   return () =>
     (_req: AuthRequest, _res: Response, next: NextFunction): void => {
       next()
-    }
-})
-
-jest.mock('../../identity-server/utils/authenticate', () => {
-  return (_db: IdentityServerDb, _conf: Config) =>
-    (
-      _req: AuthRequest,
-      _res: Response,
-      cb: (data: any, token: string) => void
-    ) => {
-      // eslint-disable-next-line n/no-callback-literal
-      cb('test', 'test')
     }
 })
 
@@ -38,7 +26,10 @@ jest.mock('../services/index.ts', () => {
 
 const idServerMock = {
   db: {},
-  userDb: {}
+  userDb: {},
+  authenticate: jest.fn().mockImplementation((req, res, callbackMethod) => {
+    callbackMethod('test', 'test')
+  })
 }
 
 app.use(

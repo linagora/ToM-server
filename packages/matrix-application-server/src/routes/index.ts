@@ -1,18 +1,19 @@
-import { transaction, query } from '../controllers'
+import { Router, json, urlencoded, type IRoute } from 'express'
+import rateLimit, { type RateLimitRequestHandler } from 'express-rate-limit'
+import { type ValidationChain } from 'express-validator'
+import type MatrixApplicationServer from '..'
+import { query, transaction } from '../controllers'
+import auth from '../middlewares/auth'
+import validation from '../middlewares/validation'
 import {
+  Endpoints,
   allowCors,
   errorMiddleware,
   legacyEndpointHandler,
   methodNotAllowed,
-  Endpoints,
   type expressAppHandler,
   type expressAppHandlerError
 } from '../utils'
-import validation from '../middlewares/validation'
-import type MatrixApplicationServer from '..'
-import { type ValidationChain } from 'express-validator'
-import auth from '../middlewares/auth'
-import { type IRoute, Router, json, urlencoded } from 'express'
 
 export enum EHttpMethod {
   DELETE = 'DELETE',
@@ -23,7 +24,18 @@ export enum EHttpMethod {
 
 export default class MASRouter {
   routes: Router
+  rateLimiter: RateLimitRequestHandler
+  defaultAuthMiddleware: expressAppHandler
+
   constructor(private readonly _appServer: MatrixApplicationServer) {
+    this.rateLimiter = rateLimit({
+      windowMs: this._appServer.conf.rate_limiting_window,
+      limit: this._appServer.conf.rate_limiting_nb_requests
+    })
+    this.defaultAuthMiddleware = auth(
+      this._appServer.appServiceRegistration.hsToken,
+      this.rateLimiter
+    )
     this.routes = Router()
     /**
      * @openapi
@@ -68,7 +80,8 @@ export default class MASRouter {
       .put(
         this._middlewares(
           transaction(this._appServer),
-          validation(Endpoints.TRANSACTIONS)
+          validation(Endpoints.TRANSACTIONS),
+          this.defaultAuthMiddleware
         )
       )
       .all(allowCors, methodNotAllowed, errorMiddleware)
@@ -105,7 +118,13 @@ export default class MASRouter {
      */
     this.routes
       .route('/_matrix/app/v1/users/:userId')
-      .get(this._middlewares(query, validation(Endpoints.USERS)))
+      .get(
+        this._middlewares(
+          query,
+          validation(Endpoints.USERS),
+          this.defaultAuthMiddleware
+        )
+      )
       .all(allowCors, methodNotAllowed, errorMiddleware)
 
     /**
@@ -140,7 +159,13 @@ export default class MASRouter {
      */
     this.routes
       .route('/_matrix/app/v1/rooms/:roomAlias')
-      .get(this._middlewares(query, validation(Endpoints.ROOMS)))
+      .get(
+        this._middlewares(
+          query,
+          validation(Endpoints.ROOMS),
+          this.defaultAuthMiddleware
+        )
+      )
       .all(allowCors, methodNotAllowed, errorMiddleware)
 
     this.routes
@@ -156,17 +181,14 @@ export default class MASRouter {
   protected _middlewares(
     controller: expressAppHandler,
     validators: ValidationChain[],
-    authMiddleware = auth(this._appServer.appServiceRegistration.hsToken)
+    authMiddleware?: expressAppHandler
   ): Array<expressAppHandler | expressAppHandlerError | ValidationChain> {
-    return [
-      allowCors,
-      json(),
-      urlencoded({ extended: false }),
-      authMiddleware,
-      ...validators,
-      controller,
-      errorMiddleware
-    ]
+    const middlewares = [allowCors, json(), urlencoded({ extended: false })]
+    if (authMiddleware != null) {
+      middlewares.push(this.rateLimiter, authMiddleware)
+    }
+
+    return [...middlewares, ...validators, controller, errorMiddleware]
   }
 
   public addRoute(
@@ -174,7 +196,7 @@ export default class MASRouter {
     method: EHttpMethod,
     controller: expressAppHandler,
     validators: ValidationChain[],
-    authMiddleware = auth(this._appServer.appServiceRegistration.hsToken)
+    authMiddleware?: expressAppHandler
   ): void {
     const route: IRoute = this.routes.route(path)
     switch (method) {

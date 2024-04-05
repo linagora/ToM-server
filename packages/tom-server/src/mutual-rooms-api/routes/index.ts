@@ -6,7 +6,7 @@ import {
 } from '@twake/logger'
 import type { MatrixDBBackend } from '@twake/matrix-identity-server'
 import { Router } from 'express'
-import type { Config, IdentityServerDb } from '../../types'
+import type { AuthenticationFunction, Config } from '../../types'
 import authMiddleware from '../../utils/middlewares/auth.middleware'
 import errorMiddleware from '../../utils/middlewares/error.middleware'
 import MutualRoomsApiController from '../controllers'
@@ -14,14 +14,14 @@ import MutualRoomsApiController from '../controllers'
 export const PATH = '/_twake/mutual_rooms'
 
 export default (
-  db: IdentityServerDb,
   config: Config,
   matrixdb: MatrixDBBackend,
+  authenticator: AuthenticationFunction,
   defaultLogger?: TwakeLogger
 ): Router => {
   const logger = defaultLogger ?? getLogger(config as unknown as LoggerConfig)
   const router = Router()
-  const authenticate = authMiddleware(db, config, logger)
+  const authenticate = authMiddleware(authenticator, logger)
   const controller = new MutualRoomsApiController(matrixdb)
 
   /**

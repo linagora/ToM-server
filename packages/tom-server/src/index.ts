@@ -40,8 +40,13 @@ export default class TwakeServer {
       this._getConfigurationFile(conf)
     ) as Config
     this.logger = logger ?? getLogger(this.conf as unknown as LoggerConfig)
-    this.idServer = new IdServer(this, confDesc, this.logger)
     this.matrixDb = new MatrixDB(this.conf, this.logger)
+    this.idServer = new IdServer(
+      this.matrixDb,
+      this.conf,
+      confDesc,
+      this.logger
+    )
     this.endpoints = Router()
     this.ready = new Promise<boolean>((resolve, reject) => {
       this._initServer(confDesc)
@@ -97,26 +102,27 @@ export default class TwakeServer {
       await initializeDb(this)
 
       const vaultServer = new VaultServer(
-        this.conf,
         this.idServer.db,
-        this.logger
+        this.idServer.authenticate
       )
       const wellKnown = new WellKnown(this.conf)
       const privateNoteApi = privateNoteApiRouter(
         this.idServer.db,
         this.conf,
+        this.idServer.authenticate,
         this.logger
       )
       const mutualRoolsApi = mutualRoomsAPIRouter(
-        this.idServer.db,
         this.conf,
         this.matrixDb.db,
+        this.idServer.authenticate,
         this.logger
       )
       const roomTagsApi = roomTagsAPIRouter(
         this.idServer.db,
         this.matrixDb.db,
         this.conf,
+        this.idServer.authenticate,
         this.logger
       )
       const userInfoApi = userInfoAPIRouter(
@@ -125,7 +131,11 @@ export default class TwakeServer {
         this.logger
       )
 
-      const smsApi = smsApiRouter(this.idServer.db, this.conf, this.logger)
+      const smsApi = smsApiRouter(
+        this.conf,
+        this.idServer.authenticate,
+        this.logger
+      )
 
       this.endpoints.use(privateNoteApi)
       this.endpoints.use(mutualRoolsApi)

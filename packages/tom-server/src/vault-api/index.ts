@@ -1,8 +1,7 @@
-import { type TwakeLogger } from '@twake/logger'
 import { Router } from 'express'
 import defaultConfDesc from '../config.json'
 import { type TwakeDB } from '../db'
-import { type Config } from '../types'
+import { type AuthenticationFunction } from '../types'
 import {
   deleteRecoveryWords,
   getRecoveryWords,
@@ -30,7 +29,10 @@ export const defaultConfig = defaultConfDesc
 export default class TwakeVaultAPI {
   endpoints: Router
 
-  constructor(conf: Config, db: TwakeDB, logger: TwakeLogger) {
+  constructor(
+    public db: TwakeDB,
+    public authenticator: AuthenticationFunction
+  ) {
     this.endpoints = Router()
     this.endpoints
       .route('/_twake/recoveryWords')
@@ -83,7 +85,7 @@ export default class TwakeVaultAPI {
        *      500:
        *        $ref: '#/components/responses/InternalServerError'
        */
-      .get(...this._middlewares(getRecoveryWords, conf, db, logger))
+      .get(...this._middlewares(getRecoveryWords))
       /**
        * @openapi
        * '/_twake/recoveryWords':
@@ -124,7 +126,7 @@ export default class TwakeVaultAPI {
        *      500:
        *        $ref: '#/components/responses/InternalServerError'
        */
-      .post(...this._middlewares(saveRecoveryWords, conf, db, logger))
+      .post(...this._middlewares(saveRecoveryWords))
       /**
        * @openapi
        * '/_twake/recoveryWords':
@@ -152,21 +154,18 @@ export default class TwakeVaultAPI {
        *      500:
        *        $ref: '#/components/responses/InternalServerError'
        */
-      .delete(...this._middlewares(deleteRecoveryWords, conf, db, logger))
+      .delete(...this._middlewares(deleteRecoveryWords))
       .all(allowCors, methodNotAllowed, errorMiddleware)
   }
 
   private _middlewares(
-    controller: VaultController,
-    conf: Config,
-    db: TwakeDB,
-    logger: TwakeLogger
+    controller: VaultController
   ): Array<expressAppHandler | expressAppHandlerError> {
     return [
       allowCors,
       ...parser,
-      isAuth(db, conf, logger),
-      controller(db),
+      isAuth(this.authenticator),
+      controller(this.db),
       errorMiddleware
     ]
   }

@@ -1,6 +1,6 @@
 import { type TwakeLogger } from '@twake/logger'
 import { Utils, errMsg } from '@twake/matrix-identity-server'
-import type TwakeServer from '../..'
+import type AugmentedIdentityServer from '..'
 import { type expressAppHandler } from '../../types'
 
 const schema = {
@@ -18,7 +18,7 @@ interface DiffQueryBody {
 }
 
 const diff = (
-  tomServer: TwakeServer,
+  idServer: AugmentedIdentityServer,
   logger: TwakeLogger
 ): expressAppHandler => {
   return (req, res) => {
@@ -28,11 +28,11 @@ const diff = (
       /* istanbul ignore next */
       Utils.send(res, 500, errMsg('unknown'))
     }
-    tomServer.idServer.authenticate(req, res, (token) => {
+    idServer.authenticate(req, res, (token) => {
       const timestamp = Utils.epoch()
       Utils.jsonContent(req, res, logger, (obj) => {
         Utils.validateParameters(res, schema, obj, logger, (data) => {
-          tomServer.idServer.db
+          idServer.db
             .getHigherThan(
               'userHistory',
               ['address', 'active'],
@@ -47,7 +47,7 @@ const diff = (
               })
               const fields = (data as { fields: string[] }).fields ?? []
               if (!fields.includes('uid')) fields.push('uid')
-              tomServer.idServer.userDB
+              idServer.userDB
                 .get('users', fields, { uid: uids })
                 .then((userRows) => {
                   const newUsers: object[] = []

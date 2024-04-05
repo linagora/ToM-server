@@ -10,5 +10,7 @@
         }
       ]
     },
-    "push_ephemeral": true
+    "push_ephemeral": true,
+    "rate_limiting_window": 10000,
+    "rate_limiting_nb_requests": 100
 }

@@ -45,6 +45,7 @@
     "@twake/config-parser": "*",
     "@twake/crypto": "*",
     "@twake/logger": "*",
+    "express-rate-limit": "^7.2.0",
     "generic-pool": "^3.9.0",
     "matrix-resolve": "^1.0.1",
     "node-cron": "^3.0.2",
