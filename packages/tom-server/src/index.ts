@@ -4,6 +4,7 @@ import {
   type Config as LoggerConfig,
   type TwakeLogger
 } from '@twake/logger'
+import MatrixApplicationServer from '@twake/matrix-application-server'
 import { MatrixDB } from '@twake/matrix-identity-server'
 import { Router } from 'express'
 import fs from 'fs'
@@ -28,6 +29,7 @@ export default class TwakeServer {
   matrixDb: MatrixDB
   ready!: Promise<boolean>
   idServer!: TwakeIdentityServer
+  applicationServer: MatrixApplicationServer
 
   constructor(
     conf?: Partial<Config>,
@@ -40,6 +42,11 @@ export default class TwakeServer {
       this._getConfigurationFile(conf)
     ) as Config
     this.logger = logger ?? getLogger(this.conf as unknown as LoggerConfig)
+    this.applicationServer = new MatrixApplicationServer(
+      this.conf,
+      confDesc,
+      this.logger
+    )
     this.matrixDb = new MatrixDB(this.conf, this.logger)
     this.idServer = new IdServer(
       this.matrixDb,
@@ -49,7 +56,7 @@ export default class TwakeServer {
     )
     this.endpoints = Router()
     this.ready = new Promise<boolean>((resolve, reject) => {
-      this._initServer(confDesc)
+      this._initServer()
         .then(() => {
           if (
             process.env.ADDITIONAL_FEATURES === 'true' ||
@@ -95,65 +102,61 @@ export default class TwakeServer {
     return undefined
   }
 
-  private async _initServer(confDesc?: ConfigDescription): Promise<boolean> {
-    try {
-      await this.idServer.ready
-      await this.matrixDb.ready
-      await initializeDb(this)
+  private async _initServer(): Promise<boolean> {
+    await this.idServer.ready
+    await this.matrixDb.ready
+    await initializeDb(this)
 
-      const vaultServer = new VaultServer(
-        this.idServer.db,
-        this.idServer.authenticate
-      )
-      const wellKnown = new WellKnown(this.conf)
-      const privateNoteApi = privateNoteApiRouter(
-        this.idServer.db,
-        this.conf,
-        this.idServer.authenticate,
-        this.logger
-      )
-      const mutualRoolsApi = mutualRoomsAPIRouter(
-        this.conf,
-        this.matrixDb.db,
-        this.idServer.authenticate,
-        this.logger
-      )
-      const roomTagsApi = roomTagsAPIRouter(
-        this.idServer.db,
-        this.matrixDb.db,
-        this.conf,
-        this.idServer.authenticate,
-        this.logger
-      )
-      const userInfoApi = userInfoAPIRouter(
-        this.idServer,
-        this.conf,
-        this.logger
-      )
+    const vaultServer = new VaultServer(
+      this.idServer.db,
+      this.idServer.authenticate
+    )
+    const wellKnown = new WellKnown(this.conf)
+    const privateNoteApi = privateNoteApiRouter(
+      this.idServer.db,
+      this.conf,
+      this.idServer.authenticate,
+      this.logger
+    )
+    const mutualRoolsApi = mutualRoomsAPIRouter(
+      this.conf,
+      this.matrixDb.db,
+      this.idServer.authenticate,
+      this.logger
+    )
+    const roomTagsApi = roomTagsAPIRouter(
+      this.idServer.db,
+      this.matrixDb.db,
+      this.conf,
+      this.idServer.authenticate,
+      this.logger
+    )
+    const userInfoApi = userInfoAPIRouter(this.idServer, this.conf, this.logger)
 
-      const smsApi = smsApiRouter(
-        this.conf,
-        this.idServer.authenticate,
-        this.logger
-      )
+    const smsApi = smsApiRouter(
+      this.conf,
+      this.idServer.authenticate,
+      this.logger
+    )
 
-      this.endpoints.use(privateNoteApi)
-      this.endpoints.use(mutualRoolsApi)
-      this.endpoints.use(vaultServer.endpoints)
-      this.endpoints.use(roomTagsApi)
-      this.endpoints.use(userInfoApi)
-      this.endpoints.use(smsApi)
+    this.endpoints.use(this.applicationServer.router.routes)
+    this.endpoints.use(privateNoteApi)
+    this.endpoints.use(mutualRoolsApi)
+    this.endpoints.use(vaultServer.endpoints)
+    this.endpoints.use(roomTagsApi)
+    this.endpoints.use(userInfoApi)
+    this.endpoints.use(smsApi)
 
-      Object.keys(this.idServer.api.get).forEach((k) => {
-        this.endpoints.get(k, this.idServer.api.get[k])
-      })
-      Object.keys(this.idServer.api.post).forEach((k) => {
-        this.endpoints.post(k, this.idServer.api.post[k])
-      })
-      this.endpoints.use(vaultServer.endpoints)
-      Object.keys(wellKnown.api.get).forEach((k) => {
-        this.endpoints.get(k, wellKnown.api.get[k])
-      })
+    Object.keys(this.idServer.api.get).forEach((k) => {
+      this.endpoints.get(k, this.idServer.api.get[k])
+    })
+    Object.keys(this.idServer.api.post).forEach((k) => {
+      this.endpoints.post(k, this.idServer.api.post[k])
+    })
+    this.endpoints.use(vaultServer.endpoints)
+    Object.keys(wellKnown.api.get).forEach((k) => {
+      this.endpoints.get(k, wellKnown.api.get[k])
+    })
 
       return true
     } catch (error) {
@@ -161,6 +164,6 @@ export default class TwakeServer {
       this.logger.error(`Unable to initialize server`, { error })
       /* istanbul ignore next */
       throw Error('Unable to initialize server', { cause: error })
-    }
+    return true
   }
 }
