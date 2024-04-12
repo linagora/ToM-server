@@ -1,7 +1,5 @@
-import { type TwakeLogger } from '@twake/logger'
 import { type AppServiceOutput } from '@twake/matrix-application-server/src/utils'
 import { type DbGetResult } from '@twake/matrix-identity-server'
-import dockerComposeV1, { v2 as dockerComposeV2 } from 'docker-compose'
 import express from 'express'
 import fs from 'fs'
 import type * as http from 'http'
@@ -18,12 +16,12 @@ import {
   type StartedDockerComposeEnvironment,
   type StartedTestContainer
 } from 'testcontainers'
-import AppServiceAPI from '.'
 import TwakeServer from '..'
 import JEST_PROCESS_ROOT_PATH from '../../jest.globals'
 import { allMatrixErrorCodes, type Collections, type Config } from '../types'
-import { addUser, buildUserDB, deleteUserDB } from './__testData__/build-userdb'
-import defaultConfig from './__testData__/config.json'
+import { buildUserDB } from './__testData__/build-userdb'
+import integrationTestsConfig from './__testData__/integration-tests-config.json'
+import mockTestsConfig from './__testData__/mock-tests-config.json'
 import { TwakeRoom } from './models/room'
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -32,7 +30,7 @@ const syswideCas = require('@small-tech/syswide-cas')
 const pathToTestDataFolder = path.join(
   JEST_PROCESS_ROOT_PATH,
   'src',
-  'application-server',
+  'administration-console-api',
   '__testData__'
 )
 const pathToSynapseDataFolder = path.join(pathToTestDataFolder, 'synapse-data')
@@ -42,266 +40,96 @@ const authToken =
 
 jest.unmock('node-fetch')
 
-const mockLogger: Partial<TwakeLogger> = {
-  debug: jest.fn(),
-  error: jest.fn(),
-  warn: jest.fn(),
-  info: jest.fn()
-}
-
-describe('ApplicationServer', () => {
-  const ldapHostPort = 21389
+describe('Administration Console API', () => {
   const twakeServerPort = 3001
   let twakeServer: TwakeServer
   let app: express.Application
   let expressTwakeServer: http.Server
-  let startedLdap: StartedTestContainer
-  let startedCompose: StartedDockerComposeEnvironment
-  let testConfig = defaultConfig as Partial<Config>
-
-  const simulationConnection = async (
-    username: string,
-    password: string
-  ): Promise<string | undefined> => {
-    try {
-      let response = await fetch.default(
-        encodeURI(
-          // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-          `https://${twakeServer.conf.matrix_server}/_matrix/client/v3/login`
-        )
-      )
-      let body = (await response.json()) as any
-      const providerId = body.flows[0].identity_providers[0].id
-      response = await fetch.default(
-        encodeURI(
-          // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-          `https://${twakeServer.conf.matrix_server}/_matrix/client/r0/login/sso/redirect/${providerId}?redirectUrl=http://localhost:9876`
-        ),
-        {
-          redirect: 'manual'
-        }
-      )
-      let location = response.headers.get('location') as string
-      const matrixCookies = response.headers.get('set-cookie')
-      response = await fetch.default(location)
-      body = await response.text()
-      const hiddenInputFieldsWithValue = [
-        ...(body as string).matchAll(/<input.*name="(\S+?)".*value="(\S+?)"/g)
-      ]
-        .map((matchElt) => `${matchElt[1]}=${matchElt[2]}&`)
-        .join('')
-      const formWithToken = `${hiddenInputFieldsWithValue}user=${username}&password=${password}`
-      response = await fetch.default(location, {
-        method: 'POST',
-        body: new URLSearchParams(formWithToken),
-        redirect: 'manual'
-      })
-      location = response.headers.get('location') as string
-      response = await fetch.default(location, {
-        headers: {
-          cookie: matrixCookies as string
-        }
-      })
-      body = await response.text()
-      const loginTokenValue = [
-        ...(body as string).matchAll(/loginToken=(\S+?)"/g)
-      ][0][1]
-      response = await fetch.default(
-        encodeURI(
-          `https://${twakeServer.conf.matrix_server}/_matrix/client/v3/login`
-        ),
-        {
-          method: 'POST',
-          body: JSON.stringify({
-            initial_device_display_name: 'Jest Test Client',
-            token: loginTokenValue,
-            type: 'm.login.token'
-          })
-        }
-      )
-      return ((await response.json()) as any).access_token as string
-    } catch (e) {
-      console.log(e)
-    }
-  }
-
-  beforeAll((done) => {
-    GenericContainer.fromDockerfile(path.join(pathToTestDataFolder, 'ldap'))
-      .build()
-      // eslint-disable-next-line @typescript-eslint/promise-function-async
-      .then((builtContainer) => {
-        return builtContainer
-          .withExposedPorts({
-            container: 389,
-            host: ldapHostPort
-          })
-          .start()
-      })
-      // eslint-disable-next-line @typescript-eslint/promise-function-async
-      .then((startedContainer) => {
-        const interfaces = os.networkInterfaces()
-        const hostNetworkInterface = Object.keys(interfaces)
-          .reduce<os.NetworkInterfaceInfo[]>((acc, key) => {
-            return interfaces[key] != null
-              ? [...acc, ...(interfaces[key] as os.NetworkInterfaceInfo[])]
-              : acc
-          }, [])
-          .find(
-            (networkInterface) =>
-              networkInterface.family === 'IPv4' && !networkInterface.internal
-          ) as os.NetworkInterfaceInfo
-        startedLdap = startedContainer
-        testConfig = {
-          ...testConfig,
-          userdb_engine: 'ldap',
-          base_url: `http://${hostNetworkInterface.address}:${twakeServerPort}/`,
-          ldap_uri: `ldap://${startedLdap.getHost()}:${ldapHostPort}/`
-        }
-        return buildUserDB(testConfig)
-      })
-      // eslint-disable-next-line @typescript-eslint/promise-function-async
-      .then(() => {
-        twakeServer = new TwakeServer(testConfig)
-        app = express()
-        return twakeServer.ready
-      })
-      .then(() => {
-        app.use(twakeServer.endpoints)
-        expressTwakeServer = app.listen(twakeServerPort, () => {
-          done()
-        })
-      })
-      .catch((e) => {
-        console.log(e)
-        done(e)
-      })
-  })
-
-  afterAll((done) => {
-    const filesToDelete = [
-      path.join(pathToTestDataFolder, 'test.db'),
-      path.join(pathToSynapseDataFolder, 'registration.yaml'),
-      path.join(pathToSynapseDataFolder, 'homeserver.db'),
-      path.join(pathToSynapseDataFolder, 'matrix.example.com.signing.key')
-    ]
-    filesToDelete.forEach((path: string) => {
-      if (fs.existsSync(path)) fs.unlinkSync(path)
-    })
-    if (twakeServer != null) twakeServer.cleanJobs()
-    if (startedLdap != null) {
-      startedLdap
-        .stop()
-        .then(() => {
-          if (expressTwakeServer != null) {
-            expressTwakeServer.close((e) => {
-              if (e != null) {
-                console.log(e)
-                done(e)
-              }
-              done()
-            })
-          }
-        })
-        .catch((e) => {
-          console.log(e)
-          done(e)
-        })
-    } else {
-      done()
-    }
-  })
 
   describe('Integration tests', () => {
     let appServiceToken: string
-    let newRoomId: string
-    let rSkywalkerMatrixToken: string
-    let containerNameSuffix: string
+    const filesToDelete = [
+      path.join(pathToSynapseDataFolder, 'homeserver.log'),
+      path.join(pathToSynapseDataFolder, 'homeserver.db-shm'),
+      path.join(pathToSynapseDataFolder, 'homeserver.db-wal'),
+      path.join(pathToSynapseDataFolder, 'matrix.example.com.signing.key'),
+      path.join(pathToSynapseDataFolder, 'media_store'),
+      path.join(pathToSynapseDataFolder, 'registration.yaml')
+    ]
+    const ldapHostPort = 21389
+    let startedLdap: StartedTestContainer
+    let startedCompose: StartedDockerComposeEnvironment
+    let startedPostgresql: StartedTestContainer
 
-    beforeAll((done) => {
-      syswideCas.addCAs(
-        path.join(
-          pathToTestDataFolder,
-          'nginx',
-          'ssl',
-          'matrix.example.com.crt'
-        )
-      )
-      syswideCas.addCAs(
-        path.join(pathToTestDataFolder, 'nginx', 'ssl', 'auth.example.com.crt')
-      )
-      appServiceToken = (
-        load(
-          fs.readFileSync(testConfig.registration_file_path as string, {
-            encoding: 'utf8'
-          })
-        ) as AppServiceOutput
-      ).as_token
-      deleteUserDB(testConfig)
-        // eslint-disable-next-line @typescript-eslint/promise-function-async
-        .then((_) =>
-          Promise.allSettled([
-            dockerComposeV1.version(),
-            dockerComposeV2.version()
-          ])
-        )
-        // eslint-disable-next-line @typescript-eslint/promise-function-async
-        .then((results) => {
-          const promiseSucceededIndex = results.findIndex(
-            (res) => res.status === 'fulfilled'
+    let testConfig = integrationTestsConfig as Partial<Config>
+
+    const simulationConnection = async (
+      username: string,
+      password: string,
+      matrixServer = twakeServer.conf.matrix_server
+    ): Promise<string | undefined> => {
+      try {
+        let response = await fetch.default(
+          encodeURI(
+            // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+            `https://${matrixServer}/_matrix/client/v3/login`
           )
-          if (promiseSucceededIndex === -1) {
-            throw new Error('Docker compose is not installed')
+        )
+        let body = (await response.json()) as any
+        const providerId = body.flows[0].identity_providers[0].id
+        response = await fetch.default(
+          encodeURI(
+            // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+            `https://${matrixServer}/_matrix/client/r0/login/sso/redirect/${providerId}?redirectUrl=http://localhost:9876`
+          ),
+          {
+            redirect: 'manual'
           }
-          containerNameSuffix = promiseSucceededIndex === 0 ? '_' : '-'
-          return new DockerComposeEnvironment(
-            path.join(pathToTestDataFolder),
-            'docker-compose.yml'
-          )
-            .withEnvironment({ MYUID: os.userInfo().uid.toString() })
-            .withWaitStrategy(
-              `synapse${containerNameSuffix}1`,
-              Wait.forHealthCheck()
-            )
-            .up()
+        )
+        let location = (response.headers.get('location') as string).replace(
+          'auth.example.com',
+          'auth.example.com:444'
+        )
+        const matrixCookies = response.headers.get('set-cookie')
+        response = await fetch.default(location)
+        body = await response.text()
+        const hiddenInputFieldsWithValue = [
+          ...(body as string).matchAll(/<input.*name="(\S+?)".*value="(\S+?)"/g)
+        ]
+          .map((matchElt) => `${matchElt[1]}=${matchElt[2]}&`)
+          .join('')
+        const formWithToken = `${hiddenInputFieldsWithValue}user=${username}&password=${password}`
+        response = await fetch.default(location, {
+          method: 'POST',
+          body: new URLSearchParams(formWithToken),
+          redirect: 'manual'
         })
-        // eslint-disable-next-line @typescript-eslint/promise-function-async
-        .then((upResult) => {
-          startedCompose = upResult
-          return addUser(testConfig, [
-            '@askywalker:example.com',
-            '@dwho:example.com'
-          ])
+        location = response.headers.get('location') as string
+        response = await fetch.default(location, {
+          headers: {
+            cookie: matrixCookies as string
+          }
         })
-        .then(done)
-        .catch((e) => {
-          console.log(e)
-          done(e)
-        })
-    })
-
-    afterAll((done) => {
-      const filesToDelete = [
-        path.join(pathToSynapseDataFolder, 'homeserver.log'),
-        path.join(pathToSynapseDataFolder, 'homeserver.db-shm'),
-        path.join(pathToSynapseDataFolder, 'homeserver.db-wal')
-      ]
-      filesToDelete.forEach((path: string) => {
-        if (fs.existsSync(path)) fs.unlinkSync(path)
-      })
-      if (startedCompose != null) {
-        startedCompose
-          .down()
-          .then(() => {
-            done()
-          })
-          .catch((e) => {
-            console.log(e)
-            done(e)
-          })
-      } else {
-        done()
+        body = await response.text()
+        const loginTokenValue = [
+          ...(body as string).matchAll(/loginToken=(\S+?)"/g)
+        ][0][1]
+        response = await fetch.default(
+          encodeURI(`https://${matrixServer}/_matrix/client/v3/login`),
+          {
+            method: 'POST',
+            body: JSON.stringify({
+              initial_device_display_name: 'Jest Test Client',
+              token: loginTokenValue,
+              type: 'm.login.token'
+            })
+          }
+        )
+        return ((await response.json()) as any).access_token as string
+      } catch (e) {
+        console.log(e)
       }
-    })
+    }
 
     // eslint-disable-next-line @typescript-eslint/promise-function-async
     const getUserRoomMembership = (
@@ -326,324 +154,612 @@ describe('ApplicationServer', () => {
       })
     }
 
-    it('should create room and force users matching the filter to join the new room', async () => {
-      const response = await request(app)
-        .post('/_twake/app/v1/rooms')
-        .set('Accept', 'application/json')
-        .set('Authorization', `Bearer ${authToken}`)
-        .send({
-          name: 'room1',
-          visibility: 'public',
-          aliasName: 'r1',
-          topic: 'test room',
-          ldapFilter: {
-            mail: ['*skywalker@example.com', 'dwho@example.com']
-          }
-        })
-      expect(response.statusCode).toBe(200)
-      expect(response.body).toEqual({})
-      const rooms = await twakeServer.db?.getAll(
-        'rooms' as unknown as Collections,
-        ['*']
-      )
-      expect(rooms).not.toBeUndefined()
-      expect((rooms as DbGetResult).length).toEqual(1)
-      const newRoom = (rooms as DbGetResult)[0]
-      newRoomId = newRoom.id as string
-      expect(newRoom.filter).toEqual(
-        JSON.stringify({
-          mail: ['*skywalker@example.com', 'dwho@example.com']
-        })
-      )
-      const membersIds = await twakeServer.matrixDb.get(
-        'room_memberships',
-        ['user_id'],
-        { room_id: newRoomId }
-      )
-      expect(membersIds).not.toBeUndefined()
-      expect(membersIds.length).toEqual(3)
-      const userIds = membersIds.map((ids) => ids.user_id)
-      expect(userIds).toEqual(
-        expect.arrayContaining([
-          '@twake:example.com',
-          '@dwho:example.com',
-          '@askywalker:example.com'
-        ])
-      )
-    })
-
-    it('should force user to join room on login', (done) => {
-      twakeServer.matrixDb
-        .get('room_memberships', ['user_id'], {
-          room_id: newRoomId
+    beforeAll((done) => {
+      GenericContainer.fromDockerfile(path.join(pathToTestDataFolder, 'ldap'))
+        .build()
+        // eslint-disable-next-line @typescript-eslint/promise-function-async
+        .then((builtContainer) => {
+          return builtContainer
+            .withExposedPorts({
+              container: 389,
+              host: ldapHostPort
+            })
+            .start()
         })
         // eslint-disable-next-line @typescript-eslint/promise-function-async
-        .then((membersIds) => {
-          expect(membersIds.length).toEqual(3)
-          const userIds = membersIds.map((ids) => ids.user_id)
-          expect(userIds).toEqual(
-            expect.arrayContaining([
-              '@twake:example.com',
-              '@dwho:example.com',
-              '@askywalker:example.com'
+        .then((startedContainer) => {
+          const interfaces = os.networkInterfaces()
+          const hostNetworkInterface = Object.keys(interfaces)
+            .reduce<os.NetworkInterfaceInfo[]>((acc, key) => {
+              return interfaces[key] != null
+                ? [...acc, ...(interfaces[key] as os.NetworkInterfaceInfo[])]
+                : acc
+            }, [])
+            .find(
+              (networkInterface) =>
+                networkInterface.family === 'IPv4' && !networkInterface.internal
+            ) as os.NetworkInterfaceInfo
+          startedLdap = startedContainer
+          testConfig = {
+            ...testConfig,
+            userdb_engine: 'ldap',
+            base_url: `http://${hostNetworkInterface.address}:${twakeServerPort}/`,
+            ldap_uri: `ldap://${startedLdap.getHost()}:${ldapHostPort}/`
+          }
+          return new GenericContainer('postgres:13-bullseye')
+            .withName('postgresql')
+            .withExposedPorts({
+              container: 5432,
+              host: 5434
+            })
+            .withCopyFilesToContainer([
+              {
+                source: path.join(
+                  pathToSynapseDataFolder,
+                  'matrix.example.com.log.config'
+                ),
+                target: '/data/matrix.example.com.log.config'
+              }
             ])
-          )
-          const client = ldapjs.createClient({
-            url: `ldap://${startedLdap.getHost()}:${ldapHostPort}/`
-          })
-          client.bind('cn=admin,dc=example,dc=com', 'admin', (err) => {
-            if (err != null) {
-              console.error(err)
+            .withCopyFilesToContainer([
+              {
+                source: path.join(
+                  pathToTestDataFolder,
+                  'db',
+                  'init-synapse-and-create-users-table.sh'
+                ),
+                target:
+                  '/docker-entrypoint-initdb.d/init-synapse-and-create-users-table.sh'
+              }
+            ])
+            .withCopyFilesToContainer([
+              {
+                source: path.join(
+                  pathToTestDataFolder,
+                  'db',
+                  'init-llng-db.sh'
+                ),
+                target: '/docker-entrypoint-initdb.d/init-llng-db.sh'
+              }
+            ])
+            .withCopyFilesToContainer([
+              {
+                source: path.join(
+                  pathToTestDataFolder,
+                  'db',
+                  'init-twake-db.sh'
+                ),
+                target: '/docker-entrypoint-initdb.d/init-twake-db.sh'
+              }
+            ])
+            .withCopyFilesToContainer([
+              {
+                source: path.join(
+                  pathToTestDataFolder,
+                  'llng',
+                  'lmConf-1.json'
+                ),
+                target: '/llng-conf/conf.json'
+              }
+            ])
+            .withEnvironment({ POSTGRES_PASSWORD: 'synapse!!' })
+            .withHealthCheck({
+              test: ['CMD-SHELL', 'pg_isready'],
+              interval: 1000,
+              timeout: 5000,
+              retries: 5
+            })
+            .start()
+        })
+        // eslint-disable-next-line @typescript-eslint/promise-function-async
+        .then((started) => {
+          startedPostgresql = started
+          twakeServer = new TwakeServer(testConfig)
+          return twakeServer.ready
+        })
+        .then(() => {
+          if (twakeServer != null) twakeServer.cleanJobs()
+          if (startedPostgresql != null) {
+            startedPostgresql
+              .stop()
+              .then(() => {
+                done()
+              })
+              .catch((e) => {
+                done(e)
+              })
+          } else {
+            done()
+          }
+        })
+        .catch((e) => {
+          done(e)
+        })
+    })
+
+    afterAll((done) => {
+      if (startedLdap != null) {
+        startedLdap
+          .stop()
+          .then(() => {
+            if (expressTwakeServer != null) {
+              expressTwakeServer.close((e) => {
+                if (e != null) {
+                  done(e)
+                }
+                done()
+              })
             }
           })
-          client.add(
-            'uid=rskywalker,ou=users,dc=example,dc=com',
-            {
-              objectClass: 'inetOrgPerson',
-              uid: 'rskywalker',
-              cn: 'Rey Skywalker',
-              sn: 'Rskywalker',
-              mail: 'rskywalker@example.com',
-              userPassword: 'rskywalker'
-            },
-            (err) => {
+          .catch((e) => {
+            done(e)
+          })
+      } else {
+        done()
+      }
+    })
+
+    describe('Automatic subscription', () => {
+      let newRoomId: string
+      let rSkywalkerMatrixToken: string
+
+      beforeAll((done) => {
+        syswideCas.addCAs(
+          path.join(pathToTestDataFolder, 'nginx', 'ssl', 'ca.pem')
+        )
+        appServiceToken = (
+          load(
+            fs.readFileSync(testConfig.registration_file_path as string, {
+              encoding: 'utf8'
+            })
+          ) as AppServiceOutput
+        ).as_token
+        new DockerComposeEnvironment(
+          path.join(pathToTestDataFolder),
+          'docker-compose.yml'
+        )
+          .withEnvironment({ MYUID: os.userInfo().uid.toString() })
+          .withWaitStrategy('synapse-tom-1', Wait.forHealthCheck())
+          .up()
+          // eslint-disable-next-line @typescript-eslint/promise-function-async
+          .then((upResult) => {
+            startedCompose = upResult
+            twakeServer = new TwakeServer(testConfig)
+            app = express()
+            return twakeServer.ready
+          })
+          // eslint-disable-next-line @typescript-eslint/promise-function-async
+          .then(() => {
+            return Promise.all([
+              twakeServer.matrixDb.insert('users', {
+                name: '@askywalker:example.com',
+                password_hash: '',
+                creation_ts: Math.floor(Date.now() / 1000),
+                admin: 0,
+                upgrade_ts: 1,
+                is_guest: 0,
+                appservice_id: '',
+                consent_version: '',
+                consent_server_notice_sent: '',
+                user_type: '',
+                deactivated: 0,
+                shadow_banned: 'false',
+                consent_ts: 1
+              }),
+              twakeServer.matrixDb.insert('users', {
+                name: '@dwho:example.com',
+                password_hash: '',
+                creation_ts: Math.floor(Date.now() / 1000),
+                admin: 0,
+                upgrade_ts: 1,
+                is_guest: 0,
+                appservice_id: '',
+                consent_version: '',
+                consent_server_notice_sent: '',
+                user_type: '',
+                deactivated: 0,
+                shadow_banned: 'false',
+                consent_ts: 1
+              })
+            ]).then(() => {
+              app.use(twakeServer.endpoints)
+              expressTwakeServer = app.listen(twakeServerPort, () => {
+                done()
+              })
+            })
+          })
+          .catch((e) => {
+            console.log(e)
+            done(e)
+          })
+      })
+
+      afterAll((done) => {
+        filesToDelete.forEach((path: string) => {
+          if (fs.existsSync(path)) {
+            const isDir = fs.statSync(path).isDirectory()
+            isDir
+              ? fs.rmSync(path, { recursive: true, force: true })
+              : fs.unlinkSync(path)
+          }
+        })
+
+        if (twakeServer != null) twakeServer.cleanJobs()
+        if (startedCompose != null) {
+          startedCompose
+            .down()
+            .then(() => {
+              done()
+            })
+            .catch((e) => {
+              done(e)
+            })
+        } else {
+          done()
+        }
+      })
+
+      it('should create room and force users matching the filter to join the new room', async () => {
+        const response = await request(app)
+          .post('/_twake/app/v1/rooms')
+          .set('Accept', 'application/json')
+          .set('Authorization', `Bearer ${authToken}`)
+          .send({
+            name: 'room1',
+            visibility: 'public',
+            aliasName: 'r1',
+            topic: 'test room',
+            ldapFilter: {
+              mail: ['*skywalker@example.com', 'dwho@example.com']
+            }
+          })
+        expect(response.statusCode).toBe(200)
+        expect(response.body).toEqual({})
+        const rooms = await twakeServer.db?.getAll(
+          'rooms' as unknown as Collections,
+          ['*']
+        )
+        expect(rooms).not.toBeUndefined()
+        expect((rooms as DbGetResult).length).toEqual(1)
+        const newRoom = (rooms as DbGetResult)[0]
+        newRoomId = newRoom.id as string
+        expect(newRoom.filter).toEqual(
+          JSON.stringify({
+            mail: ['*skywalker@example.com', 'dwho@example.com']
+          })
+        )
+        const membersIds = await twakeServer.matrixDb.get(
+          'room_memberships',
+          ['user_id'],
+          { room_id: newRoomId }
+        )
+        expect(membersIds).not.toBeUndefined()
+        expect(membersIds.length).toEqual(3)
+        const userIds = membersIds.map((ids) => ids.user_id)
+        expect(userIds).toEqual(
+          expect.arrayContaining([
+            '@twake:example.com',
+            '@dwho:example.com',
+            '@askywalker:example.com'
+          ])
+        )
+      })
+
+      it('should force user to join room on login', (done) => {
+        twakeServer.matrixDb
+          .get('room_memberships', ['user_id'], {
+            room_id: newRoomId
+          })
+          // eslint-disable-next-line @typescript-eslint/promise-function-async
+          .then((membersIds) => {
+            expect(membersIds.length).toEqual(3)
+            const userIds = membersIds.map((ids) => ids.user_id)
+            expect(userIds).toEqual(
+              expect.arrayContaining([
+                '@twake:example.com',
+                '@dwho:example.com',
+                '@askywalker:example.com'
+              ])
+            )
+            const client = ldapjs.createClient({
+              url: `ldap://${startedLdap.getHost()}:${ldapHostPort}/`
+            })
+            client.bind('cn=admin,dc=example,dc=com', 'admin', (err) => {
               if (err != null) {
                 console.error(err)
               }
-              client.destroy()
-            }
-          )
-          return simulationConnection('rskywalker', 'rskywalker')
-        })
-        // eslint-disable-next-line @typescript-eslint/promise-function-async
-        .then((token) => {
-          rSkywalkerMatrixToken = token as string
-          return fetch.default(
-            encodeURI(
-              `https://${twakeServer.conf.matrix_server}/_matrix/client/v3/sync`
-            ),
-            {
-              headers: {
-                // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-                Authorization: `Bearer ${token}`
+            })
+            client.add(
+              'uid=rskywalker,ou=users,dc=example,dc=com',
+              {
+                objectClass: 'inetOrgPerson',
+                uid: 'rskywalker',
+                cn: 'Rey Skywalker',
+                sn: 'Rskywalker',
+                mail: 'rskywalker@example.com',
+                userPassword: 'rskywalker'
+              },
+              (err) => {
+                if (err != null) {
+                  console.error(err)
+                }
+                client.destroy()
               }
-            }
-          )
-        })
-        // eslint-disable-next-line @typescript-eslint/promise-function-async
-        .then(() => {
-          return new Promise<DbGetResult>((resolve, reject) => {
-            setTimeout(() => {
-              twakeServer.matrixDb
-                .get('room_memberships', ['user_id'], {
-                  room_id: newRoomId
-                })
-                .then((memberships) => {
-                  resolve(memberships)
-                })
-                .catch((e) => {
-                  console.log(e)
-                  reject(e)
-                })
-            }, 3000)
+            )
+            return simulationConnection('rskywalker', 'rskywalker')
           })
-        })
-        .then((membersIds) => {
-          expect(membersIds.length).toEqual(4)
-          expect(membersIds[3].user_id).toEqual('@rskywalker:example.com')
-          done()
-        })
-        .catch((e) => {
-          console.log(e)
-          done(e)
-        })
-    })
-
-    it('should join again room if user tries to leave', (done) => {
-      fetch
-        .default(
-          encodeURI(
-            `https://${twakeServer.conf.matrix_server}/_matrix/client/v3/rooms/${newRoomId}/leave`
-          ),
-          {
-            method: 'POST',
-            headers: {
-              // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-              Authorization: `Bearer ${rSkywalkerMatrixToken}`
-            }
-          }
-        )
-        // eslint-disable-next-line @typescript-eslint/promise-function-async
-        .then(() => {
-          return getUserRoomMembership(newRoomId, '@rskywalker:example.com')
-        })
-        .then((memberships) => {
-          expect(memberships.length).toEqual(3)
-          expect(memberships[0].membership).toEqual('join')
-          expect(memberships[1].membership).toEqual('leave')
-          expect(memberships[2].membership).toEqual('join')
-          done()
-        })
-        .catch((e) => {
-          console.log(e)
-          done(e)
-        })
-    })
-
-    it("should not be able to kick another member if he is not the room's creator", (done) => {
-      fetch
-        .default(
-          encodeURI(
-            `https://${twakeServer.conf.matrix_server}/_matrix/client/v3/rooms/${newRoomId}/kick`
-          ),
-          {
-            method: 'POST',
-            headers: {
-              // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-              Authorization: `Bearer ${rSkywalkerMatrixToken}`
-            },
-            body: JSON.stringify({
-              user_id: '@askywalker:example.com'
+          // eslint-disable-next-line @typescript-eslint/promise-function-async
+          .then((token) => {
+            rSkywalkerMatrixToken = token as string
+            return fetch.default(
+              encodeURI(
+                `https://${twakeServer.conf.matrix_server}/_matrix/client/v3/sync`
+              ),
+              {
+                headers: {
+                  // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+                  Authorization: `Bearer ${token}`
+                }
+              }
+            )
+          })
+          // eslint-disable-next-line @typescript-eslint/promise-function-async
+          .then(() => {
+            return new Promise<DbGetResult>((resolve, reject) => {
+              setTimeout(() => {
+                twakeServer.matrixDb
+                  .get('room_memberships', ['user_id'], {
+                    room_id: newRoomId
+                  })
+                  .then((memberships) => {
+                    resolve(memberships)
+                  })
+                  .catch((e) => {
+                    console.log(e)
+                    reject(e)
+                  })
+              }, 3000)
             })
-          }
-        )
-        // eslint-disable-next-line @typescript-eslint/promise-function-async
-        .then(() => {
-          return getUserRoomMembership(newRoomId, '@askywalker:example.com')
-        })
-        .then((memberships) => {
-          expect(memberships.length).toEqual(1)
-          expect(memberships[0].membership).toEqual('join')
-          done()
-        })
-        .catch((e) => {
-          console.log(e)
-          done(e)
-        })
-    })
+          })
+          .then((membersIds) => {
+            expect(membersIds.length).toEqual(4)
+            expect(membersIds[3].user_id).toEqual('@rskywalker:example.com')
+            done()
+          })
+          .catch((e) => {
+            console.log(e)
+            done(e)
+          })
+      })
 
-    it("should not join room on login if user has been kicked by room's creator", (done) => {
-      fetch
-        .default(
-          encodeURI(
-            `https://${twakeServer.conf.matrix_server}/_matrix/client/v3/rooms/${newRoomId}/kick`
-          ),
-          {
-            method: 'POST',
-            headers: {
-              // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-              Authorization: `Bearer ${appServiceToken}`
-            },
-            body: JSON.stringify({
-              user_id: '@rskywalker:example.com'
-            })
-          }
-        )
-        // eslint-disable-next-line @typescript-eslint/promise-function-async
-        .then(() => {
-          return getUserRoomMembership(newRoomId, '@rskywalker:example.com')
-        })
-        .then((memberships) => {
-          expect(memberships.length).toEqual(4)
-          expect(memberships[0].membership).toEqual('join')
-          expect(memberships[1].membership).toEqual('leave')
-          expect(memberships[2].membership).toEqual('join')
-          expect(memberships[3].membership).toEqual('leave')
-        })
-        // eslint-disable-next-line @typescript-eslint/promise-function-async
-        .then(() => {
-          return fetch.default(
+      it('should join again room if user tries to leave', (done) => {
+        fetch
+          .default(
             encodeURI(
-              `https://${twakeServer.conf.matrix_server}/_matrix/client/v3/sync`
+              `https://${twakeServer.conf.matrix_server}/_matrix/client/v3/rooms/${newRoomId}/leave`
             ),
             {
+              method: 'POST',
               headers: {
                 // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
                 Authorization: `Bearer ${rSkywalkerMatrixToken}`
               }
             }
           )
-        })
-        // eslint-disable-next-line @typescript-eslint/promise-function-async
-        .then(() => {
-          return getUserRoomMembership(newRoomId, '@rskywalker:example.com')
-        })
-        .then((memberships) => {
-          expect(memberships.length).toEqual(4)
-          expect(memberships[0].membership).toEqual('join')
-          expect(memberships[1].membership).toEqual('leave')
-          expect(memberships[2].membership).toEqual('join')
-          expect(memberships[3].membership).toEqual('leave')
-          done()
-        })
-        .catch((e) => {
-          console.log(e)
-          done(e)
-        })
-    })
+          // eslint-disable-next-line @typescript-eslint/promise-function-async
+          .then(() => {
+            return getUserRoomMembership(newRoomId, '@rskywalker:example.com')
+          })
+          .then((memberships) => {
+            expect(memberships.length).toEqual(3)
+            expect(memberships[0].membership).toEqual('join')
+            expect(memberships[1].membership).toEqual('leave')
+            expect(memberships[2].membership).toEqual('join')
+            done()
+          })
+          .catch((e) => {
+            console.log(e)
+            done(e)
+          })
+      })
 
-    it("should not join room on login if user has been banned by room's creator", (done) => {
-      fetch
-        .default(
-          encodeURI(
-            `https://${twakeServer.conf.matrix_server}/_matrix/client/v3/rooms/${newRoomId}/ban`
-          ),
-          {
-            method: 'POST',
-            headers: {
-              // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-              Authorization: `Bearer ${appServiceToken}`
-            },
-            body: JSON.stringify({
-              user_id: '@askywalker:example.com'
-            })
-          }
-        )
-        // eslint-disable-next-line @typescript-eslint/promise-function-async
-        .then(() => {
-          return getUserRoomMembership(newRoomId, '@askywalker:example.com')
-        })
-        .then((memberships) => {
-          expect(memberships.length).toEqual(2)
-          expect(memberships[0].membership).toEqual('join')
-          expect(memberships[1].membership).toEqual('ban')
-        })
-        // eslint-disable-next-line @typescript-eslint/promise-function-async
-        .then(() => simulationConnection('askywalker', 'askywalker'))
-        // eslint-disable-next-line @typescript-eslint/promise-function-async
-        .then((token) => {
-          return fetch.default(
+      it("should not be able to kick another member if he is not the room's creator", (done) => {
+        fetch
+          .default(
             encodeURI(
-              `https://${twakeServer.conf.matrix_server}/_matrix/client/v3/sync`
+              `https://${twakeServer.conf.matrix_server}/_matrix/client/v3/rooms/${newRoomId}/kick`
             ),
             {
+              method: 'POST',
               headers: {
                 // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-                Authorization: `Bearer ${token}`
-              }
+                Authorization: `Bearer ${rSkywalkerMatrixToken}`
+              },
+              body: JSON.stringify({
+                user_id: '@askywalker:example.com'
+              })
             }
           )
-        })
-        // eslint-disable-next-line @typescript-eslint/promise-function-async
-        .then(() => {
-          return getUserRoomMembership(newRoomId, '@askywalker:example.com')
-        })
-        .then((memberships) => {
-          expect(memberships.length).toEqual(2)
-          expect(memberships[0].membership).toEqual('join')
-          expect(memberships[1].membership).toEqual('ban')
-          done()
-        })
-        .catch((e) => {
-          console.log(e)
-          done(e)
-        })
+          // eslint-disable-next-line @typescript-eslint/promise-function-async
+          .then(() => {
+            return getUserRoomMembership(newRoomId, '@askywalker:example.com')
+          })
+          .then((memberships) => {
+            expect(memberships.length).toEqual(1)
+            expect(memberships[0].membership).toEqual('join')
+            done()
+          })
+          .catch((e) => {
+            console.log(e)
+            done(e)
+          })
+      })
+
+      it("should not join room on login if user has been kicked by room's creator", (done) => {
+        fetch
+          .default(
+            encodeURI(
+              `https://${twakeServer.conf.matrix_server}/_matrix/client/v3/rooms/${newRoomId}/kick`
+            ),
+            {
+              method: 'POST',
+              headers: {
+                // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+                Authorization: `Bearer ${appServiceToken}`
+              },
+              body: JSON.stringify({
+                user_id: '@rskywalker:example.com'
+              })
+            }
+          )
+          // eslint-disable-next-line @typescript-eslint/promise-function-async
+          .then(() => {
+            return getUserRoomMembership(newRoomId, '@rskywalker:example.com')
+          })
+          .then((memberships) => {
+            expect(memberships.length).toEqual(4)
+            expect(memberships[0].membership).toEqual('join')
+            expect(memberships[1].membership).toEqual('leave')
+            expect(memberships[2].membership).toEqual('join')
+            expect(memberships[3].membership).toEqual('leave')
+          })
+          // eslint-disable-next-line @typescript-eslint/promise-function-async
+          .then(() => {
+            return fetch.default(
+              encodeURI(
+                `https://${twakeServer.conf.matrix_server}/_matrix/client/v3/sync`
+              ),
+              {
+                headers: {
+                  // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+                  Authorization: `Bearer ${rSkywalkerMatrixToken}`
+                }
+              }
+            )
+          })
+          // eslint-disable-next-line @typescript-eslint/promise-function-async
+          .then(() => {
+            return getUserRoomMembership(newRoomId, '@rskywalker:example.com')
+          })
+          .then((memberships) => {
+            expect(memberships.length).toEqual(4)
+            expect(memberships[0].membership).toEqual('join')
+            expect(memberships[1].membership).toEqual('leave')
+            expect(memberships[2].membership).toEqual('join')
+            expect(memberships[3].membership).toEqual('leave')
+            done()
+          })
+          .catch((e) => {
+            console.log(e)
+            done(e)
+          })
+      })
+
+      it("should not join room on login if user has been banned by room's creator", (done) => {
+        fetch
+          .default(
+            encodeURI(
+              `https://${twakeServer.conf.matrix_server}/_matrix/client/v3/rooms/${newRoomId}/ban`
+            ),
+            {
+              method: 'POST',
+              headers: {
+                // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+                Authorization: `Bearer ${appServiceToken}`
+              },
+              body: JSON.stringify({
+                user_id: '@askywalker:example.com'
+              })
+            }
+          )
+          // eslint-disable-next-line @typescript-eslint/promise-function-async
+          .then(() => {
+            return getUserRoomMembership(newRoomId, '@askywalker:example.com')
+          })
+          .then((memberships) => {
+            expect(memberships.length).toEqual(2)
+            expect(memberships[0].membership).toEqual('join')
+            expect(memberships[1].membership).toEqual('ban')
+          })
+          // eslint-disable-next-line @typescript-eslint/promise-function-async
+          .then(() => simulationConnection('askywalker', 'askywalker'))
+          // eslint-disable-next-line @typescript-eslint/promise-function-async
+          .then((token) => {
+            return fetch.default(
+              encodeURI(
+                `https://${twakeServer.conf.matrix_server}/_matrix/client/v3/sync`
+              ),
+              {
+                headers: {
+                  // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+                  Authorization: `Bearer ${token}`
+                }
+              }
+            )
+          })
+          // eslint-disable-next-line @typescript-eslint/promise-function-async
+          .then(() => {
+            return getUserRoomMembership(newRoomId, '@askywalker:example.com')
+          })
+          .then((memberships) => {
+            expect(memberships.length).toEqual(2)
+            expect(memberships[0].membership).toEqual('join')
+            expect(memberships[1].membership).toEqual('ban')
+            done()
+          })
+          .catch((e) => {
+            console.log(e)
+            done(e)
+          })
+      })
     })
   })
 
   describe('Tests with mocks', () => {
     beforeEach(() => {
       jest.restoreAllMocks()
+    })
+
+    beforeAll((done) => {
+      buildUserDB(mockTestsConfig as Config)
+        // eslint-disable-next-line @typescript-eslint/promise-function-async
+        .then(() => {
+          twakeServer = new TwakeServer(mockTestsConfig as Config)
+          app = express()
+          return twakeServer.ready
+        })
+        .then(() => {
+          app.use(twakeServer.endpoints)
+          expressTwakeServer = app.listen(twakeServerPort, () => {
+            done()
+          })
+        })
+        .catch((e) => {
+          done(e)
+        })
+    })
+
+    afterAll((done) => {
+      const filesToDelete = [
+        path.join(pathToTestDataFolder, 'matrix.db'),
+        path.join(pathToTestDataFolder, 'twake.db'),
+        path.join(pathToTestDataFolder, 'user.db')
+      ]
+      filesToDelete.forEach((path) => {
+        if (fs.existsSync(path)) fs.unlinkSync(path)
+      })
+
+      if (twakeServer != null) twakeServer.cleanJobs()
+      if (expressTwakeServer != null) {
+        expressTwakeServer.close((e) => {
+          if (e != null) {
+            done(e)
+          }
+          done()
+        })
+      } else {
+        done()
+      }
     })
 
     describe('On create room', () => {
@@ -1188,15 +1304,11 @@ describe('ApplicationServer', () => {
     describe('on login', () => {
       it('should log an error when m.presence event sender is not found in user database', (done) => {
         const ldapUid = 'test'
-        const appService = new AppServiceAPI(
-          twakeServer,
-          undefined,
-          mockLogger as TwakeLogger
-        )
+        const spyOnLoggerError = jest.spyOn(twakeServer.logger, 'error')
         jest.spyOn(twakeServer.idServer.userDB, 'get').mockResolvedValue([])
         jest.spyOn(TwakeRoom, 'getAllRooms').mockResolvedValue([])
         jest.spyOn(twakeServer.matrixDb, 'get').mockResolvedValue([])
-        appService.emit('ephemeral_type: m.presence', {
+        twakeServer.applicationServer.emit('ephemeral_type: m.presence', {
           content: {
             avatar_url: 'mxc://localhost/wefuiwegh8742w',
             currently_active: false,
@@ -1208,8 +1320,8 @@ describe('ApplicationServer', () => {
           type: 'm.presence'
         })
         setTimeout(() => {
-          expect(mockLogger.error).toHaveBeenCalledTimes(1)
-          expect(mockLogger.error).toHaveBeenCalledWith(
+          expect(spyOnLoggerError).toHaveBeenCalledTimes(1)
+          expect(spyOnLoggerError).toHaveBeenCalledWith(
             new Error(
               `User with ${
                 twakeServer.conf.ldap_uid_field as string
@@ -1221,11 +1333,7 @@ describe('ApplicationServer', () => {
       })
 
       it('should complete all join requests even if an error occurs', (done) => {
-        const appService = new AppServiceAPI(
-          twakeServer,
-          undefined,
-          mockLogger as TwakeLogger
-        )
+        const spyOnLoggerError = jest.spyOn(twakeServer.logger, 'error')
         jest
           .spyOn(fetch, 'default')
           .mockResolvedValueOnce(new fetch.Response())
@@ -1249,7 +1357,7 @@ describe('ApplicationServer', () => {
             new TwakeRoom('room3', { uid: 'bb8' })
           ])
         jest.spyOn(twakeServer.matrixDb, 'get').mockResolvedValue([])
-        appService.emit('ephemeral_type: m.presence', {
+        twakeServer.applicationServer.emit('ephemeral_type: m.presence', {
           content: {
             avatar_url: 'mxc://localhost/wefuiwegh8742w',
             currently_active: false,
@@ -1261,13 +1369,12 @@ describe('ApplicationServer', () => {
           type: 'm.presence'
         })
         setTimeout(() => {
-          expect(mockLogger.error).not.toHaveBeenCalled()
+          expect(spyOnLoggerError).not.toHaveBeenCalled()
           done()
         }, 3000)
       })
 
       it('should force join only to rooms whose sender is not member yet', (done) => {
-        const appService = new AppServiceAPI(twakeServer)
         const spyOnFetch = jest
           .spyOn(fetch, 'default')
           .mockResolvedValue(new fetch.Response())
@@ -1299,7 +1406,7 @@ describe('ApplicationServer', () => {
             membership: 'invite'
           }
         ])
-        appService.emit('ephemeral_type: m.presence', {
+        twakeServer.applicationServer.emit('ephemeral_type: m.presence', {
           content: {
             avatar_url: 'mxc://localhost/wefuiwegh8742w',
             currently_active: false,

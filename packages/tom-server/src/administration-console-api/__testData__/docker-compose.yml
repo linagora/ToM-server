@@ -1,0 +1,86 @@
+version: '3.8'
+
+networks:
+  admin-console-test:
+
+services:
+  postgresql:
+    image: postgres:13-bullseye
+    volumes:
+      - ./synapse-data/matrix.example.com.log.config:/data/matrix.example.com.log.config
+      - ./db/init-synapse-db.sh:/docker-entrypoint-initdb.d/init-synapse-db.sh
+      - ./db/init-llng-db.sh:/docker-entrypoint-initdb.d/init-llng-db.sh
+      - ./db/init-twake-db.sh:/docker-entrypoint-initdb.d/init-twake-db.sh
+      - ./llng/lmConf-1.json:/llng-conf/conf.json
+    environment:
+      - POSTGRES_PASSWORD=synapse!!
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    ports:
+      - 5434:5432
+    networks:
+      - admin-console-test
+
+  synapse:
+    image: matrixdotorg/synapse:v1.89.0
+    container_name: synapse-tom-1
+    volumes:
+      - ./synapse-data:/data
+      - ./nginx/ssl/ca.pem:/etc/ssl/certs/ca.pem
+      - ./nginx/ssl/9da13359.0:/etc/ssl/certs/9da13359.0
+      - ./nginx/ssl/matrix.example.com.crt:/etc/ssl/certs/matrix.example.com.crt
+      - ./nginx/ssl/matrix.example.com.key:/etc/ssl/certs/matrix.example.com.key
+    depends_on:
+      - auth
+    environment: 
+      - UID=${MYUID}
+      - VIRTUAL_PORT=8448
+      - VIRTUAL_HOST=matrix.example.com
+      - VIRTUAL_PROTO=https
+    healthcheck:
+      test: ["CMD", "curl", "-fSsk", "https://localhost:8448/health"]
+      interval: 10s
+      timeout: 10s
+      retries: 3
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      admin-console-test:
+        aliases:
+          - matrix.example.com
+
+  auth:
+    image: yadd/lemonldap-ng-portal:2.18.2-9
+    volumes:
+      - ./llng/lmConf-1.json:/var/lib/lemonldap-ng/conf/lmConf-1.json
+      - ./llng/ssl.conf:/etc/nginx/sites-enabled/0000default.conf
+      - ./nginx/ssl/auth.example.com.crt:/etc/nginx/ssl/auth.example.com.crt
+      - ./nginx/ssl/auth.example.com.key:/etc/nginx/ssl/auth.example.com.key
+    environment:
+      - PORTAL=https://auth.example.com
+      - VIRTUAL_HOST=auth.example.com
+      - PG_SERVER=postgresql
+    depends_on:
+      postgresql:
+        condition: service_healthy
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      admin-console-test:
+        aliases:
+          - auth.example.com
+
+  nginx-proxy:
+    image: nginxproxy/nginx-proxy
+    ports:
+      - 444:444
+    environment:
+      - HTTPS_PORT=444
+    volumes:
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+      - ./nginx/ssl:/etc/nginx/certs
+    networks:
+      - admin-console-test

@@ -1,14 +1,23 @@
+import { type TwakeLogger } from '@twake/logger'
+import type MatrixApplicationServer from '@twake/matrix-application-server'
 import { EHttpMethod } from '@twake/matrix-application-server'
-import type TwakeApplicationServer from '..'
-import type TwakeServer from '../..'
+import { type MatrixDB, type UserDB } from '@twake/matrix-identity-server'
+import { Router } from 'express'
+import { type TwakeDB } from '../../db'
+import { type Config } from '../../types'
 import { createRoom } from '../controllers/room'
 import { auth } from '../middlewares/auth'
 import validation from '../middlewares/validation'
 
-export const extendRoutes = (
-  appServer: TwakeApplicationServer,
-  twakeServer: TwakeServer
-): void => {
+export default (
+  appServer: MatrixApplicationServer,
+  db: TwakeDB,
+  userDb: UserDB,
+  matrixDb: MatrixDB,
+  conf: Config,
+  logger: TwakeLogger
+): Router => {
+  const router = Router()
   /**
    * @openapi
    * '/_twake/app/v1/rooms':
@@ -115,10 +124,13 @@ export const extendRoutes = (
    *        $ref: '#/components/responses/InternalServerError'
    */
   appServer.router.addRoute(
+    router,
     '/_twake/app/v1/rooms',
     EHttpMethod.POST,
-    createRoom(appServer, twakeServer),
+    createRoom(appServer, db, userDb, matrixDb, conf, logger),
     validation(),
     auth
   )
+
+  return router
 }

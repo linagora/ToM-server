@@ -1,16 +1,20 @@
+import { type TwakeLogger } from '@twake/logger'
+import type MatrixApplicationServer from '@twake/matrix-application-server'
 import {
   AppServerAPIError,
   validationErrorHandler,
   type expressAppHandler
 } from '@twake/matrix-application-server'
-import { type DbGetResult } from '@twake/matrix-identity-server'
+import {
+  type DbGetResult,
+  type MatrixDB,
+  type UserDB
+} from '@twake/matrix-identity-server'
 import { type NextFunction, type Request, type Response } from 'express'
 import lodash from 'lodash'
 import fetch, { type Response as FetchResponse } from 'node-fetch'
-import type TwakeApplicationServer from '..'
-import type TwakeServer from '../..'
 import { type TwakeDB } from '../../db'
-import { allMatrixErrorCodes } from '../../types'
+import { allMatrixErrorCodes, type Config } from '../../types'
 import { TwakeRoom } from '../models/room'
 const { intersection } = lodash
 
@@ -21,8 +25,12 @@ const portRe =
 const hostnameRe = new RegExp(`^${domainRe}(:${portRe})?$`, 'i')
 
 export const createRoom = (
-  appServer: TwakeApplicationServer,
-  twakeServer: TwakeServer
+  appServer: MatrixApplicationServer,
+  db: TwakeDB,
+  userDb: UserDB,
+  matrixDb: MatrixDB,
+  conf: Config,
+  logger: TwakeLogger
 ): expressAppHandler => {
   // eslint-disable-next-line @typescript-eslint/no-misused-promises
   return async (
@@ -33,13 +41,13 @@ export const createRoom = (
     try {
       let newRoomId: string | null = null
       validationErrorHandler(req)
-      if (!hostnameRe.test(twakeServer.conf.matrix_server)) {
+      if (!hostnameRe.test(conf.matrix_server)) {
         throw Error('Bad matrix_server_name')
       }
-      const appServiceMatrixId = `@${appServer.appServiceRegistration.senderLocalpart}:${twakeServer.conf.server_name}`
+      const appServiceMatrixId = `@${appServer.appServiceRegistration.senderLocalpart}:${conf.server_name}`
       // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
       const roomAliasName = `_twake_${req.body.aliasName}`
-      const rooms = await twakeServer.matrixDb.get('room_aliases', undefined, {
+      const rooms = await matrixDb.get('room_aliases', undefined, {
         room_alias: roomAliasName
       })
       if (rooms.length > 1) {
@@ -62,7 +70,7 @@ export const createRoom = (
         const response = await fetch(
           encodeURI(
             // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-            `https://${twakeServer.conf.matrix_server}/_matrix/client/v3/createRoom`
+            `https://${conf.matrix_server}/_matrix/client/v3/createRoom`
           ),
           {
             method: 'POST',
@@ -103,40 +111,32 @@ export const createRoom = (
         }
         newRoomId = body.room_id
       }
-      const twakeRoom = await TwakeRoom.getRoom(
-        twakeServer.db as TwakeDB,
-        newRoomId
-      )
+      const twakeRoom = await TwakeRoom.getRoom(db, newRoomId)
       if (twakeRoom != null && rooms.length > 0) {
         throw new AppServerAPIError<typeof allMatrixErrorCodes>({
           status: 409,
           message: 'This room already exits in Twake database'
         })
       } else if (twakeRoom != null) {
-        await twakeRoom.updateRoom(
-          twakeServer.db as TwakeDB,
-          req.body.ldapFilter
-        )
+        await twakeRoom.updateRoom(db, req.body.ldapFilter)
       } else {
-        await new TwakeRoom(newRoomId, req.body.ldapFilter).saveRoom(
-          twakeServer.db as TwakeDB
-        )
+        await new TwakeRoom(newRoomId, req.body.ldapFilter).saveRoom(db)
       }
       const [ldapUsers, matrixUsers] = await Promise.all<
         Array<Promise<DbGetResult>>
       >([
-        twakeServer.idServer.userDB.get(
+        userDb.get(
           'users',
-          [twakeServer.conf.ldap_uid_field as string],
+          [conf.ldap_uid_field as string],
           req.body.ldapFilter
         ),
-        twakeServer.matrixDb.getAll('users', ['name'])
+        matrixDb.getAll('users', ['name'])
       ])
 
       const ldapUsersIds = ldapUsers.map(
         (user) =>
-          `@${user[twakeServer.conf.ldap_uid_field as string] as string}:${
-            twakeServer.conf.server_name
+          `@${user[conf.ldap_uid_field as string] as string}:${
+            conf.server_name
           }`
       )
       const matrixUsersIds = matrixUsers.map((user) => user.name as string)
@@ -152,7 +152,7 @@ export const createRoom = (
             return fetch(
               encodeURI(
                 // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-                `https://${twakeServer.conf.matrix_server}/_matrix/client/v3/join/${newRoomId}?user_id=${id}`
+                `https://${conf.matrix_server}/_matrix/client/v3/join/${newRoomId}?user_id=${id}`
               ),
               {
                 method: 'POST',
@@ -174,8 +174,7 @@ export const createRoom = (
             >
             if ('errcode' in body) {
               joinErrors.push({
-                [twakeServer.conf.ldap_uid_field as string]:
-                  usersIdsMatchingFilter[index],
+                [conf.ldap_uid_field as string]: usersIdsMatchingFilter[index],
                 ...body
               })
             }
@@ -183,8 +182,7 @@ export const createRoom = (
           }
           case 'rejected':
             joinErrors.push({
-              [twakeServer.conf.ldap_uid_field as string]:
-                usersIdsMatchingFilter[index],
+              [conf.ldap_uid_field as string]: usersIdsMatchingFilter[index],
               errcode: allMatrixErrorCodes.unknown,
               error: response.reason ?? 'Internal server error'
             })
@@ -195,7 +193,7 @@ export const createRoom = (
       }
       joinErrors.length > 0 ? res.json(joinErrors) : res.send()
     } catch (error) {
-      appServer.logger.error(error)
+      logger.error(error)
       next(error)
     }
   }

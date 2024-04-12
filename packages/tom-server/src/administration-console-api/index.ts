@@ -1,32 +1,39 @@
-import { type ConfigDescription } from '@twake/config-parser'
 import { type TwakeLogger } from '@twake/logger'
-import MatrixApplicationServer, {
-  type AppService,
-  type ClientEvent
-} from '@twake/matrix-application-server'
-import { type DbGetResult } from '@twake/matrix-identity-server'
+import type MatrixApplicationServer from '@twake/matrix-application-server'
+import { type ClientEvent } from '@twake/matrix-application-server'
+import {
+  type DbGetResult,
+  type MatrixDB,
+  type UserDB
+} from '@twake/matrix-identity-server'
+import { type Router } from 'express'
 import lodash from 'lodash'
 import fetch from 'node-fetch'
-import type TwakeServer from '..'
-import defaultConfig from '../config.json'
+import { type TwakeDB } from '../db'
+import { type Config } from '../types'
 import { TwakeRoom } from './models/room'
-import { extendRoutes } from './routes'
+import setRoutes from './routes'
 const { groupBy } = lodash
 
-export default class TwakeApplicationServer
-  extends MatrixApplicationServer
-  implements AppService
-{
+export default class AdministrationConsoleAPI {
+  endpoints: Router
   constructor(
-    parent: TwakeServer,
-    confDesc?: ConfigDescription,
-    logger?: TwakeLogger
+    applicationServer: MatrixApplicationServer,
+    db: TwakeDB,
+    userDb: UserDB,
+    matrixDb: MatrixDB,
+    conf: Config,
+    logger: TwakeLogger
   ) {
-    if (confDesc == null) confDesc = defaultConfig
-    super(parent.conf, confDesc, logger)
-    extendRoutes(this, parent)
-
-    this.on('ephemeral_type: m.presence', (event: ClientEvent) => {
+    this.endpoints = setRoutes(
+      applicationServer,
+      db,
+      userDb,
+      matrixDb,
+      conf,
+      logger
+    )
+    applicationServer.on('ephemeral_type: m.presence', (event: ClientEvent) => {
       if (
         event.type === 'm.presence' &&
         'presence' in event.content &&
@@ -40,13 +47,13 @@ export default class TwakeApplicationServer
             ldapUid = match[1]
           }
         }
-        if (matrixUserId != null && ldapUid != null && parent.db != null) {
+        if (matrixUserId != null && ldapUid != null && db != null) {
           Promise.all([
-            parent.idServer.userDB.get('users', undefined, {
-              [parent.conf.ldap_uid_field as string]: ldapUid
+            userDb.get('users', undefined, {
+              [conf.ldap_uid_field as string]: ldapUid
             }),
-            TwakeRoom.getAllRooms(parent.db),
-            parent.matrixDb.get('room_memberships', ['room_id'], {
+            TwakeRoom.getAllRooms(db),
+            matrixDb.get('room_memberships', ['room_id'], {
               user_id: matrixUserId
             })
           ])
@@ -54,7 +61,7 @@ export default class TwakeApplicationServer
             .then(([user, rooms, roomMemberships]) => {
               if (user.length !== 1) {
                 throw new Error(
-                  `User with ${parent.conf.ldap_uid_field as string} ${
+                  `User with ${conf.ldap_uid_field as string} ${
                     ldapUid as string
                   } not found`
                 )
@@ -94,12 +101,12 @@ export default class TwakeApplicationServer
                     return fetch(
                       encodeURI(
                         // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-                        `https://${parent.conf.matrix_server}/_matrix/client/v3/join/${room.id}?user_id=${matrixUserId}`
+                        `https://${conf.matrix_server}/_matrix/client/v3/join/${room.id}?user_id=${matrixUserId}`
                       ),
                       {
                         method: 'POST',
                         headers: {
-                          Authorization: `Bearer ${this.appServiceRegistration.asToken}`
+                          Authorization: `Bearer ${applicationServer.appServiceRegistration.asToken}`
                         }
                       }
                     )
@@ -107,42 +114,45 @@ export default class TwakeApplicationServer
               )
             })
             .catch((e) => {
-              this.logger.error(e)
+              logger.error(e)
             })
         }
       }
     })
 
-    this.on('state event | type: m.room.member', (event: ClientEvent) => {
-      if (
-        event.type === 'm.room.member' &&
-        'membership' in event.content &&
-        event.content.membership === 'leave'
-      ) {
-        const matrixUserId = event.sender
-        const targetUserId = event.state_key
+    applicationServer.on(
+      'state event | type: m.room.member',
+      (event: ClientEvent) => {
         if (
-          matrixUserId != null &&
-          targetUserId != null &&
-          targetUserId === matrixUserId
+          event.type === 'm.room.member' &&
+          'membership' in event.content &&
+          event.content.membership === 'leave'
         ) {
-          fetch(
-            encodeURI(
-              // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-              `https://${parent.conf.matrix_server}/_matrix/client/v3/join/${event.room_id}?user_id=${matrixUserId}`
-            ),
-            {
-              method: 'POST',
-              headers: {
-                Authorization: `Bearer ${this.appServiceRegistration.asToken}`
+          const matrixUserId = event.sender
+          const targetUserId = event.state_key
+          if (
+            matrixUserId != null &&
+            targetUserId != null &&
+            targetUserId === matrixUserId
+          ) {
+            fetch(
+              encodeURI(
+                // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+                `https://${conf.matrix_server}/_matrix/client/v3/join/${event.room_id}?user_id=${matrixUserId}`
+              ),
+              {
+                method: 'POST',
+                headers: {
+                  Authorization: `Bearer ${applicationServer.appServiceRegistration.asToken}`
+                }
               }
-            }
-          ).catch((e) => {
-            // istanbul ignore next
-            this.logger.error(e)
-          })
+            ).catch((e) => {
+              // istanbul ignore next
+              logger.error(e)
+            })
+          }
         }
       }
-    })
+    )
   }
 }

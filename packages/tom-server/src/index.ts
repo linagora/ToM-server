@@ -8,7 +8,7 @@ import MatrixApplicationServer from '@twake/matrix-application-server'
 import { MatrixDB } from '@twake/matrix-identity-server'
 import { Router } from 'express'
 import fs from 'fs'
-import AppServiceAPI from './application-server'
+import AdministrationConsoleAPI from './administration-console-api'
 import defaultConfig from './config.json'
 import initializeDb, { type TwakeDB } from './db'
 import IdServer from './identity-server'
@@ -62,8 +62,15 @@ export default class TwakeServer {
             process.env.ADDITIONAL_FEATURES === 'true' ||
             (this.conf.additional_features as boolean)
           ) {
-            const appServiceApi = new AppServiceAPI(this, confDesc, this.logger)
-            this.endpoints.use(appServiceApi.router.routes)
+            const adminConsoleApi = new AdministrationConsoleAPI(
+              this.applicationServer,
+              this.idServer.db,
+              this.idServer.userDB,
+              this.matrixDb,
+              this.conf,
+              this.logger
+            )
+            this.endpoints.use(adminConsoleApi.endpoints)
           }
           resolve(true)
         })
