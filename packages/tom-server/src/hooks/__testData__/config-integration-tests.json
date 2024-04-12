@@ -1,0 +1,25 @@
+{
+  "additional_features": true,
+  "base_url": "http://host.docker.internal:3003/",
+  "cron_service": true,
+  "database_engine": "pg",
+  "database_host": "localhost:5435",
+  "database_name": "twakedb",
+  "database_user": "twake",
+  "database_password": "twake!",
+  "ldap_base": "dc=example,dc=com",
+  "ldap_uri": "ldap://localhost:21391",
+  "matrix_database_engine": "pg",
+  "matrix_database_host": "localhost:5435",
+  "matrix_database_name": "synapsedb",
+  "matrix_database_password": "synapse!",
+  "matrix_database_user": "synapse",
+  "matrix_server": "matrix.example.com:446",
+  "namespaces": {
+    "users": [{ "exclusive": false, "regex": "@.*" }]
+  },
+  "registration_file_path": "./src/hooks/__testData__/synapse-data/registration.yaml",
+  "server_name": "example.com",
+  "template_dir": "./templates",
+  "userdb_engine": "ldap"
+}

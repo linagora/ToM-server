@@ -1,0 +1,10 @@
+id: lpqhjc6nyj7sfir56es9yjkasbcigz9l7dkcgkt66kaolp8dqcffwkghqpahd9o3
+hs_token: rr7d9j1cezgdmdjgcxew7wdofsplp85poy7azc86bgfkkhsm8kqarhouebh6ofk4
+as_token: 7ok8e79fchomqbgxf7lkk4krjgoilas8j2ggch4hb8pcnigo595jemkomioha7f4
+url: http://localhost:3003/
+sender_localpart: twake
+namespaces:
+  users:
+    - exclusive: false
+      regex: '@.*'
+de.sorunome.msc2409.push_ephemeral: true

@@ -1,0 +1,174 @@
+dn: dc=example,dc=com
+objectClass: top
+objectClass: organization
+objectClass: dcObject
+dc: example
+o: Example
+
+dn: ou=users,dc=example,dc=com
+objectClass: top
+objectClass: organizationalUnit
+ou: users
+
+dn: uid=dwho,ou=users,dc=example,dc=com
+objectClass: inetOrgPerson
+uid: dwho
+cn: Dr Who
+sn: Dwho
+mail: dwho@example.com
+mobile: 33671298765
+userPassword: dwho
+
+dn: uid=rtyler,ou=users,dc=example,dc=com
+objectClass: inetOrgPerson
+uid: rtyler
+cn: Rose Tyler
+sn: Rtyler
+mail: rtyler@example.com
+mobile: 33671298767
+userPassword: rtyler
+
+dn: uid=msmith,ou=users,dc=example,dc=com
+objectClass: inetOrgPerson
+uid: msmith
+cn: Mr Smith
+sn: Msmith
+mail: msmith@example.com
+userPassword: msmith
+
+dn: uid=okenobi,ou=users,dc=example,dc=com
+objectClass: inetOrgPerson
+uid: okenobi
+cn: Obi-Wan Kenobi
+sn: Okenobi
+mail: okenobi@example.com
+userPassword: okenobi
+
+dn: uid=qjinn,ou=users,dc=example,dc=com
+objectClass: inetOrgPerson
+uid: qjinn
+cn: Qui-Gon Jinn
+sn: Qgonjinn
+mail: qjinn@example.com
+userPassword: qjinn
+
+dn: uid=chewbacca,ou=users,dc=example,dc=com
+objectClass: inetOrgPerson
+uid: chewbacca
+cn: Chewbacca
+sn: Chewbacca
+mail: chewbacca@example.com
+userPassword: chewbacca
+
+dn: uid=lorgana,ou=users,dc=example,dc=com
+objectClass: inetOrgPerson
+uid: lorgana
+cn: Leia Organa
+sn: Lorgana
+mail: lorgana@example.com
+userPassword: lorgana
+
+dn: uid=pamidala,ou=users,dc=example,dc=com
+objectClass: inetOrgPerson
+uid: pamidala
+cn: Padme Amidala
+sn: Pamidala
+mail: pamidala@example.com
+userPassword: pamidala
+
+dn: uid=cdooku,ou=users,dc=example,dc=com
+objectClass: inetOrgPerson
+uid: cdooku
+cn: Comte Dooku
+sn: Cdooku
+mail: cdooku@example.com
+userPassword: cdooku
+
+dn: uid=kren,ou=users,dc=example,dc=com
+objectClass: inetOrgPerson
+uid: kren
+cn: Kylo Ren
+sn: Kren
+mail: kren@example.com
+userPassword: kren
+
+dn: uid=dmaul,ou=users,dc=example,dc=com
+objectClass: inetOrgPerson
+uid: dmaul
+cn: Dark Maul
+sn: Dmaul
+mail: dmaul@example.com
+userPassword: dmaul
+
+dn: uid=askywalker,ou=users,dc=example,dc=com
+objectClass: inetOrgPerson
+uid: askywalker
+cn: Anakin Skywalker
+sn: Askywalker
+mail: askywalker@example.com
+userPassword: askywalker
+
+dn: uid=jbinks,ou=users,dc=example,dc=com
+objectClass: inetOrgPerson
+uid: jbinks
+cn: Jar Jar Binks
+sn: Jbinks
+mail: jbinks@example.com
+userPassword: jbinks
+
+dn: uid=bfett,ou=users,dc=example,dc=com
+objectClass: inetOrgPerson
+uid: bfett
+cn: Boba Fett
+sn: Bfett
+mail: bfett@example.com
+userPassword: bfett
+
+dn: uid=jfett,ou=users,dc=example,dc=com
+objectClass: inetOrgPerson
+uid: jfett
+cn: Jango Ffett
+sn: Jfett
+mail: jfett@example.com
+userPassword: jfett
+
+dn: uid=lskywalker,ou=users,dc=example,dc=com
+objectClass: inetOrgPerson
+uid: lskywalker
+cn: Luke Skywalker
+sn: Lskywalker
+mail: lskywalker@example.com
+userPassword: lskywalker
+
+dn: uid=myoda,ou=users,dc=example,dc=com
+objectClass: inetOrgPerson
+uid: myoda
+cn: Master Yoda
+sn: Myoda
+mail: myoda@example.com
+userPassword: myoda
+
+dn: uid=hsolo,ou=users,dc=example,dc=com
+objectClass: inetOrgPerson
+uid: hsolo
+cn: Han Solo
+sn: Hsolo
+mail: hsolo@example.com
+userPassword: hsolo
+
+dn: uid=r2d2,ou=users,dc=example,dc=com
+objectClass: inetOrgPerson
+uid: r2d2
+cn: R2D2
+sn: R2D2
+mail: r2d2@example.com
+userPassword: r2d2
+
+dn: uid=c3po,ou=users,dc=example,dc=com
+objectClass: inetOrgPerson
+uid: c3po
+cn: C3PO
+sn: C3po
+mail: c3po@example.com
+userPassword: c3po
+
