@@ -25,10 +25,16 @@ type Match = (
 */
 type GetAll = (table: Collections, fields: string[]) => Promise<DbGetResult>
 
+type Insert = (
+  table: Collections,
+  values: Record<string, string | number>
+) => Promise<DbGetResult>
+
 export interface MatrixDBBackend {
   ready: Promise<void>
   get: Get
   getAll: GetAll
+  insert: Insert
   // match: Match
   close: () => void
 }
@@ -77,6 +83,11 @@ class MatrixDB implements MatrixDBBackend {
     filterFields?: Record<string, string | number | Array<string | number>>
   ): Promise<DbGetResult> => {
     return await this.db.get(table, fields, filterFields)
+  }
+
+  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
+  insert(table: Collections, values: Record<string, string | number>) {
+    return this.db.insert(table, values)
   }
 
   close(): void {

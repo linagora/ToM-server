@@ -11,6 +11,7 @@ import fs from 'fs'
 import AdministrationConsoleAPI from './administration-console-api'
 import defaultConfig from './config.json'
 import initializeDb, { type TwakeDB } from './db'
+import { TwakeServerHooks } from './hooks'
 import IdServer from './identity-server'
 import mutualRoomsAPIRouter from './mutual-rooms-api'
 import privateNoteApiRouter from './private-note-api'
@@ -30,6 +31,7 @@ export default class TwakeServer {
   ready!: Promise<boolean>
   idServer!: TwakeIdentityServer
   applicationServer: MatrixApplicationServer
+  hooks!: TwakeServerHooks
 
   constructor(
     conf?: Partial<Config>,
@@ -164,13 +166,13 @@ export default class TwakeServer {
     Object.keys(wellKnown.api.get).forEach((k) => {
       this.endpoints.get(k, wellKnown.api.get[k])
     })
-
-      return true
-    } catch (error) {
-      /* istanbul ignore next */
-      this.logger.error(`Unable to initialize server`, { error })
-      /* istanbul ignore next */
-      throw Error('Unable to initialize server', { cause: error })
+    this.hooks = new TwakeServerHooks(
+      this.applicationServer,
+      this.matrixDb,
+      this.conf,
+      this.logger
+    )
+    await this.hooks.ready
     return true
   }
 }
