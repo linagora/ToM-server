@@ -38,7 +38,8 @@ env BASE_URL= \
     SMS_API_URL= \
     SMS_API_KEY= \
     RATE_LIMITING_WINDOW= \
-    RATE_LIMITING_NB_REQUESTS=
+    RATE_LIMITING_NB_REQUESTS= \
+    TRUSTED_PROXIES=
 
 RUN apt update && apt -y dist-upgrade
 
