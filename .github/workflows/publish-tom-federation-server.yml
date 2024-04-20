@@ -30,4 +30,4 @@ jobs:
           workdir: "${{ github.workspace }}"
           context: .
           buildoptions: "-t linagora/tom-federation-server -f packages/federation-server/Dockerfile"
-          tags: "latest"
+          tags: "latest,${{ steps.date.outputs.date }}"
