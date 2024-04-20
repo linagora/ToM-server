@@ -9,7 +9,7 @@ export const auth: expressAppHandler = (
   res: Response,
   next: NextFunction
 ): void => {
-  const tokenRe = /^Bearer ([a-zA-Z0-9]{64})$/
+  const tokenRe = /^Bearer (\S+)$/
   let token = null
   if (req.headers?.authorization != null) {
     const re = req.headers.authorization.match(tokenRe)
