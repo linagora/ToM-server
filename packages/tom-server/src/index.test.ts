@@ -107,6 +107,9 @@ describe('Tom-server', () => {
         'm.authentication': {
           issuer: 'https://auth.example.com'
         },
+        'org.matrix.msc3575.proxy': {
+          url: 'https://syncv3.example.com'
+        },
         't.server': {
           base_url: 'http://example.com/',
           server_name: 'example.com'
