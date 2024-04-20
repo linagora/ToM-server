@@ -10,6 +10,9 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     steps:
+      - name: date
+        id: date
+        run: echo "::set-output name=date::$(date +'%Y-%m-%d')"
       - uses: actions/checkout@v3
       - name: Get all src files that have changed
         id: changed-files
@@ -27,4 +30,6 @@ jobs:
           workdir: "${{ github.workspace }}"
           context: .
           buildoptions: "-t linagora/tom-server -f Dockerfile"
-          tags: "latest"
+          tags: |
+            "latest"
+            ${{ steps.date.outputs.date }}
