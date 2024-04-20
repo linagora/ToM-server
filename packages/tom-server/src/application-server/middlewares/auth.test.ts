@@ -52,7 +52,7 @@ describe('Authentication', () => {
   it('should throw AppServerAPIError with 403 status if authorization token does not match regex', () => {
     mockRequest = {
       headers: {
-        authorization: `Bearer falsy_token`
+        authorization: `Bearer falsy token`
       }
     }
     expect(() => {
