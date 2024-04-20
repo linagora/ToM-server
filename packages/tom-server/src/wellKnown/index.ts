@@ -105,6 +105,9 @@ interface WellKnownType {
   'm.identity_server': {
     base_url: string
   }
+  'org.matrix.msc3575.proxy': {
+    url: string
+  }
   'm.federation_servers'?: {
     base_urls: string[]
   }
@@ -145,6 +148,9 @@ class WellKnown {
         },
         'm.identity_server': {
           base_url: conf.base_url
+        },
+        'org.matrix.msc3575.proxy': {
+          url: `https://syncv3.${conf.server_name}`
         },
         't.server': {
           base_url: conf.base_url,

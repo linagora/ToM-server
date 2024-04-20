@@ -76,8 +76,10 @@ if (process.argv[2] === 'generate') {
 } else {
   const tomServer = new TomServer(conf)
   const app = express()
-  const trustProxy = process.env.TRUSTED_PROXIES ? process.env.TRUSTED_PROXIES.split(/\s+/) : []
-  if (trustProxy.length>0) {
+  const trustProxy = process.env.TRUSTED_PROXIES
+    ? process.env.TRUSTED_PROXIES.split(/\s+/)
+    : []
+  if (trustProxy.length > 0) {
     app.set('trust proxy', ...trustProxy)
   }
   const promises = [tomServer.ready]
