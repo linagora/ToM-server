@@ -30,7 +30,5 @@ jobs:
           workdir: "${{ github.workspace }}/packages/matrix-invite"
           context: .
           buildoptions: "-t linagora/matrix-invite -f Dockerfile"
-          tags: |
-            latest
-            ${{ steps.date.outputs.date }}
+          tags: "latest"
 
