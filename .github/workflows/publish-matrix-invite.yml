@@ -11,6 +11,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+      - name: date
+        id: date
+        run: echo "::set-output name=date::$(date +'%Y-%m-%d')"
       - name: Get all src files that have changed
         id: changed-files
         uses: tj-actions/changed-files@v41
@@ -27,5 +30,7 @@ jobs:
           workdir: "${{ github.workspace }}/packages/matrix-invite"
           context: .
           buildoptions: "-t linagora/matrix-invite -f Dockerfile"
-          tags: "latest"
+          tags: |
+            latest
+            ${{ steps.date.outputs.date }}
 

@@ -31,5 +31,5 @@ jobs:
           context: .
           buildoptions: "-t linagora/tom-server -f Dockerfile"
           tags: |
-            "latest"
+            latest
             ${{ steps.date.outputs.date }}
