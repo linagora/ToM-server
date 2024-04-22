@@ -49,17 +49,10 @@ export default class FederationServer extends MatrixIdentityServer {
     this.logger.debug(
       `Trusted servers: ${this.conf.trusted_servers_addresses.join(', ')}`
     )
-    this.rateLimiter = rateLimit({
-      windowMs: this.conf.rate_limiting_window,
-      limit: this.conf.rate_limiting_nb_requests,
-      validate: {
-        trustProxy: this.conf.trust_x_forwarded_for
-      }
-    })
     this.authenticate = Authenticate(
       this.db,
       this.conf.trusted_servers_addresses,
-      this.conf.trust_x_forwarded_for,
+      this.conf.trust_x_forwarded_for as boolean,
       this.logger
     )
     const superReady = this.ready

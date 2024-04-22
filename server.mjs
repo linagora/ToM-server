@@ -16,7 +16,7 @@ const appServerConf = {
   push_ephemeral: process.env.PUSH_EPHEMERAL || true
 }
 
-const conf = {
+let conf = {
   ...appServerConf,
   additional_features: process.env.ADDITIONAL_FEATURES || false,
   cron_service: process.env.CRON_SERVICE || true,
@@ -74,14 +74,18 @@ if (process.argv[2] === 'generate') {
   // eslint-disable-next-line no-unused-vars
   const appServer = new AppServer(appServerConf)
 } else {
-  const tomServer = new TomServer(conf)
   const app = express()
   const trustProxy = process.env.TRUSTED_PROXIES
     ? process.env.TRUSTED_PROXIES.split(/\s+/)
     : []
   if (trustProxy.length > 0) {
+    conf = {
+      ...conf,
+      trust_x_forwarded_for: true
+    }
     app.set('trust proxy', ...trustProxy)
   }
+  const tomServer = new TomServer(conf)
   const promises = [tomServer.ready]
 
   if (process.env.CROWDSEC_URI) {
