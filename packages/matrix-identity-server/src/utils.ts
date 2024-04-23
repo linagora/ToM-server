@@ -119,6 +119,7 @@ export const jsonContent = (
       }
     } catch (err) {
       logger.error('JSON error', err)
+      logger.error(`Content was: ${content}`)
       send(res, 400, errMsg('unknown', err as string))
       accept = false
     }
