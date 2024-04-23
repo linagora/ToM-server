@@ -18,6 +18,7 @@ export interface Config {
   push_ephemeral?: boolean
   rate_limiting_window?: number
   rate_limiting_nb_requests?: number
+  trust_x_forwarded_for?: boolean
 }
 
 export { type ClientEvent } from './interfaces'

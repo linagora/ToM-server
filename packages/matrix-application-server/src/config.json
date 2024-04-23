@@ -5,5 +5,6 @@
     "namespaces": { "users": [] },
     "push_ephemeral": true,
     "rate_limiting_window": 600000,
-    "rate_limiting_nb_requests": 100
+    "rate_limiting_nb_requests": 100,
+    "trust_x_forwarded_for": false
 }
