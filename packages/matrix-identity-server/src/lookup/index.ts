@@ -31,6 +31,9 @@ const lookup = (idServer: MatrixIdentityServer): expressAppHandler => {
             /* istanbul ignore next */
             send(res, 400, errMsg('invalidParam'))
           } else {
+            idServer.logger.debug(
+              `lookup request to search ${JSON.stringify(obj)}`
+            )
             idServer.db
               .get('hashes', ['value', 'hash', 'active'], {
                 hash: (obj as { addresses: string[] }).addresses
