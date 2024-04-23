@@ -35,5 +35,8 @@
   "scripts": {
     "build": "rollup -c",
     "test": "jest"
+  },
+  "dependencies": {
+    "js-nacl": "^1.4.0"
   }
 }
