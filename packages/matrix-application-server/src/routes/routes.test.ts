@@ -73,6 +73,7 @@ describe('MASRouter', () => {
     const keys = Object.keys(newRoutes)
     keys.forEach((method) => {
       router.addRoute(
+        router.routes,
         newRoutes[method].path,
         method as EHttpMethod,
         (req, res, next) => {},

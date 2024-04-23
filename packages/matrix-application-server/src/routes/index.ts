@@ -78,16 +78,14 @@ export default class MASRouter {
      *      500:
      *        $ref: '#/components/responses/InternalServerError'
      */
-    this.routes
-      .route('/_matrix/app/v1/transactions/:txnId')
-      .put(
-        this._middlewares(
-          transaction(this._appServer),
-          validation(Endpoints.TRANSACTIONS),
-          this.defaultAuthMiddleware
-        )
-      )
-      .all(allowCors, methodNotAllowed, errorMiddleware)
+    this.addRoute(
+      this.routes,
+      '/_matrix/app/v1/transactions/:txnId',
+      EHttpMethod.PUT,
+      transaction(this._appServer),
+      validation(Endpoints.TRANSACTIONS),
+      this.defaultAuthMiddleware
+    )
 
     /**
      * @openapi
@@ -119,16 +117,14 @@ export default class MASRouter {
      *      500:
      *        $ref: '#/components/responses/InternalServerError'
      */
-    this.routes
-      .route('/_matrix/app/v1/users/:userId')
-      .get(
-        this._middlewares(
-          query,
-          validation(Endpoints.USERS),
-          this.defaultAuthMiddleware
-        )
-      )
-      .all(allowCors, methodNotAllowed, errorMiddleware)
+    this.addRoute(
+      this.routes,
+      '/_matrix/app/v1/users/:userId',
+      EHttpMethod.GET,
+      query,
+      validation(Endpoints.USERS),
+      this.defaultAuthMiddleware
+    )
 
     /**
      * @openapi
@@ -160,16 +156,14 @@ export default class MASRouter {
      *      500:
      *        $ref: '#/components/responses/InternalServerError'
      */
-    this.routes
-      .route('/_matrix/app/v1/rooms/:roomAlias')
-      .get(
-        this._middlewares(
-          query,
-          validation(Endpoints.ROOMS),
-          this.defaultAuthMiddleware
-        )
-      )
-      .all(allowCors, methodNotAllowed, errorMiddleware)
+    this.addRoute(
+      this.routes,
+      '/_matrix/app/v1/rooms/:roomAlias',
+      EHttpMethod.GET,
+      query,
+      validation(Endpoints.ROOMS),
+      this.defaultAuthMiddleware
+    )
 
     this.routes
       .route(/^\/(users|rooms|transactions)\/[a-zA-Z0-9]*/g)
@@ -195,13 +189,14 @@ export default class MASRouter {
   }
 
   public addRoute(
+    router: Router,
     path: string,
     method: EHttpMethod,
     controller: expressAppHandler,
     validators: ValidationChain[],
     authMiddleware?: expressAppHandler
   ): void {
-    const route: IRoute = this.routes.route(path)
+    const route: IRoute = router.route(path)
     switch (method) {
       case EHttpMethod.DELETE:
         route.delete(this._middlewares(controller, validators, authMiddleware))

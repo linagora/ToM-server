@@ -1,7 +1,7 @@
-import { type Collections } from '../../db'
 import { type MatrixDBBackend } from '../'
-import { type Config } from '../../types'
+import { type Collections } from '../../db'
 import SQLite from '../../db/sql/sqlite'
+import { type Config } from '../../types'
 
 class MatrixDBSQLite extends SQLite implements MatrixDBBackend {
   // eslint-disable-next-line @typescript-eslint/promise-function-async
@@ -21,8 +21,7 @@ class MatrixDBSQLite extends SQLite implements MatrixDBBackend {
           /* istanbul ignore next */ // @ts-ignore
           if (sqlite3.Database == null) sqlite3 = sqlite3.default
           const db = (this.db = new sqlite3.Database(
-            conf.matrix_database_host as string,
-            sqlite3.OPEN_READONLY
+            conf.matrix_database_host as string
           ))
           /* istanbul ignore if */
           if (db == null) {

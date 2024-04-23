@@ -1,0 +1,146 @@
+version: '3.8'
+
+services:
+  postgresql:
+    image: postgres:13-bullseye
+    container_name: postgresql-tom
+    volumes:
+      - ./synapse-data/matrix.example.com.log.config:/data/matrix.example.com.log.config
+      - ./db/init-synapse-db.sh:/docker-entrypoint-initdb.d/init-synapse-db.sh
+      - ./db/init-llng-db.sh:/docker-entrypoint-initdb.d/init-llng-db.sh
+      - ./db/init-twake-db.sh:/docker-entrypoint-initdb.d/init-twake-db.sh
+      - ./llng/lmConf-1.json:/llng-conf/conf.json
+    environment:
+      - POSTGRES_PASSWORD=synapse!!
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    ports:
+      - 5435:5432
+    networks:
+      - hooks-test
+
+  synapse:
+    image: matrixdotorg/synapse:v1.89.0
+    container_name: synapse-tom
+    volumes:
+      - ./synapse-data:/data
+      - ./nginx/ssl/ca.pem:/etc/ssl/certs/ca.pem
+      - ./nginx/ssl/9da13359.0:/etc/ssl/certs/9da13359.0
+      - ./nginx/ssl/matrix.example.com.crt:/etc/ssl/certs/matrix.example.com.crt
+      - ./nginx/ssl/matrix.example.com.key:/etc/ssl/certs/matrix.example.com.key
+    depends_on:
+      - auth
+    environment: 
+      - UID=${MYUID}
+      - VIRTUAL_PORT=8448
+      - VIRTUAL_HOST=matrix.example.com
+      - VIRTUAL_PROTO=https
+    healthcheck:
+      test: ["CMD", "curl", "-fSsk", "https://localhost:8448/health"]
+      interval: 10s
+      timeout: 10s
+      retries: 3
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      hooks-test:
+        aliases:
+          - matrix.example.com
+
+  external-synapse:
+    image: matrixdotorg/synapse:v1.89.0
+    container_name: external-synapse
+    volumes:
+      - ./synapse-external:/data
+      - ./nginx/ssl/ca.pem:/etc/ssl/certs/ca.pem
+      - ./nginx/ssl/9da13359.0:/etc/ssl/certs/9da13359.0
+      - ./nginx/ssl/matrix.external.com.crt:/etc/ssl/certs/matrix.external.com.crt
+      - ./nginx/ssl/matrix.external.com.key:/etc/ssl/certs/matrix.external.com.key
+    depends_on:
+      - auth
+    environment: 
+      - UID=${MYUID}
+      - VIRTUAL_PORT=8448
+      - VIRTUAL_HOST=matrix.external.com
+      - VIRTUAL_PROTO=https
+    healthcheck:
+      test: ["CMD", "curl", "-fSsk", "https://localhost:8448/health"]
+      interval: 10s
+      timeout: 10s
+      retries: 3
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      hooks-test:
+        aliases:
+          - matrix.external.com
+
+  auth:
+    image: yadd/lemonldap-ng-portal:2.16.1-bullseye
+    volumes:
+      - ./llng/lmConf-1.json:/var/lib/lemonldap-ng/conf/lmConf-1.json
+      - ./llng/ssl.conf:/etc/nginx/sites-enabled/0000default.conf
+      - ./nginx/ssl/auth.example.com.crt:/etc/nginx/ssl/auth.example.com.crt
+      - ./nginx/ssl/auth.example.com.key:/etc/nginx/ssl/auth.example.com.key
+    environment:
+      - PORTAL=https://auth.example.com
+      - VIRTUAL_HOST=auth.example.com
+      - PG_SERVER=postgresql
+    depends_on:
+      postgresql:
+        condition: service_healthy
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      hooks-test:
+        aliases:
+          - auth.example.com
+
+  annuaire:
+    image: ldap
+    build: ./ldap
+    ports:
+      - 21391:389
+    networks:
+      - hooks-test
+
+  nginx-proxy-hooks:
+    image: nginxproxy/nginx-proxy
+    ports:
+      - 446:446
+    environment:
+      - HTTPS_PORT=446
+    volumes:
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+      - ./nginx/ssl:/etc/nginx/certs
+    networks:
+      - hooks-test
+  
+  nginx-example:
+    image: nginx
+    volumes:
+      - ./nginx/ssl/example.com.ssl.conf:/etc/nginx/nginx.conf
+      - ./nginx/ssl/example.com.crt:/etc/nginx/ssl/example.com.crt
+      - ./nginx/ssl/example.com.key:/etc/nginx/ssl/example.com.key
+    networks:
+      hooks-test:
+        aliases:
+          - example.com
+  
+  nginx-external:
+    image: nginx
+    volumes:
+      - ./nginx/ssl/external.com.ssl.conf:/etc/nginx/nginx.conf
+      - ./nginx/ssl/external.com.crt:/etc/nginx/ssl/external.com.crt
+      - ./nginx/ssl/external.com.key:/etc/nginx/ssl/external.com.key
+    networks:
+      hooks-test:
+        aliases:
+          - external.com
+
+networks:
+  hooks-test:
+    name: hooks-test

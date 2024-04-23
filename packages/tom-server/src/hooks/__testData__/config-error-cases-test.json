@@ -1,0 +1,17 @@
+{
+  "additional_features": true,
+  "base_url": "http://localhost:3003/",
+  "cron_service": true,
+  "database_engine": "sqlite",
+  "database_host": "./src/hooks/__testData__/twake.db",
+  "matrix_database_engine": "sqlite",
+  "matrix_database_host": "./src/hooks/__testData__/matrix.db",
+  "namespaces": {
+    "users": [{ "exclusive": false, "regex": "@.*" }]
+  },
+  "registration_file_path": "./src/hooks/__testData__/registration-error-cases.yaml",
+  "server_name": "example.com",
+  "template_dir": "./templates",
+  "userdb_engine": "sqlite",
+  "userdb_host": "./src/hooks/__testData__/user.db"
+}

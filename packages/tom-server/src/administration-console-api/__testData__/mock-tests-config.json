@@ -1,0 +1,26 @@
+{
+  "additional_features": true,
+  "base_url": "http://localhost:3001/",
+  "cron_service": true,
+  "database_vacuum_delay": 7200,
+  "key_delay": 3600,
+  "keys_depth": 5,
+  "mail_link_delay": 7200,
+  "rate_limiting_window": 10000,
+  "server_name": "example.com",
+  "smtp_server": "localhost",
+  "userdb_engine": "sqlite",
+  "userdb_host": "./src/administration-console-api/__testData__/user.db",
+  "template_dir": "./templates",
+  "matrix_server": "matrix.example.com",
+  "registration_file_path": "./src/administration-console-api/__testData__/registration-mock.yaml",
+  "namespaces": {
+    "aliases": [{ "exclusive": false, "regex": "#_twake_.*" }],
+    "users": [{ "exclusive": false, "regex": "@.*" }]
+  },
+  "push_ephemeral": true,
+  "database_engine": "sqlite",
+  "database_host": "./src/administration-console-api/__testData__/twake.db",
+  "matrix_database_engine": "sqlite",
+  "matrix_database_host": "./src/administration-console-api/__testData__/matrix.db"
+}

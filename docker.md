@@ -26,7 +26,7 @@ $ docker run -d -p 3000:3000 \
     -e JITSI_PREFERRED_DOMAIN=meet.tom-dev.xyz \
     -e MATRIX_SERVER=matrix.example.com \
     -e MATRIX_DATABASE_ENGINE=pg \
-    -e MATRIX_DATABASE_HOST=synapse-db \
+    -e MATRIX_DATABASE_HOST=synapsedb \
     -e MATRIX_DATABASE_NAME=synapse \
     -e MATRIX_DATABASE_PASSWORD=synapse!1 \
     -e MATRIX_DATABASE_USER=synapse \

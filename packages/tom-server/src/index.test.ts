@@ -139,12 +139,9 @@ describe('Tom-server', () => {
       })
     })
 
-    describe('Application server', () => {
-      test('application server endpoint should not be available', async () => {
-        let response = await request(app).post('/_twake/app/v1/rooms')
-        expect(response.statusCode).toBe(404)
-
-        response = await request(app).put('/_matrix/app/v1/transactions/1')
+    describe('Administration Console API', () => {
+      test('administration console endpoint should not be available', async () => {
+        const response = await request(app).post('/_twake/app/v1/rooms')
         expect(response.statusCode).toBe(404)
       })
     })
