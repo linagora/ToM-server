@@ -76,5 +76,6 @@
   "push_ephemeral": true,
   "sms_api_url": "",
   "sms_api_login": "",
-  "sms_api_key": ""
+  "sms_api_key": "",
+  "trust_x_forwarded_for": false
 }

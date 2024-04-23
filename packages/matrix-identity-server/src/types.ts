@@ -48,6 +48,7 @@ export interface Config {
   smtp_tls?: boolean
   smtp_user?: string
   smtp_verify_certificate?: boolean
+  trust_x_forwarded_for?: boolean
   update_federation_hashes_cron?: string
   update_users_cron?: string
   userdb_engine?: SupportedUserDatabases

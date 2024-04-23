@@ -123,7 +123,10 @@ export default class MatrixIdentityServer {
     this._convertStringtoNumberInConfig()
     this.rateLimiter = rateLimit({
       windowMs: this.conf.rate_limiting_window,
-      limit: this.conf.rate_limiting_nb_requests
+      limit: this.conf.rate_limiting_nb_requests,
+      validate: {
+        trustProxy: this.conf.trust_x_forwarded_for
+      }
     })
     this._logger = logger ?? getLogger(this.conf as unknown as LoggerConfig)
     try {
