@@ -30,7 +30,10 @@ export default class MASRouter {
   constructor(private readonly _appServer: MatrixApplicationServer) {
     this.rateLimiter = rateLimit({
       windowMs: this._appServer.conf.rate_limiting_window,
-      limit: this._appServer.conf.rate_limiting_nb_requests
+      limit: this._appServer.conf.rate_limiting_nb_requests,
+      validate: {
+        trustProxy: this._appServer.conf.trust_x_forwarded_for
+      }
     })
     this.defaultAuthMiddleware = auth(
       this._appServer.appServiceRegistration.hsToken,
