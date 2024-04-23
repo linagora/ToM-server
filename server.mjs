@@ -79,10 +79,7 @@ if (process.argv[2] === 'generate') {
     ? process.env.TRUSTED_PROXIES.split(/\s+/)
     : []
   if (trustProxy.length > 0) {
-    conf = {
-      ...conf,
-      trust_x_forwarded_for: true
-    }
+    conf.trust_x_forwarded_for = true
     app.set('trust proxy', ...trustProxy)
   }
   const tomServer = new TomServer(conf)
