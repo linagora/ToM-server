@@ -31,6 +31,7 @@ env BASE_URL= \
     MATRIX_DATABASE_PASSWORD= \
     MATRIX_DATABASE_SSL= \
     MATRIX_DATABASE_USER= \
+    NODE_EXTRA_CA_CERTS= \
     OIDC_ISSUER= \
     SERVER_NAME= \
     TEMPLATE_DIR=/usr/src/app/packages/tom-server/templates \
