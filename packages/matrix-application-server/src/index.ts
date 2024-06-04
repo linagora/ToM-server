@@ -26,7 +26,10 @@ export { EHttpMethod } from './routes'
 export {
   AppServerAPIError,
   validationErrorHandler,
-  type expressAppHandler
+  type expressAppHandler,
+  errorMiddleware,
+  allowCors,
+  methodNotAllowed
 } from './utils'
 
 export declare interface AppService {

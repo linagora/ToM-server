@@ -1,0 +1,210 @@
+{
+  "mailbox_v2": {
+    "mappings": {
+      "dynamic": "strict",
+      "properties": {
+        "attachments": {
+          "properties": {
+            "contentDisposition": {
+              "type": "keyword"
+            },
+            "fileExtension": {
+              "type": "keyword"
+            },
+            "fileName": {
+              "type": "text",
+              "analyzer": "standard"
+            },
+            "mediaType": {
+              "type": "keyword"
+            },
+            "subtype": {
+              "type": "keyword"
+            },
+            "textContent": {
+              "type": "text",
+              "analyzer": "standard"
+            }
+          }
+        },
+        "bcc": {
+          "properties": {
+            "address": {
+              "type": "text",
+              "fields": {
+                "raw": {
+                  "type": "keyword"
+                }
+              },
+              "analyzer": "standard"
+            },
+            "domain": {
+              "type": "text",
+              "analyzer": "simple",
+              "search_analyzer": "keyword"
+            },
+            "name": {
+              "type": "text"
+            }
+          }
+        },
+        "cc": {
+          "properties": {
+            "address": {
+              "type": "text",
+              "fields": {
+                "raw": {
+                  "type": "keyword"
+                }
+              },
+              "analyzer": "standard"
+            },
+            "domain": {
+              "type": "text",
+              "analyzer": "simple",
+              "search_analyzer": "keyword"
+            },
+            "name": {
+              "type": "text"
+            }
+          }
+        },
+        "date": {
+          "type": "date",
+          "format": "uuuu-MM-dd'T'HH:mm:ssX||uuuu-MM-dd'T'HH:mm:ssXXX||uuuu-MM-dd'T'HH:mm:ssXXXXX"
+        },
+        "from": {
+          "properties": {
+            "address": {
+              "type": "text",
+              "fields": {
+                "raw": {
+                  "type": "keyword"
+                }
+              },
+              "analyzer": "standard"
+            },
+            "domain": {
+              "type": "text",
+              "analyzer": "simple",
+              "search_analyzer": "keyword"
+            },
+            "name": {
+              "type": "text"
+            }
+          }
+        },
+        "hasAttachment": {
+          "type": "boolean"
+        },
+        "headers": {
+          "type": "nested",
+          "properties": {
+            "name": {
+              "type": "keyword"
+            },
+            "value": {
+              "type": "text"
+            }
+          }
+        },
+        "htmlBody": {
+          "type": "text",
+          "analyzer": "standard"
+        },
+        "isAnswered": {
+          "type": "boolean"
+        },
+        "isDeleted": {
+          "type": "boolean"
+        },
+        "isDraft": {
+          "type": "boolean"
+        },
+        "isFlagged": {
+          "type": "boolean"
+        },
+        "isRecent": {
+          "type": "boolean"
+        },
+        "isUnread": {
+          "type": "boolean"
+        },
+        "mailboxId": {
+          "type": "keyword",
+          "store": true
+        },
+        "mediaType": {
+          "type": "keyword"
+        },
+        "messageId": {
+          "type": "keyword",
+          "store": true
+        },
+        "mimeMessageID": {
+          "type": "keyword"
+        },
+        "modSeq": {
+          "type": "long"
+        },
+        "saveDate": {
+          "type": "date",
+          "format": "uuuu-MM-dd'T'HH:mm:ssX||uuuu-MM-dd'T'HH:mm:ssXXX||uuuu-MM-dd'T'HH:mm:ssXXXXX"
+        },
+        "sentDate": {
+          "type": "date",
+          "format": "uuuu-MM-dd'T'HH:mm:ssX||uuuu-MM-dd'T'HH:mm:ssXXX||uuuu-MM-dd'T'HH:mm:ssXXXXX"
+        },
+        "size": {
+          "type": "long"
+        },
+        "subject": {
+          "type": "text",
+          "fields": {
+            "raw": {
+              "type": "keyword"
+            }
+          }
+        },
+        "subtype": {
+          "type": "keyword"
+        },
+        "textBody": {
+          "type": "text",
+          "analyzer": "standard"
+        },
+        "threadId": {
+          "type": "keyword"
+        },
+        "to": {
+          "properties": {
+            "address": {
+              "type": "text",
+              "fields": {
+                "raw": {
+                  "type": "keyword"
+                }
+              },
+              "analyzer": "standard"
+            },
+            "domain": {
+              "type": "text",
+              "analyzer": "simple",
+              "search_analyzer": "keyword"
+            },
+            "name": {
+              "type": "text"
+            }
+          }
+        },
+        "uid": {
+          "type": "long",
+          "store": true
+        },
+        "userFlags": {
+          "type": "keyword"
+        }
+      }
+    }
+  }
+}
