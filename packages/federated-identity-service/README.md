@@ -46,6 +46,26 @@ These are the steps to obtain a token that works on the federated identity servi
 For more details see [Matrix specification](https://spec.matrix.org/v1.8/identity-service-api/#post_matrixidentityv2accountregister)
    * The response body JSON of each request will contain a `token` field whose the value will allow to be authenticated on the matching federated identity service.
 
+## Docker
+
+**Federation Identity Service** is available on [Docker](https://hub.docker.com/).
+You can configure it using environment variables:
+
+* Required parameters:
+  * `TRUSTED_SERVERS_ADDRESSES`: the space separated list of Tom-Servers allowed
+    to push data. Networks or IP addresses
+  * `BASE_URL`; the public URL of this service _(example: https://fed-id-service.example.com/)_
+  * `DATABASE_ENGINE` _(`sqlite` or `pg`)_, `DATABASE_HOST`, `DATABASE_NAME`,
+    `DATABASE_USER`, `DATABASE_PASSWORD`: the database parameters
+* Optional parameters:
+  * `CRON_SERVICE` _(true/false)_: enable ot disable cron tasks. It is required
+    to have at least one active federated-odentity-service with `CRON_SERVICE`
+    active per database
+
+A federation server is also a [Matrix Identity Service](matrix-identity-server/README.md),
+thus all parameters of this service can also be enabled but this is interseting
+only if this instance is also used as ToM-Server.
+
 ## Copyright and license
 
 Copyright (c) 2023-present Linagora <https://linagora.com>
