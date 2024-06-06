@@ -5,7 +5,7 @@
   "database_engine": "sqlite",
   "database_host": "./src/identity-server/__testData__/test.db",
   "database_vacuum_delay": 7200,
-  "is_federation_server": false,
+  "is_federated_identity_service": false,
   "jitsiBaseUrl": "https://jitsi.example.com/",
   "jitsiJwtAlgorithm": "HS256",
   "jitsiJwtIssuer": "",

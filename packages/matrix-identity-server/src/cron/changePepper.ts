@@ -35,9 +35,9 @@ export const filter = async (
     matrixDb.close()
     /* istanbul ignore if */
     if (entries == null || entries.length === 0) {
-      return (conf.federation_servers == null ||
-        conf.federation_servers.length === 0) &&
-        !conf.is_federation_server
+      return (conf.federated_identity_services == null ||
+        conf.federated_identity_services.length === 0) &&
+        !conf.is_federated_identity_service
         ? rows
         : []
     }
@@ -46,8 +46,9 @@ export const filter = async (
       names.push((row.name as string).replace(/^@(.*?):(?:.*)$/, '$1'))
     })
     if (
-      (conf.federation_servers != null && conf.federation_servers.length > 0) ||
-      conf.is_federation_server
+      (conf.federated_identity_services != null &&
+        conf.federated_identity_services.length > 0) ||
+      conf.is_federated_identity_service
     ) {
       rows = rows
         .filter((row) => names.includes(row.uid as string))

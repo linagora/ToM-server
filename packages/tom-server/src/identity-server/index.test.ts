@@ -41,7 +41,7 @@ process.env.TWAKE_IDENTITY_SERVER_CONF = path.join(
 let twakeServer: TwakeServer
 let app: express.Application
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-let federationToken: string
+let federatedIdentityToken: string
 
 beforeAll((done) => {
   const conf: Config = {
@@ -437,7 +437,7 @@ describe('/_matrix/identity/v2/account/register', () => {
       .set('Accept', 'application/json')
     expect(response.statusCode).toBe(200)
     expect(response.body.token).toMatch(/^[a-zA-Z0-9]{64}$/)
-    federationToken = response.body.token
+    federatedIdentityToken = response.body.token
   })
 })
 
@@ -445,12 +445,12 @@ describe('/_matrix/identity/v2/account', () => {
   it('should logout (/_matrix/identity/v2/account/logout)', async () => {
     let response = await request(app)
       .post('/_matrix/identity/v2/account/logout')
-      .set('Authorization', `Bearer ${federationToken}`)
+      .set('Authorization', `Bearer ${federatedIdentityToken}`)
       .set('Accept', 'application/json')
     expect(response.statusCode).toBe(200)
     response = await request(app)
       .get('/_matrix/identity/v2/account')
-      .set('Authorization', `Bearer ${federationToken}`)
+      .set('Authorization', `Bearer ${federatedIdentityToken}`)
       .set('Accept', 'application/json')
     expect(response.statusCode).toBe(401)
   })
