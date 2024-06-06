@@ -135,7 +135,7 @@ userPassword: jfett
 dn: uid=lskywalker,ou=users,dc=example,dc=com
 objectClass: inetOrgPerson
 uid: lskywalker
-cn: Luc Skywalker
+cn: Luke Skywalker
 sn: Lskywalker
 mail: lskywalker@example.com
 userPassword: lskywalker

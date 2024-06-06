@@ -14,7 +14,7 @@ interface UserDBSQLite {
 const logger: TwakeLogger = getLogger()
 
 const createUsersTable = 'CREATE TABLE users (uid varchar(32), cn varchar(32), sn varchar(32), mail varchar(32), mobile varchar(12))'
-const insertLskywalker = "INSERT INTO users VALUES('lskywalker', 'Luc Skywalker', 'Lskywalker', 'lskywalker@example.com', '')"
+const insertLskywalker = "INSERT INTO users VALUES('lskywalker', 'Luke Skywalker', 'Lskywalker', 'lskywalker@example.com', '')"
 const insertOkenobi = "INSERT INTO users VALUES('okenobi', 'Obi-Wan Kenobi', 'Okenobi', 'okenobi@example.com', '')"
 const insertAskywalker = "INSERT INTO users VALUES('askywalker', 'Anakin Skywalker', 'Askywalker', 'askywalker@example.com', '')"
 const insertQjinn = "INSERT INTO users VALUES('qjinn', 'Qgonjinn', 'Qjinn', 'qjinn@example.com', '')"
