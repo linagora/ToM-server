@@ -5,7 +5,7 @@
   "database_engine": "sqlite",
   "database_host": "./src/__testData__/database.db",
   "database_vacuum_delay": 3600,
-  "is_federation_server": true,
+  "is_federated_identity_service": true,
   "key_delay": 3600,
   "keys_depth": 5,
   "ldap_base": "",

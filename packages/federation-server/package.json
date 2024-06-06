@@ -1,11 +1,12 @@
 {
-  "name": "@twake/federation-server",
+  "name": "@twake/federated-identity-service",
   "version": "0.0.1",
-  "description": "This is the Twake Federation server",
+  "description": "This is the Twake Federated Identity Service",
   "keywords": [
     "federation",
+    "identity",
     "twake",
-    "server"
+    "service"
   ],
   "homepage": "https://ci.linagora.com/publicgroup/oss/twake/tom-server",
   "bugs": {
@@ -33,9 +34,9 @@
   ],
   "scripts": {
     "build": "npm run build:lib && npm run build:example",
-    "build:example": "rollup -p @rollup/plugin-typescript -e express,@twake/federation-server -m -o example/federation-server.js example/federation-server.ts",
+    "build:example": "rollup -p @rollup/plugin-typescript -e express,@twake/federated-identity-service -m -o example/federated-identity-service.js example/federated-identity-service.ts",
     "build:lib": "rollup -c",
-    "start": "node example/federation-server.js",
+    "start": "node example/federated-identity-service.js",
     "test": "jest"
   },
   "dependencies": {

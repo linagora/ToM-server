@@ -4,7 +4,7 @@ RUN apt update && apt -y dist-upgrade
 
 WORKDIR /usr/src/app
 
-COPY ./packages/federation-server/src/__testData__/identity-server/server.mjs .
+COPY ./packages/federated-identity-service/src/__testData__/identity-server/server.mjs .
 
 COPY ./packages/matrix-identity-server ./packages/matrix-identity-server
 COPY ./packages/logger ./packages/logger

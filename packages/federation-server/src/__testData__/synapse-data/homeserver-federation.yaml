@@ -11,7 +11,7 @@
 # https://matrix-org.github.io/synapse/latest/usage/configuration/config_documentation.html
 server_name: "example.com"
 public_baseurl: "https://matrix.example.com/"
-pid_file: /data/homeserver-federation.pid
+pid_file: /data/homeserver-federated-identity.pid
 listeners:
   - port: 8008
     tls: false
@@ -25,7 +25,7 @@ database:
   args:
     user: synapse
     password: 'synapse!1'
-    database: synapsefederation
+    database: synapsefederatedidentity
     host: postgresql
     cp_min: 2
     cp_max: 4
@@ -33,7 +33,7 @@ database:
     keepalives_interval: 10
     keepalives_count: 3
 log_config: "/data/matrix.example.com.log.config"
-media_store_path: /data/media_store_federation
+media_store_path: /data/media_store_federated_identity
 registration_shared_secret: "u+Q^i6&*Y9azZ*~pID^.a=qrvd+mUIBX9SAreEPGJ=xzP&c+Sk"
 report_stats: false
 macaroon_secret_key: "=0ws-1~ztzXm&xh+As;7YL5.-U~r-T,F4zR3mW#E;6Y::Rb7&G"

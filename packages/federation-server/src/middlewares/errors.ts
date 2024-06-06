@@ -4,20 +4,20 @@ import { validationResult, type ValidationError } from 'express-validator'
 import {
   type ErrorResponseBody,
   type expressAppHandlerError,
-  type federationServerErrorCode
+  type federatedIdentityServiceErrorCode
 } from '../types'
 
 export const defaultErrorMsg = 'Internal server error'
 
-export class FederationServerError extends Error {
+export class FederatedIdentityServiceError extends Error {
   statusCode: number
-  errcode?: federationServerErrorCode
+  errcode?: federatedIdentityServiceErrorCode
 
   constructor(
     error: {
       status?: number
       message?: string
-      code?: federationServerErrorCode
+      code?: federatedIdentityServiceErrorCode
     } = {}
   ) {
     let errorMessage = defaultErrorMsg
@@ -40,18 +40,21 @@ export const errorMiddleware: expressAppHandlerError = (
   res,
   next
 ) => {
-  const federationServerError: FederationServerError =
-    error instanceof FederationServerError
+  const federatedIdentityServiceError: FederatedIdentityServiceError =
+    error instanceof FederatedIdentityServiceError
       ? error
-      : new FederationServerError({ message: error.message })
-  res.status(federationServerError.statusCode)
+      : new FederatedIdentityServiceError({ message: error.message })
+  res.status(federatedIdentityServiceError.statusCode)
   let bodyResponse: ErrorResponseBody = {
-    error: federationServerError.message
+    error: federatedIdentityServiceError.message
   }
-  if (federationServerError.errcode != null) {
-    bodyResponse = { errcode: federationServerError.errcode, ...bodyResponse }
+  if (federatedIdentityServiceError.errcode != null) {
+    bodyResponse = {
+      errcode: federatedIdentityServiceError.errcode,
+      ...bodyResponse
+    }
   }
-  res.statusMessage = federationServerError.message
+  res.statusMessage = federatedIdentityServiceError.message
   res.json(bodyResponse)
 }
 
@@ -67,7 +70,7 @@ export const validationErrorHandler = (req: Request): void => {
           }`
       )
       .join(', ')
-    throw new FederationServerError({
+    throw new FederatedIdentityServiceError({
       status: 400,
       message: errorMessage,
       code: MatrixErrors.errCodes.invalidParam

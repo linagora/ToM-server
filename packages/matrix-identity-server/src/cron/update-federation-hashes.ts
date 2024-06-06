@@ -23,7 +23,7 @@ interface LookupsDetail {
   updatedHashes: string[]
 }
 /**
- * update federation server hashes cron job.
+ * update federated identity service hashes cron job.
  *
  * @param {MatrixIdentityServer} idServer - the matrix identity server instance.
  */
@@ -32,13 +32,13 @@ export default async (
   userDB: UserDB,
   logger: TwakeLogger
 ): Promise<void> => {
-  const prefixErrorMessage = '[Update federation server hashes]'
+  const prefixErrorMessage = '[Update federated identity service hashes]'
 
-  let federationServersAddresses =
-    typeof conf.federation_servers === 'object'
-      ? (conf.federation_servers as string[])
-      : conf.federation_servers != null
-      ? (conf.federation_servers as string).split(/[,\s]+/)
+  let federatedIdentityServicesAddresses =
+    typeof conf.federated_identity_services === 'object'
+      ? (conf.federated_identity_services as string[])
+      : conf.federated_identity_services != null
+      ? (conf.federated_identity_services as string).split(/[,\s]+/)
       : []
 
   let serversIndexFail: number[] = []
@@ -46,7 +46,7 @@ export default async (
   let responses = (
     await Promise.allSettled(
       // eslint-disable-next-line @typescript-eslint/promise-function-async
-      federationServersAddresses.map((address) =>
+      federatedIdentityServicesAddresses.map((address) =>
         fetch(encodeURI(`https://${address}/_matrix/identity/v2/hash_details`))
       )
     )
@@ -55,7 +55,7 @@ export default async (
       if (result.status === 'rejected') {
         logger.error(
           // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-          `${prefixErrorMessage} Request to get pepper and algorithms from federation server ${federationServersAddresses[index]} failed. Reason: ${result.reason}`
+          `${prefixErrorMessage} Request to get pepper and algorithms from federated identity service ${federatedIdentityServicesAddresses[index]} failed. Reason: ${result.reason}`
         )
         serversIndexFail.push(index)
         return false
@@ -64,9 +64,10 @@ export default async (
     })
     .map((result) => (result as PromiseFulfilledResult<Response>).value)
 
-  federationServersAddresses = federationServersAddresses.filter(
-    (_address, index) => !serversIndexFail.includes(index)
-  )
+  federatedIdentityServicesAddresses =
+    federatedIdentityServicesAddresses.filter(
+      (_address, index) => !serversIndexFail.includes(index)
+    )
   serversIndexFail = []
 
   const bodies = (
@@ -79,7 +80,7 @@ export default async (
       if (curr.status === 'rejected') {
         throw new Error(
           // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-          `${prefixErrorMessage} Error on parsing response body of request to get pepper and algorithm from ${federationServersAddresses[index]}. Reason: ${curr.reason}`
+          `${prefixErrorMessage} Error on parsing response body of request to get pepper and algorithm from ${federatedIdentityServicesAddresses[index]}. Reason: ${curr.reason}`
         )
       }
       const body = curr.value as
@@ -87,15 +88,15 @@ export default async (
         | { error: string; errcode: string }
       if ('errcode' in body) {
         throw new Error(
-          `${prefixErrorMessage} Error in response body of request to get pepper and algorithm from ${federationServersAddresses[index]}. Reason: ${body.error}`
+          `${prefixErrorMessage} Error in response body of request to get pepper and algorithm from ${federatedIdentityServicesAddresses[index]}. Reason: ${body.error}`
         )
       } else if (body.algorithms == null || body.algorithms.length < 1) {
         throw new Error(
-          `${prefixErrorMessage} Error ${federationServersAddresses[index]} did not provide algorithms`
+          `${prefixErrorMessage} Error ${federatedIdentityServicesAddresses[index]} did not provide algorithms`
         )
       } else if (body.lookup_pepper == null) {
         throw new Error(
-          `${prefixErrorMessage} Error ${federationServersAddresses[index]} did not provide lookup_pepper`
+          `${prefixErrorMessage} Error ${federatedIdentityServicesAddresses[index]} did not provide lookup_pepper`
         )
       } else {
         return [...acc, body]
@@ -107,25 +108,27 @@ export default async (
     }
   }, [])
 
-  federationServersAddresses = federationServersAddresses.filter(
-    (_address, index) => !serversIndexFail.includes(index)
-  )
+  federatedIdentityServicesAddresses =
+    federatedIdentityServicesAddresses.filter(
+      (_address, index) => !serversIndexFail.includes(index)
+    )
 
-  const federationServersDetail = federationServersAddresses.reduce<
-    Record<string, { algorithm: string; peppers: string[] }>
-  >(
-    (acc, curr, index) => ({
-      ...acc,
-      [curr]: {
-        algorithm: bodies[index].algorithms[0],
-        peppers: [
-          bodies[index].lookup_pepper,
-          ...(bodies[index].alt_lookup_peppers ?? [])
-        ]
-      }
-    }),
-    {}
-  )
+  const federatedIdentityServicesDetail =
+    federatedIdentityServicesAddresses.reduce<
+      Record<string, { algorithm: string; peppers: string[] }>
+    >(
+      (acc, curr, index) => ({
+        ...acc,
+        [curr]: {
+          algorithm: bodies[index].algorithms[0],
+          peppers: [
+            bodies[index].lookup_pepper,
+            ...(bodies[index].alt_lookup_peppers ?? [])
+          ]
+        }
+      }),
+      {}
+    )
 
   const isMatrixDbAvailable =
     Boolean(conf.matrix_database_host) && Boolean(conf.matrix_database_engine)
@@ -174,17 +177,17 @@ export default async (
     return result
   }
 
-  const lookupsRequestsDetails = federationServersAddresses.reduce<
+  const lookupsRequestsDetails = federatedIdentityServicesAddresses.reduce<
     LookupsDetail[]
   >(
     (acc, address) => [
       ...acc,
-      ...federationServersDetail[address].peppers.map((pepper) => ({
+      ...federatedIdentityServicesDetail[address].peppers.map((pepper) => ({
         address,
-        algorithm: federationServersDetail[address].algorithm,
+        algorithm: federatedIdentityServicesDetail[address].algorithm,
         pepper,
         updatedHashes: getUsersHashes(
-          federationServersDetail[address].algorithm,
+          federatedIdentityServicesDetail[address].algorithm,
           pepper
         )
       }))
@@ -221,11 +224,13 @@ export default async (
       if (result.status === 'rejected') {
         logger.error(
           // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-          `${prefixErrorMessage} Request to post updated hashes on ${federationServersAddresses[index]} failed. Reason: ${result.reason}`
+          `${prefixErrorMessage} Request to post updated hashes on ${federatedIdentityServicesAddresses[index]} failed. Reason: ${result.reason}`
         )
         return false
       }
-      logger.debug(`Hashes pushed to ${federationServersAddresses[index]}`)
+      logger.debug(
+        `Hashes pushed to ${federatedIdentityServicesAddresses[index]}`
+      )
       return true
     })
     .map((result) => (result as PromiseFulfilledResult<Response>).value)
@@ -239,7 +244,7 @@ export default async (
       if (result.status === 'rejected') {
         throw new Error(
           // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-          `${prefixErrorMessage} Error on parsing response body of request to push updated hashes to ${federationServersAddresses[index]}. Reason: ${result.reason}`
+          `${prefixErrorMessage} Error on parsing response body of request to push updated hashes to ${federatedIdentityServicesAddresses[index]}. Reason: ${result.reason}`
         )
       }
       const body = result.value as
@@ -248,7 +253,7 @@ export default async (
       if ('errcode' in body) {
         throw new Error(
           // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-          `${prefixErrorMessage} Error in response body of request to post updated hashes on ${federationServersAddresses[index]}. Reason: ${body.error}`
+          `${prefixErrorMessage} Error in response body of request to post updated hashes on ${federatedIdentityServicesAddresses[index]}. Reason: ${body.error}`
         )
       }
     } catch (e) {

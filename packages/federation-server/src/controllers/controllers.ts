@@ -4,7 +4,7 @@ import { MatrixErrors, type DbGetResult } from '@twake/matrix-identity-server'
 import lodash from 'lodash'
 import { hashByServer } from '../db'
 import {
-  FederationServerError,
+  FederatedIdentityServiceError,
   validationErrorHandler
 } from '../middlewares/errors'
 import {
@@ -69,7 +69,7 @@ export const lookup = (
       })
       .catch((e) => {
         next(
-          new FederationServerError({
+          new FederatedIdentityServiceError({
             message: e,
             code: MatrixErrors.errCodes.unknown
           })
@@ -116,7 +116,7 @@ export const lookups = (db: IdentityServerDb): expressAppHandler => {
       })
       .catch((e) => {
         next(
-          new FederationServerError({
+          new FederatedIdentityServiceError({
             message: e,
             code: MatrixErrors.errCodes.unknown
           })
@@ -155,7 +155,7 @@ export const hashDetails = (
       })
       .catch((e) => {
         next(
-          new FederationServerError({
+          new FederatedIdentityServiceError({
             message: e,
             code: MatrixErrors.errCodes.unknown
           })

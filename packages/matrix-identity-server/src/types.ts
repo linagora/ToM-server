@@ -16,9 +16,9 @@ export interface Config {
   database_ssl?: boolean | ConnectionOptions | undefined
   database_user?: string
   database_vacuum_delay: number
-  federation_servers?: string[] | null
+  federated_identity_services?: string[] | null
   hashes_rate_limit?: number
-  is_federation_server: boolean
+  is_federated_identity_service: boolean
   key_delay: number
   keys_depth: number
   ldap_filter?: string
@@ -49,7 +49,7 @@ export interface Config {
   smtp_user?: string
   smtp_verify_certificate?: boolean
   trust_x_forwarded_for?: boolean
-  update_federation_hashes_cron?: string
+  update_federated_identity_hashes_cron?: string
   update_users_cron?: string
   userdb_engine?: SupportedUserDatabases
   userdb_host?: string

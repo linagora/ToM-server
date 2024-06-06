@@ -14,7 +14,7 @@ import {
   type StartedDockerComposeEnvironment,
   type StartedTestContainer
 } from 'testcontainers'
-import FederationServer from '.'
+import FederatedIdentityService from '.'
 import JEST_PROCESS_ROOT_PATH from '../jest.globals'
 import { buildMatrixDb, buildUserDB } from './__testData__/build-userdb'
 import defaultConfig from './__testData__/config.json'
@@ -42,7 +42,7 @@ interface IHashDetails {
   alt_lookup_peppers?: string[]
 }
 
-describe('Federation server', () => {
+describe('Federated identity service', () => {
   const hash = new Hash()
 
   beforeAll((done) => {
@@ -59,7 +59,7 @@ describe('Federation server', () => {
     let startedCompose: StartedDockerComposeEnvironment
     let identity1IPAddress: string
     let identity2IPAddress: string
-    let tokens: { matrixToken: string; federationToken: string }
+    let tokens: { matrixToken: string; federatedIdentityToken: string }
     let hashDetails: IHashDetails
     let allPeppers: string[]
 
@@ -67,9 +67,9 @@ describe('Federation server', () => {
       username: string,
       password: string,
       matrixServer: string,
-      federationServer?: string
+      federatedIdentityService?: string
     ): Promise<
-      { matrixToken: string; federationToken?: string } | undefined
+      { matrixToken: string; federatedIdentityToken?: string } | undefined
     > => {
       let response = await fetch.default(
         encodeURI(
@@ -126,7 +126,7 @@ describe('Federation server', () => {
       )
       body = (await response.json()) as any
       const matrixToken = body.access_token as string
-      if (federationServer != null) {
+      if (federatedIdentityService != null) {
         const userId = body.user_id as string
         response = await fetch.default(
           encodeURI(
@@ -143,7 +143,7 @@ describe('Federation server', () => {
         body = await response.json()
         response = await fetch.default(
           encodeURI(
-            `https://${federationServer}/_matrix/identity/v2/account/register`
+            `https://${federatedIdentityService}/_matrix/identity/v2/account/register`
           ),
           {
             method: 'POST',
@@ -157,7 +157,8 @@ describe('Federation server', () => {
       }
       return {
         matrixToken,
-        federationToken: federationServer != null ? body.token : null
+        federatedIdentityToken:
+          federatedIdentityService != null ? body.token : null
       }
     }
 
@@ -177,7 +178,10 @@ describe('Federation server', () => {
       )
         .withEnvironment({ MYUID: os.userInfo().uid.toString() })
         .withWaitStrategy('postgresql', Wait.forHealthCheck())
-        .withWaitStrategy('synapse-federation', Wait.forHealthCheck())
+        .withWaitStrategy(
+          'synapse-federated-identity-service',
+          Wait.forHealthCheck()
+        )
         .withWaitStrategy('synapse-1', Wait.forHealthCheck())
         .withWaitStrategy('synapse-2', Wait.forHealthCheck())
         .withWaitStrategy('synapse-3', Wait.forHealthCheck())
@@ -202,7 +206,7 @@ describe('Federation server', () => {
         path.join(pathToSynapseDataFolder, 'media_store1'),
         path.join(pathToSynapseDataFolder, 'media_store2'),
         path.join(pathToSynapseDataFolder, 'media_store3'),
-        path.join(pathToSynapseDataFolder, 'media_store_federation')
+        path.join(pathToSynapseDataFolder, 'media_store_federated_identity')
       ]
       filesToDelete.forEach((path: string) => {
         if (fs.existsSync(path)) {
@@ -224,23 +228,25 @@ describe('Federation server', () => {
       }
     })
 
-    describe('Federation server in docker container', () => {
-      let federationServerContainer: StartedTestContainer
-      const federationServerHostname = 'federation.example.com'
-      const pathToFederationServerConf = path.join(
+    describe('Federated identity service in docker container', () => {
+      let federatedIdentityServiceContainer: StartedTestContainer
+      const federatedIdentityServiceHostname = 'federated-identity.example.com'
+      const pathToFederatedIdentityServiceConf = path.join(
         pathToTestDataFolder,
-        'federation-server',
-        'federation-server.conf'
+        'federated-identity-service',
+        'federated-identity-service.conf'
       )
       let confOriginalContent: string
 
       const getHashDetails = async (): Promise<IHashDetails> => {
         const response = await fetch.default(
           encodeURI(
-            `https://${federationServerHostname}/_matrix/identity/v2/hash_details`
+            `https://${federatedIdentityServiceHostname}/_matrix/identity/v2/hash_details`
           ),
           {
-            headers: { Authorization: `Bearer ${tokens.federationToken}` }
+            headers: {
+              Authorization: `Bearer ${tokens.federatedIdentityToken}`
+            }
           }
         )
         return (await response.json()) as IHashDetails
@@ -255,12 +261,12 @@ describe('Federation server', () => {
           .getIpAddress('test')
 
         confOriginalContent = fs.readFileSync(
-          pathToFederationServerConf,
+          pathToFederatedIdentityServiceConf,
           'utf-8'
         )
 
         fs.writeFileSync(
-          pathToFederationServerConf,
+          pathToFederatedIdentityServiceConf,
           confOriginalContent.replace(
             /"trusted_servers_addresses": \[\]/g,
             `"trusted_servers_addresses": ["${identity1IPAddress}", "${identity2IPAddress}"]`
@@ -268,10 +274,11 @@ describe('Federation server', () => {
           'utf-8'
         )
 
-        federationServerContainer =
-          startedCompose.getContainer('federation-server')
+        federatedIdentityServiceContainer = startedCompose.getContainer(
+          'federated-identity-service'
+        )
 
-        federationServerContainer
+        federatedIdentityServiceContainer
           .restart()
           // eslint-disable-next-line @typescript-eslint/promise-function-async
           .then(() => {
@@ -279,14 +286,14 @@ describe('Federation server', () => {
               'askywalker',
               'askywalker',
               'matrix1.example.com',
-              federationServerHostname
+              federatedIdentityServiceHostname
             )
           })
           // eslint-disable-next-line @typescript-eslint/promise-function-async
           .then((askywalkerTokens) => {
             tokens = askywalkerTokens as {
               matrixToken: string
-              federationToken: string
+              federatedIdentityToken: string
             }
             return Promise.all([
               simulationConnection(
@@ -299,7 +306,7 @@ describe('Federation server', () => {
           })
           // eslint-disable-next-line @typescript-eslint/promise-function-async
           .then(() => {
-            // wait for identity servers to push hashes to federation server
+            // wait for identity servers to push hashes to federated identity service
             return new Promise((resolve) => setTimeout(resolve, 8000))
           })
           .then(() => {
@@ -312,12 +319,12 @@ describe('Federation server', () => {
 
       afterAll((done) => {
         fs.writeFileSync(
-          pathToFederationServerConf,
+          pathToFederatedIdentityServiceConf,
           confOriginalContent,
           'utf-8'
         )
-        if (federationServerContainer != null) {
-          federationServerContainer
+        if (federatedIdentityServiceContainer != null) {
+          federatedIdentityServiceContainer
             .stop()
             .then(() => {
               done()
@@ -340,13 +347,13 @@ describe('Federation server', () => {
         for (let i = 0; i < allPeppers.length; i++) {
           const response = await fetch.default(
             encodeURI(
-              `https://${federationServerHostname}/_matrix/identity/v2/lookup`
+              `https://${federatedIdentityServiceHostname}/_matrix/identity/v2/lookup`
             ),
             {
               method: 'post',
               headers: {
                 'Content-Type': 'application/json',
-                Authorization: `Bearer ${tokens.federationToken}`
+                Authorization: `Bearer ${tokens.federatedIdentityToken}`
               },
               body: JSON.stringify({
                 algorithm: hashDetails.algorithms[0],
@@ -381,7 +388,7 @@ describe('Federation server', () => {
         expect(hosts.has('identity2.example.com:443')).toEqual(true)
       })
 
-      it('should get user of federation server environment on lookup', async () => {
+      it('should get user of federated identity service environment on lookup', async () => {
         await simulationConnection(
           'chewbacca',
           'chewbacca',
@@ -398,13 +405,13 @@ describe('Federation server', () => {
         for (let i = 0; i < allPeppers.length; i++) {
           const response = await fetch.default(
             encodeURI(
-              `https://${federationServerHostname}/_matrix/identity/v2/lookup`
+              `https://${federatedIdentityServiceHostname}/_matrix/identity/v2/lookup`
             ),
             {
               method: 'post',
               headers: {
                 'Content-Type': 'application/json',
-                Authorization: `Bearer ${tokens.federationToken}`
+                Authorization: `Bearer ${tokens.federatedIdentityToken}`
               },
               body: JSON.stringify({
                 algorithm: hashDetails.algorithms[0],
@@ -444,13 +451,13 @@ describe('Federation server', () => {
         for (let i = 0; i < allPeppers.length; i++) {
           const response = await fetch.default(
             encodeURI(
-              `https://${federationServerHostname}/_matrix/identity/v2/lookup`
+              `https://${federatedIdentityServiceHostname}/_matrix/identity/v2/lookup`
             ),
             {
               method: 'post',
               headers: {
                 'Content-Type': 'application/json',
-                Authorization: `Bearer ${tokens.federationToken}`
+                Authorization: `Bearer ${tokens.federatedIdentityToken}`
               },
               body: JSON.stringify({
                 algorithm: hashDetails.algorithms[0],
@@ -475,7 +482,7 @@ describe('Federation server', () => {
         expect(hosts.has('identity2.example.com:443')).toEqual(true)
       })
 
-      it('should find all federation users and servers address of third party users on lookup', async () => {
+      it('should find all federated identity service users and servers address of third party users on lookup', async () => {
         hashDetails = await getHashDetails()
         allPeppers = getAllPeppers(hashDetails)
         const lskywalkerHashes = allPeppers.map((pepper) =>
@@ -500,13 +507,13 @@ describe('Federation server', () => {
         for (let i = 0; i < allPeppers.length; i++) {
           const response = await fetch.default(
             encodeURI(
-              `https://${federationServerHostname}/_matrix/identity/v2/lookup`
+              `https://${federatedIdentityServiceHostname}/_matrix/identity/v2/lookup`
             ),
             {
               method: 'post',
               headers: {
                 'Content-Type': 'application/json',
-                Authorization: `Bearer ${tokens.federationToken}`
+                Authorization: `Bearer ${tokens.federatedIdentityToken}`
               },
               body: JSON.stringify({
                 algorithm: hashDetails.algorithms[0],
@@ -564,13 +571,13 @@ describe('Federation server', () => {
         for (let i = 0; i < allPeppers.length; i++) {
           const response = await fetch.default(
             encodeURI(
-              `https://${federationServerHostname}/_matrix/identity/v2/lookup`
+              `https://${federatedIdentityServiceHostname}/_matrix/identity/v2/lookup`
             ),
             {
               method: 'post',
               headers: {
                 'Content-Type': 'application/json',
-                Authorization: `Bearer ${tokens.federationToken}`
+                Authorization: `Bearer ${tokens.federatedIdentityToken}`
               },
               body: JSON.stringify({
                 algorithm: hashDetails.algorithms[0],
@@ -598,13 +605,13 @@ describe('Federation server', () => {
         for (let i = 0; i < allPeppers.length; i++) {
           const response = await fetch.default(
             encodeURI(
-              `https://${federationServerHostname}/_matrix/identity/v2/lookup`
+              `https://${federatedIdentityServiceHostname}/_matrix/identity/v2/lookup`
             ),
             {
               method: 'post',
               headers: {
                 'Content-Type': 'application/json',
-                Authorization: `Bearer ${tokens.federationToken}`
+                Authorization: `Bearer ${tokens.federatedIdentityToken}`
               },
               body: JSON.stringify({
                 algorithm: hashDetails.algorithms[0],
@@ -624,19 +631,18 @@ describe('Federation server', () => {
       })
     })
 
-    // Does not work on CI when pepper is udpated due to ip addresses in identity servers requests
-    describe('Federation Server as express app', () => {
-      let federationServer: FederationServer
+    describe('Federated Identity Service as express app', () => {
+      let federatedIdentityService: FederatedIdentityService
       let app: express.Application
-      let expressFederationServer: http.Server
+      let expressFederatedIdentityService: http.Server
       const pathToIdentityServerConf = path.join(
         pathToTestDataFolder,
         'identity-server',
         'conf'
       )
       const pathToNginxSsl = path.join(pathToTestDataFolder, 'nginx', 'ssl')
-      let federationServerCrtFilePath: string
-      let federationServerKeyFilePath: string
+      let federatedIdentityServiceCrtFilePath: string
+      let federatedIdentityServiceKeyFilePath: string
 
       const originalContents: string[] = []
       const interfaces = os.networkInterfaces()
@@ -655,7 +661,7 @@ describe('Federation server', () => {
         const response = await request(app)
           .get('/_matrix/identity/v2/hash_details')
           .set('Accept', 'application/json')
-          .set('Authorization', `Bearer ${tokens.federationToken}`)
+          .set('Authorization', `Bearer ${tokens.federatedIdentityToken}`)
 
         return response.body as IHashDetails
       }
@@ -677,17 +683,17 @@ describe('Federation server', () => {
           const content = fs.readFileSync(confFilePath, 'utf-8')
           originalContents.push(content)
           const newContent = content.replace(
-            /federation\.example\.com/g,
+            /federated-identity\.example\.com/g,
             `${hostNetworkInterface.address}:3000`
           )
           fs.writeFileSync(confFilePath, newContent, 'utf-8')
         }
 
-        federationServerCrtFilePath = path.join(
+        federatedIdentityServiceCrtFilePath = path.join(
           pathToNginxSsl,
           `${hostNetworkInterface.address}.crt`
         )
-        federationServerKeyFilePath = path.join(
+        federatedIdentityServiceKeyFilePath = path.join(
           pathToNginxSsl,
           `${hostNetworkInterface.address}.key`
         )
@@ -708,14 +714,14 @@ describe('Federation server', () => {
         }
 
         waitForFilesExist([
-          federationServerCrtFilePath,
-          federationServerKeyFilePath
+          federatedIdentityServiceCrtFilePath,
+          federatedIdentityServiceKeyFilePath
         ])
           // eslint-disable-next-line @typescript-eslint/promise-function-async
           .then((areFilesCreated) => {
             if (!areFilesCreated)
               throw new Error(
-                'Certificates files for federation server has not been created'
+                'Certificates files for federated identity service has not been created'
               )
             return Promise.all([
               startedCompose.getContainer('identity-server-1').restart(),
@@ -744,7 +750,7 @@ describe('Federation server', () => {
               database_host: `${startedCompose
                 .getContainer(`postgresql`)
                 .getHost()}:5432`,
-              database_name: 'federation',
+              database_name: 'federatedidentity',
               ldap_base: 'dc=example,dc=com',
               ldap_uri: `ldap://${startedCompose
                 .getContainer(`postgresql`)
@@ -753,7 +759,7 @@ describe('Federation server', () => {
               matrix_database_host: `${startedCompose
                 .getContainer(`postgresql`)
                 .getHost()}:5432`,
-              matrix_database_name: 'synapsefederation',
+              matrix_database_name: 'synapsefederatedidentity',
               matrix_database_user: 'synapse',
               matrix_database_password: 'synapse!1',
               pepperCron: '*/2 * * * *',
@@ -772,25 +778,25 @@ describe('Federation server', () => {
               update_users_cron: '*/5 * * * * *',
               userdb_engine: 'ldap'
             }
-            federationServer = new FederationServer(testConfig)
+            federatedIdentityService = new FederatedIdentityService(testConfig)
             app = express()
-            return federationServer.ready
+            return federatedIdentityService.ready
           })
           // eslint-disable-next-line @typescript-eslint/promise-function-async
           .then(() => {
-            app.use(federationServer.routes)
-            const key = fs.readFileSync(federationServerKeyFilePath)
-            const cert = fs.readFileSync(federationServerCrtFilePath)
-            expressFederationServer = createServer({ key, cert }, app)
+            app.use(federatedIdentityService.routes)
+            const key = fs.readFileSync(federatedIdentityServiceKeyFilePath)
+            const cert = fs.readFileSync(federatedIdentityServiceCrtFilePath)
+            expressFederatedIdentityService = createServer({ key, cert }, app)
             return new Promise<void>((resolve, _reject) => {
-              expressFederationServer.listen(3000, () => {
+              expressFederatedIdentityService.listen(3000, () => {
                 resolve()
               })
             })
           })
           // eslint-disable-next-line @typescript-eslint/promise-function-async
           .then(() => {
-            // wait for identity servers to push hashes to federation server
+            // wait for identity servers to push hashes to federated identity service
             return new Promise((resolve) => setTimeout(resolve, 8000))
           })
           .then(() => {
@@ -810,15 +816,16 @@ describe('Federation server', () => {
           )
         }
         const filesToDelete = [
-          federationServerCrtFilePath,
-          federationServerKeyFilePath
+          federatedIdentityServiceCrtFilePath,
+          federatedIdentityServiceKeyFilePath
         ]
         filesToDelete.forEach((path: string) => {
           if (fs.existsSync(path)) fs.unlinkSync(path)
         })
-        if (federationServer != null) federationServer.cleanJobs()
-        if (expressFederationServer != null) {
-          expressFederationServer.close((e) => {
+        if (federatedIdentityService != null)
+          federatedIdentityService.cleanJobs()
+        if (expressFederatedIdentityService != null) {
+          expressFederatedIdentityService.close((e) => {
             if (e != null) {
               done(e)
             }
@@ -840,7 +847,7 @@ describe('Federation server', () => {
           const response = await request(app)
             .post('/_matrix/identity/v2/lookup')
             .set('Accept', 'application/json')
-            .set('Authorization', `Bearer ${tokens.federationToken}`)
+            .set('Authorization', `Bearer ${tokens.federatedIdentityToken}`)
             .send({
               algorithm: hashDetails.algorithms[0],
               pepper: allPeppers[i],
@@ -858,7 +865,7 @@ describe('Federation server', () => {
         expect(hosts.has('identity2.example.com:443')).toEqual(true)
       })
 
-      it('should get user of federation server environment on lookup', async () => {
+      it('should get user of federated identity service environment on lookup', async () => {
         hashDetails = await getHashDetails()
         allPeppers = getAllPeppers(hashDetails)
         const chewbaccaHashes = allPeppers.map((pepper) =>
@@ -870,7 +877,7 @@ describe('Federation server', () => {
           const response = await request(app)
             .post('/_matrix/identity/v2/lookup')
             .set('Accept', 'application/json')
-            .set('Authorization', `Bearer ${tokens.federationToken}`)
+            .set('Authorization', `Bearer ${tokens.federatedIdentityToken}`)
             .send({
               algorithm: hashDetails.algorithms[0],
               pepper: allPeppers[i],
@@ -897,7 +904,7 @@ describe('Federation server', () => {
           const response = await request(app)
             .post('/_matrix/identity/v2/lookup')
             .set('Accept', 'application/json')
-            .set('Authorization', `Bearer ${tokens.federationToken}`)
+            .set('Authorization', `Bearer ${tokens.federatedIdentityToken}`)
             .send({
               algorithm: hashDetails.algorithms[0],
               pepper: allPeppers[i],
@@ -919,7 +926,7 @@ describe('Federation server', () => {
           const response = await request(app)
             .post('/_matrix/identity/v2/lookup')
             .set('Accept', 'application/json')
-            .set('Authorization', `Bearer ${tokens.federationToken}`)
+            .set('Authorization', `Bearer ${tokens.federatedIdentityToken}`)
             .send({
               algorithm: hashDetails.algorithms[0],
               pepper: allPeppers[i],
@@ -931,7 +938,7 @@ describe('Federation server', () => {
         }
       })
 
-      it('should find all federation users and servers address of third party users on lookup', async () => {
+      it('should find all federated identity service and servers address of third party users on lookup', async () => {
         hashDetails = await getHashDetails()
         allPeppers = getAllPeppers(hashDetails)
         const lskywalkerHashes = allPeppers.map((pepper) =>
@@ -958,7 +965,7 @@ describe('Federation server', () => {
           const response = await request(app)
             .post('/_matrix/identity/v2/lookup')
             .set('Accept', 'application/json')
-            .set('Authorization', `Bearer ${tokens.federationToken}`)
+            .set('Authorization', `Bearer ${tokens.federatedIdentityToken}`)
             .send({
               algorithm: hashDetails.algorithms[0],
               pepper: allPeppers[i],
@@ -1005,9 +1012,9 @@ describe('Federation server', () => {
   })
 
   describe('Mock tests', () => {
-    let federationServer: FederationServer
+    let federatedIdentityService: FederatedIdentityService
     let app: express.Application
-    let expressFederationServer: http.Server
+    let expressFederatedIdentityService: http.Server
     const trustedIpAddress = '192.168.1.1'
     const trustedIpv6Address = '2001:db8:3333:4444:5555:6666:7777:8888'
     const trustedNetwork = '192.168.200.4/30'
@@ -1022,7 +1029,7 @@ describe('Federation server', () => {
       ]
     }
 
-    const stopFederationServer = (
+    const stopFederatedIdentityService = (
       done: jest.DoneCallback,
       filesToDelete = [
         path.join(pathToTestDataFolder, 'database.db'),
@@ -1033,9 +1040,9 @@ describe('Federation server', () => {
       filesToDelete.forEach((path: string) => {
         if (fs.existsSync(path)) fs.unlinkSync(path)
       })
-      if (federationServer != null) federationServer.cleanJobs()
-      if (expressFederationServer != null) {
-        expressFederationServer.close((e) => {
+      if (federatedIdentityService != null) federatedIdentityService.cleanJobs()
+      if (expressFederatedIdentityService != null) {
+        expressFederatedIdentityService.close((e) => {
           if (e != null) {
             done(e)
           }
@@ -1061,7 +1068,7 @@ describe('Federation server', () => {
     })
 
     afterAll((done) => {
-      stopFederationServer(done)
+      stopFederatedIdentityService(done)
     })
 
     beforeEach(() => {
@@ -1077,25 +1084,26 @@ describe('Federation server', () => {
       let chewbaccaHashes: string[]
       let qjinnHashes: string[]
 
-      const setFederationServerDataAndRoutes = async (): Promise<void> => {
-        await new Promise<void>((resolve, _reject) =>
-          setTimeout(() => {
-            resolve()
-          }, 16000)
-        ) // wait to set previousPepper in db
-        await federationServer.db.insert('accessTokens', {
-          id: authToken,
-          data: '{"sub": "@test:example.com"}'
-        })
-        await new Promise<void>((resolve, _reject) => {
-          app.use(federationServer.routes)
-          expressFederationServer = app.listen(3000, () => {
-            resolve()
+      const setFederatedIdentityServiceDataAndRoutes =
+        async (): Promise<void> => {
+          await new Promise<void>((resolve, _reject) =>
+            setTimeout(() => {
+              resolve()
+            }, 16000)
+          ) // wait to set previousPepper in db
+          await federatedIdentityService.db.insert('accessTokens', {
+            id: authToken,
+            data: '{"sub": "@test:example.com"}'
           })
-        })
-      }
+          await new Promise<void>((resolve, _reject) => {
+            app.use(federatedIdentityService.routes)
+            expressFederatedIdentityService = app.listen(3000, () => {
+              resolve()
+            })
+          })
+        }
 
-      const pushHashesToFederationServer = async (
+      const pushHashesToFederatedIdentityService = async (
         fedServerHashDetails?: IHashDetails
       ): Promise<void> => {
         hashDetails =
@@ -1188,13 +1196,15 @@ describe('Federation server', () => {
             .join(',')
             .concat(',invalid_ip')
           process.env.TRUST_X_FORWARDED_FOR = String(trustXForwardedFor)
-          federationServer = new FederationServer(mIdentityServerConfig)
+          federatedIdentityService = new FederatedIdentityService(
+            mIdentityServerConfig
+          )
           app = express()
-          federationServer.ready
+          federatedIdentityService.ready
             // eslint-disable-next-line @typescript-eslint/promise-function-async
-            .then(() => setFederationServerDataAndRoutes())
+            .then(() => setFederatedIdentityServiceDataAndRoutes())
             // eslint-disable-next-line @typescript-eslint/promise-function-async
-            .then(() => pushHashesToFederationServer())
+            .then(() => pushHashesToFederatedIdentityService())
             .then(() => {
               done()
             })
@@ -1206,7 +1216,7 @@ describe('Federation server', () => {
         afterAll((done) => {
           delete process.env.TRUSTED_SERVERS_ADDRESSES
           delete process.env.TRUST_X_FORWARDED_FOR
-          stopFederationServer(done, [
+          stopFederatedIdentityService(done, [
             path.join(pathToTestDataFolder, 'database.db')
           ])
         })
@@ -1234,7 +1244,7 @@ describe('Federation server', () => {
           expect(hosts.has('identity2.example.com:443')).toEqual(true)
         })
 
-        it('should get user of federation server environment on lookup', async () => {
+        it('should get user of federated identity service environment on lookup', async () => {
           const matrixAddresses = new Set<string>()
           for (let i = 0; i < allPeppers.length; i++) {
             const response = await request(app)
@@ -1334,7 +1344,7 @@ describe('Federation server', () => {
           expect(hosts.has('identity2.example.com:443')).toEqual(true)
         })
 
-        it('should find all federation users and servers address of third party users on lookup', async () => {
+        it('should find all federated identity service users and servers address of third party users on lookup', async () => {
           const matrixAddresses = new Set<string>()
           const askywalkerHosts = new Set<string>()
           const lskywalkerHosts = new Set<string>()
@@ -1394,13 +1404,13 @@ describe('Federation server', () => {
 
       describe('Use JSON configuration object', () => {
         beforeAll((done) => {
-          federationServer = new FederationServer(testConfig)
+          federatedIdentityService = new FederatedIdentityService(testConfig)
           app = express()
-          federationServer.ready
+          federatedIdentityService.ready
             // eslint-disable-next-line @typescript-eslint/promise-function-async
-            .then(() => setFederationServerDataAndRoutes())
+            .then(() => setFederatedIdentityServiceDataAndRoutes())
             // eslint-disable-next-line @typescript-eslint/promise-function-async
-            .then(() => pushHashesToFederationServer())
+            .then(() => pushHashesToFederatedIdentityService())
             .then(() => {
               done()
             })
@@ -1432,7 +1442,7 @@ describe('Federation server', () => {
           expect(hosts.has('identity2.example.com:443')).toEqual(true)
         })
 
-        it('should get user of federation server environment on lookup', async () => {
+        it('should get user of federated identity service environment on lookup', async () => {
           const matrixAddresses = new Set<string>()
           for (let i = 0; i < allPeppers.length; i++) {
             const response = await request(app)
@@ -1532,7 +1542,7 @@ describe('Federation server', () => {
           expect(hosts.has('identity2.example.com:443')).toEqual(true)
         })
 
-        it('should find all federation users and servers address of third party users on lookup', async () => {
+        it('should find all federated identity service users and servers address of third party users on lookup', async () => {
           const matrixAddresses = new Set<string>()
           const askywalkerHosts = new Set<string>()
           const lskywalkerHosts = new Set<string>()
@@ -1604,9 +1614,11 @@ describe('Federation server', () => {
 
           let handledPeppers = [
             ...new Set<string>(
-              (await federationServer.db.getAll(hashByServer, ['pepper'])).map(
-                (row) => row.pepper as string
-              )
+              (
+                await federatedIdentityService.db.getAll(hashByServer, [
+                  'pepper'
+                ])
+              ).map((row) => row.pepper as string)
             )
           ]
 
@@ -1632,13 +1644,15 @@ describe('Federation server', () => {
             ...(newHashDetails.alt_lookup_peppers ?? [])
           ]
 
-          await pushHashesToFederationServer(newHashDetails)
+          await pushHashesToFederatedIdentityService(newHashDetails)
 
           handledPeppers = [
             ...new Set<string>(
-              (await federationServer.db.getAll(hashByServer, ['pepper'])).map(
-                (row) => row.pepper as string
-              )
+              (
+                await federatedIdentityService.db.getAll(hashByServer, [
+                  'pepper'
+                ])
+              ).map((row) => row.pepper as string)
             )
           ]
 
@@ -1739,7 +1753,7 @@ describe('Federation server', () => {
 
         it('should send an error if token data in accessTokens table does not contain "sub" field', async () => {
           jest
-            .spyOn(federationServer.db, 'get')
+            .spyOn(federatedIdentityService.db, 'get')
             .mockResolvedValue([{ data: JSON.stringify({}) }])
 
           const jsonParseSpy = jest.spyOn(JSON, 'parse')
@@ -1925,7 +1939,7 @@ describe('Federation server', () => {
 
         it('should send an error if getting hashes from db fails', async () => {
           jest
-            .spyOn(federationServer.db, 'get')
+            .spyOn(federatedIdentityService.db, 'get')
             .mockResolvedValueOnce([
               { data: JSON.stringify({ sub: '@test:example.com' }) }
             ])
@@ -1952,7 +1966,7 @@ describe('Federation server', () => {
 
         it('should send an error if getting hashes from hashes table fails', async () => {
           const dbGetSpy = jest
-            .spyOn(federationServer.db, 'get')
+            .spyOn(federatedIdentityService.db, 'get')
             .mockResolvedValueOnce([
               { data: JSON.stringify({ sub: '@test:example.com' }) }
             ])
@@ -1980,7 +1994,7 @@ describe('Federation server', () => {
 
         it('should send an error if getting hashes from hashbyserver table fails', async () => {
           const dbGetSpy = jest
-            .spyOn(federationServer.db, 'get')
+            .spyOn(federatedIdentityService.db, 'get')
             .mockResolvedValueOnce([
               { data: JSON.stringify({ sub: '@test:example.com' }) }
             ])
@@ -2227,7 +2241,7 @@ describe('Federation server', () => {
 
         it('should send an error if getting pepper in keys table fails', async () => {
           jest
-            .spyOn(federationServer.db, 'get')
+            .spyOn(federatedIdentityService.db, 'get')
             .mockRejectedValueOnce(new Error(errorMessage))
 
           const response = await request(app)
@@ -2251,7 +2265,7 @@ describe('Federation server', () => {
 
         it('should send an error if deleting hashes in hashbyserver table fails', async () => {
           jest
-            .spyOn(federationServer.db, 'deleteWhere')
+            .spyOn(federatedIdentityService.db, 'deleteWhere')
             .mockRejectedValue(new Error(errorMessage))
 
           const response = await request(app)
@@ -2275,7 +2289,7 @@ describe('Federation server', () => {
 
         it('should send an error if inserting hashes in hashbyserver table fails', async () => {
           const insertSpyOn = jest
-            .spyOn(federationServer.db, 'insert')
+            .spyOn(federatedIdentityService.db, 'insert')
             .mockResolvedValueOnce([])
             .mockResolvedValueOnce([])
             .mockRejectedValueOnce(new Error(errorMessage))
@@ -2337,7 +2351,7 @@ describe('Federation server', () => {
 
         it('should send an error if deleting hashes in hashbyserver table fails', async () => {
           jest
-            .spyOn(federationServer.db, 'get')
+            .spyOn(federatedIdentityService.db, 'get')
             .mockResolvedValueOnce([
               { data: JSON.stringify({ sub: '@test:example.com' }) }
             ])

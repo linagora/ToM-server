@@ -25,15 +25,15 @@
  *                    base_url:
  *                      type: string
  *                      description: Base URL of Identity server
- *                m.federation_servers:
+ *                m.federated_identity_services:
  *                  type: object
  *                  properties:
  *                    base_urls:
  *                      type: array
  *                      items:
  *                        type: string
- *                        description: Base URL of Federation server
- *                      description: Available Federation servers Base URL list
+ *                        description: Base URL of Federated identity service
+ *                      description: Available Federated identity services Base URL list
  *                t.server:
  *                  type: object
  *                  properties:
@@ -81,8 +81,8 @@
  *                base_url: matrix.example.com
  *              m.identity_server:
  *                base_url: global-id-server.twake.app
- *              m.federation_servers:
- *                base_urls: ["global-federation-server.twake.app", "other-federation-server.twake.app"]
+ *              m.federated_identity_services:
+ *                base_urls: ["global-federated_identity_service.twake.app", "other-federated-identity-service.twake.app"]
  *              m.integrations:
  *                jitsi:
  *                  baseUrl: https://jitsi.example.com/
@@ -108,7 +108,7 @@ interface WellKnownType {
   'org.matrix.msc3575.proxy': {
     url: string
   }
-  'm.federation_servers'?: {
+  'm.federated_identity_services'?: {
     base_urls: string[]
   }
   't.server'?: {
@@ -164,18 +164,18 @@ class WellKnown {
           }
         }
       }
-      conf.federation_servers =
-        typeof conf.federation_servers === 'object'
-          ? conf.federation_servers
-          : typeof conf.federation_servers === 'string'
-          ? (conf.federation_servers as string).split(/[,\s]+/)
+      conf.federated_identity_services =
+        typeof conf.federated_identity_services === 'object'
+          ? conf.federated_identity_services
+          : typeof conf.federated_identity_services === 'string'
+          ? (conf.federated_identity_services as string).split(/[,\s]+/)
           : []
       if (
-        conf.federation_servers != null &&
-        conf.federation_servers.length > 0
+        conf.federated_identity_services != null &&
+        conf.federated_identity_services.length > 0
       ) {
-        wellKnown['m.federation_servers'] = {
-          base_urls: conf.federation_servers.map(
+        wellKnown['m.federated_identity_services'] = {
+          base_urls: conf.federated_identity_services.map(
             (address) => `https://${address}/`
           )
         }

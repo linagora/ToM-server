@@ -2,7 +2,6 @@ import configParser, { type ConfigDescription } from '@twake/config-parser'
 import { type TwakeLogger } from '@twake/logger'
 import MatrixIdentityServer from '@twake/matrix-identity-server'
 import { Router } from 'express'
-import rateLimit from 'express-rate-limit'
 import fs from 'fs'
 import defaultConfig from './config.json'
 import initializeDb from './db'
@@ -11,7 +10,7 @@ import Routes from './routes/routes'
 import { type Config } from './types'
 import { isIpLiteral, isNetwork } from './utils/ip-address'
 
-export default class FederationServer extends MatrixIdentityServer {
+export default class FederatedIdentityService extends MatrixIdentityServer {
   routes = Router()
   declare conf: Config
   constructor(
@@ -23,10 +22,10 @@ export default class FederationServer extends MatrixIdentityServer {
     const serverConf = configParser(
       confDesc,
       /* istanbul ignore next */
-      fs.existsSync('/etc/twake/federation-server.conf')
-        ? '/etc/twake/federation-server.conf'
-        : process.env.TWAKE_FEDERATION_SERVER_CONF != null
-        ? process.env.TWAKE_FEDERATION_SERVER_CONF
+      fs.existsSync('/etc/twake/federated-identity-service.conf')
+        ? '/etc/twake/federated-identity-service.conf'
+        : process.env.TWAKE_FEDERATED_IDENTITY_SERVICE_CONF != null
+        ? process.env.TWAKE_FEDERATED_IDENTITY_SERVICE_CONF
         : conf != null
         ? conf
         : undefined

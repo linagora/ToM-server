@@ -6,7 +6,7 @@ import defaultConfig from '../config.json'
 import { type Config } from '../types'
 import UserDB from '../userdb'
 import { errCodes } from '../utils/errors'
-import updateFederationHashes from './update-federation-hashes'
+import updateFederatedIdentityHashes from './update-federated-identity-hashes'
 
 jest.mock('node-fetch', () => {
   return {
@@ -27,10 +27,10 @@ const conf: Config = {
   userdb_engine: 'sqlite',
   userdb_host: './src/__testData__/hashes.db',
   server_name: 'company.com',
-  federation_servers: [
-    'federation1.example.com',
-    'federation2.example.com',
-    'federation3.example.com'
+  federated_identity_services: [
+    'federated-identity1.example.com',
+    'federated-identity2.example.com',
+    'federated-identity3.example.com'
   ]
 }
 
@@ -125,7 +125,8 @@ type mockedRequest =
   | typeof errorOnParsingResponseBody
 
 const mockPromiseAllSettled = (mocks: mockedRequest[]): void => {
-  if (mocks.length < (conf.federation_servers as string[]).length) return
+  if (mocks.length < (conf.federated_identity_services as string[]).length)
+    return
   mocks.forEach((mock, index) => {
     if (mocks[index].state === 'resolved') {
       fetchMock.mockResolvedValueOnce(mock.value)
@@ -182,8 +183,8 @@ afterAll(() => {
   logger.close()
 })
 
-describe('updateFederationHashes', () => {
-  it('should be able to calculate and push hashes to federation server', async () => {
+describe('updateFederatedIdentityHashes', () => {
+  it('should be able to calculate and push hashes to federated identity service', async () => {
     const hash = new Hash()
     await hash.ready
 
@@ -204,7 +205,7 @@ describe('updateFederationHashes', () => {
 
     mockRequests(mocks)
 
-    await updateFederationHashes(conf, userDB, logger)
+    await updateFederatedIdentityHashes(conf, userDB, logger)
 
     const getExpectedLookupsRequestBody = (pepper: string): RequestInit => ({
       method: 'post',
@@ -224,27 +225,37 @@ describe('updateFederationHashes', () => {
     expect(fetchMock).toHaveBeenCalledTimes(8)
     expect(fetchMock).toHaveBeenNthCalledWith(
       4,
-      encodeURI(`https://federation1.example.com/_matrix/identity/v2/lookups`),
+      encodeURI(
+        `https://federated-identity1.example.com/_matrix/identity/v2/lookups`
+      ),
       getExpectedLookupsRequestBody(defaultPepper)
     )
     expect(fetchMock).toHaveBeenNthCalledWith(
       5,
-      encodeURI(`https://federation2.example.com/_matrix/identity/v2/lookups`),
+      encodeURI(
+        `https://federated-identity2.example.com/_matrix/identity/v2/lookups`
+      ),
       getExpectedLookupsRequestBody(defaultPepper)
     )
     expect(fetchMock).toHaveBeenNthCalledWith(
       6,
-      encodeURI(`https://federation3.example.com/_matrix/identity/v2/lookups`),
+      encodeURI(
+        `https://federated-identity3.example.com/_matrix/identity/v2/lookups`
+      ),
       getExpectedLookupsRequestBody(defaultPepper)
     )
     expect(fetchMock).toHaveBeenNthCalledWith(
       7,
-      encodeURI(`https://federation3.example.com/_matrix/identity/v2/lookups`),
+      encodeURI(
+        `https://federated-identity3.example.com/_matrix/identity/v2/lookups`
+      ),
       getExpectedLookupsRequestBody(altPeppers[0])
     )
     expect(fetchMock).toHaveBeenNthCalledWith(
       8,
-      encodeURI(`https://federation3.example.com/_matrix/identity/v2/lookups`),
+      encodeURI(
+        `https://federated-identity3.example.com/_matrix/identity/v2/lookups`
+      ),
       getExpectedLookupsRequestBody(altPeppers[1])
     )
   })
@@ -258,10 +269,10 @@ describe('updateFederationHashes', () => {
 
       mockRequests(mocks)
 
-      await updateFederationHashes(conf, userDB, logger)
+      await updateFederatedIdentityHashes(conf, userDB, logger)
       expect(spyOnLoggerError).toHaveBeenCalledTimes(1)
       expect(spyOnLoggerError).toHaveBeenCalledWith(
-        `[Update federation server hashes] Request to get pepper and algorithms from federation server federation2.example.com failed. Reason: ${fetchFailed.value}`
+        `[Update federated identity service hashes] Request to get pepper and algorithms from federated identity service federated-identity2.example.com failed. Reason: ${fetchFailed.value}`
       )
       expect(fetchMock).toHaveBeenCalledTimes(5)
     })
@@ -278,11 +289,11 @@ describe('updateFederationHashes', () => {
 
       mockRequests(mocks)
 
-      await updateFederationHashes(conf, userDB, logger)
+      await updateFederatedIdentityHashes(conf, userDB, logger)
       expect(spyOnLoggerError).toHaveBeenCalledTimes(1)
       expect(spyOnLoggerError).toHaveBeenCalledWith(
         new Error(
-          `[Update federation server hashes] Error on parsing response body of request to get pepper and algorithm from federation2.example.com. Reason: Error: Error on parsing response body`
+          `[Update federated identity service hashes] Error on parsing response body of request to get pepper and algorithm from federated-identity2.example.com. Reason: Error: Error on parsing response body`
         )
       )
       expect(fetchMock).toHaveBeenCalledTimes(5)
@@ -296,13 +307,13 @@ describe('updateFederationHashes', () => {
 
       mockRequests(mocks)
 
-      await updateFederationHashes(conf, userDB, logger)
+      await updateFederatedIdentityHashes(conf, userDB, logger)
       expect(spyOnLoggerError).toHaveBeenCalledTimes(2)
       for (let i = 1; i <= 2; i++) {
         expect(spyOnLoggerError).toHaveBeenNthCalledWith(
           i,
           new Error(
-            `[Update federation server hashes] Error in response body of request to get pepper and algorithm from federation${i}.example.com. Reason: Unauthorized`
+            `[Update federated identity service hashes] Error in response body of request to get pepper and algorithm from federated-identity${i}.example.com. Reason: Unauthorized`
           )
         )
       }
@@ -317,18 +328,18 @@ describe('updateFederationHashes', () => {
 
       mockRequests(mocks)
 
-      await updateFederationHashes(conf, userDB, logger)
+      await updateFederatedIdentityHashes(conf, userDB, logger)
       expect(spyOnLoggerError).toHaveBeenCalledTimes(2)
       expect(spyOnLoggerError).toHaveBeenNthCalledWith(
         1,
         new Error(
-          '[Update federation server hashes] Error federation2.example.com did not provide algorithms'
+          '[Update federated identity service hashes] Error federated-identity2.example.com did not provide algorithms'
         )
       )
       expect(spyOnLoggerError).toHaveBeenNthCalledWith(
         2,
         new Error(
-          `[Update federation server hashes] Error in response body of request to get pepper and algorithm from federation3.example.com. Reason: Unauthorized`
+          `[Update federated identity service hashes] Error in response body of request to get pepper and algorithm from federated-identity3.example.com. Reason: Unauthorized`
         )
       )
       expect(fetchMock).toHaveBeenCalledTimes(4)
@@ -342,16 +353,16 @@ describe('updateFederationHashes', () => {
 
       mockRequests(mocks)
 
-      await updateFederationHashes(conf, userDB, logger)
+      await updateFederatedIdentityHashes(conf, userDB, logger)
       expect(spyOnLoggerError).toHaveBeenCalledTimes(2)
       expect(spyOnLoggerError).toHaveBeenNthCalledWith(
         1,
-        `[Update federation server hashes] Request to get pepper and algorithms from federation server federation1.example.com failed. Reason: ${fetchFailed.value}`
+        `[Update federated identity service hashes] Request to get pepper and algorithms from federated identity service federated-identity1.example.com failed. Reason: ${fetchFailed.value}`
       )
       expect(spyOnLoggerError).toHaveBeenNthCalledWith(
         2,
         new Error(
-          '[Update federation server hashes] Error federation3.example.com did not provide lookup_pepper'
+          '[Update federated identity service hashes] Error federated-identity3.example.com did not provide lookup_pepper'
         )
       )
       expect(fetchMock).toHaveBeenCalledTimes(4)
@@ -365,11 +376,11 @@ describe('updateFederationHashes', () => {
 
       mockRequests(mocks)
 
-      await updateFederationHashes(conf, userDB, logger)
+      await updateFederatedIdentityHashes(conf, userDB, logger)
       expect(fetchMock).toHaveBeenCalledTimes(6)
       expect(spyOnLoggerError).toHaveBeenCalledTimes(1)
       expect(spyOnLoggerError).toHaveBeenCalledWith(
-        `[Update federation server hashes] Request to post updated hashes on federation3.example.com failed. Reason: ${fetchFailed.value}`
+        `[Update federated identity service hashes] Request to post updated hashes on federated-identity3.example.com failed. Reason: ${fetchFailed.value}`
       )
     })
 
@@ -381,11 +392,11 @@ describe('updateFederationHashes', () => {
 
       mockRequests(mocks)
 
-      await updateFederationHashes(conf, userDB, logger)
+      await updateFederatedIdentityHashes(conf, userDB, logger)
       expect(spyOnLoggerError).toHaveBeenCalledTimes(1)
       expect(spyOnLoggerError).toHaveBeenCalledWith(
         new Error(
-          `[Update federation server hashes] Error on parsing response body of request to push updated hashes to federation2.example.com. Reason: Error: Error on parsing response body`
+          `[Update federated identity service hashes] Error on parsing response body of request to push updated hashes to federated-identity2.example.com. Reason: Error: Error on parsing response body`
         )
       )
       expect(fetchMock).toHaveBeenCalledTimes(6)
@@ -399,12 +410,12 @@ describe('updateFederationHashes', () => {
 
       mockRequests(mocks)
 
-      await updateFederationHashes(conf, userDB, logger)
+      await updateFederatedIdentityHashes(conf, userDB, logger)
       expect(fetchMock).toHaveBeenCalledTimes(6)
       expect(spyOnLoggerError).toHaveBeenCalledTimes(1)
       expect(spyOnLoggerError).toHaveBeenCalledWith(
         new Error(
-          `[Update federation server hashes] Error in response body of request to post updated hashes on federation2.example.com. Reason: Unauthorized`
+          `[Update federated identity service hashes] Error in response body of request to post updated hashes on federated-identity2.example.com. Reason: Unauthorized`
         )
       )
     })

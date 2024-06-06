@@ -2,6 +2,7 @@ import { type TwakeLogger } from '@twake/logger'
 import { type IdServerAPI, type Utils } from '@twake/matrix-identity-server'
 import { Router, json, urlencoded } from 'express'
 import { hashDetails, lookup, lookups } from '../controllers/controllers'
+import { auth } from '../middlewares/auth'
 import { errorMiddleware } from '../middlewares/errors'
 import {
   allowCors,
@@ -19,7 +20,6 @@ import {
   type expressAppHandler,
   type middlewaresList
 } from '../types'
-import { auth } from '../middlewares/auth'
 
 const errorMiddlewares = (middleware: expressAppHandler): middlewaresList => [
   allowCors,
@@ -44,7 +44,7 @@ export default (
    * '/_matrix/identity/v2/lookup':
    *  post:
    *    tags:
-   *    - Federation server
+   *    - Federated identity service
    *    description: Extends https://spec.matrix.org/v1.6/identity-service-api/#post_matrixidentityv2lookup to display inactive users and 3PID users
    *    requestBody:
    *      description: Object containing hashes of mails/phones to search
@@ -145,7 +145,7 @@ export default (
    * '/_matrix/identity/v2/hash_details':
    *  get:
    *    tags:
-   *    - Federation server
+   *    - Federated identity service
    *    description: Implements https://spec.matrix.org/v1.6/identity-service-api/#get_matrixidentityv2hash_details
    */
   routes
@@ -183,10 +183,10 @@ export default (
    * '/_matrix/identity/v2/lookups':
    *  post:
    *    tags:
-   *    - Federation server
+   *    - Federated identity service
    *    description: Implements https://github.com/guimard/matrix-spec-proposals/blob/unified-identity-service/proposals/4004-unified-identity-service-view.md
    *    requestBody:
-   *      description: Object containing hashes to store in federation server database
+   *      description: Object containing hashes to store in federated identity service database
    *      required: true
    *      content:
    *        application/json:

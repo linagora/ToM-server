@@ -1,4 +1,4 @@
-import FederationServer from '@twake/federation-server'
+import FederatedIdentityService from '@twake/federated-identity-service'
 import express from 'express'
 import path from 'node:path'
 import { fileURLToPath } from 'url'
@@ -16,7 +16,7 @@ const conf = {
   database_user: process.env.DATABASE_USER,
   database_password: process.env.DATABASE_PASSWORD,
   hashes_rate_limit: process.env.HASHES_RATE_LIMIT,
-  is_federation_server: true,
+  is_federated_identity_service: true,
   ldap_base: process.env.LDAP_BASE,
   ldap_filter: process.env.LDAP_FILTER,
   ldap_user: process.env.LDAP_USER,
@@ -48,9 +48,9 @@ const conf = {
   trusted_servers_addresses: process.env.TRUSTED_SERVERS_ADDRESSES
 }
 
-const federationServer = new FederationServer(conf)
+const federatedIdentityService = new FederatedIdentityService(conf)
 const app = express()
-const promises = [federationServer.ready]
+const promises = [federatedIdentityService.ready]
 
 if (process.env.CROWDSEC_URI) {
   if (!process.env.CROWDSEC_KEY) {
@@ -76,7 +76,7 @@ if (process.env.CROWDSEC_URI) {
 
 Promise.all(promises)
   .then(() => {
-    app.use(federationServer.routes)
+    app.use(federatedIdentityService.routes)
     const port = process.argv[2] != null ? parseInt(process.argv[2]) : 3000
     console.log(`Listening on port ${port}`)
     app.listen(port)

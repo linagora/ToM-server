@@ -22,9 +22,9 @@ services:
     networks:
       - test
 
-  synapse-federation: &synapse_template
+  synapse-federated-identity-service: &synapse_template
     image: matrixdotorg/synapse:v1.89.0
-    container_name: synapse-federation
+    container_name: synapse-federated-identity-service
     volumes:
       - ./synapse-data:/data
       - ./nginx/ssl/ca.pem:/etc/ssl/certs/ca.pem
@@ -35,7 +35,7 @@ services:
       - UID=${MYUID}
       - VIRTUAL_PORT=8008
       - VIRTUAL_HOST=matrix.example.com
-      - SYNAPSE_CONFIG_PATH=/data/homeserver-federation.yaml
+      - SYNAPSE_CONFIG_PATH=/data/homeserver-federated-identity.yaml
     healthcheck:
       test: ["CMD", "curl", "-fSs", "http://localhost:8008/health"]
       interval: 10s
@@ -96,17 +96,17 @@ services:
     networks:
       - test
 
-  federation-server:
-    image: federation-server
-    container_name: federation-server
+  federated-identity-service:
+    image: federated-identity-service
+    container_name: federated-identity-service
     build:
       context: ../../../..
-      dockerfile: ./packages/federation-server/Dockerfile
+      dockerfile: ./packages/federated-identity-service/Dockerfile
     volumes:
       - ./nginx/ssl/ca.pem:/etc/ssl/certs/ca.pem
-      - ./federation-server/federation-server.conf:/etc/twake/federation-server.conf
+      - ./federated-identity-service/federated-identity-service.conf:/etc/twake/federated-identity-service.conf
     depends_on:
-      synapse-federation:
+      synapse-federated-identity-service:
         condition: service_started
       identity-server-1:
         condition: service_started
@@ -117,7 +117,7 @@ services:
     environment:
       - NODE_EXTRA_CA_CERTS=/etc/ssl/certs/ca.pem
       - VIRTUAL_PORT=3000
-      - VIRTUAL_HOST=federation.example.com
+      - VIRTUAL_HOST=federated-identity.example.com
     networks:
       - test
 
@@ -126,7 +126,7 @@ services:
     container_name: identity-server-1
     build:
       context: ../../../..
-      dockerfile: ./packages/federation-server/src/__testData__/identity-server/Dockerfile
+      dockerfile: ./packages/federated-identity-service/src/__testData__/identity-server/Dockerfile
     volumes:
       - ./nginx/ssl/ca.pem:/etc/ssl/certs/ca.pem
       - ./identity-server/conf/identity-server-1.conf:/etc/twake/identity-server.conf
@@ -196,7 +196,7 @@ services:
           - matrix2.example.com
           - matrix3.example.com
           - auth.example.com
-          - federation.example.com
+          - federated-identity.example.com
 
 networks:
   test:

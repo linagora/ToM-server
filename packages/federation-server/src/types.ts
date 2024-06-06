@@ -23,12 +23,12 @@ export interface AuthRequest extends Request {
   accessToken?: string
 }
 
-export type federationServerErrorCode =
+export type federatedIdentityServiceErrorCode =
   (typeof MatrixErrors.errCodes)[keyof typeof MatrixErrors.errCodes]
 
 export interface ErrorResponseBody {
   error: string
-  errcode?: federationServerErrorCode
+  errcode?: federatedIdentityServiceErrorCode
 }
 
 export type middlewaresList = Array<expressAppHandler | expressAppHandlerError>

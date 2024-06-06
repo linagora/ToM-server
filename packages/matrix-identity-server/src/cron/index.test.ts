@@ -22,7 +22,7 @@ const conf: Config = {
   userdb_engine: 'sqlite',
   userdb_host: ':memory:',
   server_name: 'company.com',
-  federation_servers: ['federation.example.com']
+  federated_identity_services: ['federated-identity.example.com']
 }
 
 const logger: TwakeLogger = getLogger()

@@ -28,11 +28,11 @@ let conf = {
     ? JSON.parse(process.env.DATABASE_SSL)
     : false,
   database_password: process.env.DATABASE_PASSWORD,
-  federation_servers: process.env.FEDERATION_SERVERS
-    ? process.env.FEDERATION_SERVERS.split(/[,\s]+/)
+  federated_identity_services: process.env.FEDERATED_IDENTITY_SERVICES
+    ? process.env.FEDERATED_IDENTITY_SERVICES.split(/[,\s]+/)
     : [],
   hashes_rate_limit: process.env.HASHES_RATE_LIMIT,
-  is_federation_server: false,
+  is_federated_identity_service: false,
   jitsiBaseUrl: process.env.JITSI_BASE_URL,
   jitsiJwtAlgorithm: process.env.JITSI_JWT_ALGORITHM,
   jitsiJwtIssuer: process.env.JITSI_JWT_ISSUER,
@@ -73,8 +73,8 @@ let conf = {
   template_dir:
     process.env.TEMPLATE_DIR ||
     path.join(__dirname, 'node_modules', '@twake', 'server', 'templates'),
-  update_federation_hashes_cron:
-    process.env.UDPATE_FEDERATION_HASHES_CRON || '*/10 * * * *',
+  update_federated_identity_hashes_cron:
+    process.env.UPDATE_FEDERATED_IDENTITY_HASHES_CRON || '*/10 * * * *',
   update_users_cron: process.env.UPDATE_USERS_CRON || '*/10 * * * *',
   userdb_engine: 'ldap',
   sms_api_key: process.env.SMS_API_KEY,

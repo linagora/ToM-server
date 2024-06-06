@@ -1,16 +1,16 @@
 import express from 'express'
 
-import FederationServer from '@twake/federation-server'
+import FederatedIdentityService from '@twake/federated-identity-service'
 
-const federationServer = new FederationServer({
+const federatedIdentityService = new FederatedIdentityService({
   database_host: ':memory:'
 })
 
 const app = express()
 
-federationServer.ready
+federatedIdentityService.ready
   .then(() => {
-    app.use(federationServer.routes)
+    app.use(federatedIdentityService.routes)
     const port = process.argv[2] != null ? parseInt(process.argv[2]) : 3000
     console.log(`Listening on port ${port}`)
     app.listen(port)
