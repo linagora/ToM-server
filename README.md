@@ -1,4 +1,33 @@
-# Twake server repository
+# Twake Chat Server
+[![Contributors](https://img.shields.io/github/contributors/linagora/ToM-server?label=Contributors
+)](
+  https://github.com/linagora/ToM-server/graphs/contributors
+)
+[![Issues](https://img.shields.io/github/issues/linagora/ToM-server?label=Issues
+)](https://github.com/linagora/ToM-server/issues)
+[![Documentation](https://img.shields.io/badge/Documentation-green.svg)](docs)
+[![Android application](https://img.shields.io/badge/App-Android-blue.svg)](https://play.google.com/store/apps/dev?id=8845244706987756601)
+[![Ios application](https://img.shields.io/badge/App-iOS-red.svg)](https://apps.apple.com/gr/developer/linagora/id1110867042)
+
+<br />
+<div align="center">
+  <a href="https://github.com/linagora/twake-on-matrix">
+    <img src="https://github.com/linagora/ToM-server/assets/146178981/3383aec3-6a88-44eb-b470-17d08856fe44">
+  </a>
+
+<h3 align="center">twake-chat.com</h3>
+  <p align="center">
+    <a href="https://twake-chat.com">Website</a>
+    •
+    <a href="https://beta.twake.app/web/#/rooms">View Demo</a>
+    •
+    <a href="https://github.com/linagora/twake-on-matrix/issues">Report Bug</a>
+    •
+    <a href="https://hosted.weblate.org/projects/linagora/twake-matrix/#repository">Translate Twake></a>
+</p>
+</div>
+
+---
 
 This is a multi-packages repository. See [packages](./packages) directory.
 
