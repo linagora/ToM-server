@@ -24,8 +24,3 @@ jobs:
     uses: ./.github/workflows/publish-matrix-invite.yml
     needs: [test]
     secrets: inherit
-  upadte-docs:
-    name: Update Docs
-    uses: ./.github/workflows/update-docs.yml
-    needs: [test]
-    secrets: inherit
