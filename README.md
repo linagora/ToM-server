@@ -55,6 +55,7 @@ This repository provides a docker image. Here are the environment variables:
   * `ADDITIONAL_FEATURES`: set true to have all search features; false for a public instance
   * Cron service:
     * `CRON_SERVICE` _(default: true)_: enable cron tasks
+    * `PEPPER_CRON` _(default: `9 1 * * *`)_
     * `UPDATE_USERS_CRON` _(default: `*/15 * * * *`)_
     * `UPDATE_FEDERATED_IDENTITY_HASHES_CRON` _(default: `3 3 * * *`)_
   * Logs:
