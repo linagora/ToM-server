@@ -19,7 +19,7 @@ const appServerConf = {
 let conf = {
   ...appServerConf,
   additional_features: process.env.ADDITIONAL_FEATURES || false,
-  cron_service: process.env.CRON_SERVICE || true,
+  cron_service: process.env.CRON_SERVICE ?? true,
   database_engine: process.env.DATABASE_ENGINE,
   database_host: process.env.DATABASE_HOST,
   database_name: process.env.DATABASE_NAME,
