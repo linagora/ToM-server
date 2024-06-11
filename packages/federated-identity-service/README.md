@@ -61,6 +61,9 @@ You can configure it using environment variables:
   * `CRON_SERVICE` _(true/false)_: enable ot disable cron tasks. It is required
     to have at least one active federated-odentity-service with `CRON_SERVICE`
     active per database
+  * Logs:
+    * `LOG_TRANSPORTS`: set to `Console`
+    * `LOG_LEVEL`: default to "error", possible values: "error", "warn", "info", "http", "verbose", "debug", "silly"
 
 A federation server is also a [Matrix Identity Service](matrix-identity-server/README.md),
 thus all parameters of this service can also be enabled but this is interseting
