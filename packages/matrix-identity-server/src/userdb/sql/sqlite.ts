@@ -27,6 +27,9 @@ class UserDBSQLite extends SQLite implements UserDBBackend {
           if (db == null) {
             reject(new Error('Database not created'))
           }
+          db.run(
+            'CREATE TABLE users (uid varchar(255), mobile text, mail test)'
+          )
           resolve()
         })
         .catch((e) => {
