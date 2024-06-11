@@ -15,6 +15,9 @@ const conf = {
   database_name: process.env.DATABASE_NAME,
   database_user: process.env.DATABASE_USER,
   database_password: process.env.DATABASE_PASSWORD,
+  database_ssl: process.env.DATABASE_SSL
+    ? JSON.parse(process.env.DATABASE_SSL)
+    : false,
   hashes_rate_limit: process.env.HASHES_RATE_LIMIT,
   is_federated_identity_service: true,
   ldap_base: process.env.LDAP_BASE,
@@ -27,6 +30,9 @@ const conf = {
   matrix_database_name: process.env.MATRIX_DATABASE_NAME,
   matrix_database_password: process.env.MATRIX_DATABASE_PASSWORD,
   matrix_database_user: process.env.MATRIX_DATABASE_USER,
+  matrix_database_ssl: process.env.MATRIX_DATABASE_SSL
+    ? JSON.parse(process.env.MATRIX_DATABASE_SSL)
+    : false,
   pepperCron: process.env.PEPPER_CRON || '9 1 * * *',
   server_name: process.env.SERVER_NAME,
   template_dir:
@@ -44,6 +50,9 @@ const conf = {
   userdb_name: process.env.USERDB_NAME,
   userdb_user: process.env.USERDB_USER,
   userdb_password: process.env.USERDB_PASSWORD,
+  userdb_ssl: process.env.USERDB_SSL
+    ? JSON.parse(process.env.USERDB_SSL)
+    : false,
   trust_x_forwarded_for: process.env.TRUST_X_FORWARDED_FOR || false,
   trusted_servers_addresses: process.env.TRUSTED_SERVERS_ADDRESSES
 }
