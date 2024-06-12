@@ -27,6 +27,10 @@ REST API Endpoints documentation is available on https://linagora.github.io/ToM-
   [Matrix specification](https://spec.matrix.org/latest/server-server-api/#server-discovery)
 * [@twake/retry-promise](packages/retry-promise): simple module extending javascript Promise with retry strategy
 
+## Target architecture
+
+![target architecture](./docs/arch.png)
+
 ## Twake-Chat docker
 
 This repository provides a docker image. Here are the environment variables:

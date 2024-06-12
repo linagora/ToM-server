@@ -1,0 +1,54 @@
+digraph { 
+  nodesep=1
+  subgraph cluster_external {
+    style=dotted
+    label=External
+    fontcolor=olivedrab3
+    "External Twake-Chat" [color=olivedrab3]
+    "External Matrix" [color=olivedrab3]
+    "Client" [color=green]
+  }
+  subgraph cluster_frontends {
+    style=invisible
+    shape=doubleoctagon
+    margin=20
+    label=frontends
+    color=gray50
+    fontcolor=gray50
+    "SSO" [color=blue,shape=box,group=frontend]
+    "Synapse" [color=blue,fontcolor=black,shape=box]
+    "Tom Server" [color=blue,fontcolor=black,shape=box]
+  }
+  subgraph cluster_db {
+    bgcolor="#eeeeff"
+    style=dashed
+    label=DB
+    fontcolor=blue
+    "Filesystem" [color=blue,fontcolor=blue,shape=cylinder,group=db]
+    "Postgres" [color=blue,fontcolor=blue,shape=cylinder,group=db]
+    "Redis" [color=blue,fontcolor=blue,shape=cylinder,group=db]
+    "LDAP" [color=blue,fontcolor=blue,shape=cylinder,group=db]
+  }
+  subgraph cluster_fede {
+    style=dotted
+    color=gray50
+    fontcolor=gray50
+    label=Common
+    "Federation Server" [color=red,shape=box,group=frontend]
+  }
+  "Client" -> "SSO" [color=red,fontcolor=red]
+  "Client" -> "Synapse" [color=red,fontcolor=red,label=Chat,penwidth=3]
+  "Client" -> "Tom Server" [color=red,fontcolor=red,label=Search,penwidth=3]
+  "Client" -> "Federation Server" [color=red,fontcolor=red,label=Search]
+  "Tom Server" -> "Postgres" [color=blue,label="Synapse + own DB",fontcolor=blue,penwidth=2]
+  "Tom Server" -> "LDAP" [color=blue,fontcolor=blue,label="Get user data"]
+  "Tom Server" -> "Redis" [color=blue,fontcolor=blue,label="Cache user data"]
+  "Tom Server" -> "Federation Server" [constraint=false,color=coral3,fontcolor=coral3,label="Push hashes",style=dashed]
+  "Tom Server" -> "Synapse" [constraint=false,color=coral3,fontcolor=red,style=dashed]
+  "External Matrix" -> "Synapse" [color=olivedrab3,fontcolor=olivedrab3,label=Federation]
+  "External Twake-Chat" -> "Synapse" [color=olivedrab3,fontcolor=olivedrab3,label=Federation]
+  "External Twake-Chat" -> "Federation Server" [constraint=false,color=olivedrab3,fontcolor=olivedrab3,label="Push hashes",style=dashed]
+  "Synapse" -> "Postgres" [color=blue,fontcolor=blue,penwidth=2]
+  "Synapse" -> "Filesystem" [color=blue,label="medias",fontcolor=blue,penwidth=2]
+  "Synapse" -> "SSO" [constraint=false,color=coral3,fontcolor=coral3,label="Validate SSO token",style=dashed]
+}
