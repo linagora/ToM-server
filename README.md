@@ -1,10 +1,22 @@
 # Twake-Chat server repository
 
-This is a multi-packages repository. See [packages](./packages) directory.
+This repository is a multi-packages repository. See [Modules](#modules) for details.
+
+**ToM server** enhances a [Matrix Synapse server](https://github.com/element-hq/synapse) with several features:
+ * first, **Tom** is a [Matrix Identity Server](https://spec.matrix.org/latest/identity-service-api/) but with additional features:
+   * inside an organization, it adds some search APIs that allows to find internal users like do the mail clients, for autocompletion for example
+   * it extends also [Matrix Identity Service](https://spec.matrix.org/latest/identity-service-api/) search responses by adding inactive users
+ * it provide also an "application service" that allows administrator to create channels with automatic join
+ * it implements also the [federated identity mechanism](https://github.com/matrix-org/matrix-spec-proposals/pull/4004) that extend the
+   [Matrix Identity Service](https://spec.matrix.org/latest/identity-service-api/) to join Matrix identity services to provide a better search
+
+Here is the architecture principle:
+
+![architecture principle](./docs/arch.png)
 
 REST API Endpoints documentation is available on https://linagora.github.io/ToM-server/
 
-[Try it with docker](./docker.md)
+[Try it with docker](#twake-chat-docker)
 
 ## Scripts
 
@@ -27,13 +39,9 @@ REST API Endpoints documentation is available on https://linagora.github.io/ToM-
   [Matrix specification](https://spec.matrix.org/latest/server-server-api/#server-discovery)
 * [@twake/retry-promise](packages/retry-promise): simple module extending javascript Promise with retry strategy
 
-## Target architecture
-
-![target architecture](./docs/arch.png)
-
 ## Twake-Chat docker
 
-This repository provides a docker image. Here are the environment variables:
+This repository provides different docker images. The main is [Tom Server](./Dockerfile) itself. Here are its environment variables:
 
 * Required:
   * `BASE_URL`: Public URL
