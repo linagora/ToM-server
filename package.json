@@ -23,7 +23,9 @@
   "scripts": {
     "build": "npm run softClean && lerna run build",
     "clean": "rimraf packages/*/dist packages/*/coverage ./node_modules/.cache/nx packages/*/example/*.js*",
-    "doc": "node docs/swagger.cjs",
+    "doc": "npm run doc:swagger && npm run doc:arch",
+    "doc:swagger": "node docs/swagger.cjs",
+    "doc:arch": "dot -Tpng -o docs/arch.png docs/arch.dot",
     "format:check": "prettier --check .",
     "format:check-diff": "prettier --check $(git diff $(git rev-parse --abbrev-ref --symbolic-full-name @{u}) --name-status|grep -E '^M|A'|cut -f2)",
     "format:fix": "prettier --write .",
