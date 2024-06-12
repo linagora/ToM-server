@@ -60,6 +60,7 @@ This repository provides a docker image. Here are the environment variables:
     * `UPDATE_FEDERATED_IDENTITY_HASHES_CRON` _(default: `3 3 * * *`)_
   * Logs:
     * `LOG_TRANSPORTS`: set to `Console`
+    * `LOG_LEVEL`: default to "error", possible values: "error", "warn", "info", "http", "verbose", "debug", "silly"
   * `TRUSTED_PROXIES`: IP list of server allowed to set `X-Frowarded-For` header
   * Rate limits _(see [express-rate-limit](https://www.npmjs.com/package/express-rate-limit))_:
     * `RATE_LIMITING_WINDOW`
