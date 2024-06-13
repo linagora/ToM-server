@@ -11,15 +11,17 @@ First, you need to include DNS names. To do this, just add this line into your
 127.0.0.1  auth.example.com matrix.example.com tom.example.com
 ```
 
-To initialize the server, simple launch `./init`
+To initialize the server, simply launch [`./init`](./init)
 
 ## Run server
 
-Launch `./run`. To see logs:
+Just launch [`./run`](./run).
+
+To see logs:
  * SSO logs: `docker compose logs auth`
  * Synapse logs are in `synapse-data/homeserver.log`
 
-Server runs on https://matrix.example.com/ (API only).
+The Matrix-Synapse server runs on https://matrix.example.com/ (API only), and the SSO on https://auth.example.com/ _(certificate invalid of course)_
 
 ### Available accounts
 
@@ -33,17 +35,20 @@ You can use any Matrix client, but to just test is server is up:
  * Download **llng** tool from [Simple OIDC client repo](https://github.com/linagora/simple-oidc-client)
  * Launch the following command
 ```shell
-llng --llng-server auth.example.com --matrix-server matrix.example.com:443 --login dwho --password dwho matrix_token
+llng --llng-server auth.example.com --matrix-server matrix.example.com:443 \
+     --login dwho --password dwho matrix_token
 ```
 
-It will authenticate using the dwho account, then authenticate to Matrix, then get a matrix `access_token`
+It will use the dwho account to authenticate, then propagate authenticate to Matrix via
+[OIDC](https://openid.net/specs/openid-connect-core-1_0.html), then get a matrix `access_token`
 
 To get a federation `access_token`, reuse the result of previous command with `matrix_federation_token` subcommand:
 
 ```shell
-llng --llng-server auth.example.com --matrix-server matrix.example.com:443 --login dwho --password dwho matrix_federation_token syt_ZHdobw_JswjzYCRQiPxhPJPAfbj_15jQrD
+llng --llng-server auth.example.com --matrix-server matrix.example.com:443 --login dwho \
+     --password dwho matrix_federation_token syt_ZHdobw_JswjzYCRQiPxhPJPAfbj_15jQrD
 ```
 
 ## Stop server
 
-Launch `./stop` or `docker-compose down`
+Launch [`./stop`](./stop) or `docker-compose down`
