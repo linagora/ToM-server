@@ -1,0 +1,20 @@
+#!/bin/sh
+
+rm -rf synapse-data
+cp -a synapse-ref synapse-data
+
+MYUID=${SUDO_UID:-$(id --user)}
+MYGID=${SUDO_GID:-$(id --group)}
+
+docker-compose down
+docker run -it --rm \
+    -v `pwd`/synapse-data:/data \
+    -e SYNAPSE_SERVER_NAME=matrix.example.com \
+    -e SYNAPSE_REPORT_STATS=no \
+    -e UID=$MYUID \
+    -e GID=$MYGID \
+    matrixdotorg/synapse:latest generate
+
+chmod 644 synapse-data/example.com.signing.key
+mkdir -p synapse-data/media_store
+touch /data/homeserver.log

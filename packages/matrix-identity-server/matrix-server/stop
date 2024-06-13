@@ -1,0 +1,6 @@
+#!/bin/sh
+
+export MYUID=${SUDO_UID:-$(id --user)}
+export MYGID=${SUDO_GID:-$(id --group)}
+
+docker-compose down
