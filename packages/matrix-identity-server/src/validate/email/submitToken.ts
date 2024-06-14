@@ -1,11 +1,11 @@
 import type MatrixIdentityServer from '../..'
-import { jsonContent, send, type expressAppHandler } from '../../utils'
+import { epoch, jsonContent, send, type expressAppHandler } from '../../utils'
 import { errMsg } from '../../utils/errors'
 
 interface parameters {
   client_secret?: string
   token?: string
-  sid?: string
+  sid?: string 
 }
 
 interface mailToken {
@@ -33,7 +33,11 @@ const SubmitToken = (idServer: MatrixIdentityServer): expressAppHandler => {
               idServer.db
                 .deleteToken(prms.token as string)
                 .then(() => {
-                  send(res, 200, { success: true })
+                  idServer.db.update('mappings',{valid : 1, submit_time : epoch()},'session_id',(data as mailToken).sid)
+                  .then(()=>{
+                    send(res, 200, { success: true })
+                  })
+                  .catch((e)=>{})
                 })
                 .catch((e) => {})
             } else {

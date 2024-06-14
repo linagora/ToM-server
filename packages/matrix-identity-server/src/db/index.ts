@@ -17,7 +17,7 @@ export type Collections =
   | 'roomTags'
   | 'userHistory'
   | 'userQuotas'
-
+  | 'mappings'
 const cleanByExpires: Collections[] = ['oneTimeTokens', 'attempts']
 
 type sqlComparaisonOperator = '=' | '!=' | '>' | '<' | '>=' | '<=' | '<>'

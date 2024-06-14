@@ -338,6 +338,46 @@ describe('Use configuration file', () => {
           token = RegExp.$1
           sid = RegExp.$2
         })
+        it('should not resend an email for the same attempt', async () => {
+          const response = await request(app)
+          .post('/_matrix/identity/v2/validate/email/requestToken')
+          .set('Authorization', `Bearer ${validToken}`)
+          .set('Accept', 'application/json')
+          .send({
+          client_secret: 'mysecret',
+          email: 'xg@xnr.fr',
+          next_link: 'http://localhost:8090',
+          send_attempt: 1
+          })
+          .send({
+          client_secret: 'mysecret',
+          email: 'xg@xnr.fr',
+          next_link: 'http://localhost:8090',
+          send_attempt: 1
+          })
+          expect(response.statusCode).toBe(200)
+          expect(sendMailMock).not.toHaveBeenCalled()
+      })
+      it('should resend an email for a different attempt', async () => {
+        const response = await request(app)
+        .post('/_matrix/identity/v2/validate/email/requestToken')
+        .set('Authorization', `Bearer ${validToken}`)
+        .set('Accept', 'application/json')
+        .send({
+        client_secret: 'mysecret',
+        email: 'xg@xnr.fr',
+        next_link: 'http://localhost:8090',
+        send_attempt: 1
+        })
+        .send({
+        client_secret: 'mysecret',
+        email: 'xg@xnr.fr',
+        next_link: 'http://localhost:8090',
+        send_attempt: 2
+        })
+        expect(response.statusCode).toBe(200)
+        expect(sendMailMock).toHaveBeenCalled()
+    })
       })
       describe('/_matrix/identity/v2/validate/email/submitToken', () => {
         /* Works but disabled to avoid invalidate previous token
