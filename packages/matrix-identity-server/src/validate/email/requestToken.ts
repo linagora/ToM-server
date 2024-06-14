@@ -87,27 +87,33 @@ const fillTable = (
   verificationTemplate: string,
   transport: Mailer,
   res: any
-): void => {
+):void => {
   const sid = randomString(64)
   idServer.db
     .createOneTimeToken(
       {
         sid,
         email: dst,
-        client_secret: clientSecret
+        client_secret: clientSecret,
       },
       idServer.conf.mail_link_delay
     )
     .then((token) => {
       void transport.sendMail({
         to: dst,
-        raw: mailBody(verificationTemplate, dst, token, clientSecret, sid)
+        raw: mailBody(
+          verificationTemplate,
+          dst,
+          token,
+          clientSecret,
+          sid
+        )
       })
       idServer.db
         .insert('mappings', {
           client_secret: clientSecret,
           address: dst,
-          medium: 'email',
+          medium: "email",
           valid: 0,
           submit_time: 0,
           session_id: sid,
@@ -117,9 +123,7 @@ const fillTable = (
           send(res, 200, { sid })
         })
         .catch((err) => {
-          // istanbul ignore next
           idServer.logger.error('Insertion error', err)
-          // istanbul ignore next
           send(res, 400, errMsg('unknown', err))
         })
     })
@@ -146,57 +150,40 @@ const RequestToken = (idServer: MatrixIdentityServer): expressAppHandler => {
         validateParameters(res, schema, obj, idServer.logger, (obj) => {
           const clientSecret = (obj as RequestTokenArgs).client_secret
           const sendAttempt = (obj as RequestTokenArgs).send_attempt
+          const clientSecret = (obj as RequestTokenArgs).client_secret
+          const sendAttempt = (obj as RequestTokenArgs).send_attempt
           const dst = (obj as RequestTokenArgs).email
+
+          if (!clientSecretRe.test(clientSecret)) {
 
           if (!clientSecretRe.test(clientSecret)) {
             send(res, 400, errMsg('invalidParam', 'invalid client_secret'))
           } else if (!validEmailRe.test(dst)) {
             send(res, 400, errMsg('invalidEmail'))
+          } else if (!validEmailRe.test(dst)) {
+            send(res, 400, errMsg('invalidEmail'))
           } else {
             idServer.db
-              .get('mappings', ['send_attempt', 'session_id'], {
-                client_secret: clientSecret,
-                address: dst
-              })
+              .get('mappings', ['send_attempt', 'session_id'], { client_secret: clientSecret })
               .then((rows) => {
                 if (rows.length > 0) {
                   if (sendAttempt === rows[0].send_attempt) {
-                    send(res, 200, { sid: rows[0].session_id })
-                  } else {
+                    send(res, 200, { sid: rows[0].sid })
+                  } 
+                  else {
                     idServer.db
-                      .deleteEqualAnd(
-                        'mappings',
-                        { field: 'client_secret', value: clientSecret },
-                        { field: 'session_id', value: rows[0].session_id }
-                      )
+                      .deleteWhere('mappings', { field : 'client_secret', operator:'=', value: clientSecret })
                       .then(() => {
-                        fillTable(
-                          idServer,
-                          dst,
-                          clientSecret,
-                          sendAttempt,
-                          verificationTemplate,
-                          transport,
-                          res
-                        )
+                        fillTable(idServer, dst, clientSecret, sendAttempt, verificationTemplate, transport, res)
                       })
                       .catch((err) => {
-                        // istanbul ignore next
                         idServer.logger.error('Deletion error', err)
-                        // istanbul ignore next
                         send(res, 400, errMsg('unknown', err))
                       })
                   }
-                } else {
-                  fillTable(
-                    idServer,
-                    dst,
-                    clientSecret,
-                    sendAttempt,
-                    verificationTemplate,
-                    transport,
-                    res
-                  )
+                } 
+                else {
+                  fillTable(idServer, dst, clientSecret, sendAttempt, verificationTemplate, transport, res)
                 }
               })
               .catch((err) => {
