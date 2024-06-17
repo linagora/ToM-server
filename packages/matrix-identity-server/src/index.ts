@@ -235,5 +235,5 @@ export default class MatrixIdentityServer {
     this.db?.close()
     this.userDB.close()
     this.logger.close()
-  }
+  };
 }
