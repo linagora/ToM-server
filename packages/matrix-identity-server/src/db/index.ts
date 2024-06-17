@@ -17,6 +17,9 @@ export type Collections =
   | 'roomTags'
   | 'userHistory'
   | 'userQuotas'
+  // J'ajoute ici les collections pour les paires de clés
+  | 'longTermKeypairs'
+  | 'shortTermKeypairs'
 
 const cleanByExpires: Collections[] = ['oneTimeTokens', 'attempts']
 

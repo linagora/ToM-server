@@ -3,8 +3,8 @@
 rm -rf synapse-data
 cp -a synapse-ref synapse-data
 
-MYUID=${SUDO_UID:-$(id --user)}
-MYGID=${SUDO_GID:-$(id --group)}
+export MYUID=${SUDO_UID:-$(id -u)}
+export MYGID=${SUDO_GID:-$(id -g)}
 
 docker-compose down
 docker run -it --rm \

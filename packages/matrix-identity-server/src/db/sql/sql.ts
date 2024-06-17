@@ -25,7 +25,10 @@ const tables: Record<Collections, string> = {
   roomTags:
     'id varchar(64) PRIMARY KEY, authorId varchar(64), content text, roomId varchar(64)',
   userHistory: 'address text PRIMARY KEY, active integer, timestamp integer',
-  userQuotas: 'user_id varchar(64) PRIMARY KEY, size int'
+  userQuotas: 'user_id varchar(64) PRIMARY KEY, size int',
+  // Key management
+  longTermKeypairs: 'keyID varchar(64) PRIMARY KEY, public text, private text',
+  shortTermKeypairs: 'keyID varchar(64) PRIMARY KEY, public text, private text'
 }
 
 const indexes: Partial<Record<Collections, string[]>> = {
