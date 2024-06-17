@@ -38,4 +38,4 @@ const getPubkey = <T extends string = never>(
   }
 }
 
-export default getPubkey;
+export default getPubkey
