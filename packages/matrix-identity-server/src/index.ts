@@ -182,10 +182,16 @@ export default class MatrixIdentityServer {
                     '/_matrix/identity/v2/validate/email/submitToken':
                       SubmitToken(this),
                     // Ajout des endpoints
-                    '/_matrix/identity/v2/pubkey/isvalid': isPubkeyValid(this.db,this.logger),
+                    '/_matrix/identity/v2/pubkey/isvalid': isPubkeyValid(
+                      this.db,
+                      this.logger
+                    ),
                     '/_matrix/identity/v2/ephemeral_pubkey/isvalid':
                       isEphemeralPubkeyValid(this.db, this.logger),
-                    '/_matrix/identity/v2/pubkey/get' : getPubkey(this.db, this.logger)
+                    '/_matrix/identity/v2/pubkey/get': getPubkey(
+                      this.db,
+                      this.logger
+                    )
                   },
                   post: {
                     '/_matrix/identity/v2': badMethod,
@@ -235,5 +241,5 @@ export default class MatrixIdentityServer {
     this.db?.close()
     this.userDB.close()
     this.logger.close()
-  };
+  }
 }
