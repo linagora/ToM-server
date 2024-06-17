@@ -47,7 +47,7 @@ describe('Key validation', () => {
     await db.insert('shortTermKeypairs', {
       keyID: 'testID',
       public: 'testPub',
-      private : 'testPri',
+      private: 'testPri'
     })
   })
 
@@ -92,5 +92,4 @@ describe('Key validation', () => {
     expect(response.statusCode).toBe(200)
     expect(response.body.valid).toBe(false)
   })
-
 })

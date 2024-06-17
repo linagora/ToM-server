@@ -198,7 +198,10 @@ export default class MatrixIdentityServer {
                     ),
                     '/_matrix/identity/v2/ephemeral_pubkey/isvalid':
                       isEphemeralPubkeyValid(this.db, this.logger),
-                    '/_matrix/identity/v2/pubkey/get' : getPubkey(this.db, this.logger)
+                    '/_matrix/identity/v2/pubkey/get': getPubkey(
+                      this.db,
+                      this.logger
+                    )
                   },
                   post: {
                     '/_matrix/identity/v2': badMethod,
