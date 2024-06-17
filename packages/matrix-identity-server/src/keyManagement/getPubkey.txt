@@ -1,0 +1,30 @@
+const getPubkey = require('./getPubkey');
+
+describe('getPubkey', () => {
+    it('should return the public key', () => {
+        // Existing test code
+        // ...
+
+        // Additional test code
+        // Test case 1: Verify that the public key is returned correctly
+        const publicKey = getPubkey();
+        expect(publicKey).toBeDefined();
+        expect(typeof publicKey).toBe('string');
+        expect(publicKey.length).toBeGreaterThan(0);
+
+        // Test case 2: Verify that the public key is a valid RSA public key
+        // You can use a library like 'node-forge' to validate the key format
+        // ...
+
+        // Test case 3: Verify that the public key is not empty or null
+        // ...
+
+        // Test case 4: Verify that the public key is unique for each invocation
+        // ...
+
+        // Test case 5: Verify that the public key is not accessible without proper authorization
+        // ...
+
+        // Additional test cases can be added based on your specific requirements
+    });
+});
