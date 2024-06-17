@@ -1,39 +1,55 @@
-import type IdentityServerDB from '../db'
-import { type Request } from 'express'
-import { send, type expressAppHandler } from '../utils'
+import type MatrixIdentityServer from '..'
+import {
+  jsonContent,
+  send,
+  validateParameters,
+  type expressAppHandler
+} from '../utils'
 import { errMsg } from '../utils/errors'
 
-const getPubkey = (idServer: IdentityServerDB): expressAppHandler => {
-  return (req, res) => {
-    const _keyID: string = (req as Request).params.keyId
+const schema = {
+  keyID: true
+}
 
-    idServer.db
-      .get('shortTermKeypairs', ['public'], { keyID: _keyID })
-      // eslint-disable-next-line @typescript-eslint/promise-function-async
-      .then((rows) => {
-        if (rows.length === 1) {
-          send(res, 200, { public_key: rows[0].public })
-        } else {
-          return idServer.db
-            .get('longTermKeypairs', ['public'], { keyID: _keyID })
-            .then((rows) => {
-              if (rows.length === 0) {
-                send(
-                  res,
-                  404,
-                  errMsg('notFound', 'The public key was not found')
-                )
-              } else {
-                send(res, 200, { public_key: rows[0].public })
-              }
-            })
-        }
+const getPubkey = (idServer: MatrixIdentityServer): expressAppHandler => {
+  return (req, res) => {
+    jsonContent(req, res, idServer.logger, (obj) => {
+      validateParameters(res, schema, obj, idServer.logger, (obj) => {
+        idServer.logger.debug(`request to search ${JSON.stringify(obj)}`)
+        idServer.db
+          .get('shortTermKeypairs', ['public'], {
+            keyID: (obj as { _keyID: string })._keyID
+          })
+          .then((rows) => {
+            if (rows.length === 0) {
+              idServer.db
+                .get('longTermKeypairs', ['public'], {
+                  keyID: (obj as { _keyID: string })._keyID
+                })
+                .then((rows) => {
+                  if (rows.length === 0) {
+                    send(res, 404, errMsg('notFound'))
+                  } else {
+                    // On verifie ailleurs que la clef publique n'apparait bien qu'une seule fois !
+                    send(res, 200, { public_key: rows[0].public })
+                  }
+                })
+                .catch((e) => {
+                  /* istanbul ignore next */
+                  send(res, 500, errMsg('unknown', e))
+                })
+              send(res, 404, errMsg('notFound'))
+            } else {
+              // On verifie ailleurs que la clef publique n'apparait bien qu'une seule fois !
+              send(res, 200, { public_key: rows[0].public })
+            }
+          })
+          .catch((e) => {
+            /* istanbul ignore next */
+            send(res, 500, errMsg('unknown', e))
+          })
       })
-      .catch((e) => {
-        console.error('Error querying keypairs:', e) // Debugging statement
-        /* istanbul ignore next */
-        send(res, 500, errMsg('unknown', e))
-      })
+    })
   }
 }
 

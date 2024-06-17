@@ -191,7 +191,14 @@ export default class MatrixIdentityServer {
                     '/_matrix/identity/v2/3pid/bind': badMethod,
                     '/_matrix/identity/v2/3pid/getValidated3pid':
                       GetValidated3pid(this),
-                    '/_matrix/identity/v2/3pid/unbind': badMethod
+                    '/_matrix/identity/v2/3pid/unbind': badMethod,
+                    '/_matrix/identity/v2/pubkey/isvalid': isPubkeyValid(
+                      db,
+                      this.logger
+                    ),
+                    '/_matrix/identity/v2/ephemeral_pubkey/isvalid':
+                      isEphemeralPubkeyValid(db, this.logger)
+                    // '/_matrix/identity/v2/pubkey/get' : getPubkey(db)
                   },
                   post: {
                     '/_matrix/identity/v2': badMethod,

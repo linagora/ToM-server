@@ -1,35 +1,43 @@
 import type IdentityServerDB from '../db'
-import { type Request } from 'express'
-import { send, type expressAppHandler } from '../utils'
+import { type TwakeLogger } from '@twake/logger'
+import {
+  jsonContent,
+  send,
+  validateParameters,
+  type expressAppHandler
+} from '../utils'
 import { errMsg } from '../utils/errors'
 
-const isPubkeyValid = (idServer: IdentityServerDB): expressAppHandler => {
+const schema = {
+  public_key: true
+}
+
+const isPubkeyValid = (
+  idServer: IdentityServerDB,
+  logger: TwakeLogger
+): expressAppHandler => {
   return (req, res) => {
-    const publicKey = (req as Request).query.public_key
-    if (
-      publicKey !== undefined &&
-      typeof publicKey === 'string' &&
-      publicKey.length > 0
-    ) {
-      idServer.db
-        .get('longTermKeypairs', ['public'], {
-          public: publicKey
-        })
-        .then((rows) => {
-          if (rows.length === 0) {
-            send(res, 200, { valid: false })
-          } else {
-            // TO DO : ensure that the pubkey only appears one time
-            send(res, 200, { valid: true })
-          }
-        })
-        .catch((e) => {
-          /* istanbul ignore next */
-          send(res, 500, errMsg('unknown', e))
-        })
-    } else {
-      send(res, 400, errMsg('missingParams'))
-    }
+    jsonContent(req, res, logger, (obj) => {
+      validateParameters(res, schema, obj, logger, (obj) => {
+        logger.debug(`request to search ${JSON.stringify(obj)}`)
+        idServer.db
+          .get('longTermKeypairs', ['public'], {
+            public: (obj as { public_key: string }).public_key
+          })
+          .then((rows) => {
+            if (rows.length === 0) {
+              send(res, 200, { valid: false })
+            } else {
+              // On verifie ailleurs que la clef publique n'apparait bien qu'une seule fois !
+              send(res, 200, { valid: true })
+            }
+          })
+          .catch((e) => {
+            /* istanbul ignore next */
+            send(res, 500, errMsg('unknown', e))
+          })
+      })
+    })
   }
 }
 
