@@ -40,7 +40,7 @@ import RequestToken from './validate/email/requestToken'
 import SubmitToken from './validate/email/submitToken'
 // Ajout des imports
 import isPubkeyValid from './keyManagement/validPubkey'
-// import getPubkey from './keyManagement/getPubkey'
+import getPubkey from './keyManagement/getPubkey'
 import isEphemeralPubkeyValid from './keyManagement/validEphemeralPubkey'
 
 export { type tokenContent } from './account/register'
@@ -182,13 +182,10 @@ export default class MatrixIdentityServer {
                     '/_matrix/identity/v2/validate/email/submitToken':
                       SubmitToken(this),
                     // Ajout des endpoints
-                    '/_matrix/identity/v2/pubkey/isvalid': isPubkeyValid(
-                      db,
-                      this.logger
-                    ),
+                    '/_matrix/identity/v2/pubkey/isvalid': isPubkeyValid(this.db,this.logger),
                     '/_matrix/identity/v2/ephemeral_pubkey/isvalid':
-                      isEphemeralPubkeyValid(db, this.logger)
-                    // '/_matrix/identity/v2/pubkey/get' : getPubkey(db)
+                      isEphemeralPubkeyValid(this.db, this.logger),
+                    '/_matrix/identity/v2/pubkey/get' : getPubkey(this.db, this.logger)
                   },
                   post: {
                     '/_matrix/identity/v2': badMethod,
