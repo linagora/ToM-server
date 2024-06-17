@@ -38,8 +38,10 @@
     "test": "lerna run test"
   },
   "dependencies": {
+    "@remix-run/express": "^1.16.0",
     "express": "^4.18.2",
-    "@remix-run/express": "^1.16.0"
+    "tweetnacl": "^1.0.3",
+    "tweetnacl-util": "^0.15.1"
   },
   "devDependencies": {
     "@crowdsec/express-bouncer": "^0.1.0",

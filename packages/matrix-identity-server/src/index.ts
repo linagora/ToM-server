@@ -40,7 +40,7 @@ import RequestToken from './validate/email/requestToken'
 import SubmitToken from './validate/email/submitToken'
 // Ajout des imports
 import isPubkeyValid from './keyManagement/validPubkey'
-import getPubkey from './keyManagement/getPubkey'
+// import getPubkey from './keyManagement/getPubkey'
 import isEphemeralPubkeyValid from './keyManagement/validEphemeralPubkey'
 
 export { type tokenContent } from './account/register'
