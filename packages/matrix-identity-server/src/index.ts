@@ -42,7 +42,7 @@ import GetValidated3pid from './3pid/getValidated3pid'
 import unbind from './3pid/unbind'
 import bind from './3pid/bind'
 import isPubkeyValid from './keyManagement/validPubkey'
-// import getPubkey from './keyManagement/getPubkey'
+import getPubkey from './keyManagement/getPubkey'
 import isEphemeralPubkeyValid from './keyManagement/validEphemeralPubkey'
 export { type tokenContent } from './account/register'
 export { default as updateUsers } from './cron/updateUsers'
@@ -183,14 +183,10 @@ export default class MatrixIdentityServer {
                     '/_matrix/identity/v2/validate/email/submitToken':
                       SubmitToken(this),
                     // Ajout des endpoints
-                    '/_matrix/identity/v2/pubkey/isvalid': isPubkeyValid(
-                      db,
-                      this.logger
-                    ),
+                    '/_matrix/identity/v2/pubkey/isvalid': isPubkeyValid(this.db,this.logger),
                     '/_matrix/identity/v2/ephemeral_pubkey/isvalid':
-                      isEphemeralPubkeyValid(db, this.logger)
+                      isEphemeralPubkeyValid(db, this.logger),
                     // '/_matrix/identity/v2/pubkey/get' : getPubkey(db)
-                      SubmitToken(this),
                     '/_matrix/identity/v2/3pid/bind': badMethod,
                     '/_matrix/identity/v2/3pid/getValidated3pid':
                       GetValidated3pid(this),
