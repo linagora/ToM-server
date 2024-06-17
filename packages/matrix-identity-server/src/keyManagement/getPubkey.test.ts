@@ -1,6 +1,5 @@
 import { getLogger, type TwakeLogger } from '@twake/logger'
 import { generateKeyPair } from '@twake/crypto'
-import fs from 'fs'
 import request from 'supertest'
 import express from 'express'
 import IdentityServerDB from '../db'
@@ -16,8 +15,6 @@ const longKeyPair: { publicKey: string; privateKey: string; keyId: string } =
   generateKeyPair('ed25519')
 const shortKeyPair: { publicKey: string; privateKey: string; keyId: string } =
   generateKeyPair('curve25519')
-console.log('longKeyPair', longKeyPair)
-console.log('shortKeyPair', shortKeyPair)
 
 beforeAll(async () => {
   conf = {
@@ -26,13 +23,6 @@ beforeAll(async () => {
     base_url: 'http://example.com/',
     userdb_engine: 'sqlite',
     cron_service: false
-  }
-})
-
-afterAll(() => {
-  // Clean up test database file
-  if (fs.existsSync('src/__testData__/test.db')) {
-    fs.unlinkSync('src/__testData__/test.db')
   }
 })
 
@@ -61,16 +51,11 @@ describe('Get public key from keyID', () => {
 
   afterAll(async () => {
     clearTimeout(db.cleanJob)
-    // Clean up test database file
-    if (fs.existsSync('./src/__testData__/hashes.db')) {
-      fs.unlinkSync('./src/__testData__/hashes.db')
-    }
     db.close()
     logger.close()
   })
 
   it('should return the public key when correct keyID is given (from long term key pairs)', async () => {
-    console.log('correct long')
     const _keyID = longKeyPair.keyId
     const response = await request(app).get(
       `/_matrix/identity/v2/pubkey/${_keyID}`
@@ -83,7 +68,6 @@ describe('Get public key from keyID', () => {
   })
 
   it('should return the public key when correct keyID is given (from short term key pairs)', async () => {
-    console.log('correct short')
     const _keyID = shortKeyPair.keyId
     const response = await request(app).get(
       `/_matrix/identity/v2/pubkey/${_keyID}`
@@ -96,7 +80,6 @@ describe('Get public key from keyID', () => {
   })
 
   it('should return 404 when incorrect keyID is given', async () => {
-    console.log('incorrect')
     const _keyID = 'incorrectKeyID'
     const response = await request(app).get(
       `/_matrix/identity/v2/pubkey/${_keyID}`
