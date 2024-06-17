@@ -9,12 +9,9 @@ const getPubkey = (
   logger: TwakeLogger
 ): expressAppHandler => {
   return (req, res) => {
-    console.log('test entry')
     const _keyID: string = (req as Request).params.keyId
 
-    if (_keyID.length === 0) {
-      send(res, 400, errMsg('missingParams', 'keyId'))
-    } else {
+    
       idServer.db
         .get('shortTermKeypairs', ['public'], { keyID: _keyID })
         // eslint-disable-next-line @typescript-eslint/promise-function-async
@@ -39,7 +36,6 @@ const getPubkey = (
           send(res, 500, errMsg('unknown', e))
         })
     }
-  }
 }
 
 export default getPubkey

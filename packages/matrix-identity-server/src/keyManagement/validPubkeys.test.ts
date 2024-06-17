@@ -1,5 +1,4 @@
 import { getLogger, type TwakeLogger } from '@twake/logger'
-import fs from 'fs'
 import request from 'supertest'
 import express from 'express'
 import IdentityServerDB from '../db'
@@ -20,13 +19,6 @@ beforeAll(async () => {
     base_url: 'http://example.com/',
     userdb_engine: 'sqlite',
     cron_service: false
-  }
-})
-
-afterAll(() => {
-  // Clean up test database file
-  if (fs.existsSync('src/__testData__/test.db')) {
-    fs.unlinkSync('src/__testData__/test.db')
   }
 })
 
@@ -52,14 +44,15 @@ describe('Key validation', () => {
       public: 'testPub',
       private: 'testPri'
     })
+    await db.insert('shortTermKeypairs', {
+      keyID: 'testID',
+      public: 'testPub',
+      private : 'testPri',
+    })
   })
 
   afterAll(async () => {
     clearTimeout(db.cleanJob)
-    // Clean up test database file
-    if (fs.existsSync('./src/__testData__/hashes.db')) {
-      fs.unlinkSync('./src/__testData__/hashes.db')
-    }
     db.close()
     logger.close()
   })
@@ -81,4 +74,23 @@ describe('Key validation', () => {
     expect(response.statusCode).toBe(200)
     expect(response.body.valid).toBe(false)
   })
+
+  it('should validate a valid ephemeral pubkey', async () => {
+    const key = 'testPub'
+    const response = await request(app)
+      .get('/_matrix/identity/v2/ephemeral_pubkey/isvalid')
+      .send({ public_key: key })
+    expect(response.statusCode).toBe(200)
+    expect(response.body.valid).toBe(true)
+  })
+
+  it('should invalidate an invalid ephemeral pubkey', async () => {
+    const key = 'invalidPub'
+    const response = await request(app)
+      .get('/_matrix/identity/v2/ephemeral_pubkey/isvalid')
+      .send({ public_key: key })
+    expect(response.statusCode).toBe(200)
+    expect(response.body.valid).toBe(false)
+  })
+
 })
