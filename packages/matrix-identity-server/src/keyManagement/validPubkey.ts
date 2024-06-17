@@ -38,7 +38,7 @@ const isPubkeyValid = (
           })
       })
     })
-  }
+  };
 }
 
 export default isPubkeyValid

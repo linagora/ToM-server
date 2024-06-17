@@ -35,7 +35,7 @@ const getPubkey = (
           /* istanbul ignore next */
           send(res, 500, errMsg('unknown', e))
         })
-    }
+    };
 }
 
 export default getPubkey
