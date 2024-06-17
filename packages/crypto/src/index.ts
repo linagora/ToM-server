@@ -55,51 +55,60 @@ export const randomString = (n: number): string => {
 
 // Function to generate KeyId
 function generateKeyId(algorithm: string, identifier: string): string {
-  return `${algorithm}:${identifier}`;
+  return `${algorithm}:${identifier}`
 }
 
 // Function to generate Ed25519 key pair and KeyId
-function generateEdKeyPair(): { publicKey: string, privateKey: string, keyId: string } {
+function generateEdKeyPair(): {
+  publicKey: string
+  privateKey: string
+  keyId: string
+} {
   // Generate an Ed25519 key pair
-  const keyPair = nacl.sign.keyPair();
+  const keyPair = nacl.sign.keyPair()
 
   // Generate a unique identifier for the KeyId
-  const identifier = nacl.randomBytes(8); // Generate 8 random bytes
-  let identifierHex = naclUtil.encodeBase64(identifier);
+  const identifier = nacl.randomBytes(8) // Generate 8 random bytes
+  let identifierHex = naclUtil.encodeBase64(identifier)
   // remove the '/' character from the identifier
-  identifierHex = identifierHex.replace(/\//g, '+');
-  const algorithm = 'ed25519';
-  const _keyId = generateKeyId(algorithm, identifierHex);
-
-  return {
-    publicKey: naclUtil.encodeBase64(keyPair.publicKey),
-    privateKey: naclUtil.encodeBase64(keyPair.secretKey),
-    keyId : _keyId
-  };
-}
-
-// Function to generate Curve25519 key pair and KeyId
-function generateCurveKeyPair(): { publicKey: string, privateKey: string, keyId: string } {
-  // Generate a Curve25519 key pair
-  const keyPair = nacl.box.keyPair();
-
-  // Generate a unique identifier for the KeyId
-  const identifier = nacl.randomBytes(8); // Generate 8 random bytes
-  let identifierHex = naclUtil.encodeBase64(identifier);
-  // remove the '/' character from the identifier
-  identifierHex = identifierHex.replace(/\//g, '+');
-  const algorithm = 'curve25519';
-  const _keyId = generateKeyId(algorithm, identifierHex);
+  identifierHex = identifierHex.replace(/\//g, '+')
+  const algorithm = 'ed25519'
+  const _keyId = generateKeyId(algorithm, identifierHex)
 
   return {
     publicKey: naclUtil.encodeBase64(keyPair.publicKey),
     privateKey: naclUtil.encodeBase64(keyPair.secretKey),
     keyId: _keyId
-  };
+  }
 }
 
-export const generateKeyPair = (algorithm: 'ed25519' | 'curve25519'):
-                              { publicKey: string, privateKey: string, keyId: string } => {
+// Function to generate Curve25519 key pair and KeyId
+function generateCurveKeyPair(): {
+  publicKey: string
+  privateKey: string
+  keyId: string
+} {
+  // Generate a Curve25519 key pair
+  const keyPair = nacl.box.keyPair()
+
+  // Generate a unique identifier for the KeyId
+  const identifier = nacl.randomBytes(8) // Generate 8 random bytes
+  let identifierHex = naclUtil.encodeBase64(identifier)
+  // remove the '/' character from the identifier
+  identifierHex = identifierHex.replace(/\//g, '+')
+  const algorithm = 'curve25519'
+  const _keyId = generateKeyId(algorithm, identifierHex)
+
+  return {
+    publicKey: naclUtil.encodeBase64(keyPair.publicKey),
+    privateKey: naclUtil.encodeBase64(keyPair.secretKey),
+    keyId: _keyId
+  }
+}
+
+export const generateKeyPair = (
+  algorithm: 'ed25519' | 'curve25519'
+): { publicKey: string; privateKey: string; keyId: string } => {
   if (algorithm === 'ed25519') {
     return generateEdKeyPair()
   } else if (algorithm === 'curve25519') {

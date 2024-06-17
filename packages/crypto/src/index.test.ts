@@ -42,16 +42,16 @@ test('randomString', () => {
 
 describe('generateKeyPair', () => {
   it('should generate a valid Ed25519 key pair and key ID', () => {
-    const { publicKey, privateKey, keyId } = generateKeyPair('ed25519');
-    expect(publicKey).toMatch(/^[A-Za-z0-9+/=]+$/); // Base64 encoded string
-    expect(privateKey).toMatch(/^[A-Za-z0-9+/=]+$/); // Base64 encoded string
-    expect(keyId).toMatch(/^ed25519:[A-Za-z0-9+/=]+$/); // Key ID format
-  });
+    const { publicKey, privateKey, keyId } = generateKeyPair('ed25519')
+    expect(publicKey).toMatch(/^[A-Za-z0-9+/=]+$/) // Base64 encoded string
+    expect(privateKey).toMatch(/^[A-Za-z0-9+/=]+$/) // Base64 encoded string
+    expect(keyId).toMatch(/^ed25519:[A-Za-z0-9+/=]+$/) // Key ID format
+  })
 
   it('should generate a valid Curve25519 key pair and key ID', () => {
-    const { publicKey, privateKey, keyId } = generateKeyPair('curve25519');
-    expect(publicKey).toMatch(/^[A-Za-z0-9+/=]+$/); // Base64 encoded string
-    expect(privateKey).toMatch(/^[A-Za-z0-9+/=]+$/); // Base64 encoded string
-    expect(keyId).toMatch(/^curve25519:[A-Za-z0-9+/=]+$/); // Key ID format
-  });
-});
+    const { publicKey, privateKey, keyId } = generateKeyPair('curve25519')
+    expect(publicKey).toMatch(/^[A-Za-z0-9+/=]+$/) // Base64 encoded string
+    expect(privateKey).toMatch(/^[A-Za-z0-9+/=]+$/) // Base64 encoded string
+    expect(keyId).toMatch(/^curve25519:[A-Za-z0-9+/=]+$/) // Key ID format
+  })
+})
