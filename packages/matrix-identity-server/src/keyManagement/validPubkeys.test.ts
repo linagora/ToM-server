@@ -19,7 +19,7 @@ beforeAll(async () => {
     base_url: 'http://example.com/',
     userdb_engine: 'sqlite',
     cron_service: false
-  }
+  };
 })
 
 const logger: TwakeLogger = getLogger()
