@@ -12,6 +12,7 @@ import {
 import { errMsg } from '../../utils/errors'
 import Mailer from '../../utils/mailer'
 
+
 interface RequestTokenArgs {
   client_secret: string
   email: string
@@ -158,15 +159,15 @@ const RequestToken = (idServer: MatrixIdentityServer): expressAppHandler => {
             send(res, 400, errMsg('invalidEmail'))
           } else {
             idServer.db
-              .get('mappings', ['send_attempt', 'session_id'], { client_secret: clientSecret })
+              .get('mappings', ['send_attempt', 'session_id'], { client_secret: clientSecret, address: dst})
               .then((rows) => {
                 if (rows.length > 0) {
                   if (sendAttempt === rows[0].send_attempt) {
-                    send(res, 200, { sid: rows[0].sid })
+                    send(res, 200, { sid: rows[0].session_id })
                   } 
                   else {
                     idServer.db
-                      .deleteWhere('mappings', { field : 'client_secret', operator:'=', value: clientSecret })
+                      .deleteEqualAnd('mappings',{field :'client_secret',value : clientSecret},{field :'session_id', value : rows[0].session_id})
                       .then(() => {
                         fillTable(idServer, dst, clientSecret, sendAttempt, verificationTemplate, transport, res)
                       })

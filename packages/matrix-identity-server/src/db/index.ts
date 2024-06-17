@@ -38,6 +38,12 @@ type Update = (
   field: string,
   value: string | number
 ) => Promise<DbGetResult>
+type UpdateAnd = (
+  table: Collections,
+  values: Record<string, string | number>,
+  condition1: { field: string, value: string | number },
+  condition2: { field: string, value: string | number }
+) => Promise<DbGetResult>
 type Get = (
   table: Collections,
   fields: string[],
@@ -65,6 +71,11 @@ type DeleteEqual = (
   field: string,
   value: string | number
 ) => Promise<void>
+type DeleteEqualAnd = (
+  table: Collections,
+  condition1: { field: string, value: string | number | Array<string | number>},
+  condition2: { field: string, value: string | number | Array<string | number>}
+) => Promise<void>
 type DeleteLowerThan = (
   table: Collections,
   field: string,
@@ -86,7 +97,9 @@ export interface IdDbBackend {
   getHigherThan: Get
   match: Match
   update: Update
+  updateAnd : UpdateAnd
   deleteEqual: DeleteEqual
+  deleteEqualAnd: DeleteEqualAnd
   deleteLowerThan: DeleteLowerThan
   deleteWhere: DeleteWhere
   close: () => void
@@ -177,6 +190,16 @@ class IdentityServerDb implements IdDbBackend {
   }
 
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
+  updateAnd(
+    table: Collections,
+    values: Record<string, string | number>,
+    condition1: { field: string, value: string | number },
+    condition2: { field: string, value: string | number }
+  ) {
+    return this.db.updateAnd(table, values, condition1, condition2)
+  }
+  
+  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
   get(
     table: Collections,
     fields: string[],
@@ -222,6 +245,15 @@ class IdentityServerDb implements IdDbBackend {
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
   deleteEqual(table: Collections, field: string, value: string | number) {
     return this.db.deleteEqual(table, field, value)
+  }
+
+    // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
+  deleteEqualAnd(
+    table: Collections,
+    condition1: { field: string, value: string | number | Array<string | number>},
+    condition2: { field: string, value: string | number | Array<string | number>}
+  ) {
+    return this.db.deleteEqualAnd(table, condition1, condition2)
   }
 
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async

@@ -33,7 +33,7 @@ const SubmitToken = (idServer: MatrixIdentityServer): expressAppHandler => {
               idServer.db
                 .deleteToken(prms.token as string)
                 .then(() => {
-                  idServer.db.update('mappings',{valid : 1, submit_time : epoch()},'session_id',(data as mailToken).sid)
+                  idServer.db.updateAnd('mappings', { valid: 1, submit_time : epoch()}, { field : 'session_id', value : (data as mailToken).sid }, {field : 'client_secret', value : (data as mailToken).client_secret })
                   .then(()=>{
                     send(res, 200, { success: true })
                   })
