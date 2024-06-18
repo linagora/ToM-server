@@ -184,20 +184,11 @@ export default class MatrixIdentityServer {
                       SubmitToken(this),
                     // Ajout des endpoints
                     '/_matrix/identity/v2/pubkey/isvalid': isPubkeyValid(
-                      this.db,
-                      this.logger
+                      this.db
                     ),
                     '/_matrix/identity/v2/ephemeral_pubkey/isvalid':
-                      isEphemeralPubkeyValid(db, this.logger),
-                      '/_matrix/identity/v2/pubkey/get': getPubkey(
-                      this.db,
-                      this.logger
-                    ),
-                    // '/_matrix/identity/v2/pubkey/get' : getPubkey(db)
-                    '/_matrix/identity/v2/3pid/bind': badMethod,
-                    '/_matrix/identity/v2/3pid/getValidated3pid':
-                      GetValidated3pid(this),
-                    '/_matrix/identity/v2/3pid/unbind': badMethod
+                      isEphemeralPubkeyValid(this.db),
+                    '/_matrix/identity/v2/pubkey/:keyId': getPubkey(this.db)
                   },
                   post: {
                     '/_matrix/identity/v2': badMethod,
@@ -214,9 +205,10 @@ export default class MatrixIdentityServer {
                       RequestToken(this),
                     '/_matrix/identity/v2/validate/email/submitToken':
                       SubmitToken(this),
-                    '/_matrix/identity/v2/3pid/getValidated3pid': badMethod,
-                    '/_matrix/identity/v2/3pid/bind': bind(this),
-                    '/_matrix/identity/v2/3pid/unbind': unbind(this)
+                    // Ajout des endpoints
+                    '/_matrix/identity/v2/pubkey/isvalid': badMethod,
+                    '/_matrix/identity/v2/ephemeral_pubkey/isvalid': badMethod,
+                    '/_matrix/identity/v2/pubkey/:keyId': badMethod
                   }
                 }
                 resolve(true)
