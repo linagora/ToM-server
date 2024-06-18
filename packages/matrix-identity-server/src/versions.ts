@@ -11,7 +11,8 @@ const versions = [
   'v1.3',
   'v1.4',
   'v1.5',
-  'v1.6'
+  'v1.6',
+  'v1.10'
 ]
 
 const getVersions: expressAppHandler = (req, res) => {
