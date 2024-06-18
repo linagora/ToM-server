@@ -87,5 +87,5 @@ describe('Get public key from keyID', () => {
 
     expect(response.statusCode).toBe(404)
     expect(response.body.errcode).toBe('M_NOT_FOUND')
-  });
+  })
 })
