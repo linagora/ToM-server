@@ -1,6 +1,7 @@
 import { getLogger, type TwakeLogger } from '@twake/logger'
 import request from 'supertest'
 import express from 'express'
+import fs from 'fs'
 import IdentityServerDB from '../db'
 import { type Config } from '../types'
 import isPubkeyValid from './validPubkey'
@@ -52,12 +53,12 @@ describe('Key validation', () => {
   })
 
   afterAll(async () => {
-    clearTimeout(db.cleanJob)
+    fs.unlinkSync('src/__testData__/test.db')
     db.close()
     logger.close()
   })
 
-  it('should validate a valid long-term pubkey', async () => {
+  it('should validate a valid long-cdterm pubkey', async () => {
     const key = 'testPub'
     const response = await request(app)
       .get('/_matrix/identity/v2/pubkey/isvalid')
