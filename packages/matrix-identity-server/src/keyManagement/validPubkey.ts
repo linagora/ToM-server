@@ -28,7 +28,7 @@ const isPubkeyValid = (
             if (rows.length === 0) {
               send(res, 200, { valid: false })
             } else {
-              // On verifie ailleurs que la clef publique n'apparait bien qu'une seule fois !
+              // TO DO : ensure that the pubkey only appears one time 
               send(res, 200, { valid: true })
             }
           })
