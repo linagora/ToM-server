@@ -28,7 +28,7 @@ const isPubkeyValid = (
             if (rows.length === 0) {
               send(res, 200, { valid: false })
             } else {
-              // TO DO : ensure that the pubkey only appears one time 
+              // TO DO : ensure that the pubkey only appears one time
               send(res, 200, { valid: true })
             }
           })

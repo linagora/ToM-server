@@ -53,7 +53,6 @@ afterAll(async () => {
 })
 
 describe('Get public key from keyID', () => {
-
   it('should return the public key when correct keyID is given (from long term key pairs)', async () => {
     const _keyID = longKeyPair.keyId
     const response = await request(app).get(
