@@ -1,13 +1,9 @@
 import type IdentityServerDB from '../db'
 import { type Request } from 'express'
-import { type TwakeLogger } from '@twake/logger'
 import { send, type expressAppHandler } from '../utils'
 import { errMsg } from '../utils/errors'
 
-const getPubkey = (
-  idServer: IdentityServerDB,
-  logger: TwakeLogger
-): expressAppHandler => {
+const getPubkey = (idServer: IdentityServerDB): expressAppHandler => {
   return (req, res) => {
     const _keyID: string = (req as Request).params.keyId
 
