@@ -27,14 +27,18 @@ const logger: TwakeLogger = getLogger()
 describe('Id Server DB', () => {
   let idDb: IdDb
   afterEach(() => {
-    process.env.TEST_PG === 'yes' || fs.unlinkSync('./testdb.db')
+    if (idDb) {
+      clearTimeout(idDb.cleanJob)
+      idDb.close()
+    }
+    if (process.env.TEST_PG !== 'yes') {
+      fs.unlinkSync('./testdb.db')
+    }
   })
 
   afterAll(() => {
+    idDb.close()
     logger.close()
-    // if (fs.existsSync('./testdb.db')) {
-    //   fs.unlinkSync('./testdb.db')
-    // }
   })
   it('should have SQLite database initialized', (done) => {
     idDb = new IdDb(baseConf, logger)
