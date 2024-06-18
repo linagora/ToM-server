@@ -38,6 +38,7 @@ import UserDB from './userdb'
 import _validateMatrixToken from './utils/validateMatrixToken'
 import RequestToken from './validate/email/requestToken'
 import SubmitToken from './validate/email/submitToken'
+import GetValidated3pid from './3pid'
 
 export { type tokenContent } from './account/register'
 export { default as updateUsers } from './cron/updateUsers'
@@ -176,7 +177,9 @@ export default class MatrixIdentityServer {
                     '/_matrix/identity/v2/validate/email/requestToken':
                       badMethod,
                     '/_matrix/identity/v2/validate/email/submitToken':
-                      SubmitToken(this)
+                      SubmitToken(this),
+                    '/_matrix/identity/v2/3pid/getValidated3pid':
+                      GetValidated3pid(this)
                   },
                   post: {
                     '/_matrix/identity/v2': badMethod,
@@ -192,7 +195,8 @@ export default class MatrixIdentityServer {
                     '/_matrix/identity/v2/validate/email/requestToken':
                       RequestToken(this),
                     '/_matrix/identity/v2/validate/email/submitToken':
-                      SubmitToken(this)
+                      SubmitToken(this),
+                    '/_matrix/identity/v2/3pid/getValidated3pid': badMethod
                   }
                 }
                 resolve(true)

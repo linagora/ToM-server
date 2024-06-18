@@ -340,44 +340,44 @@ describe('Use configuration file', () => {
         })
         it('should not resend an email for the same attempt', async () => {
           const response = await request(app)
-          .post('/_matrix/identity/v2/validate/email/requestToken')
-          .set('Authorization', `Bearer ${validToken}`)
-          .set('Accept', 'application/json')
-          .send({
-          client_secret: 'mysecret',
-          email: 'xg@xnr.fr',
-          next_link: 'http://localhost:8090',
-          send_attempt: 1
-          })
-          .send({
-          client_secret: 'mysecret',
-          email: 'xg@xnr.fr',
-          next_link: 'http://localhost:8090',
-          send_attempt: 1
-          })
+            .post('/_matrix/identity/v2/validate/email/requestToken')
+            .set('Authorization', `Bearer ${validToken}`)
+            .set('Accept', 'application/json')
+            .send({
+              client_secret: 'mysecret',
+              email: 'xg@xnr.fr',
+              next_link: 'http://localhost:8090',
+              send_attempt: 1
+            })
+            .send({
+              client_secret: 'mysecret',
+              email: 'xg@xnr.fr',
+              next_link: 'http://localhost:8090',
+              send_attempt: 1
+            })
           expect(response.statusCode).toBe(200)
           expect(sendMailMock).not.toHaveBeenCalled()
-      })
-      it('should resend an email for a different attempt', async () => {
-        const response = await request(app)
-        .post('/_matrix/identity/v2/validate/email/requestToken')
-        .set('Authorization', `Bearer ${validToken}`)
-        .set('Accept', 'application/json')
-        .send({
-        client_secret: 'mysecret',
-        email: 'xg@xnr.fr',
-        next_link: 'http://localhost:8090',
-        send_attempt: 1
         })
-        .send({
-        client_secret: 'mysecret',
-        email: 'xg@xnr.fr',
-        next_link: 'http://localhost:8090',
-        send_attempt: 2
+        it('should resend an email for a different attempt', async () => {
+          const response = await request(app)
+            .post('/_matrix/identity/v2/validate/email/requestToken')
+            .set('Authorization', `Bearer ${validToken}`)
+            .set('Accept', 'application/json')
+            .send({
+              client_secret: 'mysecret0',
+              email: 'xg@xnr.fr',
+              next_link: 'http://localhost:8090',
+              send_attempt: 1
+            })
+            .send({
+              client_secret: 'mysecret0',
+              email: 'xg@xnr.fr',
+              next_link: 'http://localhost:8090',
+              send_attempt: 2
+            })
+          expect(response.statusCode).toBe(200)
+          expect(sendMailMock).toHaveBeenCalled()
         })
-        expect(response.statusCode).toBe(200)
-        expect(sendMailMock).toHaveBeenCalled()
-    })
       })
       describe('/_matrix/identity/v2/validate/email/submitToken', () => {
         /* Works but disabled to avoid invalidate previous token
@@ -425,6 +425,94 @@ describe('Use configuration file', () => {
             })
             .set('Accept', 'application/json')
           expect(response.statusCode).toBe(400)
+        })
+      })
+    })
+
+    describe('/_matrix/identity/v2/3pid', () => {
+      describe('/_matrix/identity/v2/3pid/getValidated3pid', () => {
+        let sid: string, token: string
+        it('should return 404 if no valid session is found', async () => {
+          const response = await request(app)
+            .get('/_matrix/identity/v2/3pid/getValidated3pid')
+            .set('Authorization', `Bearer ${validToken}`)
+            .set('Accept', 'application/json')
+            .send({
+              client_secret: 'invalid_secret',
+              sid: 'invalid_sid'
+            })
+          expect(response.body.errcode).toBe('M_NO_VALID_SESSION')
+          expect(response.statusCode).toBe(404)
+        })
+        // Necessary test to get the sid and token
+        test('copy of requestToken test', async () => {
+          const response = await request(app)
+            .post('/_matrix/identity/v2/validate/email/requestToken')
+            .set('Authorization', `Bearer ${validToken}`)
+            .set('Accept', 'application/json')
+            .send({
+              client_secret: 'newsecret',
+              email: 'xg@xnr.fr',
+              next_link: 'http://localhost:8090',
+              send_attempt: 1
+            })
+          expect(response.statusCode).toBe(200)
+          expect(sendMailMock.mock.calls[0][0].to).toBe('xg@xnr.fr')
+          expect(sendMailMock.mock.calls[0][0].raw).toMatch(
+            /token=([a-zA-Z0-9]{64})&client_secret=newsecret&sid=([a-zA-Z0-9]{64})/
+          )
+          token = RegExp.$1
+          sid = RegExp.$2
+        })
+        it('should return 400 if the session is not validated', async () => {
+          const response = await request(app)
+            .get('/_matrix/identity/v2/3pid/getValidated3pid')
+            .set('Authorization', `Bearer ${validToken}`)
+            .set('Accept', 'application/json')
+            .send({
+              client_secret: 'newsecret',
+              sid
+            })
+          expect(response.body.errcode).toBe('M_SESSION_NOT_VALIDATED')
+          expect(response.statusCode).toBe(400)
+        })
+        // Necessary test to validate the session
+        test('copy of submitToken test', async () => {
+          const response = await request(app)
+            .get('/_matrix/identity/v2/validate/email/submitToken')
+            .query({
+              token,
+              client_secret: 'newsecret',
+              sid
+            })
+            .set('Accept', 'application/json')
+          expect(response.body).toEqual({ success: true })
+          expect(response.statusCode).toBe(200)
+        })
+        /* Works if the validationTime is set to 1 millisecond in 3pid/index.ts
+        it('should return 400 if the session is expired', async () => {
+          const response = await request(app)
+            .get('/_matrix/identity/v2/3pid/getValidated3pid')
+            .set('Authorization', `Bearer ${validToken}`)
+            .set('Accept', 'application/json')
+            .send({
+              client_secret: 'newsecret',
+              sid
+            })
+          expect(response.body.errcode).toBe('M_SESSION_EXPIRED')
+          expect(response.statusCode).toBe(400)
+        })
+        */
+        it('should return 200 if a valid session is found', async () => {
+          const response = await request(app)
+            .get('/_matrix/identity/v2/3pid/getValidated3pid')
+            .set('Authorization', `Bearer ${validToken}`)
+            .set('Accept', 'application/json')
+            .send({
+              client_secret: 'newsecret',
+              sid
+            })
+          expect(response.statusCode).toBe(200)
         })
       })
     })
