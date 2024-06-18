@@ -2,6 +2,7 @@ import { getLogger, type TwakeLogger } from '@twake/logger'
 import { generateKeyPair } from '@twake/crypto'
 import request from 'supertest'
 import express from 'express'
+import fs from 'fs'
 import IdentityServerDB from '../db'
 import { type Config } from '../types'
 import defaultConfig from '../__testData__/registerConf.json'
@@ -16,6 +17,8 @@ const longKeyPair: { publicKey: string; privateKey: string; keyId: string } =
 const shortKeyPair: { publicKey: string; privateKey: string; keyId: string } =
   generateKeyPair('curve25519')
 
+let db: IdentityServerDB
+
 beforeAll(async () => {
   conf = {
     ...defaultConfig,
@@ -24,36 +27,32 @@ beforeAll(async () => {
     userdb_engine: 'sqlite',
     cron_service: false
   }
+  app = express()
+  db = new IdentityServerDB(conf, logger)
+
+  await db.ready
+  app.get(`/_matrix/identity/v2/pubkey/:keyId`, getPubkey(db, logger))
+
+  // Insert a test key into the database
+  await db.insert('longTermKeypairs', {
+    keyID: longKeyPair.keyId,
+    public: longKeyPair.publicKey,
+    private: longKeyPair.privateKey
+  })
+  await db.insert('shortTermKeypairs', {
+    keyID: shortKeyPair.keyId,
+    public: shortKeyPair.publicKey,
+    private: shortKeyPair.privateKey
+  })
+})
+
+afterAll(async () => {
+  fs.unlinkSync('src/__testData__/test.db')
+  db.close()
+  logger.close()
 })
 
 describe('Get public key from keyID', () => {
-  let db: IdentityServerDB
-
-  beforeAll(async () => {
-    app = express()
-    db = new IdentityServerDB(conf, logger)
-
-    await db.ready
-    app.get(`/_matrix/identity/v2/pubkey/:keyId`, getPubkey(db, logger))
-
-    // Insert a test key into the database
-    await db.insert('longTermKeypairs', {
-      keyID: longKeyPair.keyId,
-      public: longKeyPair.publicKey,
-      private: longKeyPair.privateKey
-    })
-    await db.insert('shortTermKeypairs', {
-      keyID: shortKeyPair.keyId,
-      public: shortKeyPair.publicKey,
-      private: shortKeyPair.privateKey
-    })
-  })
-
-  afterAll(async () => {
-    clearTimeout(db.cleanJob)
-    db.close()
-    logger.close()
-  })
 
   it('should return the public key when correct keyID is given (from long term key pairs)', async () => {
     const _keyID = longKeyPair.keyId
@@ -83,7 +82,7 @@ describe('Get public key from keyID', () => {
     const _keyID = 'incorrectKeyID'
     const response = await request(app).get(
       `/_matrix/identity/v2/pubkey/${_keyID}`
-    ) // exactement '/_matrix/identity/v2/pubkey/' + _keyID
+    ) // exactly '/_matrix/identity/v2/pubkey/' + _keyID
 
     expect(response.statusCode).toBe(404)
     expect(response.body.errcode).toBe('M_NOT_FOUND')
