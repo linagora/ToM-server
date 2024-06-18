@@ -117,22 +117,3 @@ export const generateKeyPair = (
     throw new Error('Unsupported algorithm')
   }
 }
-
-// // Function to sign a JSON object using a base64-encoded private key
-// function signJsonObject(jsonObject: any, privateKeyBase64: string): string {
-//   const message = naclUtil.decodeUTF8(JSON.stringify(jsonObject));
-//   const privateKey = naclUtil.decodeBase64(privateKeyBase64);
-//   const signedMessage = nacl.sign(message, privateKey);
-//   return naclUtil.encodeBase64(signedMessage);
-// }
-
-// // Function to verify a signed JSON object
-// function verifySignedJsonObject(signedMessageBase64: string, publicKeyBase64: string): any {
-//   const signedMessage = naclUtil.decodeBase64(signedMessageBase64);
-//   const publicKey = naclUtil.decodeBase64(publicKeyBase64);
-//   const message = nacl.sign.open(signedMessage, publicKey);
-//   if (message === null) {
-//     throw new Error("Signature verification failed");
-//   }
-//   return JSON.parse(naclUtil.encodeUTF8(message));
-// }
