@@ -175,5 +175,5 @@ export const validateParameters: validateParametersType = (
 }
 
 export const epoch = (): number => {
-  return Math.floor(Date.now() / 1000)
+  return Date.now()
 }
