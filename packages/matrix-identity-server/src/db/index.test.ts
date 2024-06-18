@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/strict-boolean-expressions */
 import { randomString } from '@twake/crypto'
 import { getLogger, type TwakeLogger } from '@twake/logger'
 import fs from 'fs'
@@ -26,16 +27,22 @@ describe('Id Server DB', () => {
   let idDb: IdDb
 
   afterEach(() => {
-    process.env.TEST_PG === 'yes' || fs.unlinkSync('./testdb.db')
+    if (idDb) {
+      clearTimeout(idDb.cleanJob)
+      idDb.close()
+    }
+    if (process.env.TEST_PG !== 'yes') {
+      fs.unlinkSync('./testdb.db')
+    }
   })
 
   afterAll(() => {
-    idDb.close()
-    logger.close()
+    if (logger) {
+      logger.close()
+    }
   })
 
   it('should have SQLite database initialized', (done) => {
-    // eslint-disable-next-line @typescript-eslint/no-floating-promises
     idDb = new IdDb(baseConf, logger)
     idDb.ready
       .then(() => {
@@ -49,8 +56,6 @@ describe('Id Server DB', () => {
                 expect(rows.length).toBe(1)
                 expect(rows[0].id).toEqual(id)
                 expect(rows[0].data).toEqual('{}')
-                clearTimeout(idDb.cleanJob)
-                idDb.close()
                 done()
               })
               .catch((e) => done(e))
@@ -77,11 +82,9 @@ describe('Id Server DB', () => {
                 idDb
                   .verifyOneTimeToken(token)
                   .then((data) => {
-                    done("Souldn't have find a value")
+                    done("Shouldn't have found a value")
                   })
                   .catch((e) => {
-                    clearTimeout(idDb.cleanJob)
-                    idDb.close()
                     done()
                   })
               })
@@ -110,15 +113,11 @@ describe('Id Server DB', () => {
                     // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
                     // @ts-ignore
                     expect(data.a).toEqual(1)
-                    clearTimeout(idDb.cleanJob)
-                    idDb.close()
                     done()
                   })
                   .catch((e) => done(e))
               })
-              .catch((e) => {
-                done(e)
-              })
+              .catch((e) => done(e))
           })
           .catch((e) => done(e))
       })
@@ -141,8 +140,6 @@ describe('Id Server DB', () => {
                     // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
                     // @ts-ignore
                     expect(data.a).toEqual(2)
-                    clearTimeout(idDb.cleanJob)
-                    idDb.close()
                     done()
                   })
                   .catch((e) => done(e))
@@ -165,8 +162,7 @@ describe('Id Server DB', () => {
               .update('oneTimeTokens', { data: '{"a": 2}' }, 'id', token)
               .then((rows) => {
                 expect(rows.length).toBe(1)
-                expect(rows[0].data).toEqual('{"a": 2}') // [OMH] Same as the test from get but directly from update.
-                clearTimeout(idDb.cleanJob)
+                expect(rows[0].data).toEqual('{"a": 2}')
                 done()
               })
               .catch((e) => done(e))
@@ -176,8 +172,111 @@ describe('Id Server DB', () => {
       .catch((e) => done(e))
   })
 
+  describe('updateAnd', () => {
+    beforeEach((done) => {
+      idDb = new IdDb(baseConf, logger)
+      idDb.ready.then(() => done()).catch((e) => done(e))
+    })
+    it('should update records matching both conditions', (done) => {
+      const idsNumber = 8
+      const ids: string[] = []
+      const insertsPromises: Array<Promise<DbGetResult>> = []
+
+      for (let index = 0; index < idsNumber; index++) {
+        ids[index] = randomString(64)
+        insertsPromises[index] = idDb.insert('privateNotes', {
+          id: ids[index],
+          authorId: `author${index}`,
+          content: `{${index}}`,
+          targetId: `target${index}`
+        })
+      }
+
+      Promise.all(insertsPromises)
+        // eslint-disable-next-line @typescript-eslint/promise-function-async
+        .then(() => {
+          return idDb.updateAnd(
+            'privateNotes',
+            { content: 'updatedContent' },
+            { field: 'authorId', value: 'author0' },
+            { field: 'targetId', value: 'target0' }
+          )
+        })
+        .then((rows) => {
+          expect(rows.length).toBe(1)
+          expect(rows[0].content).toEqual('updatedContent')
+          done()
+        })
+        .catch((e) => done(e))
+    })
+
+    it('should return entry on update', (done) => {
+      const idsNumber = 8
+      const ids: string[] = []
+      const insertsPromises: Array<Promise<DbGetResult>> = []
+
+      for (let index = 0; index < idsNumber; index++) {
+        ids[index] = randomString(64)
+        insertsPromises[index] = idDb.insert('privateNotes', {
+          id: ids[index],
+          authorId: `author${index}`,
+          content: `{${index}}`,
+          targetId: `target${index}`
+        })
+      }
+
+      Promise.all(insertsPromises)
+        // eslint-disable-next-line @typescript-eslint/promise-function-async
+        .then(() => {
+          return idDb.updateAnd(
+            'privateNotes',
+            { content: '{"a": 2}' },
+            { field: 'authorId', value: 'author0' },
+            { field: 'targetId', value: 'target0' }
+          )
+        })
+        .then((rows) => {
+          expect(rows.length).toBe(1)
+          expect(rows[0].content).toEqual('{"a": 2}')
+          done()
+        })
+        .catch((e) => done(e))
+    })
+
+    it('should not update records if conditions do not match', (done) => {
+      const idsNumber = 8
+      const ids: string[] = []
+      const insertsPromises: Array<Promise<DbGetResult>> = []
+
+      for (let index = 0; index < idsNumber; index++) {
+        ids[index] = randomString(64)
+        insertsPromises[index] = idDb.insert('privateNotes', {
+          id: ids[index],
+          authorId: `author${index}`,
+          content: `{${index}}`,
+          targetId: `target${index}`
+        })
+      }
+
+      Promise.all(insertsPromises)
+        // eslint-disable-next-line @typescript-eslint/promise-function-async
+        .then(() => {
+          return idDb.updateAnd(
+            'privateNotes',
+            { content: 'updatedContent' },
+            { field: 'authorId', value: 'authorNotExist' },
+            { field: 'targetId', value: 'target0' }
+          )
+        })
+        .then((rows) => {
+          expect(rows.length).toBe(0)
+          done()
+        })
+        .catch((e) => done(e))
+    })
+  })
+
   it('should return entry on insert', (done) => {
-    // eslint-disable-next-line @typescript-eslint/no-floating-promises
     idDb = new IdDb(baseConf, logger)
     idDb.ready
       .then(() => {
@@ -188,8 +287,6 @@ describe('Id Server DB', () => {
             expect(rows.length).toBe(1)
             expect(rows[0].id).toEqual(id)
             expect(rows[0].data).toEqual('{}')
-            clearTimeout(idDb.cleanJob)
-            idDb.close()
             done()
           })
           .catch((e) => done(e))
@@ -211,8 +308,6 @@ describe('Id Server DB', () => {
                   .getCount('oneTimeTokens', 'id')
                   .then((val) => {
                     expect(val).toBe(initialValue + 1)
-                    clearTimeout(idDb.cleanJob)
-                    idDb.close()
                     done()
                   })
                   .catch((e) => done(e))
@@ -243,8 +338,6 @@ describe('Id Server DB', () => {
                       .getCount('oneTimeTokens', 'id', [token, token + 'z'])
                       .then((val) => {
                         expect(val).toBe(1)
-                        clearTimeout(idDb.cleanJob)
-                        idDb.close()
                         done()
                       })
                       .catch((e) => done(e))
@@ -272,8 +365,6 @@ describe('Id Server DB', () => {
                   .getCount('oneTimeTokens', 'id', token + 'z')
                   .then((val) => {
                     expect(val).toBe(0)
-                    clearTimeout(idDb.cleanJob)
-                    idDb.close()
                     done()
                   })
                   .catch((e) => done(e))
@@ -315,8 +406,6 @@ describe('Id Server DB', () => {
                   .then((rows) => {
                     expect(rows.length).toBe(Math.floor(idsNumber / 2))
                     expect(rows[0].data).toEqual('{1}')
-                    clearTimeout(idDb.cleanJob)
-                    idDb.close()
                     done()
                   })
                   .catch((e) => done(e))
@@ -328,47 +417,95 @@ describe('Id Server DB', () => {
       .catch((e) => done(e))
   })
 
-  it('should delete lines with specified filters', (done) => {
-    idDb = new IdDb(baseConf, logger)
-    idDb.ready
-      .then(() => {
-        const idsNumber = 8
-        const ids: string[] = []
-        const insertsPromises: Array<Promise<DbGetResult>> = []
+  describe('deleteEqualAnd', () => {
+    beforeEach((done) => {
+      idDb = new IdDb(baseConf, logger)
+      idDb.ready.then(() => done()).catch((e) => done(e))
+    })
 
-        for (let index = 0; index < idsNumber; index++) {
-          ids[index] = randomString(64)
-          insertsPromises[index] = idDb.insert('accessTokens', {
-            id: ids[index],
-            data: `{${index % 2}}`
-          })
-        }
+    it('should delete records matching both conditions', (done) => {
+      const idsNumber = 8
+      const ids: string[] = []
+      const insertsPromises: Array<Promise<DbGetResult>> = []
 
-        Promise.all(insertsPromises)
-          .then(() => {
-            idDb
-              .deleteWhere('accessTokens', {
-                field: 'data',
-                operator: '=',
-                value: '{0}'
-              })
-              .then(() => {
-                idDb
-                  .getAll('accessTokens', ['id', 'data'])
-                  .then((rows) => {
-                    expect(rows.length).toBe(Math.floor(idsNumber / 2))
-                    expect(rows[0].data).toEqual('{1}')
-                    clearTimeout(idDb.cleanJob)
-                    idDb.close()
-                    done()
-                  })
-                  .catch((e) => done(e))
-              })
-              .catch((e) => done(e))
+      for (let index = 0; index < idsNumber; index++) {
+        ids[index] = randomString(64)
+        insertsPromises[index] = idDb.insert('privateNotes', {
+          id: ids[index],
+          authorId: `author${index}`,
+          content: `{${index}}`,
+          targetId: `target${index}`
+        })
+      }
+
+      Promise.all(insertsPromises)
+        // eslint-disable-next-line @typescript-eslint/promise-function-async
+        .then(() => {
+          return idDb.deleteEqualAnd(
+            'privateNotes',
+            { field: 'content', value: '{0}' },
+            { field: 'authorId', value: 'author0' }
+          )
+        })
+        // eslint-disable-next-line @typescript-eslint/promise-function-async
+        .then(() => {
+          return idDb.getAll('privateNotes', [
+            'id',
+            'authorId',
+            'content',
+            'targetId'
+          ])
+        })
+        .then((rows) => {
+          expect(rows.length).toBe(idsNumber - 1)
+          rows.forEach((row) => {
+            expect(row.content).not.toEqual('{0}')
+            expect(row.authorId).not.toEqual('author0')
           })
-          .catch((e) => done(e))
-      })
-      .catch((e) => done(e))
+          done()
+        })
+        .catch((e) => done(e))
+    })
+
+    it('should not delete records if conditions do not match', (done) => {
+      const idsNumber = 8
+      const ids: string[] = []
+      const insertsPromises: Array<Promise<DbGetResult>> = []
+
+      for (let index = 0; index < idsNumber; index++) {
+        ids[index] = randomString(64)
+        insertsPromises[index] = idDb.insert('privateNotes', {
+          id: ids[index],
+          authorId: `author${index % 2}`,
+          content: `{${index % 2}}`,
+          targetId: 'targetC'
+        })
+      }
+
+      Promise.all(insertsPromises)
+        // eslint-disable-next-line @typescript-eslint/promise-function-async
+        .then(() => {
+          return idDb.deleteEqualAnd(
+            'privateNotes',
+            { field: 'content', value: '{0}' },
+            { field: 'authorId', value: 'authorC' }
+          )
+        })
+        // eslint-disable-next-line @typescript-eslint/promise-function-async
+        .then(() => {
+          return idDb.getAll('privateNotes', [
+            'id',
+            'authorId',
+            'content',
+            'targetId'
+          ])
+        })
+        .then((rows) => {
+          expect(rows.length).toBe(idsNumber)
+          done()
+        })
+        .catch((e) => done(e))
+    })
   })
 
   test('OneTimeToken timeout', (done) => {
@@ -385,8 +522,6 @@ describe('Id Server DB', () => {
                   done('Should throw')
                 })
                 .catch((e) => {
-                  clearTimeout(idDb.cleanJob)
-                  idDb.close()
                   done()
                 })
             }, 6000)
