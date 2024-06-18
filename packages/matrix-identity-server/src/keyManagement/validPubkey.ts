@@ -1,5 +1,5 @@
 import type IdentityServerDB from '../db'
-import { type TwakeLogger } from '@twake/logger'
+import { type TwakeLogger, getLogger } from '@twake/logger'
 import {
   jsonContent,
   send,
@@ -12,10 +12,9 @@ const schema = {
   public_key: true
 }
 
-const isPubkeyValid = (
-  idServer: IdentityServerDB,
-  logger: TwakeLogger
-): expressAppHandler => {
+const logger: TwakeLogger = getLogger()
+
+const isPubkeyValid = (idServer: IdentityServerDB): expressAppHandler => {
   return (req, res) => {
     jsonContent(req, res, logger, (obj) => {
       validateParameters(res, schema, obj, logger, (obj) => {
