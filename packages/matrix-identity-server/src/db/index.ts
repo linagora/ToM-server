@@ -1,4 +1,4 @@
-import { randomString } from '@twake/crypto'
+import { randomString, generateKeyPair } from '@twake/crypto'
 import { type TwakeLogger } from '@twake/logger'
 import { type Config, type DbGetResult } from '../types'
 import { epoch } from '../utils'
@@ -24,6 +24,12 @@ export type Collections =
 const cleanByExpires: Collections[] = ['oneTimeTokens', 'attempts']
 
 type sqlComparaisonOperator = '=' | '!=' | '>' | '<' | '>=' | '<=' | '<>'
+
+interface keyPair {
+  publicKey: string
+  privateKey: string
+  keyId: string
+}
 
 export interface ISQLCondition {
   field: string
@@ -378,6 +384,59 @@ class IdentityServerDb implements IdDbBackend {
         .catch((e) => {
           /* istanbul ignore next */
           this.logger.info(`Token ${id} already deleted`, e)
+          /* istanbul ignore next */
+          resolve()
+        })
+    })
+  }
+
+  // eslint-disable-next-line @typescript-eslint/promise-function-async
+  createKeypair(
+    type: 'longTerm' | 'shortTerm',
+    algorithm: 'ed25519' | 'curve25519'
+  ): Promise<keyPair> {
+    /* istanbul ignore if */
+    if (this.db == null) {
+      throw new Error('Wait for database to be ready')
+    }
+    const keyPair = generateKeyPair(algorithm)
+    // while () {
+    //   // making sure the new key is not already valid
+    // }
+    const _type = type === 'longTerm' ? 'longTermKeypairs' : 'shortTermKeypairs'
+    return new Promise((resolve, reject) => {
+      this.db
+        .insert(_type, {
+          keyID: keyPair.keyId,
+          public: keyPair.publicKey,
+          private: keyPair.privateKey
+        })
+        .then(() => {
+          resolve(keyPair)
+        })
+        .catch((err) => {
+          /* istanbul ignore next */
+          this.logger.error('Failed to insert ephemeral Key Pair', err)
+        })
+    })
+  }
+
+  // eslint-disable-next-line @typescript-eslint/promise-function-async
+  deleteKey(_keyID: string, type: 'longTerm' | 'shortTerm'): Promise<void> {
+    /* istanbul ignore if */
+    if (this.db == null) {
+      throw new Error('Wait for database to be ready')
+    }
+    const _type = type === 'longTerm' ? 'longTermKeypairs' : 'shortTermKeypairs'
+    return new Promise((resolve, reject) => {
+      this.db
+        .deleteEqual(_type, 'KeyID', _keyID)
+        .then(() => {
+          resolve()
+        })
+        .catch((e) => {
+          /* istanbul ignore next */
+          this.logger.info(`Key ${_keyID} already deleted`, e)
           /* istanbul ignore next */
           resolve()
         })

@@ -948,29 +948,28 @@ describe('Use configuration file', () => {
     })
   })
 
-  describe('Key validation', () => {
+  describe('/_matrix/identity/v2/ephemeral_pubkey/isvalid', () => {
+    let shortKeyPair: { publicKey: string; privateKey: string; keyId: string }
     beforeAll(async () => {
       // Insert a test key into the database
-      await idServer.db.insert('longTermKeypairs', {
-        keyID: 'testID',
-        public: 'testPub',
-        private: 'testPri'
-      })
-      await idServer.db.insert('shortTermKeypairs', {
-        keyID: 'testID',
-        public: 'testPub',
-        private: 'testPri'
-      })
+      await idServer.db
+        .createKeypair('shortTerm', 'curve25519')
+        .then((keypair) => {
+          shortKeyPair = keypair
+        })
     })
 
     afterAll(async () => {
       // Remove the test key from the database
-      await idServer.db.deleteEqual('longTermKeypairs', 'keyID', 'testID')
-      await idServer.db.deleteEqual('shortTermKeypairs', 'keyID', 'testID')
+      await idServer.db.deleteEqual(
+        'shortTermKeypairs',
+        'keyID',
+        shortKeyPair.keyId
+      )
     })
 
-    it('should validate a valid long-term pubkey', async () => {
-      const key = 'testPub'
+    it('should validate a valid ephemeral pubkey', async () => {
+      const key = shortKeyPair.publicKey
       const response = await request(app)
         .get('/_matrix/identity/v2/pubkey/isvalid')
         .send({ public_key: key })
@@ -986,42 +985,56 @@ describe('Use configuration file', () => {
       expect(response.statusCode).toBe(200)
       expect(response.body.valid).toBe(false)
     })
+  })
 
-    it('should validate a valid ephemeral pubkey', async () => {
-      const key = 'testPub'
+  describe('/_matrix/identity/v2/pubkey/isvalid', () => {
+    let longKeyPair: { publicKey: string; privateKey: string; keyId: string }
+    beforeAll(async () => {
+      // Insert a test key into the database
+      await idServer.db.createKeypair('longTerm', 'ed25519').then((keypair) => {
+        longKeyPair = keypair
+      })
+    })
+
+    afterAll(async () => {
+      // Remove the test key from the database
+      await idServer.db.deleteEqual(
+        'longTermKeypairs',
+        'keyID',
+        longKeyPair.keyId
+      )
+    })
+
+    it('should validate a valid long-term pubkey', async () => {
+      const key = longKeyPair.publicKey
       const response = await request(app)
-        .get('/_matrix/identity/v2/ephemeral_pubkey/isvalid')
+        .get('/_matrix/identity/v2/pubkey/isvalid')
         .send({ public_key: key })
       expect(response.statusCode).toBe(200)
       expect(response.body.valid).toBe(true)
     })
 
-    it('should invalidate an invalid ephemeral pubkey', async () => {
+    it('should invalidate an invalid long-term pubkey', async () => {
       const key = 'invalidPub'
       const response = await request(app)
-        .get('/_matrix/identity/v2/ephemeral_pubkey/isvalid')
+        .get('/_matrix/identity/v2/pubkey/isvalid')
         .send({ public_key: key })
       expect(response.statusCode).toBe(200)
       expect(response.body.valid).toBe(false)
     })
   })
 
-  describe('Get public key from keyID', () => {
-    longKeyPair = generateKeyPair('ed25519')
-    shortKeyPair = generateKeyPair('curve25519')
-
+  describe('/_matrix/identity/v2/pubkey/$:keyID', () => {
     beforeAll(async () => {
       // Insert a test key into the database
-      await idServer.db.insert('longTermKeypairs', {
-        keyID: longKeyPair.keyId,
-        public: longKeyPair.publicKey,
-        private: longKeyPair.privateKey
+      await idServer.db.createKeypair('longTerm', 'ed25519').then((keypair) => {
+        longKeyPair = keypair
       })
-      await idServer.db.insert('shortTermKeypairs', {
-        keyID: shortKeyPair.keyId,
-        public: shortKeyPair.publicKey,
-        private: shortKeyPair.privateKey
-      })
+      await idServer.db
+        .createKeypair('shortTerm', 'curve25519')
+        .then((_keypair) => {
+          shortKeyPair = _keypair
+        })
     })
 
     afterAll(async () => {
