@@ -190,7 +190,8 @@ export default class MatrixIdentityServer {
                     '/_matrix/identity/v2/pubkey/:keyId': getPubkey(this.db),
                     '/_matrix/identity/v2/3pid/bind': badMethod,
                     '/_matrix/identity/v2/3pid/getValidated3pid':
-                      GetValidated3pid(this)
+                      GetValidated3pid(this),
+                    '/_matrix/identity/v2/3pid/unbind': badMethod
                   },
                   post: {
                     '/_matrix/identity/v2': badMethod,
@@ -211,7 +212,8 @@ export default class MatrixIdentityServer {
                     '/_matrix/identity/v2/pubkey/ephemeral/isvalid': badMethod,
                     '/_matrix/identity/v2/pubkey/:keyId': badMethod,
                     '/_matrix/identity/v2/3pid/getValidated3pid': badMethod,
-                    '/_matrix/identity/v2/3pid/bind': bind(this)
+                    '/_matrix/identity/v2/3pid/bind': bind(this),
+                    '/_matrix/identity/v2/3pid/unbind': unbind(this)
                   }
                 }
                 resolve(true)
