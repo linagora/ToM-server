@@ -30,7 +30,6 @@ describe('Id Server DB', () => {
   })
 
   afterAll(() => {
-    idDb.close()
     logger.close()
   })
 
