@@ -28,8 +28,10 @@ const tables: Record<Collections, string> = {
   userQuotas: 'user_id varchar(64) PRIMARY KEY, size int',
   mappings:
     'client_secret varchar(255) PRIMARY KEY, session_id varchar(12), medium varchar(8), valid integer, address text, submit_time integer, send_attempt integer',
-  longTermKeypairs: 'keyID varchar(64) PRIMARY KEY, public text, private text',
-  shortTermKeypairs: 'keyID varchar(64) PRIMARY KEY, public text, private text',
+  longTermKeypairs:
+    'name text PRIMARY KEY, keyID varchar(64), public text, private text',
+  shortTermKeypairs:
+    'keyID varchar(64) PRIMARY KEY, public text, private text, active integer',
   userPolicies: 'user_id text, policy_name text, accepted integer'
 }
 

@@ -188,6 +188,7 @@ export default class MatrixIdentityServer {
                     '/_matrix/identity/v2/pubkey/ephemeral/isvalid':
                       isEphemeralPubkeyValid(this.db),
                     '/_matrix/identity/v2/pubkey/:keyId': getPubkey(this.db),
+                    '/_matrix/identity/v2/3pid/bind': badMethod,
                     '/_matrix/identity/v2/3pid/getValidated3pid':
                       GetValidated3pid(this)
                   },
@@ -209,7 +210,8 @@ export default class MatrixIdentityServer {
                     '/_matrix/identity/v2/pubkey/isvalid': badMethod,
                     '/_matrix/identity/v2/pubkey/ephemeral/isvalid': badMethod,
                     '/_matrix/identity/v2/pubkey/:keyId': badMethod,
-                    '/_matrix/identity/v2/3pid/getValidated3pid': badMethod
+                    '/_matrix/identity/v2/3pid/getValidated3pid': badMethod,
+                    '/_matrix/identity/v2/3pid/bind': bind(this)
                   }
                 }
                 resolve(true)
