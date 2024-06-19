@@ -160,6 +160,7 @@ class SQLite extends SQL implements IdDbBackend {
     })
   }
 
+  // TODO : Merge update and updateAnd into one function that takes an array of conditions as argument
     updateAnd(table : string, 
               values: Record<string, string | number>, 
               condition1 : { field: string, value: string | number }, 
