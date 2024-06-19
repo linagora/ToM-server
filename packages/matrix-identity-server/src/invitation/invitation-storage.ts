@@ -8,7 +8,6 @@ import {
   type expressAppHandler
 } from '../utils'
 import { errMsg } from '../utils/errors'
-import { template } from 'lodash'
 import type MatrixIdentityServer from '../index'
 import Mailer from '../utils/mailer'
 import { type Config } from '../types'
@@ -57,24 +56,50 @@ const preConfigureTemplate = (
       // initialize "From"
       .replace(/__from__/g, transport.from)
       // fix multipart stuff
-      .replace(/__multipart_boundary__/g, mb)
+      .replace(/__multipart_boundary__/g, mb) // c'est quoi ca ?
       // prepare link
-      .replace(/__link__/g, `${baseUrl}?__linkQuery__`)
+      .replace(/__link__/g, `${baseUrl}?__linkQuery__`) // TO DO : adapt to new link
   )
 }
 
 const mailBody = (
   template: string,
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   inviter_name: string,
+  // eslint-disable-next-line @typescript-eslint/naming-convention
+  dst: string,
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   room_name?: string,
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   room_avatar?: string,
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   room_type?: string
 ): string => {
-  return template
-  // TO DO
+  // TO DO : complete new template
+  return (
+    template
+      // set "To"
+      .replace(/__to__/g, dst)
+      // Set __inviter_name__
+      .replace(/__inviter_name__/g, inviter_name)
+      // set date
+      .replace(/__date__/g, new Date().toUTCString())
+      // initialize message id
+      .replace(/__messageid__/g, randomString(32))
+      // set link parameters
+      .replace(
+        /__linkQuery__/g,
+        new URLSearchParams({
+          /* TO DO */
+        }).toString()
+      )
+      .replace(/__room_name__/g, room_name ?? '')
+      .replace(/__room_avatar__/g, room_avatar ?? '')
+      .replace(/__room_type__/g, room_type ?? '')
+  )
 }
-
-const validEmailRe = /^\w[+.-\w]*\w@\w[.-\w]*\w\.\w{2,6}$/
+// To use if we want to verify email format
+// const validEmailRe = /^\w[+.-\w]*\w@\w[.-\w]*\w\.\w{2,6}$/
 const validMediums = ['email']
 
 const redactAddress = (address: string): string => {
@@ -113,51 +138,47 @@ export const storeInvitation = (
   const transport = new Mailer(idServer.conf)
   const verificationTemplate = preConfigureTemplate(
     fs
-      .readFileSync(`${idServer.conf.template_dir}/mailVerification.tpl`)
+      .readFileSync(`${idServer.conf.template_dir}/3pidInvitation.tpl`)
       .toString(),
     idServer.conf,
     transport
   )
-  return async (req, res) => {
-    idServer.authenticate(req, res, async (_data, _id) => {
-      jsonContent(req, res, idServer.logger, async (obj) => {
-        validateParameters(res, schema, obj, idServer.logger, async (obj) => {
-          let _address = (obj as storeInvitationArgs).address
-          if (!validEmailRe.test(_address)) {
-            send(res, 400, errMsg('invalidEmail'))
-            return
+  return (req, res) => {
+    idServer.authenticate(req, res, (_data, _id) => {
+      jsonContent(req, res, idServer.logger, (obj) => {
+        validateParameters(res, schema, obj, idServer.logger, (obj) => {
+          // TO DO : check for terms not signed
+          if (!validMediums.includes((obj as storeInvitationArgs).medium)) {
+            send(
+              res,
+              400,
+              errMsg('unrecognized', 'This medium is not supported.')
+            )
           } else {
-            const randomToken = randomString(32)
-            // TO DO : adapt this, change to :  idServer.db.createKeypair('shortTern', 'curve25519').then(...)
-            //const ephemeralKey = generateKeyPair('ed25519')
-            // TO DO : check for terms not signed
-            if (!validMediums.includes((obj as storeInvitationArgs).medium)) {
-              send(
-                res,
-                400,
-                errMsg('unrecognized', 'This medium is not supported.')
-              )
-              return
-            }
+            const _address = (obj as storeInvitationArgs).address
+
             // Call to the lookup API to check for any existing third-party identifiers
-            const authHeader = req.headers.authorization || ''
+            const authHeader = req.headers.authorization ?? '' // TO DO : verify authHeader
             const validToken = authHeader.split(' ')[1]
-            const pepper = await idServer.db.get('keys', ['data'], {
+            const _pepper = idServer.db.get('keys', ['data'], {
               name: 'pepper'
             })
-            fetch(encodeURI(`https://${idServer}/_matrix/identity/v2/lookup`), {
-              method: 'POST',
-              headers: {
-                Authorization: `Bearer ${validToken}`,
-                Accept: 'application/json',
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify({
-                addresses: [_address],
-                algorithm: 'sha256',
-                pepper: pepper
-              })
-            })
+            fetch(
+              `https://${idServer.conf.server_name}/_matrix/identity/v2/lookup`,
+              {
+                method: 'POST',
+                headers: {
+                  Authorization: `Bearer ${validToken}`,
+                  Accept: 'application/json',
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                  addresses: [_address],
+                  algorithm: 'sha256',
+                  pepper: _pepper
+                })
+              }
+            )
               .then((response) => {
                 if (response.status === 200) {
                   send(res, 400, {
@@ -167,38 +188,61 @@ export const storeInvitation = (
                     mxid: (obj as storeInvitationArgs).sender
                   })
                 } else if (response.status === 400) {
-                  // add the invitation to the database
-                  // send email
-                  void transport.sendMail({
-                    to: _address,
-                    raw: mailBody(
-                      verificationTemplate,
-                      (obj as storeInvitationArgs).sender_display_name || '',
-                      (obj as storeInvitationArgs).room_name,
-                      (obj as storeInvitationArgs).room_avatar_url,
-                      (obj as storeInvitationArgs).room_type
-                    )
-                  })
-                  // send 200 response
-                  const redactedAddress = redactAddress(_address)
-                  const responseBody = {
-                    display_name: redactedAddress,
-                    public_keys: [
-                      {
-                        key_validity_url: `https://${idServer}/_matrix/identity/v2/pubkey/isvalid`
-                        // TO DO : adapt to changes
-                        //public_key: ephemeralKey.publicKey
-                      },
-                      {
-                        key_validity_url: `https://${idServer}/_matrix/identity/v2/pubkey/ephemeral/isvalid`
-                        // TO DO : adapt to changes
-                        //public_key: ephemeralKey.privateKey
-                      }
-                    ],
-                    token: randomToken
-                  }
-                  send(res, 200, responseBody)
-                } /* istanbul ignore next */ else {
+                  const sid = randomString(64)
+                  idServer.db
+                    .createKeypair('shortTerm', 'curve25519')
+                    .then((ephemeralKey) => {
+                      idServer.db
+                        .createOneTimeToken(
+                          // TO DO : put the right parameters
+                          { sid, email: _address },
+                          idServer.conf.mail_link_delay
+                        )
+                        .then((token) => {
+                          const randomToken = randomString(32)
+
+                          // add the invitation to the database
+                          // send email
+                          void transport.sendMail({
+                            to: _address,
+                            raw: mailBody(
+                              verificationTemplate,
+                              (obj as storeInvitationArgs)
+                                .sender_display_name ?? '', // TO DO : handle case where sender_display_name is undefined
+                              _address,
+                              (obj as storeInvitationArgs).room_name,
+                              (obj as storeInvitationArgs).room_avatar_url,
+                              (obj as storeInvitationArgs).room_type
+                            )
+                          })
+                          // send 200 response
+                          const redactedAddress = redactAddress(_address)
+                          const responseBody = {
+                            display_name: redactedAddress,
+                            public_keys: [
+                              {
+                                key_validity_url: `https://${idServer.conf.server_name}/_matrix/identity/v2/pubkey/isvalid`,
+                                // TO DO : adapt to changes
+                                public_key: ephemeralKey.publicKey
+                              },
+                              {
+                                key_validity_url: `https://${idServer.conf.server_name}/_matrix/identity/v2/pubkey/ephemeral/isvalid`,
+                                // TO DO : adapt to changes
+                                public_key: ephemeralKey.privateKey
+                              }
+                            ],
+                            token: randomToken
+                          }
+                          send(res, 200, responseBody)
+                        })
+                        .catch((e) => {
+                          throw e
+                        })
+                    })
+                    .catch((e) => {
+                      throw e
+                    })
+                } else {
                   send(
                     res,
                     500,
