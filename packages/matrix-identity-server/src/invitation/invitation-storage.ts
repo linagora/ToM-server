@@ -1,4 +1,6 @@
-import { randomString, generateKeyPair } from '@twake/crypto'
+import { randomString } from '@twake/crypto'
+import fetch from 'node-fetch'
+import fs from 'fs'
 import {
   jsonContent,
   send,
@@ -8,17 +10,8 @@ import {
 import { errMsg } from '../utils/errors'
 import { template } from 'lodash'
 import type MatrixIdentityServer from '../index'
-
-const mailBody = (
-  template: string,
-  inviter_name: string,
-  room_name?: string,
-  room_avatar?: string,
-  room_type?: string
-): string => {
-  return template
-  // TO DO
-}
+import Mailer from '../utils/mailer'
+import { type Config } from '../types'
 
 interface storeInvitationArgs {
   address: string
@@ -48,7 +41,41 @@ const schema = {
   sender_display_name: false
 }
 
+const preConfigureTemplate = (
+  template: string,
+  conf: Config,
+  transport: Mailer
+): string => {
+  const mb = randomString(32)
+  const baseUrl =
+    /* istanbul ignore next */
+    (conf.base_url != null && conf.base_url.length > 0
+      ? conf.base_url.replace(/\/+$/, '')
+      : `https://${conf.server_name}`) + '/_matrix/identity/v2/store-invite'
+  return (
+    template
+      // initialize "From"
+      .replace(/__from__/g, transport.from)
+      // fix multipart stuff
+      .replace(/__multipart_boundary__/g, mb)
+      // prepare link
+      .replace(/__link__/g, `${baseUrl}?__linkQuery__`)
+  )
+}
+
+const mailBody = (
+  template: string,
+  inviter_name: string,
+  room_name?: string,
+  room_avatar?: string,
+  room_type?: string
+): string => {
+  return template
+  // TO DO
+}
+
 const validEmailRe = /^\w[+.-\w]*\w@\w[.-\w]*\w\.\w{2,6}$/
+const validMediums = ['email']
 
 const redactAddress = (address: string): string => {
   const atIndex = address.indexOf('@')
@@ -83,26 +110,109 @@ const redactAddress = (address: string): string => {
 export const storeInvitation = (
   idServer: MatrixIdentityServer
 ): expressAppHandler => {
-  // TO DO : implementation du mail a faire
-
-  return (req, res) => {
-    idServer.authenticate(req, res, (_data, _id) => {
-      jsonContent(req, res, idServer.logger, (obj) => {
-        validateParameters(res, schema, obj, idServer.logger, (obj) => {
-          // check if user has to do smth to use following API : 403 : M_TERMS_NOT_SIGNED
-
-          // check if the mail is correct :
-          if (!validEmailRe.test(dst)) {
+  const transport = new Mailer(idServer.conf)
+  const verificationTemplate = preConfigureTemplate(
+    fs
+      .readFileSync(`${idServer.conf.template_dir}/mailVerification.tpl`)
+      .toString(),
+    idServer.conf,
+    transport
+  )
+  return async (req, res) => {
+    idServer.authenticate(req, res, async (_data, _id) => {
+      jsonContent(req, res, idServer.logger, async (obj) => {
+        validateParameters(res, schema, obj, idServer.logger, async (obj) => {
+          let _address = (obj as storeInvitationArgs).address
+          if (!validEmailRe.test(_address)) {
             send(res, 400, errMsg('invalidEmail'))
+            return
           } else {
             const randomToken = randomString(32)
-            const ephemeralKey = generateKeyPair('ed25519')
-            // Ajouter la clef dans la base de donnée
-            let _adress = (obj as storeInvitationArgs).address
-            // Check if 3pid is already associated with matrix user ID -> 400 : M_THREEPID_IN_USE
-            // check if medium is valid (email) -> 400 : M_UNRECOGNIZED
-
-            display_name = redactAddress(display_name)
+            // TO DO : adapt this, change to :  idServer.db.createKeypair('shortTern', 'curve25519').then(...)
+            //const ephemeralKey = generateKeyPair('ed25519')
+            // TO DO : check for terms not signed
+            if (!validMediums.includes((obj as storeInvitationArgs).medium)) {
+              send(
+                res,
+                400,
+                errMsg('unrecognized', 'This medium is not supported.')
+              )
+              return
+            }
+            // Call to the lookup API to check for any existing third-party identifiers
+            const authHeader = req.headers.authorization || ''
+            const validToken = authHeader.split(' ')[1]
+            const pepper = await idServer.db.get('keys', ['data'], {
+              name: 'pepper'
+            })
+            fetch(encodeURI(`https://${idServer}/_matrix/identity/v2/lookup`), {
+              method: 'POST',
+              headers: {
+                Authorization: `Bearer ${validToken}`,
+                Accept: 'application/json',
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                addresses: [_address],
+                algorithm: 'sha256',
+                pepper: pepper
+              })
+            })
+              .then((response) => {
+                if (response.status === 200) {
+                  send(res, 400, {
+                    errcode: 'M_THREEPID_IN_USE',
+                    error:
+                      'The third party identifier is already in use by another user.',
+                    mxid: (obj as storeInvitationArgs).sender
+                  })
+                } else if (response.status === 400) {
+                  // add the invitation to the database
+                  // send email
+                  void transport.sendMail({
+                    to: _address,
+                    raw: mailBody(
+                      verificationTemplate,
+                      (obj as storeInvitationArgs).sender_display_name || '',
+                      (obj as storeInvitationArgs).room_name,
+                      (obj as storeInvitationArgs).room_avatar_url,
+                      (obj as storeInvitationArgs).room_type
+                    )
+                  })
+                  // send 200 response
+                  const redactedAddress = redactAddress(_address)
+                  const responseBody = {
+                    display_name: redactedAddress,
+                    public_keys: [
+                      {
+                        key_validity_url: `https://${idServer}/_matrix/identity/v2/pubkey/isvalid`
+                        // TO DO : adapt to changes
+                        //public_key: ephemeralKey.publicKey
+                      },
+                      {
+                        key_validity_url: `https://${idServer}/_matrix/identity/v2/pubkey/ephemeral/isvalid`
+                        // TO DO : adapt to changes
+                        //public_key: ephemeralKey.privateKey
+                      }
+                    ],
+                    token: randomToken
+                  }
+                  send(res, 200, responseBody)
+                } /* istanbul ignore next */ else {
+                  send(
+                    res,
+                    500,
+                    errMsg(
+                      'unknown',
+                      'Wrong behaviour of the /_matrix/identity/v2/lookup API'
+                    )
+                  )
+                }
+              })
+              .catch((e) => {
+                /* istanbul ignore next */
+                send(res, 500, errMsg('unknown', e))
+              })
           }
         })
       })
