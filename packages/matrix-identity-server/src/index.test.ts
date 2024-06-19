@@ -56,6 +56,7 @@ beforeAll((done) => {
 })
 
 afterAll(() => {
+  
   fs.unlinkSync('src/__testData__/test.db')
 })
 
@@ -1018,74 +1019,74 @@ describe('Use configuration file', () => {
         })
       })
 
-      describe('/_matrix/identity/v2/lookup', () => {
-        it('should send an error if "addresses" is not an array', async () => {
-          await idServer.cronTasks?.ready
-          const response = await request(app)
-            .post('/_matrix/identity/v2/lookup')
-            .send({
-              addresses: 3,
-              algorithm: 'sha256',
-              pepper
-            })
-            .set('Authorization', `Bearer ${validToken}`)
-            .set('Accept', 'application/json')
-          expect(response.statusCode).toBe(400)
-        })
+        describe('/_matrix/identity/v2/lookup', () => {
+          it('should send an error if "addresses" is not an array', async () => {
+            await idServer.cronTasks?.ready
+            const response = await request(app)
+              .post('/_matrix/identity/v2/lookup')
+              .send({
+                addresses: 3,
+                algorithm: 'sha256',
+                pepper
+              })
+              .set('Authorization', `Bearer ${validToken}`)
+              .set('Accept', 'application/json')
+            expect(response.statusCode).toBe(400)
+          })
 
-        it('should send an error if one address is not a string', async () => {
-          const hash = new Hash()
-          await hash.ready
-          await idServer.cronTasks?.ready
-          const phoneHash = hash.sha256(`33612345678 msisdn ${pepper}`)
-          const response = await request(app)
-            .post('/_matrix/identity/v2/lookup')
-            .send({
-              addresses: [phoneHash, 3],
-              algorithm: 'sha256',
-              pepper
-            })
-            .set('Authorization', `Bearer ${validToken}`)
-            .set('Accept', 'application/json')
-          expect(response.statusCode).toBe(400)
-        })
+          it('should send an error if one address is not a string', async () => {
+            const hash = new Hash()
+            await hash.ready
+            await idServer.cronTasks?.ready
+            const phoneHash = hash.sha256(`33612345678 msisdn ${pepper}`)
+            const response = await request(app)
+              .post('/_matrix/identity/v2/lookup')
+              .send({
+                addresses: [phoneHash, 3],
+                algorithm: 'sha256',
+                pepper
+              })
+              .set('Authorization', `Bearer ${validToken}`)
+              .set('Accept', 'application/json')
+            expect(response.statusCode).toBe(400)
+          })
 
-        it('should send an error if exceeds hashes limit', async () => {
-          const hash = new Hash()
-          await hash.ready
-          await idServer.cronTasks?.ready
-          const phoneHash = hash.sha256(`33612345678 msisdn ${pepper}`)
-          const response = await request(app)
-            .post('/_matrix/identity/v2/lookup')
-            .send({
-              addresses: Array.from({ length: 101 }, (_, i) => phoneHash),
-              algorithm: 'sha256',
-              pepper
-            })
-            .set('Authorization', `Bearer ${validToken}`)
-            .set('Accept', 'application/json')
-          expect(response.statusCode).toBe(400)
-        })
+          it('should send an error if exceeds hashes limit', async () => {
+            const hash = new Hash()
+            await hash.ready
+            await idServer.cronTasks?.ready
+            const phoneHash = hash.sha256(`33612345678 msisdn ${pepper}`)
+            const response = await request(app)
+              .post('/_matrix/identity/v2/lookup')
+              .send({
+                addresses: Array.from({ length: 101 }, (_, i) => phoneHash),
+                algorithm: 'sha256',
+                pepper
+              })
+              .set('Authorization', `Bearer ${validToken}`)
+              .set('Accept', 'application/json')
+            expect(response.statusCode).toBe(400)
+          })
 
-        it('should return Matrix id', async () => {
-          const hash = new Hash()
-          await hash.ready
-          await idServer.cronTasks?.ready
-          const phoneHash = hash.sha256(`33612345678 msisdn ${pepper}`)
-          const response = await request(app)
-            .post('/_matrix/identity/v2/lookup')
-            .send({
-              addresses: [phoneHash],
-              algorithm: 'sha256',
-              pepper
-            })
-            .set('Authorization', `Bearer ${validToken}`)
-            .set('Accept', 'application/json')
-          expect(response.statusCode).toBe(200)
-          expect(response.body.mappings[phoneHash]).toBe('@dwho:matrix.org')
+          it('should return Matrix id', async () => {
+            const hash = new Hash()
+            await hash.ready
+            await idServer.cronTasks?.ready
+            const phoneHash = hash.sha256(`33612345678 msisdn ${pepper}`)
+            const response = await request(app)
+              .post('/_matrix/identity/v2/lookup')
+              .send({
+                addresses: [phoneHash],
+                algorithm: 'sha256',
+                pepper
+              })
+              .set('Authorization', `Bearer ${validToken}`)
+              .set('Accept', 'application/json')
+            expect(response.statusCode).toBe(200)
+            expect(response.body.mappings[phoneHash]).toBe('@dwho:matrix.org')
+          })
         })
       })
-    })
 
     describe('/_matrix/identity/v2/account', () => {
       it('should accept valid token in headers', async () => {
@@ -1285,83 +1286,83 @@ describe('Use configuration file', () => {
   })
 })
 
-describe('Use environment variables', () => {
-  describe('For hashes rate limit', () => {
-    let pepper: string
-    const hash = new Hash()
+  describe('Use environment variables', () => {
+    describe('For hashes rate limit', () => {
+      let pepper: string
+      const hash = new Hash()
 
-    beforeAll((done) => {
-      process.env.HASHES_RATE_LIMIT = '4'
-      idServer = new IdServer()
-      app = express()
-      idServer.ready
-        // eslint-disable-next-line @typescript-eslint/promise-function-async
-        .then(() => {
-          Object.keys(idServer.api.get).forEach((k) => {
-            app.get(k, idServer.api.get[k])
-          })
-          Object.keys(idServer.api.post).forEach((k) => {
-            app.post(k, idServer.api.post[k])
-          })
-          const mockResponse = Promise.resolve({
-            ok: true,
-            status: 200,
-            json: () => {
-              return {
-                sub: '@dwho:example.com',
-                'm.server': 'matrix.example.com:8448'
-              }
-            }
-          })
-          // @ts-expect-error mock is unknown
-          fetch.mockImplementation(async () => await mockResponse)
-          return request(app)
-            .post('/_matrix/identity/v2/account/register')
-            .send({
-              access_token: 'bar',
-              expires_in: 86400,
-              matrix_server_name: 'matrix.example.com',
-              token_type: 'Bearer'
+      beforeAll((done) => {
+        process.env.HASHES_RATE_LIMIT = '4'
+        idServer = new IdServer()
+        app = express()
+        idServer.ready
+          // eslint-disable-next-line @typescript-eslint/promise-function-async
+          .then(() => {
+            Object.keys(idServer.api.get).forEach((k) => {
+              app.get(k, idServer.api.get[k])
             })
-        })
-        .then((response) => {
-          validToken = response.body.token
-          return request(app)
-            .get('/_matrix/identity/v2/hash_details')
-            .set('Authorization', `Bearer ${validToken}`)
-            .set('Accept', 'application/json')
-        })
-        // eslint-disable-next-line @typescript-eslint/promise-function-async
-        .then((response) => {
-          pepper = response.body.lookup_pepper as string
-          return hash.ready
-        })
-        .then(() => {
-          done()
-        })
-        .catch((e) => {
-          done(e)
-        })
-    })
+            Object.keys(idServer.api.post).forEach((k) => {
+              app.post(k, idServer.api.post[k])
+            })
+            const mockResponse = Promise.resolve({
+              ok: true,
+              status: 200,
+              json: () => {
+                return {
+                  sub: '@dwho:example.com',
+                  'm.server': 'matrix.example.com:8448'
+                }
+              }
+            })
+            // @ts-expect-error mock is unknown
+            fetch.mockImplementation(async () => await mockResponse)
+            return request(app)
+              .post('/_matrix/identity/v2/account/register')
+              .send({
+                access_token: 'bar',
+                expires_in: 86400,
+                matrix_server_name: 'matrix.example.com',
+                token_type: 'Bearer'
+              })
+          })
+          .then((response) => {
+            validToken = response.body.token
+            return request(app)
+              .get('/_matrix/identity/v2/hash_details')
+              .set('Authorization', `Bearer ${validToken}`)
+              .set('Accept', 'application/json')
+          })
+          // eslint-disable-next-line @typescript-eslint/promise-function-async
+          .then((response) => {
+            pepper = response.body.lookup_pepper as string
+            return hash.ready
+          })
+          .then(() => {
+            done()
+          })
+          .catch((e) => {
+            done(e)
+          })
+      })
 
-    afterAll(() => {
-      idServer.cleanJobs()
-      delete process.env.HASHES_RATE_LIMIT
-    })
+      afterAll(() => {
+        idServer.cleanJobs()
+        delete process.env.HASHES_RATE_LIMIT
+      })
 
-    it('should send an error if exceeds hashes limit', async () => {
-      const phoneHash = hash.sha256(`33612345678 msisdn ${pepper}`)
-      const response = await request(app)
-        .post('/_matrix/identity/v2/lookup')
-        .send({
-          addresses: Array.from({ length: 5 }, (_, i) => phoneHash),
-          algorithm: 'sha256',
-          pepper
-        })
-        .set('Authorization', `Bearer ${validToken}`)
-        .set('Accept', 'application/json')
-      expect(response.statusCode).toBe(400)
-    })
+      it('should send an error if exceeds hashes limit', async () => {
+        const phoneHash = hash.sha256(`33612345678 msisdn ${pepper}`)
+        const response = await request(app)
+          .post('/_matrix/identity/v2/lookup')
+          .send({
+            addresses: Array.from({ length: 5 }, (_, i) => phoneHash),
+            algorithm: 'sha256',
+            pepper
+          })
+          .set('Authorization', `Bearer ${validToken}`)
+          .set('Accept', 'application/json')
+        expect(response.statusCode).toBe(400)
+      })
 
     it('should return Matrix id', async () => {
       const phoneHash = hash.sha256(`33612345678 msisdn ${pepper}`)
