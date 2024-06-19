@@ -391,9 +391,9 @@ class IdentityServerDb implements IdDbBackend {
         })
       )
       /* istanbul ignore next */
-      this.cleanJob = setTimeout(() => _vacuum, delay)
+      this.cleanJob = setTimeout(() => _vacuum, delay * 1000)
     }
-    this.cleanJob = setTimeout(() => _vacuum, delay)
+    this.cleanJob = setTimeout(() => _vacuum, delay * 1000)
   }
 
   close(): void {
