@@ -7,7 +7,7 @@ import {
 } from '../utils'
 import { errMsg } from '../utils/errors'
 import { template } from 'lodash'
-import type MatrixIdentityServer from '../../index'
+import type MatrixIdentityServer from '../index'
 
 const mailBody = (
   template: string,
@@ -48,28 +48,36 @@ const schema = {
   sender_display_name: false
 }
 
+const validEmailRe = /^\w[+.-\w]*\w@\w[.-\w]*\w\.\w{2,6}$/
+
 const redactAddress = (address: string): string => {
   const atIndex = address.indexOf('@')
   if (atIndex === -1) {
     throw new Error('Invalid address: missing @ symbol')
   }
   const localPart = address.slice(0, atIndex)
-  const domainPart = address.slice(atIndex)
+  const domainPart = address.slice(atIndex + 1)
 
-  const replaceRandomCharacters = (str: string): string => {
+  const replaceRandomCharacters = (
+    str: string,
+    redactionRatio: number
+  ): string => {
     const chars = str.split('')
-    for (let i = 0; i < chars.length; i++) {
-      if (Math.random() < 0.3) {
-        chars[i] = '*'
-      }
+    const redactionCount = Math.ceil(chars.length * redactionRatio)
+
+    for (let i = 0; i < redactionCount; i++) {
+      const index = i * Math.floor(chars.length / redactionCount)
+      chars[index] = '*'
     }
+
     return chars.join('')
   }
 
-  const redactedLocalPart = replaceRandomCharacters(localPart)
-  const redactedDomainPart = replaceRandomCharacters(domainPart)
+  const redactionRatio = 0.3 // Redact 30% of the characters
+  const redactedLocalPart = replaceRandomCharacters(localPart, redactionRatio)
+  const redactedDomainPart = replaceRandomCharacters(domainPart, redactionRatio)
 
-  return `${redactedLocalPart}${redactedDomainPart}`
+  return `${redactedLocalPart}@${redactedDomainPart}`
 }
 
 export const storeInvitation = (
@@ -82,14 +90,20 @@ export const storeInvitation = (
       jsonContent(req, res, idServer.logger, (obj) => {
         validateParameters(res, schema, obj, idServer.logger, (obj) => {
           // check if user has to do smth to use following API : 403 : M_TERMS_NOT_SIGNED
-          const randomToken = randomString(32)
-          const ephemeralKey = generateKeyPair('ed25519')
-          // Ajouter la clef dans la base de donnée
-          let _adress = (obj as storeInvitationArgs).address
-          // Check if 3pid is already associated with matrix user ID -> 400 : M_THREEPID_IN_USE
-          // check if medium is valid (email) -> 400 : M_UNRECOGNIZED
 
-          display_name = redactAddress(display_name)
+          // check if the mail is correct :
+          if (!validEmailRe.test(dst)) {
+            send(res, 400, errMsg('invalidEmail'))
+          } else {
+            const randomToken = randomString(32)
+            const ephemeralKey = generateKeyPair('ed25519')
+            // Ajouter la clef dans la base de donnée
+            let _adress = (obj as storeInvitationArgs).address
+            // Check if 3pid is already associated with matrix user ID -> 400 : M_THREEPID_IN_USE
+            // check if medium is valid (email) -> 400 : M_UNRECOGNIZED
+
+            display_name = redactAddress(display_name)
+          }
         })
       })
     })

@@ -17,6 +17,8 @@ export type Collections =
   | 'roomTags'
   | 'userHistory'
   | 'userQuotas'
+  // Added for API store-invite
+  | 'invitations'
 
 const cleanByExpires: Collections[] = ['oneTimeTokens', 'attempts']
 
