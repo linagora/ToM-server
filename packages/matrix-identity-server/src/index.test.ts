@@ -1509,18 +1509,20 @@ describe('Use configuration file', () => {
 
     it('should validate a valid ephemeral pubkey', async () => {
       const key = shortKeyPair.publicKey
-      const response = await request(app)
-        .get('/_matrix/identity/v2/ephemeral_pubkey/isvalid')
-        .send({ public_key: key })
+      const response = await request(app).get(
+        '/_matrix/identity/v2/ephemeral_pubkey/isvalid?public_key=' + key
+      )
+
       expect(response.statusCode).toBe(200)
       expect(response.body.valid).toBe(true)
     })
 
     it('should invalidate an invalid ephemeral pubkey', async () => {
       const key = 'invalidPub'
-      const response = await request(app)
-        .get('/_matrix/identity/v2/ephemeral_pubkey/isvalid')
-        .send({ public_key: key })
+      const response = await request(app).get(
+        '/_matrix/identity/v2/ephemeral_pubkey/isvalid?public_key=' + key
+      )
+
       expect(response.statusCode).toBe(200)
       expect(response.body.valid).toBe(false)
     })
@@ -1546,9 +1548,10 @@ describe('Use configuration file', () => {
 
     it('should validate a valid long-term pubkey', async () => {
       const key = longKeyPair.publicKey
-      const response = await request(app)
-        .get('/_matrix/identity/v2/pubkey/isvalid')
-        .send({ public_key: key })
+      const response = await request(app).get(
+        '/_matrix/identity/v2/pubkey/isvalid?public_key=' + key
+      )
+
       expect(response.statusCode).toBe(200)
       expect(response.body.valid).toBe(true)
     })
@@ -1557,13 +1560,14 @@ describe('Use configuration file', () => {
       const key = 'invalidPub'
       const response = await request(app)
         .get('/_matrix/identity/v2/pubkey/isvalid')
-        .send({ public_key: key })
+        .query({ public_key: key })
+
       expect(response.statusCode).toBe(200)
       expect(response.body.valid).toBe(false)
     })
   })
 
-  describe('/_matrix/identity/v2/pubkey/$:keyID', () => {
+  describe('/_matrix/identity/v2/pubkey/:keyID', () => {
     beforeAll(async () => {
       // Insert a test key into the database
       await idServer.db.createKeypair('longTerm', 'ed25519').then((keypair) => {
