@@ -26,6 +26,9 @@ const tables: Record<Collections, string> = {
     'id varchar(64) PRIMARY KEY, authorId varchar(64), content text, roomId varchar(64)',
   userHistory: 'address text PRIMARY KEY, active integer, timestamp integer',
   userQuotas: 'user_id varchar(64) PRIMARY KEY, size int',
+  // Key management
+  longTermKeypairs: 'keyID varchar(64) PRIMARY KEY, public text, private text',
+  shortTermKeypairs: 'keyID varchar(64) PRIMARY KEY, public text, private text',
   // Added for store-invite API
   invitations:
     'address text PRIMARY KEY, medium text, room_id text, room_alias text, room_avatar_url text, room_join_rule text, room_name text, room_type text, sender text, sender_avatar_url text, sender_display_name text'

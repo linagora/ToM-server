@@ -58,6 +58,11 @@ function generateKeyId(algorithm: string, identifier: string): string {
   return `${algorithm}:${identifier}`
 }
 
+// Function to convert a Base64 string to unpadded Base64 URL encoded string
+function toBase64Url(base64: string): string {
+  return base64.replace(/=+$/, '').replace(/\//g, '_').replace(/\+/g, '-')
+}
+
 // Function to generate Ed25519 key pair and KeyId
 function generateEdKeyPair(): {
   publicKey: string
@@ -70,14 +75,15 @@ function generateEdKeyPair(): {
   // Generate a unique identifier for the KeyId
   const identifier = nacl.randomBytes(8) // Generate 8 random bytes
   let identifierHex = naclUtil.encodeBase64(identifier)
-  // remove the '/' character from the identifier
-  identifierHex = identifierHex.replace(/\//g, '+')
+  // Convert to unpadded Base64 URL encoded form
+  identifierHex = toBase64Url(identifierHex)
+
   const algorithm = 'ed25519'
   const _keyId = generateKeyId(algorithm, identifierHex)
 
   return {
-    publicKey: naclUtil.encodeBase64(keyPair.publicKey),
-    privateKey: naclUtil.encodeBase64(keyPair.secretKey),
+    publicKey: toBase64Url(naclUtil.encodeBase64(keyPair.publicKey)),
+    privateKey: toBase64Url(naclUtil.encodeBase64(keyPair.secretKey)),
     keyId: _keyId
   }
 }
@@ -94,14 +100,15 @@ function generateCurveKeyPair(): {
   // Generate a unique identifier for the KeyId
   const identifier = nacl.randomBytes(8) // Generate 8 random bytes
   let identifierHex = naclUtil.encodeBase64(identifier)
-  // remove the '/' character from the identifier
-  identifierHex = identifierHex.replace(/\//g, '+')
+  // Convert to unpadded Base64 URL encoded form
+  identifierHex = toBase64Url(identifierHex)
+
   const algorithm = 'curve25519'
   const _keyId = generateKeyId(algorithm, identifierHex)
 
   return {
-    publicKey: naclUtil.encodeBase64(keyPair.publicKey),
-    privateKey: naclUtil.encodeBase64(keyPair.secretKey),
+    publicKey: toBase64Url(naclUtil.encodeBase64(keyPair.publicKey)),
+    privateKey: toBase64Url(naclUtil.encodeBase64(keyPair.secretKey)),
     keyId: _keyId
   }
 }

@@ -38,6 +38,10 @@ import UserDB from './userdb'
 import _validateMatrixToken from './utils/validateMatrixToken'
 import RequestToken from './validate/email/requestToken'
 import SubmitToken from './validate/email/submitToken'
+// Ajout des imports
+import isPubkeyValid from './keyManagement/validPubkey'
+import getPubkey from './keyManagement/getPubkey'
+import isEphemeralPubkeyValid from './keyManagement/validEphemeralPubkey'
 
 export { type tokenContent } from './account/register'
 export { default as updateUsers } from './cron/updateUsers'
@@ -176,7 +180,14 @@ export default class MatrixIdentityServer {
                     '/_matrix/identity/v2/validate/email/requestToken':
                       badMethod,
                     '/_matrix/identity/v2/validate/email/submitToken':
-                      SubmitToken(this)
+                      SubmitToken(this),
+                    // Ajout des endpoints
+                    '/_matrix/identity/v2/pubkey/isvalid': isPubkeyValid(
+                      this.db
+                    ),
+                    '/_matrix/identity/v2/ephemeral_pubkey/isvalid':
+                      isEphemeralPubkeyValid(this.db),
+                    '/_matrix/identity/v2/pubkey/:keyId': getPubkey(this.db)
                   },
                   post: {
                     '/_matrix/identity/v2': badMethod,
@@ -192,7 +203,11 @@ export default class MatrixIdentityServer {
                     '/_matrix/identity/v2/validate/email/requestToken':
                       RequestToken(this),
                     '/_matrix/identity/v2/validate/email/submitToken':
-                      SubmitToken(this)
+                      SubmitToken(this),
+                    // Ajout des endpoints
+                    '/_matrix/identity/v2/pubkey/isvalid': badMethod,
+                    '/_matrix/identity/v2/ephemeral_pubkey/isvalid': badMethod,
+                    '/_matrix/identity/v2/pubkey/:keyId': badMethod
                   }
                 }
                 resolve(true)

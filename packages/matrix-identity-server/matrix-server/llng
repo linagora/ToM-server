@@ -1,0 +1,190 @@
+#!/bin/sh
+#
+
+#
+# Authors : P Vilarem <pvilarem@linagora.com>
+#           X Guimard <xguimard@linagora.com>
+#
+# Licence : GPL V3 https://www.gnu.org/licenses/gpl-3.0.en.html
+
+VERSION='0.1.0'
+
+SIMPLEOIDCCLIENTLIBDIR=${SIMPLEOIDCCLIENTLIBDIR:-$(dirname $(test -L "$0" && readlink "$0" || echo "$0"))}
+
+if [ ! -f $SIMPLEOIDCCLIENTLIBDIR/llng-lib.sh ] ; then
+	SIMPLEOIDCCLIENTLIBDIR=$(dirname $0)/"$SIMPLEOIDCCLIENTLIBDIR"
+fi
+
+. $SIMPLEOIDCCLIENTLIBDIR/llng-lib.sh
+
+check_install
+
+# 1. GET PARAMETERS
+# TEMP=$(getopt -o 'c:u:Pp:H:ki:s:r:t:z:vh' "$@")
+# echo $TEMP
+if [ $? -ne 0 ]; then
+        echo 'Terminating...' >&2
+        exit 1
+fi
+
+# eval set -- "$TEMP"
+# echo $TEMP
+
+# unset TEMP
+# echo $TEMP
+
+usage () {
+	echo 'LemonLDAP::NG OpenID-Connect client'
+	echo
+	echo "$0 <options> <command>"
+	echo
+	echo 'See https://github.com/linagora/simple-oidc-client/tree/master/sh#readme'
+}
+# echo "parametre 1bis = $@"
+
+while true; do
+	case "$1" in
+		'-v'|'--version')
+			echo $VERSION
+			exit
+			;;
+		'-h'|'--help')
+			usage
+			exit
+			;;
+		'-c'|'--cookie-jar')
+			COOKIEJAR="$2"
+			shift 2
+			;;
+		'-u'|'--login'|'--user')
+			LLNG_LOGIN="$2"
+			shift 2
+			;;
+		'-P'|'--prompt')
+			PROMPT=yes
+			shift
+			;;
+		'-p'|'--password'|'--llng-password')
+			LLNG_PASSWORD="$2"
+			shift 2
+			;;
+		'-l'|'--llng-server')
+			LLNG_SERVER="$2"
+			shift 2
+			;;
+		'-H'|'--llng-url')
+			LLNG_URL="$2"
+			shift 2
+			;;
+		'-k'|'--pkce')
+			PKCE=1
+			shift
+			;;
+		'-i'|'--client-id')
+			CLIENT_ID="$2"
+			shift 2
+			;;
+		'-s'|'--client-secret')
+			CLIENT_SECRET="$2"
+			shift 2
+			;;
+		'-r'|'--redirect-uri')
+			REDIRECT_URI="$2"
+			shift 2
+			;;
+		'-o'|'--scope')
+			SCOPE="$2"
+			shift 2
+			;;
+		'-t' | '--matrix-server')
+			MATRIX_SERVER="$2"
+			shift 2
+			;;
+		'-z' | '--matrix-user')
+			MATRIX_USER="$2"
+			shift 2
+			;;
+		'--')
+                        shift
+                        break
+			;;
+		*)
+			echo "Unknown option $1" >&2
+			usage
+			exit 1
+			break
+			;;
+		?)
+			echo Aborting >&2
+			exit 1
+			;;
+	esac
+done
+
+# echo "parametre 1 = $1"
+
+if test "$LLNG_SERVER" = "" -a "$LLNG_URL" = ""
+then
+	LLNG_SERVER=$(askString Server)
+fi
+
+if test "$LLNG_URL" = ""
+then
+	LLNG_URL=$(build_llng_url)
+fi
+
+COMMAND="$1"
+if test "$COMMAND" != ""; then
+	shift
+fi
+# echo "tous les param : $@"
+
+case "$COMMAND" in
+	whoami)
+		whoami
+		;;
+	languages)
+		getLanguages
+		;;
+	llng_cookie)
+		getLlngId
+		;;
+	oidc_metadata)
+		getOidcMetadata
+		;;
+	oidc_endpoints)
+		getOidcEndpoints
+		env|grep _ENDPOINT
+		;;
+	oidc_tokens)
+		getOidcTokens
+		;;
+	access_token)
+		getAccessToken
+		;;
+	id_token)
+		getIdToken
+		;;
+	refresh_token)
+		getRefreshToken
+		;;
+	user_info)
+		getUserInfo
+		;;
+	introspection)
+		getIntrospection "$@"
+		;;
+	matrix_token)
+		getMatrixToken "$@"
+		;;
+	matrix_federation_token)
+		getMatrixFederationToken "$@"
+		;;
+	matrix_token_exchange)
+		getAccessTokenFromMatrixToken "$@"
+		;;
+	*)
+		echo "BAD COMMAND $COMMAND" >&2
+		echo "Accepted commands: whoami, access_token, id_token, refresh_token" >&2
+		exit 1
+esac
