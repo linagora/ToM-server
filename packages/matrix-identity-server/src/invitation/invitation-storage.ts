@@ -158,7 +158,7 @@ export const storeInvitation = (
             const _address = (obj as storeInvitationArgs).address
 
             // Call to the lookup API to check for any existing third-party identifiers
-            const authHeader = req.headers.authorization ?? '' // TO DO : verify authHeader
+            const authHeader = req.headers.authorization ?? ''
             const validToken = authHeader.split(' ')[1]
             const _pepper = idServer.db.get('keys', ['data'], {
               name: 'pepper'
@@ -198,42 +198,63 @@ export const storeInvitation = (
                           { sid, email: _address },
                           idServer.conf.mail_link_delay
                         )
-                        .then((token) => {
-                          const randomToken = randomString(32)
-
-                          // add the invitation to the database
-                          // send email
-                          void transport.sendMail({
-                            to: _address,
-                            raw: mailBody(
-                              verificationTemplate,
-                              (obj as storeInvitationArgs)
-                                .sender_display_name ?? '', // TO DO : handle case where sender_display_name is undefined
-                              _address,
-                              (obj as storeInvitationArgs).room_name,
-                              (obj as storeInvitationArgs).room_avatar_url,
-                              (obj as storeInvitationArgs).room_type
-                            )
-                          })
-                          // send 200 response
-                          const redactedAddress = redactAddress(_address)
-                          const responseBody = {
-                            display_name: redactedAddress,
-                            public_keys: [
-                              {
-                                key_validity_url: `https://${idServer.conf.server_name}/_matrix/identity/v2/pubkey/isvalid`,
-                                // TO DO : adapt to changes
-                                public_key: ephemeralKey.publicKey
-                              },
-                              {
-                                key_validity_url: `https://${idServer.conf.server_name}/_matrix/identity/v2/pubkey/ephemeral/isvalid`,
-                                // TO DO : adapt to changes
-                                public_key: ephemeralKey.privateKey
+                        .then((_token) => {
+                          // TO DO : add the invitation to the database
+                          const invitation: storeInvitationArgs =
+                            obj as storeInvitationArgs
+                          idServer.db
+                            .insert('invitations', {
+                              address: invitation.address,
+                              medium: invitation.medium,
+                              room_id: invitation.room_id,
+                              room_alias: invitation.room_alias ?? '',
+                              room_avatar_url: invitation.room_avatar_url ?? '',
+                              room_join_rule: invitation.room_join_rules ?? '',
+                              room_name: invitation.room_name ?? '',
+                              room_type: invitation.room_type ?? '',
+                              sender: invitation.sender,
+                              sender_avatar_url:
+                                invitation.sender_avatar_url ?? '',
+                              sender_display_name:
+                                invitation.sender_display_name ?? ''
+                            })
+                            .then(() => {
+                              // send email
+                              void transport.sendMail({
+                                to: _address,
+                                raw: mailBody(
+                                  verificationTemplate,
+                                  (obj as storeInvitationArgs)
+                                    .sender_display_name ?? '', // TO DO : handle case where sender_display_name is undefined
+                                  _address,
+                                  (obj as storeInvitationArgs).room_name,
+                                  (obj as storeInvitationArgs).room_avatar_url,
+                                  (obj as storeInvitationArgs).room_type
+                                )
+                              })
+                              // send 200 response
+                              const redactedAddress = redactAddress(_address)
+                              const responseBody = {
+                                display_name: redactedAddress,
+                                public_keys: [
+                                  {
+                                    key_validity_url: `https://${idServer.conf.server_name}/_matrix/identity/v2/pubkey/isvalid`,
+                                    // TO DO : adapt to changes
+                                    public_key: ephemeralKey.publicKey
+                                  },
+                                  {
+                                    key_validity_url: `https://${idServer.conf.server_name}/_matrix/identity/v2/pubkey/ephemeral/isvalid`,
+                                    // TO DO : adapt to changes
+                                    public_key: ephemeralKey.privateKey
+                                  }
+                                ],
+                                token: _token
                               }
-                            ],
-                            token: randomToken
-                          }
-                          send(res, 200, responseBody)
+                              send(res, 200, responseBody)
+                            })
+                            .catch((e) => {
+                              throw e
+                            })
                         })
                         .catch((e) => {
                           throw e
