@@ -288,7 +288,7 @@ class IdentityServerDb implements IdDbBackend {
     const id = randomString(64)
     // default: expires in 600 s
     const expiresForDb =
-      epoch() + (expires != null && expires > 0 ? expires : 600 * 1000)
+      epoch() + 1000 * (expires != null && expires > 0 ? expires : 600)
     return new Promise((resolve, reject) => {
       this.db
         .insert('oneTimeTokens', {
