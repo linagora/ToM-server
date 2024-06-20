@@ -7,10 +7,13 @@ import {
   validateParameters,
   type expressAppHandler
 } from '../utils'
+import { type TwakeLogger, getLogger } from '@twake/logger'
 import { errMsg } from '../utils/errors'
 import type MatrixIdentityServer from '../index'
 import Mailer from '../utils/mailer'
 import { type Config } from '../types'
+
+const logger: TwakeLogger = getLogger()
 
 interface storeInvitationArgs {
   address: string
@@ -260,32 +263,47 @@ export const storeInvitation = (
                               })
                               // send 200 response
                               const redactedAddress = redactAddress(_address)
-                              const responseBody = {
-                                display_name: redactedAddress,
-                                public_keys: [
-                                  {
-                                    key_validity_url: `https://${idServer.conf.server_name}/_matrix/identity/v2/pubkey/isvalid`,
-                                    // TO DO : adapt to changes -> get the server's long term key -> which one ?
-                                    public_key: ephemeralKey.publicKey
-                                  },
-                                  {
-                                    key_validity_url: `https://${idServer.conf.server_name}/_matrix/identity/v2/pubkey/ephemeral/isvalid`,
-                                    public_key: ephemeralKey.privateKey
+                              idServer.db
+                                .getKeys('current')
+                                .then((keys) => {
+                                  const responseBody = {
+                                    display_name: redactedAddress,
+                                    public_keys: [
+                                      {
+                                        key_validity_url: `https://${idServer.conf.server_name}/_matrix/identity/v2/pubkey/isvalid`,
+                                        public_key: keys.publicKey
+                                      },
+                                      {
+                                        key_validity_url: `https://${idServer.conf.server_name}/_matrix/identity/v2/pubkey/ephemeral/isvalid`,
+                                        public_key: ephemeralKey.privateKey
+                                      }
+                                    ],
+                                    token: _token
                                   }
-                                ],
-                                token: _token
-                              }
-                              send(res, 200, responseBody)
+                                  send(res, 200, responseBody)
+                                })
+                                .catch((e) => {
+                                  logger.debug(
+                                    'Error while getting current long term key',
+                                    e
+                                  )
+                                })
                             })
                             .catch((e) => {
+                              logger.debug(
+                                'Error while inserting invitation',
+                                e
+                              )
                               throw e
                             })
                         })
                         .catch((e) => {
+                          logger.debug('Error while creating one time token', e)
                           throw e
                         })
                     })
                     .catch((e) => {
+                      logger.debug('Error while creating ephemeral key', e)
                       throw e
                     })
                 } else {
