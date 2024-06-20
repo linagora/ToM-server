@@ -30,8 +30,6 @@ let idServer: IdServer
 let app: express.Application
 let validToken: string
 let conf: Config
-let longKeyPair: { publicKey: string; privateKey: string; keyId: string }
-let shortKeyPair: { publicKey: string; privateKey: string; keyId: string }
 
 beforeAll((done) => {
   conf = {
