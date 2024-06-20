@@ -63,6 +63,15 @@ function toBase64Url(base64: string): string {
   return base64.replace(/=+$/, '').replace(/\//g, '_').replace(/\+/g, '-')
 }
 
+// Function to convert an unpadded Base64 URL encoded string to Base64 string
+function fromBase64Url(base64Url: string): string {
+  let base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/')
+  while (base64.length % 4 !== 0) {
+    base64 += '='
+  }
+  return base64
+}
+
 // Function to generate Ed25519 key pair and KeyId
 function generateEdKeyPair(): {
   publicKey: string
@@ -123,4 +132,56 @@ export const generateKeyPair = (
   } else {
     throw new Error('Unsupported algorithm')
   }
+}
+
+export const canonicalJson = (value: any): string => {
+  return JSON.stringify(value, (key, val) =>
+    typeof val === 'object' && val !== null && !Array.isArray(val)
+      ? Object.keys(val)
+          .sort()
+          .reduce<any>((sorted, key) => {
+            sorted[key] = val[key]
+            return sorted
+          }, {})
+      : val
+  ).replace(/[\u007f-\uffff]/g, function (c) {
+    return c
+  })
+}
+
+interface JsonObject {
+  [key: string]: any
+  signatures?: Record<string, Record<string, string>>
+  unsigned?: any
+}
+
+export const signJson = (
+  jsonObj: JsonObject,
+  signingKey: string,
+  signingName: string,
+  keyId: string
+): JsonObject => {
+  // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+  const signatures = jsonObj.signatures ?? {}
+  const unsigned = jsonObj.unsigned
+  delete jsonObj.signatures
+  delete jsonObj.unsigned
+  const signed = nacl.sign(
+    naclUtil.decodeUTF8(canonicalJson(jsonObj)),
+    naclUtil.decodeBase64(fromBase64Url(signingKey))
+  )
+  const signatureBase64 = Buffer.from(signed).toString('base64')
+
+  signatures[signingName] = {
+    ...signatures[signingName],
+    [keyId]: signatureBase64
+  }
+
+  jsonObj.signatures = signatures
+  // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+  if (unsigned) {
+    jsonObj.unsigned = unsigned
+  }
+
+  return jsonObj
 }

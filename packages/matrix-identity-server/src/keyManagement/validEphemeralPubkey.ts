@@ -8,7 +8,6 @@ const isEphemeralPubkeyValid = (
 ): expressAppHandler => {
   return (req, res) => {
     const publicKey = (req as Request).query.public_key
-    console.log('publicKey ephemeral:', publicKey)
     if (
       publicKey !== undefined &&
       typeof publicKey === 'string' &&
