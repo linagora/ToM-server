@@ -6,7 +6,6 @@ import { errMsg } from '../utils/errors'
 const isPubkeyValid = (idServer: IdentityServerDB): expressAppHandler => {
   return (req, res) => {
     const publicKey = (req as Request).query.public_key
-    console.log('publicKey longterm:', publicKey)
     if (
       publicKey !== undefined &&
       typeof publicKey === 'string' &&
