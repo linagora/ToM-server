@@ -5,6 +5,13 @@ import {
   canonicalJson,
   signJson
 } from './index'
+import {
+  Hash,
+  randomString,
+  generateKeyPair,
+  canonicalJson,
+  signJson
+} from './index'
 
 const sha256Results: Record<string, string> = {
   'alice@example.com email matrixrocks':
