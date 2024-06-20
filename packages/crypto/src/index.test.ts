@@ -305,10 +305,10 @@ describe('canonicalJson', () => {
 })
 
 describe('signJson', () => {
-  const testKeyPair = nacl.sign.keyPair()
-  const signingKey = naclUtil.encodeBase64(testKeyPair.secretKey)
+  const testKey = generateKeyPair('ed25519')
+  const signingKey = testKey.privateKey
   const signingName = 'testSigningName'
-  const keyId = 'testKeyId'
+  const keyId = testKey.keyId
 
   it('should add signature to a simple object', () => {
     const jsonObj = { a: 1, b: 'string' }
