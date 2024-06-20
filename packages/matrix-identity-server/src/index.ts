@@ -182,7 +182,6 @@ export default class MatrixIdentityServer {
                       badMethod,
                     '/_matrix/identity/v2/validate/email/submitToken':
                       SubmitToken(this),
-                    // Ajout des endpoints
                     '/_matrix/identity/v2/pubkey/isvalid': isPubkeyValid(
                       this.db
                     ),
@@ -205,7 +204,6 @@ export default class MatrixIdentityServer {
                       RequestToken(this),
                     '/_matrix/identity/v2/validate/email/submitToken':
                       SubmitToken(this),
-                    // Ajout des endpoints
                     '/_matrix/identity/v2/pubkey/isvalid': badMethod,
                     '/_matrix/identity/v2/pubkey/ephemeral/isvalid': badMethod,
                     '/_matrix/identity/v2/pubkey/:keyId': badMethod
