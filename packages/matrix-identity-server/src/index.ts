@@ -186,7 +186,7 @@ export default class MatrixIdentityServer {
                     '/_matrix/identity/v2/pubkey/isvalid': isPubkeyValid(
                       this.db
                     ),
-                    '/_matrix/identity/v2/ephemeral_pubkey/isvalid':
+                    '/_matrix/identity/v2/pubkey/ephemeral/isvalid':
                       isEphemeralPubkeyValid(this.db),
                     '/_matrix/identity/v2/pubkey/:keyId': getPubkey(this.db)
                   },
@@ -207,7 +207,7 @@ export default class MatrixIdentityServer {
                       SubmitToken(this),
                     // Ajout des endpoints
                     '/_matrix/identity/v2/pubkey/isvalid': badMethod,
-                    '/_matrix/identity/v2/ephemeral_pubkey/isvalid': badMethod,
+                    '/_matrix/identity/v2/pubkey/ephemeral/isvalid': badMethod,
                     '/_matrix/identity/v2/pubkey/:keyId': badMethod
                   }
                 }

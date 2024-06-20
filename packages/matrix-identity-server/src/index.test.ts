@@ -948,7 +948,7 @@ describe('Use configuration file', () => {
     })
   })
 
-  describe('/_matrix/identity/v2/ephemeral_pubkey/isvalid', () => {
+  describe('/_matrix/identity/v2/pubkey/ephemeral/isvalid', () => {
     let shortKeyPair: { publicKey: string; privateKey: string; keyId: string }
     beforeAll(async () => {
       // Insert a test key into the database
@@ -970,7 +970,7 @@ describe('Use configuration file', () => {
 
     it('should return error 400 if no public_key is given (shortTerm case)', async () => {
       const response = await request(app).get(
-        '/_matrix/identity/v2/ephemeral_pubkey/isvalid'
+        '/_matrix/identity/v2/pubkey/ephemeral/isvalid'
       )
 
       expect(response.statusCode).toBe(400)

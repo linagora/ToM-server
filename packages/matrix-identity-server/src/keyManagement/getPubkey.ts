@@ -7,11 +7,6 @@ const getPubkey = (idServer: IdentityServerDB): expressAppHandler => {
   return (req, res) => {
     const _keyID: string = (req as Request).params.keyId
 
-    if (_keyID === undefined || typeof _keyID !== 'string') {
-      send(res, 400, errMsg('missingParams'))
-      return
-    }
-
     idServer.db
       .get('shortTermKeypairs', ['public'], { keyID: _keyID })
       // eslint-disable-next-line @typescript-eslint/promise-function-async
