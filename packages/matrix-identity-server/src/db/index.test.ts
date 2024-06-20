@@ -446,33 +446,28 @@ describe('Id Server DB', () => {
       .catch((e) => done(e))
   })
 
-  it('should delete a key from the correct table', (done) => {
+  it('should delete a key from the shortKey pairs table', (done) => {
     // eslint-disable-next-line @typescript-eslint/no-floating-promises
     idDb = new IdDb(baseConf, logger)
     idDb.ready
       .then(() => {
         idDb
-          .createKeypair('longTerm', 'ed25519')
+          .createKeypair('shortTerm', 'ed25519')
           .then((key1) => {
             idDb
               .createKeypair('shortTerm', 'curve25519')
               .then((key2) => {
                 idDb
-                  .deleteKey(key1.keyId, 'longTerm')
+                  .deleteKey(key1.keyId)
                   .then(() => {
                     idDb
-                      .get('longTermKeypairs', ['keyID'], {})
+                      .get('shortTermKeypairs', ['keyID'], {})
                       .then((rows) => {
-                        expect(rows.length).toBe(0)
-                        idDb
-                          .get('shortTermKeypairs', ['keyID'], {})
-                          .then((rows) => {
-                            expect(rows.length).toBe(1)
-                            clearTimeout(idDb.cleanJob)
-                            idDb.close()
-                            done()
-                          })
-                          .catch((e) => done(e))
+                        expect(rows.length).toBe(1)
+                        expect(rows[0].keyID).toEqual(key2.keyId)
+                        clearTimeout(idDb.cleanJob)
+                        idDb.close()
+                        done()
                       })
                       .catch((e) => done(e))
                   })

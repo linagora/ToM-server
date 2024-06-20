@@ -17,7 +17,6 @@ export type Collections =
   | 'roomTags'
   | 'userHistory'
   | 'userQuotas'
-  // J'ajoute ici les collections pour les paires de clés
   | 'longTermKeypairs'
   | 'shortTermKeypairs'
 
@@ -350,6 +349,34 @@ class IdentityServerDb implements IdDbBackend {
   }
 
   // eslint-disable-next-line @typescript-eslint/promise-function-async
+  getKeys(type: 'current' | 'previous'): Promise<keyPair> {
+    /* istanbul ignore if */
+    if (this.db == null) {
+      throw new Error('Wait for database to be ready')
+    }
+    return new Promise((resolve, reject) => {
+      const _type = type === 'current' ? 'currentKey' : 'previousKey'
+      this.db
+        .get('longTermKeypairs', ['keyID', 'public', 'private'], {
+          name: _type
+        })
+        .then((rows) => {
+          if (rows.length === 0) {
+            reject(new Error(`No ${_type} found`))
+          }
+          resolve({
+            keyId: rows[0].keyID as string,
+            publicKey: rows[0].public as string,
+            privateKey: rows[0].private as string
+          })
+        })
+        .catch((e) => {
+          reject(e)
+        })
+    })
+  }
+
+  // eslint-disable-next-line @typescript-eslint/promise-function-async
   createKeypair(
     type: 'longTerm' | 'shortTerm',
     algorithm: 'ed25519' | 'curve25519'
@@ -359,9 +386,11 @@ class IdentityServerDb implements IdDbBackend {
       throw new Error('Wait for database to be ready')
     }
     const keyPair = generateKeyPair(algorithm)
-    // while () {
-    //   // making sure the new key is not already valid
-    // }
+    if (type === 'longTerm') {
+      throw new Error('Long term key pairs are not supported')
+    }
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-expect-error
     const _type = type === 'longTerm' ? 'longTermKeypairs' : 'shortTermKeypairs'
     return new Promise((resolve, reject) => {
       this.db
@@ -380,16 +409,16 @@ class IdentityServerDb implements IdDbBackend {
     })
   }
 
+  // Deletes a short term key pair from the database
   // eslint-disable-next-line @typescript-eslint/promise-function-async
-  deleteKey(_keyID: string, type: 'longTerm' | 'shortTerm'): Promise<void> {
+  deleteKey(_keyID: string): Promise<void> {
     /* istanbul ignore if */
     if (this.db == null) {
       throw new Error('Wait for database to be ready')
     }
-    const _type = type === 'longTerm' ? 'longTermKeypairs' : 'shortTermKeypairs'
     return new Promise((resolve, reject) => {
       this.db
-        .deleteEqual(_type, 'KeyID', _keyID)
+        .deleteEqual('shortTermKeypairs', 'KeyID', _keyID)
         .then(() => {
           resolve()
         })
