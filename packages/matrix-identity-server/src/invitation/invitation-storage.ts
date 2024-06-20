@@ -69,11 +69,11 @@ const mailBody = (
   // eslint-disable-next-line @typescript-eslint/naming-convention
   dst: string,
   // eslint-disable-next-line @typescript-eslint/naming-convention
-  room_name?: string,
+  room_name: string,
   // eslint-disable-next-line @typescript-eslint/naming-convention
-  room_avatar?: string,
+  room_avatar: string,
   // eslint-disable-next-line @typescript-eslint/naming-convention
-  room_type?: string
+  room_type: string
 ): string => {
   // TO DO : complete new template
   return (
@@ -93,14 +93,25 @@ const mailBody = (
           /* TO DO */
         }).toString()
       )
-      .replace(/__room_name__/g, room_name ?? '')
-      .replace(/__room_avatar__/g, room_avatar ?? '')
-      .replace(/__room_type__/g, room_type ?? '')
+      .replace(/__room_name__/g, room_name)
+      .replace(/__room_avatar__/g, room_avatar)
+      .replace(/__room_type__/g, room_type)
   )
 }
-// To use if we want to verify email format
-// const validEmailRe = /^\w[+.-\w]*\w@\w[.-\w]*\w\.\w{2,6}$/
-const validMediums = ['email']
+
+// To complete if another 3PID is added for this endpoint
+const validMediums: string[] = ['email']
+
+function validateMedium(medium: string, media: string): boolean {
+  if (validMediums.includes(medium)) {
+    const validMainRe = /^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/
+    // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+    if (validMainRe.test(media)) {
+      return true
+    }
+  }
+  return false
+}
 
 const redactAddress = (address: string): string => {
   const atIndex = address.indexOf('@')
@@ -156,7 +167,16 @@ export const storeInvitation = (
             )
           } else {
             const _address = (obj as storeInvitationArgs).address
-
+            if (
+              !validateMedium((obj as storeInvitationArgs).medium, _address)
+            ) {
+              send(
+                res,
+                400,
+                errMsg('invalidEmail', 'This email adress is not supported.')
+              )
+              return
+            }
             // Call to the lookup API to check for any existing third-party identifiers
             const authHeader = req.headers.authorization ?? ''
             const validToken = authHeader.split(' ')[1]
@@ -194,12 +214,12 @@ export const storeInvitation = (
                     .then((ephemeralKey) => {
                       idServer.db
                         .createOneTimeToken(
+                          // maybe not use that but use a basic random string
                           // TO DO : put the right parameters
                           { sid, email: _address },
                           idServer.conf.mail_link_delay
                         )
                         .then((_token) => {
-                          // TO DO : add the invitation to the database
                           const invitation: storeInvitationArgs =
                             obj as storeInvitationArgs
                           idServer.db
@@ -216,7 +236,10 @@ export const storeInvitation = (
                               sender_avatar_url:
                                 invitation.sender_avatar_url ?? '',
                               sender_display_name:
-                                invitation.sender_display_name ?? ''
+                                invitation.sender_display_name ?? '',
+                              token: _token,
+                              ephemeralKey: ephemeralKey.publicKey,
+                              display_name: redactAddress(_address)
                             })
                             .then(() => {
                               // send email
@@ -225,11 +248,14 @@ export const storeInvitation = (
                                 raw: mailBody(
                                   verificationTemplate,
                                   (obj as storeInvitationArgs)
-                                    .sender_display_name ?? '', // TO DO : handle case where sender_display_name is undefined
+                                    .sender_display_name ?? '*****',
                                   _address,
-                                  (obj as storeInvitationArgs).room_name,
-                                  (obj as storeInvitationArgs).room_avatar_url,
-                                  (obj as storeInvitationArgs).room_type
+                                  (obj as storeInvitationArgs).room_name ??
+                                    '*****',
+                                  (obj as storeInvitationArgs)
+                                    .room_avatar_url ?? '*****',
+                                  (obj as storeInvitationArgs).room_type ??
+                                    '*****'
                                 )
                               })
                               // send 200 response
@@ -239,12 +265,11 @@ export const storeInvitation = (
                                 public_keys: [
                                   {
                                     key_validity_url: `https://${idServer.conf.server_name}/_matrix/identity/v2/pubkey/isvalid`,
-                                    // TO DO : adapt to changes
+                                    // TO DO : adapt to changes -> get the server's long term key -> which one ?
                                     public_key: ephemeralKey.publicKey
                                   },
                                   {
                                     key_validity_url: `https://${idServer.conf.server_name}/_matrix/identity/v2/pubkey/ephemeral/isvalid`,
-                                    // TO DO : adapt to changes
                                     public_key: ephemeralKey.privateKey
                                   }
                                 ],

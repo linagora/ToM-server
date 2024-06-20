@@ -31,7 +31,7 @@ const tables: Record<Collections, string> = {
   shortTermKeypairs: 'keyID varchar(64) PRIMARY KEY, public text, private text',
   // Added for store-invite API
   invitations:
-    'address text PRIMARY KEY, medium text, room_id text, room_alias text, room_avatar_url text, room_join_rule text, room_name text, room_type text, sender text, sender_avatar_url text, sender_display_name text'
+    'address text PRIMARY KEY, medium text, room_id text, room_alias text, room_avatar_url text, room_join_rule text, room_name text, room_type text, sender text, sender_avatar_url text, sender_display_name text, token text, ephemeralKey text, display_name text'
 }
 
 const indexes: Partial<Record<Collections, string[]>> = {
