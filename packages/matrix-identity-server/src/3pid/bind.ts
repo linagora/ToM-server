@@ -121,14 +121,17 @@ const bind = (idServer: MatrixIdentityServer): expressAppHandler => {
                         }
                       })
                       .catch((err) => {
+                        // istanbul ignore next
                         send(res, 500, errMsg('unknown', err))
                       })
                   })
                   .catch((err) => {
+                    // istanbul ignore next
                     send(res, 500, errMsg('unknown', err))
                   })
               })
               .catch((err) => {
+                // istanbul ignore next
                 send(res, 500, errMsg('unknown', err))
               })
           }

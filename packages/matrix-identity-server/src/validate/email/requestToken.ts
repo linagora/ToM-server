@@ -117,7 +117,9 @@ const fillTable = (
           send(res, 200, { sid })
         })
         .catch((err) => {
+          // istanbul ignore next
           idServer.logger.error('Insertion error', err)
+          // istanbul ignore next
           send(res, 400, errMsg('unknown', err))
         })
     })
@@ -179,7 +181,9 @@ const RequestToken = (idServer: MatrixIdentityServer): expressAppHandler => {
                         )
                       })
                       .catch((err) => {
+                        // istanbul ignore next
                         idServer.logger.error('Deletion error', err)
+                        // istanbul ignore next
                         send(res, 400, errMsg('unknown', err))
                       })
                   }

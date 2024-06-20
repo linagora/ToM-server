@@ -45,6 +45,7 @@ const unbind = (idServer: MatrixIdentityServer): expressAppHandler => {
             } else if (!mxidRe.test(mxid)) {
               send(res, 400, errMsg('invalidParam', 'invalid Matrix user ID'))
             } else if (!sidRe.test(sid)) {
+              // istanbul ignore next
               send(res, 400, errMsg('invalidParam', 'invalid session ID'))
             } else {
               idServer.db
@@ -75,12 +76,14 @@ const unbind = (idServer: MatrixIdentityServer): expressAppHandler => {
                           send(res, 200, {})
                         })
                         .catch((e) => {
+                          // istanbul ignore next
                           send(res, 500, errMsg('unknown', e.toString()))
                         })
                     }
                   }
                 })
                 .catch((e) => {
+                  // istanbul ignore next
                   send(res, 500, errMsg('unknown', e.toString()))
                 })
             }

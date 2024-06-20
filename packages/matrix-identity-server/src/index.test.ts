@@ -357,6 +357,7 @@ describe('Use configuration file', () => {
             })
           expect(response.statusCode).toBe(200)
           expect(sendMailMock).not.toHaveBeenCalled()
+          expect(response.body).toEqual({ sid })
         })
         it('should resend an email for a different attempt', async () => {
           const response = await request(app)
@@ -364,13 +365,7 @@ describe('Use configuration file', () => {
             .set('Authorization', `Bearer ${validToken}`)
             .set('Accept', 'application/json')
             .send({
-              client_secret: 'my_secret',
-              email: 'xg@xnr.fr',
-              next_link: 'http://localhost:8090',
-              send_attempt: 1
-            })
-            .send({
-              client_secret: 'my_secret',
+              client_secret: 'mysecret',
               email: 'xg@xnr.fr',
               next_link: 'http://localhost:8090',
               send_attempt: 2
@@ -378,7 +373,7 @@ describe('Use configuration file', () => {
           expect(response.statusCode).toBe(200)
           expect(sendMailMock.mock.calls[0][0].to).toBe('xg@xnr.fr')
           expect(sendMailMock.mock.calls[0][0].raw).toMatch(
-            /token=([a-zA-Z0-9]{64})&client_secret=my_secret&sid=([a-zA-Z0-9]{64})/
+            /token=([a-zA-Z0-9]{64})&client_secret=mysecret&sid=([a-zA-Z0-9]{64})/
           )
           const newSid = RegExp.$2
           expect(response.body).toEqual({ sid: newSid })
@@ -663,6 +658,19 @@ describe('Use configuration file', () => {
           expect(response.body.errcode).toBe('M_INVALID_PARAM')
           expect(response.statusCode).toBe(400)
         })
+        it('should refuse an invalid session_id', async () => {
+          const response = await request(app)
+            .post('/_matrix/identity/v2/3pid/bind')
+            .set('Authorization', `Bearer ${validToken}`)
+            .set('Accept', 'application/json')
+            .send({
+              client_secret: 'mysecret2',
+              sid: '$!:',
+              mxid: '@ab:abc.fr'
+            })
+          expect(response.body.errcode).toBe('M_INVALID_PARAM')
+          expect(response.statusCode).toBe(400)
+        })
         it('should refuse a non-existing session ID or client secret', async () => {
           const response = await request(app)
             .post('/_matrix/identity/v2/3pid/bind')
@@ -704,7 +712,28 @@ describe('Use configuration file', () => {
             .set('Accept', 'application/json')
             .send({
               mxid: '@ab:abc.fr',
-              client_secret: 'a'
+              client_secret: 'a',
+              sid: 'sid',
+              threepid: {
+                address: 'ab@abc.fr',
+                medium: 'email'
+              }
+            })
+          expect(response.statusCode).toBe(400)
+        })
+        it('should refuse an invalid session id', async () => {
+          const response = await request(app)
+            .post('/_matrix/identity/v2/3pid/unbind')
+            .set('Authorization', `Bearer ${validToken}`)
+            .set('Accept', 'application/json')
+            .send({
+              mxid: '@ab:abc.fr',
+              sid: '$!:',
+              client_secret: 'mysecret4',
+              threepid: {
+                address: 'ab@abc.fr',
+                medium: 'email'
+              }
             })
           expect(response.statusCode).toBe(400)
         })
