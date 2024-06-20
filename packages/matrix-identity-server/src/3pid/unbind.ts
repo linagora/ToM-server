@@ -77,6 +77,7 @@ const unbind = (idServer: MatrixIdentityServer): expressAppHandler => {
                         })
                         .catch((e) => {
                           // istanbul ignore next
+                          idServer.logger.error('Error deleting 3pid association', e)
                           send(res, 500, errMsg('unknown', e.toString()))
                         })
                     }
@@ -84,6 +85,7 @@ const unbind = (idServer: MatrixIdentityServer): expressAppHandler => {
                 })
                 .catch((e) => {
                   // istanbul ignore next
+                  idServer.logger.error('Error finding 3pid associated with this session_id or client_secret', e)
                   send(res, 500, errMsg('unknown', e.toString()))
                 })
             }
