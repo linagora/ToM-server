@@ -58,6 +58,20 @@ function generateKeyId(algorithm: string, identifier: string): string {
   return `${algorithm}:${identifier}`
 }
 
+// Function to convert a Base64 string to unpadded Base64 URL encoded string
+function toBase64Url(base64: string): string {
+  return base64.replace(/=+$/, '').replace(/\//g, '_').replace(/\+/g, '-')
+}
+
+// Function to convert an unpadded Base64 URL encoded string to Base64 string
+function fromBase64Url(base64Url: string): string {
+  let base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/')
+  while (base64.length % 4 !== 0) {
+    base64 += '='
+  }
+  return base64
+}
+
 // Function to generate Ed25519 key pair and KeyId
 function generateEdKeyPair(): {
   publicKey: string
@@ -69,13 +83,16 @@ function generateEdKeyPair(): {
 
   // Generate a unique identifier for the KeyId
   const identifier = nacl.randomBytes(8) // Generate 8 random bytes
-  const identifierHex = naclUtil.encodeBase64(identifier)
+  let identifierHex = naclUtil.encodeBase64(identifier)
+  // Convert to unpadded Base64 URL encoded form
+  identifierHex = toBase64Url(identifierHex)
+
   const algorithm = 'ed25519'
   const _keyId = generateKeyId(algorithm, identifierHex)
 
   return {
-    publicKey: naclUtil.encodeBase64(keyPair.publicKey),
-    privateKey: naclUtil.encodeBase64(keyPair.secretKey),
+    publicKey: toBase64Url(naclUtil.encodeBase64(keyPair.publicKey)),
+    privateKey: toBase64Url(naclUtil.encodeBase64(keyPair.secretKey)),
     keyId: _keyId
   }
 }
@@ -91,13 +108,16 @@ function generateCurveKeyPair(): {
 
   // Generate a unique identifier for the KeyId
   const identifier = nacl.randomBytes(8) // Generate 8 random bytes
-  const identifierHex = naclUtil.encodeBase64(identifier)
+  let identifierHex = naclUtil.encodeBase64(identifier)
+  // Convert to unpadded Base64 URL encoded form
+  identifierHex = toBase64Url(identifierHex)
+
   const algorithm = 'curve25519'
   const _keyId = generateKeyId(algorithm, identifierHex)
 
   return {
-    publicKey: naclUtil.encodeBase64(keyPair.publicKey),
-    privateKey: naclUtil.encodeBase64(keyPair.secretKey),
+    publicKey: toBase64Url(naclUtil.encodeBase64(keyPair.publicKey)),
+    privateKey: toBase64Url(naclUtil.encodeBase64(keyPair.secretKey)),
     keyId: _keyId
   }
 }
@@ -148,7 +168,7 @@ export const signJson = (
   delete jsonObj.unsigned
   const signed = nacl.sign(
     naclUtil.decodeUTF8(canonicalJson(jsonObj)),
-    naclUtil.decodeBase64(signingKey)
+    naclUtil.decodeBase64(fromBase64Url(signingKey))
   )
   const signatureBase64 = Buffer.from(signed).toString('base64')
 

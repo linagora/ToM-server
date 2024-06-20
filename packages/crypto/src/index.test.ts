@@ -1,6 +1,10 @@
-import { Hash, randomString, canonicalJson, signJson } from './index'
-import nacl from 'tweetnacl'
-import naclUtil from 'tweetnacl-util'
+import {
+  Hash,
+  randomString,
+  generateKeyPair,
+  canonicalJson,
+  signJson
+} from './index'
 
 const sha256Results: Record<string, string> = {
   'alice@example.com email matrixrocks':
@@ -40,6 +44,22 @@ describe('Hash methods', () => {
 test('randomString', () => {
   const res = randomString(64)
   expect(res).toMatch(/^[a-zA-Z0-9]{64}$/)
+})
+
+describe('generateKeyPair', () => {
+  it('should generate a valid Ed25519 key pair and key ID', () => {
+    const { publicKey, privateKey, keyId } = generateKeyPair('ed25519')
+    expect(publicKey).toMatch(/^[A-Za-z0-9_-]+$/) // Unpadded Base64 URL encoded string
+    expect(privateKey).toMatch(/^[A-Za-z0-9_-]+$/) // Unpadded Base64 URL encoded string
+    expect(keyId).toMatch(/^ed25519:[A-Za-z0-9_-]+$/) // Key ID format
+  })
+
+  it('should generate a valid Curve25519 key pair and key ID', () => {
+    const { publicKey, privateKey, keyId } = generateKeyPair('curve25519')
+    expect(publicKey).toMatch(/^[A-Za-z0-9_-]+$/) // Unpadded Base64 URL encoded string
+    expect(privateKey).toMatch(/^[A-Za-z0-9_-]+$/) // Unpadded Base64 URL encoded string
+    expect(keyId).toMatch(/^curve25519:[A-Za-z0-9_-]+$/) // Key ID format
+  })
 })
 
 describe('canonicalJson', () => {
@@ -118,10 +138,10 @@ describe('canonicalJson', () => {
 })
 
 describe('signJson', () => {
-  const testKeyPair = nacl.sign.keyPair()
-  const signingKey = naclUtil.encodeBase64(testKeyPair.secretKey)
+  const testKey = generateKeyPair('ed25519')
+  const signingKey = testKey.privateKey
   const signingName = 'testSigningName'
-  const keyId = 'testKeyId'
+  const keyId = testKey.keyId
 
   it('should add signature to a simple object', () => {
     const jsonObj = { a: 1, b: 'string' }
