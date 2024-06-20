@@ -175,8 +175,8 @@ class Pg extends SQL implements IdDbBackend {
   updateAnd(
     table: Collections,
     values: Record<string, string | number>,
-    condition1: { field: string, value: string | number },
-    condition2: { field: string, value: string | number }
+    condition1: { field: string; value: string | number },
+    condition2: { field: string; value: string | number }
   ): Promise<DbGetResult> {
     return new Promise((resolve, reject) => {
       /* istanbul ignore if */
@@ -195,7 +195,9 @@ class Pg extends SQL implements IdDbBackend {
         this.db.query(
           `UPDATE ${table} SET ${names
             .map((name, i) => `${name}=$${i + 1}`)
-            .join(',')} WHERE ${condition1.field}=$${vals.length - 1} AND ${condition2.field}=$${vals.length} RETURNING *;`,
+            .join(',')} WHERE ${condition1.field}=$${vals.length - 1} AND ${
+            condition2.field
+          }=$${vals.length} RETURNING *;`,
           vals,
           (err, rows) => {
             // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
@@ -205,7 +207,6 @@ class Pg extends SQL implements IdDbBackend {
       }
     })
   }
-  
 
   _get(
     op: string,
@@ -349,8 +350,14 @@ class Pg extends SQL implements IdDbBackend {
 
   deleteEqualAnd(
     table: Collections,
-    condition1: { field: string, value: string | number | Array<string | number>},
-    condition2: { field: string, value: string | number | Array<string | number>}
+    condition1: {
+      field: string
+      value: string | number | Array<string | number>
+    },
+    condition2: {
+      field: string
+      value: string | number | Array<string | number>
+    }
   ): Promise<void> {
     return new Promise((resolve, reject) => {
       if (this.db == null) {
@@ -387,7 +394,6 @@ class Pg extends SQL implements IdDbBackend {
       }
     })
   }
-  
 
   deleteLowerThan(
     table: string,

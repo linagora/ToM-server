@@ -4,7 +4,7 @@ import { getLogger, type TwakeLogger } from '@twake/logger'
 import DefaultConfig from '../config.json'
 import { type Config, type DbGetResult } from '../types'
 import IdDb from './index'
-import fs from 'fs';
+import fs from 'fs'
 
 const baseConf: Config = {
   ...DefaultConfig,
@@ -23,8 +23,6 @@ if (process.env.TEST_PG === 'yes') {
 }
 
 const logger: TwakeLogger = getLogger()
-
-
 
 describe('Id Server DB', () => {
   let idDb: IdDb
@@ -167,84 +165,85 @@ describe('Id Server DB', () => {
   })
 
   it('should update records matching both conditions', (done) => {
-      idDb = new IdDb(baseConf, logger)
-      idDb.ready
+    idDb = new IdDb(baseConf, logger)
+    idDb.ready
       .then(() => {
         idDb
-        .insert('roomTags',{ id: 1, roomId: 1, authorId: 1, content : '' })
-        .then(() => {
-          idDb
-          .updateAnd(
-            'roomTags',
-            { id: 2 },
-            { field: 'id', value: 1 },
-            { field: 'roomId', value: 1 }
-          )
-          .then((rows) => {
-            expect(rows[0].id).toEqual('2')
-            done()
-          })
-          .catch(done)
-        })
-        .catch(done)
-        })
-        .catch(done)
-      })
-
-
-      it('should return entry on updateAnd', (done) => {
-        idDb = new IdDb(baseConf, logger)
-        idDb.ready
-        .then(() => {
-          idDb
-          .insert('roomTags',{ id: 3, roomId: 1, authorId: 1, content : '' })
+          .insert('roomTags', { id: 1, roomId: 1, authorId: 1, content: '' })
           .then(() => {
             idDb
-            .updateAnd(
-              'roomTags',
-              { id: 4 },
-              { field: 'id', value: 3 },
-              { field: 'roomId', value: 1 }
-            )
-            .then((rows) => {
-              expect(rows.length).toBe(1)
-              expect(rows[0].id).toEqual('4')
-              done()
-            })
-            .catch(done)
+              .updateAnd(
+                'roomTags',
+                { id: 2 },
+                { field: 'id', value: 1 },
+                { field: 'roomId', value: 1 }
+              )
+              .then((rows) => {
+                expect(rows[0].id).toEqual('2')
+                done()
+              })
+              .catch(done)
           })
           .catch(done)
-          })
-          .catch(done)
-        })
+      })
+      .catch(done)
+  })
 
-   it('should not update records if conditions do not match', (done) => {
-      idDb = new IdDb(baseConf, logger)
-      idDb.ready
+  it('should return entry on updateAnd', (done) => {
+    idDb = new IdDb(baseConf, logger)
+    idDb.ready
       .then(() => {
-        idDb.insert('roomTags',{ id: 4, roomId: 1, authorId: 1, content : '' }).then(() => {
-          idDb
-          .updateAnd(
-            'roomTags',
-            { authorId: 2 },
-            { field: 'id', value: 4 },
-            { field: 'roomId', value: 100}
-          )
+        idDb
+          .insert('roomTags', { id: 3, roomId: 1, authorId: 1, content: '' })
           .then(() => {
-            idDb.get('roomTags', ['*'], { id: 4})
-            .then((rows) => {
-              expect(rows[0].authorId).toEqual('1')
-              done()
-            })
-            .catch(done)
+            idDb
+              .updateAnd(
+                'roomTags',
+                { id: 4 },
+                { field: 'id', value: 3 },
+                { field: 'roomId', value: 1 }
+              )
+              .then((rows) => {
+                expect(rows.length).toBe(1)
+                expect(rows[0].id).toEqual('4')
+                done()
+              })
+              .catch(done)
           })
           .catch(done)
-        })
-        .catch(done)
-        })
-        .catch(done)
-    }) 
-  
+      })
+      .catch(done)
+  })
+
+  it('should not update records if conditions do not match', (done) => {
+    idDb = new IdDb(baseConf, logger)
+    idDb.ready
+      .then(() => {
+        idDb
+          .insert('roomTags', { id: 4, roomId: 1, authorId: 1, content: '' })
+          .then(() => {
+            idDb
+              .updateAnd(
+                'roomTags',
+                { authorId: 2 },
+                { field: 'id', value: 4 },
+                { field: 'roomId', value: 100 }
+              )
+              .then(() => {
+                idDb
+                  .get('roomTags', ['*'], { id: 4 })
+                  .then((rows) => {
+                    expect(rows[0].authorId).toEqual('1')
+                    done()
+                  })
+                  .catch(done)
+              })
+              .catch(done)
+          })
+          .catch(done)
+      })
+      .catch(done)
+  })
 
   it('should return entry on insert', (done) => {
     idDb = new IdDb(baseConf, logger)
@@ -374,7 +373,7 @@ describe('Id Server DB', () => {
                 idDb
                   .getAll('accessTokens', ['id', 'data'])
                   .then((rows) => {
-                    expect(rows.length).toBe(Math.floor(idsNumber / 2)) 
+                    expect(rows.length).toBe(Math.floor(idsNumber / 2))
                     expect(rows[0].data).toEqual('{1}')
                     done()
                   })
@@ -387,9 +386,9 @@ describe('Id Server DB', () => {
       .catch((e) => done(e))
   })
 
-    it('should delete records matching both conditions', (done) => {
-      idDb = new IdDb(baseConf, logger)
-      idDb.ready
+  it('should delete records matching both conditions', (done) => {
+    idDb = new IdDb(baseConf, logger)
+    idDb.ready
       .then(() => {
         const idsNumber = 8
         const ids: string[] = []
@@ -400,46 +399,42 @@ describe('Id Server DB', () => {
             email: `email${index}`,
             expires: index,
             attempt: index
-        })
-      }
+          })
+        }
 
-      Promise.all(insertsPromises)
-        .then(() => {
-          idDb
-          .deleteEqualAnd(
-            'attempts',
-            { field: 'email', value: 'email0' },
-            { field: 'expires', value: '0' }
-          )
+        Promise.all(insertsPromises)
           .then(() => {
             idDb
-            .getAll('attempts', [
-              'email',
-              'expires',
-              'attempt'
-            ])
-            .then((rows) => {
-              expect(rows.length).toBe(idsNumber - 1)
-              rows.forEach((row) => {
-                expect(row.email).not.toEqual('email0')
-                expect(row.attempt).not.toEqual('0')
-                expect(row.expires).not.toEqual('0')
+              .deleteEqualAnd(
+                'attempts',
+                { field: 'email', value: 'email0' },
+                { field: 'expires', value: '0' }
+              )
+              .then(() => {
+                idDb
+                  .getAll('attempts', ['email', 'expires', 'attempt'])
+                  .then((rows) => {
+                    expect(rows.length).toBe(idsNumber - 1)
+                    rows.forEach((row) => {
+                      expect(row.email).not.toEqual('email0')
+                      expect(row.attempt).not.toEqual('0')
+                      expect(row.expires).not.toEqual('0')
+                    })
+                    done()
+                  })
+                  .catch(done)
               })
-              done()
+              .catch(done)
           })
           .catch(done)
-          })
-          .catch(done)
-        })
-        .catch(done)
       })
       .catch(done)
-    })
+  })
 
-    it('should not delete records if conditions do not match', (done) => {
-      idDb = new IdDb(baseConf, logger)
-      idDb.ready.
-      then(() => {
+  it('should not delete records if conditions do not match', (done) => {
+    idDb = new IdDb(baseConf, logger)
+    idDb.ready
+      .then(() => {
         const idsNumber = 8
         const ids: string[] = []
         const insertsPromises: Array<Promise<DbGetResult>> = []
@@ -452,35 +447,36 @@ describe('Id Server DB', () => {
             content: `{${index % 2}}`,
             targetId: 'targetC'
           })
-      }
+        }
 
-      Promise.all(insertsPromises)
-        .then(() => {
-          idDb.deleteEqualAnd(
-            'privateNotes',
-            { field: 'content', value: '{0}' },
-            { field: 'authorId', value: 'authorC' }
-          )
+        Promise.all(insertsPromises)
           .then(() => {
             idDb
-            .getAll('privateNotes', [
-              'id',
-              'authorId',
-              'content',
-              'targetId'
-            ])
-            .then((rows) => {
-              expect(rows.length).toBe(idsNumber)
-              done()
-            })
-            .catch(done)
-        })
-        .catch(done)
-        })
-        .catch(done)
+              .deleteEqualAnd(
+                'privateNotes',
+                { field: 'content', value: '{0}' },
+                { field: 'authorId', value: 'authorC' }
+              )
+              .then(() => {
+                idDb
+                  .getAll('privateNotes', [
+                    'id',
+                    'authorId',
+                    'content',
+                    'targetId'
+                  ])
+                  .then((rows) => {
+                    expect(rows.length).toBe(idsNumber)
+                    done()
+                  })
+                  .catch(done)
+              })
+              .catch(done)
+          })
+          .catch(done)
       })
       .catch(done)
-      })
+  })
 
   test('OneTimeToken timeout', (done) => {
     idDb = new IdDb({ ...baseConf, database_vacuum_delay: 3 }, logger)
@@ -509,4 +505,3 @@ describe('Id Server DB', () => {
       })
   })
 })
-

@@ -661,114 +661,120 @@ describe('Use configuration file', () => {
         })
       })
       describe('/_matrix/identity/v2/3pid/unbind', () => {
-        let token4:string ; let sid4:string
+        let token4: string
+        let sid4: string
         it('should refuse an invalid Matrix ID', async () => {
           const response = await request(app)
             .post('/_matrix/identity/v2/3pid/unbind')
             .set('Authorization', `Bearer ${validToken}`)
             .set('Accept', 'application/json')
-            . send({
-              sid : 'sid',
-              client_secret : 'mysecret4',
-              threepid : {
-                address : "unbind@unbind.fr",
-                medium : "email"
+            .send({
+              sid: 'sid',
+              client_secret: 'mysecret4',
+              threepid: {
+                address: 'unbind@unbind.fr',
+                medium: 'email'
               },
-              mxid: 'unbind@unbind.fr'})
+              mxid: 'unbind@unbind.fr'
+            })
           expect(response.body.errcode).toBe('M_INVALID_PARAM')
           expect(response.statusCode).toBe(400)
-      })
-      it('should refuse an invalid client secret', async () => {
-        const response = await request(app)
-          .post('/_matrix/identity/v2/3pid/unbind')
-          .set('Authorization', `Bearer ${validToken}`)
-          .set('Accept', 'application/json')
-          .send({
-            mxid: '@ab:abc.fr',
-            client_secret: 'a'
-          })
-        expect(response.statusCode).toBe(400)
-      })
-      it('should refuse incompatible session_id and client_secret', async () => {
-        const response_request_token = await request(app)
-        .post('/_matrix/identity/v2/validate/email/requestToken')
-        .set('Authorization', `Bearer ${validToken}`)
-        .set('Accept', 'application/json')
-        .send({
-          client_secret: 'mysecret4',
-          email: 'unbind@unbind.fr',
-          send_attempt: 1
-      })
-      expect(response_request_token.statusCode).toBe(200)
-      expect(sendMailMock).toHaveBeenCalled()
-      expect(sendMailMock.mock.calls[0][0].to).toBe('unbind@unbind.fr')
-      expect(sendMailMock.mock.calls[0][0].raw).toMatch(
+        })
+        it('should refuse an invalid client secret', async () => {
+          const response = await request(app)
+            .post('/_matrix/identity/v2/3pid/unbind')
+            .set('Authorization', `Bearer ${validToken}`)
+            .set('Accept', 'application/json')
+            .send({
+              mxid: '@ab:abc.fr',
+              client_secret: 'a'
+            })
+          expect(response.statusCode).toBe(400)
+        })
+        it('should refuse incompatible session_id and client_secret', async () => {
+          const response_request_token = await request(app)
+            .post('/_matrix/identity/v2/validate/email/requestToken')
+            .set('Authorization', `Bearer ${validToken}`)
+            .set('Accept', 'application/json')
+            .send({
+              client_secret: 'mysecret4',
+              email: 'unbind@unbind.fr',
+              send_attempt: 1
+            })
+          expect(response_request_token.statusCode).toBe(200)
+          expect(sendMailMock).toHaveBeenCalled()
+          expect(sendMailMock.mock.calls[0][0].to).toBe('unbind@unbind.fr')
+          expect(sendMailMock.mock.calls[0][0].raw).toMatch(
             /token=([a-zA-Z0-9]{64})&client_secret=mysecret4&sid=([a-zA-Z0-9]{64})/
           )
-      token4 = RegExp.$1
-      sid4 = response_request_token.body.sid
-      const response_submit_token = await request(app)
-        .post('/_matrix/identity/v2/validate/email/submitToken')
-        .send({
-          token: token4 ,
-          client_secret: 'mysecret4',
-          sid: sid4
+          token4 = RegExp.$1
+          sid4 = response_request_token.body.sid
+          const response_submit_token = await request(app)
+            .post('/_matrix/identity/v2/validate/email/submitToken')
+            .send({
+              token: token4,
+              client_secret: 'mysecret4',
+              sid: sid4
+            })
+            .set('Accept', 'application/json')
+          expect(response_submit_token.statusCode).toBe(200)
+          const response_bind = await request(app)
+            .post('/_matrix/identity/v2/3pid/bind')
+            .set('Authorization', `Bearer ${validToken}`)
+            .set('Accept', 'application/json')
+            .send({
+              client_secret: 'mysecret4',
+              sid: sid4,
+              mxid: '@unbind:unbind.fr'
+            })
+          expect(response_bind.statusCode).toBe(200)
+          const response = await request(app)
+            .post('/_matrix/identity/v2/3pid/unbind')
+            .set('Authorization', `Bearer ${validToken}`)
+            .set('Accept', 'application/json')
+            .send({
+              mxid: '@unbind:unbind.fr',
+              client_secret: 'mysecret_',
+              sid: sid4,
+              threepid: {
+                address: 'unbind@unbind.fr',
+                medium: 'email'
+              }
+            })
+          expect(response.statusCode).toBe(403)
         })
-        .set('Accept', 'application/json')
-      expect(response_submit_token.statusCode).toBe(200)
-      const response_bind = await request(app)
-        .post('/_matrix/identity/v2/3pid/bind')
-        .set('Authorization', `Bearer ${validToken}`)
-        .set('Accept', 'application/json')
-        .send({
-          client_secret: 'mysecret4',
-          sid: sid4,
-          mxid: '@unbind:unbind.fr'
+        it('should refuse an invalid threepid', async () => {
+          const response = await request(app)
+            .post('/_matrix/identity/v2/3pid/unbind')
+            .set('Authorization', `Bearer ${validToken}`)
+            .set('Accept', 'application/json')
+            .send({
+              mxid: '@ab:abc.fr',
+              sid: sid4,
+              client_secret: 'mysecret4',
+              threepid: {
+                address: 'ab@ab.fr',
+                medium: 'email'
+              }
+            })
+          expect(response.statusCode).toBe(403)
         })
-      expect(response_bind.statusCode).toBe(200)
-      const response = await request(app)
-        .post('/_matrix/identity/v2/3pid/unbind')
-        .set('Authorization', `Bearer ${validToken}`)
-        .set('Accept', 'application/json')
-        .send({
-          mxid: '@unbind:unbind.fr',
-          client_secret: 'mysecret_',
-          sid : sid4,
-          threepid : {
-            address:'unbind@unbind.fr',
-            medium : 'email'
-          }
+        it('should unbind a 3pid when given the right parameters', async () => {
+          const response = await request(app)
+            .post('/_matrix/identity/v2/3pid/unbind')
+            .set('Authorization', `Bearer ${validToken}`)
+            .set('Accept', 'application/json')
+            .send({
+              mxid: '@unbind:unbind.fr',
+              client_secret: 'mysecret4',
+              sid: sid4,
+              threepid: {
+                address: 'unbind@unbind.fr'
+              }
+            })
+          expect(response.statusCode).toBe(200)
         })
-      expect(response.statusCode).toBe(403)
-    })
-    it('should refuse an invalid threepid', async () => {
-      const response = await request(app)
-        .post('/_matrix/identity/v2/3pid/unbind')
-        .set('Authorization', `Bearer ${validToken}`)
-        .set('Accept', 'application/json')
-        .send({
-          mxid: '@ab:abc.fr',
-          sid:sid4,
-          client_secret: 'mysecret4',
-          threepid: {
-            address: 'ab@ab.fr',
-            medium:"email"}})
-      expect(response.statusCode).toBe(403)
-    })
-    it('should unbind a 3pid when given the right parameters', async () => {
-      const response = await request(app)
-        .post('/_matrix/identity/v2/3pid/unbind')
-        .set('Authorization', `Bearer ${validToken}`)
-        .set('Accept', 'application/json')
-        .send({
-          mxid: '@unbind:unbind.fr',
-          client_secret: 'mysecret4',
-          sid : sid4,
-          threepid : {
-            address:'unbind@unbind.fr'}})
-      expect(response.statusCode).toBe(200)
-    })
-  })
+      })
     })
     describe('/_matrix/identity/v2/lookup', () => {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars

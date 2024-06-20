@@ -5,7 +5,7 @@ import { errMsg } from '../../utils/errors'
 interface parameters {
   client_secret?: string
   token?: string
-  sid?: string 
+  sid?: string
 }
 
 interface mailToken {
@@ -33,11 +33,20 @@ const SubmitToken = (idServer: MatrixIdentityServer): expressAppHandler => {
               idServer.db
                 .deleteToken(prms.token as string)
                 .then(() => {
-                  idServer.db.updateAnd('mappings', { valid: 1, submit_time : epoch()}, { field : 'session_id', value : (data as mailToken).sid }, {field : 'client_secret', value : (data as mailToken).client_secret })
-                  .then(()=>{
-                    send(res, 200, { success: true })
-                  })
-                  .catch((e)=>{})
+                  idServer.db
+                    .updateAnd(
+                      'mappings',
+                      { valid: 1, submit_time: epoch() },
+                      { field: 'session_id', value: (data as mailToken).sid },
+                      {
+                        field: 'client_secret',
+                        value: (data as mailToken).client_secret
+                      }
+                    )
+                    .then(() => {
+                      send(res, 200, { success: true })
+                    })
+                    .catch((e) => {})
                 })
                 .catch((e) => {})
             } else {

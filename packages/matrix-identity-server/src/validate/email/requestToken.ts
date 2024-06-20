@@ -12,7 +12,6 @@ import {
 import { errMsg } from '../../utils/errors'
 import Mailer from '../../utils/mailer'
 
-
 interface RequestTokenArgs {
   client_secret: string
   email: string
@@ -88,33 +87,27 @@ const fillTable = (
   verificationTemplate: string,
   transport: Mailer,
   res: any
-):void => {
+): void => {
   const sid = randomString(64)
   idServer.db
     .createOneTimeToken(
       {
         sid,
         email: dst,
-        client_secret: clientSecret,
+        client_secret: clientSecret
       },
       idServer.conf.mail_link_delay
     )
     .then((token) => {
       void transport.sendMail({
         to: dst,
-        raw: mailBody(
-          verificationTemplate,
-          dst,
-          token,
-          clientSecret,
-          sid
-        )
+        raw: mailBody(verificationTemplate, dst, token, clientSecret, sid)
       })
       idServer.db
         .insert('mappings', {
           client_secret: clientSecret,
           address: dst,
-          medium: "email",
+          medium: 'email',
           valid: 0,
           submit_time: 0,
           session_id: sid,
@@ -159,26 +152,47 @@ const RequestToken = (idServer: MatrixIdentityServer): expressAppHandler => {
             send(res, 400, errMsg('invalidEmail'))
           } else {
             idServer.db
-              .get('mappings', ['send_attempt', 'session_id'], { client_secret: clientSecret, address: dst})
+              .get('mappings', ['send_attempt', 'session_id'], {
+                client_secret: clientSecret,
+                address: dst
+              })
               .then((rows) => {
                 if (rows.length > 0) {
                   if (sendAttempt === rows[0].send_attempt) {
                     send(res, 200, { sid: rows[0].session_id })
-                  } 
-                  else {
+                  } else {
                     idServer.db
-                      .deleteEqualAnd('mappings',{field :'client_secret',value : clientSecret},{field :'session_id', value : rows[0].session_id})
+                      .deleteEqualAnd(
+                        'mappings',
+                        { field: 'client_secret', value: clientSecret },
+                        { field: 'session_id', value: rows[0].session_id }
+                      )
                       .then(() => {
-                        fillTable(idServer, dst, clientSecret, sendAttempt, verificationTemplate, transport, res)
+                        fillTable(
+                          idServer,
+                          dst,
+                          clientSecret,
+                          sendAttempt,
+                          verificationTemplate,
+                          transport,
+                          res
+                        )
                       })
                       .catch((err) => {
                         idServer.logger.error('Deletion error', err)
                         send(res, 400, errMsg('unknown', err))
                       })
                   }
-                } 
-                else {
-                  fillTable(idServer, dst, clientSecret, sendAttempt, verificationTemplate, transport, res)
+                } else {
+                  fillTable(
+                    idServer,
+                    dst,
+                    clientSecret,
+                    sendAttempt,
+                    verificationTemplate,
+                    transport,
+                    res
+                  )
                 }
               })
               .catch((err) => {

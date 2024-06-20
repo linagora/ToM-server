@@ -55,12 +55,12 @@ const bind = (idServer: MatrixIdentityServer): expressAppHandler => {
             )
 
             idServer.db
-              .get('mappings', ['address', 'medium', 'submit_time','valid'], {
+              .get('mappings', ['address', 'medium', 'submit_time', 'valid'], {
                 session_id: sid,
                 client_secret: clientSecret
               })
               .then((rows) => {
-                if(rows.length === 0){
+                if (rows.length === 0) {
                   send(res, 404, {
                     errcode: 'M_NO_VALID_SESSION',
                     error:
@@ -68,7 +68,7 @@ const bind = (idServer: MatrixIdentityServer): expressAppHandler => {
                   })
                   return
                 }
-                if(rows[0].valid === 0){
+                if (rows[0].valid === 0) {
                   send(res, 400, {
                     errcode: 'M_SESSION_NOT_VALIDATED',
                     error: 'This validation session has not yet been completed'
@@ -78,49 +78,51 @@ const bind = (idServer: MatrixIdentityServer): expressAppHandler => {
                 idServer.db
                   .get('keys', ['data'], { name: 'pepper' })
                   .then(async (pepperRow) => {
-                      const field =
-                        rows[0].medium === 'email' ? 'mail' : 'msisdn'
-                      const hash = new Hash()
-                      await hash.ready
-                      await idServer.db.insert('hashes', {
-                        hash: hash.sha256(
-                          `${rows[0].address as string} ${field} ${pepperRow[0].data as string}`
-                        ),
-                        pepper: pepperRow[0].data as string,
-                        type: field,
-                        value: mxid,
-                        active: 1
-                      })
-                      const body: ResponseArgs = {
-                        address: rows[0].address as string,
-                        medium: rows[0].medium as string,
-                        mxid,
-                        not_after: rows[0].submit_time as number + 86400000 * 36500,
-                        not_before: rows[0].submit_time as number,
-                        ts: rows[0].submit_time as number
-                      }
-                      idServer.db
-                        .get('longTermKeypairs', ['keyID', 'private'], {})
-                        .then((keyrows) => {
-                          if (
-                            typeof keyrows[0].private === 'string' &&
-                            typeof keyrows[0].keyID === 'string'
-                          ) {
-                            send(
-                              res,
-                              200,
-                              signJson(
-                                body,
-                                keyrows[0].private,
-                                idServer.conf.server_name,
-                                keyrows[0].keyID
-                              )
+                    const field = rows[0].medium === 'email' ? 'mail' : 'msisdn'
+                    const hash = new Hash()
+                    await hash.ready
+                    await idServer.db.insert('hashes', {
+                      hash: hash.sha256(
+                        `${rows[0].address as string} ${field} ${
+                          pepperRow[0].data as string
+                        }`
+                      ),
+                      pepper: pepperRow[0].data as string,
+                      type: field,
+                      value: mxid,
+                      active: 1
+                    })
+                    const body: ResponseArgs = {
+                      address: rows[0].address as string,
+                      medium: rows[0].medium as string,
+                      mxid,
+                      not_after:
+                        (rows[0].submit_time as number) + 86400000 * 36500,
+                      not_before: rows[0].submit_time as number,
+                      ts: rows[0].submit_time as number
+                    }
+                    idServer.db
+                      .get('longTermKeypairs', ['keyID', 'private'], {})
+                      .then((keyrows) => {
+                        if (
+                          typeof keyrows[0].private === 'string' &&
+                          typeof keyrows[0].keyID === 'string'
+                        ) {
+                          send(
+                            res,
+                            200,
+                            signJson(
+                              body,
+                              keyrows[0].private,
+                              idServer.conf.server_name,
+                              keyrows[0].keyID
                             )
-                          }
-                        })
-                        .catch((err) => {
-                          send(res, 500, errMsg('unknown', err))
-                        })
+                          )
+                        }
+                      })
+                      .catch((err) => {
+                        send(res, 500, errMsg('unknown', err))
+                      })
                   })
                   .catch((err) => {
                     send(res, 500, errMsg('unknown', err))

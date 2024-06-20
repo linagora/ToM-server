@@ -23,12 +23,12 @@ const idServer = new IdServer(config)
 
 const app = express()
 
-idServer.ready.then( () => {
-  Object.keys(idServer.api.get).forEach( k => {
+idServer.ready.then(() => {
+  Object.keys(idServer.api.get).forEach((k) => {
     app.get(k, idServer.api.get[k])
   })
 
-  Object.keys(idServer.api.post).forEach( k => {
+  Object.keys(idServer.api.post).forEach((k) => {
     app.post(k, idServer.api.get[k])
   })
 
