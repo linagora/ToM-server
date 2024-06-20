@@ -5,7 +5,7 @@ import { errMsg } from '../../utils/errors'
 interface parameters {
   client_secret?: string
   token?: string
-  sid?: string 
+  sid?: string
 }
 
 interface mailToken {

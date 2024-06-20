@@ -24,8 +24,6 @@ if (process.env.TEST_PG === 'yes') {
 
 const logger: TwakeLogger = getLogger()
 
-
-
 describe('Id Server DB', () => {
   let idDb: IdDb
   afterEach(() => {
@@ -375,7 +373,7 @@ describe('Id Server DB', () => {
                 idDb
                   .getAll('accessTokens', ['id', 'data'])
                   .then((rows) => {
-                    expect(rows.length).toBe(Math.floor(idsNumber / 2)) 
+                    expect(rows.length).toBe(Math.floor(idsNumber / 2))
                     expect(rows[0].data).toEqual('{1}')
                     done()
                   })
@@ -585,4 +583,3 @@ describe('Id Server DB', () => {
       .catch((e) => done(e))
   })
 })
-
