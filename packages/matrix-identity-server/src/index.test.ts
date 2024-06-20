@@ -1,4 +1,9 @@
-import { Hash, randomString, supportedHashes } from '@twake/crypto'
+import {
+  Hash,
+  randomString,
+  supportedHashes,
+  generateKeyPair
+} from '@twake/crypto'
 import express from 'express'
 import fs from 'fs'
 import fetch from 'node-fetch'
@@ -23,8 +28,6 @@ let idServer: IdServer
 let app: express.Application
 let validToken: string
 let conf: Config
-let longKeyPair: { publicKey: string; privateKey: string; keyId: string }
-let shortKeyPair: { publicKey: string; privateKey: string; keyId: string }
 
 beforeAll((done) => {
   conf = {
@@ -1541,8 +1544,12 @@ describe('Use configuration file', () => {
     let longKeyPair: { publicKey: string; privateKey: string; keyId: string }
     beforeAll(async () => {
       // Insert a test key into the database
-      await idServer.db.createKeypair('longTerm', 'ed25519').then((keypair) => {
-        longKeyPair = keypair
+      longKeyPair = generateKeyPair('ed25519')
+      await idServer.db.insert('longTermKeypairs', {
+        name: 'currentKey',
+        keyID: longKeyPair.keyId,
+        public: longKeyPair.publicKey,
+        private: longKeyPair.privateKey
       })
     })
 
@@ -1585,10 +1592,16 @@ describe('Use configuration file', () => {
   })
 
   describe('/_matrix/identity/v2/pubkey/:keyID', () => {
+    let longKeyPair: { publicKey: string; privateKey: string; keyId: string }
+    let shortKeyPair: { publicKey: string; privateKey: string; keyId: string }
     beforeAll(async () => {
       // Insert a test key into the database
-      await idServer.db.createKeypair('longTerm', 'ed25519').then((keypair) => {
-        longKeyPair = keypair
+      longKeyPair = generateKeyPair('ed25519')
+      await idServer.db.insert('longTermKeypairs', {
+        name: 'currentKey',
+        keyID: longKeyPair.keyId,
+        public: longKeyPair.publicKey,
+        private: longKeyPair.privateKey
       })
       await idServer.db
         .createKeypair('shortTerm', 'curve25519')
