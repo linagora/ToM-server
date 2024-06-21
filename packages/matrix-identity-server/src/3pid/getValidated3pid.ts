@@ -7,10 +7,6 @@ interface parameters {
   sid: string
 }
 
-const schema = {
-  client_secret: true,
-  sid: true
-}
 
 const validationTime: number = 100 * 365 * 24 * 60 * 60 * 1000
 
@@ -18,7 +14,8 @@ const GetValidated3pid = (
   idServer: MatrixIdentityServer
 ): expressAppHandler => {
   return (req, res) => {
-    // @ts-ignore
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-expect-error
     const prms: parameters = req.query as parameters
     if (prms.client_secret?.length != null && prms.sid?.length != null) {
       idServer.authenticate(req, res, (data, id) => {
