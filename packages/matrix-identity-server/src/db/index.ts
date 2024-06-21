@@ -31,12 +31,6 @@ interface keyPair {
   keyId: string
 }
 
-interface keyPair {
-  publicKey: string
-  privateKey: string
-  keyId: string
-}
-
 export interface ISQLCondition {
   field: string
   operator: sqlComparaisonOperator
