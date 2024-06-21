@@ -17,7 +17,6 @@ export type Collections =
   | 'roomTags'
   | 'userHistory'
   | 'userQuotas'
-  | 'invitations'
   | 'longTermKeypairs'
   | 'shortTermKeypairs'
 
