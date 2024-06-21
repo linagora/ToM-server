@@ -2,7 +2,7 @@ Date: __date__
 From: __from__
 To: __to__
 Message-ID: __messageid__
-Subject: Invitation to join Matrix
+Subject: Invitation to join a Matrix room 
 MIME-Version: 1.0
 Content-Type: multipart/alternative;
     boundary="__multipart_boundary__"
@@ -12,17 +12,7 @@ Content-Type: text/plain; charset=UTF-8
 Content-Disposition: inline
 Hello,
 
-You have been invited to join the Matrix platform by __inviter_name__. If you wish to accept this invitation and register on Matrix, please use the following link:
-
-__link__
-
-If your client requires a code, the code is __token__
-
-Invitation Details:
-- Inviter: __inviter_name__
-- Room Name: __room_name__
-- Room Type: __room_type__
-- Room Avatar: __room_avatar__
+You have been invited to join a Matrix room by __inviter_name__. If you possess a Matrix account, please consider binding this email address to your account in order to accept the invitation.
 
 
 About Matrix:
@@ -38,7 +28,7 @@ Content-Disposition: inline
 <html>
 <head>
 <meta charset="utf-8" />
-<title>Invitation to join Matrix</title>
+<title>Invitation to join a Matrix room</title>
 <style>
 body {
     font-family: "Myriad Pro", "Myriad", Helvetica, Arial, sans-serif;
@@ -50,13 +40,7 @@ body {
 <body>
 <p>Hello,</p>
 
-<p>You have been invited to join the Matrix platform by __inviter_name__. If you wish to accept this invitation and register on Matrix, please use the following link:</p>
-
-<p><a href="__link__">Join Matrix</a></p>
-
-<p>...or copy this link into your web browser:</p>
-
-<p>__link__</p>
+<p>You have been invited to join a Matrix room by __inviter_name__. If you possess a Matrix account, please consider binding this email address to your account in order to accept the invitation.</p>
 
 <p>If your client requires a code, the code is __token__</p>
 

@@ -254,6 +254,177 @@ describe('Use configuration file', () => {
     })
   })
 
+  describe('/_matrix/identity/v2/pubkey', () => {
+    describe('/_matrix/identity/v2/pubkey/ephemeral/isvalid', () => {
+      let shortKeyPair: { publicKey: string; privateKey: string; keyId: string }
+      beforeAll(async () => {
+        // Insert a test key into the database
+        await idServer.db
+          .createKeypair('shortTerm', 'curve25519')
+          .then((keypair) => {
+            shortKeyPair = keypair
+          })
+      })
+
+      afterAll(async () => {
+        // Remove the test key from the database
+        await idServer.db.deleteEqual(
+          'shortTermKeypairs',
+          'keyID',
+          shortKeyPair.keyId
+        )
+      })
+
+      it('should return error 400 if no public_key is given (shortTerm case)', async () => {
+        const response = await request(app).get(
+          '/_matrix/identity/v2/pubkey/ephemeral/isvalid'
+        )
+
+        expect(response.statusCode).toBe(400)
+        expect(response.body.errcode).toBe('M_MISSING_PARAMS')
+      })
+
+      it('should validate a valid ephemeral pubkey', async () => {
+        const key = shortKeyPair.publicKey
+        const response = await request(app).get(
+          '/_matrix/identity/v2/pubkey/ephemeral/isvalid?public_key=' + key
+        )
+
+        expect(response.statusCode).toBe(200)
+        expect(response.body.valid).toBe(true)
+      })
+
+      it('should invalidate an invalid ephemeral pubkey', async () => {
+        const key = 'invalidPub'
+        const response = await request(app).get(
+          '/_matrix/identity/v2/pubkey/ephemeral/isvalid?public_key=' + key
+        )
+
+        expect(response.statusCode).toBe(200)
+        expect(response.body.valid).toBe(false)
+      })
+    })
+
+    describe('/_matrix/identity/v2/pubkey/isvalid', () => {
+      let longKeyPair: { publicKey: string; privateKey: string; keyId: string }
+      beforeAll(async () => {
+        // Insert a test key into the database
+        longKeyPair = generateKeyPair('ed25519')
+        await idServer.db.insert('longTermKeypairs', {
+          name: 'currentKey',
+          keyID: longKeyPair.keyId,
+          public: longKeyPair.publicKey,
+          private: longKeyPair.privateKey
+        })
+      })
+
+      afterAll(async () => {
+        // Remove the test key from the database
+        await idServer.db.deleteEqual(
+          'longTermKeypairs',
+          'keyID',
+          longKeyPair.keyId
+        )
+      })
+      it('should return error 400 if no public_key is given (longTerm case)', async () => {
+        const response = await request(app).get(
+          '/_matrix/identity/v2/pubkey/isvalid'
+        )
+
+        expect(response.statusCode).toBe(400)
+        expect(response.body.errcode).toBe('M_MISSING_PARAMS')
+      })
+
+      it('should validate a valid long-term pubkey', async () => {
+        const key = longKeyPair.publicKey
+        const response = await request(app).get(
+          '/_matrix/identity/v2/pubkey/isvalid?public_key=' + key
+        )
+
+        expect(response.statusCode).toBe(200)
+        expect(response.body.valid).toBe(true)
+      })
+
+      it('should invalidate an invalid long-term pubkey', async () => {
+        const key = 'invalidPub'
+        const response = await request(app)
+          .get('/_matrix/identity/v2/pubkey/isvalid')
+          .query({ public_key: key })
+
+        expect(response.statusCode).toBe(200)
+        expect(response.body.valid).toBe(false)
+      })
+    })
+
+    describe('/_matrix/identity/v2/pubkey/:keyID', () => {
+      let longKeyPair: { publicKey: string; privateKey: string; keyId: string }
+      let shortKeyPair: { publicKey: string; privateKey: string; keyId: string }
+      beforeAll(async () => {
+        // Insert a test key into the database
+        longKeyPair = generateKeyPair('ed25519')
+        await idServer.db.insert('longTermKeypairs', {
+          name: 'currentKey',
+          keyID: longKeyPair.keyId,
+          public: longKeyPair.publicKey,
+          private: longKeyPair.privateKey
+        })
+        await idServer.db
+          .createKeypair('shortTerm', 'curve25519')
+          .then((_keypair) => {
+            shortKeyPair = _keypair
+          })
+      })
+
+      afterAll(async () => {
+        // Remove the test key from the database
+        await idServer.db.deleteEqual(
+          'longTermKeypairs',
+          'keyID',
+          longKeyPair.keyId
+        )
+        await idServer.db.deleteEqual(
+          'shortTermKeypairs',
+          'keyID',
+          shortKeyPair.keyId
+        )
+      })
+
+      it('should return the public key when correct keyID is given (from long term key pairs)', async () => {
+        const _keyID = longKeyPair.keyId
+        const response = await request(app).get(
+          `/_matrix/identity/v2/pubkey/${_keyID}`
+        )
+
+        expect(response.statusCode).toBe(200)
+        expect(response.body.public_key).toBeDefined()
+        expect(response.body.public_key).toMatch(/^[A-Za-z0-9_-]+$/)
+        expect(response.body.public_key).toBe(longKeyPair.publicKey)
+      })
+
+      it('should return the public key when correct keyID is given (from short term key pairs)', async () => {
+        const _keyID = shortKeyPair.keyId
+        const response = await request(app).get(
+          `/_matrix/identity/v2/pubkey/${_keyID}`
+        )
+
+        expect(response.statusCode).toBe(200)
+        expect(response.body.public_key).toBeDefined()
+        expect(response.body.public_key).toMatch(/^[A-Za-z0-9_-]+$/)
+        expect(response.body.public_key).toBe(shortKeyPair.publicKey)
+      })
+
+      it('should return 404 when incorrect keyID is given', async () => {
+        const _keyID = 'incorrectKeyID'
+        const response = await request(app).get(
+          `/_matrix/identity/v2/pubkey/${_keyID}`
+        ) // exactly '/_matrix/identity/v2/pubkey/' + _keyID
+
+        expect(response.statusCode).toBe(404)
+        expect(response.body.errcode).toBe('M_NOT_FOUND')
+      })
+    })
+  })
+
   describe('Endpoint with authentication', () => {
     it('should reject if more than 100 requests are done in less than 10 seconds', async () => {
       let response
@@ -487,6 +658,173 @@ describe('Use configuration file', () => {
       })
     })
 
+    describe('/_matrix/identity/v2/store-invite', () => {
+      let longKeyPair: { publicKey: string; privateKey: string; keyId: string }
+      beforeAll(async () => {
+        // Insert a test key into the database
+        longKeyPair = generateKeyPair('ed25519')
+        await idServer.db.insert('longTermKeypairs', {
+          name: 'currentKey',
+          keyID: longKeyPair.keyId,
+          public: longKeyPair.publicKey,
+          private: longKeyPair.privateKey
+        })
+      })
+
+      afterAll(async () => {
+        // Remove the test key from the database
+        await idServer.db.deleteEqual(
+          'longTermKeypairs',
+          'keyID',
+          longKeyPair.keyId
+        )
+      })
+      it('should require authentication', async () => {
+        const response = await request(app)
+          .post('/_matrix/identity/v2/store-invite')
+          .set('Accept', 'application/json')
+          .send({
+            address: 'xg@xnr.fr',
+            medium: 'email',
+            room_id: '!room:matrix.org',
+            sender: '@dwho:matrix.org'
+          })
+        expect(response.statusCode).toBe(401)
+        expect(response.body.errcode).toEqual('M_UNAUTHORIZED')
+      })
+      it('should require all parameters', async () => {
+        const response = await request(app)
+          .post('/_matrix/identity/v2/store-invite')
+          .set('Authorization', `Bearer ${validToken}`)
+          .set('Accept', 'application/json')
+          .send({
+            address: 'xg@xnr.fr',
+            medium: 'email',
+            room_id: '!room:matrix.org'
+            // sender: '@dwho:matrix.org'
+          })
+        expect(response.statusCode).toBe(400)
+        expect(response.body.errcode).toEqual('M_MISSING_PARAMS')
+      })
+      it('should reject an invalid medium', async () => {
+        const response = await request(app)
+          .post('/_matrix/identity/v2/store-invite')
+          .set('Authorization', `Bearer ${validToken}`)
+          .set('Accept', 'application/json')
+          .send({
+            address: 'xg@xnr.fr',
+            medium: 'invalid medium',
+            room_id: '!room:matrix.org',
+            sender: '@dwho:matrix.org'
+          })
+        expect(response.statusCode).toBe(400)
+        expect(response.body.errcode).toEqual('M_UNRECOGNIZED')
+      })
+      it('should reject an invalid email', async () => {
+        const response = await request(app)
+          .post('/_matrix/identity/v2/store-invite')
+          .set('Authorization', `Bearer ${validToken}`)
+          .set('Accept', 'application/json')
+          .send({
+            address: '@xg:xnr.fr',
+            medium: 'email',
+            room_id: '!room:matrix.org',
+            sender: '@dwho:matrix.org'
+          })
+        expect(response.statusCode).toBe(400)
+        expect(response.body.errcode).toEqual('M_INVALID_EMAIL')
+      })
+      it('should alert if the lookup API did not behave as expected', async () => {
+        const mockResponse = Promise.resolve({
+          ok: false,
+          status: 401, // should return 200 or 400
+          json: () => {
+            return {}
+          }
+        })
+        // @ts-expect-error mock is unknown
+        fetch.mockImplementation(async () => await mockResponse)
+        await mockResponse
+        const response = await request(app)
+          .post('/_matrix/identity/v2/store-invite')
+          .set('Authorization', `Bearer ${validToken}`)
+          .set('Accept', 'application/json')
+          .send({
+            address: 'xg@xnr.fr',
+            medium: 'email',
+            room_id: '!room:matrix.org',
+            sender: '@dwho:matrix.org'
+          })
+        expect(response.statusCode).toBe(500)
+        expect(response.body.errcode).toEqual('M_UNKNOWN')
+        expect(response.body.error).toEqual(
+          'Unexpected response statusCode from the /_matrix/identity/v2/lookup API'
+        )
+      })
+      it('should not send a mail if the address is already binded to a matrix id', async () => {
+        const mockResponse = Promise.resolve({
+          ok: true,
+          status: 200,
+          json: () => {
+            return {
+              mappings: {
+                '4kenr7N9drpCJ4AfalmlGQVsOn3o2RHjkADUpXJWZUc':
+                  '@alice:example.org'
+              }
+            }
+          }
+        })
+        // @ts-expect-error mock is unknown
+        fetch.mockImplementation(async () => await mockResponse)
+        await mockResponse
+        const response = await request(app)
+          .post('/_matrix/identity/v2/store-invite')
+          .set('Authorization', `Bearer ${validToken}`)
+          .set('Accept', 'application/json')
+          .send({
+            address: 'xg@xnr.fr',
+            medium: 'email',
+            room_id: '!room:matrix.org',
+            sender: '@alice:example.org'
+          })
+        expect(response.statusCode).toBe(400)
+        expect(response.body.errcode).toBe('M_THREEPID_IN_USE')
+      })
+      it('should accept a valid request', async () => {
+        const mockResponse = Promise.resolve({
+          ok: false,
+          status: 400,
+          json: () => {
+            return {
+              errcode: 'M_INVALID_PEPPER',
+              error: 'Unknown or invalid pepper - has it been rotated?'
+            }
+          }
+        })
+        // @ts-expect-error mock is unknown
+        fetch.mockImplementation(async () => await mockResponse)
+        await mockResponse
+        const response = await request(app)
+          .post('/_matrix/identity/v2/store-invite')
+          .set('Authorization', `Bearer ${validToken}`)
+          .set('Accept', 'application/json')
+          .send({
+            address: 'xg@xnr.fr',
+            medium: 'email',
+            room_id: '!room:matrix.org',
+            sender: '@dwho:matrix.org'
+          })
+        expect(response.statusCode).toBe(200)
+        expect(sendMailMock).toHaveBeenCalled()
+        expect(sendMailMock.mock.calls[0][0].to).toBe('xg@xnr.fr')
+        expect(response.body).toHaveProperty('display_name')
+        expect(response.body.display_name).not.toBe('xg@xnr.fr')
+        expect(response.body).toHaveProperty('public_keys')
+        expect(response.body).toHaveProperty('token')
+        expect(response.body.token).toMatch(/^[a-zA-Z0-9]{64}$/)
+      })
+    })
+
     describe('/_matrix/identity/v2/account', () => {
       it('should accept valid token in headers', async () => {
         const response = await request(app)
@@ -513,177 +851,6 @@ describe('Use configuration file', () => {
           .set('Authorization', `Bearer ${validToken}`)
           .set('Accept', 'application/json')
         expect(response.statusCode).toBe(401)
-      })
-    })
-  })
-
-  describe('Key management API', () => {
-    describe('/_matrix/identity/v2/pubkey/ephemeral/isvalid', () => {
-      let shortKeyPair: { publicKey: string; privateKey: string; keyId: string }
-      beforeAll(async () => {
-        // Insert a test key into the database
-        await idServer.db
-          .createKeypair('shortTerm', 'curve25519')
-          .then((keypair) => {
-            shortKeyPair = keypair
-          })
-      })
-
-      afterAll(async () => {
-        // Remove the test key from the database
-        await idServer.db.deleteEqual(
-          'shortTermKeypairs',
-          'keyID',
-          shortKeyPair.keyId
-        )
-      })
-
-      it('should return error 400 if no public_key is given (shortTerm case)', async () => {
-        const response = await request(app).get(
-          '/_matrix/identity/v2/pubkey/ephemeral/isvalid'
-        )
-
-        expect(response.statusCode).toBe(400)
-        expect(response.body.errcode).toBe('M_MISSING_PARAMS')
-      })
-
-      it('should validate a valid ephemeral pubkey', async () => {
-        const key = shortKeyPair.publicKey
-        const response = await request(app).get(
-          '/_matrix/identity/v2/pubkey/ephemeral/isvalid?public_key=' + key
-        )
-
-        expect(response.statusCode).toBe(200)
-        expect(response.body.valid).toBe(true)
-      })
-
-      it('should invalidate an invalid ephemeral pubkey', async () => {
-        const key = 'invalidPub'
-        const response = await request(app).get(
-          '/_matrix/identity/v2/pubkey/ephemeral/isvalid?public_key=' + key
-        )
-
-        expect(response.statusCode).toBe(200)
-        expect(response.body.valid).toBe(false)
-      })
-    })
-
-    describe('/_matrix/identity/v2/pubkey/isvalid', () => {
-      let longKeyPair: { publicKey: string; privateKey: string; keyId: string }
-      beforeAll(async () => {
-        // Insert a test key into the database
-        longKeyPair = generateKeyPair('ed25519')
-        await idServer.db.insert('longTermKeypairs', {
-          name: 'currentKey',
-          keyID: longKeyPair.keyId,
-          public: longKeyPair.publicKey,
-          private: longKeyPair.privateKey
-        })
-      })
-
-      afterAll(async () => {
-        // Remove the test key from the database
-        await idServer.db.deleteEqual(
-          'longTermKeypairs',
-          'keyID',
-          longKeyPair.keyId
-        )
-      })
-      it('should return error 400 if no public_key is given (longTerm case)', async () => {
-        const response = await request(app).get(
-          '/_matrix/identity/v2/pubkey/isvalid'
-        )
-
-        expect(response.statusCode).toBe(400)
-        expect(response.body.errcode).toBe('M_MISSING_PARAMS')
-      })
-
-      it('should validate a valid long-term pubkey', async () => {
-        const key = longKeyPair.publicKey
-        const response = await request(app).get(
-          '/_matrix/identity/v2/pubkey/isvalid?public_key=' + key
-        )
-
-        expect(response.statusCode).toBe(200)
-        expect(response.body.valid).toBe(true)
-      })
-
-      it('should invalidate an invalid long-term pubkey', async () => {
-        const key = 'invalidPub'
-        const response = await request(app)
-          .get('/_matrix/identity/v2/pubkey/isvalid')
-          .query({ public_key: key })
-
-        expect(response.statusCode).toBe(200)
-        expect(response.body.valid).toBe(false)
-      })
-    })
-
-    describe('/_matrix/identity/v2/pubkey/:keyID', () => {
-      let longKeyPair: { publicKey: string; privateKey: string; keyId: string }
-      let shortKeyPair: { publicKey: string; privateKey: string; keyId: string }
-      beforeAll(async () => {
-        // Insert a test key into the database
-        longKeyPair = generateKeyPair('ed25519')
-        await idServer.db.insert('longTermKeypairs', {
-          name: 'currentKey',
-          keyID: longKeyPair.keyId,
-          public: longKeyPair.publicKey,
-          private: longKeyPair.privateKey
-        })
-        await idServer.db
-          .createKeypair('shortTerm', 'curve25519')
-          .then((_keypair) => {
-            shortKeyPair = _keypair
-          })
-      })
-
-      afterAll(async () => {
-        // Remove the test key from the database
-        await idServer.db.deleteEqual(
-          'longTermKeypairs',
-          'keyID',
-          longKeyPair.keyId
-        )
-        await idServer.db.deleteEqual(
-          'shortTermKeypairs',
-          'keyID',
-          shortKeyPair.keyId
-        )
-      })
-
-      it('should return the public key when correct keyID is given (from long term key pairs)', async () => {
-        const _keyID = longKeyPair.keyId
-        const response = await request(app).get(
-          `/_matrix/identity/v2/pubkey/${_keyID}`
-        )
-
-        expect(response.statusCode).toBe(200)
-        expect(response.body.public_key).toBeDefined()
-        expect(response.body.public_key).toMatch(/^[A-Za-z0-9_-]+$/)
-        expect(response.body.public_key).toBe(longKeyPair.publicKey)
-      })
-
-      it('should return the public key when correct keyID is given (from short term key pairs)', async () => {
-        const _keyID = shortKeyPair.keyId
-        const response = await request(app).get(
-          `/_matrix/identity/v2/pubkey/${_keyID}`
-        )
-
-        expect(response.statusCode).toBe(200)
-        expect(response.body.public_key).toBeDefined()
-        expect(response.body.public_key).toMatch(/^[A-Za-z0-9_-]+$/)
-        expect(response.body.public_key).toBe(shortKeyPair.publicKey)
-      })
-
-      it('should return 404 when incorrect keyID is given', async () => {
-        const _keyID = 'incorrectKeyID'
-        const response = await request(app).get(
-          `/_matrix/identity/v2/pubkey/${_keyID}`
-        ) // exactly '/_matrix/identity/v2/pubkey/' + _keyID
-
-        expect(response.statusCode).toBe(404)
-        expect(response.body.errcode).toBe('M_NOT_FOUND')
       })
     })
   })

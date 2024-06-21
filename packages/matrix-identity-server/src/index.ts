@@ -38,10 +38,10 @@ import UserDB from './userdb'
 import _validateMatrixToken from './utils/validateMatrixToken'
 import RequestToken from './validate/email/requestToken'
 import SubmitToken from './validate/email/submitToken'
-// Ajout des imports
 import isPubkeyValid from './keyManagement/validPubkey'
 import getPubkey from './keyManagement/getPubkey'
 import isEphemeralPubkeyValid from './keyManagement/validEphemeralPubkey'
+import StoreInvit from './invitation'
 
 export { type tokenContent } from './account/register'
 export { default as updateUsers } from './cron/updateUsers'
@@ -186,7 +186,8 @@ export default class MatrixIdentityServer {
                     ),
                     '/_matrix/identity/v2/pubkey/ephemeral/isvalid':
                       isEphemeralPubkeyValid(this.db),
-                    '/_matrix/identity/v2/pubkey/:keyId': getPubkey(this.db)
+                    '/_matrix/identity/v2/pubkey/:keyId': getPubkey(this.db),
+                    '/_matrix/identity/v2/store-invite': badMethod
                   },
                   post: {
                     '/_matrix/identity/v2': badMethod,
@@ -205,7 +206,8 @@ export default class MatrixIdentityServer {
                       SubmitToken(this),
                     '/_matrix/identity/v2/pubkey/isvalid': badMethod,
                     '/_matrix/identity/v2/pubkey/ephemeral/isvalid': badMethod,
-                    '/_matrix/identity/v2/pubkey/:keyId': badMethod
+                    '/_matrix/identity/v2/pubkey/:keyId': badMethod,
+                    '/_matrix/identity/v2/store-invite': StoreInvit(this)
                   }
                 }
                 resolve(true)
