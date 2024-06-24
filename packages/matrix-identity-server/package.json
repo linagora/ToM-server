@@ -39,7 +39,7 @@
     "build:example": "rollup -p @rollup/plugin-typescript -e express,@twake/matrix-identity-server -m -o example/identity-server.js example/identity-server.ts",
     "build:lib": "rollup -c",
     "start": "node example/identity-server.js",
-    "test": "jest"
+    "test": "LOG_TRANSPORTS=File LOG_FILE=/dev/null jest"
   },
   "dependencies": {
     "@twake/config-parser": "*",
