@@ -1,4 +1,4 @@
-import { randomString } from '@twake/crypto'
+import { randomString, generateKeyPair } from '@twake/crypto'
 import { type TwakeLogger } from '@twake/logger'
 import { type Config, type DbGetResult } from '../types'
 import { epoch } from '../utils'
@@ -17,10 +17,18 @@ export type Collections =
   | 'roomTags'
   | 'userHistory'
   | 'userQuotas'
+  | 'longTermKeypairs'
+  | 'shortTermKeypairs'
 
 const cleanByExpires: Collections[] = ['oneTimeTokens', 'attempts']
 
 type sqlComparaisonOperator = '=' | '!=' | '>' | '<' | '>=' | '<=' | '<>'
+
+interface keyPair {
+  publicKey: string
+  privateKey: string
+  keyId: string
+}
 
 export interface ISQLCondition {
   field: string
@@ -334,6 +342,89 @@ class IdentityServerDb implements IdDbBackend {
         .catch((e) => {
           /* istanbul ignore next */
           this.logger.info(`Token ${id} already deleted`, e)
+          /* istanbul ignore next */
+          resolve()
+        })
+    })
+  }
+
+  // eslint-disable-next-line @typescript-eslint/promise-function-async
+  getKeys(type: 'current' | 'previous'): Promise<keyPair> {
+    /* istanbul ignore if */
+    if (this.db == null) {
+      throw new Error('Wait for database to be ready')
+    }
+    return new Promise((resolve, reject) => {
+      const _type = type === 'current' ? 'currentKey' : 'previousKey'
+      this.db
+        .get('longTermKeypairs', ['keyID', 'public', 'private'], {
+          name: _type
+        })
+        .then((rows) => {
+          if (rows.length === 0) {
+            reject(new Error(`No ${_type} found`))
+          }
+          resolve({
+            keyId: rows[0].keyID as string,
+            publicKey: rows[0].public as string,
+            privateKey: rows[0].private as string
+          })
+        })
+        .catch((e) => {
+          reject(e)
+        })
+    })
+  }
+
+  // eslint-disable-next-line @typescript-eslint/promise-function-async
+  createKeypair(
+    type: 'longTerm' | 'shortTerm',
+    algorithm: 'ed25519' | 'curve25519'
+  ): Promise<keyPair> {
+    /* istanbul ignore if */
+    if (this.db == null) {
+      throw new Error('Wait for database to be ready')
+    }
+    const keyPair = generateKeyPair(algorithm)
+    if (type === 'longTerm') {
+      throw new Error('Long term key pairs are not supported')
+    }
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-expect-error
+    const _type = type === 'longTerm' ? 'longTermKeypairs' : 'shortTermKeypairs'
+    return new Promise((resolve, reject) => {
+      this.db
+        .insert(_type, {
+          keyID: keyPair.keyId,
+          public: keyPair.publicKey,
+          private: keyPair.privateKey
+        })
+        .then(() => {
+          resolve(keyPair)
+        })
+        .catch((err) => {
+          /* istanbul ignore next */
+          this.logger.error('Failed to insert ephemeral Key Pair', err)
+        })
+    })
+  }
+
+  // Deletes a short term key pair from the database
+  // eslint-disable-next-line @typescript-eslint/promise-function-async
+  deleteKey(_keyID: string): Promise<void> {
+    /* istanbul ignore if */
+    if (this.db == null) {
+      throw new Error('Wait for database to be ready')
+    }
+    return new Promise((resolve, reject) => {
+      this.db
+        .deleteEqual('shortTermKeypairs', 'KeyID', _keyID)
+        .then(() => {
+          resolve()
+        })
+        .catch((e) => {
+          /* istanbul ignore next */
+          this.logger.info(`Key ${_keyID} already deleted`, e)
           /* istanbul ignore next */
           resolve()
         })
