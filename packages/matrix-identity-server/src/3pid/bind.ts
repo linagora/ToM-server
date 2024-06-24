@@ -122,16 +122,22 @@ const bind = (idServer: MatrixIdentityServer): expressAppHandler => {
                       })
                       .catch((err) => {
                         // istanbul ignore next
+                        idServer.logger.error(
+                          'Error getting long term key',
+                          err
+                        )
                         send(res, 500, errMsg('unknown', err))
                       })
                   })
                   .catch((err) => {
                     // istanbul ignore next
+                    idServer.logger.error('Error getting pepper', err)
                     send(res, 500, errMsg('unknown', err))
                   })
               })
               .catch((err) => {
                 // istanbul ignore next
+                idServer.logger.error('Error getting mapping', err)
                 send(res, 500, errMsg('unknown', err))
               })
           }

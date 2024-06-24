@@ -1045,7 +1045,7 @@ describe('Use environment variables', () => {
 // This test has to be executed after the others so as not to add policies to the database and make the authentication fail for all the other tests
 describe('_matrix/identity/v2/terms', () => {
   let idServer2: IdServer
-  let conf2 : Config
+  let conf2: Config
   let app2: express.Application
   let validToken2: string
   let userId: string
