@@ -37,7 +37,8 @@ export const send = (
 export type AuthenticationFunction = (
   req: Request | http.IncomingMessage,
   res: Response | http.ServerResponse,
-  callback: (data: tokenContent, id: string | null) => void
+  callback: (data: tokenContent, id: string | null) => void,
+  requiresTerms?: boolean
 ) => void
 
 export const Authenticate = (
@@ -45,7 +46,7 @@ export const Authenticate = (
   logger: TwakeLogger
 ): AuthenticationFunction => {
   const tokenRe = /^Bearer (\S+)$/
-  return (req, res, callback) => {
+  return (req, res, callback, requiresTerms = true) => {
     let token: string | null = null
     if (req.headers.authorization != null) {
       const re = req.headers.authorization.match(tokenRe)
@@ -69,7 +70,39 @@ export const Authenticate = (
             )
             send(res, 401, errMsg('unAuthorized'))
           } else {
-            callback(JSON.parse(rows[0].data as string), token)
+            if (requiresTerms) {
+              db.get('userPolicies', ['policy_name', 'accepted'], {
+                user_id: JSON.parse(rows[0].data as string).sub
+              })
+                .then((policies) => {
+                  if (policies.length === 0) {
+                    callback(JSON.parse(rows[0].data as string), token)
+                    // If there are no policies to accept. This assumes that for each policy we add to the config, we update the database and add the corresponding policy with accepted = 0 for all users
+                    return
+                  }
+                  const notAcceptedTerms = policies.find(
+                    (row) => row.accepted === 0
+                  ) // We assume the terms database contains all policies. If we update the policies we must also update the database and add the corresponding policy with accepted = 0 for all users
+                  // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+                  if (notAcceptedTerms) {
+                    logger.error(
+                      `Please accept our updated terms of service before continuing.`
+                    )
+                    send(res, 403, errMsg('termsNotSigned'))
+                  } else {
+                    callback(JSON.parse(rows[0].data as string), token)
+                  }
+                })
+                .catch((e) => {
+                  logger.error(
+                    `Please accept our updated terms of service before continuing.`,
+                    e
+                  )
+                  send(res, 403, errMsg('termsNotSigned'))
+                })
+            } else {
+              callback(JSON.parse(rows[0].data as string), token)
+            }
           }
         })
         .catch((e) => {

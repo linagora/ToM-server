@@ -29,7 +29,8 @@ const tables: Record<Collections, string> = {
   mappings:
     'client_secret varchar(255) PRIMARY KEY, session_id varchar(12), medium varchar(8), valid integer, address text, submit_time integer, send_attempt integer',
   longTermKeypairs: 'keyID varchar(64) PRIMARY KEY, public text, private text',
-  shortTermKeypairs: 'keyID varchar(64) PRIMARY KEY, public text, private text'
+  shortTermKeypairs: 'keyID varchar(64) PRIMARY KEY, public text, private text',
+  userPolicies: 'user_id text, policy_name text, accepted integer'
 }
 
 const indexes: Partial<Record<Collections, string[]>> = {

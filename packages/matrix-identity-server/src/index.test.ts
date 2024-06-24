@@ -14,6 +14,7 @@ import buildUserDB from './__testData__/buildUserDB'
 import defaultConfig from './__testData__/registerConf.json'
 import IdServer from './index'
 import { type Config } from './types'
+import { fillPoliciesDB } from './terms/index.post'
 
 jest.mock('node-fetch', () => jest.fn())
 const sendMailMock = jest.fn()
@@ -1038,5 +1039,123 @@ describe('Use environment variables', () => {
       expect(response.statusCode).toBe(200)
       expect(response.body.mappings[phoneHash]).toBe('@dwho:matrix.org')
     })
+  })
+})
+
+// This test has to be executed after the others so as not to add policies to the database and make the authentication fail for all the other tests
+describe('_matrix/identity/v2/terms', () => {
+  let idServer2: IdServer
+  let conf2 : Config
+  let app2: express.Application
+  let validToken2: string
+  let userId: string
+  const policies = {
+    privacy_policy: {
+      en: {
+        name: 'Privacy Policy',
+        url: 'https://example.org/somewhere/privacy-1.2-en.html'
+      },
+      fr: {
+        name: 'Politique de confidentialité',
+        url: 'https://example.org/somewhere/privacy-1.2-fr.html'
+      },
+      version: '1.2'
+    },
+    terms_of_service: {
+      en: {
+        name: 'Terms of Service',
+        url: 'https://example.org/somewhere/terms-2.0-en.html'
+      },
+      fr: {
+        name: "Conditions d'utilisation",
+        url: 'https://example.org/somewhere/terms-2.0-fr.html'
+      },
+      version: '2.0'
+    }
+  }
+  beforeAll((done) => {
+    conf2 = {
+      ...defaultConfig,
+      database_engine: 'sqlite',
+      base_url: 'http://example.com/',
+      userdb_engine: 'sqlite',
+      policies
+    }
+    idServer2 = new IdServer(conf2)
+    app2 = express()
+    idServer2.ready
+      .then(() => {
+        Object.keys(idServer2.api.get).forEach((k) => {
+          app2.get(k, idServer2.api.get[k])
+        })
+        Object.keys(idServer.api.post).forEach((k) => {
+          app2.post(k, idServer2.api.post[k])
+        })
+        done()
+      })
+      .catch((e) => {
+        done(e)
+      })
+  })
+
+  afterAll(() => {
+    idServer2.cleanJobs()
+  })
+  it('copy of register test', async () => {
+    const mockResponse = Promise.resolve({
+      ok: true,
+      status: 200,
+      json: () => {
+        return {
+          sub: '@dwho:example.com',
+          'm.server': 'matrix.example.com:8448'
+        }
+      }
+    })
+    // @ts-expect-error mock is unknown
+    fetch.mockImplementation(async () => await mockResponse)
+    await mockResponse
+    const response = await request(app2)
+      .post('/_matrix/identity/v2/account/register')
+      .send({
+        access_token: 'bar',
+        expires_in: 86400,
+        matrix_server_name: 'matrix.example.com',
+        token_type: 'Bearer'
+      })
+      .set('Accept', 'application/json')
+    expect(response.statusCode).toBe(200)
+    expect(response.body.token).toMatch(/^[a-zA-Z0-9]{64}$/)
+    validToken2 = response.body.token
+  })
+  it('should update policies', async () => {
+    const rows = await idServer2.db.get('accessTokens', ['data'], {
+      id: validToken2
+    })
+    userId = JSON.parse(rows[0].data as string).sub
+    await idServer2.db.insert('userPolicies', {
+      policy_name: 'terms_of_service 2.0',
+      user_id: userId,
+      accepted: 0
+    })
+    const response2 = await request(app2)
+      .post('/_matrix/identity/v2/terms')
+      .send({ user_accepts: policies.terms_of_service.en.url })
+      .set('Accept', 'application/json')
+      .set('Authorization', `Bearer ${validToken2}`)
+    expect(response2.statusCode).toBe(200)
+    const response3 = await idServer2.db.get('userPolicies', ['accepted'], {
+      user_id: userId,
+      policy_name: 'terms_of_service 2.0'
+    })
+    expect(response3[0].accepted).toBe(1)
+  })
+  it('should refuse authentifying a user that did not accept the terms', async () => {
+    fillPoliciesDB(userId, idServer2, 0)
+    const response = await request(app2)
+      .get('/_matrix/identity/v2/account')
+      .set('Authorization', `Bearer ${validToken2}`)
+      .set('Accept', 'application/json')
+    expect(response.statusCode).toBe(403)
   })
 })
