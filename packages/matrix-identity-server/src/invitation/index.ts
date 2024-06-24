@@ -84,7 +84,7 @@ const mailBody = (
   )
 }
 
-// TO DO : insert this in the config files ? + change value ?
+// TO DO : insert this in the config files or not ? + change value ?
 const invitationDelay = 604800 // 7 days in seconds
 
 // To complete if another 3PID is added for this endpoint
@@ -136,28 +136,30 @@ const StoreInvit = (idServer: MatrixIdentityServer): expressAppHandler => {
         validateParameters(res, schema, obj, idServer.logger, async (obj) => {
           const _address = (obj as storeInvitationArgs).address
           const _medium = (obj as storeInvitationArgs).medium
-          if (!validMediums.includes((obj as storeInvitationArgs).medium)) {
+          if (!validMediums.includes(_medium)) {
             send(
               res,
               400,
               errMsg('unrecognized', 'This medium is not supported.')
             )
-          } else {
-            // Check the validity of the media
-            switch (_medium) {
-              case 'email':
-                if (!validEmailRe.test(_address)) {
-                  send(res, 400, errMsg('invalidEmail'))
-                  return
-                }
-            }
-            // Call to the lookup API to check for any existing third-party identifiers
-            const authHeader = req.headers.authorization ?? ''
+            return
+          }
+          // Check the validity of the media
+          switch (_medium) {
+            case 'email':
+              if (!validEmailRe.test(_address)) {
+                send(res, 400, errMsg('invalidEmail'))
+                return
+              }
+          }
+          // Call to the lookup API to check for any existing third-party identifiers
+          try {
+            const authHeader = req.headers.authorization as string
             const validToken = authHeader.split(' ')[1]
             const _pepper = idServer.db.get('keys', ['data'], {
               name: 'pepper'
             })
-            await fetch(
+            const response = await fetch(
               `https://${idServer.conf.server_name}/_matrix/identity/v2/lookup`,
               {
                 method: 'POST',
@@ -173,109 +175,87 @@ const StoreInvit = (idServer: MatrixIdentityServer): expressAppHandler => {
                 })
               }
             )
-              .then((response) => {
-                if (response.status === 200) {
-                  send(res, 400, {
-                    errcode: 'M_THREEPID_IN_USE',
-                    error:
-                      'The third party identifier is already in use by another user.',
-                    mxid: (obj as storeInvitationArgs).sender
-                  })
-                } else if (response.status === 400) {
-                  idServer.db
-                    .createKeypair('shortTerm', 'curve25519')
-                    .then((ephemeralKey) => {
-                      const objWithKey = {
-                        ...(obj as storeInvitationArgs),
-                        key: ephemeralKey
-                      }
-                      idServer.db
-                        .createToken(objWithKey, invitationDelay)
-                        .then((_token) => {
-                          // send email
-                          void transport.sendMail({
-                            to: _address,
-                            raw: mailBody(
-                              verificationTemplate,
-                              (obj as storeInvitationArgs)
-                                .sender_display_name ?? '*****',
-                              _address,
-                              (obj as storeInvitationArgs).room_name ?? '*****',
-                              (obj as storeInvitationArgs).room_avatar_url ??
-                                '*****',
-                              (obj as storeInvitationArgs).room_type ?? '*****'
-                            )
-                          })
-                          // send 200 response
-                          const redactedAddress = redactAddress(_address)
-                          idServer.db
-                            .getKeys('current')
-                            .then((keys) => {
-                              const responseBody = {
-                                display_name: redactedAddress,
-                                public_keys: [
-                                  {
-                                    key_validity_url: `https://${idServer.conf.server_name}/_matrix/identity/v2/pubkey/isvalid`,
-                                    public_key: keys.publicKey
-                                  },
-                                  {
-                                    key_validity_url: `https://${idServer.conf.server_name}/_matrix/identity/v2/pubkey/ephemeral/isvalid`,
-                                    public_key: ephemeralKey.privateKey
-                                  }
-                                ],
-                                token: _token
-                              }
-                              send(res, 200, responseBody)
-                            })
-                            .catch((e) => {
-                              /* istanbul ignore next */
-                              idServer.logger.debug(
-                                'Error while getting the current key',
-                                e
-                              )
-                              /* istanbul ignore next */
-                              throw e
-                            })
-                        })
-                        .catch((e) => {
-                          /* istanbul ignore next */
-                          idServer.logger.debug(
-                            'Error while creating one time token',
-                            e
-                          )
-                          /* istanbul ignore next */
-                          throw e
-                        })
-                    })
-                    .catch((e) => {
-                      /* istanbul ignore next */
-                      idServer.logger.debug(
-                        'Error while creating ephemeral key',
-                        e
-                      )
-                      /* istanbul ignore next */
-                      throw e
-                    })
-                } else {
-                  send(
-                    res,
-                    500,
-                    errMsg(
-                      'unknown',
-                      'Unexpected response statusCode from the /_matrix/identity/v2/lookup API'
-                    )
-                  )
-                }
+
+            if (response.status === 200) {
+              send(res, 400, {
+                errcode: 'M_THREEPID_IN_USE',
+                error:
+                  'The third party identifier is already in use by another user.',
+                mxid: (obj as storeInvitationArgs).sender
               })
-              .catch((e) => {
-                /* istanbul ignore next */
-                idServer.logger.debug(
-                  'Error while making a call to the lookup API',
-                  e
+            } else if (response.status === 400) {
+              const ephemeralKey = await idServer.db.createKeypair(
+                'shortTerm',
+                'curve25519'
+              )
+              const objWithKey = {
+                ...(obj as storeInvitationArgs),
+                key: ephemeralKey
+              }
+              const _token = await idServer.db.createToken(
+                objWithKey,
+                invitationDelay
+              )
+              // send email
+              void transport.sendMail({
+                to: _address,
+                raw: mailBody(
+                  verificationTemplate,
+                  (obj as storeInvitationArgs).sender_display_name ?? '*****',
+                  _address,
+                  (obj as storeInvitationArgs).room_name ?? '*****',
+                  (obj as storeInvitationArgs).room_avatar_url ?? '*****',
+                  (obj as storeInvitationArgs).room_type ?? '*****'
                 )
-                /* istanbul ignore next */
-                throw e
               })
+              // send 200 response
+              const redactedAddress = redactAddress(_address)
+              idServer.db
+                .getKeys('current')
+                .then((keys) => {
+                  const responseBody = {
+                    display_name: redactedAddress,
+                    public_keys: [
+                      {
+                        key_validity_url: `https://${idServer.conf.server_name}/_matrix/identity/v2/pubkey/isvalid`,
+                        public_key: keys.publicKey
+                      },
+                      {
+                        key_validity_url: `https://${idServer.conf.server_name}/_matrix/identity/v2/pubkey/ephemeral/isvalid`,
+                        public_key: ephemeralKey.privateKey
+                      }
+                    ],
+                    token: _token
+                  }
+                  send(res, 200, responseBody)
+                })
+                .catch((e) => {
+                  /* istanbul ignore next */
+                  idServer.logger.debug(
+                    'Error while getting the current key',
+                    e
+                  )
+                  /* istanbul ignore next */
+                  throw e
+                })
+            } else {
+              send(
+                res,
+                500,
+                errMsg(
+                  'unknown',
+                  'Unexpected response statusCode from the /_matrix/identity/v2/lookup API'
+                )
+              )
+            }
+          } catch (e) {
+            /* istanbul ignore next */
+            idServer.logger.debug(
+              'Error while making a call to the lookup API (/_matrix/identity/v2/lookup)',
+              e
+            )
+            /* istanbul ignore next */
+            throw e
           }
         })
       })

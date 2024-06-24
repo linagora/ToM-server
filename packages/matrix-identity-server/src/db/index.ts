@@ -389,9 +389,7 @@ class IdentityServerDb implements IdDbBackend {
     if (type === 'longTerm') {
       throw new Error('Long term key pairs are not supported')
     }
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-expect-error
-    const _type = type === 'longTerm' ? 'longTermKeypairs' : 'shortTermKeypairs'
+    const _type = 'shortTermKeypairs'
     return new Promise((resolve, reject) => {
       this.db
         .insert(_type, {
