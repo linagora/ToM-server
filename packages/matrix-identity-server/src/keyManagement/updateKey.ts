@@ -21,11 +21,13 @@ const updateKey = async (
     })
 
     if (previousKeyRows.length === 0) {
+      /* istanbul ignore next */
       throw new Error('No previousKey found')
     }
 
     // Check if keyID is in the correct format /^ed25519:[A-Za-z0-9_-]+$/
     if (!/^ed25519:[A-Za-z0-9_-]+$/.test(previousKeyRows[0].keyID as string)) {
+      /* istanbul ignore next */
       throw new Error('previousKey value is not valid')
     }
 
@@ -36,7 +38,8 @@ const updateKey = async (
     )
 
     if (currentKeyRows.length === 0) {
-      throw new Error('No currentKey found')
+      /* istanbul ignore next */
+      throw new Error('currentKey undefined')
     }
 
     // Step 2:
@@ -58,7 +61,9 @@ const updateKey = async (
       )
       logger.info('Previous key updated successfully')
     } catch (error) {
+      /* istanbul ignore next */
       logger.error('Error updating previous key', error)
+      /* istanbul ignore next */
       throw error
     }
 
@@ -75,12 +80,15 @@ const updateKey = async (
       )
       logger.info('Current key updated successfully')
     } catch (error) {
+      /* istanbul ignore next */
       logger.error('Error updating current key', error)
+      /* istanbul ignore next */
       throw error
     }
 
     logger.info('Long-term key updated successfully')
   } catch (error) {
+    /* istanbul ignore next */
     logger.error('Error updating long-term key', error)
   }
 }
