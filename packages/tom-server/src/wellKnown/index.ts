@@ -168,8 +168,8 @@ class WellKnown {
         typeof conf.federated_identity_services === 'object'
           ? conf.federated_identity_services
           : typeof conf.federated_identity_services === 'string'
-          ? (conf.federated_identity_services as string).split(/[,\s]+/)
-          : []
+            ? (conf.federated_identity_services as string).split(/[,\s]+/)
+            : []
       if (
         conf.federated_identity_services != null &&
         conf.federated_identity_services.length > 0

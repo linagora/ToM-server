@@ -38,7 +38,10 @@ export interface MatrixDBBackend {
 class MatrixDB implements MatrixDBBackend {
   ready: Promise<void>
   db: MatrixDBBackend
-  constructor(conf: Config, private readonly logger: TwakeLogger) {
+  constructor(
+    conf: Config,
+    private readonly logger: TwakeLogger
+  ) {
     let Module
     /* istanbul ignore next */
     switch (conf.matrix_database_engine) {

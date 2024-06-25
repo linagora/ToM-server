@@ -21,7 +21,10 @@ export class OpenSearchRepository implements IOpenSearchRepository {
   private readonly _openSearchClient: Client
   private readonly _requestOptions: Record<string, any>
 
-  constructor(config: Config, private readonly logger: TwakeLogger) {
+  constructor(
+    config: Config,
+    private readonly logger: TwakeLogger
+  ) {
     this._setNumberOfShards(config.opensearch_number_of_shards)
     this._setNumberOfReplicas(config.opensearch_number_of_replicas)
     this._setWaitForActiveShards(config.opensearch_wait_for_active_shards)

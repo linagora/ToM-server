@@ -8,7 +8,10 @@ class UserDBLDAP implements UserDBBackend {
   ready: Promise<void>
   ldap: () => Promise<Client>
 
-  constructor(conf: Config, private readonly logger: TwakeLogger) {
+  constructor(
+    conf: Config,
+    private readonly logger: TwakeLogger
+  ) {
     this.base = conf.ldap_base != null ? conf.ldap_base : ''
     const ldapjsOpts = conf.ldapjs_opts != null ? conf.ldapjs_opts : {}
     // eslint-disable-next-line @typescript-eslint/promise-function-async

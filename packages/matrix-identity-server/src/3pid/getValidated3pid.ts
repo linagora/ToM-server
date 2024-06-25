@@ -7,7 +7,6 @@ interface parameters {
   sid: string
 }
 
-
 const validationTime: number = 100 * 365 * 24 * 60 * 60 * 1000
 
 const GetValidated3pid = (

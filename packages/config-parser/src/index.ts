@@ -14,8 +14,8 @@ const twakeConfig = (
     defaultConfigurationFile == null
       ? {}
       : typeof defaultConfigurationFile === 'string'
-      ? JSON.parse(fs.readFileSync(defaultConfigurationFile).toString())
-      : defaultConfigurationFile
+        ? JSON.parse(fs.readFileSync(defaultConfigurationFile).toString())
+        : defaultConfigurationFile
   // Parse wanted keys
   Object.keys(desc).forEach((key: string) => {
     // If environment variable exists, it overrides current value

@@ -55,7 +55,10 @@ abstract class SQL {
   ready: Promise<void>
   cleanJob?: NodeJS.Timeout
 
-  constructor(conf: Config, private readonly logger: TwakeLogger) {
+  constructor(
+    conf: Config,
+    private readonly logger: TwakeLogger
+  ) {
     // @ts-expect-error method is defined in child class
     this.ready = this.createDatabases(
       conf,

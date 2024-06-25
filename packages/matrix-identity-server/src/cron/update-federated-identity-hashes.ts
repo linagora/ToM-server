@@ -38,8 +38,8 @@ export default async (
     typeof conf.federated_identity_services === 'object'
       ? (conf.federated_identity_services as string[])
       : conf.federated_identity_services != null
-      ? (conf.federated_identity_services as string).split(/[,\s]+/)
-      : []
+        ? (conf.federated_identity_services as string).split(/[,\s]+/)
+        : []
 
   let serversIndexFail: number[] = []
 

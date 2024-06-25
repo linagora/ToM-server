@@ -25,10 +25,10 @@ export default class FederatedIdentityService extends MatrixIdentityServer {
       fs.existsSync('/etc/twake/federated-identity-service.conf')
         ? '/etc/twake/federated-identity-service.conf'
         : process.env.TWAKE_FEDERATED_IDENTITY_SERVICE_CONF != null
-        ? process.env.TWAKE_FEDERATED_IDENTITY_SERVICE_CONF
-        : conf != null
-        ? conf
-        : undefined
+          ? process.env.TWAKE_FEDERATED_IDENTITY_SERVICE_CONF
+          : conf != null
+            ? conf
+            : undefined
     ) as Config
     super(serverConf, confDesc, logger)
     this.conf.trusted_servers_addresses =
