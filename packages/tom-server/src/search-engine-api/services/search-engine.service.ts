@@ -53,8 +53,9 @@ export class SearchEngineService implements ISearchEngineService {
       }
     )
 
-    const userRoomsIds =
-      await this._matrixDBRoomsRepository.getUserRoomsIds(userId)
+    const userRoomsIds = await this._matrixDBRoomsRepository.getUserRoomsIds(
+      userId
+    )
 
     const openSearchRoomsResult = (
       response.body.responses as Array<
@@ -89,8 +90,9 @@ export class SearchEngineService implements ISearchEngineService {
       }))
     }
 
-    const roomsDetails =
-      await this._matrixDBRoomsRepository.getRoomsDetails(userRoomsIds)
+    const roomsDetails = await this._matrixDBRoomsRepository.getRoomsDetails(
+      userRoomsIds
+    )
 
     openSearchRoomsResult.forEach((osResult) => {
       responseBody.rooms.push({

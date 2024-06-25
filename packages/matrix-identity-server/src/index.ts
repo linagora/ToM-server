@@ -112,19 +112,19 @@ export default class MatrixIdentityServer {
       conf != null
         ? conf
         : process.env.TWAKE_IDENTITY_SERVER_CONF != null
-          ? process.env.TWAKE_IDENTITY_SERVER_CONF
-          : fs.existsSync('/etc/twake/identity-server.conf')
-            ? '/etc/twake/identity-server.conf'
-            : undefined
+        ? process.env.TWAKE_IDENTITY_SERVER_CONF
+        : fs.existsSync('/etc/twake/identity-server.conf')
+        ? '/etc/twake/identity-server.conf'
+        : undefined
     ) as Config
     this.conf.federated_identity_services =
       typeof this.conf.federated_identity_services === 'object'
         ? this.conf.federated_identity_services
         : typeof this.conf.federated_identity_services === 'string'
-          ? (this.conf.federated_identity_services as string)
-              .split(/[,\s]+/)
-              .filter((addr) => addr.match(hostnameRe))
-          : []
+        ? (this.conf.federated_identity_services as string)
+            .split(/[,\s]+/)
+            .filter((addr) => addr.match(hostnameRe))
+        : []
     this._convertStringtoNumberInConfig()
     this.rateLimiter = rateLimit({
       windowMs: this.conf.rate_limiting_window,

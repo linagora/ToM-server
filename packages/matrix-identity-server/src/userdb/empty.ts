@@ -4,10 +4,7 @@ import { type UserDBBackend } from './index'
 
 class UserDBEmpty implements UserDBBackend {
   ready: Promise<void>
-  constructor(
-    _conf: Config,
-    private readonly logger: TwakeLogger
-  ) {
+  constructor(_conf: Config, private readonly logger: TwakeLogger) {
     this.ready = Promise.resolve()
     this.logger.warn('Running a fake user database')
   }

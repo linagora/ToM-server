@@ -51,7 +51,7 @@ describe('the user info API controller', () => {
           givenName: 'David',
           sn: 'Who',
           uid: 'dwho'
-        }) satisfies UserInformation
+        } satisfies UserInformation)
     )
 
     const response = await supertest(app).get(`${PATH}/dwho`)

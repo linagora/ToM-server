@@ -137,10 +137,7 @@ class IdentityServerDb implements IdDbBackend {
   cleanJob?: NodeJS.Timeout
   cleanByExpires: Collections[]
 
-  constructor(
-    conf: Config,
-    private readonly logger: TwakeLogger
-  ) {
+  constructor(conf: Config, private readonly logger: TwakeLogger) {
     this.cleanByExpires = cleanByExpires
     let Module
     /* istanbul ignore next */

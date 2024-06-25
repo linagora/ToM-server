@@ -46,10 +46,7 @@ export class AppServiceRegistration {
    * @constructor
    * @param {AppServiceOutput} conf The configuration of the application service
    */
-  constructor(
-    conf: Config,
-    private readonly logger: TwakeLogger
-  ) {
+  constructor(conf: Config, private readonly logger: TwakeLogger) {
     let appServiceConfig: AppServiceOutput
     if (fs.existsSync(conf.registration_file_path)) {
       appServiceConfig = load(
