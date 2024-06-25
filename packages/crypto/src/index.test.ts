@@ -1,12 +1,3 @@
-import nacl from 'tweetnacl'
-import * as naclUtil from 'tweetnacl-util';
-import {
-  Hash,
-  randomString,
-  generateKeyPair,
-  canonicalJson,
-  signJson
-} from './index'
 import {
   Hash,
   randomString,
