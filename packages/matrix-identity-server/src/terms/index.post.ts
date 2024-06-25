@@ -39,7 +39,6 @@ export const fillPoliciesDB = (
   Object.keys(
     getUrlsFromPolicies(computePolicy(idServer.conf, idServer.logger))
   ).forEach((policyName) => {
-    console.log(policyName)
     idServer.db
       .insert('userPolicies', {
         policy_name: policyName,
