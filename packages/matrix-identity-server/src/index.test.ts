@@ -426,7 +426,6 @@ describe('Use configuration file', () => {
       })
     })
   })
-  
 
   describe('Endpoint with authentication', () => {
     it('should reject if more than 100 requests are done in less than 10 seconds', async () => {
