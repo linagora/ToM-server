@@ -117,7 +117,9 @@ const fillTable = (
           send(res, 200, { sid })
         })
         .catch((err) => {
+          // istanbul ignore next
           idServer.logger.error('Insertion error', err)
+          // istanbul ignore next
           send(res, 400, errMsg('unknown', err))
         })
     })
@@ -144,16 +146,10 @@ const RequestToken = (idServer: MatrixIdentityServer): expressAppHandler => {
         validateParameters(res, schema, obj, idServer.logger, (obj) => {
           const clientSecret = (obj as RequestTokenArgs).client_secret
           const sendAttempt = (obj as RequestTokenArgs).send_attempt
-          const clientSecret = (obj as RequestTokenArgs).client_secret
-          const sendAttempt = (obj as RequestTokenArgs).send_attempt
           const dst = (obj as RequestTokenArgs).email
 
           if (!clientSecretRe.test(clientSecret)) {
-
-          if (!clientSecretRe.test(clientSecret)) {
             send(res, 400, errMsg('invalidParam', 'invalid client_secret'))
-          } else if (!validEmailRe.test(dst)) {
-            send(res, 400, errMsg('invalidEmail'))
           } else if (!validEmailRe.test(dst)) {
             send(res, 400, errMsg('invalidEmail'))
           } else {
@@ -185,7 +181,9 @@ const RequestToken = (idServer: MatrixIdentityServer): expressAppHandler => {
                         )
                       })
                       .catch((err) => {
+                        // istanbul ignore next
                         idServer.logger.error('Deletion error', err)
+                        // istanbul ignore next
                         send(res, 400, errMsg('unknown', err))
                       })
                   }

@@ -18,7 +18,11 @@ const getPubkey = (idServer: IdentityServerDB): expressAppHandler => {
             .get('longTermKeypairs', ['public'], { keyID: _keyID })
             .then((rows) => {
               if (rows.length === 0) {
-                send(res, 404, errMsg('notFound'))
+                send(
+                  res,
+                  404,
+                  errMsg('notFound', 'The public key was not found')
+                )
               } else {
                 send(res, 200, { public_key: rows[0].public })
               }
