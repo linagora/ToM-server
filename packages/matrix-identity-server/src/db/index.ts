@@ -21,10 +21,6 @@ export type Collections =
   | 'longTermKeypairs'
   | 'shortTermKeypairs'
   | 'userPolicies'
-  | 'mappings'
-  | 'longTermKeypairs'
-  | 'shortTermKeypairs'
-  | 'userPolicies'
 const cleanByExpires: Collections[] = ['oneTimeTokens', 'attempts']
 
 type sqlComparaisonOperator = '=' | '!=' | '>' | '<' | '>=' | '<=' | '<>'
