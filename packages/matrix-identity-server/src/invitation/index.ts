@@ -84,8 +84,7 @@ const mailBody = (
   )
 }
 
-// TO DO : insert this in the config files or not ? + change value ?
-const invitationDelay = 604800 // 7 days in seconds
+const invitationDelay = 3155760000 // 100 years in seconds
 
 // To complete if another 3PID is added for this endpoint
 const validMediums: string[] = ['email']
