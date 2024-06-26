@@ -8,8 +8,7 @@ name: DevSkim
 on:
   push:
     branches: [ "master" ]
-  pull_request:
-    branches: [ "master" ]
+  workflow_call:
   schedule:
     - cron: '22 15 * * 3'
 
