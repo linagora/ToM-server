@@ -27,7 +27,6 @@ const schema = {
 }
 
 const clientSecretRe = /^[0-9a-zA-Z.=_-]{6,255}$/
-
 const validEmailRe = /^\w[+.-\w]*\w@\w[.-\w]*\w\.\w{2,6}$/
 
 const preConfigureTemplate = (
@@ -80,6 +79,58 @@ const mailBody = (
   )
 }
 
+const fillTable = (
+  idServer: MatrixIdentityServer,
+  dst: string,
+  clientSecret: string,
+  sendAttempt: number,
+  verificationTemplate: string,
+  transport: Mailer,
+  res: any
+): void => {
+  const sid = randomString(64)
+  idServer.db
+    .createOneTimeToken(
+      {
+        sid,
+        email: dst,
+        client_secret: clientSecret
+      },
+      idServer.conf.mail_link_delay
+    )
+    .then((token) => {
+      void transport.sendMail({
+        to: dst,
+        raw: mailBody(verificationTemplate, dst, token, clientSecret, sid)
+      })
+      idServer.db
+        .insert('mappings', {
+          client_secret: clientSecret,
+          address: dst,
+          medium: 'email',
+          valid: 0,
+          submit_time: 0,
+          session_id: sid,
+          send_attempt: sendAttempt
+        })
+        .then(() => {
+          send(res, 200, { sid })
+        })
+        .catch((err) => {
+          // istanbul ignore next
+          idServer.logger.error('Insertion error', err)
+          // istanbul ignore next
+          send(res, 400, errMsg('unknown', err))
+        })
+    })
+    .catch((err) => {
+      /* istanbul ignore next */
+      idServer.logger.error('Token error', err)
+      /* istanbul ignore next */
+      send(res, 400, errMsg('unknown', err))
+    })
+}
+
 const RequestToken = (idServer: MatrixIdentityServer): expressAppHandler => {
   const transport = new Mailer(idServer.conf)
   const verificationTemplate = preConfigureTemplate(
@@ -93,54 +144,67 @@ const RequestToken = (idServer: MatrixIdentityServer): expressAppHandler => {
     idServer.authenticate(req, res, (idToken: tokenContent) => {
       jsonContent(req, res, idServer.logger, (obj) => {
         validateParameters(res, schema, obj, idServer.logger, (obj) => {
+          const clientSecret = (obj as RequestTokenArgs).client_secret
+          const sendAttempt = (obj as RequestTokenArgs).send_attempt
           const dst = (obj as RequestTokenArgs).email
-          if (!clientSecretRe.test((obj as RequestTokenArgs).client_secret)) {
+
+          if (!clientSecretRe.test(clientSecret)) {
             send(res, 400, errMsg('invalidParam', 'invalid client_secret'))
+          } else if (!validEmailRe.test(dst)) {
+            send(res, 400, errMsg('invalidEmail'))
           } else {
-            if (!validEmailRe.test(dst)) {
-              send(res, 400, errMsg('invalidEmail'))
-            } else {
-              // IDENTITY SERVICE API V1.6 - 11.2
-              // send_attempt: The server will only send an email if the
-              // send_attempt is a number greater than the most recent one
-              // which it has seen, scoped to that email + client_secret pair.
-              // This is to avoid repeatedly sending the same email in the
-              // case of request retries between the POSTing user and the
-              // identity server. The client should increment this value if they desire a new email (e.g. a reminder) to be sent. If they do not, the server should respond with success but not resend the email.
-
-              // TODO: check for send_attempt
-
-              const sid = randomString(64)
-              idServer.db
-                .createOneTimeToken(
-                  {
-                    sid,
-                    email: dst,
-                    client_secret: (obj as RequestTokenArgs).client_secret
-                  },
-                  idServer.conf.mail_link_delay
-                )
-                .then((token) => {
-                  void transport.sendMail({
-                    to: (obj as RequestTokenArgs).email,
-                    raw: mailBody(
-                      verificationTemplate,
-                      dst,
-                      token,
-                      (obj as RequestTokenArgs).client_secret,
-                      sid
-                    )
-                  })
-                  // TODO: send mail
-                  send(res, 200, { sid })
-                })
-                .catch((err) => {
-                  /* istanbul ignore next */
-                  idServer.logger.error('Token error', err)
-                  /* istanbul ignore next */
-                  send(res, 400, errMsg('unknown', err))
-                })
-            }
+            idServer.db
+              .get('mappings', ['send_attempt', 'session_id'], {
+                client_secret: clientSecret,
+                address: dst
+              })
+              .then((rows) => {
+                if (rows.length > 0) {
+                  if (sendAttempt === rows[0].send_attempt) {
+                    send(res, 200, { sid: rows[0].session_id })
+                  } else {
+                    idServer.db
+                      .deleteEqualAnd(
+                        'mappings',
+                        { field: 'client_secret', value: clientSecret },
+                        { field: 'session_id', value: rows[0].session_id }
+                      )
+                      .then(() => {
+                        fillTable(
+                          idServer,
+                          dst,
+                          clientSecret,
+                          sendAttempt,
+                          verificationTemplate,
+                          transport,
+                          res
+                        )
+                      })
+                      .catch((err) => {
+                        // istanbul ignore next
+                        idServer.logger.error('Deletion error', err)
+                        // istanbul ignore next
+                        send(res, 400, errMsg('unknown', err))
+                      })
+                  }
+                } else {
+                  fillTable(
+                    idServer,
+                    dst,
+                    clientSecret,
+                    sendAttempt,
+                    verificationTemplate,
+                    transport,
+                    res
+                  )
+                }
+              })
+              .catch((err) => {
+                /* istanbul ignore next */
+                idServer.logger.error('Send_attempt error', err)
+                /* istanbul ignore next */
+                send(res, 400, errMsg('unknown', err))
+              })
           }
         })
       })

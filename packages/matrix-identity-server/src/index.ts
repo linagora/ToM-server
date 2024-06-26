@@ -38,11 +38,12 @@ import UserDB from './userdb'
 import _validateMatrixToken from './utils/validateMatrixToken'
 import RequestToken from './validate/email/requestToken'
 import SubmitToken from './validate/email/submitToken'
-// Ajout des imports
+import GetValidated3pid from './3pid'
+import unbind from './3pid/unbind'
+import bind from './3pid/bind'
 import isPubkeyValid from './keyManagement/validPubkey'
 import getPubkey from './keyManagement/getPubkey'
 import isEphemeralPubkeyValid from './keyManagement/validEphemeralPubkey'
-
 export { type tokenContent } from './account/register'
 export { default as updateUsers } from './cron/updateUsers'
 export * as IdentityServerDb from './db'
@@ -87,9 +88,9 @@ export default class MatrixIdentityServer {
   }
 
   set authenticate(auth: AuthenticationFunction) {
-    this._authenticate = (req, res, cb) => {
+    this._authenticate = (req, res, cb, requiresTerms = true) => {
       this.rateLimiter(req as Request, res as Response, () => {
-        auth(req, res, cb)
+        auth(req, res, cb, requiresTerms)
       })
     }
   }
@@ -186,7 +187,11 @@ export default class MatrixIdentityServer {
                     ),
                     '/_matrix/identity/v2/pubkey/ephemeral/isvalid':
                       isEphemeralPubkeyValid(this.db),
-                    '/_matrix/identity/v2/pubkey/:keyId': getPubkey(this.db)
+                    '/_matrix/identity/v2/pubkey/:keyId': getPubkey(this.db),
+                    '/_matrix/identity/v2/3pid/bind': badMethod,
+                    '/_matrix/identity/v2/3pid/getValidated3pid':
+                      GetValidated3pid(this),
+                    '/_matrix/identity/v2/3pid/unbind': badMethod
                   },
                   post: {
                     '/_matrix/identity/v2': badMethod,
@@ -205,7 +210,10 @@ export default class MatrixIdentityServer {
                       SubmitToken(this),
                     '/_matrix/identity/v2/pubkey/isvalid': badMethod,
                     '/_matrix/identity/v2/pubkey/ephemeral/isvalid': badMethod,
-                    '/_matrix/identity/v2/pubkey/:keyId': badMethod
+                    '/_matrix/identity/v2/pubkey/:keyId': badMethod,
+                    '/_matrix/identity/v2/3pid/getValidated3pid': badMethod,
+                    '/_matrix/identity/v2/3pid/bind': bind(this),
+                    '/_matrix/identity/v2/3pid/unbind': unbind(this)
                   }
                 }
                 resolve(true)

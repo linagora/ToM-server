@@ -160,6 +160,46 @@ class SQLite extends SQL implements IdDbBackend {
     })
   }
 
+  // TODO : Merge update and updateAnd into one function that takes an array of conditions as argument
+  updateAnd(
+    table: string,
+    values: Record<string, string | number>,
+    condition1: { field: string; value: string | number },
+    condition2: { field: string; value: string | number }
+  ): Promise<DbGetResult> {
+    return new Promise((resolve, reject) => {
+      if (this.db == null) {
+        throw new Error('Wait for database to be ready')
+      }
+      const names = Object.keys(values)
+      const vals = Object.values(values)
+      vals.push(condition1.value, condition2.value)
+
+      const setClause = names.map((name) => `${name} = ?`).join(', ')
+      const stmt = this.db.prepare(
+        `UPDATE ${table} SET ${setClause} WHERE ${condition1.field} = ? AND ${condition2.field} = ? RETURNING *;`
+      )
+
+      stmt.all(
+        vals,
+        (err: string, rows: Array<Record<string, string | number>>) => {
+          if (err != null) {
+            reject(err)
+          } else {
+            resolve(rows)
+          }
+        }
+      )
+
+      stmt.finalize((err) => {
+        // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+        if (err) {
+          reject(err)
+        }
+      })
+    })
+  }
+
   _get(
     op: string,
     table: string,
@@ -296,6 +336,40 @@ class SQLite extends SQL implements IdDbBackend {
       } else {
         const stmt = this.db.prepare(`DELETE FROM ${table} WHERE ${field}=?`)
         stmt.all([value], (err, rows) => {
+          /* istanbul ignore if */
+          if (err != null) {
+            reject(err)
+          } else {
+            resolve()
+          }
+        })
+        stmt.finalize((err) => {
+          reject(err)
+        })
+      }
+    })
+  }
+
+  deleteEqualAnd(
+    table: Collections,
+    condition1: {
+      field: string
+      value: string | number | Array<string | number>
+    },
+    condition2: {
+      field: string
+      value: string | number | Array<string | number>
+    }
+  ): Promise<void> {
+    return new Promise((resolve, reject) => {
+      /* istanbul ignore if */
+      if (this.db == null) {
+        reject(new Error('Wait for database to be ready'))
+      } else {
+        const stmt = this.db.prepare(
+          `DELETE FROM ${table} WHERE ${condition1.field}=? AND ${condition2.field}=?`
+        )
+        stmt.all([condition1.value, condition2.value], (err, rows) => {
           /* istanbul ignore if */
           if (err != null) {
             reject(err)
