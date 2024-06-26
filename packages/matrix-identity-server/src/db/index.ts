@@ -29,7 +29,7 @@ export type Collections =
   | 'mappings'
   | 'longTermKeypairs'
   | 'shortTermKeypairs'
-
+  | 'userPolicies'
 const cleanByExpires: Collections[] = ['oneTimeTokens', 'attempts']
 
 const tables: Record<Collections, string> = {
@@ -547,7 +547,7 @@ class IdentityServerDb<T extends string = never>
     const id = randomString(64)
     // default: expires in 600 s
     const expiresForDb =
-      epoch() + (expires != null && expires > 0 ? expires : 600)
+      epoch() + 1000 * (expires != null && expires > 0 ? expires : 600)
     return new Promise((resolve, reject) => {
       this.db
         .insert('oneTimeTokens', {

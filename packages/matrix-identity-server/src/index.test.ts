@@ -528,9 +528,43 @@ describe('Use configuration file', () => {
           token = RegExp.$1
           sid = RegExp.$2
         })
-      })
-      describe('/_matrix/identity/v2/validate/email/submitToken', () => {
-        /* Works but disabled to avoid invalidate previous token
+        it('should not resend an email for the same attempt', async () => {
+          const response = await request(app)
+            .post('/_matrix/identity/v2/validate/email/requestToken')
+            .set('Authorization', `Bearer ${validToken}`)
+            .set('Accept', 'application/json')
+            .send({
+              client_secret: 'mysecret',
+              email: 'xg@xnr.fr',
+              next_link: 'http://localhost:8090',
+              send_attempt: 1
+            })
+          expect(response.statusCode).toBe(200)
+          expect(sendMailMock).not.toHaveBeenCalled()
+          expect(response.body).toEqual({ sid })
+        })
+        it('should resend an email for a different attempt', async () => {
+          const response = await request(app)
+            .post('/_matrix/identity/v2/validate/email/requestToken')
+            .set('Authorization', `Bearer ${validToken}`)
+            .set('Accept', 'application/json')
+            .send({
+              client_secret: 'mysecret',
+              email: 'xg@xnr.fr',
+              next_link: 'http://localhost:8090',
+              send_attempt: 2
+            })
+          expect(response.statusCode).toBe(200)
+          expect(sendMailMock.mock.calls[0][0].to).toBe('xg@xnr.fr')
+          expect(sendMailMock.mock.calls[0][0].raw).toMatch(
+            /token=([a-zA-Z0-9]{64})&client_secret=mysecret&sid=([a-zA-Z0-9]{64})/
+          )
+          const newSid = RegExp.$2
+          expect(response.body).toEqual({ sid: newSid })
+          expect(sendMailMock).toHaveBeenCalled()
+        })
+        describe('/_matrix/identity/v2/validate/email/submitToken', () => {
+          /* Works but disabled to avoid invalidate previous token
         it('should refuse mismatch registration parameters', async () => {
           const response = await request(app)
             .get('/_matrix/identity/v2/validate/email/submitToken')
