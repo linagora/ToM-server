@@ -59,7 +59,7 @@ function generateKeyId(algorithm: string, identifier: string): string {
 }
 
 // Function to convert a Base64 string to unpadded Base64 URL encoded string
-function toBase64Url(base64: string): string {
+export function toBase64Url(base64: string): string {
   return base64.replace(/=+$/, '').replace(/\//g, '_').replace(/\+/g, '-')
 }
 
@@ -161,8 +161,8 @@ export const signJson = (
   signingName: string,
   keyId: string
 ): JsonObject => {
-  // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
-  const signatures = jsonObj.signatures ?? {}
+  const signatures =
+    jsonObj.signatures ?? ({} as Record<string, Record<string, string>>)
   const unsigned = jsonObj.unsigned
   delete jsonObj.signatures
   delete jsonObj.unsigned
@@ -182,6 +182,5 @@ export const signJson = (
   if (unsigned) {
     jsonObj.unsigned = unsigned
   }
-
   return jsonObj
 }
