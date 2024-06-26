@@ -254,7 +254,7 @@ describe('Use configuration file', () => {
     })
   })
 
-  describe('/_matrix/identity/v2/pubkey/', () => {
+  describe('/_matrix/identity/v2/pubkey', () => {
     describe('/_matrix/identity/v2/pubkey/ephemeral/isvalid', () => {
       let shortKeyPair: { publicKey: string; privateKey: string; keyId: string }
       beforeAll(async () => {
@@ -655,6 +655,281 @@ describe('Use configuration file', () => {
           expect(response.statusCode).toBe(200)
           expect(response.body.mappings[phoneHash]).toBe('@dwho:matrix.org')
         })
+      })
+    })
+
+    describe('/_matrix/identity/v2/store-invite', () => {
+      let longKeyPair: { publicKey: string; privateKey: string; keyId: string }
+      beforeAll(async () => {
+        // Insert a test key into the database
+        longKeyPair = generateKeyPair('ed25519')
+        await idServer.db.insert('longTermKeypairs', {
+          name: 'currentKey',
+          keyID: longKeyPair.keyId,
+          public: longKeyPair.publicKey,
+          private: longKeyPair.privateKey
+        })
+      })
+
+      afterAll(async () => {
+        // Remove the test key from the database
+        await idServer.db.deleteEqual(
+          'longTermKeypairs',
+          'keyID',
+          longKeyPair.keyId
+        )
+      })
+      it('should require authentication', async () => {
+        const response = await request(app)
+          .post('/_matrix/identity/v2/store-invite')
+          .set('Accept', 'application/json')
+          .send({
+            address: 'xg@xnr.fr',
+            medium: 'email',
+            room_id: '!room:matrix.org',
+            sender: '@dwho:matrix.org'
+          })
+        expect(response.statusCode).toBe(401)
+        expect(response.body.errcode).toEqual('M_UNAUTHORIZED')
+      })
+      it('should require all parameters', async () => {
+        const response = await request(app)
+          .post('/_matrix/identity/v2/store-invite')
+          .set('Authorization', `Bearer ${validToken}`)
+          .set('Accept', 'application/json')
+          .send({
+            address: 'xg@xnr.fr',
+            medium: 'email',
+            room_id: '!room:matrix.org'
+            // sender: '@dwho:matrix.org'
+          })
+        expect(response.statusCode).toBe(400)
+        expect(response.body.errcode).toEqual('M_MISSING_PARAMS')
+      })
+      it('should reject an invalid medium', async () => {
+        const response = await request(app)
+          .post('/_matrix/identity/v2/store-invite')
+          .set('Authorization', `Bearer ${validToken}`)
+          .set('Accept', 'application/json')
+          .send({
+            address: 'xg@xnr.fr',
+            medium: 'invalid medium',
+            room_id: '!room:matrix.org',
+            sender: '@dwho:matrix.org'
+          })
+        expect(response.statusCode).toBe(400)
+        expect(response.body.errcode).toEqual('M_UNRECOGNIZED')
+      })
+      it('should reject an invalid email', async () => {
+        const response = await request(app)
+          .post('/_matrix/identity/v2/store-invite')
+          .set('Authorization', `Bearer ${validToken}`)
+          .set('Accept', 'application/json')
+          .send({
+            address: '@xg:xnr.fr',
+            medium: 'email',
+            room_id: '!room:matrix.org',
+            sender: '@dwho:matrix.org'
+          })
+        expect(response.statusCode).toBe(400)
+        expect(response.body.errcode).toEqual('M_INVALID_EMAIL')
+      })
+      it('should alert if the lookup API did not behave as expected', async () => {
+        const mockResponse = Promise.resolve({
+          ok: false,
+          status: 401, // should return 200 or 400
+          json: () => {
+            return {}
+          }
+        })
+        // @ts-expect-error mock is unknown
+        fetch.mockImplementation(async () => await mockResponse)
+        await mockResponse
+        const response = await request(app)
+          .post('/_matrix/identity/v2/store-invite')
+          .set('Authorization', `Bearer ${validToken}`)
+          .set('Accept', 'application/json')
+          .send({
+            address: 'xg@xnr.fr',
+            medium: 'email',
+            room_id: '!room:matrix.org',
+            sender: '@dwho:matrix.org'
+          })
+        expect(response.statusCode).toBe(500)
+        expect(response.body.errcode).toEqual('M_UNKNOWN')
+        expect(response.body.error).toEqual(
+          'Unexpected response statusCode from the /_matrix/identity/v2/lookup API'
+        )
+      })
+      it('should not send a mail if the address is already binded to a matrix id', async () => {
+        const mockResponse = Promise.resolve({
+          ok: true,
+          status: 200,
+          json: () => {
+            return {
+              mappings: {
+                '4kenr7N9drpCJ4AfalmlGQVsOn3o2RHjkADUpXJWZUc':
+                  '@alice:example.org'
+              }
+            }
+          }
+        })
+        // @ts-expect-error mock is unknown
+        fetch.mockImplementation(async () => await mockResponse)
+        await mockResponse
+        const response = await request(app)
+          .post('/_matrix/identity/v2/store-invite')
+          .set('Authorization', `Bearer ${validToken}`)
+          .set('Accept', 'application/json')
+          .send({
+            address: 'xg@xnr.fr',
+            medium: 'email',
+            room_id: '!room:matrix.org',
+            sender: '@alice:example.org'
+          })
+        expect(response.statusCode).toBe(400)
+        expect(response.body.errcode).toBe('M_THREEPID_IN_USE')
+      })
+      it('should accept a valid request', async () => {
+        const mockResponse = Promise.resolve({
+          ok: false,
+          status: 400,
+          json: () => {
+            return {
+              errcode: 'M_INVALID_PEPPER',
+              error: 'Unknown or invalid pepper - has it been rotated?'
+            }
+          }
+        })
+        // @ts-expect-error mock is unknown
+        fetch.mockImplementation(async () => await mockResponse)
+        await mockResponse
+        const response = await request(app)
+          .post('/_matrix/identity/v2/store-invite')
+          .set('Authorization', `Bearer ${validToken}`)
+          .set('Accept', 'application/json')
+          .send({
+            address: 'xg@xnr.fr',
+            medium: 'email',
+            room_id: '!room:matrix.org',
+            sender: '@dwho:matrix.org'
+          })
+        expect(response.statusCode).toBe(200)
+        expect(sendMailMock).toHaveBeenCalled()
+        expect(sendMailMock.mock.calls[0][0].to).toBe('xg@xnr.fr')
+        expect(response.body).toHaveProperty('display_name')
+        expect(response.body.display_name).not.toBe('xg@xnr.fr')
+        expect(response.body).toHaveProperty('public_keys')
+        expect(response.body).toHaveProperty('token')
+        expect(response.body.token).toMatch(/^[a-zA-Z0-9]{64}$/)
+      })
+    })
+
+    describe('/_matrix/identity/v2/sign-ed25519 ', () => {
+      let keyPair: {
+        publicKey: string
+        privateKey: string
+        keyId: string
+      }
+      let token: string
+      let longKeyPair: { publicKey: string; privateKey: string; keyId: string }
+      beforeAll(async () => {
+        keyPair = generateKeyPair('ed25519')
+        console.log('keyPair private key', keyPair.privateKey)
+        longKeyPair = generateKeyPair('ed25519')
+        await idServer.db.insert('longTermKeypairs', {
+          name: 'currentKey',
+          keyID: longKeyPair.keyId,
+          public: longKeyPair.publicKey,
+          private: longKeyPair.privateKey
+        })
+      })
+
+      afterAll(async () => {
+        await idServer.db.deleteEqual(
+          'longTermKeypairs',
+          'keyID',
+          longKeyPair.keyId
+        )
+      })
+      it('should refuse an invalid Matrix ID', async () => {
+        const mockResponse = Promise.resolve({
+          ok: false,
+          status: 400,
+          json: () => {
+            return {
+              errcode: 'M_INVALID_PEPPER',
+              error: 'Unknown or invalid pepper - has it been rotated?'
+            }
+          }
+        })
+        // @ts-expect-error mock is unknown
+        fetch.mockImplementation(async () => await mockResponse)
+        await mockResponse
+        const response_store_invit = await request(app)
+          .post('/_matrix/identity/v2/store-invite')
+          .set('Authorization', `Bearer ${validToken}`)
+          .set('Accept', 'application/json')
+          .send({
+            address: 'xg@xnr.fr',
+            medium: 'email',
+            room_id: '!room:matrix.org',
+            sender: '@dwho:matrix.org'
+          })
+        expect(response_store_invit.statusCode).toBe(200)
+        token = response_store_invit.body.token
+        const response = await request(app)
+          .post('/_matrix/identity/v2/sign-ed25519')
+          .set('Authorization', `Bearer ${validToken}`)
+          .set('Accept', 'application/json')
+          .send({
+            mxid: 'invalid_mxid',
+            private_key: keyPair.privateKey,
+            token: token
+          })
+        expect(response.statusCode).toBe(400)
+      })
+      it('should refuse an empty token', async () => {
+        const response = await request(app)
+          .post('/_matrix/identity/v2/sign-ed25519')
+          .set('Authorization', `Bearer ${validToken}`)
+          .set('Accept', 'application/json')
+          .send({
+            mxid: '@test:matrix.org',
+            private_key: keyPair.privateKey,
+            token: ''
+          })
+        expect(response.statusCode).toBe(400)
+      })
+      it('should refuse an invalid token', async () => {
+        const response = await request(app)
+          .post('/_matrix/identity/v2/sign-ed25519')
+          .set('Authorization', `Bearer ${validToken}`)
+          .set('Accept', 'application/json')
+          .send({
+            mxid: '@test:matrix.org',
+            private_key: keyPair.privateKey,
+            token: 'invalidtoken'
+          })
+        expect(response.statusCode).toBe(404)
+      })
+      it('should accept a valid token and sign the invitation details', async () => {
+        const response = await request(app)
+          .post('/_matrix/identity/v2/sign-ed25519')
+          .set('Authorization', `Bearer ${validToken}`)
+          .set('Accept', 'application/json')
+          .send({
+            mxid: '@test:matrix.org',
+            private_key: keyPair.privateKey,
+            token: token
+          })
+        expect(response.statusCode).toBe(200)
+        expect(response.body).toHaveProperty('signatures')
+        const serverName = idServer.conf.server_name
+        expect(response.body.signatures[serverName]).toBeDefined()
+        expect(response.body.mxid).toBe('@test:matrix.org')
+        expect(response.body.sender).toBe('@dwho:matrix.org')
+        expect(response.body).toHaveProperty('token')
       })
     })
 
