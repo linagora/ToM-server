@@ -94,9 +94,9 @@ export default class MatrixIdentityServer<T extends string = never> {
   }
 
   set authenticate(auth: AuthenticationFunction) {
-    this._authenticate = (req, res, cb, requiresTerms = true) => {
+    this._authenticate = (req, res, cb) => {
       this.rateLimiter(req as Request, res as Response, () => {
-        auth(req, res, cb, requiresTerms)
+        auth(req, res, cb)
       })
     }
   }
