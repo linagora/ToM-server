@@ -825,6 +825,114 @@ describe('Use configuration file', () => {
       })
     })
 
+    describe('/_matrix/identity/v2/sign-ed25519 ', () => {
+      let keyPair: {
+        publicKey: string
+        privateKey: string
+        keyId: string
+      }
+      let token: string
+      let longKeyPair: { publicKey: string; privateKey: string; keyId: string }
+      beforeAll(async () => {
+        keyPair = generateKeyPair('ed25519')
+        console.log('keyPair private key', keyPair.privateKey)
+        longKeyPair = generateKeyPair('ed25519')
+        await idServer.db.insert('longTermKeypairs', {
+          name: 'currentKey',
+          keyID: longKeyPair.keyId,
+          public: longKeyPair.publicKey,
+          private: longKeyPair.privateKey
+        })
+      })
+
+      afterAll(async () => {
+        await idServer.db.deleteEqual(
+          'longTermKeypairs',
+          'keyID',
+          longKeyPair.keyId
+        )
+      })
+      it('should refuse an invalid Matrix ID', async () => {
+        const mockResponse = Promise.resolve({
+          ok: false,
+          status: 400,
+          json: () => {
+            return {
+              errcode: 'M_INVALID_PEPPER',
+              error: 'Unknown or invalid pepper - has it been rotated?'
+            }
+          }
+        })
+        // @ts-expect-error mock is unknown
+        fetch.mockImplementation(async () => await mockResponse)
+        await mockResponse
+        const response_store_invit = await request(app)
+          .post('/_matrix/identity/v2/store-invite')
+          .set('Authorization', `Bearer ${validToken}`)
+          .set('Accept', 'application/json')
+          .send({
+            address: 'xg@xnr.fr',
+            medium: 'email',
+            room_id: '!room:matrix.org',
+            sender: '@dwho:matrix.org'
+          })
+        expect(response_store_invit.statusCode).toBe(200)
+        token = response_store_invit.body.token
+        const response = await request(app)
+          .post('/_matrix/identity/v2/sign-ed25519')
+          .set('Authorization', `Bearer ${validToken}`)
+          .set('Accept', 'application/json')
+          .send({
+            mxid: 'invalid_mxid',
+            private_key: keyPair.privateKey,
+            token: token
+          })
+        expect(response.statusCode).toBe(400)
+      })
+      it('should refuse an empty token', async () => {
+        const response = await request(app)
+          .post('/_matrix/identity/v2/sign-ed25519')
+          .set('Authorization', `Bearer ${validToken}`)
+          .set('Accept', 'application/json')
+          .send({
+            mxid: '@test:matrix.org',
+            private_key: keyPair.privateKey,
+            token: ''
+          })
+        expect(response.statusCode).toBe(400)
+      })
+      it('should refuse an invalid token', async () => {
+        const response = await request(app)
+          .post('/_matrix/identity/v2/sign-ed25519')
+          .set('Authorization', `Bearer ${validToken}`)
+          .set('Accept', 'application/json')
+          .send({
+            mxid: '@test:matrix.org',
+            private_key: keyPair.privateKey,
+            token: 'invalidtoken'
+          })
+        expect(response.statusCode).toBe(404)
+      })
+      it('should accept a valid token and sign the invitation details', async () => {
+        const response = await request(app)
+          .post('/_matrix/identity/v2/sign-ed25519')
+          .set('Authorization', `Bearer ${validToken}`)
+          .set('Accept', 'application/json')
+          .send({
+            mxid: '@test:matrix.org',
+            private_key: keyPair.privateKey,
+            token: token
+          })
+        expect(response.statusCode).toBe(200)
+        expect(response.body).toHaveProperty('signatures')
+        const serverName = idServer.conf.server_name
+        expect(response.body.signatures[serverName]).toBeDefined()
+        expect(response.body.mxid).toBe('@test:matrix.org')
+        expect(response.body.sender).toBe('@dwho:matrix.org')
+        expect(response.body).toHaveProperty('token')
+      })
+    })
+
     describe('/_matrix/identity/v2/account', () => {
       it('should accept valid token in headers', async () => {
         const response = await request(app)

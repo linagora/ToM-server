@@ -47,6 +47,13 @@ test('randomString', () => {
 })
 
 describe('generateKeyPair', () => {
+  it('should refuse an invalid algorithm', () => {
+    expect(() =>
+      generateKeyPair(
+        'invalid_algorithm' as unknown as 'ed25519' | 'curve25519'
+      )
+    ).toThrow('Unsupported algorithm')
+  })
   it('should generate a valid Ed25519 key pair and key ID', () => {
     const { publicKey, privateKey, keyId } = generateKeyPair('ed25519')
     expect(publicKey).toMatch(/^[A-Za-z0-9_-]+$/) // Unpadded Base64 URL encoded string
@@ -140,7 +147,7 @@ describe('canonicalJson', () => {
 describe('signJson', () => {
   const testKey = generateKeyPair('ed25519')
   const signingKey = testKey.privateKey
-  const signingName = 'testSigningName'
+  const signingName: string = 'matrix.org'
   const keyId = testKey.keyId
 
   it('should add signature to a simple object', () => {
@@ -148,8 +155,11 @@ describe('signJson', () => {
     const result = signJson(jsonObj, signingKey, signingName, keyId)
 
     expect(result).toHaveProperty('signatures')
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    expect(result.signatures).toHaveProperty(signingName)
+    expect(result.signatures?.[signingName]).toBeDefined()
+    expect(result.signatures?.[signingName]?.[keyId]).toBeDefined()
+    expect(result.signatures?.[signingName]?.[keyId]).toMatch(
+      /^[A-Za-z0-9+/]+$/
+    )
     expect(result.signatures?.[signingName]).toHaveProperty(keyId)
     expect(result).toMatchObject({
       a: 1,
@@ -172,7 +182,7 @@ describe('signJson', () => {
 
     expect(result.signatures).toHaveProperty('existingSignature')
     expect(result.signatures?.existingSignature).toHaveProperty('existingKeyId')
-    expect(result.signatures).toHaveProperty(signingName)
+    expect(result.signatures?.[signingName]).toBeDefined()
     expect(result.signatures?.[signingName]).toHaveProperty(keyId)
   })
 
@@ -196,7 +206,7 @@ describe('signJson', () => {
     const result = signJson(jsonObj, signingKey, signingName, keyId)
 
     expect(result).toHaveProperty('signatures')
-    expect(result.signatures).toHaveProperty(signingName)
+    expect(result.signatures?.[signingName]).toBeDefined()
     expect(result.signatures?.[signingName]).toHaveProperty(keyId)
     expect(result).toMatchObject({
       a: { b: { c: 1 } },
@@ -210,7 +220,7 @@ describe('signJson', () => {
     const result = signJson(jsonObj, signingKey, signingName, keyId)
 
     expect(result).toHaveProperty('signatures')
-    expect(result.signatures).toHaveProperty(signingName)
+    expect(result.signatures?.[signingName]).toBeDefined()
     expect(result.signatures?.[signingName]).toHaveProperty(keyId)
     expect(result).toMatchObject({
       a: null,
