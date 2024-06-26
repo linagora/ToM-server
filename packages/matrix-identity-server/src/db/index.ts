@@ -26,9 +26,10 @@ export type Collections =
   | 'userQuotas'
   | 'activeContacts'
   // J'ajoute ici les collections pour les paires de clés
+  | 'mappings'
   | 'longTermKeypairs'
   | 'shortTermKeypairs'
-
+  | 'userPolicies'
 const cleanByExpires: Collections[] = ['oneTimeTokens', 'attempts']
 
 const tables: Record<Collections, string> = {

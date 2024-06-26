@@ -287,6 +287,93 @@ describe('Id Server DB', () => {
       .catch(done)
   })
 
+  it('should update records matching both conditions', (done) => {
+    idDb = new IdDb(baseConf, logger)
+    idDb.ready
+      .then(() => {
+        idDb
+          .insert('roomTags', { id: 1, roomId: 1, authorId: 1, content: '' })
+          .then(() => {
+            idDb
+              .updateAnd(
+                'roomTags',
+                { id: 2 },
+                { field: 'id', value: 1 },
+                { field: 'roomId', value: 1 }
+              )
+              .then((rows) => {
+                expect(rows[0].id).toEqual('2')
+                clearTimeout(idDb.cleanJob)
+                idDb.close()
+                done()
+              })
+              .catch(done)
+          })
+          .catch(done)
+      })
+      .catch(done)
+  })
+
+  it('should return entry on updateAnd', (done) => {
+    idDb = new IdDb(baseConf, logger)
+    idDb.ready
+      .then(() => {
+        idDb
+          .insert('roomTags', { id: 3, roomId: 1, authorId: 1, content: '' })
+          .then(() => {
+            idDb
+              .updateAnd(
+                'roomTags',
+                { id: 4 },
+                { field: 'id', value: 3 },
+                { field: 'roomId', value: 1 }
+              )
+              .then((rows) => {
+                expect(rows.length).toBe(1)
+                expect(rows[0].id).toEqual('4')
+                clearTimeout(idDb.cleanJob)
+                idDb.close()
+                done()
+              })
+              .catch(done)
+          })
+          .catch(done)
+      })
+      .catch(done)
+  })
+
+  it('should not update records if conditions do not match', (done) => {
+    idDb = new IdDb(baseConf, logger)
+    idDb.ready
+      .then(() => {
+        idDb
+          .insert('roomTags', { id: 4, roomId: 1, authorId: 1, content: '' })
+          .then(() => {
+            idDb
+              .updateAnd(
+                'roomTags',
+                { authorId: 2 },
+                { field: 'id', value: 4 },
+                { field: 'roomId', value: 100 }
+              )
+              .then(() => {
+                idDb
+                  .get('roomTags', ['*'], { id: 4 })
+                  .then((rows) => {
+                    expect(rows[0].authorId).toEqual('1')
+                    clearTimeout(idDb.cleanJob)
+                    idDb.close()
+                    done()
+                  })
+                  .catch(done)
+              })
+              .catch(done)
+          })
+          .catch(done)
+      })
+      .catch(done)
+  })
+
   it('should return entry on insert', (done) => {
     idDb = new IdDb(baseConf, logger)
     idDb.ready
@@ -298,8 +385,6 @@ describe('Id Server DB', () => {
             expect(rows.length).toBe(1)
             expect(rows[0].id).toEqual(id)
             expect(rows[0].data).toEqual('{}')
-            clearTimeout(idDb.cleanJob)
-            idDb.close()
             done()
           })
           .catch(done)
