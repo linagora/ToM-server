@@ -44,6 +44,7 @@ import bind from './3pid/bind'
 import isPubkeyValid from './keyManagement/validPubkey'
 import getPubkey from './keyManagement/getPubkey'
 import isEphemeralPubkeyValid from './keyManagement/validEphemeralPubkey'
+
 export { type tokenContent } from './account/register'
 export { default as updateUsers } from './cron/updateUsers'
 export * as IdentityServerDb from './db'

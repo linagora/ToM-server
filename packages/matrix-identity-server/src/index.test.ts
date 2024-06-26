@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import {
-  generateKeyPair,
   Hash,
   randomString,
-  supportedHashes
+  supportedHashes,
+  generateKeyPair
 } from '@twake/crypto'
 import express from 'express'
 import fs from 'fs'
