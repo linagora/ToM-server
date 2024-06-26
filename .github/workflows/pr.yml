@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - master
+      - full-id-service
   merge_group:
   workflow_dispatch:
 
@@ -12,4 +13,16 @@ jobs:
   test:
     name: Build And Test
     uses: ./.github/workflows/build-and-test.yml
+    secrets: inherit
+  analyze:
+    name: CodeQL
+    uses: ./.github/workflows/codeql.yml
+    secrets: inherit
+  lint:
+    name: DevSkim
+    uses: ./.github/workflows/devskim.yml
+    secrets: inherit
+  njsscan: 
+    name: njsscan
+    uses: ./.github/workflows/njsscan.yml
     secrets: inherit
