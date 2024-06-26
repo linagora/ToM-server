@@ -279,6 +279,42 @@ class Pg<T extends string> extends SQL<T> implements IdDbBackend<T> {
     })
   }
 
+  updateAnd(
+    table: Collections,
+    values: Record<string, string | number>,
+    condition1: { field: string; value: string | number },
+    condition2: { field: string; value: string | number }
+  ): Promise<DbGetResult> {
+    return new Promise((resolve, reject) => {
+      /* istanbul ignore if */
+      if (this.db == null) {
+        reject(new Error('Wait for database to be ready'))
+      } else {
+        const names: string[] = []
+        const vals:
+          | (string[] & Array<string | number>)
+          | (number[] & Array<string | number>) = []
+        Object.keys(values).forEach((k) => {
+          names.push(k)
+          vals.push(values[k])
+        })
+        vals.push(condition1.value, condition2.value)
+        this.db.query(
+          `UPDATE ${table} SET ${names
+            .map((name, i) => `${name}=$${i + 1}`)
+            .join(',')} WHERE ${condition1.field}=$${vals.length - 1} AND ${
+            condition2.field
+          }=$${vals.length} RETURNING *;`,
+          vals,
+          (err, rows) => {
+            // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+            err ? reject(err) : resolve(rows.rows)
+          }
+        )
+      }
+    })
+  }
+
   _get(
     tables: T[],
     fields?: string[],
@@ -952,6 +988,53 @@ class Pg<T extends string> extends SQL<T> implements IdDbBackend<T> {
               })
               resolve()
             }
+          }
+        )
+      }
+    })
+  }
+
+  deleteEqualAnd(
+    table: Collections,
+    condition1: {
+      field: string
+      value: string | number | Array<string | number>
+    },
+    condition2: {
+      field: string
+      value: string | number | Array<string | number>
+    }
+  ): Promise<void> {
+    return new Promise((resolve, reject) => {
+      if (this.db == null) {
+        reject(new Error('DB not ready'))
+      } else {
+        if (
+          !condition1.field ||
+          condition1.field.length === 0 ||
+          !condition1.value ||
+          condition1.value.toString().length === 0 ||
+          !condition2.field ||
+          condition2.field.length === 0 ||
+          !condition2.value ||
+          condition2.value.toString().length === 0
+        ) {
+          reject(
+            new Error(
+              // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+              `Bad deleteAnd call, conditions: ${condition1.field}=${condition1.value}, ${condition2.field}=${condition2.value}`
+            )
+          )
+          return
+        }
+        this.db.query(
+          `DELETE FROM ${table} WHERE ${condition1.field}=$1 AND ${condition2.field}=$2`,
+          [condition1.value, condition2.value] as
+            | (string[] & Array<string | number>)
+            | (number[] & Array<string | number>),
+          (err) => {
+            // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+            err ? reject(err) : resolve()
           }
         )
       }
