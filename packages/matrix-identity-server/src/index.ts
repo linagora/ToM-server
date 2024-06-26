@@ -38,12 +38,12 @@ import UserDB from './userdb'
 import _validateMatrixToken from './utils/validateMatrixToken'
 import RequestToken from './validate/email/requestToken'
 import SubmitToken from './validate/email/submitToken'
-import GetValidated3pid from './3pid'
-import unbind from './3pid/unbind'
-import bind from './3pid/bind'
 import isPubkeyValid from './keyManagement/validPubkey'
 import getPubkey from './keyManagement/getPubkey'
 import isEphemeralPubkeyValid from './keyManagement/validEphemeralPubkey'
+import StoreInvit from './invitation'
+import SignEd25519 from './ephemeral_signing'
+
 export { type tokenContent } from './account/register'
 export { default as updateUsers } from './cron/updateUsers'
 export * as IdentityServerDb from './db'
@@ -88,9 +88,9 @@ export default class MatrixIdentityServer {
   }
 
   set authenticate(auth: AuthenticationFunction) {
-    this._authenticate = (req, res, cb, requiresTerms = true) => {
+    this._authenticate = (req, res, cb) => {
       this.rateLimiter(req as Request, res as Response, () => {
-        auth(req, res, cb, requiresTerms)
+        auth(req, res, cb)
       })
     }
   }
@@ -188,10 +188,8 @@ export default class MatrixIdentityServer {
                     '/_matrix/identity/v2/pubkey/ephemeral/isvalid':
                       isEphemeralPubkeyValid(this.db),
                     '/_matrix/identity/v2/pubkey/:keyId': getPubkey(this.db),
-                    '/_matrix/identity/v2/3pid/bind': badMethod,
-                    '/_matrix/identity/v2/3pid/getValidated3pid':
-                      GetValidated3pid(this),
-                    '/_matrix/identity/v2/3pid/unbind': badMethod
+                    '/_matrix/identity/v2/store-invite': badMethod,
+                    '/_matrix/identity/v2/sign-ed25519': badMethod
                   },
                   post: {
                     '/_matrix/identity/v2': badMethod,
@@ -211,9 +209,8 @@ export default class MatrixIdentityServer {
                     '/_matrix/identity/v2/pubkey/isvalid': badMethod,
                     '/_matrix/identity/v2/pubkey/ephemeral/isvalid': badMethod,
                     '/_matrix/identity/v2/pubkey/:keyId': badMethod,
-                    '/_matrix/identity/v2/3pid/getValidated3pid': badMethod,
-                    '/_matrix/identity/v2/3pid/bind': bind(this),
-                    '/_matrix/identity/v2/3pid/unbind': unbind(this)
+                    '/_matrix/identity/v2/store-invite': StoreInvit(this),
+                    '/_matrix/identity/v2/sign-ed25519': SignEd25519(this)
                   }
                 }
                 resolve(true)

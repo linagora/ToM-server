@@ -17,10 +17,9 @@ export type Collections =
   | 'roomTags'
   | 'userHistory'
   | 'userQuotas'
-  | 'mappings'
   | 'longTermKeypairs'
   | 'shortTermKeypairs'
-  | 'userPolicies'
+
 const cleanByExpires: Collections[] = ['oneTimeTokens', 'attempts']
 
 type sqlComparaisonOperator = '=' | '!=' | '>' | '<' | '>=' | '<=' | '<>'
@@ -46,12 +45,6 @@ type Update = (
   values: Record<string, string | number>,
   field: string,
   value: string | number
-) => Promise<DbGetResult>
-type UpdateAnd = (
-  table: Collections,
-  values: Record<string, string | number>,
-  condition1: { field: string; value: string | number },
-  condition2: { field: string; value: string | number }
 ) => Promise<DbGetResult>
 type Get = (
   table: Collections,
@@ -80,14 +73,6 @@ type DeleteEqual = (
   field: string,
   value: string | number
 ) => Promise<void>
-type DeleteEqualAnd = (
-  table: Collections,
-  condition1: {
-    field: string
-    value: string | number | Array<string | number>
-  },
-  condition2: { field: string; value: string | number | Array<string | number> }
-) => Promise<void>
 type DeleteLowerThan = (
   table: Collections,
   field: string,
@@ -109,9 +94,7 @@ export interface IdDbBackend {
   getHigherThan: Get
   match: Match
   update: Update
-  updateAnd: UpdateAnd
   deleteEqual: DeleteEqual
-  deleteEqualAnd: DeleteEqualAnd
   deleteLowerThan: DeleteLowerThan
   deleteWhere: DeleteWhere
   close: () => void
@@ -202,16 +185,6 @@ class IdentityServerDb implements IdDbBackend {
   }
 
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
-  updateAnd(
-    table: Collections,
-    values: Record<string, string | number>,
-    condition1: { field: string; value: string | number },
-    condition2: { field: string; value: string | number }
-  ) {
-    return this.db.updateAnd(table, values, condition1, condition2)
-  }
-
-  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
   get(
     table: Collections,
     fields: string[],
@@ -260,21 +233,6 @@ class IdentityServerDb implements IdDbBackend {
   }
 
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
-  deleteEqualAnd(
-    table: Collections,
-    condition1: {
-      field: string
-      value: string | number | Array<string | number>
-    },
-    condition2: {
-      field: string
-      value: string | number | Array<string | number>
-    }
-  ) {
-    return this.db.deleteEqualAnd(table, condition1, condition2)
-  }
-
-  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
   deleteLowerThan(table: Collections, field: string, value: string | number) {
     return this.db.deleteLowerThan(table, field, value)
   }
@@ -295,7 +253,7 @@ class IdentityServerDb implements IdDbBackend {
     const id = randomString(64)
     // default: expires in 600 s
     const expiresForDb =
-      epoch() + 1000 * (expires != null && expires > 0 ? expires : 600)
+      epoch() + (expires != null && expires > 0 ? expires : 600)
     return new Promise((resolve, reject) => {
       this.db
         .insert('oneTimeTokens', {
@@ -431,9 +389,7 @@ class IdentityServerDb implements IdDbBackend {
     if (type === 'longTerm') {
       throw new Error('Long term key pairs are not supported')
     }
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-expect-error
-    const _type = type === 'longTerm' ? 'longTermKeypairs' : 'shortTermKeypairs'
+    const _type = 'shortTermKeypairs'
     return new Promise((resolve, reject) => {
       this.db
         .insert(_type, {
