@@ -3,7 +3,9 @@ import {
   type IdentityServerDb as MIdentityServerDb
 } from '@twake/matrix-identity-server'
 
-export type Config = MIdentityServerConfig
+export type Config = MIdentityServerConfig & {
+  "matrix_server": "localhost"
+}
 
 export type Collections = MIdentityServerDb.Collections
 

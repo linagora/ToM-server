@@ -7,7 +7,7 @@ import {
 } from '@twake/matrix-identity-server'
 import { type Collections, type Config } from '../types'
 
-export const tables = {}
+export const tables = {matrixTokens: 'id varchar(64) PRIMARY KEY, data text'}
 
 // eslint-disable-next-line @typescript-eslint/promise-function-async
 const initializeDb = (
