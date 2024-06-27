@@ -1,0 +1,17 @@
+{
+  "cron_service": true,
+  "database_engine": "sqlite",
+  "database_host": "./src/__testData__/test.db",
+  "database_vacuum_delay": 7200,
+  "is_federated_identity_service": false,
+  "key_delay": 3600,
+  "keys_depth": 5,
+  "mail_link_delay": 7200,
+  "rate_limiting_window": 10000,
+  "server_name": "matrix.org",
+  "smtp_sender": "yadd@debian.org",
+  "smtp_server": "localhost",
+  "template_dir": "./templates",
+  "userdb_engine": "sqlite",
+  "userdb_host": "./src/__testData__/test.db"
+}
