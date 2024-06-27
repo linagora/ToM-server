@@ -6,7 +6,21 @@ import defaultConfig from './config.json'
 import initializeDb from './db'
 import { type Config } from './types'
 
+// Internal libraries
+import { type expressAppHandler } from '../../matrix-identity-server/src/utils'
+import MatrixDBmodified from './matrixDb'
+
+// Endpoints
+
 export default class MatrixClientServer extends MatrixIdentityServer {
+  api: {
+    get: Record<string, expressAppHandler>
+    post: Record<string, expressAppHandler>
+    put: Record<string, expressAppHandler>
+  }
+
+  matrixDb: MatrixDBmodified
+
   constructor(
     conf?: Partial<Config>,
     confDesc?: ConfigDescription,
@@ -25,6 +39,8 @@ export default class MatrixClientServer extends MatrixIdentityServer {
         : undefined
     ) as Config
     super(serverConf, confDesc, logger)
+    this.api = { get: {}, post: {}, put: {} }
+    this.matrixDb = new MatrixDBmodified(serverConf, this.logger)
     this.ready = new Promise((resolve, reject) => {
       this.ready
         // eslint-disable-next-line @typescript-eslint/promise-function-async
@@ -34,6 +50,7 @@ export default class MatrixClientServer extends MatrixIdentityServer {
         .then(() => {
           this.api.get = { ...this.api.get }
           this.api.post = { ...this.api.post }
+          this.api.put = { ...this.api.put }
           resolve(true)
         })
         /* istanbul ignore next */
