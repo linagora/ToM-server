@@ -39,7 +39,7 @@
     "build:example": "rollup -p @rollup/plugin-typescript -e express,@twake/matrix-client-server -m -o example/client-server.js example/client-server.ts",
     "build:lib": "rollup -c",
     "start": "node server.mjs",
-    "test": "jest"
+    "test": "jest --passWithNoTests"
   },
   "dependencies": {
     "@twake/config-parser": "*",

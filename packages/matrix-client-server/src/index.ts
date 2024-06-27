@@ -24,11 +24,9 @@ export default class MatrixClientServer extends MatrixIdentityServer {
         ? conf
         : undefined
     ) as Config
-    console.log('init config')
     super(serverConf, confDesc, logger)
-    const superReady = this.ready
     this.ready = new Promise((resolve, reject) => {
-      superReady
+      this.ready
         // eslint-disable-next-line @typescript-eslint/promise-function-async
         .then(() => {
           return initializeDb(this.db, this.conf, this.logger)
