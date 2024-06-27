@@ -19,7 +19,7 @@ export default class MatrixClientServer extends MatrixIdentityServer {
   }
 
   matrixDb: MatrixDBmodified
-  declare conf: Config
+
   constructor(
     conf?: Partial<Config>,
     confDesc?: ConfigDescription,
@@ -40,12 +40,14 @@ export default class MatrixClientServer extends MatrixIdentityServer {
     super(serverConf, confDesc, logger)
     this.api = { get: {}, post: {}, put: {} }
     this.matrixDb = new MatrixDBmodified(serverConf, this.logger)
+    this.api = { get: {}, post: {}, put: {} }
+    this.matrixDb = new MatrixDBmodified(serverConf, this.logger)
     this.ready = new Promise((resolve, reject) => {
       this.ready
         .then(() => {
-          this.api.get = { '/_matrix/client/v3/account/whoami': whoami(this) }
-          this.api.post = {}
-          this.api.put = {}
+          this.api.get = { ...this.api.get }
+          this.api.post = { ...this.api.post }
+          this.api.put = { ...this.api.put }
           resolve(true)
         })
         /* istanbul ignore next */
