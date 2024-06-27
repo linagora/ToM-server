@@ -46,6 +46,8 @@ export default class MatrixClientServer extends MatrixIdentityServer {
     this.matrixDb = new MatrixDBmodified(serverConf, this.logger)
     this.api = { get: {}, post: {}, put: {} }
     this.matrixDb = new MatrixDBmodified(serverConf, this.logger)
+    this.api = { get: {}, post: {}, put: {} }
+    this.matrixDb = new MatrixDBmodified(serverConf, this.logger)
     this.ready = new Promise((resolve, reject) => {
       this.ready
         .then(() => {
