@@ -4,6 +4,7 @@ import { type Config } from './types'
 import buildMatrixDb from './__testData__/buildUserDB'
 import defaultConfig from './__testData__/registerConf.json'
 
+
 jest.mock('node-fetch', () => jest.fn())
 const sendMailMock = jest.fn()
 jest.mock('nodemailer', () => ({
