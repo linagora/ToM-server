@@ -4,7 +4,7 @@ import {
 } from '@twake/matrix-identity-server'
 
 export type Config = MIdentityServerConfig & {
-  "matrix_server": "localhost"
+  matrix_server: 'localhost'
 }
 
 export type Collections = MIdentityServerDb.Collections

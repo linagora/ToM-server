@@ -2,7 +2,7 @@ import ClientServer from './index'
 import { type Config } from './types'
 import buildMatrixDb from './__testData__/buildUserDB'
 import defaultConfig from './__testData__/registerConf.json'
-import fs from 'fs';
+import fs from 'fs'
 
 jest.mock('node-fetch', () => jest.fn())
 const sendMailMock = jest.fn()
