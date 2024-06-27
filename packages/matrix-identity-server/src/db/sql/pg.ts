@@ -139,7 +139,7 @@ class Pg<T extends string> extends SQL<T> implements IdDbBackend<T> {
   }
 
   update(
-    table: T,
+    table: string,
     values: Record<string, string | number>,
     field: string,
     value: string | number
