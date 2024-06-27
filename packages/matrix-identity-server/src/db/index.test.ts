@@ -385,6 +385,8 @@ describe('Id Server DB', () => {
             expect(rows.length).toBe(1)
             expect(rows[0].id).toEqual(id)
             expect(rows[0].data).toEqual('{}')
+            clearTimeout(idDb.cleanJob)
+            idDb.close()
             done()
           })
           .catch(done)
