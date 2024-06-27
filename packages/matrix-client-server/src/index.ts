@@ -19,7 +19,7 @@ export default class MatrixClientServer extends MatrixIdentityServer {
   }
 
   matrixDb: MatrixDBmodified
-  declare conf: Config
+
   constructor(
     conf?: Partial<Config>,
     confDesc?: ConfigDescription,
@@ -47,6 +47,7 @@ export default class MatrixClientServer extends MatrixIdentityServer {
         .then(() => {
           this.api.get = { ...this.api.get }
           this.api.post = { ...this.api.post }
+          this.api.put = { ...this.api.put }
           this.api.put = { ...this.api.put }
           resolve(true)
         })
