@@ -7,6 +7,7 @@ import { type Config } from './types'
 import MatrixDBmodified from './matrixDb'
 import MatrixIdentityServer from '../../matrix-identity-server/src/index'
 import { type Utils } from '@twake/matrix-identity-server/'
+import whoami from './account/whoami'
 
 // Endpoints
 
