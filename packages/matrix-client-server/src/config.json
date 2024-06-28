@@ -22,6 +22,7 @@
   "ldap_user": "",
   "ldapjs_opts": {},
   "mail_link_delay": 7200,
+  "matrix_server": "localhost",
   "matrix_database_engine": null,
   "matrix_database_host": null,
   "matrix_database_name": null,

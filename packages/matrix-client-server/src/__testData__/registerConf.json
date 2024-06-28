@@ -13,5 +13,6 @@
   "smtp_server": "localhost",
   "template_dir": "./templates",
   "userdb_engine": "sqlite",
-  "userdb_host": "./src/__testData__/test.db"
+  "userdb_host": "./src/__testData__/test.db",
+  "matrix_server": "localhost"
 }
