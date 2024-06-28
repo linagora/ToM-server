@@ -5,10 +5,10 @@ import fs from 'fs'
 import defaultConfig from './config.json'
 import initializeDb from './db'
 import { type Config } from './types'
-
 // Internal libraries
 import { type expressAppHandler } from '../../matrix-identity-server/src/utils'
 import MatrixDBmodified from './matrixDb'
+import whoami from './account/whoami'
 
 // Endpoints
 
@@ -48,9 +48,9 @@ export default class MatrixClientServer extends MatrixIdentityServer {
           return initializeDb(this.db, this.conf, this.logger)
         })
         .then(() => {
-          this.api.get = { ...this.api.get }
-          this.api.post = { ...this.api.post }
-          this.api.put = { ...this.api.put }
+          this.api.get = { '/_matrix/client/v3/account/whoami': whoami(this) }
+          this.api.post = {}
+          this.api.put = {}
           resolve(true)
         })
         /* istanbul ignore next */

@@ -14,5 +14,11 @@
   "template_dir": "./templates",
   "userdb_engine": "sqlite",
   "userdb_host": "./src/__testData__/test.db",
-  "matrix_server": "localhost"
+  "matrix_server": "localhost",
+  "matrix_database_engine": "sqlite",
+  "matrix_database_host": "./matrix.db",
+  "matrix_database_name": null,
+  "matrix_database_password": null,
+  "matrix_database_ssl": false,
+  "matrix_database_user": null
 }

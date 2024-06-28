@@ -1,9 +1,11 @@
+import express from 'express'
+import fs from 'fs'
+import request, { type Response } from 'supertest'
+import defaultConfig from './__testData__/registerConf.json'
 import ClientServer from './index'
 import { type Config } from './types'
-import buildMatrixDb from './__testData__/buildUserDB'
-import defaultConfig from './__testData__/registerConf.json'
-import fs from 'fs'
-
+import { randomString } from '@twake/crypto'
+import { buildMatrixDb } from './__testData__/buildUserDB'
 jest.mock('node-fetch', () => jest.fn())
 const sendMailMock = jest.fn()
 jest.mock('nodemailer', () => ({
@@ -12,7 +14,7 @@ jest.mock('nodemailer', () => ({
   }))
 }))
 
-// process.env.TWAKE_CLIENT_SERVER_CONF = '../../matrix-identity-server/src/__testData__/registerConf.json'
+process.env.TWAKE_CLIENT_SERVER_CONF = './src/__testData__/registerConf.json'
 
 let clientServer: ClientServer
 let app: express.Application
@@ -23,7 +25,7 @@ beforeAll((done) => {
   conf = {
     ...defaultConfig,
     database_engine: 'sqlite',
-    base_url: 'http://example.com/',
+    base_url: '',
     userdb_engine: 'sqlite'
   }
   if (process.env.TEST_PG === 'yes') {
@@ -69,5 +71,73 @@ describe('Error on server start', () => {
       )
     )
     delete process.env.HASHES_RATE_LIMIT
+  })
+})
+
+describe('Use configuration file', () => {
+  beforeAll((done) => {
+    clientServer = new ClientServer()
+    app = express()
+
+    clientServer.ready
+      .then(() => {
+        Object.keys(clientServer.api.get).forEach((k) => {
+          app.get(k, clientServer.api.get[k])
+        })
+        Object.keys(clientServer.api.post).forEach((k) => {
+          app.post(k, clientServer.api.post[k])
+        })
+        Object.keys(clientServer.api.put).forEach((k) => {
+          app.put(k, clientServer.api.put[k])
+        })
+        done()
+      })
+      .catch((e) => {
+        done(e)
+      })
+  })
+
+  afterAll(() => {
+    clientServer.cleanJobs()
+  })
+
+  describe('Endpoint with authentication', () => {
+    it('should reject if more than 100 requests are done in less than 10 seconds', async () => {
+      let response
+      let token
+      // eslint-disable-next-line @typescript-eslint/no-for-in-array, @typescript-eslint/no-unused-vars
+      for (const i in [...Array(101).keys()]) {
+        token = Number(i) % 2 === 0 ? `Bearer ${validToken}` : 'falsy_token'
+        response = await request(app)
+          .get('/_matrix/client/v3/account/whoami')
+          .set('Authorization', token)
+          .set('Accept', 'application/json')
+      }
+      expect((response as Response).statusCode).toEqual(429)
+      await new Promise((resolve) => setTimeout(resolve, 11000))
+    })
+
+    describe('/_matrix/client/v3/account/whoami', () => {
+      it('should reject missing token (', async () => {
+        const response = await request(app)
+          .get('/_matrix/client/v3/account/whoami')
+          .set('Accept', 'application/json')
+        expect(response.statusCode).toBe(401)
+      })
+      it('should reject token that mismatch regex', async () => {
+        const response = await request(app)
+          .get('/_matrix/client/v3/account/whoami')
+          .set('Authorization', 'Bearer zzzzzzz')
+          .set('Accept', 'application/json')
+        expect(response.statusCode).toBe(401)
+      })
+      it('should reject expired or invalid token', async () => {
+        const response = await request(app)
+          .get('/_matrix/client/v3/account/whoami')
+          .set('Authorization', `Bearer ${randomString(64)}`)
+          .set('Accept', 'application/json')
+        expect(response.statusCode).toBe(401)
+      })
+    })
   })
 })

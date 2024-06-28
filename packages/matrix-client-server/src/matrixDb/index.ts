@@ -21,6 +21,7 @@ type Collections =
   | 'local_media_repository'
   | 'redactions'
   | 'room_aliases'
+  | 'threepid_guest_access_tokens'
 
 type Get = (
   table: Collections,
