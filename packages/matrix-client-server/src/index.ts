@@ -18,7 +18,7 @@ export default class MatrixClientServer extends MatrixIdentityServer {
   }
 
   matrixDb: MatrixDBmodified
-
+  declare conf: Config
   constructor(
     conf?: Partial<Config>,
     confDesc?: ConfigDescription,
