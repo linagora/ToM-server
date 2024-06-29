@@ -15,8 +15,8 @@ import {
   lookupsValidator
 } from '../middlewares/validation'
 import {
+  type FdServerDb,
   type Config,
-  type IdentityServerDb,
   type expressAppHandler,
   type middlewaresList
 } from '../types'
@@ -33,7 +33,7 @@ export default (
     post: IdServerAPI
     put?: IdServerAPI
   },
-  db: IdentityServerDb,
+  db: FdServerDb,
   authenticate: Utils.AuthenticationFunction,
   conf: Config,
   logger: TwakeLogger
