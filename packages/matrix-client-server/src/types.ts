@@ -1,7 +1,4 @@
-import {
-  type Config as MIdentityServerConfig,
-  type IdentityServerDb as MIdentityServerDb
-} from '@twake/matrix-identity-server'
+import { type Config as MIdentityServerConfig } from '@twake/matrix-identity-server'
 
 export type Config = MIdentityServerConfig & {
   matrix_server: string
