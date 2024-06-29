@@ -1,5 +1,5 @@
 import { type NextFunction, type Request, type Response } from 'express'
-import { type TwakeDB } from '../../db'
+import { type TwakeDB } from '../../types'
 import { type tokenDetail } from '../middlewares/auth'
 import { VaultAPIError, type expressAppHandler } from '../utils'
 import { getRecoveryWords, methodNotAllowed, saveRecoveryWords } from './vault'
