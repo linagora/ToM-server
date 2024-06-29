@@ -29,7 +29,7 @@ const middlewareSpy = jest.fn().mockImplementation((_req, _res, next) => {
 })
 
 jest
-  .spyOn(IdentityServerDb.default.prototype, 'get')
+  .spyOn(IdentityServerDb.prototype, 'get')
   .mockResolvedValue([{ data: '"test"' }])
 
 const idServer = new IdServer(

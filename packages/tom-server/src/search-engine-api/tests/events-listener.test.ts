@@ -58,7 +58,7 @@ jest.mock('../../identity-server/index.ts', () => {
   return function () {
     return {
       ready: Promise.resolve(true),
-      db: {},
+      db: { cleanByExpires: [] },
       userDB: {},
       api: { get: {}, post: {} },
       cleanJobs: jest.fn().mockImplementation(() => testServer.logger.close())
@@ -75,8 +75,6 @@ jest.mock('../../application-server/index.ts', () => {
     }
   }
 })
-
-jest.mock('../../db/index.ts', () => jest.fn())
 
 describe('Search engine API - Opensearch service', () => {
   let app: express.Application

@@ -20,7 +20,7 @@ import {
 import AppServiceAPI from '.'
 import TwakeServer from '..'
 import JEST_PROCESS_ROOT_PATH from '../../jest.globals'
-import { allMatrixErrorCodes, type Collections, type Config } from '../types'
+import { allMatrixErrorCodes, type Config } from '../types'
 import { addUser, buildUserDB, deleteUserDB } from './__testData__/build-userdb'
 import defaultConfig from './__testData__/config.json'
 import { TwakeRoom } from './models/room'
@@ -326,10 +326,7 @@ describe('ApplicationServer', () => {
         })
       expect(response.statusCode).toBe(200)
       expect(response.body).toEqual({})
-      const rooms = await twakeServer.db?.getAll(
-        'rooms' as unknown as Collections,
-        ['*']
-      )
+      const rooms = await twakeServer.db?.getAll('rooms', ['*'])
       expect(rooms).not.toBeUndefined()
       expect((rooms as DbGetResult).length).toEqual(1)
       const newRoom = (rooms as DbGetResult)[0]
