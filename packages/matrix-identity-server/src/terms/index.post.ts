@@ -53,7 +53,9 @@ export const fillPoliciesDB = (
   })
 }
 
-const PostTerms = (idServer: MatrixIdentityServer): expressAppHandler => {
+const PostTerms = <T extends string = never>(
+  idServer: MatrixIdentityServer<T>
+): expressAppHandler => {
   const urlsFromPolicies = getUrlsFromPolicies(
     computePolicy(idServer.conf, idServer.logger)
   )

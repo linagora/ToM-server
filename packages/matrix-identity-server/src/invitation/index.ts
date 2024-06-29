@@ -120,7 +120,9 @@ const redactAddress = (address: string): string => {
   return `${redactedLocalPart}@${redactedDomainPart}`
 }
 
-const StoreInvit = (idServer: MatrixIdentityServer): expressAppHandler => {
+const StoreInvit = <T extends string = never>(
+  idServer: MatrixIdentityServer<T>
+): expressAppHandler => {
   const transport = new Mailer(idServer.conf)
   const verificationTemplate = preConfigureTemplate(
     fs

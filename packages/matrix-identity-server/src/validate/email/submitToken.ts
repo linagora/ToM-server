@@ -14,7 +14,9 @@ interface mailToken {
   sid: string
 }
 
-const SubmitToken = (idServer: MatrixIdentityServer): expressAppHandler => {
+const SubmitToken = <T extends string = never>(
+  idServer: MatrixIdentityServer<T>
+): expressAppHandler => {
   return (req, res) => {
     const realMethod = (prms: parameters): void => {
       if (
