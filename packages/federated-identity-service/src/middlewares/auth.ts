@@ -5,13 +5,13 @@ import {
   type tokenContent
 } from '@twake/matrix-identity-server'
 import { type NextFunction, type Response } from 'express'
-import { type AuthRequest, type IdentityServerDb } from '../types'
+import { type AuthRequest, type FdServerDb } from '../types'
 import { convertToIPv6 } from '../utils/ip-address'
 
 const tokenTrustedServer = 'TOKEN_TRUSTED_SERVER'
 
 export const Authenticate = (
-  db: IdentityServerDb,
+  db: FdServerDb,
   trustedServersList: string[],
   trustXForwardedForHeader: boolean,
   logger: TwakeLogger

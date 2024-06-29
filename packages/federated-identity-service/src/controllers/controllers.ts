@@ -2,22 +2,16 @@ import { supportedHashes } from '@twake/crypto'
 import { type TwakeLogger } from '@twake/logger'
 import { MatrixErrors, type DbGetResult } from '@twake/matrix-identity-server'
 import lodash from 'lodash'
-import { hashByServer } from '../db'
 import {
   FederatedIdentityServiceError,
   validationErrorHandler
 } from '../middlewares/errors'
-import {
-  type Config,
-  type IdentityServerDb,
-  type expressAppHandler
-} from '../types'
+import { type Config, type FdServerDb, type expressAppHandler } from '../types'
 const { groupBy, mapValues } = lodash
 
-export const lookup = (
-  conf: Config,
-  db: IdentityServerDb
-): expressAppHandler => {
+export const hashByServer = 'hashByServer'
+
+export const lookup = (conf: Config, db: FdServerDb): expressAppHandler => {
   return (req, res, next) => {
     const mappings: Record<string, string> = {}
     const inactives: Record<string, string> = {}
@@ -78,7 +72,7 @@ export const lookup = (
   }
 }
 
-export const lookups = (db: IdentityServerDb): expressAppHandler => {
+export const lookups = (db: FdServerDb): expressAppHandler => {
   return (req, res, next) => {
     validationErrorHandler(req)
     const pepper = req.body.pepper
@@ -132,7 +126,7 @@ interface HashDetailsObject {
 }
 
 export const hashDetails = (
-  db: IdentityServerDb,
+  db: FdServerDb,
   logger: TwakeLogger
 ): expressAppHandler => {
   return (req, res, next) => {
