@@ -1,11 +1,10 @@
 import { type TwakeLogger } from '@twake/logger'
 import { type ClientConfig } from 'pg'
-import { type UserDBBackend } from '../'
-import { type Collections } from '../../db'
+import { type Collections, type UserDBBackend } from '..'
 import Pg from '../../db/sql/pg'
 import { type Config } from '../../types'
 
-class UserDBPg extends Pg implements UserDBBackend {
+class UserDBPg extends Pg<Collections> implements UserDBBackend {
   // eslint-disable-next-line @typescript-eslint/promise-function-async
   createDatabases(
     conf: Config,
