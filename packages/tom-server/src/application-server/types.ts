@@ -1,4 +1,4 @@
-import { type TwakeDB } from '../db'
+import { type TwakeDB } from '../types'
 
 export interface ITwakeRoomModel {
   readonly id: string

@@ -1,9 +1,9 @@
-import type { IdentityServerDb } from '../../types'
+import { type TwakeDB } from '../../types'
 import type { IRoomTagsService, RoomTag } from '../types'
 import { getRoomTagId, userRoomTagExists } from '../utils'
 
 class RoomTagsService implements IRoomTagsService {
-  constructor(private readonly db: IdentityServerDb) {}
+  constructor(private readonly db: TwakeDB) {}
 
   /**
    * Fetches the tags of a room.

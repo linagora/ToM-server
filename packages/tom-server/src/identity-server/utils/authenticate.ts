@@ -1,11 +1,7 @@
 import { type TwakeLogger } from '@twake/logger'
 import { Utils, errMsg, type tokenContent } from '@twake/matrix-identity-server'
 import fetch from 'node-fetch'
-import {
-  type AuthenticationFunction,
-  type Config,
-  type IdentityServerDb
-} from '../../types'
+import type { AuthenticationFunction, Config, TwakeDB } from '../../types'
 
 export interface WhoAmIResponse {
   user_id?: string
@@ -14,7 +10,7 @@ export interface WhoAmIResponse {
 }
 
 const Authenticate = (
-  db: IdentityServerDb,
+  db: TwakeDB,
   conf: Config,
   logger: TwakeLogger
 ): AuthenticationFunction => {
@@ -32,7 +28,6 @@ const Authenticate = (
       token = req.query.access_token
     }
     if (token != null) {
-      // @ts-expect-error matrixTokens not in Collections
       db.get('matrixTokens', ['data'], { id: token })
         .then((rows) => {
           if (rows.length === 0) {
@@ -62,7 +57,6 @@ const Authenticate = (
                   epoch: Utils.epoch()
                 }
                 // STORE
-                // @ts-expect-error recoveryWords not in Collections
                 db.insert('matrixTokens', {
                   // eslint-disable-next-line n/no-callback-literal
                   // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error

@@ -6,11 +6,7 @@ import {
 } from '@twake/logger'
 import type { MatrixDBBackend } from '@twake/matrix-identity-server'
 import { Router } from 'express'
-import type {
-  AuthenticationFunction,
-  Config,
-  IdentityServerDb
-} from '../../types'
+import type { AuthenticationFunction, Config, TwakeDB } from '../../types'
 import authMiddleware from '../../utils/middlewares/auth.middleware'
 import RoomTagsController from '../controllers'
 import RoomTagsMiddleware from '../middlewares'
@@ -18,7 +14,7 @@ import RoomTagsMiddleware from '../middlewares'
 export const PATH = '/_twake/v1/room_tags'
 
 export default (
-  db: IdentityServerDb,
+  db: TwakeDB,
   maxtrixDb: MatrixDBBackend,
   config: Config,
   authenticator: AuthenticationFunction,
