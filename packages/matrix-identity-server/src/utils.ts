@@ -41,8 +41,8 @@ export type AuthenticationFunction = (
   requiresTerms?: boolean
 ) => void
 
-export const Authenticate = (
-  db: IdentityServerDb,
+export const Authenticate = <T extends string = never>(
+  db: IdentityServerDb<T>,
   logger: TwakeLogger
 ): AuthenticationFunction => {
   const tokenRe = /^Bearer (\S+)$/

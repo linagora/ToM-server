@@ -3,6 +3,7 @@ import { type TwakeLogger } from '@twake/logger'
 import { type Config, type DbGetResult } from '../types'
 import { epoch } from '../utils'
 import Pg from './sql/pg'
+import { type ISQLCondition } from './sql/sql'
 import Sqlite from './sql/sqlite'
 
 export type SupportedDatabases = 'sqlite' | 'pg'
@@ -23,7 +24,42 @@ export type Collections =
   | 'userPolicies'
 const cleanByExpires: Collections[] = ['oneTimeTokens', 'attempts']
 
-type sqlComparaisonOperator = '=' | '!=' | '>' | '<' | '>=' | '<=' | '<>'
+const tables: Record<Collections, string> = {
+  accessTokens: 'id varchar(64) PRIMARY KEY, data text',
+  oneTimeTokens: 'id varchar(64) PRIMARY KEY, expires int, data text',
+  attempts: 'email text PRIMARY KEY, expires int, attempt int',
+  keys: 'name varchar(32) PRIMARY KEY, data text',
+  hashes:
+    'hash varchar(48) PRIMARY KEY, pepper varchar(32), type varchar(8), value text, active integer',
+  privateNotes:
+    'id varchar(64) PRIMARY KEY, authorId varchar(64), content text, targetId varchar(64)',
+  roomTags:
+    'id varchar(64) PRIMARY KEY, authorId varchar(64), content text, roomId varchar(64)',
+  userHistory: 'address text PRIMARY KEY, active integer, timestamp integer',
+  userQuotas: 'user_id varchar(64) PRIMARY KEY, size int',
+  mappings:
+    'client_secret varchar(255) PRIMARY KEY, session_id varchar(12), medium varchar(8), valid integer, address text, submit_time integer, send_attempt integer',
+  longTermKeypairs:
+    'name text PRIMARY KEY, keyID varchar(64), public text, private text',
+  shortTermKeypairs:
+    'keyID varchar(64) PRIMARY KEY, public text, private text, active integer',
+  userPolicies: 'user_id text, policy_name text, accepted integer'
+}
+
+const indexes: Partial<Record<Collections, string[]>> = {
+  oneTimeTokens: ['expires'],
+  attempts: ['expires'],
+  userHistory: ['timestamp']
+}
+
+const initializeValues: Partial<
+  Record<Collections, Array<Record<string, string | number>>>
+> = {
+  keys: [
+    { name: 'pepper', data: '' },
+    { name: 'previousPepper', data: '' }
+  ]
+}
 
 interface keyPair {
   publicKey: string
@@ -31,89 +67,83 @@ interface keyPair {
   keyId: string
 }
 
-export interface ISQLCondition {
-  field: string
-  operator: sqlComparaisonOperator
-  value: string | number
-}
-
-type Insert = (
-  table: Collections,
+type Insert<T> = (
+  table: T,
   values: Record<string, string | number>
 ) => Promise<DbGetResult>
-type Update = (
-  table: Collections,
+type Update<T> = (
+  table: T,
   values: Record<string, string | number>,
   field: string,
   value: string | number
 ) => Promise<DbGetResult>
-type UpdateAnd = (
-  table: Collections,
+type UpdateAnd<T> = (
+  table: T,
   values: Record<string, string | number>,
   condition1: { field: string; value: string | number },
   condition2: { field: string; value: string | number }
 ) => Promise<DbGetResult>
-type Get = (
-  table: Collections,
+type Get<T> = (
+  table: T,
   fields: string[],
   filterFields: Record<string, string | number | Array<string | number>>,
   order?: string
 ) => Promise<DbGetResult>
-type GetCount = (
-  table: Collections,
+type GetCount<T> = (
+  table: T,
   field: string,
   value?: string | number | string[]
 ) => Promise<number>
-type GetAll = (
-  table: Collections,
+type GetAll<T> = (
+  table: T,
   fields: string[],
   order?: string
 ) => Promise<DbGetResult>
-type Match = (
-  table: Collections,
+type Match<T> = (
+  table: T,
   fields: string[],
   searchFields: string[],
   value: string | number
 ) => Promise<DbGetResult>
-type DeleteEqual = (
-  table: Collections,
+type DeleteEqual<T> = (
+  table: T,
   field: string,
   value: string | number
 ) => Promise<void>
-type DeleteEqualAnd = (
-  table: Collections,
+type DeleteEqualAnd<T> = (
+  table: T,
   condition1: {
     field: string
     value: string | number | Array<string | number>
   },
   condition2: { field: string; value: string | number | Array<string | number> }
 ) => Promise<void>
-type DeleteLowerThan = (
-  table: Collections,
+type DeleteLowerThan<T> = (
+  table: T,
   field: string,
   value: string | number
 ) => Promise<void>
 
-type DeleteWhere = (
-  table: string,
+type DeleteWhere<T> = (
+  table: T,
   conditions: ISQLCondition | ISQLCondition[]
 ) => Promise<void>
 
-export interface IdDbBackend {
+export interface IdDbBackend<T> {
   ready: Promise<void>
   createDatabases: (conf: Config, ...args: any) => Promise<void>
-  insert: Insert
-  get: Get
-  getCount: GetCount
-  getAll: GetAll
-  getHigherThan: Get
-  match: Match
-  update: Update
-  updateAnd: UpdateAnd
-  deleteEqual: DeleteEqual
-  deleteEqualAnd: DeleteEqualAnd
-  deleteLowerThan: DeleteLowerThan
-  deleteWhere: DeleteWhere
+  insert: Insert<T>
+  get: Get<T>
+  getCount: GetCount<T>
+  getAll: GetAll<T>
+  getHigherThan: Get<T>
+  match: Match<T>
+  update: Update<T>
+  updateAnd: UpdateAnd<T>
+  deleteEqual: DeleteEqual<T>
+  deleteEqualAnd: DeleteEqualAnd<T>
+  deleteLowerThan: DeleteLowerThan<T>
+  deleteWhere: DeleteWhere<T>
   close: () => void
 }
 export type InsertType = (
@@ -121,13 +151,23 @@ export type InsertType = (
   values: Array<string | number>
 ) => Promise<void>
 
-class IdentityServerDb implements IdDbBackend {
+class IdentityServerDb<T extends string = never>
+  implements IdDbBackend<Collections | T>
+{
   ready: Promise<void>
-  db: IdDbBackend
+  db: IdDbBackend<Collections | T>
   cleanJob?: NodeJS.Timeout
-  cleanByExpires: Collections[]
+  cleanByExpires: Array<Collections | T>
 
-  constructor(conf: Config, private readonly logger: TwakeLogger) {
+  constructor(
+    conf: Config,
+    private readonly logger: TwakeLogger,
+    additionnalTables?: Record<T, string>,
+    additionnalIndexes?: Partial<Record<T, string[]>>,
+    additionnalInitializeValues?: Partial<
+      Record<Collections, Array<Record<string, string | number>>>
+    >
+  ) {
     this.cleanByExpires = cleanByExpires
     let Module
     /* istanbul ignore next */
@@ -145,7 +185,26 @@ class IdentityServerDb implements IdDbBackend {
         throw new Error(`Unsupported database type ${conf.database_engine}`)
       }
     }
-    this.db = new Module(conf, this.logger)
+
+    const allTables =
+      additionnalTables != null ? { ...tables, ...additionnalTables } : tables
+    const allIndexes =
+      additionnalIndexes != null
+        ? { ...indexes, ...additionnalIndexes }
+        : indexes
+    const allInitializeValues =
+      additionnalInitializeValues != null
+        ? { ...initializeValues, ...additionnalInitializeValues }
+        : initializeValues
+    this.db = new Module<Collections | T>(
+      conf,
+      this.logger,
+      allTables as Record<Collections | T, string>,
+      allIndexes as Partial<Record<Collections | T, string[]>>,
+      allInitializeValues as Partial<
+        Record<Collections | T, Array<Record<string, string | number>>>
+      >
+    )
     this.ready = new Promise((resolve, reject) => {
       this.db.ready
         .then(() => {
@@ -187,13 +246,13 @@ class IdentityServerDb implements IdDbBackend {
   }
 
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
-  insert(table: Collections, values: Record<string, string | number>) {
+  insert(table: Collections | T, values: Record<string, string | number>) {
     return this.db.insert(table, values)
   }
 
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
   update(
-    table: Collections,
+    table: Collections | T,
     values: Record<string, string | number>,
     field: string,
     value: string | number
@@ -203,7 +262,7 @@ class IdentityServerDb implements IdDbBackend {
 
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
   updateAnd(
-    table: Collections,
+    table: Collections | T,
     values: Record<string, string | number>,
     condition1: { field: string; value: string | number },
     condition2: { field: string; value: string | number }
@@ -213,7 +272,7 @@ class IdentityServerDb implements IdDbBackend {
 
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
   get(
-    table: Collections,
+    table: Collections | T,
     fields: string[],
     filterFields: Record<string, string | number | Array<string | number>>
   ) {
@@ -222,7 +281,7 @@ class IdentityServerDb implements IdDbBackend {
 
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
   getCount(
-    table: Collections,
+    table: Collections | T,
     field: string,
     value?: string | number | string[]
   ) {
@@ -230,13 +289,13 @@ class IdentityServerDb implements IdDbBackend {
   }
 
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
-  getAll(table: Collections, fields: string[], order?: string) {
+  getAll(table: Collections | T, fields: string[], order?: string) {
     return this.db.getAll(table, fields, order)
   }
 
   // eslint-disable-next-line @typescript-eslint/promise-function-async
   getHigherThan(
-    table: Collections,
+    table: Collections | T,
     fields: string[],
     filterFields: Record<string, string | number | Array<string | number>>,
     order?: string
@@ -246,7 +305,7 @@ class IdentityServerDb implements IdDbBackend {
 
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
   match(
-    table: Collections,
+    table: Collections | T,
     fields: string[],
     searchFields: string[],
     value: string | number
@@ -255,13 +314,13 @@ class IdentityServerDb implements IdDbBackend {
   }
 
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
-  deleteEqual(table: Collections, field: string, value: string | number) {
+  deleteEqual(table: Collections | T, field: string, value: string | number) {
     return this.db.deleteEqual(table, field, value)
   }
 
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
   deleteEqualAnd(
-    table: Collections,
+    table: Collections | T,
     condition1: {
       field: string
       value: string | number | Array<string | number>
@@ -275,12 +334,19 @@ class IdentityServerDb implements IdDbBackend {
   }
 
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
-  deleteLowerThan(table: Collections, field: string, value: string | number) {
+  deleteLowerThan(
+    table: Collections | T,
+    field: string,
+    value: string | number
+  ) {
     return this.db.deleteLowerThan(table, field, value)
   }
 
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
-  deleteWhere(table: string, conditions: ISQLCondition | ISQLCondition[]) {
+  deleteWhere(
+    table: Collections | T,
+    conditions: ISQLCondition | ISQLCondition[]
+  ) {
     // Deletes from table where filters correspond to values
     // Size of filters and values must be the same
     return this.db.deleteWhere(table, conditions)
@@ -476,7 +542,7 @@ class IdentityServerDb implements IdDbBackend {
       /* istanbul ignore next */
       await Promise.all(
         // eslint-disable-next-line @typescript-eslint/promise-function-async
-        cleanByExpires.map((table) => {
+        this.cleanByExpires.map((table) => {
           return this.deleteLowerThan(table, 'expires', epoch())
         })
       )

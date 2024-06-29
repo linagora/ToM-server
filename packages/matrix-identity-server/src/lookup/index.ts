@@ -13,7 +13,9 @@ const schema = {
   pepper: false
 }
 
-const lookup = (idServer: MatrixIdentityServer): expressAppHandler => {
+const lookup = <T extends string = never>(
+  idServer: MatrixIdentityServer<T>
+): expressAppHandler => {
   return (req, res) => {
     idServer.authenticate(req, res, (data, id) => {
       jsonContent(req, res, idServer.logger, (obj) => {

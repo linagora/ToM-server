@@ -3,7 +3,9 @@ import { send, type expressAppHandler } from '../utils'
 import { errMsg } from '../utils/errors'
 import type MatrixIdentityServer from '..'
 
-const hashDetails = (idServer: MatrixIdentityServer): expressAppHandler => {
+const hashDetails = <T extends string = never>(
+  idServer: MatrixIdentityServer<T>
+): expressAppHandler => {
   return (req, res) => {
     idServer.authenticate(req, res, (tokenContent, id) => {
       idServer.db

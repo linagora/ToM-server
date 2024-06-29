@@ -3,7 +3,9 @@ import { send, type expressAppHandler } from '../utils'
 import { errMsg } from '../utils/errors'
 import { type tokenContent } from './register'
 
-const Logout = (idServer: MatrixIdentityServer): expressAppHandler => {
+const Logout = <T extends string = never>(
+  idServer: MatrixIdentityServer<T>
+): expressAppHandler => {
   return (req, res) => {
     // @ts-expect-error id is defined here
     idServer.authenticate(req, res, (idToken: tokenContent, id: string) => {
