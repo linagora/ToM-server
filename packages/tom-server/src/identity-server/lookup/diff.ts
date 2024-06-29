@@ -1,6 +1,6 @@
 import { type TwakeLogger } from '@twake/logger'
 import { Utils, errMsg } from '@twake/matrix-identity-server'
-import type AugmentedIdentityServer from '..'
+import type TwakeIdentityServer from '..'
 import { type expressAppHandler } from '../../types'
 
 const schema = {
@@ -18,7 +18,7 @@ interface DiffQueryBody {
 }
 
 const diff = (
-  idServer: AugmentedIdentityServer,
+  idServer: TwakeIdentityServer,
   logger: TwakeLogger
 ): expressAppHandler => {
   return (req, res) => {
