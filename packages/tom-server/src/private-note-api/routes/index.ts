@@ -5,11 +5,7 @@ import {
   type TwakeLogger
 } from '@twake/logger'
 import { Router } from 'express'
-import type {
-  AuthenticationFunction,
-  Config,
-  IdentityServerDb
-} from '../../types'
+import type { AuthenticationFunction, Config, TwakeDB } from '../../types'
 import authMiddleware from '../../utils/middlewares/auth.middleware'
 import PrivateNoteApiController from '../controllers'
 import PrivateNoteApiValidationMiddleware from '../middlewares/validation.middleware'
@@ -17,7 +13,7 @@ import PrivateNoteApiValidationMiddleware from '../middlewares/validation.middle
 export const PATH = '/_twake/private_note'
 
 export default (
-  db: IdentityServerDb,
+  db: TwakeDB,
   config: Config,
   authenticator: AuthenticationFunction,
   defaultLogger?: TwakeLogger
