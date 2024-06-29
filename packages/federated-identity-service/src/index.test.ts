@@ -18,7 +18,7 @@ import FederatedIdentityService from '.'
 import JEST_PROCESS_ROOT_PATH from '../jest.globals'
 import { buildMatrixDb, buildUserDB } from './__testData__/build-userdb'
 import defaultConfig from './__testData__/config.json'
-import { hashByServer } from './db'
+import { hashByServer } from './controllers/controllers'
 import { type Config } from './types'
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
