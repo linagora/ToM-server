@@ -9,7 +9,6 @@ import { Router } from 'express'
 import fs from 'fs'
 import AppServiceAPI from './application-server'
 import defaultConfig from './config.json'
-import initializeDb, { type TwakeDB } from './db'
 import IdServer from './identity-server'
 import mutualRoomsAPIRouter from './mutual-rooms-api'
 import privateNoteApiRouter from './private-note-api'
@@ -17,7 +16,7 @@ import roomTagsAPIRouter from './room-tags-api'
 import TwakeSearchEngine from './search-engine-api'
 import { type IOpenSearchRepository } from './search-engine-api/repositories/interfaces/opensearch-repository.interface'
 import smsApiRouter from './sms-api'
-import type { Config, ConfigurationFile, TwakeIdentityServer } from './types'
+import type { Config, ConfigurationFile, TwakeDB, TwakeIdentityServer } from './types'
 import userInfoAPIRouter from './user-info-api'
 import VaultServer from './vault-api'
 import WellKnown from './wellKnown'
@@ -103,19 +102,17 @@ export default class TwakeServer {
 
   private async _initServer(confDesc?: ConfigDescription): Promise<boolean> {
     await this.idServer.ready
+    this.db = this.idServer.db
+    this.db.cleanByExpires.push('matrixTokens')
     this.logger.debug('idServer initialized')
     await this.matrixDb.ready
     this.logger.debug('Connected to Matrix DB')
-    await initializeDb(this)
     this.logger.debug('Main database initialized')
 
-    const vaultServer = new VaultServer(
-      this.idServer.db,
-      this.idServer.authenticate
-    )
+    const vaultServer = new VaultServer(this.db, this.idServer.authenticate)
     const wellKnown = new WellKnown(this.conf)
     const privateNoteApi = privateNoteApiRouter(
-      this.idServer.db,
+      this.db,
       this.conf,
       this.idServer.authenticate,
       this.logger
@@ -127,7 +124,7 @@ export default class TwakeServer {
       this.logger
     )
     const roomTagsApi = roomTagsAPIRouter(
-      this.idServer.db,
+      this.db,
       this.matrixDb.db,
       this.conf,
       this.idServer.authenticate,
@@ -153,7 +150,7 @@ export default class TwakeServer {
       this.conf.opensearch_is_activated
     ) {
       const searchEngineApi = new TwakeSearchEngine(
-        this.idServer.db,
+        this.db,
         this.idServer.userDB,
         this.idServer.authenticate,
         this.matrixDb,

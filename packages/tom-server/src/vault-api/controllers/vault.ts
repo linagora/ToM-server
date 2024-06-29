@@ -1,4 +1,4 @@
-import { type TwakeDB } from '../../db'
+import { type TwakeDB } from '../../types'
 import { VaultAPIError, type expressAppHandler } from '../utils'
 
 export type VaultController = (db: TwakeDB) => expressAppHandler
@@ -13,7 +13,6 @@ export const saveRecoveryWords = (db: TwakeDB): expressAppHandler => {
       userId: req.token.content.sub,
       words: req.body.words
     }
-    // @ts-expect-error 'recoveryWords' isn't declared in Collection
     db.insert('recoveryWords', data)
       .then((_) => {
         res.status(201).json({ message: 'Saved recovery words sucessfully' })
@@ -27,7 +26,6 @@ export const saveRecoveryWords = (db: TwakeDB): expressAppHandler => {
 export const getRecoveryWords = (db: TwakeDB): expressAppHandler => {
   return (req, res, next) => {
     const userId: string = req.token.content.sub
-    // @ts-expect-error recoveryWords isn't declared in Collections
     db.get('recoveryWords', ['words'], { userId })
       .then((data) => {
         if (data.length === 0) {
@@ -53,7 +51,6 @@ export const deleteRecoveryWords = (db: TwakeDB): expressAppHandler => {
   return (req, res, next) => {
     const userId: string = req.token.content.sub
 
-    // @ts-expect-error recoveryWords isn't declared in Collections
     db.get('recoveryWords', ['words'], { userId })
       .then((data) => {
         if (data.length === 0) {
