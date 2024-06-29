@@ -1,6 +1,6 @@
 import type MatrixIdentityServer from '..'
 import { errMsg } from '..'
-import { type expressAppHandler, send, epoch } from '../utils'
+import { epoch, send, type expressAppHandler } from '../utils'
 
 interface parameters {
   client_secret: string

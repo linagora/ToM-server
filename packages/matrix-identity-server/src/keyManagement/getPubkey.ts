@@ -1,5 +1,5 @@
-import type IdentityServerDB from '../db'
 import { type Request } from 'express'
+import type IdentityServerDB from '../db'
 import { send, type expressAppHandler } from '../utils'
 import { errMsg } from '../utils/errors'
 

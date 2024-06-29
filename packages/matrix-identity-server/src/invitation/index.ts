@@ -1,6 +1,8 @@
 import { randomString } from '@twake/crypto'
-import fetch from 'node-fetch'
 import fs from 'fs'
+import fetch from 'node-fetch'
+import type MatrixIdentityServer from '../index'
+import { type Config } from '../types'
 import {
   jsonContent,
   send,
@@ -8,9 +10,7 @@ import {
   type expressAppHandler
 } from '../utils'
 import { errMsg } from '../utils/errors'
-import type MatrixIdentityServer from '../index'
 import Mailer from '../utils/mailer'
-import { type Config } from '../types'
 
 interface storeInvitationArgs {
   address: string

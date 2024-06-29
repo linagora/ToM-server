@@ -1,4 +1,4 @@
-import { randomString, generateKeyPair } from '@twake/crypto'
+import { generateKeyPair, randomString } from '@twake/crypto'
 import { type TwakeLogger } from '@twake/logger'
 import { type Config, type DbGetResult } from '../types'
 import { epoch } from '../utils'
