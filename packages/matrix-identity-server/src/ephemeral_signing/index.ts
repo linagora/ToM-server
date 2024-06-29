@@ -25,7 +25,9 @@ const schema = {
   token: true
 }
 
-const SignEd25519 = (idServer: MatrixIdentityServer): expressAppHandler => {
+const SignEd25519 = <T extends string = never>(
+  idServer: MatrixIdentityServer<T>
+): expressAppHandler => {
   return (req, res) => {
     idServer.authenticate(req, res, (data, id) => {
       jsonContent(req, res, idServer.logger, (obj) => {

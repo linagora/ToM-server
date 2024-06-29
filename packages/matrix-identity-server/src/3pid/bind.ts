@@ -33,7 +33,9 @@ const schema = {
   sid: true
 }
 
-const bind = (idServer: MatrixIdentityServer): expressAppHandler => {
+const bind = <T extends string = never>(
+  idServer: MatrixIdentityServer<T>
+): expressAppHandler => {
   return (req, res) => {
     idServer.authenticate(req, res, (data, id) => {
       jsonContent(req, res, idServer.logger, (obj) => {

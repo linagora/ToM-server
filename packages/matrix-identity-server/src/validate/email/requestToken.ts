@@ -79,8 +79,8 @@ const mailBody = (
   )
 }
 
-const fillTable = (
-  idServer: MatrixIdentityServer,
+const fillTable = <T extends string = never>(
+  idServer: MatrixIdentityServer<T>,
   dst: string,
   clientSecret: string,
   sendAttempt: number,
@@ -131,7 +131,9 @@ const fillTable = (
     })
 }
 
-const RequestToken = (idServer: MatrixIdentityServer): expressAppHandler => {
+const RequestToken = <T extends string = never>(
+  idServer: MatrixIdentityServer<T>
+): expressAppHandler => {
   const transport = new Mailer(idServer.conf)
   const verificationTemplate = preConfigureTemplate(
     fs

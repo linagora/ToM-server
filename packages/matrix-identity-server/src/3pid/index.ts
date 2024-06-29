@@ -9,8 +9,8 @@ interface parameters {
 
 const validationTime: number = 100 * 365 * 24 * 60 * 60 * 1000
 
-const GetValidated3pid = (
-  idServer: MatrixIdentityServer
+const GetValidated3pid = <T extends string = never>(
+  idServer: MatrixIdentityServer<T>
 ): expressAppHandler => {
   return (req, res) => {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment

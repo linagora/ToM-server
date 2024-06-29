@@ -3,7 +3,9 @@ import { type Request } from 'express'
 import { send, type expressAppHandler } from '../utils'
 import { errMsg } from '../utils/errors'
 
-const isPubkeyValid = (idServer: IdentityServerDB): expressAppHandler => {
+const isPubkeyValid = <T extends string = never>(
+  idServer: IdentityServerDB<T>
+): expressAppHandler => {
   return (req, res) => {
     const publicKey = (req as Request).query.public_key
     if (

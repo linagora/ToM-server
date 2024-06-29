@@ -66,16 +66,16 @@ export const defaultConfig = defaultConfDesc
 
 export type IdServerAPI = Record<string, expressAppHandler>
 
-export default class MatrixIdentityServer {
+export default class MatrixIdentityServer<T extends string = never> {
   api: {
     get: IdServerAPI
     post: IdServerAPI
     put?: IdServerAPI
   }
 
-  db: IdentityServerDb
+  db: IdentityServerDb<T>
   userDB: UserDB
-  cronTasks?: CronTasks
+  cronTasks?: CronTasks<T>
   conf: Config
   ready: Promise<boolean>
   cache?: Cache
@@ -104,7 +104,8 @@ export default class MatrixIdentityServer {
   constructor(
     conf?: Partial<Config>,
     confDesc?: ConfigDescription,
-    logger?: TwakeLogger
+    logger?: TwakeLogger,
+    additionnalTables?: Record<T, string>
   ) {
     this.api = { get: {}, post: {} }
     if (confDesc == null) confDesc = defaultConfDesc
@@ -150,17 +151,26 @@ export default class MatrixIdentityServer {
       }
       // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
       this.cache = this.conf.cache_engine ? new Cache(this.conf) : undefined
-      const db = (this.db = new IdentityServerDb(this.conf, this.logger))
+      const db = (this.db = new IdentityServerDb<T>(
+        this.conf,
+        this.logger,
+        additionnalTables
+      ))
       const userDB = (this.userDB = new UserDB(
         this.conf,
         this.logger,
         this.cache
       ))
-      this.authenticate = Authenticate(db, this.logger)
+      this.authenticate = Authenticate<T>(db, this.logger)
       this.ready = new Promise((resolve, reject) => {
         Promise.all([db.ready, userDB.ready])
           .then(() => {
-            this.cronTasks = new CronTasks(this.conf, db, userDB, this.logger)
+            this.cronTasks = new CronTasks<T>(
+              this.conf,
+              db,
+              userDB,
+              this.logger
+            )
             this.updateHash = updateHash
             this.cronTasks.ready
               .then(() => {
