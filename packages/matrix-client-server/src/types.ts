@@ -4,8 +4,6 @@ export type Config = MIdentityServerConfig & {
   matrix_server: string
 }
 
-export type Collections = MIdentityServerDb.Collections
-
 export type DbGetResult = Array<
   Record<string, string | number | Array<string | number>>
 >
