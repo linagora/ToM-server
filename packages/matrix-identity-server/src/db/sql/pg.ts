@@ -280,7 +280,7 @@ class Pg<T extends string> extends SQL<T> implements IdDbBackend<T> {
   }
 
   updateAnd(
-    table: Collections,
+    table: T,
     values: Record<string, string | number>,
     condition1: { field: string; value: string | number },
     condition2: { field: string; value: string | number }
@@ -995,7 +995,7 @@ class Pg<T extends string> extends SQL<T> implements IdDbBackend<T> {
   }
 
   deleteEqualAnd(
-    table: Collections,
+    table: T,
     condition1: {
       field: string
       value: string | number | Array<string | number>
