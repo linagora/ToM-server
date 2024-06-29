@@ -2,7 +2,7 @@ import { type TwakeLogger } from '@twake/logger'
 import { Utils } from '@twake/matrix-identity-server'
 import { type expressAppHandler } from '../../types'
 import _search, { type Query } from './_search'
-import type AugmentedIdentityServer from '..'
+import type TwakeIdentityServer from '..'
 
 const schema = {
   scope: true,
@@ -13,7 +13,7 @@ const schema = {
 }
 
 const autocompletion = (
-  idServer: AugmentedIdentityServer,
+  idServer: TwakeIdentityServer,
   logger: TwakeLogger
 ): expressAppHandler => {
   const search = _search(idServer, logger)

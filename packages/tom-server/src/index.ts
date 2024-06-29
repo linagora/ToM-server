@@ -16,7 +16,7 @@ import roomTagsAPIRouter from './room-tags-api'
 import TwakeSearchEngine from './search-engine-api'
 import { type IOpenSearchRepository } from './search-engine-api/repositories/interfaces/opensearch-repository.interface'
 import smsApiRouter from './sms-api'
-import type { Config, ConfigurationFile, TwakeDB, TwakeIdentityServer } from './types'
+import type { Config, ConfigurationFile, TwakeDB } from './types'
 import userInfoAPIRouter from './user-info-api'
 import VaultServer from './vault-api'
 import WellKnown from './wellKnown'
@@ -29,7 +29,7 @@ export default class TwakeServer {
   matrixDb: MatrixDB
   private _openSearchClient: IOpenSearchRepository | undefined
   ready!: Promise<boolean>
-  idServer!: TwakeIdentityServer
+  idServer!: IdServer
 
   constructor(
     conf?: Partial<Config>,
