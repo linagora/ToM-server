@@ -24,6 +24,7 @@ import {
   getAvatarUrl,
   getDisplayname
 } from './profiles/getProfiles'
+import { changeAvatarUrl, changeDisplayname } from './profiles/changeProfiles'
 import whoami from './account/whoami'
 import whois from './admin/whois'
 import accountDataType from './user/account_data'
