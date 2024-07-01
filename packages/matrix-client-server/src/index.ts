@@ -11,6 +11,8 @@ import { type Utils } from '@twake/matrix-identity-server/'
 
 // Endpoints
 
+const tables = { matrixTokens: 'id varchar(64) PRIMARY KEY, data text' }
+
 export default class MatrixClientServer extends MatrixIdentityServer {
   api: {
     get: Record<string, Utils.expressAppHandler>
@@ -37,7 +39,7 @@ export default class MatrixClientServer extends MatrixIdentityServer {
         ? conf
         : undefined
     ) as Config
-    super(serverConf, confDesc, logger)
+    super(serverConf, confDesc, logger, tables)
     this.api = { get: {}, post: {}, put: {} }
     this.matrixDb = new MatrixDBmodified(serverConf, this.logger)
     this.api = { get: {}, post: {}, put: {} }

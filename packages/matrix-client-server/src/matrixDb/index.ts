@@ -1,6 +1,5 @@
 import { type TwakeLogger } from '@twake/logger'
 import { type Config, type DbGetResult } from '../types'
-import type ISQLCondition from '@twake/matrix-identity-server/src/db'
 import MatrixDBPg from './sql/pg'
 import MatrixDBSQLite from './sql/sqlite'
 
