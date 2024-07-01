@@ -22,7 +22,7 @@ class MatrixDBSQLite extends SQLite<string> implements MatrixDBmodifiedBackend {
           if (sqlite3.Database == null) sqlite3 = sqlite3.default
           const db = (this.db = new sqlite3.Database(
             conf.matrix_database_host as string,
-            sqlite3.OPEN_READONLY
+            sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE
           ))
           /* istanbul ignore if */
           if (db == null) {
