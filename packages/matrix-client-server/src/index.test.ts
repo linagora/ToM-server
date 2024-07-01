@@ -1,8 +1,8 @@
+import fs from 'fs'
 import ClientServer from './index'
 import { type Config } from './types'
 import buildMatrixDb from './__testData__/buildUserDB'
 import defaultConfig from './__testData__/registerConf.json'
-import fs from 'fs'
 
 jest.mock('node-fetch', () => jest.fn())
 const sendMailMock = jest.fn()
@@ -14,10 +14,8 @@ jest.mock('nodemailer', () => ({
 
 // process.env.TWAKE_CLIENT_SERVER_CONF = '../../matrix-identity-server/src/__testData__/registerConf.json'
 
-let clientServer: ClientServer
-let app: express.Application
-let validToken: string
 let conf: Config
+let clientServer: ClientServer
 
 beforeAll((done) => {
   conf = {
