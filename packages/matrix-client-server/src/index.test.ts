@@ -1,6 +1,6 @@
-import express from 'express'
 import fs from 'fs'
 import request from 'supertest'
+import express from 'express'
 import ClientServer from './index'
 import { buildMatrixDb, buildUserDB } from './__testData__/buildUserDB'
 import { AuthenticationTypes, type Config } from './types'
@@ -8,13 +8,6 @@ import defaultConfig from './__testData__/registerConf.json'
 import { getLogger, type TwakeLogger } from '@twake/logger'
 import { randomString } from '@twake/crypto'
 
-jest.mock('node-fetch', () => jest.fn())
-const sendMailMock = jest.fn()
-jest.mock('nodemailer', () => ({
-  createTransport: jest.fn().mockImplementation(() => ({
-    sendMail: sendMailMock
-  }))
-}))
 
 process.env.TWAKE_CLIENT_SERVER_CONF = './src/__testData__/registerConf.json'
 
