@@ -5,9 +5,8 @@ import defaultConfig from './config.json'
 import { type Config } from './types'
 
 // Internal libraries
+import MatrixIdentityServer, { type Utils } from '@twake/matrix-identity-server'
 import MatrixDBmodified from './matrixDb'
-import MatrixIdentityServer from '../../matrix-identity-server/src/index'
-import { type Utils } from '@twake/matrix-identity-server/'
 
 // Endpoints
 

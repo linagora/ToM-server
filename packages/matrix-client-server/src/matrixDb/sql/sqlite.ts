@@ -1,9 +1,11 @@
-import { type Collections } from '../../../../matrix-identity-server/src/db'
-import { type MatrixDBmodifiedBackend } from '../'
+import { SQLite } from '@twake/matrix-identity-server'
+import { type Collections, type MatrixDBmodifiedBackend } from '../'
 import { type Config } from '../../types'
-import SQLite from '../../../../matrix-identity-server/src/db/sql/sqlite'
 
-class MatrixDBSQLite extends SQLite<string> implements MatrixDBmodifiedBackend {
+class MatrixDBSQLite
+  extends SQLite<Collections>
+  implements MatrixDBmodifiedBackend
+{
   // eslint-disable-next-line @typescript-eslint/promise-function-async
   createDatabases(
     conf: Config,

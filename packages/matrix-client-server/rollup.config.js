@@ -4,5 +4,7 @@ export default config([
   '@twake/config-parser',
   "@twake/logger",
   '@twake/matrix-identity-server',
-  'fs'
+  'fs',
+  'sqlite3',
+  'pg'
 ])

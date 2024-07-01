@@ -1,11 +1,10 @@
 import { type TwakeLogger } from '@twake/logger'
+import { Pg } from '@twake/matrix-identity-server'
 import { type ClientConfig } from 'pg'
+import { type Collections, type MatrixDBmodifiedBackend } from '../'
 import { type Config } from '../../types'
-import { type MatrixDBmodifiedBackend } from '../'
-import { type Collections } from '../../../../matrix-identity-server/src/db'
-import Pg from '../../../../matrix-identity-server/src/db/sql/pg'
 
-class MatrixDBPg extends Pg<string> implements MatrixDBmodifiedBackend {
+class MatrixDBPg extends Pg<Collections> implements MatrixDBmodifiedBackend {
   // eslint-disable-next-line @typescript-eslint/promise-function-async
   createDatabases(
     conf: Config,
