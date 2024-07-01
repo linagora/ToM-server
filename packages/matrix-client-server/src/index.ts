@@ -17,9 +17,6 @@ export default class MatrixClientServer extends MatrixIdentityServer {
     get: Record<string, Utils.expressAppHandler>
     post: Record<string, Utils.expressAppHandler>
     put: Record<string, Utils.expressAppHandler>
-    get: Record<string, Utils.expressAppHandler>
-    post: Record<string, Utils.expressAppHandler>
-    put: Record<string, Utils.expressAppHandler>
   }
 
   matrixDb: MatrixDBmodified
