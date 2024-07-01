@@ -1788,6 +1788,7 @@ describe('Use configuration file', () => {
         })
       })
     })
+
     describe('/_matrix/client/v3/admin/whois', () => {
       it('should refuse a request without a userId', async () => {
         const response = await request(app)
