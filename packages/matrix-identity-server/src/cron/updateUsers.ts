@@ -12,9 +12,9 @@ import { epoch } from '../utils'
  * @param idServer Matrix identity server
  * @returns Promise<void>
  */
-const updateUsers = async (
+const updateUsers = async <T extends string = never>(
   conf: Config,
-  db: IdentityServerDb,
+  db: IdentityServerDb<T>,
   userDB: UserDB,
   logger: TwakeLogger
 ): Promise<void> => {

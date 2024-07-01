@@ -22,11 +22,19 @@ import {
 } from '@twake/logger'
 import { type Request, type Response } from 'express'
 import rateLimit, { type RateLimitRequestHandler } from 'express-rate-limit'
+import GetValidated3pid from './3pid'
+import bind from './3pid/bind'
+import unbind from './3pid/unbind'
 import account from './account'
 import logout from './account/logout'
 import register from './account/register'
 import Cache from './cache'
 import IdentityServerDb from './db'
+import SignEd25519 from './ephemeral_signing'
+import StoreInvit from './invitation'
+import getPubkey from './keyManagement/getPubkey'
+import isEphemeralPubkeyValid from './keyManagement/validEphemeralPubkey'
+import isPubkeyValid from './keyManagement/validPubkey'
 import lookup from './lookup'
 import hashDetails from './lookup/hash_details'
 import updateHash from './lookup/updateHash'
@@ -38,20 +46,12 @@ import UserDB from './userdb'
 import _validateMatrixToken from './utils/validateMatrixToken'
 import RequestToken from './validate/email/requestToken'
 import SubmitToken from './validate/email/submitToken'
-import GetValidated3pid from './3pid'
-import unbind from './3pid/unbind'
-import bind from './3pid/bind'
-import isPubkeyValid from './keyManagement/validPubkey'
-import getPubkey from './keyManagement/getPubkey'
-import isEphemeralPubkeyValid from './keyManagement/validEphemeralPubkey'
-import StoreInvit from './invitation'
-import SignEd25519 from './ephemeral_signing'
 export { type tokenContent } from './account/register'
 export { default as updateUsers } from './cron/updateUsers'
-export * as IdentityServerDb from './db'
+export { default as IdentityServerDb } from './db'
 export { default as createTables } from './db/sql/_createTables'
 export { default as Pg } from './db/sql/pg'
-export * as SQLite from './db/sql/sqlite'
+export { default as SQLite } from './db/sql/sqlite'
 export { default as MatrixDB, type MatrixDBBackend } from './matrixDb'
 export * from './types'
 export {
@@ -66,16 +66,16 @@ export const defaultConfig = defaultConfDesc
 
 export type IdServerAPI = Record<string, expressAppHandler>
 
-export default class MatrixIdentityServer {
+export default class MatrixIdentityServer<T extends string = never> {
   api: {
     get: IdServerAPI
     post: IdServerAPI
     put?: IdServerAPI
   }
 
-  db: IdentityServerDb
+  db: IdentityServerDb<T>
   userDB: UserDB
-  cronTasks?: CronTasks
+  cronTasks?: CronTasks<T>
   conf: Config
   ready: Promise<boolean>
   cache?: Cache
@@ -104,7 +104,8 @@ export default class MatrixIdentityServer {
   constructor(
     conf?: Partial<Config>,
     confDesc?: ConfigDescription,
-    logger?: TwakeLogger
+    logger?: TwakeLogger,
+    additionnalTables?: Record<T, string>
   ) {
     this.api = { get: {}, post: {} }
     if (confDesc == null) confDesc = defaultConfDesc
@@ -150,17 +151,26 @@ export default class MatrixIdentityServer {
       }
       // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
       this.cache = this.conf.cache_engine ? new Cache(this.conf) : undefined
-      const db = (this.db = new IdentityServerDb(this.conf, this.logger))
+      const db = (this.db = new IdentityServerDb<T>(
+        this.conf,
+        this.logger,
+        additionnalTables
+      ))
       const userDB = (this.userDB = new UserDB(
         this.conf,
         this.logger,
         this.cache
       ))
-      this.authenticate = Authenticate(db, this.logger)
+      this.authenticate = Authenticate<T>(db, this.logger)
       this.ready = new Promise((resolve, reject) => {
         Promise.all([db.ready, userDB.ready])
           .then(() => {
-            this.cronTasks = new CronTasks(this.conf, db, userDB, this.logger)
+            this.cronTasks = new CronTasks<T>(
+              this.conf,
+              db,
+              userDB,
+              this.logger
+            )
             this.updateHash = updateHash
             this.cronTasks.ready
               .then(() => {

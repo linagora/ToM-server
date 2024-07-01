@@ -2,7 +2,7 @@ import { type TwakeLogger } from '@twake/logger'
 import { errMsg, Utils } from '@twake/matrix-identity-server'
 import { type Response } from 'express'
 import type http from 'http'
-import type AugmentedIdentityServer from '..'
+import type TwakeIdentityServer from '..'
 
 type SearchFunction = (res: Response | http.ServerResponse, data: Query) => void
 
@@ -26,7 +26,7 @@ export const SearchFields = new Set<string>([
 ])
 
 const _search = (
-  idServer: AugmentedIdentityServer,
+  idServer: TwakeIdentityServer,
   logger: TwakeLogger
 ): SearchFunction => {
   return (res, data) => {

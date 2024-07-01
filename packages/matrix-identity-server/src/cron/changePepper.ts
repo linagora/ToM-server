@@ -66,9 +66,9 @@ export const filter = async (
 }
 
 // eslint-disable-next-line @typescript-eslint/promise-function-async
-const updateHashes = (
+const updateHashes = <T extends string = never>(
   conf: Config,
-  db: IdentityServerDb,
+  db: IdentityServerDb<T>,
   userDB: UserDB,
   logger: TwakeLogger
 ): Promise<void> => {

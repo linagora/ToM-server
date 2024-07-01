@@ -1,6 +1,6 @@
+import type { NextFunction, Response } from 'express'
+import type { AuthRequest, TwakeDB } from '../../types'
 import PrivateNoteValidationMiddleware from '../middlewares/validation.middleware'
-import type { Response, NextFunction } from 'express'
-import type { IdentityServerDb, AuthRequest } from '../../types'
 
 describe('Validation middlewares', () => {
   let mockRequest: Partial<AuthRequest>
@@ -16,7 +16,7 @@ describe('Validation middlewares', () => {
   }
 
   const privateNoteValidationMiddlewareMock =
-    new PrivateNoteValidationMiddleware(dbMock as unknown as IdentityServerDb)
+    new PrivateNoteValidationMiddleware(dbMock as unknown as TwakeDB)
 
   beforeEach(() => {
     mockRequest = {}

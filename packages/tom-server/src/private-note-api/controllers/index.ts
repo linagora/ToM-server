@@ -1,6 +1,6 @@
 import { type NextFunction, type Request, type Response } from 'express'
+import { type TwakeDB } from '../../types'
 import PrivateNoteService from '../services'
-import type { TwakeDB } from '../../db'
 import type { IPrivateNoteApiController, IPrivateNoteService } from '../types'
 
 export default class PrivateNoteApiController

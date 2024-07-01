@@ -1,6 +1,6 @@
 import {
+  type IdentityServerDb,
   type Config as MConfig,
-  type IdentityServerDb as MIdentityServerDb,
   type MatrixErrors
 } from '@twake/matrix-identity-server'
 import { type NextFunction, type Request, type Response } from 'express'
@@ -37,6 +37,6 @@ export type Config = MConfig & {
   trusted_servers_addresses: string[]
 }
 
-export type IdentityServerDb = MIdentityServerDb.default
+export type fdDbCollections = 'hashByServer'
 
-export type Collections = MIdentityServerDb.Collections
+export type FdServerDb = IdentityServerDb<fdDbCollections>

@@ -3,7 +3,6 @@ import { type TwakeLogger } from '@twake/logger'
 import MatrixIdentityServer from '@twake/matrix-identity-server'
 import fs from 'fs'
 import defaultConfig from './config.json'
-import initializeDb from './db'
 import { type Config } from './types'
 
 export default class MatrixClientServer extends MatrixIdentityServer {
@@ -27,10 +26,6 @@ export default class MatrixClientServer extends MatrixIdentityServer {
     super(serverConf, confDesc, logger)
     this.ready = new Promise((resolve, reject) => {
       this.ready
-        // eslint-disable-next-line @typescript-eslint/promise-function-async
-        .then(() => {
-          return initializeDb(this.db, this.conf, this.logger)
-        })
         .then(() => {
           this.api.get = { ...this.api.get }
           this.api.post = { ...this.api.post }

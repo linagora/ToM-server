@@ -2,26 +2,22 @@
 import { type TwakeLogger } from '@twake/logger'
 import { type Database, type Statement } from 'sqlite3'
 import { type Config, type DbGetResult } from '../../types'
-import {
-  type Collections,
-  type ISQLCondition,
-  type IdDbBackend
-} from '../index'
+import { type IdDbBackend } from '../index'
 import createTables from './_createTables'
-import SQL from './sql'
+import SQL, { type ISQLCondition } from './sql'
 
 export type SQLiteDatabase = Database
 
 export type SQLiteStatement = Statement
 
-class SQLite extends SQL implements IdDbBackend {
+class SQLite<T extends string> extends SQL<T> implements IdDbBackend<T> {
   declare db?: SQLiteDatabase
   createDatabases(
     conf: Config,
-    tables: Record<Collections, string>,
-    indexes: Partial<Record<Collections, string[]>>,
+    tables: Record<T, string>,
+    indexes: Partial<Record<T, string[]>>,
     initializeValues: Partial<
-      Record<Collections, Array<Record<string, string | number>>>
+      Record<T, Array<Record<string, string | number>>>
     >,
     logger: TwakeLogger
   ): Promise<void> {
@@ -78,13 +74,13 @@ class SQLite extends SQL implements IdDbBackend {
     })
   }
 
-  exists(table: string): Promise<number> {
+  exists(table: T): Promise<number> {
     // @ts-expect-error sqlite_master not listed in Collections
     return this.getCount('sqlite_master', 'name', table)
   }
 
   insert(
-    table: string,
+    table: T,
     values: Record<string, string | number>
   ): Promise<DbGetResult> {
     return new Promise((resolve, reject) => {
@@ -121,7 +117,7 @@ class SQLite extends SQL implements IdDbBackend {
   }
 
   update(
-    table: string,
+    table: T,
     values: Record<string, string | number>,
     field: string,
     value: string | number
@@ -162,7 +158,7 @@ class SQLite extends SQL implements IdDbBackend {
 
   // TODO : Merge update and updateAnd into one function that takes an array of conditions as argument
   updateAnd(
-    table: string,
+    table: T,
     values: Record<string, string | number>,
     condition1: { field: string; value: string | number },
     condition2: { field: string; value: string | number }
@@ -202,7 +198,7 @@ class SQLite extends SQL implements IdDbBackend {
 
   _get(
     op: string,
-    table: string,
+    table: T,
     fields?: string[],
     filterFields?: Record<string, string | number | Array<string | number>>,
     order?: string
@@ -268,7 +264,7 @@ class SQLite extends SQL implements IdDbBackend {
   }
 
   get(
-    table: string,
+    table: T,
     fields?: string[],
     filterFields?: Record<string, string | number | Array<string | number>>,
     order?: string
@@ -277,7 +273,7 @@ class SQLite extends SQL implements IdDbBackend {
   }
 
   getHigherThan(
-    table: Collections,
+    table: T,
     fields: string[],
     filterFields: Record<string, string | number | Array<string | number>>,
     order?: string
@@ -286,7 +282,7 @@ class SQLite extends SQL implements IdDbBackend {
   }
 
   match(
-    table: string,
+    table: T,
     fields: string[],
     searchFields: string[],
     value: string | number,
@@ -324,11 +320,7 @@ class SQLite extends SQL implements IdDbBackend {
     })
   }
 
-  deleteEqual(
-    table: string,
-    field: string,
-    value: string | number
-  ): Promise<void> {
+  deleteEqual(table: T, field: string, value: string | number): Promise<void> {
     return new Promise((resolve, reject) => {
       /* istanbul ignore if */
       if (this.db == null) {
@@ -351,7 +343,7 @@ class SQLite extends SQL implements IdDbBackend {
   }
 
   deleteEqualAnd(
-    table: Collections,
+    table: T,
     condition1: {
       field: string
       value: string | number | Array<string | number>
@@ -385,7 +377,7 @@ class SQLite extends SQL implements IdDbBackend {
   }
 
   deleteLowerThan(
-    table: string,
+    table: T,
     field: string,
     value: string | number
   ): Promise<void> {
@@ -416,7 +408,7 @@ class SQLite extends SQL implements IdDbBackend {
    * @param {ISQLCondition | ISQLCondition[]} conditions - the list of filters, operators and values for sql conditions
    */
   deleteWhere(
-    table: string,
+    table: T,
     conditions: ISQLCondition | ISQLCondition[]
   ): Promise<void> {
     // Adaptation of the method get, with the delete keyword, 'AND' instead of 'OR', and with filters instead of fields

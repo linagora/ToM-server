@@ -1,9 +1,11 @@
-import type IdentityServerDB from '../db'
 import { type Request } from 'express'
+import type IdentityServerDB from '../db'
 import { send, type expressAppHandler } from '../utils'
 import { errMsg } from '../utils/errors'
 
-const getPubkey = (idServer: IdentityServerDB): expressAppHandler => {
+const getPubkey = <T extends string = never>(
+  idServer: IdentityServerDB<T>
+): expressAppHandler => {
   return (req, res) => {
     const _keyID: string = (req as Request).params.keyId
 

@@ -1,7 +1,6 @@
 import type { NextFunction, Response } from 'express'
+import type { AuthRequest, TwakeDB } from '../../types'
 import type { IPrivateNoteApiValidationMiddleware, Note } from '../types'
-import type { TwakeDB } from '../../db'
-import type { Collections, AuthRequest } from '../../types'
 
 export default class PrivateNoteApiValidationMiddleware
   implements IPrivateNoteApiValidationMiddleware
@@ -90,11 +89,9 @@ export default class PrivateNoteApiValidationMiddleware
         throw new Error('Missing required query parameters')
       }
 
-      const ExistingNotes = (await this.db.get(
-        'PrivateNotes' as Collections,
-        ['authorId'],
-        { id }
-      )) as unknown as Note[]
+      const ExistingNotes = (await this.db.get('privateNotes', ['authorId'], {
+        id
+      })) as unknown as Note[]
 
       /* istanbul ignore if */
       if (ExistingNotes.length === 0) {
@@ -139,11 +136,9 @@ export default class PrivateNoteApiValidationMiddleware
         throw new Error('Bad Request')
       }
 
-      const existingNotes = (await this.db.get(
-        'PrivateNotes' as Collections,
-        ['authorId'],
-        { id: itemId }
-      )) as unknown as Note[]
+      const existingNotes = (await this.db.get('privateNotes', ['authorId'], {
+        id: itemId
+      })) as unknown as Note[]
 
       /* istanbul ignore if */
       if (existingNotes.length === 0) {

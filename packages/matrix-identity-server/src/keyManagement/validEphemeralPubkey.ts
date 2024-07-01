@@ -1,10 +1,10 @@
-import type IdentityServerDB from '../db'
 import { type Request } from 'express'
+import type IdentityServerDB from '../db'
 import { send, type expressAppHandler } from '../utils'
 import { errMsg } from '../utils/errors'
 
-const isEphemeralPubkeyValid = (
-  idServer: IdentityServerDB
+const isEphemeralPubkeyValid = <T extends string = never>(
+  idServer: IdentityServerDB<T>
 ): expressAppHandler => {
   return (req, res) => {
     const publicKey = (req as Request).query.public_key

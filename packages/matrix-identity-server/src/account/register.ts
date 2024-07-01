@@ -25,8 +25,8 @@ export interface tokenContent {
   epoch: number
 }
 
-const Register = (
-  db: IdentityServerDb,
+const Register = <T extends string = never>(
+  db: IdentityServerDb<T>,
   logger: TwakeLogger
 ): expressAppHandler => {
   const validateToken = validateMatrixToken(logger)
