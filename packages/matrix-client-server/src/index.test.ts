@@ -21,6 +21,7 @@ let conf: Config
 let clientServer: ClientServer
 let app: express.Application
 let validToken: string
+
 const logger: TwakeLogger = getLogger()
 
 beforeAll((done) => {
@@ -119,6 +120,70 @@ describe('Use configuration file', () => {
     expect(response.statusCode).toBe(405)
   })
 
+  describe('/_matrix/client/v3/profile/{userId}', () => {
+    describe('GET', () => {
+      describe('/_matrix/client/v3/profile/{userId}', () => {
+        const testUserId = '@testuser:example.com'
+
+        beforeAll(async () => {
+          clientServer.matrixDb
+            .insert('profiles', {
+              user_id: testUserId,
+              displayname: 'Test User',
+              avatar_url: 'http://example.com/avatar.jpg'
+            })
+            .then(() => {
+              logger.info('Test user profile created')
+            })
+            .catch((e) => {
+              logger.error('Error creating test user profile:', e)
+            })
+        })
+
+        afterAll(async () => {
+          clientServer.matrixDb
+            .deleteEqual('profiles', 'user_id', testUserId)
+            .then(() => {
+              logger.info('Test user profile deleted')
+            })
+            .catch((e) => {
+              logger.error('Error deleting test user profile:', e)
+            })
+        })
+
+        it('should return the profile information for an existing user', async () => {
+          const response = await request(app).get(
+            `/_matrix/client/v3/profile/${testUserId}`
+          )
+
+          expect(response.statusCode).toBe(200)
+          expect(response.body).toHaveProperty('avatar_url')
+          expect(response.body).toHaveProperty('displayname')
+        })
+
+        // it('should return error 403 if the server is unwilling to disclose profile information', async () => {
+        //   const response = await request(app).get(
+        //     '/_matrix/client/v3/profile/@forbiddenuser:example.com'
+        //   )
+
+        //   expect(response.statusCode).toBe(403)
+        //   expect(response.body.errcode).toBe('M_FORBIDDEN')
+        //   expect(response.body).toHaveProperty('error')
+        // })
+
+        it('should return error 404 if the user does not exist', async () => {
+          const response = await request(app).get(
+            '/_matrix/client/v3/profile/@nonexistentuser:example.com'
+          )
+
+          expect(response.statusCode).toBe(404)
+          expect(response.body.errcode).toBe('M_NOT_FOUND')
+          expect(response.body).toHaveProperty('error')
+        })
+      })
+    })
+  })
+
   describe('Endpoints with authentication', () => {
     describe('/_matrix/client/v3/account/whoami', () => {
       it('should reject missing token (', async () => {
@@ -173,6 +238,7 @@ describe('Use configuration file', () => {
         expect(response.statusCode).toBe(200)
       })
     })
+
     describe('/_matrix/client/v3/admin/whois', () => {
       it('should refuse a request without a userId', async () => {
         const response = await request(app)

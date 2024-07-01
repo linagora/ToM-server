@@ -19,6 +19,11 @@ import { errMsg, send, type expressAppHandler } from '@twake/utils'
 import Authenticate from './utils/authenticate'
 
 // Endpoints
+import {
+  getProfile,
+  getAvatarUrl,
+  getDisplayname
+} from './profiles/getProfiles'
 import whoami from './account/whoami'
 import whois from './admin/whois'
 import accountDataType from './user/account_data'
@@ -90,20 +95,38 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
             '/_matrix/client/v3/admin/whois': whois(this),
             '/_matrix/client/v3/user/:userId/account_data/:type':
               accountDataType(this),
-            '/_matrix/client/v3/register': badMethod
+            '/_matrix/client/v3/register': badMethod,
+            '/_matrix/client/v3/profile/:userId': getProfile(
+              this.matrixDb,
+              this.logger
+            ),
+            '/_matrix/client/v3/profile/:userId/avatar_url': getAvatarUrl(
+              this.matrixDb,
+              this.logger
+            ),
+            '/_matrix/client/v3/profile/:userId/displayname': getDisplayname(
+              this.matrixDb,
+              this.logger
+            )
           }
           this.api.post = {
             '/_matrix/client/v3/account/whoami': badMethod,
             '/_matrix/client/v3/admin/whois': badMethod,
-            '/_matrix/client/v3/user/:userId/account_data/:type': badMethod,
-            '/_matrix/client/v3/register': register(this)
+            '/_matrix/client/v3/register': register(this),
+            '/_matrix/client/v3/profile/:userId': badMethod,
+            '/_matrix/client/v3/profile/:userId/avatar_url': badMethod,
+            '/_matrix/client/v3/profile/:userId/displayname': badMethod,
+            '/_matrix/client/v3/user/:userId/account_data/:type': badMethod
           }
           this.api.put = {
             '/_matrix/client/v3/account/whoami': badMethod,
             '/_matrix/client/v3/admin/whois': badMethod,
+            '/_matrix/client/v3/register': badMethod,
+            '/_matrix/client/v3/profile/:userId': badMethod,
+            '/_matrix/client/v3/profile/:userId/avatar_url': badMethod,
+            '/_matrix/client/v3/profile/:userId/displayname': badMethod,
             '/_matrix/client/v3/user/:userId/account_data/:type':
-              accountDataType(this),
-            '/_matrix/client/v3/register': badMethod
+              accountDataType(this)
           }
           resolve(true)
         })
