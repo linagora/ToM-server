@@ -1,22 +1,22 @@
 import configParser, { type ConfigDescription } from '@twake/config-parser'
 import { type TwakeLogger } from '@twake/logger'
-import MatrixIdentityServer from '@twake/matrix-identity-server'
 import fs from 'fs'
 import defaultConfig from './config.json'
 import initializeDb from './db'
 import { type Config } from './types'
 
 // Internal libraries
-import { type expressAppHandler } from '../../matrix-identity-server/src/utils'
 import MatrixDBmodified from './matrixDb'
+import MatrixIdentityServer from '../../matrix-identity-server/src/index'
+import { type Utils } from '@twake/matrix-identity-server/'
 
 // Endpoints
 
 export default class MatrixClientServer extends MatrixIdentityServer {
   api: {
-    get: Record<string, expressAppHandler>
-    post: Record<string, expressAppHandler>
-    put: Record<string, expressAppHandler>
+    get: Record<string, Utils.expressAppHandler>
+    post: Record<string, Utils.expressAppHandler>
+    put: Record<string, Utils.expressAppHandler>
   }
 
   matrixDb: MatrixDBmodified

@@ -1,14 +1,4 @@
-import {
-  Hash,
-  randomString,
-  supportedHashes,
-  generateKeyPair
-} from '@twake/crypto'
-import express from 'express'
 import fs from 'fs'
-import fetch from 'node-fetch'
-import querystring from 'querystring'
-import request, { type Response } from 'supertest'
 import ClientServer from './index'
 import { type Config } from './types'
 import buildMatrixDb from './__testData__/buildUserDB'
@@ -24,10 +14,8 @@ jest.mock('nodemailer', () => ({
 
 // process.env.TWAKE_CLIENT_SERVER_CONF = '../../matrix-identity-server/src/__testData__/registerConf.json'
 
-let clientServer: ClientServer
-let app: express.Application
-let validToken: string
 let conf: Config
+let clientServer: ClientServer
 
 beforeAll((done) => {
   conf = {
