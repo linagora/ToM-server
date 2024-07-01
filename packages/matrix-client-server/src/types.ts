@@ -4,7 +4,6 @@ import {
 } from '@twake/matrix-identity-server'
 
 export type Config = MIdentityServerConfig & {
-  matrix_server: string
   flows: flowContent
   params: any
 }

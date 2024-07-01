@@ -15,7 +15,8 @@ import MatrixIdentityServer from '@twake/matrix-identity-server/'
 import UiAuthenticate, {
   type UiAuthFunction
 } from './utils/userInteractiveAuthentication'
-import { type expressAppHandler } from '@twake/matrix-identity-server/src/utils'
+import { errMsg } from '../../matrix-identity-server/src/utils/errors'
+import { send } from '../../matrix-identity-server/src/utils'
 
 // Endpoints
 
@@ -76,14 +77,31 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
     this.ready = new Promise((resolve, reject) => {
       this.ready
         .then(() => {
-          this.api.get = { ...this.api.get }
-          this.api.post = { ...this.api.post }
-          this.api.put = { ...this.api.put }
-          this.api.put = { ...this.api.put }
+          const badMethod: Utils.expressAppHandler = (req, res) => {
+            send(res, 405, errMsg('unrecognized'))
+          }
+          this.api.get = {
+            ...this.api.get
+          }
+          this.api.post = {
+            ...this.api.post
+          }
+          this.api.put = {
+            ...this.api.put
+          }
           resolve(true)
         })
         /* istanbul ignore next */
         .catch(reject)
     })
+  }
+
+  cleanJobs(): void {
+    clearTimeout(this.db?.cleanJob)
+    this.cronTasks?.stop()
+    this.db?.close()
+    this.userDB.close()
+    this.logger.close()
+    this.matrixDb.close()
   }
 }
