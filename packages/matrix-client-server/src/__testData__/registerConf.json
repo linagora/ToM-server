@@ -1,5 +1,5 @@
 {
-  "cron_service": true,
+  "cron_service": false,
   "database_engine": "sqlite",
   "database_host": "./src/__testData__/test.db",
   "database_vacuum_delay": 7200,
@@ -13,5 +13,7 @@
   "smtp_server": "localhost",
   "template_dir": "./templates",
   "userdb_engine": "sqlite",
-  "userdb_host": "./src/__testData__/test.db"
+  "userdb_host": "./src/__testData__/test.db",
+  "matrix_database_engine": "sqlite",
+  "matrix_database_host": "./src/__testData__/testMatrix.db"
 }
