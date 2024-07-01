@@ -8,7 +8,6 @@ import defaultConfig from './__testData__/registerConf.json'
 import { getLogger, type TwakeLogger } from '@twake/logger'
 import { randomString } from '@twake/crypto'
 
-
 jest.mock('node-fetch', () => jest.fn())
 const sendMailMock = jest.fn()
 jest.mock('nodemailer', () => ({
