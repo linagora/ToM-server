@@ -16,8 +16,6 @@
   "template_dir": "./templates",
   "userdb_engine": "sqlite",
   "userdb_host": "./src/__testData__/test.db",
-  "matrix_database_engine": "sqlite",
-  "matrix_database_host": "./src/__testData__/testMatrix.db",
   "flows": [
     {
       "stages": ["m.login.dummy"]
