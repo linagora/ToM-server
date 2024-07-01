@@ -1,6 +1,5 @@
 import { type TwakeLogger } from '@twake/logger'
 import { type Config, type DbGetResult } from '../types'
-import { type ISQLCondition } from '@twake/matrix-identity-server/src/db'
 import MatrixDBPg from './sql/pg'
 import MatrixDBSQLite from './sql/sqlite'
 
@@ -27,14 +26,7 @@ type Get = (
   fields?: string[],
   filterFields?: Record<string, string | number | Array<string | number>>
 ) => Promise<DbGetResult>
-/*
-  type Match = (
-    table: Collections,
-    fields: string[],
-    searchFields: string[],
-    value: string | number
-  ) => Promise<DbGetResult>
-  */
+
 type GetAll = (table: Collections, fields: string[]) => Promise<DbGetResult>
 
 type Insert = (
@@ -52,10 +44,6 @@ type DeleteEqual = (
   field: string,
   value: string | number
 ) => Promise<void>
-type DeleteWhere = (
-  table: string,
-  conditions: ISQLCondition | ISQLCondition[]
-) => Promise<void>
 
 export interface MatrixDBmodifiedBackend {
   ready: Promise<void>
@@ -63,9 +51,7 @@ export interface MatrixDBmodifiedBackend {
   getAll: GetAll
   insert: Insert
   deleteEqual: DeleteEqual
-  deleteWhere: DeleteWhere
   update: Update
-  // match: Match
   close: () => void
 }
 
@@ -134,13 +120,6 @@ class MatrixDBmodified implements MatrixDBmodifiedBackend {
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
   deleteEqual(table: Collections, field: string, value: string | number) {
     return this.db.deleteEqual(table, field, value)
-  }
-
-  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
-  deleteWhere(table: string, conditions: ISQLCondition | ISQLCondition[]) {
-    // Deletes from table where filters correspond to values
-    // Size of filters and values must be the same
-    return this.db.deleteWhere(table, conditions)
   }
 
   close(): void {

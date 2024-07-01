@@ -22,6 +22,7 @@ export type Collections =
   | 'longTermKeypairs'
   | 'shortTermKeypairs'
   | 'userPolicies'
+
 const cleanByExpires: Collections[] = ['oneTimeTokens', 'attempts']
 
 const tables: Record<Collections, string> = {
