@@ -18,6 +18,7 @@ jest.mock('nodemailer', () => ({
 
 process.env.TWAKE_CLIENT_SERVER_CONF = './src/__testData__/registerConf.json'
 
+let conf: Config
 let clientServer: ClientServer
 let app: express.Application
 // let validToken: string
