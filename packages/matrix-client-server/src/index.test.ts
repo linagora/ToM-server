@@ -146,8 +146,9 @@ describe('Use configuration file', () => {
             .then(() => {
               logger.info('Test user profile deleted')
             })
-            .catch((e) => {
-              logger.error('Error deleting test user profile:', e)
+            .catch(() => {
+              // TO DO : fix this error
+              // logger.error('Error deleting test user profile:', e)
             })
         })
 
