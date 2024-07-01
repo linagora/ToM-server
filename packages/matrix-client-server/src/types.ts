@@ -1,4 +1,7 @@
-import { type Config as MIdentityServerConfig } from '@twake/matrix-identity-server'
+import {
+  type IdentityServerDb,
+  type Config as MIdentityServerConfig
+} from '@twake/matrix-identity-server'
 
 export type Config = MIdentityServerConfig & {
   matrix_server: string
@@ -22,3 +25,7 @@ export interface UserQuota {
   user_id: string
   size: number
 }
+
+export type clientDbCollections = 'matrixTokens'
+
+export type ClientServerDb = IdentityServerDb<clientDbCollections>
