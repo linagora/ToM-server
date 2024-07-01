@@ -24,6 +24,7 @@ import {
   getAvatarUrl,
   getDisplayname
 } from './profiles/getProfiles'
+import { changeAvatarUrl, changeDisplayname } from './profiles/changeProfiles'
 import whoami from './account/whoami'
 import whois from './admin/whois'
 import register from './register'
@@ -119,8 +120,10 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
             '/_matrix/client/v3/admin/whois': badMethod,
             '/_matrix/client/v3/register': badMethod,
             '/_matrix/client/v3/profile/:userId': badMethod,
-            '/_matrix/client/v3/profile/:userId/avatar_url': badMethod,
-            '/_matrix/client/v3/profile/:userId/displayname': badMethod
+            '/_matrix/client/v3/profile/:userId/avatar_url':
+              changeAvatarUrl(this),
+            '/_matrix/client/v3/profile/:userId/displayname':
+              changeDisplayname(this)
           }
           resolve(true)
         })
