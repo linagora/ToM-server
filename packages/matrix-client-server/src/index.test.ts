@@ -1,6 +1,6 @@
+import express from 'express'
 import fs from 'fs'
 import request, { type Response } from 'supertest'
-import express from 'express'
 import ClientServer from './index'
 import { buildMatrixDb, buildUserDB } from './__testData__/buildUserDB'
 import { type flowContent, type Config } from './types'
