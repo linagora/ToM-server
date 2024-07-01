@@ -2,8 +2,6 @@ import { type Config as MIdentityServerConfig } from '@twake/matrix-identity-ser
 
 export type Config = MIdentityServerConfig
 
-export type Collections = MIdentityServerDb.Collections
-
 export type DbGetResult = Array<
   Record<string, string | number | Array<string | number>>
 >

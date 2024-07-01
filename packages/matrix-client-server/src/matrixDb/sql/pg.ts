@@ -5,7 +5,7 @@ import { type MatrixDBmodifiedBackend } from '../'
 import { type Collections } from '../../../../matrix-identity-server/src/db'
 import Pg from '../../../../matrix-identity-server/src/db/sql/pg'
 
-class MatrixDBPg extends Pg implements MatrixDBmodifiedBackend {
+class MatrixDBPg extends Pg<string> implements MatrixDBmodifiedBackend {
   // eslint-disable-next-line @typescript-eslint/promise-function-async
   createDatabases(
     conf: Config,
