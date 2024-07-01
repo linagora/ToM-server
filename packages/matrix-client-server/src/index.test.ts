@@ -1,11 +1,9 @@
-import express from 'express'
 import fs from 'fs'
-import request, { type Response } from 'supertest'
-import defaultConfig from './__testData__/registerConf.json'
 import ClientServer from './index'
 import { type Config } from './types'
-import { randomString } from '@twake/crypto'
-import { buildMatrixDb } from './__testData__/buildUserDB'
+import buildMatrixDb from './__testData__/buildUserDB'
+import defaultConfig from './__testData__/registerConf.json'
+
 jest.mock('node-fetch', () => jest.fn())
 const sendMailMock = jest.fn()
 jest.mock('nodemailer', () => ({
@@ -16,10 +14,8 @@ jest.mock('nodemailer', () => ({
 
 process.env.TWAKE_CLIENT_SERVER_CONF = './src/__testData__/registerConf.json'
 
-let clientServer: ClientServer
-let app: express.Application
-let validToken: string
 let conf: Config
+let clientServer: ClientServer
 
 beforeAll((done) => {
   conf = {
