@@ -13,6 +13,7 @@ export const getProfile = (
 ): expressAppHandler => {
   return (req, res) => {
     const userId: string = (req as Request).params.userId
+    /* istanbul ignore else */
     if (
       userId !== undefined &&
       typeof userId === 'string' &&
@@ -36,7 +37,6 @@ export const getProfile = (
         })
         .catch((e) => {
           /* istanbul ignore next */
-          logger.error('Error querying profiles:', e)
           send(
             res,
             403,
@@ -45,10 +45,11 @@ export const getProfile = (
               'Profile lookup over federation is disabled on this homeserver'
             )
           )
+          logger.error('Error querying profiles:', e)
         })
     } else {
-      logger.debug('No user ID provided')
       send(res, 400, errMsg('missingParams', 'No user ID provided'))
+      logger.debug('No user ID provided')
     }
   }
 }
@@ -59,6 +60,7 @@ export const getAvatarUrl = (
 ): expressAppHandler => {
   return (req, res) => {
     const userId: string = (req as Request).params.userId
+    /* istanbul ignore else */
     if (
       userId !== undefined &&
       typeof userId === 'string' &&
@@ -71,22 +73,29 @@ export const getAvatarUrl = (
         .then((rows) => {
           if (rows.length === 0) {
             logger.info('No avatar found')
-            send(res, 404, errMsg('notFound', 'No avatar found for this user'))
+            send(res, 404, errMsg('notFound', 'This user does not exist'))
           } else {
-            logger.info('Avatar found')
-            send(res, 200, {
-              avatar_url: rows[0].avatar_url
-            })
+            if (rows[0].avatar_url === null) {
+              logger.info('No avatar found')
+              send(
+                res,
+                404,
+                errMsg('notFound', 'No avatar found for this user')
+              )
+            } else {
+              send(res, 200, {
+                avatar_url: rows[0].avatar_url
+              })
+            }
           }
         })
         .catch((e) => {
           /* istanbul ignore next */
           logger.error('Error querying profiles:', e)
-          send(res, 404, errMsg('notFound', 'This user does not exist'))
         })
     } else {
-      logger.debug('No user ID provided')
       send(res, 400, errMsg('missingParams', 'No user ID provided'))
+      logger.debug('No user ID provided')
     }
   }
 }
@@ -97,7 +106,7 @@ export const getDisplayname = (
 ): expressAppHandler => {
   return (req, res) => {
     const userId: string = (req as Request).params.userId
-
+    /* istanbul ignore else */
     if (
       userId !== undefined &&
       typeof userId === 'string' &&
@@ -110,26 +119,29 @@ export const getDisplayname = (
         .then((rows) => {
           if (rows.length === 0) {
             logger.info('No display_name found')
-            send(
-              res,
-              404,
-              errMsg('notFound', 'No display_name found for this user')
-            )
+            send(res, 404, errMsg('notFound', 'This user does not exist'))
           } else {
-            logger.info('DisplayName found')
-            send(res, 200, {
-              displayname: rows[0].displayname
-            })
+            if (rows[0].displayname === null) {
+              logger.info('No display_name found')
+              send(
+                res,
+                404,
+                errMsg('notFound', 'No display_name found for this user')
+              )
+            } else {
+              send(res, 200, {
+                displayname: rows[0].displayname
+              })
+            }
           }
         })
         .catch((e) => {
           /* istanbul ignore next */
           logger.error('Error querying profiles:', e)
-          send(res, 404, errMsg('notFound', 'This user does not exist'))
         })
     } else {
-      logger.debug('No user ID provided')
       send(res, 400, errMsg('missingParams', 'No user ID provided'))
+      logger.debug('No user ID provided')
     }
   }
 }
