@@ -2893,4 +2893,24 @@ describe('Use configuration file', () => {
       })
     })
   })
+
+  // describe('PUT /_matrix/client/v3/profile/{userId}/avatar_url', () => {
+  //     it('should require authentication', async () => {
+  //       await clientServer.cronTasks?.ready
+  //       const response = await request(app)
+  //         .get('/_matrix/identity/v2/hash_details')
+  //         .set('Accept', 'application/json')
+  //       expect(response.statusCode).toBe(401)
+  //     })
+  //   })
+
+  //   describe('PUT /_matrix/client/v3/profile/{userId}/displayname', () => {
+  //     it('should require authentication', async () => {
+  //       await clientServer.cronTasks?.ready
+  //       const response = await request(app)
+  //         .get('/_matrix/identity/v2/hash_details')
+  //         .set('Accept', 'application/json')
+  //       expect(response.statusCode).toBe(401)
+  //     })
+  //   })
 })
