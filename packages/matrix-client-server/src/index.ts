@@ -25,9 +25,9 @@ const tables = {
 
 export default class MatrixClientServer extends MatrixIdentityServer<clientDbCollections> {
   api: {
-    get: Record<string, Utils.expressAppHandler>
-    post: Record<string, Utils.expressAppHandler>
-    put: Record<string, Utils.expressAppHandler>
+    get: Record<string, expressAppHandler>
+    post: Record<string, expressAppHandler>
+    put: Record<string, expressAppHandler>
   }
 
   matrixDb: MatrixDBmodified
