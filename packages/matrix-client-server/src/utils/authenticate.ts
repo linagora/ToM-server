@@ -1,9 +1,14 @@
 import { type TwakeLogger } from '@twake/logger'
 import { type Request, type Response } from 'express'
-import { Utils, errMsg, type tokenContent } from '@twake/matrix-identity-server'
-import fetch from 'node-fetch'
+import { Utils } from '@twake/matrix-identity-server'
 import type http from 'http'
-import type { ClientServerDb, Config } from '../types'
+import type { Config } from '../types'
+import type MatrixDBmodified from '../matrixDb'
+
+interface tokenContent {
+  sub: string
+  device_id?: string
+}
 
 export type AuthenticationFunction = (
   req: Request | http.IncomingMessage,
@@ -18,7 +23,7 @@ export interface WhoAmIResponse {
 }
 
 const Authenticate = (
-  db: ClientServerDb,
+  db: MatrixDBmodified,
   conf: Config,
   logger: TwakeLogger
 ): AuthenticationFunction => {
@@ -36,64 +41,26 @@ const Authenticate = (
       token = req.query.access_token
     }
     if (token != null) {
-      db.get('matrixTokens', ['data'], { id: token })
+      let data: tokenContent
+      db.get('user_ips', ['user_id, device_id'], { access_token: token })
         .then((rows) => {
           if (rows.length === 0) {
             throw Error()
           }
-          callback(JSON.parse(rows[0].data as string), token)
+          data.sub = rows[0].user_id as string
+          // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+          if (rows[0].device_id) {
+            data.device_id = rows[0].device_id as string
+          }
+          callback(data, token)
         })
         .catch((e) => {
-          // Try to get token from matrix
-          fetch(
-            `https://${conf.matrix_server}/_matrix/client/r0/account/whoami`,
-            {
-              headers: {
-                // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-                Authorization: `Bearer ${token}`
-              }
-            }
-          )
-            // eslint-disable-next-line @typescript-eslint/promise-function-async
-            .then((res) => res.json())
-            .then((userInfo) => {
-              const uid = (userInfo as WhoAmIResponse).user_id
-              /* istanbul ignore else */
-              if (uid != null) {
-                const data: tokenContent = {
-                  sub: uid,
-                  epoch: Utils.epoch()
-                }
-                // STORE
-                db.insert('matrixTokens', {
-                  // eslint-disable-next-line n/no-callback-literal
-                  // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
-                  // @ts-ignore token is defined
-                  id: token,
-                  data: JSON.stringify(data)
-                }).catch((e) => {
-                  /* istanbul ignore next */
-                  logger.error('Unable to insert a token', e)
-                })
-                // eslint-disable-next-line n/no-callback-literal
-                // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
-                // @ts-ignore token is defined
-                callback(data, token)
-              } else {
-                logger.warn('Bad token', userInfo)
-                Utils.send(res, 401, errMsg('unAuthorized'))
-              }
-            })
-            .catch((e) => {
-              /* istanbul ignore next */
-              logger.debug('Fetch error', e)
-              /* istanbul ignore next */
-              Utils.send(res, 401, errMsg('unAuthorized'))
-            })
+          logger.warn('Access tried with an unkown token', req.headers)
+          Utils.send(res, 401, errMsg('unknownToken')) // TODO : Sync with new utils
         })
     } else {
       logger.warn('Access tried without token', req.headers)
-      Utils.send(res, 401, errMsg('unAuthorized'))
+      Utils.send(res, 401, errMsg('missingToken')) // TODO : Sync with new utils
     }
   }
 }

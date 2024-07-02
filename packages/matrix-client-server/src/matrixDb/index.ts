@@ -20,6 +20,7 @@ type Collections =
   | 'local_media_repository'
   | 'redactions'
   | 'room_aliases'
+  | 'user_ips'
 
 type Get = (
   table: Collections,
