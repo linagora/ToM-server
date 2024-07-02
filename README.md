@@ -33,6 +33,7 @@ REST API Endpoints documentation is available on https://linagora.github.io/ToM-
 * [@twake/config-parser](./packages/config-parser): simple file parser that uses also environment variables
 * [@twake/crypto](./packages/crypto): cryptographic methods for Twake Chat
 * [@twake/logger](./packages/logger): logger for Twake
+* [@twake/utils](.packages/utils): utilitary methods for Twake Chat
 * [@twake/matrix-application-server](./packages/matrix-application-server): implements
   [Matrix Application Service API](https://spec.matrix.org/v1.6/application-service-api/)
 * [matrix-resolve](./packages/matrix-resolve): resolve a Matrix "server name" into base URL following
