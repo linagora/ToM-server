@@ -43,6 +43,7 @@
     "@twake/config-parser": "*",
     "@twake/crypto": "*",
     "@twake/logger": "*",
+    "@twake/utils": "*",
     "@twake/matrix-identity-server": "*",
     "@twake/utils": "*",
     "express-validator": "^7.0.1",
