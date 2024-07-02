@@ -1,11 +1,11 @@
 import type MatrixIdentityServer from '..'
 import {
+  errMsg,
   jsonContent,
   send,
   validateParameters,
   type expressAppHandler
-} from '../utils'
-import { errMsg } from '../utils/errors'
+} from '@twake/utils'
 
 const schema = {
   addresses: true,

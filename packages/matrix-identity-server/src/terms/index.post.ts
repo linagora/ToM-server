@@ -2,12 +2,12 @@
 import { type Policies } from '.'
 import type MatrixIdentityServer from '..'
 import {
+  errMsg,
   jsonContent,
   send,
   validateParameters,
   type expressAppHandler
-} from '../utils'
-import { errMsg } from '../utils/errors'
+} from '@twake/utils'
 import computePolicy from './_computePolicies'
 
 type UrlsFromPolicies = Record<string, string[]>

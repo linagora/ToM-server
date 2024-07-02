@@ -1,6 +1,11 @@
 import type MatrixIdentityServer from '../..'
-import { epoch, jsonContent, send, type expressAppHandler } from '../../utils'
-import { errMsg } from '../../utils/errors'
+import {
+  epoch,
+  errMsg,
+  jsonContent,
+  send,
+  type expressAppHandler
+} from '@twake/utils'
 
 interface parameters {
   client_secret?: string
