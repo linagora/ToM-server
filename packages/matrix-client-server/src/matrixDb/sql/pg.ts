@@ -1,6 +1,6 @@
 import { type TwakeLogger } from '@twake/logger'
 import { type ClientConfig } from 'pg'
-import { type Config } from '../../types'
+import { DbGetResult, type Config } from '../../types'
 import { type MatrixDBmodifiedBackend, type Collections } from '../'
 import { Pg } from '@twake/matrix-identity-server'
 
@@ -56,6 +56,50 @@ class MatrixDBPg extends Pg<Collections> implements MatrixDBmodifiedBackend {
           logger.error('Unable to load pg module')
           reject(e)
         })
+    })
+  }
+
+  // eslint-disable-next-line @typescript-eslint/promise-function-async
+  updateWithConditions(
+    table: Collections,
+    values: Record<string, string | number>,
+    conditions: Array<{ field: string; value: string | number }>
+  ): Promise<DbGetResult> {
+    return new Promise((resolve, reject) => {
+      if (this.db == null) {
+        reject(new Error('Wait for database to be ready'))
+        return
+      }
+
+      const names = Object.keys(values)
+      const vals = Object.values(values)
+
+      // Add the values for the conditions to the vals array
+      conditions.forEach((condition) => {
+        vals.push(condition.value)
+      })
+
+      // Construct the SET clause for the update statement
+      const setClause = names.map((name, i) => `${name} = $${i + 1}`).join(', ')
+
+      // Construct the WHERE clause for the conditions
+      const whereClause = conditions
+        .map((condition, i) => `${condition.field} = $${names.length + i + 1}`)
+        .join(' AND ')
+
+      const query = `UPDATE ${table} SET ${setClause} WHERE ${whereClause} RETURNING *;`
+
+      this.db.query(
+        query,
+        vals,
+        (err: Error, result: { rows: DbGetResult }) => {
+          if (err) {
+            reject(err)
+          } else {
+            resolve(result.rows)
+          }
+        }
+      )
     })
   }
 }
