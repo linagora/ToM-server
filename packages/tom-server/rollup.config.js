@@ -10,11 +10,6 @@ export default config([
   '@twake/config-parser',
   '@twake/matrix-identity-server',
   '@twake/matrix-application-server',
-<<<<<<< HEAD
   '@twake/utils',
   '@twake/logger'
-=======
-  '@twake/logger',
-  '@twake/utils'
->>>>>>> f0da59c (feat: created utils package)
 ])
