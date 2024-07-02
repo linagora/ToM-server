@@ -1,4 +1,4 @@
-import { MatrixErrors } from '@twake/matrix-identity-server'
+import { defaultMsg, errCodes } from '@twake/utils'
 import { type Request } from 'express'
 import { validationResult, type ValidationError } from 'express-validator'
 import {
@@ -24,7 +24,7 @@ export class FederatedIdentityServiceError extends Error {
     if (error.message != null) {
       errorMessage = error.message
     } else if (error.code != null) {
-      errorMessage = MatrixErrors.defaultMsg(error.code)
+      errorMessage = defaultMsg(error.code)
     }
     super(errorMessage)
     if (error.code != null) {
@@ -73,7 +73,7 @@ export const validationErrorHandler = (req: Request): void => {
     throw new FederatedIdentityServiceError({
       status: 400,
       message: errorMessage,
-      code: MatrixErrors.errCodes.invalidParam
+      code: errCodes.invalidParam
     })
   }
 }
