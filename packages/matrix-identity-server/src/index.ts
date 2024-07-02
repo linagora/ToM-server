@@ -58,6 +58,8 @@ export {
   type Collections as userDbCollections
 } from './userdb'
 export * as Utils from './utils'
+export { default as UserDBPg } from './userdb/sql/pg'
+export { default as UserDBSQLite } from './userdb/sql/sqlite'
 export const validateMatrixToken = _validateMatrixToken
 export const defaultConfig = defaultConfDesc
 
