@@ -5,13 +5,12 @@ import fs from 'fs'
 import defaultConfDesc from './config.json'
 import CronTasks from './cron'
 import {
-  Authenticate,
+  errMsg as _errMsg,
   hostnameRe,
   send,
-  type AuthenticationFunction,
   type expressAppHandler
-} from './utils'
-import { errMsg as _errMsg } from './utils/errors'
+} from '@twake/utils'
+import { Authenticate, type AuthenticationFunction } from './utils'
 import versions from './versions'
 
 // Endpoints
@@ -58,9 +57,8 @@ export {
   default as UserDB,
   type Collections as userDbCollections
 } from './userdb'
-export * as Utils from './utils'
-export * as MatrixErrors from './utils/errors'
-export const errMsg = _errMsg
+// export * as Utils from './utils'
+// export * as MatrixErrors from './utils/errors'
 export const validateMatrixToken = _validateMatrixToken
 export const defaultConfig = defaultConfDesc
 
@@ -175,7 +173,7 @@ export default class MatrixIdentityServer<T extends string = never> {
             this.cronTasks.ready
               .then(() => {
                 const badMethod: expressAppHandler = (req, res) => {
-                  send(res, 405, errMsg('unrecognized'))
+                  send(res, 405, _errMsg('unrecognized'))
                 }
                 // TODO
                 // const badEndPoint: expressAppHandler = (req, res) => {

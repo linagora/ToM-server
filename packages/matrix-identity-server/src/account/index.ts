@@ -1,5 +1,5 @@
 import type MatrixIdentityServer from '..'
-import { send, type expressAppHandler } from '../utils'
+import { send, type expressAppHandler } from '@twake/utils'
 import { type tokenContent } from './register'
 
 const Account = <T extends string = never>(
