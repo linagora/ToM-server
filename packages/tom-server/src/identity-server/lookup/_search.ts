@@ -1,5 +1,5 @@
 import { type TwakeLogger } from '@twake/logger'
-import { errMsg, Utils } from '@twake/matrix-identity-server'
+import { errMsg, send } from '@twake/utils'
 import { type Response } from 'express'
 import type http from 'http'
 import type TwakeIdentityServer from '..'
@@ -34,7 +34,7 @@ const _search = (
       /* istanbul ignore next */
       logger.error('Autocompletion error', e)
       /* istanbul ignore next */
-      Utils.send(res, 500, errMsg('unknown', e))
+      send(res, 500, errMsg('unknown', e))
     }
     let fields = data.fields
     let scope = data.scope
@@ -64,7 +64,7 @@ const _search = (
         .then((rows) => {
           if (rows.length === 0) {
             /* istanbul ignore next */
-            Utils.send(res, 200, { matches: [], inactive_matches: [] })
+            send(res, 200, { matches: [], inactive_matches: [] })
           } else {
             const start = data.offset ?? 0
             const end = start + (data.limit ?? 30)
@@ -101,14 +101,14 @@ const _search = (
                     inactive_matches.push(row)
                   }
                 })
-                Utils.send(res, 200, { matches, inactive_matches })
+                send(res, 200, { matches, inactive_matches })
               })
               .catch(sendError)
           }
         })
         .catch(sendError)
     } else {
-      Utils.send(res, 400, errMsg('invalidParam'))
+      send(res, 400, errMsg('invalidParam'))
     }
   }
 }

@@ -1,5 +1,6 @@
 import { type TwakeLogger } from '@twake/logger'
-import { Utils, errMsg, type tokenContent } from '@twake/matrix-identity-server'
+import { type tokenContent } from '@twake/matrix-identity-server'
+import { epoch, errMsg, send } from '@twake/utils'
 import fetch from 'node-fetch'
 import type { AuthenticationFunction, Config, TwakeDB } from '../../types'
 
@@ -54,7 +55,7 @@ const Authenticate = (
               if (uid != null) {
                 const data: tokenContent = {
                   sub: uid,
-                  epoch: Utils.epoch()
+                  epoch: epoch()
                 }
                 // STORE
                 db.insert('matrixTokens', {
@@ -73,19 +74,19 @@ const Authenticate = (
                 callback(data, token)
               } else {
                 logger.warn('Bad token', userInfo)
-                Utils.send(res, 401, errMsg('unAuthorized'))
+                send(res, 401, errMsg('unAuthorized'))
               }
             })
             .catch((e) => {
               /* istanbul ignore next */
               logger.debug('Fetch error', e)
               /* istanbul ignore next */
-              Utils.send(res, 401, errMsg('unAuthorized'))
+              send(res, 401, errMsg('unAuthorized'))
             })
         })
     } else {
       logger.warn('Access tried without token', req.headers)
-      Utils.send(res, 401, errMsg('unAuthorized'))
+      send(res, 401, errMsg('unAuthorized'))
     }
   }
 }

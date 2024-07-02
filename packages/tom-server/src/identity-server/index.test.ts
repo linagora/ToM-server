@@ -1,5 +1,6 @@
 import { Hash, supportedHashes } from '@twake/crypto'
-import { Utils, updateUsers } from '@twake/matrix-identity-server'
+import { updateUsers } from '@twake/matrix-identity-server'
+import { epoch } from '@twake/utils'
 import express from 'express'
 import fs from 'fs'
 import fetch from 'node-fetch'
@@ -12,7 +13,7 @@ import { type Config } from '../types'
 import buildUserDB from './__testData__/buildUserDB'
 import defaultConfig from './__testData__/registerConf.json'
 
-const timestamp = Utils.epoch()
+const timestamp = epoch()
 
 jest.mock('node-fetch', () => jest.fn())
 const sendMailMock = jest.fn()
