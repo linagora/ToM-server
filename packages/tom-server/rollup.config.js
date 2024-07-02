@@ -9,6 +9,4 @@ export default config([
   'node-fetch',
   '@twake/config-parser',
   '@twake/matrix-identity-server',
-  '@twake/utils',
-  '@twake/logger'
 ])
