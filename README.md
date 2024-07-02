@@ -27,6 +27,8 @@ REST API Endpoints documentation is available on https://linagora.github.io/ToM-
 
 * [@twake/matrix-identity-server](./packages/matrix-identity-server):
   [Matrix Identity Service](https://spec.matrix.org/v1.6/identity-service-api/) implementation for Node.js
+* [@twake/matrix-client-server](./packages/matrix-client-server/):
+  [Matrix Client-Server](https://spec.matrix.org/v1.11/client-server-api/) implementation for Node.js
 * [@twake/matrix-invite](./packages/matrix-invite): matrix invitation web application
 * [@twake/server](./packages/tom-server): the main Twake Chat Server, extends [@twake/matrix-identity-server](./packages/matrix-identity-server)
 * [@twake/federated-identity-service](./packages/federated-identity-service): Twake Federated Identity Service
