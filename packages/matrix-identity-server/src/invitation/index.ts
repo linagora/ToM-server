@@ -4,12 +4,12 @@ import fetch from 'node-fetch'
 import type MatrixIdentityServer from '../index'
 import { type Config } from '../types'
 import {
+  errMsg,
   jsonContent,
   send,
   validateParameters,
   type expressAppHandler
-} from '../utils'
-import { errMsg } from '../utils/errors'
+} from '@twake/utils'
 import Mailer from '../utils/mailer'
 
 interface storeInvitationArgs {

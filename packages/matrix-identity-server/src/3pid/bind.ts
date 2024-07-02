@@ -1,12 +1,12 @@
 import { Hash, signJson } from '@twake/crypto'
 import type MatrixIdentityServer from '..'
 import {
+  errMsg,
   jsonContent,
   send,
   validateParameters,
   type expressAppHandler
-} from '../utils'
-import { errMsg } from '../utils/errors'
+} from '@twake/utils'
 
 const clientSecretRe = /^[0-9a-zA-Z.=_-]{6,255}$/
 const mxidRe = /^@[0-9a-zA-Z._=-]+:[0-9a-zA-Z.-]+$/
