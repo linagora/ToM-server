@@ -11,14 +11,11 @@ import { type Request, type Response } from 'express'
 
 // Internal libraries
 import MatrixDBmodified from './matrixDb'
-import MatrixIdentityServer, {
-  type Utils
-} from '@twake/matrix-identity-server/'
 import UiAuthenticate, {
   type UiAuthFunction
 } from './utils/userInteractiveAuthentication'
-import { errMsg } from '../../matrix-identity-server/src/utils/errors'
-import { send } from '../../matrix-identity-server/src/utils'
+import MatrixIdentityServer from '@twake/matrix-identity-server'
+import { errMsg, send, type expressAppHandler } from '@twake/utils'
 
 // Endpoints
 
@@ -28,9 +25,9 @@ const tables = {
 
 export default class MatrixClientServer extends MatrixIdentityServer<clientDbCollections> {
   api: {
-    get: Record<string, Utils.expressAppHandler>
-    post: Record<string, Utils.expressAppHandler>
-    put: Record<string, Utils.expressAppHandler>
+    get: Record<string, expressAppHandler>
+    post: Record<string, expressAppHandler>
+    put: Record<string, expressAppHandler>
   }
 
   matrixDb: MatrixDBmodified
@@ -79,7 +76,7 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
     this.ready = new Promise((resolve, reject) => {
       this.ready
         .then(() => {
-          const badMethod: Utils.expressAppHandler = (req, res) => {
+          const badMethod: expressAppHandler = (req, res) => {
             send(res, 405, errMsg('unrecognized'))
           }
           this.api.get = {
