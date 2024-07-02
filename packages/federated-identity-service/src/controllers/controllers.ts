@@ -1,6 +1,7 @@
 import { supportedHashes } from '@twake/crypto'
 import { type TwakeLogger } from '@twake/logger'
-import { MatrixErrors, type DbGetResult } from '@twake/matrix-identity-server'
+import { type DbGetResult } from '@twake/matrix-identity-server'
+import { errCodes } from '@twake/utils'
 import lodash from 'lodash'
 import {
   FederatedIdentityServiceError,
@@ -65,7 +66,7 @@ export const lookup = (conf: Config, db: FdServerDb): expressAppHandler => {
         next(
           new FederatedIdentityServiceError({
             message: e,
-            code: MatrixErrors.errCodes.unknown
+            code: errCodes.unknown
           })
         )
       })
@@ -112,7 +113,7 @@ export const lookups = (db: FdServerDb): expressAppHandler => {
         next(
           new FederatedIdentityServiceError({
             message: e,
-            code: MatrixErrors.errCodes.unknown
+            code: errCodes.unknown
           })
         )
       })
@@ -151,7 +152,7 @@ export const hashDetails = (
         next(
           new FederatedIdentityServiceError({
             message: e,
-            code: MatrixErrors.errCodes.unknown
+            code: errCodes.unknown
           })
         )
       })
