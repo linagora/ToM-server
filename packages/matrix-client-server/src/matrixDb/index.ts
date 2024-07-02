@@ -3,7 +3,7 @@ import { type Config, type DbGetResult } from '../types'
 import MatrixDBPg from './sql/pg'
 import MatrixDBSQLite from './sql/sqlite'
 
-type Collections =
+export type Collections =
   | 'users'
   | 'profiles'
   | 'destinations'

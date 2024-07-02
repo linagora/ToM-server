@@ -116,10 +116,8 @@ describe('Use configuration file', () => {
   beforeAll((done) => {
     clientServer = new ClientServer()
     app = express()
-    console.log('clientServer.ready ?')
     clientServer.ready
       .then(() => {
-        console.log('clientServer.ready !')
         Object.keys(clientServer.api.get).forEach((k) => {
           app.get(k, clientServer.api.get[k])
         })
