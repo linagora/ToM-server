@@ -35,11 +35,10 @@ type Insert = (
   table: Collections,
   values: Record<string, string | number>
 ) => Promise<DbGetResult>
-type Update = (
+type updateWithConditions = (
   table: Collections,
   values: Record<string, string | number>,
-  field: string,
-  value: string | number
+  conditions: Array<{ field: string; value: string | number }>
 ) => Promise<DbGetResult>
 type DeleteEqual = (
   table: Collections,
@@ -53,7 +52,7 @@ export interface MatrixDBmodifiedBackend {
   getAll: GetAll
   insert: Insert
   deleteEqual: DeleteEqual
-  update: Update
+  updateWithConditions: updateWithConditions
   close: () => void
 }
 
@@ -110,18 +109,17 @@ class MatrixDBmodified implements MatrixDBmodifiedBackend {
   }
 
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
-  update(
-    table: Collections,
-    values: Record<string, string | number>,
-    field: string,
-    value: string | number
-  ) {
-    return this.db.update(table, values, field, value)
+  deleteEqual(table: Collections, field: string, value: string | number) {
+    return this.db.deleteEqual(table, field, value)
   }
 
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
-  deleteEqual(table: Collections, field: string, value: string | number) {
-    return this.db.deleteEqual(table, field, value)
+  updateWithConditions(
+    table: Collections,
+    values: Record<string, string | number>,
+    conditions: Array<{ field: string; value: string | number }>
+  ) {
+    return this.db.updateWithConditions(table, values, conditions)
   }
 
   close(): void {
