@@ -20,11 +20,20 @@ type Collections =
   | 'local_media_repository'
   | 'redactions'
   | 'room_aliases'
+  | 'local_current_membership'
+  | 'current_state_events'
 
 type Get = (
   table: Collections,
   fields?: string[],
   filterFields?: Record<string, string | number | Array<string | number>>
+) => Promise<DbGetResult>
+
+type GetOrNot = (
+  table: Collections,
+  fields: string[],
+  filterFields: Record<string, string | number | Array<string | number>>,
+  notFilterFields: Record<string, string | number | Array<string | number>>
 ) => Promise<DbGetResult>
 
 type GetAll = (table: Collections, fields: string[]) => Promise<DbGetResult>
@@ -48,6 +57,7 @@ type DeleteEqual = (
 export interface MatrixDBmodifiedBackend {
   ready: Promise<void>
   get: Get
+  getOrNot: GetOrNot
   getAll: GetAll
   insert: Insert
   deleteEqual: DeleteEqual
@@ -100,6 +110,15 @@ class MatrixDBmodified implements MatrixDBmodifiedBackend {
     filterFields?: Record<string, string | number | Array<string | number>>
   ): Promise<DbGetResult> => {
     return await this.db.get(table, fields, filterFields)
+  }
+
+  getOrNot = async (
+    table: Collections,
+    fields: string[],
+    filterFields: Record<string, string | number | Array<string | number>>,
+    notFilterFields: Record<string, string | number | Array<string | number>>
+  ): Promise<DbGetResult> => {
+    return await this.db.getOrNot(table, fields, filterFields, notFilterFields)
   }
 
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async

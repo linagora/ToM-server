@@ -272,6 +272,130 @@ class SQLite<T extends string> extends SQL<T> implements IdDbBackend<T> {
     return this._get('=', table, fields, filterFields, order)
   }
 
+  _getOrNot(
+    op: string,
+    table: T,
+    fields?: string[],
+    filterFields?: Record<string, string | number | Array<string | number>>,
+    notFilterFields?: Record<string, string | number | Array<string | number>>,
+    order?: string
+  ): Promise<DbGetResult> {
+    return new Promise((resolve, reject) => {
+      /* istanbul ignore if */
+      if (this.db == null) {
+        reject(new Error('Wait for database to be ready'))
+      } else {
+        let condition: string = ''
+        const values: string[] = []
+        if (fields == null || fields.length === 0) {
+          fields = ['*']
+        }
+
+        // Process filterFields
+        let filterConditions: string[] = []
+        if (filterFields != null) {
+          let index = 0
+          Object.keys(filterFields)
+            .filter(
+              (key) =>
+                filterFields[key] != null &&
+                filterFields[key].toString() !== [].toString()
+            )
+            .forEach((key) => {
+              if (Array.isArray(filterFields[key])) {
+                filterConditions.push(
+                  `${(filterFields[key] as Array<string | number>)
+                    .map((val) => {
+                      index++
+                      values.push(val.toString())
+                      return `${key}${op}$${index}`
+                    })
+                    .join(' OR ')}`
+                )
+              } else {
+                index++
+                values.push(filterFields[key].toString())
+                filterConditions.push(`${key}${op}$${index}`)
+              }
+            })
+        }
+
+        // Process notFilterFields
+        let notFilterConditions: string[] = []
+        if (notFilterFields != null) {
+          let index = values.length // Continue index from where filterFields ended
+          Object.keys(notFilterFields)
+            .filter(
+              (key) =>
+                notFilterFields[key] != null &&
+                notFilterFields[key].toString() !== [].toString()
+            )
+            .forEach((key) => {
+              if (Array.isArray(notFilterFields[key])) {
+                notFilterConditions.push(
+                  `${(notFilterFields[key] as Array<string | number>)
+                    .map((val) => {
+                      index++
+                      values.push(val.toString())
+                      return `${key} NOT IN ($${index})`
+                    })
+                    .join(' AND ')}`
+                )
+              } else {
+                index++
+                values.push(notFilterFields[key].toString())
+                notFilterConditions.push(`${key} != $${index}`)
+              }
+            })
+        }
+
+        const allConditions = [...filterConditions, ...notFilterConditions]
+        if (allConditions.length > 0) {
+          condition += `WHERE ${allConditions.join(' OR ')}`
+        }
+
+        if (order != null) condition += ` ORDER BY ${order}`
+
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
+        // @ts-ignore never undefined
+        const stmt = this.db.prepare(
+          `SELECT ${fields.join(',')} FROM ${table} ${condition}`
+        )
+        stmt.all(
+          values,
+          (err: string, rows: Array<Record<string, string | number>>) => {
+            /* istanbul ignore if */
+            if (err != null) {
+              reject(err)
+            } else {
+              resolve(rows)
+            }
+          }
+        )
+        stmt.finalize((err) => {
+          if (err) reject(err)
+        })
+      }
+    })
+  }
+
+  getOrNot(
+    table: T,
+    fields?: string[],
+    filterFields?: Record<string, string | number | Array<string | number>>,
+    notFilterFields?: Record<string, string | number | Array<string | number>>,
+    order?: string
+  ): Promise<DbGetResult> {
+    return this._getOrNot(
+      '=',
+      table,
+      fields,
+      filterFields,
+      notFilterFields,
+      order
+    )
+  }
+
   getHigherThan(
     table: T,
     fields: string[],
