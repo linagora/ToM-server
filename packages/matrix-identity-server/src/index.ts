@@ -57,8 +57,7 @@ export {
   default as UserDB,
   type Collections as userDbCollections
 } from './userdb'
-// export * as Utils from './utils'
-// export * as MatrixErrors from './utils/errors'
+export * as Utils from './utils'
 export const validateMatrixToken = _validateMatrixToken
 export const defaultConfig = defaultConfDesc
 

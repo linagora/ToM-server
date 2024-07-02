@@ -1,8 +1,8 @@
 import {
   type IdentityServerDb,
-  type Config as MConfig,
-  type MatrixErrors
+  type Config as MConfig
 } from '@twake/matrix-identity-server'
+import { type errCodes } from '@twake/utils'
 import { type NextFunction, type Request, type Response } from 'express'
 
 export type expressAppHandler = (
@@ -24,7 +24,7 @@ export interface AuthRequest extends Request {
 }
 
 export type federatedIdentityServiceErrorCode =
-  (typeof MatrixErrors.errCodes)[keyof typeof MatrixErrors.errCodes]
+  (typeof errCodes)[keyof typeof errCodes]
 
 export interface ErrorResponseBody {
   error: string

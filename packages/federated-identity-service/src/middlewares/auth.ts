@@ -1,9 +1,6 @@
 import { type TwakeLogger } from '@twake/logger'
-import {
-  MatrixErrors,
-  Utils,
-  type tokenContent
-} from '@twake/matrix-identity-server'
+import { errMsg, send } from '@twake/utils'
+import { Utils, type tokenContent } from '@twake/matrix-identity-server'
 import { type NextFunction, type Response } from 'express'
 import { type AuthRequest, type FdServerDb } from '../types'
 import { convertToIPv6 } from '../utils/ip-address'
@@ -66,10 +63,10 @@ export const Authenticate = (
               callbackMethod(JSON.parse(rows[0].data as string), token)
             })
             .catch((e) => {
-              Utils.send(res, 401, MatrixErrors.errMsg('unAuthorized'))
+              send(res, 401, errMsg('unAuthorized'))
             })
         } else {
-          Utils.send(res, 401, MatrixErrors.errMsg('unAuthorized'))
+          send(res, 401, errMsg('unAuthorized'))
         }
       }
     } catch (error) {
@@ -82,7 +79,7 @@ export const Authenticate = (
         httpMethod: request.method,
         endpointPath: request.originalUrl
       })
-      Utils.send(res, 401, MatrixErrors.errMsg('unAuthorized'))
+      send(res, 401, errMsg('unAuthorized'))
     }
   }
 }
