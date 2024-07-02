@@ -34,12 +34,9 @@ export const changeAvatarUrl = (
             const _avatar_url = (obj as changeAvatarUrlArgs).avatar_url
 
             clientServer.matrixDb
-              .update(
-                'profiles',
-                { avatar_url: _avatar_url },
-                'user_id',
-                userId
-              )
+              .updateWithConditions('profiles', { avatar_url: _avatar_url }, [
+                { field: 'user_id', value: userId }
+              ])
               .then(() => {
                 clientServer.logger.debug('Avatar URL updated')
                 send(res, 200, {})
@@ -81,11 +78,10 @@ export const changeDisplayname = (
               const _displayname = (obj as changeDisplaynameArgs).displayname
 
               clientServer.matrixDb
-                .update(
+                .updateWithConditions(
                   'profiles',
                   { displayname: _displayname },
-                  'user_id',
-                  userId
+                  [{ field: 'user_id', value: userId }]
                 )
                 .then(() => {
                   clientServer.logger.debug('Displayname updated')
