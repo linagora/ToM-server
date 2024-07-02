@@ -1,7 +1,6 @@
 import { type Request } from 'express'
 import type IdentityServerDB from '../db'
-import { send, type expressAppHandler } from '../utils'
-import { errMsg } from '../utils/errors'
+import { errMsg, send, type expressAppHandler } from '@twake/utils'
 
 const getPubkey = <T extends string = never>(
   idServer: IdentityServerDB<T>

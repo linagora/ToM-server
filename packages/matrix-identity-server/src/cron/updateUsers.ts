@@ -4,7 +4,7 @@ import updateHash, { type UpdatableFields } from '../lookup/updateHash'
 import MatrixDB from '../matrixDb'
 import { type Config, type DbGetResult } from '../types'
 import type UserDB from '../userdb'
-import { epoch } from '../utils'
+import { epoch } from '@twake/utils'
 
 /**
  * updateUsers is a cron task that reads users from UserDB and find which of

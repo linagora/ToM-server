@@ -3,12 +3,12 @@ import { type TwakeLogger } from '@twake/logger'
 import type IdentityServerDb from '../db'
 import {
   epoch,
+  errMsg,
   jsonContent,
   send,
   validateParameters,
   type expressAppHandler
-} from '../utils'
-import { errMsg } from '../utils/errors'
+} from '@twake/utils'
 import validateMatrixToken from '../utils/validateMatrixToken'
 
 const schema = {
