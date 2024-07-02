@@ -30,6 +30,7 @@ export const changeAvatarUrl = (
       clientServer.authenticate(req, res, (data, id) => {
         jsonContent(req, res, clientServer.logger, (obj) => {
           validateParameters(res, schema, obj, clientServer.logger, (obj) => {
+            // eslint-disable-next-line @typescript-eslint/naming-convention
             const _avatar_url = (obj as changeAvatarUrlArgs).avatar_url
 
             clientServer.matrixDb
@@ -58,6 +59,7 @@ export const changeAvatarUrl = (
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
 const schema_name = {
   displayname: true
 }
