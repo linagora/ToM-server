@@ -1,7 +1,7 @@
 {
-  "name": "@twake/matrix-client-server",
+  "name": "@twake/utils",
   "version": "0.0.1",
-  "description": "Matrix Client Server",
+  "description": "Utilitary methods for Twake server",
   "keywords": [
     "matrix",
     "twake"
@@ -19,19 +19,14 @@
     {
       "name": "Xavier Guimard",
       "email": "yadd@debian.org"
-    },
-    {
+    }, {
       "name": "Mathias Perez",
       "email": "mathias.perez.2022@polytechnique.org"
-    },
-    {
+    },{
       "name": "Hippolyte Wallaert",
       "email": "hippolyte.wallaert.2022@polytechnique.org"
-    },
-    {
-      "name": "Amine Chraibi",
-      "email": "amine.chraibi.2022@polytechnique.org"
     }
+
   ],
   "type": "module",
   "exports": {
@@ -42,22 +37,14 @@
   "files": [
     "package.json",
     "dist",
-    "example/client-server.js",
-    "templates",
     "*.md"
   ],
   "scripts": {
-    "build": "npm run build:lib && npm run build:example",
-    "build:example": "rollup -p @rollup/plugin-typescript -e express,@twake/matrix-client-server -m -o example/client-server.js example/client-server.ts",
-    "build:lib": "rollup -c",
-    "start": "node server.mjs",
-    "test": "jest --passWithNoTests"
+    "build": "rollup -c",
+    "test": "jest"
   },
   "dependencies": {
-    "@twake/config-parser": "*",
-    "@twake/logger": "*",
-    "@twake/matrix-identity-server": "*",
-    "express": "^4.19.2",
-    "node-fetch": "^3.3.0"
+    "js-nacl": "^1.4.0",
+    "@twake/logger": "*"
   }
 }
