@@ -1,6 +1,6 @@
 import { type Collections, type MatrixDBmodifiedBackend } from '../'
 import { type Config } from '../../types'
-import { SQLite, type DbGetResult } from '@twake/matrix-identity-server'
+import { SQLite } from '@twake/matrix-identity-server'
 
 class MatrixDBSQLite
   extends SQLite<Collections>
