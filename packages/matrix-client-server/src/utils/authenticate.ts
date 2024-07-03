@@ -1,8 +1,8 @@
 import { type TwakeLogger } from '@twake/logger'
 import { type Request, type Response } from 'express'
-import { Utils } from '@twake/matrix-identity-server'
 import type http from 'http'
 import type MatrixDBmodified from '../matrixDb'
+import { errMsg, send } from '@twake/utils'
 
 interface tokenContent {
   sub: string
@@ -54,11 +54,11 @@ const Authenticate = (
         })
         .catch((e) => {
           logger.warn('Access tried with an unkown token', req.headers)
-          Utils.send(res, 401, errMsg('unknownToken')) // TODO : Sync with new utils
+          send(res, 401, errMsg('unknownToken')) // TODO : Sync with new utils
         })
     } else {
       logger.warn('Access tried without token', req.headers)
-      Utils.send(res, 401, errMsg('missingToken')) // TODO : Sync with new utils
+      send(res, 401, errMsg('missingToken')) // TODO : Sync with new utils
     }
   }
 }

@@ -16,9 +16,6 @@ import UiAuthenticate, {
   type UiAuthFunction
 } from './utils/userInteractiveAuthentication'
 import { errMsg, send, type expressAppHandler } from '@twake/utils'
-import UiAuthenticate, {
-  type UiAuthFunction
-} from './utils/userInteractiveAuthentication'
 
 // Endpoints
 
