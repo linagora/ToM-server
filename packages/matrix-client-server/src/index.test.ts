@@ -8,7 +8,6 @@ import defaultConfig from './__testData__/registerConf.json'
 import { getLogger, type TwakeLogger } from '@twake/logger'
 import { randomString } from '@twake/crypto'
 
-
 process.env.TWAKE_CLIENT_SERVER_CONF = './src/__testData__/registerConf.json'
 
 let conf: Config
