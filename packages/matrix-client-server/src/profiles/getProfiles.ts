@@ -1,11 +1,7 @@
 import type MatrixDBmodified from '../matrixDb'
 import { type TwakeLogger } from '@twake/logger'
 import { type Request } from 'express'
-import {
-  send,
-  type expressAppHandler
-} from '../../../matrix-identity-server/src/utils'
-import { errMsg } from '../../../matrix-identity-server/src/utils/errors'
+import { errMsg, send, type expressAppHandler } from '@twake/utils'
 
 export const getProfile = (
   matrixDb: MatrixDBmodified,

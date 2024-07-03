@@ -1,14 +1,12 @@
 import type MatrixClientServer from '../index'
 import { type Request } from 'express'
 import {
+  errMsg,
+  send,
+  type expressAppHandler,
   jsonContent,
   validateParameters
-} from '../../../matrix-identity-server/src/utils'
-import {
-  send,
-  type expressAppHandler
-} from '../../../matrix-identity-server/src/utils'
-import { errMsg } from '../../../matrix-identity-server/src/utils/errors'
+} from '@twake/utils'
 
 const schema = {
   avatar_url: true
