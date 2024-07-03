@@ -21,7 +21,6 @@ let conf: Config
 let clientServer: ClientServer
 let app: express.Application
 // let validToken: string
-let conf: Config
 const logger: TwakeLogger = getLogger()
 
 beforeAll((done) => {

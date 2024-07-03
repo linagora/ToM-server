@@ -37,6 +37,7 @@ const runQueries = (
       } else {
         if (isSqlite) {
           db.run(queries[index], (err: Error | null) => {
+            // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
             if (err) {
               reject(err);
             } else {
@@ -45,6 +46,7 @@ const runQueries = (
           });
         } else {
           db.query(queries[index], (err: Error | null) => {
+            // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
             if (err) {
               reject(err);
             } else {
@@ -107,6 +109,7 @@ export const buildMatrixDb = (conf: Config): Promise<void> => {
       runQueries(matrixDb, matrixDbQueries, true)
         .then(() => {
           matrixDb.close((err) => {
+            // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
             if (err) {
               reject(err);
             } else {

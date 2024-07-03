@@ -1,8 +1,6 @@
 import { type TwakeLogger } from '@twake/logger'
 import { type Request, type Response } from 'express'
-import { errMsg, Utils } from '@twake/matrix-identity-server'
 import type http from 'http'
-import { jsonContent } from '@twake/matrix-identity-server/dist/utils'
 import {
   AuthenticationTypes,
   type MatrixIdentifier,
@@ -12,6 +10,7 @@ import {
 } from '../types'
 import { Hash, randomString } from '@twake/crypto'
 import type MatrixDBmodified from '../matrixDb'
+import { errMsg, jsonContent, send } from '@twake/utils'
 export type UiAuthFunction = (
   req: Request | http.IncomingMessage,
   res: Response | http.ServerResponse,
@@ -74,11 +73,10 @@ const checkAuthentication = (
           .then((rows) => {
             const pending: number = rows[0].pending as number
             matrixDb
-              .update(
+              .updateWithConditions(
                 'registration_tokens',
                 { pending: pending + 1 },
-                'token',
-                auth.token
+                [{ field: 'token', value: auth.token }]
               )
               .then(() => {
                 const completed: number = rows[0].completed as number
@@ -93,11 +91,10 @@ const checkAuthentication = (
                   reject(err)
                 } else {
                   matrixDb
-                    .update(
+                    .updateWithConditions(
                       'registration_tokens',
                       { completed: completed + 1, pending },
-                      'token',
-                      auth.token
+                      [{ field: 'token', value: auth.token }]
                     )
                     .then(() => {
                       resolve()
@@ -133,7 +130,7 @@ const UiAuthenticate = (
     jsonContent(req, res, logger, (obj) => {
       // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
       if (!(obj as requestBody).auth) {
-        Utils.send(res, 401, {
+        send(res, 401, {
           flows: conf.flows,
           params: conf.params,
           session: randomString(12) // Chose 12 arbitrarily according to a spec example
@@ -162,7 +159,7 @@ const UiAuthenticate = (
                     if (authOver) {
                       callback(obj) // what arguments to use in callback ?
                     } else {
-                      Utils.send(res, 401, {
+                      send(res, 401, {
                         flows: conf.flows,
                         params: conf.params,
                         session: auth.session,
@@ -175,7 +172,7 @@ const UiAuthenticate = (
                       'Error while retrieving session credentials from the database during User-Interactive Authentication',
                       e
                     )
-                    Utils.send(res, 400, errMsg('unknown'))
+                    send(res, 400, errMsg('unknown'))
                   })
               })
               .catch((e) => {
@@ -183,7 +180,7 @@ const UiAuthenticate = (
                   'Error while inserting session credentials into the database during User-Interactive Authentication',
                   e
                 )
-                Utils.send(res, 400, errMsg('unknown'))
+                send(res, 400, errMsg('unknown'))
               })
           })
           .catch((e) => {
@@ -194,7 +191,7 @@ const UiAuthenticate = (
                 const completed: string[] = rows.map(
                   (row) => row.stage_type as string
                 )
-                Utils.send(res, 401, {
+                send(res, 401, {
                   errcode: e.errcode,
                   error: e.error,
                   completed,
@@ -208,7 +205,7 @@ const UiAuthenticate = (
                   'Error while retrieving session credentials from the database during User-Interactive Authentication',
                   e
                 )
-                Utils.send(res, 400, errMsg('unknown'))
+                send(res, 400, errMsg('unknown'))
               })
           })
       }

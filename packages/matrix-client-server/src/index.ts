@@ -16,9 +16,6 @@ import UiAuthenticate, {
 } from './utils/userInteractiveAuthentication'
 import MatrixIdentityServer from '@twake/matrix-identity-server'
 import { errMsg, send, type expressAppHandler } from '@twake/utils'
-import UiAuthenticate, {
-  type UiAuthFunction
-} from './utils/userInteractiveAuthentication'
 
 // Endpoints
 
