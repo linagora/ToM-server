@@ -2,7 +2,6 @@ import { type TwakeLogger } from '@twake/logger'
 import { type Request, type Response } from 'express'
 import { Utils } from '@twake/matrix-identity-server'
 import type http from 'http'
-import type { Config } from '../types'
 import type MatrixDBmodified from '../matrixDb'
 
 interface tokenContent {
@@ -24,7 +23,6 @@ export interface WhoAmIResponse {
 
 const Authenticate = (
   db: MatrixDBmodified,
-  conf: Config,
   logger: TwakeLogger
 ): AuthenticationFunction => {
   const tokenRe = /^Bearer (\S+)$/
