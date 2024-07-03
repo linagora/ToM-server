@@ -44,7 +44,7 @@
     "test": "jest"
   },
   "dependencies": {
-    "js-nacl": "^1.4.0",
-    "@twake/logger": "*"
+    "@twake/logger": "*",
+    "express": "^4.19.2"
   }
 }
