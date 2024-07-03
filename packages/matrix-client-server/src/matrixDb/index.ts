@@ -21,6 +21,7 @@ type Collections =
   | 'redactions'
   | 'room_aliases'
   | 'user_ips'
+  | 'registration_tokens'
 
 type Get = (
   table: Collections,

@@ -1,6 +1,6 @@
 import fs from 'fs'
 import ClientServer from './index'
-import { type Config } from './types'
+import { AuthenticationTypes, type Config } from './types'
 import buildMatrixDb from './__testData__/buildUserDB'
 import defaultConfig from './__testData__/registerConf.json'
 
@@ -21,8 +21,33 @@ beforeAll((done) => {
   conf = {
     ...defaultConfig,
     database_engine: 'sqlite',
-    base_url: '',
-    userdb_engine: 'sqlite'
+    base_url: 'http://example.com/',
+    userdb_engine: 'sqlite',
+    flows: [
+      {
+        stages: [AuthenticationTypes.Password, AuthenticationTypes.Dummy]
+      },
+      {
+        stages: [AuthenticationTypes.Password, AuthenticationTypes.Email]
+      }
+    ],
+    params: {
+      'm.login.terms': {
+        policies: {
+          terms_of_service: {
+            version: '1.2',
+            en: {
+              name: 'Terms of Service',
+              url: 'https://example.org/somewhere/terms-1.2-en.html'
+            },
+            fr: {
+              name: "Conditions d'utilisation",
+              url: 'https://example.org/somewhere/terms-1.2-fr.html'
+            }
+          }
+        }
+      }
+    }
   }
   if (process.env.TEST_PG === 'yes') {
     conf.database_engine = 'pg'

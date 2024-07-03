@@ -2,24 +2,50 @@ import configParser, { type ConfigDescription } from '@twake/config-parser'
 import { type TwakeLogger } from '@twake/logger'
 import fs from 'fs'
 import defaultConfig from './config.json'
-import { type Config } from './types'
+import {
+  type clientDbCollections,
+  type ClientServerDb,
+  type Config
+} from './types'
+import { type Request, type Response } from 'express'
+
 // Internal libraries
 import MatrixDBmodified from './matrixDb'
 import MatrixIdentityServer from '../../matrix-identity-server/src/index'
-import { type Utils } from '@twake/matrix-identity-server/'
+import UiAuthenticate, {
+  type UiAuthFunction
+} from './utils/userInteractiveAuthentication'
+import { type expressAppHandler } from '@twake/matrix-identity-server/src/utils'
 
 // Endpoints
 
-const tables = { matrixTokens: 'id varchar(64) PRIMARY KEY, data text' }
+const tables = {
+  ui_auth_sessions: 'session_id TEXT NOT NULL, stage_type TEXT NOT NULL'
+}
 
-export default class MatrixClientServer extends MatrixIdentityServer {
+export default class MatrixClientServer extends MatrixIdentityServer<clientDbCollections> {
   api: {
-    get: Record<string, Utils.expressAppHandler>
-    post: Record<string, Utils.expressAppHandler>
-    put: Record<string, Utils.expressAppHandler>
+    get: Record<string, expressAppHandler>
+    post: Record<string, expressAppHandler>
+    put: Record<string, expressAppHandler>
   }
 
   matrixDb: MatrixDBmodified
+  declare conf: Config
+  declare db: ClientServerDb
+  private _uiauthenticate!: UiAuthFunction
+
+  set uiauthenticate(uiauthenticate: UiAuthFunction) {
+    this._uiauthenticate = (req, res, cb) => {
+      this.rateLimiter(req as Request, res as Response, () => {
+        uiauthenticate(req, res, cb)
+      })
+    }
+  }
+
+  get uiauthenticate(): UiAuthFunction {
+    return this.uiauthenticate
+  }
 
   constructor(
     conf?: Partial<Config>,
@@ -41,10 +67,12 @@ export default class MatrixClientServer extends MatrixIdentityServer {
     super(serverConf, confDesc, logger, tables)
     this.api = { get: {}, post: {}, put: {} }
     this.matrixDb = new MatrixDBmodified(serverConf, this.logger)
-    this.api = { get: {}, post: {}, put: {} }
-    this.matrixDb = new MatrixDBmodified(serverConf, this.logger)
-    this.api = { get: {}, post: {}, put: {} }
-    this.matrixDb = new MatrixDBmodified(serverConf, this.logger)
+    this.uiauthenticate = UiAuthenticate(
+      this.db,
+      this.matrixDb,
+      serverConf,
+      this.logger
+    )
     this.ready = new Promise((resolve, reject) => {
       this.ready
         .then(() => {
