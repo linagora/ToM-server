@@ -1,5 +1,5 @@
 import config from '../../rollup-template.js'
 
-export default config(['js-nacl', "@twake/logger"])
+export default config(['express', "@twake/logger"])
 
 
