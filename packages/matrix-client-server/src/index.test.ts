@@ -9,6 +9,13 @@ import { getLogger, type TwakeLogger } from '@twake/logger'
 import { randomString } from '@twake/crypto'
 
 process.env.TWAKE_CLIENT_SERVER_CONF = './src/__testData__/registerConf.json'
+jest.mock('node-fetch', () => jest.fn())
+const sendMailMock = jest.fn()
+jest.mock('nodemailer', () => ({
+  createTransport: jest.fn().mockImplementation(() => ({
+    sendMail: sendMailMock
+  }))
+}))
 
 let conf: Config
 let clientServer: ClientServer
@@ -82,12 +89,6 @@ afterAll(() => {
 
 beforeEach(() => {
   jest.clearAllMocks()
-  jest.mock('node-fetch', () => jest.fn())
-  jest.mock('nodemailer', () => ({
-    createTransport: jest.fn().mockImplementation(() => ({
-      sendMail: sendMailMock
-    }))
-  }))
 })
 
 describe('Error on server start', () => {

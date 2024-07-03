@@ -1,9 +1,6 @@
-import { errMsg, type tokenContent } from '@twake/matrix-identity-server'
+import { type tokenContent } from '@twake/matrix-identity-server'
+import { errMsg, send, type expressAppHandler } from '@twake/utils'
 import type MatrixClientServer from '..'
-import {
-  type expressAppHandler,
-  send
-} from '../../../matrix-identity-server/src/utils'
 
 const whoami = (clientServer: MatrixClientServer): expressAppHandler => {
   return (req, res) => {
