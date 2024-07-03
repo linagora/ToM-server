@@ -2,9 +2,7 @@
 import { getLogger, type TwakeLogger } from '@twake/logger'
 import sqlite3 from 'sqlite3'
 import { type Config } from '../types'
-import UserDB from '../../../matrix-identity-server/src/userdb'
-import type UserDBPg from '../../../matrix-identity-server/src/userdb/sql/pg'
-import type UserDBSQLite from '../../../matrix-identity-server/src/userdb/sql/sqlite'
+import {type UserDBPg, type UserDBSQLite, UserDB}  from '@twake/matrix-identity-server'
 
 const logger: TwakeLogger = getLogger()
 
