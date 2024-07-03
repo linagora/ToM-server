@@ -13,6 +13,9 @@ Future implementations may include :
 import type MatrixClientServer from '../index'
 import { type Request } from 'express'
 import {
+  errMsg,
+  send,
+  type expressAppHandler,
   jsonContent,
   validateParameters
 } from '../../../matrix-identity-server/src/utils'
