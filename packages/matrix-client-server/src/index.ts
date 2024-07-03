@@ -11,7 +11,7 @@ import { type Request, type Response } from 'express'
 
 // Internal libraries
 import MatrixDBmodified from './matrixDb'
-import MatrixIdentityServer from '../../matrix-identity-server/src/index'
+import MatrixIdentityServer from '@twake/matrix-identity-server/'
 import UiAuthenticate, {
   type UiAuthFunction
 } from './utils/userInteractiveAuthentication'
