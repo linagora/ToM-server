@@ -103,8 +103,8 @@ export const buildUserDB = (conf: Config): Promise<void> => {
 
 // eslint-disable-next-line @typescript-eslint/promise-function-async
 export const buildMatrixDb = (conf: Config): Promise<void> => {
-  if (matrixDbCreated) return Promise.resolve();
-  const matrixDb = new sqlite3.Database(conf.matrix_database_host as string) 
+  if (matrixDbCreated) return Promise.resolve()
+  const matrixDb = new sqlite3.Database(conf.matrix_database_host as string)
   return new Promise((resolve, reject) => {
     if (conf.matrix_database_engine === 'sqlite') {
       runQueries(matrixDb, matrixDbQueries, true)
