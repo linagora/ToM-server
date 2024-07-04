@@ -44,7 +44,6 @@
     "test": "jest"
   },
   "dependencies": {
-    "@twake/logger": "*",
-    "express": "^4.19.2"
+    "@twake/logger": "*"
   }
 }
