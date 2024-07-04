@@ -1,7 +1,6 @@
 import type MatrixClientServer from '../index'
 import { type Request } from 'express'
 import {
-  errMsg,
   send,
   type expressAppHandler,
   jsonContent,
@@ -42,14 +41,13 @@ export const changeAvatarUrl = (
               .catch((e) => {
                 /* istanbul ignore next */
                 clientServer.logger.error('Error querying profiles:', e)
-                send(res, 404, errMsg('notFound', 'This user does not exist'))
               })
           })
         })
       })
     } else {
+      /* istanbul ignore next */
       clientServer.logger.debug('No user ID provided')
-      send(res, 400, errMsg('missingParams', 'No user ID provided'))
     }
   }
 }
@@ -88,15 +86,14 @@ export const changeDisplayname = (
                 .catch((e) => {
                   /* istanbul ignore next */
                   clientServer.logger.error('Error querying profiles:', e)
-                  send(res, 404, errMsg('notFound', 'This user does not exist'))
                 })
             }
           )
         })
       })
     } else {
+      /* istanbul ignore next */
       clientServer.logger.debug('No user ID provided')
-      send(res, 400, errMsg('missingParams', 'No user ID provided'))
     }
   }
 }
