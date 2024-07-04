@@ -37,8 +37,10 @@ const whoami = (clientServer: MatrixClientServer): expressAppHandler => {
           .then((rows) => {
             const sessions: Record<string, sessionsContent> = {}
             const devices: Record<string, deviceContent> = {}
-            const deviceIds = Array.from(new Set(rows.map((row) => row.device_id as string))) // Get all unique deviceIds
-            const mappings: Record<string, string> = {} // Map deviceIds to access_tokens 
+            const deviceIds = Array.from(
+              new Set(rows.map((row) => row.device_id as string))
+            ) // Get all unique deviceIds
+            const mappings: Record<string, string> = {} // Map deviceIds to access_tokens
             rows.forEach((row) => {
               mappings[row.device_id as string] = row.access_token as string
             })
@@ -56,9 +58,7 @@ const whoami = (clientServer: MatrixClientServer): expressAppHandler => {
               if (devices[deviceId] == null) {
                 devices[deviceId] = { sessions: [] }
               }
-              devices[deviceId].sessions.push(
-                sessions[mappings[deviceId]]
-              )
+              devices[deviceId].sessions.push(sessions[mappings[deviceId]])
             })
             send(res, 200, {
               user_id: prms.userId,
