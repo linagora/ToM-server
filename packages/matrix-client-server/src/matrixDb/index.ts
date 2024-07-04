@@ -20,6 +20,8 @@ export type Collections =
   | 'local_media_repository'
   | 'redactions'
   | 'room_aliases'
+  | 'user_ips'
+  | 'registration_tokens'
 
 type Get = (
   table: Collections,
