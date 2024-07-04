@@ -10,8 +10,14 @@ import MatrixIdentityServer from '../../matrix-identity-server/src/index'
 import { type Utils } from '@twake/matrix-identity-server/'
 import { errMsg } from '../../matrix-identity-server/src/utils/errors'
 import { send } from '../../matrix-identity-server/src/utils'
+import versions from './versions'
+import supportPage from './support'
 
 // Endpoints
+import GetEventId from './rooms/getEventId'
+import GetJoinedMembers from './rooms/getJoinedMembers'
+import GetMembers from './rooms/getMembers'
+import GetState from './rooms/getState'
 
 export default class MatrixClientServer extends MatrixIdentityServer {
   api: {
@@ -49,10 +55,22 @@ export default class MatrixClientServer extends MatrixIdentityServer {
             send(res, 405, errMsg('unrecognized'))
           }
           this.api.get = {
-            ...this.api.get
+            '/.well-known/matrix/support': supportPage,
+            '/_matrix/client/versions': versions,
+            '/_matrix/client/v3/rooms/{roomId}/event/{eventId}':
+              GetEventId(this),
+            '/_matrix/client/v3/rooms/{roomId}/joined_members':
+              GetJoinedMembers(this),
+            '/_matrix/client/v3/rooms/{roomId}/members': GetMembers(this),
+            '/_matrix/client/v3/rooms/{roomId}/state': GetState(this)
           }
           this.api.post = {
-            ...this.api.post
+            '/.well-known/matrix/support': badMethod,
+            '/_matrix/client/versions': badMethod,
+            '/_matrix/client/v3/rooms/{roomId}/event/{eventId}': badMethod,
+            '/_matrix/client/v3/rooms/{roomId}/joined_members': badMethod,
+            '/_matrix/client/v3/rooms/{roomId}/members': badMethod,
+            '/_matrix/client/v3/rooms/{roomId}/state': badMethod
           }
           this.api.put = {
             ...this.api.put

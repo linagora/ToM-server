@@ -1,7 +1,7 @@
 import {
   send,
   type expressAppHandler
-} from '@twake/matrix-identity-server/dist/utils'
+} from '../../matrix-identity-server/src/utils'
 
 // TODO : update eventual unstable features
 // const unstable_features: object = {'org.example.my_feature': true}

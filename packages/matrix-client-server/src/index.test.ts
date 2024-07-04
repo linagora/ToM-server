@@ -132,16 +132,35 @@ describe('Use configuration file', () => {
   //   expect(response.statusCode).toBe(200)
   // })
 
-  // test('/_matrix/identity/versions', async () => {
-  //   const response = await request(app).get('/_matrix/identity/versions')
-  //   expect(response.statusCode).toBe(200)
-  // })
+  test('/_matrix/identity/versions', async () => {
+    const response = await request(app).get('/_matrix/client/versions')
+    expect(response.statusCode).toBe(200)
+  })
+
+  test('/.well-known/matrix/support', async () => {
+    const response = await request(app).get('/.well-known/matrix/support')
+    expect(response.statusCode).toBe(200)
+  })
 
   // test('/_matrix/identity/v2/terms', async () => {
   //   const response = await request(app).get('/_matrix/identity/v2/terms')
   //   expect(response.statusCode).toBe(200)
   // })
 
-  // describe('Endpoints with authentication', () => {
-  // })
+  describe('Endpoints with authentication', () => {
+    describe('/_matrix/client/v3/rooms', () => {
+      describe('/_matrix/client/v3/rooms/{roomId}/event/{eventId}', () => {
+        //
+      })
+      describe('/_matrix/client/v3/rooms/{roomId}/joined_members', () => {
+        //
+      })
+      describe('/_matrix/client/v3/rooms/{roomId}/members', () => {
+        //
+      })
+      describe('/_matrix/client/v3/rooms/{roomId}/state', () => {
+        //
+      })
+    })
+  })
 })
