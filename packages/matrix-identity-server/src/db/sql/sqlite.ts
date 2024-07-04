@@ -284,6 +284,7 @@ class SQLite<T extends string> extends SQL<T> implements IdDbBackend<T> {
     condition2: { field: string; value: string | number }
   ): Promise<DbGetResult> {
     return new Promise((resolve, reject) => {
+      /* istanbul ignore if */
       if (this.db == null) {
         throw new Error('Wait for database to be ready')
       }
