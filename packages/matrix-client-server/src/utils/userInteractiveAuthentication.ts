@@ -156,6 +156,7 @@ const UiAuthenticate = (
                         completed.includes(stage)
                       ) // check if all stages of a flow are completed
                     })
+                    // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
                     if (authOver) {
                       callback(obj) // what arguments to use in callback ?
                     } else {
