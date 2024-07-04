@@ -1,10 +1,12 @@
 import MatrixDBmodified from './index'
 import { type TwakeLogger, getLogger } from '@twake/logger'
-import { type Config, AuthenticationTypes } from '../types'
+import { type Config, AuthenticationTypes, type DbGetResult } from '../types'
 import DefaultConfig from './matrixDbTestConf.json'
 import fs from 'fs'
 import { randomString } from '@twake/crypto'
 import { buildMatrixDb } from '../__testData__/buildUserDB'
+
+jest.mock('node-fetch', () => jest.fn())
 
 const logger: TwakeLogger = getLogger()
 
@@ -14,7 +16,7 @@ const baseConf: Config = {
   userdb_engine: 'sqlite',
   cron_service: false,
   matrix_database_engine: 'sqlite',
-  matrix_database_host: './matrixTestdb.db',
+  matrix_database_host: './src/__testData__/matrixTestdb.db',
   flows: [
     {
       stages: [AuthenticationTypes.Password, AuthenticationTypes.Dummy]
@@ -42,7 +44,7 @@ const baseConf: Config = {
   }
 }
 
-describe('Id Server DB', () => {
+describe('Matrix DB', () => {
   let matrixDb: MatrixDBmodified
 
   beforeAll((done) => {
@@ -57,7 +59,7 @@ describe('Id Server DB', () => {
   })
 
   afterAll(() => {
-    fs.unlinkSync('./matrixTestdb.db')
+    fs.unlinkSync('./src/__testData__/matrixTestdb.db')
     logger.close()
   })
 
@@ -74,7 +76,7 @@ describe('Id Server DB', () => {
               .then((rows) => {
                 expect(rows.length).toBe(1)
                 expect(rows[0].user_id).toEqual(userId)
-                expect(rows[0].displayname).toEqual('')
+                expect(rows[0].displayname).toEqual(null)
                 matrixDb.close()
                 done()
               })
@@ -95,7 +97,7 @@ describe('Id Server DB', () => {
           .then((rows) => {
             expect(rows.length).toBe(1)
             expect(rows[0].user_id).toEqual(userId)
-            expect(rows[0].displayname).toEqual('')
+            expect(rows[0].displayname).toEqual(null)
             matrixDb.close()
             done()
           })
@@ -165,50 +167,45 @@ describe('Id Server DB', () => {
       .catch((e) => done(e))
   })
 
-  // it('should delete records matching both conditions', (done) => {
-  //   matrixDb = new matrixDb(baseConf, logger)
-  //   matrixDb.ready
-  //     .then(() => {
-  //       const idsNumber = 8
-  //       const ids: string[] = []
-  //       const insertsPromises: Array<Promise<DbGetResult>> = []
-  //       for (let index = 0; index < idsNumber; index++) {
-  //         ids[index] = randomString(64)
-  //         insertsPromises[index] = matrixDb.insert('attempts', {
-  //           email: `email${index}`,
-  //           expires: index,
-  //           attempt: index
-  //         })
-  //       }
+  it('should delete records matching both conditions', (done) => {
+    matrixDb = new MatrixDBmodified(baseConf, logger)
+    matrixDb.ready
+      .then(() => {
+        const idsNumber = 8
+        const insertsPromises: Array<Promise<DbGetResult>> = []
+        for (let index = 0; index < idsNumber; index++) {
+          insertsPromises[index] = matrixDb.insert('users', {
+            name: `user${index}`,
+            password_hash: `hash${index}`,
+            creation_ts: Date.now(),
+            admin: 0,
+            is_guest: 0,
+            deactivated: 0
+          })
+        }
 
-  //       Promise.all(insertsPromises)
-  //         .then(() => {
-  //           matrixDb
-  //             .deleteEqualAnd(
-  //               'attempts',
-  //               { field: 'email', value: 'email0' },
-  //               { field: 'expires', value: '0' }
-  //             )
-  //             .then(() => {
-  //               matrixDb
-  //                 .getAll('attempts', ['email', 'expires', 'attempt'])
-  //                 .then((rows) => {
-  //                   expect(rows.length).toBe(idsNumber - 1)
-  //                   rows.forEach((row) => {
-  //                     expect(row.email).not.toEqual('email0')
-  //                     expect(row.attempt).not.toEqual('0')
-  //                     expect(row.expires).not.toEqual('0')
-  //                   })
-  //                   clearTimeout(matrixDb.cleanJob)
-  //                   matrixDb.close()
-  //                   done()
-  //                 })
-  //                 .catch(done)
-  //             })
-  //             .catch(done)
-  //         })
-  //         .catch(done)
-  //     })
-  //     .catch(done)
-  // })
+        Promise.all(insertsPromises)
+          .then(() => {
+            matrixDb
+              .deleteEqual('users', 'name', 'user0')
+              .then(() => {
+                matrixDb
+                  .getAll('users', ['name', 'password_hash'])
+                  .then((rows) => {
+                    expect(rows.length).toBe(idsNumber - 1)
+                    rows.forEach((row) => {
+                      expect(row.name).not.toEqual('user0')
+                      expect(row.password_hash).not.toEqual('hash0')
+                    })
+                    matrixDb.close()
+                    done()
+                  })
+                  .catch(done)
+              })
+              .catch(done)
+          })
+          .catch(done)
+      })
+      .catch(done)
+  })
 })
