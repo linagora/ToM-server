@@ -167,7 +167,7 @@ describe('Matrix DB', () => {
       .catch((e) => done(e))
   })
 
-  it('should delete records matching both conditions', (done) => {
+  it('should delete records matching condition', (done) => {
     matrixDb = new MatrixDBmodified(baseConf, logger)
     matrixDb.ready
       .then(() => {
