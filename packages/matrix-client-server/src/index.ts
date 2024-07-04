@@ -29,6 +29,7 @@ import whoami from './account/whoami'
 import whois from './admin/whois'
 import accountDataType from './user/account_data'
 import register from './register'
+import accountDataType from './user/account_data'
 
 const tables = {
   ui_auth_sessions: 'session_id TEXT NOT NULL, stage_type TEXT NOT NULL'
@@ -108,7 +109,9 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
             '/_matrix/client/v3/profile/:userId/displayname': getDisplayname(
               this.matrixDb,
               this.logger
-            )
+            ),
+            '/_matrix/client/v3/user/:userId/account_data/:type':
+              accountDataType(this)
           }
           this.api.post = {
             '/_matrix/client/v3/account/whoami': badMethod,
@@ -124,8 +127,10 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
             '/_matrix/client/v3/admin/whois': badMethod,
             '/_matrix/client/v3/register': badMethod,
             '/_matrix/client/v3/profile/:userId': badMethod,
-            '/_matrix/client/v3/profile/:userId/avatar_url': badMethod,
-            '/_matrix/client/v3/profile/:userId/displayname': badMethod,
+            '/_matrix/client/v3/profile/:userId/avatar_url':
+              changeAvatarUrl(this),
+            '/_matrix/client/v3/profile/:userId/displayname':
+              changeDisplayname(this),
             '/_matrix/client/v3/user/:userId/account_data/:type':
               accountDataType(this)
           }
