@@ -15,10 +15,22 @@
     "url": "https://ci.linagora.com/publicgroup/oss/twake/tom-server.git"
   },
   "license": "AGPL-3.0-or-later",
-  "author": [
+  "authors": [
     {
       "name": "Xavier Guimard",
       "email": "yadd@debian.org"
+    },
+    {
+      "name": "Mathias Perez",
+      "email": "mathias.perez.2022@polytechnique.org"
+    },
+    {
+      "name": "Hippolyte Wallaert",
+      "email": "hippolyte.wallaert.2022@polytechnique.org"
+    },
+    {
+      "name": "Amine Chraibi",
+      "email": "amine.chraibi.2022@polytechnique.org"
     }
   ],
   "type": "module",
@@ -45,6 +57,7 @@
     "@twake/config-parser": "*",
     "@twake/logger": "*",
     "@twake/matrix-identity-server": "*",
+    "@twake/utils": "*",
     "express": "^4.19.2",
     "node-fetch": "^3.3.0"
   }

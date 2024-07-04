@@ -1263,7 +1263,6 @@ describe('Use configuration file', () => {
       let longKeyPair: { publicKey: string; privateKey: string; keyId: string }
       beforeAll(async () => {
         keyPair = generateKeyPair('ed25519')
-        console.log('keyPair private key', keyPair.privateKey)
         longKeyPair = generateKeyPair('ed25519')
         await idServer.db.insert('longTermKeypairs', {
           name: 'currentKey',

@@ -1,7 +1,7 @@
 import { generateKeyPair, randomString } from '@twake/crypto'
 import { type TwakeLogger } from '@twake/logger'
 import { type Config, type DbGetResult } from '../types'
-import { epoch } from '../utils'
+import { epoch } from '@twake/utils'
 import Pg from './sql/pg'
 import { type ISQLCondition } from './sql/sql'
 import Sqlite from './sql/sqlite'
@@ -22,6 +22,7 @@ export type Collections =
   | 'longTermKeypairs'
   | 'shortTermKeypairs'
   | 'userPolicies'
+
 const cleanByExpires: Collections[] = ['oneTimeTokens', 'attempts']
 
 const tables: Record<Collections, string> = {

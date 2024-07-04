@@ -1,4 +1,4 @@
-import { MatrixErrors } from '@twake/matrix-identity-server'
+import { errCodes } from '@twake/utils'
 import { type expressAppHandler } from '../types'
 import { FederatedIdentityServiceError } from './errors'
 
@@ -18,13 +18,13 @@ export const allowCors: expressAppHandler = (req, res, next) => {
 export const methodNotAllowed: expressAppHandler = (req, res, next) => {
   throw new FederatedIdentityServiceError({
     status: 405,
-    code: MatrixErrors.errCodes.unrecognized
+    code: errCodes.unrecognized
   })
 }
 
 export const methodNotFound: expressAppHandler = (req, res, next) => {
   throw new FederatedIdentityServiceError({
     status: 404,
-    code: MatrixErrors.errCodes.notFound
+    code: errCodes.notFound
   })
 }

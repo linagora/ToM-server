@@ -5,7 +5,7 @@ import fetch from 'node-fetch'
 import defaultConfig from '../config.json'
 import { type Config } from '../types'
 import UserDB from '../userdb'
-import { errCodes } from '../utils/errors'
+import { errCodes } from '@twake/utils'
 import updateFederatedIdentityHashes from './update-federated-identity-hashes'
 
 jest.mock('node-fetch', () => {
