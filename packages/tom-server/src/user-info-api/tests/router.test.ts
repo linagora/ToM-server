@@ -12,7 +12,7 @@ import router, { PATH } from '../routes'
 const app = express()
 
 jest
-  .spyOn(IdentityServerDb.default.prototype, 'get')
+  .spyOn(IdentityServerDb.prototype, 'get')
   .mockResolvedValue([{ data: '"test"' }])
 
 const idServer = new IdServer(

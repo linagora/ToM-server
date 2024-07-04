@@ -141,7 +141,7 @@ jest.mock('../../identity-server/index.ts', () => {
   return function () {
     return {
       ready: Promise.resolve(true),
-      db: {},
+      db: { cleanByExpires: [] },
       userDB: { get: mockUserDBGet },
       api: { get: {}, post: {} },
       cleanJobs: jest.fn().mockImplementation(() => testServer.logger.close())
@@ -158,8 +158,6 @@ jest.mock('../../application-server/index.ts', () => {
     }
   }
 })
-
-jest.mock('../../db/index.ts', () => jest.fn())
 
 jest.mock('../../utils/middlewares/auth.middleware.ts', () =>
   jest

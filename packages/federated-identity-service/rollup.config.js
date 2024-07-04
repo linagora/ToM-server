@@ -5,6 +5,7 @@ export default config([
   '@twake/logger',
   '@twake/crypto',
   '@twake/config-parser',
+  '@twake/utils',
   'express',
   'express-validator',
   'ip-address',

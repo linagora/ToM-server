@@ -9,8 +9,7 @@ import lodash from 'lodash'
 import fetch, { type Response as FetchResponse } from 'node-fetch'
 import type TwakeApplicationServer from '..'
 import type TwakeServer from '../..'
-import { type TwakeDB } from '../../db'
-import { allMatrixErrorCodes } from '../../types'
+import { type TwakeDB, allMatrixErrorCodes } from '../../types'
 import { TwakeRoom } from '../models/room'
 const { intersection } = lodash
 

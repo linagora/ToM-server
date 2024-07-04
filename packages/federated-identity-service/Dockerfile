@@ -28,6 +28,7 @@ COPY ./packages/matrix-resolve ./packages/matrix-resolve
 COPY ./packages/matrix-identity-server ./packages/matrix-identity-server
 COPY ./packages/config-parser ./packages/config-parser
 COPY ./packages/federated-identity-service ./packages/federated-identity-service
+COPY ./packages/utils ./packages/utils
 COPY .husky .husky
 COPY lerna.json ./
 COPY tsconfig-build.json ./

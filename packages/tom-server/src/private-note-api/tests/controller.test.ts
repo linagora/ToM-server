@@ -2,7 +2,7 @@
 import bodyParser from 'body-parser'
 import express, { type NextFunction, type Response } from 'express'
 import supertest from 'supertest'
-import type { AuthRequest, Config, IdentityServerDb } from '../../types'
+import type { AuthRequest, Config, TwakeDB } from '../../types'
 import router, { PATH } from '../routes'
 
 const app = express()
@@ -42,9 +42,7 @@ jest.mock('../../private-note-api/middlewares/validation.middleware.ts', () => {
 
 app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({ extended: true }))
-app.use(
-  router(dbMock as unknown as IdentityServerDb, {} as Config, authenticatorMock)
-)
+app.use(router(dbMock as unknown as TwakeDB, {} as Config, authenticatorMock))
 
 describe('the private note controller', () => {
   it('should try to fetch a note', async () => {

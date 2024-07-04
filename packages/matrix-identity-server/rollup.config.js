@@ -16,5 +16,6 @@ export default config([
   'redis',
   '@twake/config-parser',
   '@twake/crypto',
-  "@twake/logger"
+  "@twake/logger",
+  '@twake/utils'
 ])

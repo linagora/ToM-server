@@ -2,7 +2,9 @@
 import { type TwakeLogger } from '@twake/logger'
 import { MatrixResolve } from 'matrix-resolve'
 import fetch from 'node-fetch'
-import { hostnameRe } from '../utils'
+
+const hostnameRe =
+  /^((([a-zA-Z0-9][-a-zA-Z0-9]*)?[a-zA-Z0-9])[.])*([a-zA-Z][-a-zA-Z0-9]*[a-zA-Z0-9]|[a-zA-Z])(:(\d+))?$/
 
 interface userInfoResponse {
   sub: string

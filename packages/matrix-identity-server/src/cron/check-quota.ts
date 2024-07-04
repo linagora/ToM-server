@@ -12,11 +12,11 @@ import type {
  * check user quota cron job.
  *
  * @param {Config} conf - the configuration.
- * @param {IdentityServerDb} db - the identity server database.
+ * @param {IdentityServerDb<T>} db - the identity server database.
  */
-export default async (
+export default async <T extends string = never>(
   conf: Config,
-  db: IdentityServerDb,
+  db: IdentityServerDb<T>,
   logger: TwakeLogger
 ): Promise<void> => {
   try {
@@ -114,12 +114,12 @@ const getUserUsage = async (
 /**
  * Saves the media usage for a given user in the database.
  *
- * @param {IdentityServerDb} db -the identity server database instance.
+ * @param {IdentityServerDb<T>} db -the identity server database instance.
  * @param {string} userId - the user id of which to save the usage for.
  * @param {number } size - the total size of the media.
  */
-const saveUserUsage = async (
-  db: IdentityServerDb,
+const saveUserUsage = async <T extends string = never>(
+  db: IdentityServerDb<T>,
   userId: string,
   size: number
 ): Promise<void> => {

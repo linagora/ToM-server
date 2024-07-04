@@ -1,6 +1,6 @@
 import type { MatrixDBBackend } from '@twake/matrix-identity-server'
+import { type TwakeDB } from '../types'
 import type { RoomMembership, RoomTag } from './types'
-import type { IdentityServerDb } from '../types'
 
 /**
  * checks whether a user is a member of a room
@@ -25,13 +25,13 @@ export const isMemberOfRoom = async (
 /**
  * Checks whether a user has a tag for a room
  *
- * @param {IdentityServerDb} db - the identity server database
+ * @param {TwakeDB} db - the tom server database
  * @param {string} userId - the user id
  * @param {string} roomId - the room id
  * @returns {Promise<boolean>}
  */
 export const userRoomTagExists = async (
-  db: IdentityServerDb,
+  db: TwakeDB,
   userId: string,
   roomId: string
 ): Promise<boolean> => {
@@ -41,13 +41,13 @@ export const userRoomTagExists = async (
 /**
  * Returns the id for a room tag
  *
- * @param {IdentityServerDb} db - the identity server database database
+ * @param {TwakeDB} db - the identity server database database
  * @param {string} userId - the user id
  * @param {string} roomId - the room id
  * @returns {string | null}
  */
 export const getRoomTagId = async (
-  db: IdentityServerDb,
+  db: TwakeDB,
   userId: string,
   roomId: string
 ): Promise<string | null> => {

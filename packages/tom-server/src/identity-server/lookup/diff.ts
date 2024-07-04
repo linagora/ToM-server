@@ -1,6 +1,12 @@
 import { type TwakeLogger } from '@twake/logger'
-import { Utils, errMsg } from '@twake/matrix-identity-server'
-import type AugmentedIdentityServer from '..'
+import {
+  epoch,
+  errMsg,
+  jsonContent,
+  validateParameters,
+  send
+} from '@twake/utils'
+import type TwakeIdentityServer from '..'
 import { type expressAppHandler } from '../../types'
 
 const schema = {
@@ -18,7 +24,7 @@ interface DiffQueryBody {
 }
 
 const diff = (
-  idServer: AugmentedIdentityServer,
+  idServer: TwakeIdentityServer,
   logger: TwakeLogger
 ): expressAppHandler => {
   return (req, res) => {
@@ -26,12 +32,12 @@ const diff = (
       /* istanbul ignore next */
       logger.error('lookup/diff error', e)
       /* istanbul ignore next */
-      Utils.send(res, 500, errMsg('unknown'))
+      send(res, 500, errMsg('unknown'))
     }
     idServer.authenticate(req, res, (token) => {
-      const timestamp = Utils.epoch()
-      Utils.jsonContent(req, res, logger, (obj) => {
-        Utils.validateParameters(res, schema, obj, logger, (data) => {
+      const timestamp = epoch()
+      jsonContent(req, res, logger, (obj) => {
+        validateParameters(res, schema, obj, logger, (data) => {
           idServer.db
             .getHigherThan(
               'userHistory',
@@ -70,7 +76,7 @@ const diff = (
                   })
                   const start = (data as DiffQueryBody).offset ?? 0
                   const end = start + ((data as DiffQueryBody).limit ?? 30)
-                  Utils.send(res, 200, {
+                  send(res, 200, {
                     new: newUsers.slice(start, end),
                     deleted: deleted.slice(start, end),
                     timestamp

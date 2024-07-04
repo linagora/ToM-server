@@ -1,4 +1,4 @@
-import { type IdentityServerDb } from '../../types'
+import { type TwakeDB } from '../../types'
 import PrivateNoteService from '../services'
 import { type Note } from '../types'
 
@@ -12,7 +12,7 @@ describe('the Private Note Service', () => {
   }
 
   const privateNoteServiceMock = new PrivateNoteService(
-    dbMock as unknown as IdentityServerDb
+    dbMock as unknown as TwakeDB
   )
 
   it('should create a note', async () => {

@@ -13,14 +13,14 @@ interface UserDBSQLite {
 
 const logger: TwakeLogger = getLogger()
 
-const createUsersTable = 'CREATE TABLE users (uid varchar(32), cn varchar(32), sn varchar(32), mail varchar(32), mobile varchar(12))'
-const insertLskywalker = "INSERT INTO users VALUES('lskywalker', 'Luke Skywalker', 'Lskywalker', 'lskywalker@example.com', '')"
-const insertOkenobi = "INSERT INTO users VALUES('okenobi', 'Obi-Wan Kenobi', 'Okenobi', 'okenobi@example.com', '')"
-const insertAskywalker = "INSERT INTO users VALUES('askywalker', 'Anakin Skywalker', 'Askywalker', 'askywalker@example.com', '')"
-const insertQjinn = "INSERT INTO users VALUES('qjinn', 'Qgonjinn', 'Qjinn', 'qjinn@example.com', '')"
-const insertChewbacca = "INSERT INTO users VALUES('chewbacca', 'Chewbacca', 'Chewbacca', 'chewbacca@example.com', '')"
+const createUsersTable = 'CREATE TABLE IF NOT EXISTS users (uid varchar(255), mobile text, mail test)'
+const insertLskywalker = "INSERT INTO users VALUES('lskywalker', '', 'lskywalker@example.com')"
+const insertOkenobi = "INSERT INTO users VALUES('okenobi', '', 'okenobi@example.com')"
+const insertAskywalker = "INSERT INTO users VALUES('askywalker', '', 'askywalker@example.com')"
+const insertQjinn = "INSERT INTO users VALUES('qjinn', '', 'qjinn@example.com')"
+const insertChewbacca = "INSERT INTO users VALUES('chewbacca', '', 'chewbacca@example.com')"
 
-const mCreateUsersTable = 'CREATE TABLE users (name text)'
+const mCreateUsersTable = 'CREATE TABLE IF NOT EXISTS users (name text)'
 const mInsertChewbacca = "INSERT INTO users VALUES('@chewbacca:example.com')"
 
 // eslint-disable-next-line @typescript-eslint/promise-function-async

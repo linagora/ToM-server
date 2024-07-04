@@ -95,7 +95,7 @@
  *                server_name: example.com
  */
 
-import { Utils } from '@twake/matrix-identity-server'
+import { send } from '@twake/utils'
 import { type Config, type expressAppHandler } from '../types'
 
 interface WellKnownType {
@@ -193,7 +193,7 @@ class WellKnown {
           issuer: conf.oidc_issuer
         }
       }
-      Utils.send(res, 200, wellKnown)
+      send(res, 200, wellKnown)
     }
     this.api = {
       get: {

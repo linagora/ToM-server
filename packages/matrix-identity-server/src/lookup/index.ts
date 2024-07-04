@@ -1,11 +1,11 @@
 import type MatrixIdentityServer from '..'
 import {
+  errMsg,
   jsonContent,
   send,
   validateParameters,
   type expressAppHandler
-} from '../utils'
-import { errMsg } from '../utils/errors'
+} from '@twake/utils'
 
 const schema = {
   addresses: true,
@@ -13,7 +13,9 @@ const schema = {
   pepper: false
 }
 
-const lookup = (idServer: MatrixIdentityServer): expressAppHandler => {
+const lookup = <T extends string = never>(
+  idServer: MatrixIdentityServer<T>
+): expressAppHandler => {
   return (req, res) => {
     idServer.authenticate(req, res, (data, id) => {
       jsonContent(req, res, idServer.logger, (obj) => {

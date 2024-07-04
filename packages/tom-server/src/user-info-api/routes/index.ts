@@ -4,8 +4,8 @@ import {
   type Config as LoggerConfig,
   type TwakeLogger
 } from '@twake/logger'
-import type MatrixIdentityServer from '@twake/matrix-identity-server'
 import { Router } from 'express'
+import type IdServer from '../../identity-server'
 import type { Config } from '../../types'
 import authMiddleware from '../../utils/middlewares/auth.middleware'
 import UserInfoController from '../controllers'
@@ -13,7 +13,7 @@ import checkLdapMiddleware from '../middlewares/require-ldap'
 export const PATH = '/_twake/v1/user_info'
 
 export default (
-  idServer: MatrixIdentityServer,
+  idServer: IdServer,
   config: Config,
   defaultLogger?: TwakeLogger
 ): Router => {

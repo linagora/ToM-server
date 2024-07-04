@@ -1,22 +1,23 @@
+/* eslint-disable @typescript-eslint/strict-boolean-expressions */
 /* eslint-disable @typescript-eslint/promise-function-async */
 /* istanbul ignore file */
 import { type TwakeLogger } from '@twake/logger'
 import { type ClientConfig, type Pool as PgPool } from 'pg'
-import { type Collections, type ISQLCondition, type IdDbBackend } from '..'
+import { type IdDbBackend } from '..'
 import { type Config, type DbGetResult } from '../../types'
 import createTables from './_createTables'
-import SQL from './sql'
+import SQL, { type ISQLCondition } from './sql'
 
 export type PgDatabase = PgPool
 
-class Pg extends SQL implements IdDbBackend {
+class Pg<T extends string> extends SQL<T> implements IdDbBackend<T> {
   declare db?: PgDatabase
   createDatabases(
     conf: Config,
-    tables: Record<Collections, string>,
-    indexes: Partial<Record<Collections, string[]>>,
+    tables: Record<T, string>,
+    indexes: Partial<Record<T, string[]>>,
     initializeValues: Partial<
-      Record<Collections, Array<Record<string, string | number>>>
+      Record<T, Array<Record<string, string | number>>>
     >,
     logger: TwakeLogger
   ): Promise<void> {
@@ -88,7 +89,7 @@ class Pg extends SQL implements IdDbBackend {
     return this.db.query(query)
   }
 
-  exists(table: string): Promise<boolean> {
+  exists(table: T): Promise<boolean> {
     return new Promise((resolve, reject) => {
       if (this.db != null) {
         this.db.query(
@@ -108,7 +109,7 @@ class Pg extends SQL implements IdDbBackend {
   }
 
   insert(
-    table: string,
+    table: T,
     values: Record<string, string | number>
   ): Promise<DbGetResult> {
     return new Promise((resolve, reject) => {
@@ -138,7 +139,7 @@ class Pg extends SQL implements IdDbBackend {
   }
 
   update(
-    table: Collections,
+    table: string,
     values: Record<string, string | number>,
     field: string,
     value: string | number
@@ -171,9 +172,45 @@ class Pg extends SQL implements IdDbBackend {
     })
   }
 
+  updateAnd(
+    table: T,
+    values: Record<string, string | number>,
+    condition1: { field: string; value: string | number },
+    condition2: { field: string; value: string | number }
+  ): Promise<DbGetResult> {
+    return new Promise((resolve, reject) => {
+      /* istanbul ignore if */
+      if (this.db == null) {
+        reject(new Error('Wait for database to be ready'))
+      } else {
+        const names: string[] = []
+        const vals:
+          | (string[] & Array<string | number>)
+          | (number[] & Array<string | number>) = []
+        Object.keys(values).forEach((k) => {
+          names.push(k)
+          vals.push(values[k])
+        })
+        vals.push(condition1.value, condition2.value)
+        this.db.query(
+          `UPDATE ${table} SET ${names
+            .map((name, i) => `${name}=$${i + 1}`)
+            .join(',')} WHERE ${condition1.field}=$${vals.length - 1} AND ${
+            condition2.field
+          }=$${vals.length} RETURNING *;`,
+          vals,
+          (err, rows) => {
+            // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+            err ? reject(err) : resolve(rows.rows)
+          }
+        )
+      }
+    })
+  }
+
   _get(
     op: string,
-    table: string,
+    table: T,
     fields?: string[],
     filterFields?: Record<string, string | number | Array<string | number>>,
     order?: string
@@ -229,7 +266,7 @@ class Pg extends SQL implements IdDbBackend {
   }
 
   get(
-    table: string,
+    table: T,
     fields?: string[],
     filterFields?: Record<string, string | number | Array<string | number>>,
     order?: string
@@ -238,7 +275,7 @@ class Pg extends SQL implements IdDbBackend {
   }
 
   getHigherThan(
-    table: string,
+    table: T,
     fields?: string[],
     filterFields?: Record<string, string | number | Array<string | number>>,
     order?: string
@@ -247,7 +284,7 @@ class Pg extends SQL implements IdDbBackend {
   }
 
   match(
-    table: string,
+    table: T,
     fields: string[],
     searchFields: string[],
     value: string | number,
@@ -277,11 +314,7 @@ class Pg extends SQL implements IdDbBackend {
     })
   }
 
-  deleteEqual(
-    table: string,
-    field: string,
-    value: string | number
-  ): Promise<void> {
+  deleteEqual(table: T, field: string, value: string | number): Promise<void> {
     return new Promise((resolve, reject) => {
       if (this.db == null) {
         reject(new Error('DB not ready'))
@@ -311,8 +344,55 @@ class Pg extends SQL implements IdDbBackend {
     })
   }
 
+  deleteEqualAnd(
+    table: T,
+    condition1: {
+      field: string
+      value: string | number | Array<string | number>
+    },
+    condition2: {
+      field: string
+      value: string | number | Array<string | number>
+    }
+  ): Promise<void> {
+    return new Promise((resolve, reject) => {
+      if (this.db == null) {
+        reject(new Error('DB not ready'))
+      } else {
+        if (
+          !condition1.field ||
+          condition1.field.length === 0 ||
+          !condition1.value ||
+          condition1.value.toString().length === 0 ||
+          !condition2.field ||
+          condition2.field.length === 0 ||
+          !condition2.value ||
+          condition2.value.toString().length === 0
+        ) {
+          reject(
+            new Error(
+              // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+              `Bad deleteAnd call, conditions: ${condition1.field}=${condition1.value}, ${condition2.field}=${condition2.value}`
+            )
+          )
+          return
+        }
+        this.db.query(
+          `DELETE FROM ${table} WHERE ${condition1.field}=$1 AND ${condition2.field}=$2`,
+          [condition1.value, condition2.value] as
+            | (string[] & Array<string | number>)
+            | (number[] & Array<string | number>),
+          (err) => {
+            // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+            err ? reject(err) : resolve()
+          }
+        )
+      }
+    })
+  }
+
   deleteLowerThan(
-    table: string,
+    table: T,
     field: string,
     value: string | number
   ): Promise<void> {
@@ -348,7 +428,7 @@ class Pg extends SQL implements IdDbBackend {
   }
 
   deleteWhere(
-    table: string,
+    table: T,
     conditions: ISQLCondition | ISQLCondition[]
   ): Promise<void> {
     return new Promise((resolve, reject) => {

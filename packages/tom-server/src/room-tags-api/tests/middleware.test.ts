@@ -1,7 +1,7 @@
 import type { MatrixDBBackend } from '@twake/matrix-identity-server'
+import type { NextFunction, Response } from 'express'
+import type { AuthRequest, TwakeDB } from '../../types'
 import RoomTagsMiddleware from '../middlewares'
-import type { AuthRequest, IdentityServerDb } from '../../types'
-import type { Response, NextFunction } from 'express'
 
 describe('the room tags API middleware', () => {
   let mockRequest: Partial<AuthRequest>
@@ -21,7 +21,7 @@ describe('the room tags API middleware', () => {
   }
 
   const roomTagsMiddlewareMock = new RoomTagsMiddleware(
-    dbMock as unknown as IdentityServerDb,
+    dbMock as unknown as TwakeDB,
     matrixDbMock as unknown as MatrixDBBackend
   )
 

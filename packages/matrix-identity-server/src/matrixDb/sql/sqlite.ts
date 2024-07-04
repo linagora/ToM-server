@@ -1,9 +1,8 @@
-import { type Collections } from '../../db'
-import { type MatrixDBBackend } from '../'
-import { type Config } from '../../types'
+import { type Collections, type MatrixDBBackend } from '../'
 import SQLite from '../../db/sql/sqlite'
+import { type Config } from '../../types'
 
-class MatrixDBSQLite extends SQLite implements MatrixDBBackend {
+class MatrixDBSQLite extends SQLite<Collections> implements MatrixDBBackend {
   // eslint-disable-next-line @typescript-eslint/promise-function-async
   createDatabases(
     conf: Config,

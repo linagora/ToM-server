@@ -1,6 +1,11 @@
 import type MatrixIdentityServer from '../..'
-import { jsonContent, send, type expressAppHandler } from '../../utils'
-import { errMsg } from '../../utils/errors'
+import {
+  epoch,
+  errMsg,
+  jsonContent,
+  send,
+  type expressAppHandler
+} from '@twake/utils'
 
 interface parameters {
   client_secret?: string
@@ -14,7 +19,9 @@ interface mailToken {
   sid: string
 }
 
-const SubmitToken = (idServer: MatrixIdentityServer): expressAppHandler => {
+const SubmitToken = <T extends string = never>(
+  idServer: MatrixIdentityServer<T>
+): expressAppHandler => {
   return (req, res) => {
     const realMethod = (prms: parameters): void => {
       if (
@@ -33,7 +40,20 @@ const SubmitToken = (idServer: MatrixIdentityServer): expressAppHandler => {
               idServer.db
                 .deleteToken(prms.token as string)
                 .then(() => {
-                  send(res, 200, { success: true })
+                  idServer.db
+                    .updateAnd(
+                      'mappings',
+                      { valid: 1, submit_time: epoch() },
+                      { field: 'session_id', value: (data as mailToken).sid },
+                      {
+                        field: 'client_secret',
+                        value: (data as mailToken).client_secret
+                      }
+                    )
+                    .then(() => {
+                      send(res, 200, { success: true })
+                    })
+                    .catch((e) => {})
                 })
                 .catch((e) => {})
             } else {

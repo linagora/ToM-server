@@ -4,7 +4,7 @@ import updateHash, { type UpdatableFields } from '../lookup/updateHash'
 import MatrixDB from '../matrixDb'
 import { type Config, type DbGetResult } from '../types'
 import type UserDB from '../userdb'
-import { epoch } from '../utils'
+import { epoch } from '@twake/utils'
 
 /**
  * updateUsers is a cron task that reads users from UserDB and find which of
@@ -12,9 +12,9 @@ import { epoch } from '../utils'
  * @param idServer Matrix identity server
  * @returns Promise<void>
  */
-const updateUsers = async (
+const updateUsers = async <T extends string = never>(
   conf: Config,
-  db: IdentityServerDb,
+  db: IdentityServerDb<T>,
   userDB: UserDB,
   logger: TwakeLogger
 ): Promise<void> => {

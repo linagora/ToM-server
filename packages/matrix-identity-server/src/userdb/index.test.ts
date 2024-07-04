@@ -15,19 +15,23 @@ describe('UserDB', () => {
 
   beforeAll((done) => {
     const db = new sqlite3.Database(dbName)
-    db.run('CREATE TABLE users(uid varchar(64) primary key)', (err) => {
-      if (err != null) {
-        done(err)
-      } else {
-        db.run("INSERT INTO users values('dwho')", (err) => {
-          if (err != null) {
-            done(err)
-          } else {
-            done()
-          }
-        })
+    db.run(
+      'CREATE TABLE IF NOT EXISTS users(uid varchar(64) primary key)',
+      (err) => {
+        if (err != null) {
+          console.log('BIZARRE', err)
+          done(err)
+        } else {
+          db.run("INSERT INTO users values('dwho')", (err) => {
+            if (err != null) {
+              done(err)
+            } else {
+              done()
+            }
+          })
+        }
       }
-    })
+    )
   })
 
   afterEach(() => {

@@ -4,3 +4,4 @@ node_modules/
 packages/*/example/*.js*
 *.map
 .nx/
+packages/matrix-identity-server/matrix-server/synapse-data

@@ -1,4 +1,4 @@
-import { send, type expressAppHandler } from './utils'
+import { send, type expressAppHandler } from '@twake/utils'
 
 // TODO: fix supported versions
 const versions = [

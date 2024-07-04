@@ -1,4 +1,4 @@
-import type { IdentityServerDb } from '../../types'
+import { type TwakeDB } from '../../types'
 import RoomTagsService from '../services'
 
 describe('the room tags API service', () => {
@@ -10,9 +10,7 @@ describe('the room tags API service', () => {
     getCount: jest.fn()
   }
 
-  const roomTagsServiceMock = new RoomTagsService(
-    dbMock as unknown as IdentityServerDb
-  )
+  const roomTagsServiceMock = new RoomTagsService(dbMock as unknown as TwakeDB)
 
   it('should get a room tag', async () => {
     const roomTag = {

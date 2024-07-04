@@ -6,11 +6,7 @@ import MatrixApplicationServer, {
 } from '@twake/matrix-application-server'
 import { type MatrixDB, type UserDB } from '@twake/matrix-identity-server'
 import { Router } from 'express'
-import {
-  type AuthenticationFunction,
-  type Config,
-  type IdentityServerDb
-} from '../types'
+import type { AuthenticationFunction, Config, TwakeDB } from '../types'
 import { type IMatrixDBRoomsRepository } from './repositories/interfaces/matrix-db-rooms-repository.interface'
 import { type IOpenSearchRepository } from './repositories/interfaces/opensearch-repository.interface'
 import { MatrixDBRoomsRepository } from './repositories/matrix-db-rooms.repository'
@@ -32,7 +28,7 @@ export default class TwakeSearchEngine
   public readonly matrixDBRoomsRepository: IMatrixDBRoomsRepository
 
   constructor(
-    public readonly idDb: IdentityServerDb,
+    public readonly twakeDb: TwakeDB,
     public readonly userDB: UserDB,
     public readonly authenticate: AuthenticationFunction,
     matrixDb: MatrixDB,

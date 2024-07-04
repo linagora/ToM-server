@@ -1,6 +1,5 @@
-import type { Note, IPrivateNoteService } from '../types'
-import type { TwakeDB } from '../../db'
-import type { Collections } from '../../types'
+import { type TwakeDB } from '../../types'
+import type { IPrivateNoteService, Note } from '../types'
 
 class PrivateNoteService implements IPrivateNoteService {
   constructor(private readonly db: TwakeDB) {}
@@ -16,11 +15,9 @@ class PrivateNoteService implements IPrivateNoteService {
     targetId: string
   ): Promise<string | null> => {
     try {
-      const notes = (await this.db.get(
-        'privateNotes' as Collections,
-        ['content'],
-        { authorId }
-      )) as unknown as Note[]
+      const notes = (await this.db.get('privateNotes', ['content'], {
+        authorId
+      })) as unknown as Note[]
 
       const note = notes.find((note) => note.targetId === targetId)
 
@@ -48,11 +45,9 @@ class PrivateNoteService implements IPrivateNoteService {
     content: string
   ): Promise<void> => {
     try {
-      const notes = (await this.db.get(
-        'privateNotes' as Collections,
-        ['content'],
-        { authorId }
-      )) as unknown as Note[]
+      const notes = (await this.db.get('privateNotes', ['content'], {
+        authorId
+      })) as unknown as Note[]
 
       const existingNote = notes.find((note) => note.targetId === targetId)
 
@@ -61,7 +56,7 @@ class PrivateNoteService implements IPrivateNoteService {
         throw new Error('Note already exists')
       }
 
-      await this.db.insert('privateNotes' as Collections, {
+      await this.db.insert('privateNotes', {
         authorId,
         targetId,
         content
@@ -79,18 +74,14 @@ class PrivateNoteService implements IPrivateNoteService {
    */
   public update = async (id: number, content: string): Promise<void> => {
     try {
-      const existingNoteCount = await this.db.getCount(
-        'privateNotes' as Collections,
-        'id',
-        id
-      )
+      const existingNoteCount = await this.db.getCount('privateNotes', 'id', id)
 
       /* istanbul ignore if */
       if (existingNoteCount === 0) {
         throw new Error('Note not found')
       }
 
-      await this.db.update('privateNotes' as Collections, { content }, 'id', id)
+      await this.db.update('privateNotes', { content }, 'id', id)
     } catch (error) {
       throw new Error('Failed to update note', { cause: error })
     }
@@ -103,18 +94,14 @@ class PrivateNoteService implements IPrivateNoteService {
    */
   public delete = async (id: number): Promise<void> => {
     try {
-      const existingNoteCount = await this.db.getCount(
-        'privateNotes' as Collections,
-        'id',
-        id
-      )
+      const existingNoteCount = await this.db.getCount('privateNotes', 'id', id)
 
       /* istanbul ignore if */
       if (existingNoteCount === 0) {
         throw new Error('Note not found')
       }
 
-      await this.db.deleteEqual('privateNotes' as Collections, 'id', id)
+      await this.db.deleteEqual('privateNotes', 'id', id)
     } catch (error) {
       throw new Error('Failed to delete note', { cause: error })
     }

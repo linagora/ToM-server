@@ -11,10 +11,10 @@ const logger: TwakeLogger = getLogger()
 let created = false
 let matrixDbCreated = false
 
-const createQuery = 'CREATE TABLE users (uid varchar(8), mobile varchar(12), mail varchar(32))'
+const createQuery = 'CREATE TABLE IF NOT EXISTS users (uid varchar(8), mobile varchar(12), mail varchar(32))'
 const insertQuery = "INSERT INTO users VALUES('dwho', '33612345678', 'dwho@company.com')"
 const insertQuery2 = "INSERT INTO users VALUES('rtyler', '33687654321', 'rtyler@company.com')"
-const mCreateQuery = 'CREATE TABLE users (name text)'
+const mCreateQuery = 'CREATE TABLE IF NOT EXISTS users (name text)'
 const mInsertQuery = "INSERT INTO users VALUES('@dwho:company.com')"
 
 // eslint-disable-next-line @typescript-eslint/promise-function-async

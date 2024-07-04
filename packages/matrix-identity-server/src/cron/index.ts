@@ -12,14 +12,14 @@ import checkQuota from './check-quota'
 import updateFederatedIdentityHashes from './update-federated-identity-hashes'
 import updateUsers from './updateUsers'
 
-class CronTasks {
+class CronTasks<T extends string = never> {
   tasks: ScheduledTask[]
   ready: Promise<void>
   readonly options: Record<string, string | number> = { timezone: 'GMT' }
 
   constructor(
     conf: Config,
-    db: IdentityServerDb,
+    db: IdentityServerDb<T>,
     userDB: UserDB,
     logger: TwakeLogger
   ) {
@@ -37,13 +37,13 @@ class CronTasks {
    * Initializes the cron tasks
    *
    * @param {Config} conf - the config
-   * @param {IdentityServerDb} db - the identity server db instance
+   * @param {IdentityServerDb<T>} db - the identity server db instance
    * @param {UserDB} userDB - the user db instance
    * @param {TwakeLogger} logger - the logger
    */
   private readonly init = async (
     conf: Config,
-    db: IdentityServerDb,
+    db: IdentityServerDb<T>,
     userDB: UserDB,
     logger: TwakeLogger
   ): Promise<void> => {
@@ -80,13 +80,13 @@ class CronTasks {
    * Update the hashes job.
    *
    * @param {Config} conf - the config
-   * @param {IdentityServerDb} db - the identity server db instance
+   * @param {IdentityServerDb<T>} db - the identity server db instance
    * @param {UserDB} userDB - the user db instance
    * @param {TwakeLogger} logger - the logger
    */
   private readonly _addUpdateHashesJob = async (
     conf: Config,
-    db: IdentityServerDb,
+    db: IdentityServerDb<T>,
     userDB: UserDB,
     logger: TwakeLogger
   ): Promise<void> => {
@@ -159,12 +159,12 @@ class CronTasks {
    * Adds the check user quota job
    *
    * @param {Config} conf - the configuration
-   * @param {IdentityServerDb} db - the identity server db instance
+   * @param {IdentityServerDb<T>} db - the identity server db instance
    * @param {TwakeLogger} logger - the logger
    */
   private readonly _addCheckUserQuotaJob = async (
     conf: Config,
-    db: IdentityServerDb,
+    db: IdentityServerDb<T>,
     logger: TwakeLogger
   ): Promise<void> => {
     const cronString = conf.check_quota_cron ?? '0 0 0 * * *'

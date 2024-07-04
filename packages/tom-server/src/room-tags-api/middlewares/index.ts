@@ -1,12 +1,12 @@
 import type { MatrixDBBackend } from '@twake/matrix-identity-server'
+import type { NextFunction, Response } from 'express'
+import type { AuthRequest, TwakeDB } from '../../types'
 import type { IRoomTagsMiddleware } from '../types'
-import type { Response, NextFunction } from 'express'
-import type { IdentityServerDb, AuthRequest } from '../../types'
 import { isMemberOfRoom, userRoomTagExists } from '../utils'
 
 class RoomTagsMiddleware implements IRoomTagsMiddleware {
   constructor(
-    private readonly idDb: IdentityServerDb,
+    private readonly twakeDb: TwakeDB,
     private readonly matrixDb: MatrixDBBackend
   ) {}
 
@@ -78,7 +78,7 @@ class RoomTagsMiddleware implements IRoomTagsMiddleware {
         throw new Error('invalid tags')
       }
 
-      if (await userRoomTagExists(this.idDb, userId, roomId)) {
+      if (await userRoomTagExists(this.twakeDb, userId, roomId)) {
         throw new Error('user already has a tag for this room')
       }
 
@@ -131,7 +131,7 @@ class RoomTagsMiddleware implements IRoomTagsMiddleware {
         return
       }
 
-      if (!(await userRoomTagExists(this.idDb, userId, roomId))) {
+      if (!(await userRoomTagExists(this.twakeDb, userId, roomId))) {
         throw new Error('user tag for this room does not exist')
       }
 
@@ -167,7 +167,7 @@ class RoomTagsMiddleware implements IRoomTagsMiddleware {
         throw new Error('user_id is required')
       }
 
-      if (!(await userRoomTagExists(this.idDb, userId, roomId))) {
+      if (!(await userRoomTagExists(this.twakeDb, userId, roomId))) {
         throw new Error('user tag for this room does not exist')
       }
 

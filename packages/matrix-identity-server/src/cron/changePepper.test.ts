@@ -28,7 +28,7 @@ describe('updateHashes', () => {
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
         // @ts-ignore run is a sqlite3 method only
         userDB.db.db.run(
-          'CREATE TABLE users (uid varchar(8), mobile varchar(12), mail varchar(32))',
+          'CREATE TABLE IF NOT EXISTS users (uid varchar(8), mobile varchar(12), mail varchar(32))',
           () => {
             // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
             // @ts-ignore same

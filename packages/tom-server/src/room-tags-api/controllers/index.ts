@@ -1,12 +1,12 @@
-import type { IRoomTagsController, IRoomTagsService } from '../types'
-import type { AuthRequest, IdentityServerDb } from '../../types'
+import type { NextFunction, Response } from 'express'
+import type { AuthRequest, TwakeDB } from '../../types'
 import RoomTagsService from '../services'
-import type { Response, NextFunction } from 'express'
+import type { IRoomTagsController, IRoomTagsService } from '../types'
 
 class RoomTagsController implements IRoomTagsController {
   readonly roomTagsService: IRoomTagsService
 
-  constructor(private readonly db: IdentityServerDb) {
+  constructor(private readonly db: TwakeDB) {
     this.roomTagsService = new RoomTagsService(this.db)
   }
 

@@ -1,6 +1,5 @@
 import ldapjs from 'ldapjs'
-import { type TwakeDB } from '../../db'
-import { type Collections } from '../../types'
+import { type TwakeDB } from '../../types'
 import { type ITwakeRoomModel } from '../types'
 const { EqualityFilter, OrFilter, SubstringFilter } = ldapjs
 
@@ -11,7 +10,7 @@ export class TwakeRoom implements ITwakeRoomModel {
   ) {}
 
   public async saveRoom(db: TwakeDB): Promise<void> {
-    await db.insert('rooms' as Collections, {
+    await db.insert('rooms', {
       id: this.id,
       filter: JSON.stringify(this.filter)
     })
@@ -21,7 +20,7 @@ export class TwakeRoom implements ITwakeRoomModel {
     db: TwakeDB,
     id: string
   ): Promise<TwakeRoom | undefined> {
-    const roomsfromDb = (await db.get('rooms' as Collections, [], {
+    const roomsfromDb = (await db.get('rooms', [], {
       id
     })) as Array<{
       id: string
@@ -38,7 +37,7 @@ export class TwakeRoom implements ITwakeRoomModel {
   }
 
   static async getAllRooms(db: TwakeDB): Promise<TwakeRoom[]> {
-    const roomsfromDb = (await db.getAll('rooms' as Collections, [])) as Array<{
+    const roomsfromDb = (await db.getAll('rooms', [])) as Array<{
       id: string
       filter: string
     }>
@@ -54,12 +53,7 @@ export class TwakeRoom implements ITwakeRoomModel {
     db: TwakeDB,
     filter: Record<string, string | number | string[]>
   ): Promise<void> {
-    await db.update(
-      'rooms' as Collections,
-      { filter: JSON.stringify(filter) },
-      'id',
-      this.id
-    )
+    await db.update('rooms', { filter: JSON.stringify(filter) }, 'id', this.id)
   }
 
   public userDataMatchRoomFilter(user: any): boolean {
