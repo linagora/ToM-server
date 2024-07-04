@@ -139,7 +139,7 @@ class Pg<T extends string> extends SQL<T> implements IdDbBackend<T> {
   }
 
   update(
-    table: T,
+    table: string,
     values: Record<string, string | number>,
     field: string,
     value: string | number
@@ -223,7 +223,6 @@ class Pg<T extends string> extends SQL<T> implements IdDbBackend<T> {
     order?: string
   ): Promise<DbGetResult> {
     return new Promise((resolve, reject) => {
-      /* istanbul ignore if */
       if (this.db == null) {
         reject(new Error('Wait for database to be ready'))
       } else {
@@ -253,8 +252,8 @@ class Pg<T extends string> extends SQL<T> implements IdDbBackend<T> {
           Object.keys(filterFields)
             .filter(
               (key) =>
-                filterFields[key] != null &&
-                filterFields[key].toString() !== [].toString()
+                joinFields[key] != null &&
+                joinFields[key].toString() !== [].toString()
             )
             .forEach((key) => {
               localCondition += localCondition !== '' ? ' AND ' : ''
