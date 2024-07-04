@@ -1,10 +1,6 @@
 import type MatrixClientServer from '..'
 import { type expressAppHandler, send, errMsg } from '@twake/utils'
 
-interface parameters {
-  userId: string
-}
-
 interface connectionsContent {
   ip: string
   last_seen: number
@@ -19,22 +15,30 @@ interface deviceContent {
   sessions: sessionsContent[]
 }
 
+const mxidRe = /^@[0-9a-zA-Z._=-]+:[0-9a-zA-Z.-]+$/
+
 const whois = (clientServer: MatrixClientServer): expressAppHandler => {
   return (req, res) => {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-expect-error
-    const prms: parameters = req.query as parameters
-    if (prms.userId?.length != null) {
+    const userId: string = req.params.userId as string
+    // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+    if (mxidRe.test(userId)) {
       clientServer.authenticate(req, res, (data, id) => {
         clientServer.matrixDb
           .get(
             'user_ips',
             ['device_id', 'ip', 'user_agent', 'last_seen', 'access_token'],
             {
-              user_id: prms.userId
+              user_id: userId
             }
           )
           .then((rows) => {
+            if (rows.length === 0) {
+              clientServer.logger.error('User not found')
+              send(res, 400, errMsg('invalidParam'))
+              return
+            }
             const sessions: Record<string, sessionsContent> = {}
             const devices: Record<string, deviceContent> = {}
             const deviceIds = Array.from(
@@ -61,7 +65,7 @@ const whois = (clientServer: MatrixClientServer): expressAppHandler => {
               devices[deviceId].sessions.push(sessions[mappings[deviceId]])
             })
             send(res, 200, {
-              user_id: prms.userId,
+              user_id: userId,
               devices
             })
           })
@@ -76,7 +80,8 @@ const whois = (clientServer: MatrixClientServer): expressAppHandler => {
           })
       })
     } else {
-      send(res, 400, errMsg('missingParams'))
+      clientServer.logger.error('Wrong Matrix user ID format')
+      send(res, 400, errMsg('invalidParam'))
     }
   }
 }

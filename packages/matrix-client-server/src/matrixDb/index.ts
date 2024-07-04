@@ -22,6 +22,7 @@ export type Collections =
   | 'room_aliases'
   | 'user_ips'
   | 'registration_tokens'
+  | 'presence'
 
 type Get = (
   table: Collections,

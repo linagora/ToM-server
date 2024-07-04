@@ -198,10 +198,17 @@ describe('Use configuration file', () => {
         expect(response.statusCode).toBe(200)
       })
     })
-    describe('/_matrix/client/v3/admin/whois', () => {
-      it('should refuse a request without a userId', async () => {
+    describe('/_matrix/client/v3/admin/whois/{userId}', () => {
+      it('should refuse a request with a wrong userId', async () => {
         const response = await request(app)
-          .get('/_matrix/client/v3/admin/whois')
+          .get('/_matrix/client/v3/admin/whois/@unknownuser:example.com')
+          .set('Authorization', `Bearer ${validToken}`)
+          .set('Accept', 'application/json')
+        expect(response.statusCode).toBe(400)
+      })
+      it('should refuse a request with a userId that does not match the regex', async () => {
+        const response = await request(app)
+          .get('/_matrix/client/v3/admin/whois/invalidUserId')
           .set('Authorization', `Bearer ${validToken}`)
           .set('Accept', 'application/json')
         expect(response.statusCode).toBe(400)
@@ -217,12 +224,10 @@ describe('Use configuration file', () => {
           last_seen: 1411996332123
         })
         const response = await request(app)
-          .get('/_matrix/client/v3/admin/whois')
-          .query({ userId: '@testuser:example.com' })
+          .get('/_matrix/client/v3/admin/whois/@testuser:example.com')
           .set('Authorization', `Bearer ${validToken}`)
           .set('Accept', 'application/json')
         expect(response.statusCode).toBe(200)
-        console.log(response.body.sessions)
         expect(response.body).toHaveProperty('user_id', '@testuser:example.com')
         expect(response.body).toHaveProperty('devices')
         expect(response.body.devices).toHaveProperty('testdevice')
@@ -257,8 +262,7 @@ describe('Use configuration file', () => {
           user_agent: 'curl/7.31.0-DEV'
         })
         const response = await request(app)
-          .get('/_matrix/client/v3/admin/whois')
-          .query({ userId: '@testuser:example.com' })
+          .get('/_matrix/client/v3/admin/whois/@testuser:example.com')
           .set('Authorization', `Bearer ${validToken}`)
           .set('Accept', 'application/json')
         expect(response.statusCode).toBe(200)
@@ -279,6 +283,64 @@ describe('Use configuration file', () => {
             ]
           }
         ])
+      })
+    })
+    describe('/_matrix/client/v3/presence/{userId}/status', () => {
+      it('should return the presence state of a user', async () => {
+        await clientServer.matrixDb.insert('presence', {
+          user_id: '@testuser:example.com',
+          state: 'online',
+          status_msg: 'I am online',
+          mtime: Date.now()
+        })
+        const response = await request(app)
+          .get('/_matrix/client/v3/presence/@testuser:example.com/status')
+          .set('Authorization', `Bearer ${validToken}`)
+          .set('Accept', 'application/json')
+        expect(response.statusCode).toBe(200)
+        expect(response.body).toHaveProperty('currently_active', true)
+        expect(response.body).toHaveProperty('last_active_ts')
+        expect(response.body).toHaveProperty('state', 'online')
+        expect(response.body).toHaveProperty('status_msg', 'I am online')
+      })
+
+      it('should set the presence state of a user', async () => {
+        const response = await request(app)
+          .put('/_matrix/client/v3/presence/@testuser:example.com/status')
+          .set('Authorization', `Bearer ${validToken}`)
+          .set('Accept', 'application/json')
+          .send({ presence: 'offline', status_msg: 'I am offline' })
+        expect(response.statusCode).toBe(200)
+        const presence = await clientServer.matrixDb.get(
+          'presence',
+          ['state', 'status_msg'],
+          { user_id: '@testuser:example.com' }
+        )
+        expect(presence).toHaveLength(1)
+        expect(presence[0].state).toBe('offline')
+        expect(presence[0].status_msg).toBe('I am offline')
+      })
+      it('should reject a request to set the presence state of another user', async () => {
+        const response = await request(app)
+          .put('/_matrix/client/v3/presence/@anotheruser:example.com/status')
+          .set('Authorization', `Bearer ${validToken}`)
+          .set('Accept', 'application/json')
+          .send({ presence: 'offline', status_msg: 'I am offline' })
+        expect(response.statusCode).toBe(403)
+      })
+      it('should reject a request made to an uknown user', async () => {
+        const response = await request(app)
+          .get('/_matrix/client/v3/presence/@unknownuser:example.com/status')
+          .set('Authorization', `Bearer ${validToken}`)
+          .set('Accept', 'application/json')
+        expect(response.statusCode).toBe(404)
+      })
+      it('should reject a request with a userId that does not match the regex', async () => {
+        const response = await request(app)
+          .get('/_matrix/client/v3/presence/invalidUserId/status')
+          .set('Authorization', `Bearer ${validToken}`)
+          .set('Accept', 'application/json')
+        expect(response.statusCode).toBe(400)
       })
     })
   })
