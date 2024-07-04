@@ -120,21 +120,6 @@ describe('Use configuration file', () => {
     expect(response.statusCode).toBe(405)
   })
 
-  // test('/_matrix/identity/v2 (status)', async () => {
-  //   const response = await request(app).get('/_matrix/identity/v2')
-  //   expect(response.statusCode).toBe(200)
-  // })
-
-  // test('/_matrix/identity/versions', async () => {
-  //   const response = await request(app).get('/_matrix/identity/versions')
-  //   expect(response.statusCode).toBe(200)
-  // })
-
-  // test('/_matrix/identity/v2/terms', async () => {
-  //   const response = await request(app).get('/_matrix/identity/v2/terms')
-  //   expect(response.statusCode).toBe(200)
-  // })
-
   describe('GET /_matrix/client/v3/profile/{userId}', () => {
     const testUserId = '@testuser:example.com'
     const incompleteUserId = '@incompleteuser:example.com'
@@ -173,15 +158,13 @@ describe('Use configuration file', () => {
             .then(() => {
               logger.info('incomplete Test user profile deleted')
             })
-            .catch(() => {
-              // TO DO : fix this error
-              // logger.error('Error deleting test user profile:', e)
+            .catch((e) => {
+              logger.error('Error deleting test user profile:', e)
             })
           logger.info('Test user profile deleted')
         })
-        .catch(() => {
-          // TO DO : fix this error
-          // logger.error('Error deleting test user profile:', e)
+        .catch((e) => {
+          logger.error('Error deleting test user profile:', e)
         })
     })
 
@@ -646,23 +629,107 @@ describe('Use configuration file', () => {
     })
   })
 
-  // describe('PUT /_matrix/client/v3/profile/{userId}/avatar_url', () => {
-  //     it('should require authentication', async () => {
-  //       await clientServer.cronTasks?.ready
-  //       const response = await request(app)
-  //         .get('/_matrix/identity/v2/hash_details')
-  //         .set('Accept', 'application/json')
-  //       expect(response.statusCode).toBe(401)
-  //     })
-  //   })
+  describe('PUT /_matrix/client/v3/profile/{userId}', () => {
+    const testUserId = '@testuser:example.com'
 
-  //   describe('PUT /_matrix/client/v3/profile/{userId}/displayname', () => {
-  //     it('should require authentication', async () => {
-  //       await clientServer.cronTasks?.ready
-  //       const response = await request(app)
-  //         .get('/_matrix/identity/v2/hash_details')
-  //         .set('Accept', 'application/json')
-  //       expect(response.statusCode).toBe(401)
-  //     })
-  //   })
+    beforeEach(async () => {
+      clientServer.matrixDb
+        .insert('profiles', {
+          user_id: testUserId,
+          displayname: 'Test User',
+          avatar_url: 'http://example.com/avatar.jpg'
+        })
+        .then(() => {
+          logger.info('Test user profile created')
+        })
+        .catch((e) => {
+          logger.error('Error creating test user profile:', e)
+        })
+    })
+
+    afterEach(async () => {
+      clientServer.matrixDb
+        .deleteEqual('profiles', 'user_id', testUserId)
+        .then(() => {
+          logger.info('Test user profile deleted')
+        })
+        .catch((e) => {
+          logger.error('Error deleting test user profile:', e)
+        })
+    })
+
+    describe('/_matrix/client/v3/profile/{userId}/avatar_url', () => {
+      it('should require authentication', async () => {
+        await clientServer.cronTasks?.ready
+        const response = await request(app)
+          .put(`/_matrix/client/v3/profile/${testUserId}/avatar_url`)
+          .set('Authorization', 'Bearer invalidToken')
+          .set('Accept', 'application/json')
+        expect(response.statusCode).toBe(401)
+      })
+
+      it('should send correct response when updating the avatar_url of an existing user', async () => {
+        const response = await request(app)
+          .put(`/_matrix/client/v3/profile/${testUserId}/avatar_url`)
+          .set('Authorization', `Bearer ${validToken}`)
+          .send({ avatar_url: 'http://example.com/new_avatar.jpg' })
+
+        expect(response.statusCode).toBe(200)
+        expect(response.body).toEqual({})
+      })
+
+      it('should correctly update the avatar_url of an existing user', async () => {
+        const response = await request(app)
+          .put(`/_matrix/client/v3/profile/${testUserId}/avatar_url`)
+          .set('Authorization', `Bearer ${validToken}`)
+          .send({ avatar_url: 'http://example.com/new_avatar.jpg' })
+        expect(response.statusCode).toBe(200)
+        const rows = await clientServer.matrixDb.get(
+          'profiles',
+          ['avatar_url'],
+          { user_id: testUserId }
+        )
+
+        expect(rows.length).toBe(1)
+        expect(rows[0].avatar_url).toBe('http://example.com/new_avatar.jpg')
+      })
+    })
+
+    describe('/_matrix/client/v3/profile/{userId}/displayname', () => {
+      it('should require authentication', async () => {
+        await clientServer.cronTasks?.ready
+        const response = await request(app)
+          .put(`/_matrix/client/v3/profile/${testUserId}/displayname`)
+          .set('Authorization', 'Bearer invalidToken')
+          .set('Accept', 'application/json')
+        expect(response.statusCode).toBe(401)
+      })
+
+      it('should send correct response when updating the display_name of an existing user', async () => {
+        const response = await request(app)
+          .put(`/_matrix/client/v3/profile/${testUserId}/displayname`)
+          .set('Authorization', `Bearer ${validToken}`)
+          .send({ displayname: 'New name' })
+
+        expect(response.statusCode).toBe(200)
+        expect(response.body).toEqual({})
+      })
+
+      it('should correctly update the display_name of an existing user', async () => {
+        const response = await request(app)
+          .put(`/_matrix/client/v3/profile/${testUserId}/displayname`)
+          .set('Authorization', `Bearer ${validToken}`)
+          .send({ displayname: 'New name' })
+        expect(response.statusCode).toBe(200)
+        const rows = await clientServer.matrixDb.get(
+          'profiles',
+          ['displayname'],
+          { user_id: testUserId }
+        )
+
+        expect(rows.length).toBe(1)
+        expect(rows[0].displayname).toBe('New name')
+      })
+    })
+  })
 })
