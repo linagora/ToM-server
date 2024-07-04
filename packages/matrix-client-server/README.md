@@ -8,7 +8,8 @@ Node.js library that implements
 Example using [express](https://www.npmjs.com/package/express):
 
 ``js
- // Add example which will be similar to the one inside packages/matrix-identity-server/README.md
+// Add example which will be similar to the one inside packages/matrix-identity-server/README.md
+
 ```
 
 ## Configuration file
@@ -21,3 +22,4 @@ in [src/config.json](./src/config.json).
 Copyright (c) 2023-present Linagora <https://linagora.com>
 
 License: [GNU AFFERO GENERAL PUBLIC LICENSE](https://ci.linagora.com/publicgroup/oss/twake/tom-server/-/blob/master/LICENSE)
+```
