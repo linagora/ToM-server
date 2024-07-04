@@ -1,4 +1,3 @@
-import express from 'express'
 import fs from 'fs'
 import request, { type Response } from 'supertest'
 import ClientServer from './index'
@@ -7,6 +6,7 @@ import { type flowContent, type Config } from './types'
 import defaultConfig from './__testData__/registerConf.json'
 import { getLogger, type TwakeLogger } from '@twake/logger'
 import { Hash, randomString } from '@twake/crypto'
+import express from 'express'
 
 process.env.TWAKE_CLIENT_SERVER_CONF = './src/__testData__/registerConf.json'
 jest.mock('node-fetch', () => jest.fn())
