@@ -11,13 +11,13 @@ import { type Request, type Response } from 'express'
 
 // Internal libraries
 import MatrixDBmodified from './matrixDb'
+import MatrixIdentityServer from '@twake/matrix-identity-server'
 import UiAuthenticate, {
   type UiAuthFunction
 } from './utils/userInteractiveAuthentication'
-import MatrixIdentityServer from '@twake/matrix-identity-server'
 import { errMsg, send, type expressAppHandler } from '@twake/utils'
-
-// Endpoints
+import whoami from './account/whoami'
+import Authenticate from './utils/authenticate'
 
 const tables = {
   ui_auth_sessions: 'session_id TEXT NOT NULL, stage_type TEXT NOT NULL'
@@ -73,6 +73,7 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
       serverConf,
       this.logger
     )
+    this.authenticate = Authenticate(this.matrixDb, this.logger)
     this.ready = new Promise((resolve, reject) => {
       this.ready
         .then(() => {
@@ -80,13 +81,13 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
             send(res, 405, errMsg('unrecognized'))
           }
           this.api.get = {
-            ...this.api.get
+            '/_matrix/client/v3/account/whoami': whoami(this)
           }
           this.api.post = {
-            ...this.api.post
+            '/_matrix/client/v3/account/whoami': badMethod
           }
           this.api.put = {
-            ...this.api.put
+            '/_matrix/client/v3/account/whoami': badMethod
           }
           resolve(true)
         })

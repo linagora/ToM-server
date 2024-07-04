@@ -21,7 +21,9 @@ const insertQuery2 =
 const matrixDbQueries = [
   'CREATE TABLE IF NOT EXISTS profiles( user_id TEXT NOT NULL, displayname TEXT, avatar_url TEXT, UNIQUE(user_id) )',
   "INSERT INTO profiles VALUES('dwho', 'D Who', 'http://example.com/avatar.jpg')",
-  'CREATE TABLE IF NOT EXISTS users (user_id TEXT NOT NULL, device_id TEXT NOT NULL, PRIMARY KEY (user_id, device_id))',
+  'CREATE TABLE users( name TEXT, password_hash TEXT, creation_ts BIGINT, admin SMALLINT DEFAULT 0 NOT NULL, upgrade_ts BIGINT, is_guest SMALLINT DEFAULT 0 NOT NULL, appservice_id TEXT, consent_version TEXT, consent_server_notice_sent TEXT, user_type TEXT DEFAULT NULL, deactivated SMALLINT DEFAULT 0 NOT NULL, shadow_banned INT DEFAULT 0, consent_ts bigint, UNIQUE(name) )',
+  'CREATE TABLE user_ips ( user_id TEXT NOT NULL, access_token TEXT NOT NULL, device_id TEXT, ip TEXT NOT NULL, user_agent TEXT NOT NULL, last_seen BIGINT NOT NULL)',
+  'CREATE TABLE registration_tokens (token TEXT NOT NULL,  uses_allowed INT, pending INT NOT NULL,  completed INT NOT NULL, expiry_time BIGINT,UNIQUE (token))'
 ]
 
 // eslint-disable-next-line @typescript-eslint/promise-function-async
@@ -33,33 +35,32 @@ const runQueries = (
   return new Promise((resolve, reject) => {
     const runNextQuery = (index: number): void => {
       if (index >= queries.length) {
-        resolve();
+        resolve()
       } else {
         if (isSqlite) {
           db.run(queries[index], (err: Error | null) => {
             // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
             if (err) {
-              reject(err);
+              reject(err)
             } else {
-              runNextQuery(index + 1);
+              runNextQuery(index + 1)
             }
-          });
+          })
         } else {
           db.query(queries[index], (err: Error | null) => {
             // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
             if (err) {
-              reject(err);
+              reject(err)
             } else {
-              runNextQuery(index + 1);
+              runNextQuery(index + 1)
             }
-          });
+          })
         }
       }
-    };
-    runNextQuery(0);
-  });
-};
-
+    }
+    runNextQuery(0)
+  })
+}
 
 // eslint-disable-next-line @typescript-eslint/promise-function-async
 export const buildUserDB = (conf: Config): Promise<void> => {
@@ -111,22 +112,22 @@ export const buildMatrixDb = (conf: Config): Promise<void> => {
           matrixDb.close((err) => {
             // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
             if (err) {
-              reject(err);
+              reject(err)
             } else {
-              matrixDbCreated = true;
-              resolve();
+              matrixDbCreated = true
+              resolve()
             }
-          });
+          })
         })
         .catch((err) => {
           matrixDb.close(() => {
-            reject(err);
-          });
-        });
+            reject(err)
+          })
+        })
     } else {
       matrixDb.close(() => {
-        reject(new Error('only SQLite is implemented here'));
-      });
+        reject(new Error('only SQLite is implemented here'))
+      })
     }
-  });
-};
+  })
+}

@@ -1,12 +1,14 @@
-import express from 'express'
 import fs from 'fs'
 import request from 'supertest'
+import express from 'express'
 import ClientServer from './index'
 import { buildMatrixDb, buildUserDB } from './__testData__/buildUserDB'
 import { AuthenticationTypes, type Config } from './types'
 import defaultConfig from './__testData__/registerConf.json'
 import { getLogger, type TwakeLogger } from '@twake/logger'
+import { randomString } from '@twake/crypto'
 
+process.env.TWAKE_CLIENT_SERVER_CONF = './src/__testData__/registerConf.json'
 jest.mock('node-fetch', () => jest.fn())
 const sendMailMock = jest.fn()
 jest.mock('nodemailer', () => ({
@@ -15,12 +17,10 @@ jest.mock('nodemailer', () => ({
   }))
 }))
 
-process.env.TWAKE_CLIENT_SERVER_CONF = './src/__testData__/registerConf.json'
-
 let conf: Config
 let clientServer: ClientServer
 let app: express.Application
-// let validToken: string
+let validToken: string
 const logger: TwakeLogger = getLogger()
 
 beforeAll((done) => {
@@ -89,12 +89,6 @@ afterAll(() => {
 
 beforeEach(() => {
   jest.clearAllMocks()
-  jest.mock('node-fetch', () => jest.fn())
-  jest.mock('nodemailer', () => ({
-    createTransport: jest.fn().mockImplementation(() => ({
-      sendMail: sendMailMock
-    }))
-  }))
 })
 
 describe('Error on server start', () => {
@@ -143,28 +137,66 @@ describe('Use configuration file', () => {
     expect(response.statusCode).toBe(404)
   })
 
-  // test('Reject bad method with 405', async () => {
-  //   const response = await request(app).post(
-  //     '/_matrix/client/v3/profile/@testuser:example.com'
-  //   )
-  //   expect(response.statusCode).toBe(405)
-  // })
+  test('Reject bad method with 405', async () => {
+    const response = await request(app).post(
+      '/_matrix/client/v3/account/whoami'
+    )
+    expect(response.statusCode).toBe(405)
+  })
 
-  // test('/_matrix/identity/v2 (status)', async () => {
-  //   const response = await request(app).get('/_matrix/identity/v2')
-  //   expect(response.statusCode).toBe(200)
-  // })
-
-  // test('/_matrix/identity/versions', async () => {
-  //   const response = await request(app).get('/_matrix/identity/versions')
-  //   expect(response.statusCode).toBe(200)
-  // })
-
-  // test('/_matrix/identity/v2/terms', async () => {
-  //   const response = await request(app).get('/_matrix/identity/v2/terms')
-  //   expect(response.statusCode).toBe(200)
-  // })
-
-  // describe('Endpoints with authentication', () => {
-  // })
+  describe('Endpoints with authentication', () => {
+    describe('/_matrix/client/v3/account/whoami', () => {
+      it('should reject missing token (', async () => {
+        const response = await request(app)
+          .get('/_matrix/client/v3/account/whoami')
+          .set('Accept', 'application/json')
+        expect(response.statusCode).toBe(401)
+      })
+      it('should reject token that mismatch regex', async () => {
+        const response = await request(app)
+          .get('/_matrix/client/v3/account/whoami')
+          .set('Authorization', 'Bearer zzzzzzz')
+          .set('Accept', 'application/json')
+        expect(response.statusCode).toBe(401)
+      })
+      it('should reject expired or invalid token', async () => {
+        const response = await request(app)
+          .get('/_matrix/client/v3/account/whoami')
+          .set('Authorization', `Bearer ${randomString(64)}`)
+          .set('Accept', 'application/json')
+        expect(response.statusCode).toBe(401)
+      })
+      it('should accept valid token', async () => {
+        validToken = randomString(64)
+        await clientServer.matrixDb.insert('user_ips', {
+          user_id: '@testuser:example.com',
+          device_id: 'testdevice',
+          access_token: validToken,
+          ip: '',
+          user_agent: '',
+          last_seen: 0
+        })
+        await clientServer.matrixDb.insert('users', {
+          name: '@testuser:example.com',
+          password_hash: 'hashedpassword',
+          creation_ts: Date.now(),
+          admin: 0,
+          upgrade_ts: 'null',
+          is_guest: 0,
+          appservice_id: 'null',
+          consent_version: 'null',
+          consent_server_notice_sent: 'null',
+          user_type: 'null',
+          deactivated: 0,
+          shadow_banned: 0,
+          consent_ts: 'null'
+        })
+        const response = await request(app)
+          .get('/_matrix/client/v3/account/whoami')
+          .set('Authorization', `Bearer ${validToken}`)
+          .set('Accept', 'application/json')
+        expect(response.statusCode).toBe(200)
+      })
+    })
+  })
 })

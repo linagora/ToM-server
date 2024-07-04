@@ -2,11 +2,12 @@ import { type TwakeLogger } from '@twake/logger'
 import { type Request, type Response } from 'express'
 import type http from 'http'
 import type MatrixDBmodified from '../matrixDb'
-import { errMsg, send } from '@twake/utils'
+import { epoch, errMsg, send } from '@twake/utils'
 
-interface tokenContent {
+export interface tokenContent {
   sub: string
   device_id?: string
+  epoch: number
 }
 
 export type AuthenticationFunction = (
@@ -15,14 +16,8 @@ export type AuthenticationFunction = (
   callback: (data: tokenContent, id: string | null) => void
 ) => void
 
-export interface WhoAmIResponse {
-  user_id?: string
-  is_guest?: string
-  device_id?: string
-}
-
 const Authenticate = (
-  db: MatrixDBmodified,
+  matrixDb: MatrixDBmodified,
   logger: TwakeLogger
 ): AuthenticationFunction => {
   const tokenRe = /^Bearer (\S+)$/
@@ -40,11 +35,13 @@ const Authenticate = (
     }
     if (token != null) {
       let data: tokenContent
-      db.get('user_ips', ['user_id, device_id'], { access_token: token })
+      matrixDb
+        .get('user_ips', ['user_id, device_id'], { access_token: token })
         .then((rows) => {
           if (rows.length === 0) {
             throw Error()
           }
+          data = { sub: rows[0].user_id as string, epoch: epoch() }
           data.sub = rows[0].user_id as string
           // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
           if (rows[0].device_id) {
@@ -54,11 +51,11 @@ const Authenticate = (
         })
         .catch((e) => {
           logger.warn('Access tried with an unkown token', req.headers)
-          send(res, 401, errMsg('unknownToken')) // TODO : Sync with new utils
+          send(res, 401, errMsg('unknownToken'))
         })
     } else {
       logger.warn('Access tried without token', req.headers)
-      send(res, 401, errMsg('missingToken')) // TODO : Sync with new utils
+      send(res, 401, errMsg('missingToken'))
     }
   }
 }
