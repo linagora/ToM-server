@@ -1813,5 +1813,88 @@ describe('Use configuration file', () => {
         })
       })
     })
+    describe('/_matrix/client/v3/admin/whois', () => {
+      it('should refuse a request without a userId', async () => {
+        const response = await request(app)
+          .get('/_matrix/client/v3/admin/whois')
+          .set('Authorization', `Bearer ${validToken}`)
+          .set('Accept', 'application/json')
+        expect(response.statusCode).toBe(400)
+      })
+      it('should send device information for the user being looked-up', async () => {
+        await clientServer.matrixDb.insert('user_ips', {
+          user_id: '@testuser:example.com',
+          device_id: 'testdevice',
+          access_token: validToken,
+          ip: '10.0.0.2',
+          user_agent:
+            'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36',
+          last_seen: 1411996332123
+        })
+        const response = await request(app)
+          .get('/_matrix/client/v3/admin/whois')
+          .query({ userId: '@testuser:example.com' })
+          .set('Authorization', `Bearer ${validToken}`)
+          .set('Accept', 'application/json')
+        expect(response.statusCode).toBe(200)
+        console.log(response.body.sessions)
+        expect(response.body).toHaveProperty('user_id', '@testuser:example.com')
+        expect(response.body).toHaveProperty('devices')
+        expect(response.body.devices).toHaveProperty('testdevice')
+        expect(response.body.devices.testdevice).toHaveProperty('sessions')
+        expect(response.body.devices.testdevice.sessions).toHaveLength(1)
+        expect(response.body.devices.testdevice.sessions).toEqual([
+          {
+            connections: [
+              {
+                ip: '127.0.0.1',
+                last_seen: 1411996332123,
+                user_agent: 'curl/7.31.0-DEV'
+              },
+              {
+                ip: '10.0.0.2',
+                last_seen: 1411996332123,
+                user_agent:
+                  'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36'
+              }
+            ]
+          }
+        ])
+      })
+      it('should work if the user has multiple devices and with multiple sessions', async () => {
+        const validToken2 = randomString(64)
+        await clientServer.matrixDb.insert('user_ips', {
+          user_id: '@testuser:example.com',
+          device_id: 'testdevice2',
+          access_token: validToken2,
+          ip: '127.0.0.1',
+          last_seen: 1411996332123,
+          user_agent: 'curl/7.31.0-DEV'
+        })
+        const response = await request(app)
+          .get('/_matrix/client/v3/admin/whois')
+          .query({ userId: '@testuser:example.com' })
+          .set('Authorization', `Bearer ${validToken}`)
+          .set('Accept', 'application/json')
+        expect(response.statusCode).toBe(200)
+        expect(response.body).toHaveProperty('user_id', '@testuser:example.com')
+        expect(response.body).toHaveProperty('devices')
+        expect(response.body.devices).toHaveProperty('testdevice')
+        expect(response.body.devices).toHaveProperty('testdevice2')
+        expect(response.body.devices.testdevice2).toHaveProperty('sessions')
+        expect(response.body.devices.testdevice2.sessions).toHaveLength(1)
+        expect(response.body.devices.testdevice2.sessions).toEqual([
+          {
+            connections: [
+              {
+                ip: '127.0.0.1',
+                last_seen: 1411996332123,
+                user_agent: 'curl/7.31.0-DEV'
+              }
+            ]
+          }
+        ])
+      })
+    })
   })
 })
