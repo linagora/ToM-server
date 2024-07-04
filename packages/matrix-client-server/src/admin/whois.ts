@@ -19,7 +19,7 @@ interface deviceContent {
   sessions: sessionsContent[]
 }
 
-const whoami = (clientServer: MatrixClientServer): expressAppHandler => {
+const whois = (clientServer: MatrixClientServer): expressAppHandler => {
   return (req, res) => {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-expect-error
@@ -81,4 +81,4 @@ const whoami = (clientServer: MatrixClientServer): expressAppHandler => {
   }
 }
 
-export default whoami
+export default whois
