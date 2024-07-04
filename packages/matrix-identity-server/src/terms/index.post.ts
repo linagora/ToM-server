@@ -85,13 +85,8 @@ const PostTerms = <T extends string = never>(
               })
               if (done.length > 0) {
                 let token: string = ''
-                // @ts-expect-error req.query exists
-                if (req.query != null) {
-                  // @ts-expect-error req.query.access_token may be null
-                  token = req.query.access_token
-                } else if (req.headers.authorization != null) {
-                  token = req.headers.authorization.split(' ')[1]
-                }
+                // @ts-expect-error req.headers exists
+                token = req.headers.authorization.split(' ')[1]
                 idServer.db
                   .get('accessTokens', ['data'], { id: token })
                   .then((rows) => {
