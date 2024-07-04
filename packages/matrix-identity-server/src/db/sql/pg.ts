@@ -139,7 +139,7 @@ class Pg<T extends string> extends SQL<T> implements IdDbBackend<T> {
   }
 
   update(
-    table: T,
+    table: string,
     values: Record<string, string | number>,
     field: string,
     value: string | number
@@ -209,14 +209,20 @@ class Pg<T extends string> extends SQL<T> implements IdDbBackend<T> {
   }
 
   _get(
-    op: string,
-    table: T,
+    tables: Array<T>,
+    op1: string,
+    op2?: string,
+    op3?: string,
+    linkop1?: string,
+    linkop2?: string,
     fields?: string[],
-    filterFields?: Record<string, string | number | Array<string | number>>,
+    filterFields1?: Record<string, string | number | Array<string | number>>,
+    filterFields2?: Record<string, string | number | Array<string | number>>,
+    filterFields3?: Record<string, string | number | Array<string | number>>,
+    joinFields?: Record<string, string>,
     order?: string
   ): Promise<DbGetResult> {
     return new Promise((resolve, reject) => {
-      /* istanbul ignore if */
       if (this.db == null) {
         reject(new Error('Wait for database to be ready'))
       } else {
@@ -224,40 +230,90 @@ class Pg<T extends string> extends SQL<T> implements IdDbBackend<T> {
         const values: string[] = []
         if (fields == null || fields.length === 0) {
           fields = ['*']
+        } else {
+          // Generate aliases for fields containing periods
+          fields = fields.map((field) => {
+            if (field.includes('.')) {
+              const alias = field.replace(/\./g, '_')
+              return `${field} AS ${alias}`
+            }
+            return field
+          })
         }
-        if (filterFields != null) {
-          let index = 0
-          Object.keys(filterFields)
+
+        let index = 0
+
+        const buildCondition = (
+          op: string,
+          filterFields?: Record<
+            string,
+            string | number | Array<string | number>
+          >
+        ): string => {
+          let local_condition = ''
+          if (filterFields != null) {
+            Object.keys(filterFields)
+              .filter(
+                (key) =>
+                  filterFields[key] != null &&
+                  filterFields[key].toString() !== [].toString()
+              )
+              .forEach((key) => {
+                local_condition += local_condition !== '' ? ' AND ' : ''
+                if (Array.isArray(filterFields[key])) {
+                  local_condition += `(${(
+                    filterFields[key] as Array<string | number>
+                  )
+                    .map((val) => {
+                      index++
+                      values.push(val.toString())
+                      return `${key}${op}$${index}`
+                    })
+                    .join(' OR ')})`
+                } else {
+                  index++
+                  values.push(filterFields[key].toString())
+                  local_condition += `${key}${op}$${index}`
+                }
+              })
+            return local_condition
+          } else {
+            return ''
+          }
+        }
+
+        if (filterFields1 != null && Object.keys(filterFields1).length > 0) {
+          condition += 'WHERE ' + buildCondition(op1, filterFields1)
+        }
+        if (op2 != null) {
+          condition += linkop1 + buildCondition(op2, filterFields2)
+        }
+        if (op3 != null) {
+          condition += linkop2 + buildCondition(op3, filterFields3)
+        }
+
+        if (joinFields != null) {
+          let join_condition = ''
+          Object.keys(joinFields)
             .filter(
               (key) =>
-                filterFields[key] != null &&
-                filterFields[key].toString() !== [].toString()
+                joinFields[key] != null &&
+                joinFields[key].toString() !== [].toString()
             )
             .forEach((key) => {
-              condition += condition === '' ? 'WHERE ' : ' AND '
-              if (Array.isArray(filterFields[key])) {
-                condition += `${(filterFields[key] as Array<string | number>)
-                  .map((val) => {
-                    index++
-                    values.push(val.toString())
-                    return `${key}${op}$${index}`
-                  })
-                  .join(' OR ')}`
-              } else {
-                index++
-                values.push(filterFields[key].toString())
-                condition += `${key}${op}$${index}`
-              }
+              join_condition += join_condition !== '' ? ' AND ' : ''
+              join_condition += `${key}=${joinFields[key]}`
             })
+          condition += condition !== '' ? ' AND ' : 'WHERE '
+          condition += join_condition
         }
 
         if (order != null) condition += ` ORDER BY ${order}`
 
         this.db.query(
-          `SELECT ${fields.join(',')} FROM ${table} ${condition}`,
+          `SELECT ${fields.join(',')} FROM ${tables.join(',')} ${condition}`,
           values,
-          (err, rows) => {
-            // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+          (err: any, rows: any) => {
             err ? reject(err) : resolve(rows.rows)
           }
         )
@@ -271,7 +327,20 @@ class Pg<T extends string> extends SQL<T> implements IdDbBackend<T> {
     filterFields?: Record<string, string | number | Array<string | number>>,
     order?: string
   ): Promise<DbGetResult> {
-    return this._get('=', table, fields, filterFields, order)
+    return this._get(
+      [table],
+      '=',
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      fields,
+      filterFields,
+      undefined,
+      undefined,
+      undefined,
+      order
+    )
   }
 
   getHigherThan(
@@ -280,7 +349,201 @@ class Pg<T extends string> extends SQL<T> implements IdDbBackend<T> {
     filterFields?: Record<string, string | number | Array<string | number>>,
     order?: string
   ): Promise<DbGetResult> {
-    return this._get('>', table, fields, filterFields, order)
+    return this._get(
+      [table],
+      '>',
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      fields,
+      filterFields,
+      undefined,
+      undefined,
+      undefined,
+      order
+    )
+  }
+
+  getWhereEqualOrDifferent(
+    table: T,
+    fields?: string[],
+    filterFields1?: Record<string, string | number | Array<string | number>>,
+    filterFields2?: Record<string, string | number | Array<string | number>>,
+    order?: string
+  ): Promise<DbGetResult> {
+    return this._get(
+      [table],
+      '=',
+      '<>',
+      undefined,
+      ' OR ',
+      undefined,
+      fields,
+      filterFields1,
+      filterFields2,
+      undefined,
+      undefined,
+      order
+    )
+  }
+
+  _getMax(
+    tables: Array<T>,
+    targetField: string,
+    op1: string,
+    op2?: string,
+    linkop?: string,
+    fields?: string[],
+    filterFields1?: Record<string, string | number | Array<string | number>>,
+    filterFields2?: Record<string, string | number | Array<string | number>>,
+    joinFields?: Record<string, string>,
+    order?: string
+  ): Promise<DbGetResult> {
+    return new Promise((resolve, reject) => {
+      /* istanbul ignore if */
+      if (this.db == null) {
+        reject(new Error('Wait for database to be ready'))
+      } else {
+        let condition: string = ''
+        const values: string[] = []
+        if (fields == null || fields.length === 0) {
+          fields = ['*']
+        } else {
+          // Generate aliases for fields containing periods
+          fields = fields.map((field) => {
+            if (field.includes('.')) {
+              const alias = field.replace(/\./g, '_')
+              return `${field} AS ${alias}`
+            }
+            return field
+          })
+        }
+        let targetFieldAlias: string = targetField.replace(/\./g, '_')
+
+        let index = 0
+
+        const buildCondition = (
+          op: string,
+          filterFields?: Record<
+            string,
+            string | number | Array<string | number>
+          >
+        ): string => {
+          let local_condition = ''
+          if (filterFields != null) {
+            Object.keys(filterFields)
+              .filter(
+                (key) =>
+                  filterFields[key] != null &&
+                  filterFields[key].toString() !== [].toString()
+              )
+              .forEach((key) => {
+                local_condition += local_condition !== '' ? ' AND ' : ''
+                if (Array.isArray(filterFields[key])) {
+                  local_condition += `(${(
+                    filterFields[key] as Array<string | number>
+                  )
+                    .map((val) => {
+                      index++
+                      values.push(val.toString())
+                      return `${key}${op}$${index}`
+                    })
+                    .join(' OR ')})`
+                } else {
+                  index++
+                  values.push(filterFields[key].toString())
+                  local_condition += `${key}${op}$${index}`
+                }
+              })
+            return local_condition
+          } else {
+            return ''
+          }
+        }
+
+        if (filterFields1 != null && Object.keys(filterFields1).length > 0) {
+          condition += 'WHERE ' + buildCondition(op1, filterFields1)
+        }
+        if (op2 != null) {
+          condition += linkop + buildCondition(op2, filterFields2)
+        }
+
+        if (joinFields != null) {
+          let join_condition = ''
+          Object.keys(joinFields)
+            .filter(
+              (key) =>
+                joinFields[key] != null &&
+                joinFields[key].toString() !== [].toString()
+            )
+            .forEach((key) => {
+              join_condition += join_condition !== '' ? ' AND ' : ''
+              join_condition += `${key}=${joinFields[key]}`
+            })
+          condition += condition !== '' ? ' AND ' : 'WHERE '
+          condition += join_condition
+        }
+
+        if (order != null) condition += ` ORDER BY ${order}`
+
+        this.db.query(
+          `SELECT ${fields.join(
+            ','
+          )}, MAX(${targetField}) AS max_${targetFieldAlias} FROM ${tables.join(
+            ','
+          )} ${condition}`,
+          values,
+          (err, rows) => {
+            err ? reject(err) : resolve(rows.rows)
+          }
+        )
+      }
+    })
+  }
+
+  getMaxWhereEqual(
+    table: T,
+    targetField: string,
+    fields?: string[],
+    filterFields?: Record<string, string | number | Array<string | number>>,
+    order?: string
+  ): Promise<DbGetResult> {
+    return this._getMax(
+      [table],
+      targetField,
+      '=',
+      undefined,
+      undefined,
+      fields,
+      filterFields,
+      undefined,
+      undefined,
+      order
+    )
+  }
+
+  getMaxWhereEqualAndLowerJoin(
+    tables: Array<T>,
+    targetField: string,
+    fields?: string[],
+    filterFields1?: Record<string, string | number | Array<string | number>>,
+    filterFields2?: Record<string, string | number | Array<string | number>>,
+    joinFields?: Record<string, string>,
+    order?: string
+  ): Promise<DbGetResult> {
+    return this._getMax(
+      tables,
+      targetField,
+      '=',
+      '<=',
+      ' AND ',
+      fields,
+      filterFields1,
+      filterFields2,
+      joinFields,
+      order
+    )
   }
 
   match(
