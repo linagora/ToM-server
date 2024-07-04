@@ -87,7 +87,7 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
           this.api.get = {
             '/_matrix/client/v3/account/whoami': whoami(this),
             '/_matrix/client/v3/admin/whois/:userId': whois(this),
-            '/_matrix/client/v3/presence/:userId/status' : status(this)
+            '/_matrix/client/v3/presence/:userId/status': status(this)
           }
           this.api.post = {
             '/_matrix/client/v3/account/whoami': badMethod,
