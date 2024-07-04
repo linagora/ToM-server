@@ -1,4 +1,3 @@
-import express from 'express'
 import fs from 'fs'
 import request, { type Response } from 'supertest'
 import ClientServer from './index'
@@ -7,6 +6,7 @@ import { type flowContent, type Config } from './types'
 import defaultConfig from './__testData__/registerConf.json'
 import { getLogger, type TwakeLogger } from '@twake/logger'
 import { Hash, randomString } from '@twake/crypto'
+import express from 'express'
 
 process.env.TWAKE_CLIENT_SERVER_CONF = './src/__testData__/registerConf.json'
 jest.mock('node-fetch', () => jest.fn())
@@ -20,7 +20,6 @@ jest.mock('nodemailer', () => ({
 let conf: Config
 let clientServer: ClientServer
 let app: express.Application
-
 const logger: TwakeLogger = getLogger()
 
 beforeAll((done) => {
@@ -31,7 +30,32 @@ beforeAll((done) => {
     database_engine: 'sqlite',
     base_url: 'http://example.com/',
     userdb_engine: 'sqlite',
-    matrix_database_engine: 'sqlite'
+    matrix_database_engine: 'sqlite',
+    flows: [
+      {
+        stages: [AuthenticationTypes.Password, AuthenticationTypes.Dummy]
+      },
+      {
+        stages: [AuthenticationTypes.Password, AuthenticationTypes.Email]
+      }
+    ],
+    params: {
+      'm.login.terms': {
+        policies: {
+          terms_of_service: {
+            version: '1.2',
+            en: {
+              name: 'Terms of Service',
+              url: 'https://example.org/somewhere/terms-1.2-en.html'
+            },
+            fr: {
+              name: "Conditions d'utilisation",
+              url: 'https://example.org/somewhere/terms-1.2-fr.html'
+            }
+          }
+        }
+      }
+    }
   }
   if (process.env.TEST_PG === 'yes') {
     conf.database_engine = 'pg'
