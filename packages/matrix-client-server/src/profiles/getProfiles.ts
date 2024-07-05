@@ -41,6 +41,7 @@ export const getProfile = (
               'Profile lookup over federation is disabled on this homeserver'
             )
           )
+          /* istanbul ignore next */
           logger.error('Error querying profiles:', e)
         })
     } else {
