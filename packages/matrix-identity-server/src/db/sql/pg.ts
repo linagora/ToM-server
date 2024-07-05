@@ -223,6 +223,7 @@ class Pg<T extends string> extends SQL<T> implements IdDbBackend<T> {
     order?: string
   ): Promise<DbGetResult> {
     return new Promise((resolve, reject) => {
+      /* istanbul ignore if */
       if (this.db == null) {
         reject(new Error('Wait for database to be ready'))
       } else {
@@ -241,56 +242,67 @@ class Pg<T extends string> extends SQL<T> implements IdDbBackend<T> {
           })
         }
 
-        let index = 0
+        let index: number = 0
 
         const buildCondition = (
           op: string,
-          filterFields?: Record<
-            string,
-            string | number | Array<string | number>
-          >
+          filterFields: Record<string, string | number | Array<string | number>>
         ): string => {
           let local_condition = ''
-          if (filterFields != null) {
-            Object.keys(filterFields)
-              .filter(
-                (key) =>
-                  filterFields[key] != null &&
-                  filterFields[key].toString() !== [].toString()
-              )
-              .forEach((key) => {
-                local_condition += local_condition !== '' ? ' AND ' : ''
-                if (Array.isArray(filterFields[key])) {
-                  local_condition += `(${(
-                    filterFields[key] as Array<string | number>
-                  )
-                    .map((val) => {
-                      index++
-                      values.push(val.toString())
-                      return `${key}${op}$${index}`
-                    })
-                    .join(' OR ')})`
-                } else {
-                  index++
-                  values.push(filterFields[key].toString())
-                  local_condition += `${key}${op}$${index}`
-                }
-              })
-            return local_condition
-          } else {
-            return ''
-          }
+
+          Object.keys(filterFields)
+            .filter(
+              (key) =>
+                filterFields[key] != null &&
+                filterFields[key].toString() !== [].toString()
+            )
+            .forEach((key) => {
+              local_condition += local_condition !== '' ? ' AND ' : ''
+              if (Array.isArray(filterFields[key])) {
+                local_condition += `(${(
+                  filterFields[key] as Array<string | number>
+                )
+                  .map((val) => {
+                    index++
+                    values.push(val.toString())
+                    return `${key}${op}$${index}`
+                  })
+                  .join(' OR ')})`
+              } else {
+                index++
+                values.push(filterFields[key].toString())
+                local_condition += `${key}${op}$${index}`
+              }
+            })
+          return local_condition
         }
 
-        if (filterFields1 != null && Object.keys(filterFields1).length > 0) {
-          condition += 'WHERE ' + buildCondition(op1, filterFields1)
-        }
-        if (op2 != null) {
-          condition += linkop1 + buildCondition(op2, filterFields2)
-        }
-        if (op3 != null) {
-          condition += linkop2 + buildCondition(op3, filterFields3)
-        }
+        const condition1 =
+          filterFields1 != null && Object.keys(filterFields1).length > 0
+            ? buildCondition(op1, filterFields1)
+            : ''
+        const condition2 =
+          op2 != null &&
+          filterFields2 != null &&
+          Object.keys(filterFields2).length > 0
+            ? buildCondition(op2, filterFields2)
+            : ''
+        const condition3 =
+          op3 != null &&
+          filterFields3 != null &&
+          Object.keys(filterFields3).length > 0
+            ? buildCondition(op3, filterFields3)
+            : ''
+
+        condition += condition1 != '' ? 'WHERE ' + condition1 : ''
+        condition +=
+          condition2 != ''
+            ? (condition ? ` ${linkop1} ` : 'WHERE ') + condition2
+            : ''
+        condition +=
+          condition3 != ''
+            ? (condition ? ` ${linkop2} ` : 'WHERE ') + condition3
+            : ''
 
         if (joinFields != null) {
           let join_condition = ''
@@ -425,49 +437,53 @@ class Pg<T extends string> extends SQL<T> implements IdDbBackend<T> {
 
         const buildCondition = (
           op: string,
-          filterFields?: Record<
-            string,
-            string | number | Array<string | number>
-          >
+          filterFields: Record<string, string | number | Array<string | number>>
         ): string => {
           let local_condition = ''
-          if (filterFields != null) {
-            Object.keys(filterFields)
-              .filter(
-                (key) =>
-                  filterFields[key] != null &&
-                  filterFields[key].toString() !== [].toString()
-              )
-              .forEach((key) => {
-                local_condition += local_condition !== '' ? ' AND ' : ''
-                if (Array.isArray(filterFields[key])) {
-                  local_condition += `(${(
-                    filterFields[key] as Array<string | number>
-                  )
-                    .map((val) => {
-                      index++
-                      values.push(val.toString())
-                      return `${key}${op}$${index}`
-                    })
-                    .join(' OR ')})`
-                } else {
-                  index++
-                  values.push(filterFields[key].toString())
-                  local_condition += `${key}${op}$${index}`
-                }
-              })
-            return local_condition
-          } else {
-            return ''
-          }
+
+          Object.keys(filterFields)
+            .filter(
+              (key) =>
+                filterFields[key] != null &&
+                filterFields[key].toString() !== [].toString()
+            )
+            .forEach((key) => {
+              local_condition += local_condition !== '' ? ' AND ' : ''
+              if (Array.isArray(filterFields[key])) {
+                local_condition += `(${(
+                  filterFields[key] as Array<string | number>
+                )
+                  .map((val) => {
+                    index++
+                    values.push(val.toString())
+                    return `${key}${op}$${index}`
+                  })
+                  .join(' OR ')})`
+              } else {
+                index++
+                values.push(filterFields[key].toString())
+                local_condition += `${key}${op}$${index}`
+              }
+            })
+          return local_condition
         }
 
-        if (filterFields1 != null && Object.keys(filterFields1).length > 0) {
-          condition += 'WHERE ' + buildCondition(op1, filterFields1)
-        }
-        if (op2 != null) {
-          condition += linkop + buildCondition(op2, filterFields2)
-        }
+        const condition1 =
+          filterFields1 != null && Object.keys(filterFields1).length > 0
+            ? buildCondition(op1, filterFields1)
+            : ''
+        const condition2 =
+          op2 != null &&
+          filterFields2 != null &&
+          Object.keys(filterFields2).length > 0
+            ? buildCondition(op2, filterFields2)
+            : ''
+
+        condition += condition1 != '' ? 'WHERE ' + condition1 : ''
+        condition +=
+          condition2 != ''
+            ? (condition ? ` ${linkop} ` : 'WHERE ') + condition2
+            : ''
 
         if (joinFields != null) {
           let join_condition = ''

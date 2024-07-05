@@ -266,23 +266,32 @@ class SQLite<T extends string> extends SQL<T> implements IdDbBackend<T> {
           return local_condition
         }
 
-        if (filterFields1 != null && Object.keys(filterFields1).length > 0) {
-          condition += 'WHERE ' + buildCondition(op1, filterFields1)
-        }
-        if (
+        const condition1 =
+          filterFields1 != null && Object.keys(filterFields1).length > 0
+            ? buildCondition(op1, filterFields1)
+            : ''
+        const condition2 =
           op2 != null &&
           filterFields2 != null &&
           Object.keys(filterFields2).length > 0
-        ) {
-          condition += linkop1 + buildCondition(op2, filterFields2)
-        }
-        if (
+            ? buildCondition(op2, filterFields2)
+            : ''
+        const condition3 =
           op3 != null &&
           filterFields3 != null &&
           Object.keys(filterFields3).length > 0
-        ) {
-          condition += linkop2 + buildCondition(op3, filterFields3)
-        }
+            ? buildCondition(op3, filterFields3)
+            : ''
+
+        condition += condition1 != '' ? 'WHERE ' + condition1 : ''
+        condition +=
+          condition2 != ''
+            ? (condition ? ` ${linkop1} ` : 'WHERE ') + condition2
+            : ''
+        condition +=
+          condition3 != ''
+            ? (condition ? ` ${linkop2} ` : 'WHERE ') + condition3
+            : ''
 
         if (joinFields != null) {
           let join_condition = ''
@@ -460,16 +469,23 @@ class SQLite<T extends string> extends SQL<T> implements IdDbBackend<T> {
           return local_condition
         }
 
-        if (filterFields1 != null && Object.keys(filterFields1).length > 0) {
-          condition += 'WHERE ' + buildCondition(op1, filterFields1)
-        }
-        if (
+        const condition1 =
+          filterFields1 != null && Object.keys(filterFields1).length > 0
+            ? buildCondition(op1, filterFields1)
+            : ''
+        const condition2 =
           op2 != null &&
           filterFields2 != null &&
           Object.keys(filterFields2).length > 0
-        ) {
-          condition += linkop + buildCondition(op2, filterFields2)
-        }
+            ? buildCondition(op2, filterFields2)
+            : ''
+
+        condition += condition1 != '' ? 'WHERE ' + condition1 : ''
+        condition +=
+          condition2 != ''
+            ? (condition ? ` ${linkop} ` : 'WHERE ') + condition2
+            : ''
+
         if (joinFields != null) {
           let join_condition = ''
           Object.keys(joinFields)
@@ -488,13 +504,6 @@ class SQLite<T extends string> extends SQL<T> implements IdDbBackend<T> {
 
         if (order != null) condition += ` ORDER BY ${order}`
 
-        console.log(
-          `SELECT ${fields.join(
-            ','
-          )}, MAX(${targetField}) AS ${targetFieldAlias} FROM ${tables.join(
-            ','
-          )} ${condition}`
-        )
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
         // @ts-ignore never undefined
         const stmt = this.db.prepare(
