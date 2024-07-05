@@ -199,14 +199,14 @@ class SQLite<T extends string> extends SQL<T> implements IdDbBackend<T> {
 
   _get(
     tables: Array<T>,
-    op1: string,
-    op2?: string,
-    op3?: string,
-    linkop1?: string,
-    linkop2?: string,
     fields?: string[],
+    op1?: string,
     filterFields1?: Record<string, string | number | Array<string | number>>,
+    op2?: string,
+    linkop1?: string,
     filterFields2?: Record<string, string | number | Array<string | number>>,
+    op3?: string,
+    linkop2?: string,
     filterFields3?: Record<string, string | number | Array<string | number>>,
     joinFields?: Record<string, string>,
     order?: string
@@ -267,7 +267,9 @@ class SQLite<T extends string> extends SQL<T> implements IdDbBackend<T> {
         }
 
         const condition1 =
-          filterFields1 != null && Object.keys(filterFields1).length > 0
+          op1 != null &&
+          filterFields1 != null &&
+          Object.keys(filterFields1).length > 0
             ? buildCondition(op1, filterFields1)
             : ''
         const condition2 =
@@ -342,13 +344,13 @@ class SQLite<T extends string> extends SQL<T> implements IdDbBackend<T> {
   ): Promise<DbGetResult> {
     return this._get(
       [table],
-      '=',
-      undefined,
-      undefined,
-      undefined,
-      undefined,
       fields,
+      '=',
       filterFields,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
       undefined,
       undefined,
       undefined,
@@ -365,13 +367,13 @@ class SQLite<T extends string> extends SQL<T> implements IdDbBackend<T> {
   ): Promise<DbGetResult> {
     return this._get(
       tables,
-      '=',
-      undefined,
-      undefined,
-      undefined,
-      undefined,
       fields,
+      '=',
       filterFields,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
       undefined,
       undefined,
       joinFields,
@@ -387,13 +389,13 @@ class SQLite<T extends string> extends SQL<T> implements IdDbBackend<T> {
   ): Promise<DbGetResult> {
     return this._get(
       [table],
-      '>',
-      undefined,
-      undefined,
-      undefined,
-      undefined,
       fields,
+      '>',
       filterFields,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
       undefined,
       undefined,
       undefined,
@@ -410,14 +412,14 @@ class SQLite<T extends string> extends SQL<T> implements IdDbBackend<T> {
   ): Promise<DbGetResult> {
     return this._get(
       [table],
-      '=',
-      '<>',
-      undefined,
-      ' OR ',
-      undefined,
       fields,
+      '=',
       filterFields1,
+      '<>',
+      ' OR ',
       filterFields2,
+      undefined,
+      undefined,
       undefined,
       undefined,
       order
@@ -427,11 +429,11 @@ class SQLite<T extends string> extends SQL<T> implements IdDbBackend<T> {
   _getMax(
     tables: Array<T>,
     targetField: string,
-    op1: string,
+    fields?: string[],
+    op1?: string,
+    filterFields1?: Record<string, string | number | Array<string | number>>,
     op2?: string,
     linkop?: string,
-    fields?: string[],
-    filterFields1?: Record<string, string | number | Array<string | number>>,
     filterFields2?: Record<string, string | number | Array<string | number>>,
     joinFields?: Record<string, string>,
     order?: string
@@ -493,7 +495,9 @@ class SQLite<T extends string> extends SQL<T> implements IdDbBackend<T> {
         }
 
         const condition1 =
-          filterFields1 != null && Object.keys(filterFields1).length > 0
+          op1 != null &&
+          filterFields1 != null &&
+          Object.keys(filterFields1).length > 0
             ? buildCondition(op1, filterFields1)
             : ''
         const condition2 =
@@ -564,11 +568,11 @@ class SQLite<T extends string> extends SQL<T> implements IdDbBackend<T> {
     return this._getMax(
       [table],
       targetField,
-      '=',
-      undefined,
-      undefined,
       fields,
+      '=',
       filterFields,
+      undefined,
+      undefined,
       undefined,
       undefined,
       order
@@ -578,7 +582,7 @@ class SQLite<T extends string> extends SQL<T> implements IdDbBackend<T> {
   getMaxWhereEqualAndLowerJoin(
     tables: Array<T>,
     targetField: string,
-    fields?: string[],
+    fields: string[],
     filterFields1?: Record<string, string | number | Array<string | number>>,
     filterFields2?: Record<string, string | number | Array<string | number>>,
     joinFields?: Record<string, string>,
@@ -587,11 +591,11 @@ class SQLite<T extends string> extends SQL<T> implements IdDbBackend<T> {
     return this._getMax(
       tables,
       targetField,
+      fields,
       '=',
+      filterFields1,
       '<=',
       ' AND ',
-      fields,
-      filterFields1,
       filterFields2,
       joinFields,
       order
