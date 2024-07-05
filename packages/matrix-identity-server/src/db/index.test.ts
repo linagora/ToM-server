@@ -911,6 +911,51 @@ describe('Id Server DB', () => {
         .catch(done)
     })
 
+    it('should get entry with corresponding equal and higher conditions', (done) => {
+      idDb = new IdDb(baseConf, logger)
+      idDb.ready
+        .then(() => {
+          idDb
+            .insert('accessTokens', { id: '1', data: '{}' })
+            .then(() => {
+              idDb
+                .insert('accessTokens', {
+                  id: '2',
+                  data: '{}'
+                })
+                .then(() => {
+                  idDb
+                    .insert('accessTokens', {
+                      id: '3',
+                      data: '{wrong_data}'
+                    })
+                    .then(() => {
+                      idDb
+                        .getWhereEqualAndHigher(
+                          'accessTokens',
+                          ['id', 'data'],
+                          { data: '{}' },
+                          { id: '1' }
+                        )
+                        .then((rows) => {
+                          expect(rows.length).toBe(1)
+                          expect(rows[0].id).toEqual('2')
+                          expect(rows[0].data).toEqual('{}')
+                          clearTimeout(idDb.cleanJob)
+                          idDb.close()
+                          done()
+                        })
+                        .catch((e) => done(e))
+                    })
+                    .catch((e) => done(e))
+                })
+                .catch((e) => done(e))
+            })
+            .catch((e) => done(e))
+        })
+        .catch((e) => done(e))
+    })
+
     it('should get max entry with corresponding equal condition', (done) => {
       idDb = new IdDb(baseConf, logger)
       idDb.ready
