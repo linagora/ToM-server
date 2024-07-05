@@ -46,7 +46,7 @@ export const Authenticate = (
         callbackMethod({ sub: '', epoch: 0 }, tokenTrustedServer)
       } else {
         logger.debug(`${originalRequesterIPAddress} isn't in white list`)
-        let token: string | null = null
+        let token: string = ''
         if (req.headers.authorization != null) {
           const re = req.headers.authorization.match(tokenRe)
           if (re != null) {
