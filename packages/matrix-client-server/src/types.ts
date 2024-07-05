@@ -3,7 +3,7 @@ import {
   type IdentityServerDb,
   type Config as MIdentityServerConfig
 } from '@twake/matrix-identity-server'
-import { type Policies } from '@twake/matrix-identity-server/dist/terms'
+// import { type Policy } from '@twake/matrix-identity-server/dist/terms'
 
 // TODO : Put Policies in types.ts of matrix-identity-server to export it in the @twake/matrix-identity-server module and not in the dist/terms
 export type Config = MIdentityServerConfig & {
