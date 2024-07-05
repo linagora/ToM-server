@@ -538,13 +538,13 @@ class SQLite<T extends string> extends SQL<T> implements IdDbBackend<T> {
   ): Promise<DbGetResult> {
     return this._get(
       tables,
-      '=',
-      undefined,
-      undefined,
-      undefined,
-      undefined,
       fields,
+      '=',
       filterFields,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
       undefined,
       undefined,
       joinFields,
@@ -804,7 +804,7 @@ class SQLite<T extends string> extends SQL<T> implements IdDbBackend<T> {
   getMaxWhereEqualAndLower(
     table: T,
     targetField: string,
-    fields?: string[],
+    fields: string[],
     filterFields1?: Record<string, string | number | Array<string | number>>,
     filterFields2?: Record<string, string | number | Array<string | number>>,
     order?: string
