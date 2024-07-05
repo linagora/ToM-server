@@ -22,6 +22,7 @@ import Authenticate from './utils/authenticate'
 import whoami from './account/whoami'
 import whois from './admin/whois'
 import accountDataType from './user/account_data'
+import register from './register'
 
 const tables = {
   ui_auth_sessions: 'session_id TEXT NOT NULL, stage_type TEXT NOT NULL'
@@ -48,7 +49,7 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
   }
 
   get uiauthenticate(): UiAuthFunction {
-    return this.uiauthenticate
+    return this._uiauthenticate
   }
 
   constructor(
@@ -88,18 +89,21 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
             '/_matrix/client/v3/account/whoami': whoami(this),
             '/_matrix/client/v3/admin/whois': whois(this),
             '/_matrix/client/v3/user/:userId/account_data/:type':
-              accountDataType(this)
+              accountDataType(this),
+            '/_matrix/client/v3/register': badMethod
           }
           this.api.post = {
             '/_matrix/client/v3/account/whoami': badMethod,
             '/_matrix/client/v3/admin/whois': badMethod,
-            '/_matrix/client/v3/user/:userId/account_data/:type': badMethod
+            '/_matrix/client/v3/user/:userId/account_data/:type': badMethod,
+            '/_matrix/client/v3/register': register(this)
           }
           this.api.put = {
             '/_matrix/client/v3/account/whoami': badMethod,
             '/_matrix/client/v3/admin/whois': badMethod,
             '/_matrix/client/v3/user/:userId/account_data/:type':
-              accountDataType(this)
+              accountDataType(this),
+            '/_matrix/client/v3/register': badMethod
           }
           resolve(true)
         })
