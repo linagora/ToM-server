@@ -3,12 +3,12 @@ import {
   type IdentityServerDb,
   type Config as MIdentityServerConfig
 } from '@twake/matrix-identity-server'
-import { type Policies } from '@twake/matrix-identity-server/dist/terms'
+// import { type Policy } from '@twake/matrix-identity-server/dist/terms'
 
 export type Config = MIdentityServerConfig & {
   flows: Array<Record<string, string[]>> // those two types will be changed later on
   //  TODO : Correct typing
-  params: Record<string, Policies>
+  params: Record<string, any>
 }
 
 export type DbGetResult = Array<
