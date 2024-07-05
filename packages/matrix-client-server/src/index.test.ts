@@ -285,7 +285,6 @@ describe('Use configuration file', () => {
           '/_matrix/client/v3/profile/@incompleteuser:example.com/displayname'
         )
 
-        console.log(response.body)
         expect(response.statusCode).toBe(404)
         expect(response.body.errcode).toBe('M_NOT_FOUND')
         expect(response.body).toHaveProperty('error')
