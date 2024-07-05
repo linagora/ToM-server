@@ -426,6 +426,29 @@ class SQLite<T extends string> extends SQL<T> implements IdDbBackend<T> {
     )
   }
 
+  getWhereEqualAndHigher(
+    table: T,
+    fields?: string[],
+    filterFields1?: Record<string, string | number | Array<string | number>>,
+    filterFields2?: Record<string, string | number | Array<string | number>>,
+    order?: string
+  ): Promise<DbGetResult> {
+    return this._get(
+      [table],
+      fields,
+      '=',
+      filterFields1,
+      '>',
+      ' AND ',
+      filterFields2,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      order
+    )
+  }
+
   _getMax(
     tables: Array<T>,
     targetField: string,

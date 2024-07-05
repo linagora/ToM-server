@@ -167,6 +167,7 @@ export interface IdDbBackend<T> {
   get: Get<T>
   getJoin: GetJoin<T>
   getWhereEqualOrDifferent: Get2<T>
+  getWhereEqualAndHigher: Get2<T>
   getMaxWhereEqual: GetMax<T>
   getMaxWhereEqualAndLowerJoin: GetMaxJoin2<T>
   getCount: GetCount<T>
@@ -335,6 +336,23 @@ class IdentityServerDb<T extends string = never>
     order?: string
   ) {
     return this.db.getWhereEqualOrDifferent(
+      table,
+      fields,
+      filterFields1,
+      filterFields2,
+      order
+    )
+  }
+
+  //eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
+  getWhereEqualAndHigher(
+    table: Collections | T,
+    fields: string[],
+    filterFields1: Record<string, string | number | Array<string | number>>,
+    filterFields2: Record<string, string | number | Array<string | number>>,
+    order?: string
+  ) {
+    return this.db.getWhereEqualAndHigher(
       table,
       fields,
       filterFields1,
