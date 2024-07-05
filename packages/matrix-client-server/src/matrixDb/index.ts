@@ -23,6 +23,7 @@ export type Collections =
   | 'user_ips'
   | 'registration_tokens'
   | 'account_data'
+  | 'devices'
 
 type Get = (
   table: Collections,

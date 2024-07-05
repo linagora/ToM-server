@@ -121,7 +121,10 @@ export const errCodes = {
   resourceLimitExceeded: 'M_RESOURCE_LIMIT_EXCEEDED',
 
   // The user is unable to reject an invite to join the server notices room. See the Server Notices module for more information.
-  cannotLeaveServerNoticeRoom: 'M_CANNOT_LEAVE_SERVER_NOTICE_ROOM'
+  cannotLeaveServerNoticeRoom: 'M_CANNOT_LEAVE_SERVER_NOTICE_ROOM',
+
+  // The registration token has been used too many times and is now invalid.
+  tokenMax: 'TOKEN_USED_TOO_MANY_TIMES'
 } as const
 
 export const defaultMsg = (s: string): string => {
