@@ -355,6 +355,29 @@ class Pg<T extends string> extends SQL<T> implements IdDbBackend<T> {
     )
   }
 
+  getJoin(
+    tables: Array<T>,
+    fields?: string[],
+    filterFields?: Record<string, string | number | Array<string | number>>,
+    joinFields?: Record<string, string>,
+    order?: string
+  ): Promise<DbGetResult> {
+    return this._get(
+      tables,
+      '=',
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      fields,
+      filterFields,
+      undefined,
+      undefined,
+      joinFields,
+      order
+    )
+  }
+
   getHigherThan(
     table: T,
     fields?: string[],
