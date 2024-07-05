@@ -687,6 +687,115 @@ describe('Id Server DB', () => {
         .catch(done)
     })
 
+    it('should get entry with corresponding multiple conditions', (done) => {
+      idDb = new IdDb(baseConf, logger)
+      idDb.ready
+        .then(() => {
+          idDb.insert('accessTokens', { id: '1', data: '{}' }).then(() => {
+            idDb
+              .insert('accessTokens', { id: '2', data: '{}' })
+              .then(() => {
+                idDb
+                  .insert('accessTokens', { id: '3', data: '{}' })
+                  .then(() => {
+                    idDb
+                      .get('accessTokens', ['id'], {
+                        id: ['1', '2']
+                      })
+                      .then((rows) => {
+                        expect(rows.length).toBe(2)
+                        expect(rows[0].id).toEqual('1')
+                        expect(rows[1].id).toEqual('2')
+                        clearTimeout(idDb.cleanJob)
+                        idDb.close()
+                        done()
+                      })
+                      .catch((e) => done(e))
+                  })
+                  .catch((e) => done(e))
+              })
+              .catch((e) => done(e))
+          })
+        })
+        .catch((e) => done(e))
+    })
+
+    it('should sort entry by order', (done) => {
+      idDb = new IdDb(baseConf, logger)
+      idDb.ready
+        .then(() => {
+          idDb
+            .insert('accessTokens', { id: '2', data: '{}' })
+            .then(() => {
+              idDb
+                .insert('accessTokens', { id: '1', data: '{}' })
+                .then(() => {
+                  idDb
+                    .get('accessTokens', ['id'], { data: '{}' }, 'id DESC')
+                    .then((rows) => {
+                      expect(rows.length).toBe(2)
+                      expect(rows[0].id).toEqual('2')
+                      expect(rows[1].id).toEqual('1')
+                      clearTimeout(idDb.cleanJob)
+                      idDb.close()
+                      done()
+                    })
+                    .catch((e) => done(e))
+                })
+                .catch((e) => done(e))
+            })
+            .catch((e) => done(e))
+        })
+        .catch((e) => done(e))
+    })
+
+    it('should get entry with corresponding join conditions', (done) => {
+      idDb = new IdDb(baseConf, logger)
+      idDb.ready
+        .then(() => {
+          idDb
+            .insert('accessTokens', { id: '1', data: '{}' })
+            .then(() => {
+              idDb
+                .insert('oneTimeTokens', { id: '1', expires: 0 })
+                .then(() => {
+                  idDb
+                    .insert('accessTokens', { id: '2', data: '{}' })
+                    .then(() => {
+                      idDb
+                        .insert('oneTimeTokens', { id: '2', expires: 1 })
+                        .then(() => {
+                          idDb
+                            .getJoin(
+                              ['accessTokens', 'oneTimeTokens'],
+                              ['accessTokens.id', 'oneTimeTokens.expires'],
+                              {
+                                'accessTokens.data': '{}',
+                                'oneTimeTokens.expires': 0
+                              },
+                              { 'accessTokens.id': 'oneTimeTokens.id' }
+                            )
+                            .then((rows) => {
+                              expect(rows.length).toBe(1)
+                              expect(rows[0].accessTokens_id).toEqual('1')
+                              expect(rows[0].oneTimeTokens_expires).toEqual(0)
+                              clearTimeout(idDb.cleanJob)
+                              idDb.close()
+                              done()
+                            })
+                            .catch((e) => done(e))
+                        })
+                        .catch((e) => done(e))
+                    })
+                    .catch((e) => done(e))
+                })
+                .catch((e) => done(e))
+            })
+            .catch((e) => done(e))
+        })
+        .catch((e) => done(e))
+    })
+
     it('should get entry with corresponding equal or different conditions', (done) => {
       idDb = new IdDb(baseConf, logger)
       idDb.ready
@@ -1002,6 +1111,73 @@ describe('Id Server DB', () => {
             .catch(done)
         })
         .catch(done)
+    })
+
+    it('should get max entry with corresponding lower condition and select all fields if not specified', (done) => {
+      idDb = new IdDb(baseConf, logger)
+      idDb.ready
+        .then(() => {
+          idDb.insert('accessTokens', { id: '1', data: '{}' }).then(() => {
+            idDb
+              .insert('accessTokens', { id: '2', data: '{}' })
+              .then(() => {
+                idDb
+                  .insert('accessTokens', { id: '3', data: '{wrong_data}' })
+                  .then(() => {
+                    idDb
+                      .getMaxWhereEqual('accessTokens', 'id', [], {
+                        data: '{}'
+                      })
+                      .then((rows) => {
+                        expect(rows.length).toBe(1)
+                        expect(rows[0]).toHaveProperty('id')
+                        expect(rows[0]).toHaveProperty('data')
+                        expect(rows[0].id).toEqual('2')
+                        expect(rows[0].data).toEqual('{}')
+                        clearTimeout(idDb.cleanJob)
+                        idDb.close()
+                        done()
+                      })
+                      .catch((e) => done(e))
+                  })
+                  .catch((e) => done(e))
+              })
+              .catch((e) => done(e))
+          })
+        })
+        .catch((e) => done(e))
+    })
+
+    it('should get max entry with multiple corresponding equal conditions', (done) => {
+      idDb = new IdDb(baseConf, logger)
+      idDb.ready
+        .then(() => {
+          idDb.insert('accessTokens', { id: '1', data: '{}' }).then(() => {
+            idDb
+              .insert('accessTokens', { id: '2', data: '{...}' })
+              .then(() => {
+                idDb
+                  .insert('accessTokens', { id: '3', data: '{wrong_data}' })
+                  .then(() => {
+                    idDb
+                      .getMaxWhereEqual('accessTokens', 'id', ['id', 'data'], {
+                        data: ['{}', '{...}']
+                      })
+                      .then((rows) => {
+                        expect(rows.length).toBe(1)
+                        expect(rows[0].id).toEqual('2')
+                        clearTimeout(idDb.cleanJob)
+                        idDb.close()
+                        done()
+                      })
+                      .catch((e) => done(e))
+                  })
+                  .catch((e) => done(e))
+              })
+              .catch((e) => done(e))
+          })
+        })
+        .catch((e) => done(e))
     })
 
     it('should get max entry with corresponding equal and lower conditions on multiple joined tables', (done) => {
