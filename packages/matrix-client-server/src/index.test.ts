@@ -3,10 +3,10 @@ import request from 'supertest'
 import express from 'express'
 import ClientServer from './index'
 import { buildMatrixDb, buildUserDB } from './__testData__/buildUserDB'
-import { AuthenticationTypes, type Config } from './types'
+import { type flowContent, type Config } from './types'
 import defaultConfig from './__testData__/registerConf.json'
 import { getLogger, type TwakeLogger } from '@twake/logger'
-import { randomString } from '@twake/crypto'
+import { Hash, randomString } from '@twake/crypto'
 
 process.env.TWAKE_CLIENT_SERVER_CONF = './src/__testData__/registerConf.json'
 jest.mock('node-fetch', () => jest.fn())
@@ -30,32 +30,7 @@ beforeAll((done) => {
     database_engine: 'sqlite',
     base_url: 'http://example.com/',
     userdb_engine: 'sqlite',
-    matrix_database_engine: 'sqlite',
-    flows: [
-      {
-        stages: [AuthenticationTypes.Password, AuthenticationTypes.Dummy]
-      },
-      {
-        stages: [AuthenticationTypes.Password, AuthenticationTypes.Email]
-      }
-    ],
-    params: {
-      'm.login.terms': {
-        policies: {
-          terms_of_service: {
-            version: '1.2',
-            en: {
-              name: 'Terms of Service',
-              url: 'https://example.org/somewhere/terms-1.2-en.html'
-            },
-            fr: {
-              name: "Conditions d'utilisation",
-              url: 'https://example.org/somewhere/terms-1.2-fr.html'
-            }
-          }
-        }
-      }
-    }
+    matrix_database_engine: 'sqlite'
   }
   if (process.env.TEST_PG === 'yes') {
     conf.database_engine = 'pg'
@@ -222,7 +197,6 @@ describe('Use configuration file', () => {
           .set('Authorization', `Bearer ${validToken}`)
           .set('Accept', 'application/json')
         expect(response.statusCode).toBe(200)
-        console.log(response.body.sessions)
         expect(response.body).toHaveProperty('user_id', '@testuser:example.com')
         expect(response.body).toHaveProperty('devices')
         expect(response.body.devices).toHaveProperty('testdevice')
@@ -279,6 +253,232 @@ describe('Use configuration file', () => {
             ]
           }
         ])
+      })
+    })
+    describe('/_matrix/client/v3/register', () => {
+      let flows: flowContent
+      let session: string
+      describe('User Interactive Authentication', () => {
+        it('should validate user interactive authentication with a registration_token', async () => {
+          const response = await request(app)
+            .post('/_matrix/client/v3/register')
+            .set('User-Agent', 'curl/7.31.0-DEV')
+            .set('X-Forwarded-For', '203.0.113.195')
+            .query({ kind: 'user' })
+            .send({}) // empty request to get authentication types
+          flows = response.body.flows
+          session = response.body.session
+          await clientServer.matrixDb.insert('registration_tokens', {
+            token: validToken,
+            uses_allowed: 100,
+            pending: 0,
+            completed: 0
+          })
+          const response2 = await request(app)
+            .post('/_matrix/client/v3/register')
+            .set('User-Agent', 'curl/7.31.0-DEV')
+            .set('X-Forwarded-For', '203.0.113.195')
+            .query({ kind: 'user' })
+            .send({
+              auth: { type: flows[3].stages[0], token: validToken, session }
+            })
+          expect(response2.statusCode).toBe(401)
+          expect(response2.body).toHaveProperty('flows')
+          expect(response2.body).toHaveProperty('session')
+          expect(response2.body).toHaveProperty('completed')
+          expect(response2.body.completed).toEqual([flows[3].stages[0]])
+        })
+        it('should invalidate a registration_token after it has been used too many times for user-interactive-authentication', async () => {
+          await clientServer.matrixDb.insert('registration_tokens', {
+            token: 'exampleToken',
+            uses_allowed: 10,
+            pending: 8,
+            completed: 4
+          })
+          const response = await request(app)
+            .post('/_matrix/client/v3/register')
+            .set('User-Agent', 'curl/7.31.0-DEV')
+            .set('X-Forwarded-For', '203.0.113.195')
+            .query({ kind: 'user' })
+            .send({
+              auth: {
+                type: flows[3].stages[0],
+                token: 'exampleToken',
+                session: randomString(20)
+              }
+            })
+          expect(response.statusCode).toBe(401)
+          expect(response.body).toHaveProperty('error')
+          expect(response.body).toHaveProperty('errcode')
+        })
+        it('should validate an authentication after the user has accepted the terms', async () => {
+          const response = await request(app)
+            .post('/_matrix/client/v3/register')
+            .set('User-Agent', 'curl/7.31.0-DEV')
+            .set('X-Forwarded-For', '203.0.113.195')
+            .query({ kind: 'user' })
+            .send({
+              auth: {
+                type: 'm.login.terms',
+                session: randomString(20)
+              }
+            })
+          expect(response.statusCode).toBe(401)
+          expect(response.body).toHaveProperty('flows')
+          expect(response.body).toHaveProperty('session')
+          expect(response.body).toHaveProperty('completed')
+          expect(response.body.completed).toEqual(['m.login.terms'])
+        })
+        it('should refuse an authentication with an incorrect password', async () => {
+          const hash = new Hash()
+          await hash.ready
+          await clientServer.matrixDb.insert('users', {
+            name: '@abba:example.com',
+            password_hash: hash.sha256('password')
+          })
+          const response = await request(app)
+            .post('/_matrix/client/v3/register')
+            .set('User-Agent', 'curl/7.31.0-DEV')
+            .set('X-Forwarded-For', '203.0.113.195')
+            .query({ kind: 'user' })
+            .send({
+              auth: {
+                type: 'm.login.password',
+                identifier: { type: 'm.id.user', user: '@abba:example.com' },
+                password: 'wrongpassword',
+                session: randomString(20)
+              }
+            })
+          expect(response.statusCode).toBe(401)
+          expect(response.body).toHaveProperty('error')
+          expect(response.body).toHaveProperty('errcode', 'M_FORBIDDEN')
+        })
+        it('should accept an authentication with a correct password', async () => {
+          const response = await request(app)
+            .post('/_matrix/client/v3/register')
+            .set('User-Agent', 'curl/7.31.0-DEV')
+            .set('X-Forwarded-For', '203.0.113.195')
+            .query({ kind: 'user' })
+            .send({
+              auth: {
+                type: 'm.login.password',
+                identifier: { type: 'm.id.user', user: '@abba:example.com' },
+                password: 'password',
+                session: randomString(20)
+              }
+            })
+          expect(response.statusCode).toBe(401)
+          expect(response.body).toHaveProperty('completed')
+          expect(response.body.completed).toEqual(['m.login.password'])
+        })
+      })
+      it('should send the flows for userInteractiveAuthentication', async () => {
+        const response = await request(app)
+          .post('/_matrix/client/v3/register')
+          .set('User-Agent', 'curl/7.31.0-DEV')
+          .set('X-Forwarded-For', '203.0.113.195')
+          .query({ kind: 'user' })
+          .send({}) // Request without auth parameter so that the server sends the authentication flows
+        expect(response.statusCode).toBe(401)
+        expect(response.body).toHaveProperty('flows')
+        expect(response.body).toHaveProperty('session')
+        flows = response.body.flows
+        session = response.body.session
+      })
+      it('should run the register endpoint after authentication was completed', async () => {
+        const response = await request(app)
+          .post('/_matrix/client/v3/register')
+          .set('User-Agent', 'curl/7.31.0-DEV')
+          .set('X-Forwarded-For', '203.0.113.195')
+          .query({ kind: 'user' })
+          .send({
+            auth: { type: flows[0].stages[0], session },
+            username: 'newuser',
+            device_id: 'deviceId',
+            inhibit_login: false,
+            initial_device_display_name: 'testdevice'
+          })
+        expect(response.statusCode).toBe(200)
+        expect(response.body).toHaveProperty('user_id')
+        expect(response.body).toHaveProperty('expires_in_ms')
+        expect(response.body).toHaveProperty('access_token')
+        expect(response.body).toHaveProperty('device_id')
+      })
+      it('should only return the userId when inhibit login is set to true', async () => {
+        const response = await request(app)
+          .post('/_matrix/client/v3/register')
+          .set('User-Agent', 'curl/7.31.0-DEV')
+          .set('X-Forwarded-For', '203.0.113.195')
+          .query({ kind: 'user' })
+          .send({
+            auth: { type: flows[0].stages[0], session: randomString(20) },
+            username: 'new_user',
+            device_id: 'device_Id',
+            inhibit_login: true,
+            initial_device_display_name: 'testdevice'
+          })
+        expect(response.statusCode).toBe(200)
+        expect(response.body).toHaveProperty('user_id')
+        expect(response.body).not.toHaveProperty('expires_in_ms')
+        expect(response.body).not.toHaveProperty('access_token')
+        expect(response.body).not.toHaveProperty('device_id')
+      })
+      it('should refuse an incorrect username', async () => {
+        const response = await request(app)
+          .post('/_matrix/client/v3/register')
+          .set('User-Agent', 'curl/7.31.0-DEV')
+          .set('X-Forwarded-For', '203.0.113.195')
+          .query({ kind: 'user' })
+          .send({
+            auth: {
+              type: 'm.login.dummy',
+              session: randomString(20)
+            },
+            username: '@localhost:example.com'
+          })
+        expect(response.statusCode).toBe(400)
+        expect(response.body).toHaveProperty('error')
+        expect(response.body).toHaveProperty('errcode', 'M_INVALID_USERNAME')
+      })
+      it('should accept guest registration', async () => {
+        const response = await request(app)
+          .post('/_matrix/client/v3/register')
+          .set('User-Agent', 'curl/7.31.0-DEV')
+          .set('X-Forwarded-For', '203.0.113.195')
+          .query({ kind: 'guest' })
+          .send({})
+        expect(response.statusCode).toBe(200)
+        expect(response.body).toHaveProperty('user_id')
+        expect(response.body).toHaveProperty('expires_in_ms')
+        expect(response.body).toHaveProperty('access_token')
+        expect(response.body).toHaveProperty('device_id')
+      })
+      it('should accept guest registration with inhibit_login set to true', async () => {
+        const response = await request(app)
+          .post('/_matrix/client/v3/register')
+          .set('User-Agent', 'curl/7.31.0-DEV')
+          .set('X-Forwarded-For', '203.0.113.195')
+          .query({ kind: 'guest' })
+          .send({ inhibit_login: true })
+        expect(response.statusCode).toBe(200)
+        expect(response.body).toHaveProperty('user_id')
+        expect(response.body).not.toHaveProperty('expires_in_ms')
+        expect(response.body).not.toHaveProperty('access_token')
+        expect(response.body).not.toHaveProperty('device_id')
+      })
+      it('should refuse a username that is already in use', async () => {
+        const response = await request(app)
+          .post('/_matrix/client/v3/register')
+          .set('User-Agent', 'curl/7.31.0-DEV')
+          .set('X-Forwarded-For', '203.0.113.195')
+          .query({ kind: 'user' })
+          .send({
+            username: 'newuser',
+            auth: { type: 'm.login.dummy', session: randomString(20) }
+          })
+        expect(response.statusCode).toBe(400)
+        expect(response.body).toHaveProperty('error')
+        expect(response.body).toHaveProperty('errcode', 'M_USER_IN_USE')
       })
     })
   })
