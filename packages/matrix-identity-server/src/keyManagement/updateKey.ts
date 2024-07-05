@@ -1,3 +1,7 @@
+/* istanbul ignore file */
+
+// TO BE MODIFIED LATER ON --- FILE NOT IN USE FOR THE MOMENT
+
 /**
  * Change long-term key
  */
@@ -5,8 +9,6 @@
 import { generateKeyPair } from '@twake/crypto'
 import { type TwakeLogger } from '@twake/logger'
 import type IdentityServerDb from '../db'
-
-// TO BE MODIFIED LATER ON
 
 const updateKey = async (
   db: IdentityServerDb,
