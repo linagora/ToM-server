@@ -2,11 +2,11 @@ import { type TwakeLogger } from '@twake/logger'
 import { type Request, type Response } from 'express'
 import type http from 'http'
 import {
-  AuthenticationTypes,
   type MatrixIdentifier,
   type AuthenticationData,
   type ClientServerDb,
-  type Config
+  type Config,
+  type flowContent
 } from '../types'
 import { Hash, randomString } from '@twake/crypto'
 import type MatrixDBmodified from '../matrixDb'
@@ -28,38 +28,49 @@ const checkAuthentication = (
   matrixDb: MatrixDBmodified
 ): Promise<void> => {
   switch (auth.type) {
-    case AuthenticationTypes.Password:
+    case 'm.login.password':
       return new Promise((resolve, reject) => {
         const hash = new Hash()
-        matrixDb
-          .get('users', ['user_id'], {
-            name: (auth.identifier as MatrixIdentifier).user,
-            password_hash: hash.sha256(auth.password) // TODO : Handle other hash functions
-          })
-          .then((rows) => {
-            resolve()
+        hash.ready
+          .then(() => {
+            matrixDb
+              .get('users', ['name'], {
+                name: (auth.identifier as MatrixIdentifier).user,
+                password_hash: hash.sha256(auth.password) // TODO : Handle other hash functions
+              })
+              .then((rows) => {
+                if (rows.length === 0) {
+                  throw new Error()
+                } else {
+                  resolve()
+                }
+              })
+              .catch((e) => {
+                reject(errMsg('forbidden'))
+              })
           })
           .catch((e) => {
+            // istanbul ignore next
             reject(e)
           })
       })
-    case AuthenticationTypes.Email:
+    case 'm.login.email.identity':
       return new Promise((resolve, reject) => {
         // TODO : After implementing POST /_matrix/client/v3/account/password/email/requestToken, use it to validate this authentication type
       })
-    case AuthenticationTypes.Phone:
+    case 'm.login.msisdn':
       return new Promise((resolve, reject) => {
         // TODO : After implementing POST /_matrix/client/v3/account/password/msisdn/requestToken, use it to validate this authentication type
       })
-    case AuthenticationTypes.Recaptcha:
+    case 'm.login.recaptcha':
       return new Promise((resolve, reject) => {
         // TODO : Implement this after understanding the structure of the response field in request body
       })
-    case AuthenticationTypes.Dummy:
+    case 'm.login.dummy':
       return new Promise((resolve, reject) => {
         resolve() // Dummy authentication always succeeds
       })
-    case AuthenticationTypes.Token: // Only valid on the /register endpoint as per the spec
+    case 'm.login.registration_token': // Only valid on the /register endpoint as per the spec
       return new Promise((resolve, reject) => {
         matrixDb
           .get(
@@ -85,10 +96,7 @@ const checkAuthentication = (
                   pending + completed + 1 > usesAllowed &&
                   usesAllowed !== null
                 ) {
-                  const err: Error = new Error(
-                    'Token has been used too many times'
-                  )
-                  reject(err)
+                  reject(errMsg('tokenMax'))
                 } else {
                   matrixDb
                     .updateWithConditions(
@@ -100,20 +108,22 @@ const checkAuthentication = (
                       resolve()
                     })
                     .catch((e) => {
+                      // istanbul ignore next
                       reject(e)
                     })
                 }
               })
               .catch((e) => {
+                // istanbul ignore next
                 reject(e)
               })
-            resolve()
           })
           .catch((e) => {
+            // istanbul ignore next
             reject(e)
           })
       })
-    case AuthenticationTypes.Terms: // Only valid on the /register endpoint as per the spec
+    case 'm.login.terms': // Only valid on the /register endpoint as per the spec
       return new Promise((resolve, reject) => {
         resolve() // The client makes sure the user has accepted all the terms before sending the request indicating the user has accepted the terms
       })
@@ -151,11 +161,15 @@ const UiAuthenticate = (
                     const completed: string[] = rows.map(
                       (row) => row.stage_type as string
                     )
-                    const authOver = conf.flows.some((flow) => {
-                      return flow.stages.every((stage) =>
-                        completed.includes(stage)
-                      ) // check if all stages of a flow are completed
+                    const authOver = (
+                      conf.flows as unknown as flowContent
+                    ).some((flow) => {
+                      return (
+                        flow.stages.length === completed.length &&
+                        flow.stages.every((stage) => completed.includes(stage))
+                      )
                     })
+
                     // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
                     if (authOver) {
                       callback(obj) // what arguments to use in callback ?
@@ -169,18 +183,22 @@ const UiAuthenticate = (
                     }
                   })
                   .catch((e) => {
+                    // istanbul ignore next
                     logger.error(
                       'Error while retrieving session credentials from the database during User-Interactive Authentication',
                       e
                     )
+                    // istanbul ignore next
                     send(res, 400, errMsg('unknown'))
                   })
               })
               .catch((e) => {
+                // istanbul ignore next
                 logger.error(
                   'Error while inserting session credentials into the database during User-Interactive Authentication',
                   e
                 )
+                // istanbul ignore next
                 send(res, 400, errMsg('unknown'))
               })
           })
@@ -202,10 +220,12 @@ const UiAuthenticate = (
                 })
               })
               .catch((e) => {
+                // istanbul ignore next
                 logger.error(
                   'Error while retrieving session credentials from the database during User-Interactive Authentication',
                   e
                 )
+                // istanbul ignore next
                 send(res, 400, errMsg('unknown'))
               })
           })

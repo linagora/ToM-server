@@ -1,6 +1,6 @@
 import MatrixDBmodified from './index'
 import { type TwakeLogger, getLogger } from '@twake/logger'
-import { type Config, AuthenticationTypes, type DbGetResult } from '../types'
+import { type Config, type DbGetResult } from '../types'
 import DefaultConfig from '../__testData__/matrixDbTestConf.json'
 import fs from 'fs'
 import { randomString } from '@twake/crypto'
@@ -19,10 +19,13 @@ const baseConf: Config = {
   matrix_database_host: './src/__testData__/matrixTestdb.db',
   flows: [
     {
-      stages: [AuthenticationTypes.Password, AuthenticationTypes.Dummy]
+      stages: ['m.login.dummy', 'm.login.dummy']
     },
     {
-      stages: [AuthenticationTypes.Password, AuthenticationTypes.Email]
+      stages: ['m.login.password', 'm.login.email.identity']
+    },
+    {
+      stages: ['m.login.registration_token', 'm.login.dummy']
     }
   ],
   params: {
