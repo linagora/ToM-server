@@ -24,7 +24,7 @@ class MatrixDBSQLite
           if (sqlite3.Database == null) sqlite3 = sqlite3.default
           const db = (this.db = new sqlite3.Database(
             conf.matrix_database_host as string,
-            sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE
+            sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE // IT SHOULD ALWAYS BE READWRITE as we connect the synapse db
           ))
           /* istanbul ignore if */
           if (db == null) {

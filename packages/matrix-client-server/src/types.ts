@@ -1,11 +1,14 @@
+// istanbul ignore file
 import {
   type IdentityServerDb,
   type Config as MIdentityServerConfig
 } from '@twake/matrix-identity-server'
+// import { type Policy } from '@twake/matrix-identity-server/dist/terms'
 
 export type Config = MIdentityServerConfig & {
-  flows: flowContent
-  params: any
+  flows: Array<Record<string, string[]>> // those two types will be changed later on
+  //  TODO : Correct typing
+  params: Record<string, any>
 }
 
 export type DbGetResult = Array<
@@ -33,25 +36,19 @@ export type ClientServerDb = IdentityServerDb<clientDbCollections>
 
 // Based on https://spec.matrix.org/v1.11/client-server-api/#identifier-types
 
-enum IdentifierTypes {
-  Matrix = 'm.id.user',
-  ThirdParty = 'm.id.thirdparty',
-  Phone = 'm.id.phone'
-}
-
 export interface MatrixIdentifier {
-  type: IdentifierTypes.Matrix
+  type: 'm.id.user'
   user: string
 }
 
 export interface ThirdPartyIdentifier {
-  type: IdentifierTypes.ThirdParty
+  type: 'm.id.thirdparty'
   medium: string
   address: string
 }
 
 export interface PhoneIdentifier {
-  type: IdentifierTypes.Phone
+  type: 'm.id.phone'
   country: string
   phone: string
 }
@@ -62,19 +59,18 @@ export type UserIdentifier =
   | PhoneIdentifier
 
 // Based on https://spec.matrix.org/v1.11/client-server-api/#authentication-types
-export enum AuthenticationTypes {
-  Password = 'm.login.password',
-  Email = 'm.login.email.identity',
-  Phone = 'm.login.msisdn',
-  Recaptcha = 'm.login.recaptcha',
-  Sso = 'm.login.sso',
-  Dummy = 'm.login.dummy',
-  Token = 'm.login.registration_token',
-  Terms = 'm.login.terms'
-}
+export type AuthenticationTypes =
+  | 'm.login.password'
+  | 'm.login.email.identity'
+  | 'm.login.msisdn'
+  | 'm.login.recaptcha'
+  | 'm.login.sso'
+  | 'm.login.dummy'
+  | 'm.login.registration_token'
+  | 'm.login.terms'
 
 interface PasswordAuth {
-  type: AuthenticationTypes.Password
+  type: 'm.login.password'
   identifier: UserIdentifier
   password: string
   session: string
@@ -88,19 +84,19 @@ interface ThreepidCreds {
 }
 
 interface EmailAuth {
-  type: AuthenticationTypes.Email
+  type: 'm.login.email.identity'
   threepid_creds: ThreepidCreds
   session: string
 }
 
 interface PhoneAuth {
-  type: AuthenticationTypes.Phone
+  type: 'm.login.msisdn'
   threepid_creds: ThreepidCreds
   session: string
 }
 
 interface RecaptchaAuth {
-  type: AuthenticationTypes.Recaptcha
+  type: 'm.login.recaptcha'
   response: string
   session: string
 }
@@ -112,18 +108,18 @@ interface RecaptchaAuth {
 // }
 
 interface DummyAuth {
-  type: AuthenticationTypes.Dummy
+  type: 'm.login.dummy'
   session: string
 }
 
 interface TokenAuth {
-  type: AuthenticationTypes.Token
+  type: 'm.login.registration_token'
   token: string
   session: string
 }
 
 interface TermsAuth {
-  type: AuthenticationTypes.Terms
+  type: 'm.login.terms'
   session: string
 }
 
@@ -136,7 +132,7 @@ export type AuthenticationData =
   | TokenAuth
   | TermsAuth
 
-type flowContent = stagesContent[]
+export type flowContent = stagesContent[]
 
 interface stagesContent {
   stages: AuthenticationTypes[]
