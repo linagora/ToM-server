@@ -23,32 +23,27 @@ export const changeAvatarUrl = (
 ): expressAppHandler => {
   return (req, res) => {
     const userId: string = (req as Request).params.userId
-    if (userId !== undefined && userId.length > 0) {
-      clientServer.authenticate(req, res, (data, id) => {
-        jsonContent(req, res, clientServer.logger, (obj) => {
-          validateParameters(res, schema, obj, clientServer.logger, (obj) => {
-            // eslint-disable-next-line @typescript-eslint/naming-convention
-            const _avatar_url = (obj as changeAvatarUrlArgs).avatar_url
+    clientServer.authenticate(req, res, (data, id) => {
+      jsonContent(req, res, clientServer.logger, (obj) => {
+        validateParameters(res, schema, obj, clientServer.logger, (obj) => {
+          // eslint-disable-next-line @typescript-eslint/naming-convention
+          const _avatar_url = (obj as changeAvatarUrlArgs).avatar_url
 
-            clientServer.matrixDb
-              .updateWithConditions('profiles', { avatar_url: _avatar_url }, [
-                { field: 'user_id', value: userId }
-              ])
-              .then(() => {
-                clientServer.logger.debug('Avatar URL updated')
-                send(res, 200, {})
-              })
-              .catch((e) => {
-                /* istanbul ignore next */
-                clientServer.logger.error('Error querying profiles:', e)
-              })
-          })
+          clientServer.matrixDb
+            .updateWithConditions('profiles', { avatar_url: _avatar_url }, [
+              { field: 'user_id', value: userId }
+            ])
+            .then(() => {
+              clientServer.logger.debug('Avatar URL updated')
+              send(res, 200, {})
+            })
+            .catch((e) => {
+              /* istanbul ignore next */
+              clientServer.logger.error('Error querying profiles:', e)
+            })
         })
       })
-    } else {
-      /* istanbul ignore next */
-      clientServer.logger.debug('No user ID provided')
-    }
+    })
   }
 }
 
@@ -62,38 +57,31 @@ export const changeDisplayname = (
 ): expressAppHandler => {
   return (req, res) => {
     const userId: string = (req as Request).params.userId
-    if (userId !== undefined && userId.length > 0) {
-      clientServer.authenticate(req, res, (data, id) => {
-        jsonContent(req, res, clientServer.logger, (obj) => {
-          validateParameters(
-            res,
-            schema_name,
-            obj,
-            clientServer.logger,
-            (obj) => {
-              const _displayname = (obj as changeDisplaynameArgs).displayname
+    clientServer.authenticate(req, res, (data, id) => {
+      jsonContent(req, res, clientServer.logger, (obj) => {
+        validateParameters(
+          res,
+          schema_name,
+          obj,
+          clientServer.logger,
+          (obj) => {
+            const _displayname = (obj as changeDisplaynameArgs).displayname
 
-              clientServer.matrixDb
-                .updateWithConditions(
-                  'profiles',
-                  { displayname: _displayname },
-                  [{ field: 'user_id', value: userId }]
-                )
-                .then(() => {
-                  clientServer.logger.debug('Displayname updated')
-                  send(res, 200, {})
-                })
-                .catch((e) => {
-                  /* istanbul ignore next */
-                  clientServer.logger.error('Error querying profiles:', e)
-                })
-            }
-          )
-        })
+            clientServer.matrixDb
+              .updateWithConditions('profiles', { displayname: _displayname }, [
+                { field: 'user_id', value: userId }
+              ])
+              .then(() => {
+                clientServer.logger.debug('Displayname updated')
+                send(res, 200, {})
+              })
+              .catch((e) => {
+                /* istanbul ignore next */
+                clientServer.logger.error('Error querying profiles:', e)
+              })
+          }
+        )
       })
-    } else {
-      /* istanbul ignore next */
-      clientServer.logger.debug('No user ID provided')
-    }
+    })
   }
 }
