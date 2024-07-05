@@ -21,6 +21,7 @@ let conf: Config
 let clientServer: ClientServer
 let app: express.Application
 let validToken: string
+
 const logger: TwakeLogger = getLogger()
 
 beforeAll((done) => {
@@ -119,6 +120,149 @@ describe('Use configuration file', () => {
     expect(response.statusCode).toBe(405)
   })
 
+  describe('GET /_matrix/client/v3/profile/{userId}', () => {
+    const testUserId = '@testuser:example.com'
+    const incompleteUserId = '@incompleteuser:example.com'
+
+    beforeAll(async () => {
+      clientServer.matrixDb
+        .insert('profiles', {
+          user_id: testUserId,
+          displayname: 'Test User',
+          avatar_url: 'http://example.com/avatar.jpg'
+        })
+        .then(() => {
+          clientServer.matrixDb
+            .insert('profiles', {
+              user_id: incompleteUserId
+            })
+            .then(() => {
+              logger.info('incomplete Test user profile created')
+            })
+            .catch((e) => {
+              logger.error('Error creating incomplete Test user profile:', e)
+            })
+          logger.info('Test user profile created')
+        })
+        .catch((e) => {
+          logger.error('Error creating test user profile:', e)
+        })
+    })
+
+    afterAll(async () => {
+      clientServer.matrixDb
+        .deleteEqual('profiles', 'user_id', testUserId)
+        .then(() => {
+          clientServer.matrixDb
+            .deleteEqual('profiles', 'user_id', incompleteUserId)
+            .then(() => {
+              logger.info('incomplete Test user profile deleted')
+            })
+            .catch((e) => {
+              logger.error('Error deleting test user profile:', e)
+            })
+          logger.info('Test user profile deleted')
+        })
+        .catch((e) => {
+          logger.error('Error deleting test user profile:', e)
+        })
+    })
+
+    describe('/_matrix/client/v3/profile/{userId}', () => {
+      it('should return the profile information for an existing user', async () => {
+        const response = await request(app).get(
+          `/_matrix/client/v3/profile/${testUserId}`
+        )
+
+        expect(response.statusCode).toBe(200)
+        expect(response.body).toHaveProperty('avatar_url')
+        expect(response.body).toHaveProperty('displayname')
+      })
+
+      // it('should return error 403 if the server is unwilling to disclose profile information', async () => {
+      //   const response = await request(app).get(
+      //     '/_matrix/client/v3/profile/@forbiddenuser:example.com'
+      //   )
+
+      //   expect(response.statusCode).toBe(403)
+      //   expect(response.body.errcode).toBe('M_FORBIDDEN')
+      //   expect(response.body).toHaveProperty('error')
+      // })
+
+      it('should return error 404 if the user does not exist', async () => {
+        const response = await request(app).get(
+          '/_matrix/client/v3/profile/@nonexistentuser:example.com'
+        )
+
+        expect(response.statusCode).toBe(404)
+        expect(response.body.errcode).toBe('M_NOT_FOUND')
+        expect(response.body).toHaveProperty('error')
+      })
+    })
+
+    describe('/_matrix/client/v3/profile/{userId}/avatar_url', () => {
+      it('should return the avatar_url for an existing user', async () => {
+        const response = await request(app).get(
+          `/_matrix/client/v3/profile/${testUserId}/avatar_url`
+        )
+
+        expect(response.statusCode).toBe(200)
+        expect(response.body).toHaveProperty('avatar_url')
+      })
+
+      it('should return error 404 if the user does not exist', async () => {
+        const response = await request(app).get(
+          '/_matrix/client/v3/profile/@nonexistentuser:example.com/avatar_url'
+        )
+
+        expect(response.statusCode).toBe(404)
+        expect(response.body.errcode).toBe('M_NOT_FOUND')
+        expect(response.body).toHaveProperty('error')
+      })
+
+      it('should return error 404 if the user does not have an existing avatar_url', async () => {
+        const response = await request(app).get(
+          '/_matrix/client/v3/profile/@incompleteuser:example.com/avatar_url'
+        )
+
+        expect(response.statusCode).toBe(404)
+        expect(response.body.errcode).toBe('M_NOT_FOUND')
+        expect(response.body).toHaveProperty('error')
+      })
+    })
+
+    describe('/_matrix/client/v3/profile/{userId}/displayname', () => {
+      it('should return the displayname for an existing user', async () => {
+        const response = await request(app).get(
+          `/_matrix/client/v3/profile/${testUserId}/displayname`
+        )
+
+        expect(response.statusCode).toBe(200)
+        expect(response.body).toHaveProperty('displayname')
+      })
+
+      it('should return error 404 if the user does not exist', async () => {
+        const response = await request(app).get(
+          '/_matrix/client/v3/profile/@nonexistentuser:example.com/displayname'
+        )
+
+        expect(response.statusCode).toBe(404)
+        expect(response.body.errcode).toBe('M_NOT_FOUND')
+        expect(response.body).toHaveProperty('error')
+      })
+
+      it('should return error 404 if the user does not have an existing avatar_url', async () => {
+        const response = await request(app).get(
+          '/_matrix/client/v3/profile/@incompleteuser:example.com/displayname'
+        )
+
+        expect(response.statusCode).toBe(404)
+        expect(response.body.errcode).toBe('M_NOT_FOUND')
+        expect(response.body).toHaveProperty('error')
+      })
+    })
+  })
+
   describe('Endpoints with authentication', () => {
     describe('/_matrix/client/v3/account/whoami', () => {
       it('should reject missing token (', async () => {
@@ -173,6 +317,7 @@ describe('Use configuration file', () => {
         expect(response.statusCode).toBe(200)
       })
     })
+
     describe('/_matrix/client/v3/admin/whois', () => {
       it('should refuse a request without a userId', async () => {
         const response = await request(app)
@@ -479,6 +624,110 @@ describe('Use configuration file', () => {
         expect(response.statusCode).toBe(400)
         expect(response.body).toHaveProperty('error')
         expect(response.body).toHaveProperty('errcode', 'M_USER_IN_USE')
+      })
+    })
+  })
+
+  describe('PUT /_matrix/client/v3/profile/{userId}', () => {
+    const testUserId = '@testuser:example.com'
+
+    beforeEach(async () => {
+      clientServer.matrixDb
+        .insert('profiles', {
+          user_id: testUserId,
+          displayname: 'Test User',
+          avatar_url: 'http://example.com/avatar.jpg'
+        })
+        .then(() => {
+          logger.info('Test user profile created')
+        })
+        .catch((e) => {
+          logger.error('Error creating test user profile:', e)
+        })
+    })
+
+    afterEach(async () => {
+      clientServer.matrixDb
+        .deleteEqual('profiles', 'user_id', testUserId)
+        .then(() => {
+          logger.info('Test user profile deleted')
+        })
+        .catch((e) => {
+          logger.error('Error deleting test user profile:', e)
+        })
+    })
+
+    describe('/_matrix/client/v3/profile/{userId}/avatar_url', () => {
+      it('should require authentication', async () => {
+        await clientServer.cronTasks?.ready
+        const response = await request(app)
+          .put(`/_matrix/client/v3/profile/${testUserId}/avatar_url`)
+          .set('Authorization', 'Bearer invalidToken')
+          .set('Accept', 'application/json')
+        expect(response.statusCode).toBe(401)
+      })
+
+      it('should send correct response when updating the avatar_url of an existing user', async () => {
+        const response = await request(app)
+          .put(`/_matrix/client/v3/profile/${testUserId}/avatar_url`)
+          .set('Authorization', `Bearer ${validToken}`)
+          .send({ avatar_url: 'http://example.com/new_avatar.jpg' })
+
+        expect(response.statusCode).toBe(200)
+        expect(response.body).toEqual({})
+      })
+
+      it('should correctly update the avatar_url of an existing user', async () => {
+        const response = await request(app)
+          .put(`/_matrix/client/v3/profile/${testUserId}/avatar_url`)
+          .set('Authorization', `Bearer ${validToken}`)
+          .send({ avatar_url: 'http://example.com/new_avatar.jpg' })
+        expect(response.statusCode).toBe(200)
+        const rows = await clientServer.matrixDb.get(
+          'profiles',
+          ['avatar_url'],
+          { user_id: testUserId }
+        )
+
+        expect(rows.length).toBe(1)
+        expect(rows[0].avatar_url).toBe('http://example.com/new_avatar.jpg')
+      })
+    })
+
+    describe('/_matrix/client/v3/profile/{userId}/displayname', () => {
+      it('should require authentication', async () => {
+        await clientServer.cronTasks?.ready
+        const response = await request(app)
+          .put(`/_matrix/client/v3/profile/${testUserId}/displayname`)
+          .set('Authorization', 'Bearer invalidToken')
+          .set('Accept', 'application/json')
+        expect(response.statusCode).toBe(401)
+      })
+
+      it('should send correct response when updating the display_name of an existing user', async () => {
+        const response = await request(app)
+          .put(`/_matrix/client/v3/profile/${testUserId}/displayname`)
+          .set('Authorization', `Bearer ${validToken}`)
+          .send({ displayname: 'New name' })
+
+        expect(response.statusCode).toBe(200)
+        expect(response.body).toEqual({})
+      })
+
+      it('should correctly update the display_name of an existing user', async () => {
+        const response = await request(app)
+          .put(`/_matrix/client/v3/profile/${testUserId}/displayname`)
+          .set('Authorization', `Bearer ${validToken}`)
+          .send({ displayname: 'New name' })
+        expect(response.statusCode).toBe(200)
+        const rows = await clientServer.matrixDb.get(
+          'profiles',
+          ['displayname'],
+          { user_id: testUserId }
+        )
+
+        expect(rows.length).toBe(1)
+        expect(rows[0].displayname).toBe('New name')
       })
     })
   })

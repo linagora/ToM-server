@@ -2,9 +2,7 @@
 import { getLogger, type TwakeLogger } from '@twake/logger'
 import sqlite3 from 'sqlite3'
 import { type Config } from '../types'
-import UserDB from '../../../matrix-identity-server/src/userdb'
-import type UserDBPg from '../../../matrix-identity-server/src/userdb/sql/pg'
-import type UserDBSQLite from '../../../matrix-identity-server/src/userdb/sql/sqlite'
+import {type UserDBPg, type UserDBSQLite, UserDB}  from '@twake/matrix-identity-server'
 
 const logger: TwakeLogger = getLogger()
 
@@ -103,7 +101,7 @@ export const buildUserDB = (conf: Config): Promise<void> => {
 
 // eslint-disable-next-line @typescript-eslint/promise-function-async
 export const buildMatrixDb = (conf: Config): Promise<void> => {
-  if (matrixDbCreated) return Promise.resolve();
+  if (matrixDbCreated) return Promise.resolve()
   const matrixDb = new sqlite3.Database(conf.matrix_database_host as string) 
   return new Promise((resolve, reject) => {
     if (conf.matrix_database_engine === 'sqlite') {

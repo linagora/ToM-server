@@ -19,6 +19,12 @@ import { errMsg, send, type expressAppHandler } from '@twake/utils'
 import Authenticate from './utils/authenticate'
 
 // Endpoints
+import {
+  getProfile,
+  getAvatarUrl,
+  getDisplayname
+} from './profiles/getProfiles'
+import { changeAvatarUrl, changeDisplayname } from './profiles/changeProfiles'
 import whoami from './account/whoami'
 import whois from './admin/whois'
 import register from './register'
@@ -87,17 +93,37 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
           this.api.get = {
             '/_matrix/client/v3/account/whoami': whoami(this),
             '/_matrix/client/v3/admin/whois': whois(this),
-            '/_matrix/client/v3/register': badMethod
+            '/_matrix/client/v3/register': badMethod,
+            '/_matrix/client/v3/profile/:userId': getProfile(
+              this.matrixDb,
+              this.logger
+            ),
+            '/_matrix/client/v3/profile/:userId/avatar_url': getAvatarUrl(
+              this.matrixDb,
+              this.logger
+            ),
+            '/_matrix/client/v3/profile/:userId/displayname': getDisplayname(
+              this.matrixDb,
+              this.logger
+            )
           }
           this.api.post = {
             '/_matrix/client/v3/account/whoami': badMethod,
             '/_matrix/client/v3/admin/whois': badMethod,
-            '/_matrix/client/v3/register': register(this)
+            '/_matrix/client/v3/register': register(this),
+            '/_matrix/client/v3/profile/:userId': badMethod,
+            '/_matrix/client/v3/profile/:userId/avatar_url': badMethod,
+            '/_matrix/client/v3/profile/:userId/displayname': badMethod
           }
           this.api.put = {
             '/_matrix/client/v3/account/whoami': badMethod,
             '/_matrix/client/v3/admin/whois': badMethod,
-            '/_matrix/client/v3/register': badMethod
+            '/_matrix/client/v3/register': badMethod,
+            '/_matrix/client/v3/profile/:userId': badMethod,
+            '/_matrix/client/v3/profile/:userId/avatar_url':
+              changeAvatarUrl(this),
+            '/_matrix/client/v3/profile/:userId/displayname':
+              changeDisplayname(this)
           }
           resolve(true)
         })
