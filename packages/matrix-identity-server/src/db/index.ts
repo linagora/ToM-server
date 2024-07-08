@@ -90,6 +90,36 @@ type Get<T> = (
   filterFields: Record<string, string | number | Array<string | number>>,
   order?: string
 ) => Promise<DbGetResult>
+type Get2<T> = (
+  table: T,
+  fields: string[],
+  filterFields1: Record<string, string | number | Array<string | number>>,
+  filterFields2: Record<string, string | number | Array<string | number>>,
+  order?: string
+) => Promise<DbGetResult>
+type GetJoin<T> = (
+  tables: Array<T>,
+  fields: string[],
+  filterFields: Record<string, string | number | Array<string | number>>,
+  joinFields: Record<string, string>,
+  order?: string
+) => Promise<DbGetResult>
+type GetMax<T> = (
+  table: T,
+  targetField: string,
+  fields: string[],
+  filterFields: Record<string, string | number | Array<string | number>>,
+  order?: string
+) => Promise<DbGetResult>
+type GetMaxJoin2<T> = (
+  tables: Array<T>,
+  targetField: string,
+  fields: string[],
+  filterFields1: Record<string, string | number | Array<string | number>>,
+  filterFields2: Record<string, string | number | Array<string | number>>,
+  joinFields: Record<string, string>,
+  order?: string
+) => Promise<DbGetResult>
 type GetCount<T> = (
   table: T,
   field: string,
@@ -135,6 +165,11 @@ export interface IdDbBackend<T> {
   createDatabases: (conf: Config, ...args: any) => Promise<void>
   insert: Insert<T>
   get: Get<T>
+  getJoin: GetJoin<T>
+  getWhereEqualOrDifferent: Get2<T>
+  getWhereEqualAndHigher: Get2<T>
+  getMaxWhereEqual: GetMax<T>
+  getMaxWhereEqualAndLowerJoin: GetMaxJoin2<T>
   getCount: GetCount<T>
   getAll: GetAll<T>
   getHigherThan: Get<T>
@@ -275,9 +310,93 @@ class IdentityServerDb<T extends string = never>
   get(
     table: Collections | T,
     fields: string[],
-    filterFields: Record<string, string | number | Array<string | number>>
+    filterFields: Record<string, string | number | Array<string | number>>,
+    order?: string
   ) {
-    return this.db.get(table, fields, filterFields)
+    return this.db.get(table, fields, filterFields, order)
+  }
+
+  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
+  getJoin(
+    table: Array<Collections | T>,
+    fields: string[],
+    filterFields: Record<string, string | number | Array<string | number>>,
+    joinFields: Record<string, string>,
+    order?: string
+  ) {
+    return this.db.getJoin(table, fields, filterFields, joinFields, order)
+  }
+
+  //eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
+  getWhereEqualOrDifferent(
+    table: Collections | T,
+    fields: string[],
+    filterFields1: Record<string, string | number | Array<string | number>>,
+    filterFields2: Record<string, string | number | Array<string | number>>,
+    order?: string
+  ) {
+    return this.db.getWhereEqualOrDifferent(
+      table,
+      fields,
+      filterFields1,
+      filterFields2,
+      order
+    )
+  }
+
+  //eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
+  getWhereEqualAndHigher(
+    table: Collections | T,
+    fields: string[],
+    filterFields1: Record<string, string | number | Array<string | number>>,
+    filterFields2: Record<string, string | number | Array<string | number>>,
+    order?: string
+  ) {
+    return this.db.getWhereEqualAndHigher(
+      table,
+      fields,
+      filterFields1,
+      filterFields2,
+      order
+    )
+  }
+
+  //eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
+  getMaxWhereEqual(
+    table: Collections | T,
+    targetField: string,
+    fields: string[],
+    filterFields: Record<string, string | number | Array<string | number>>,
+    order?: string
+  ) {
+    return this.db.getMaxWhereEqual(
+      table,
+      targetField,
+      fields,
+      filterFields,
+      order
+    )
+  }
+
+  //eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
+  getMaxWhereEqualAndLowerJoin(
+    tables: Array<T | Collections>,
+    targetField: string,
+    fields: string[],
+    filterFields1: Record<string, string | number | Array<string | number>>,
+    filterFields2: Record<string, string | number | Array<string | number>>,
+    joinFields: Record<string, string>,
+    order?: string
+  ) {
+    return this.db.getMaxWhereEqualAndLowerJoin(
+      tables,
+      targetField,
+      fields,
+      filterFields1,
+      filterFields2,
+      joinFields,
+      order
+    )
   }
 
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async

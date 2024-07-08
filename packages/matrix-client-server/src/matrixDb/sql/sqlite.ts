@@ -15,6 +15,7 @@ class MatrixDBSQLite
       Record<Collections, Array<Record<string, string | number>>>
     >
   ): Promise<void> {
+    /* istanbul ignore if */
     if (this.db != null) return Promise.resolve()
     return new Promise((resolve, reject) => {
       import('sqlite3')
@@ -82,6 +83,7 @@ class MatrixDBSQLite
       )
 
       stmt.finalize((err) => {
+        /* istanbul ignore if */
         // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
         if (err) {
           reject(err)

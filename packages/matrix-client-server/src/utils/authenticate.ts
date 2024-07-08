@@ -29,7 +29,7 @@ const Authenticate = (
         token = re[1]
       }
       // @ts-expect-error req.query exists
-    } else if (req.query != null) {
+    } else if (req.query && Object.keys(req.query).length > 0) {
       // @ts-expect-error req.query.access_token may be null
       token = req.query.access_token
     }

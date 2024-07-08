@@ -86,7 +86,7 @@ const PostTerms = <T extends string = never>(
               if (done.length > 0) {
                 let token: string = ''
                 // @ts-expect-error req.query exists
-                if (req.query != null) {
+                if (req.query && Object.keys(req.query).length > 0) {
                   // @ts-expect-error req.query.access_token may be null
                   token = req.query.access_token
                 } else if (req.headers.authorization != null) {
