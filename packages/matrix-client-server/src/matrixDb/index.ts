@@ -25,6 +25,7 @@ export type Collections =
   | 'devices'
   | 'local_current_membership'
   | 'pushers'
+  | 'push_rules_enable'
 
 type Get = (
   table: Collections,
