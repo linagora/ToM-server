@@ -26,6 +26,7 @@ export const getDevices = (
           send(res, 200, { devices: _devices })
         })
         .catch((e) => {
+          /* istanbul ignore next */
           clientServer.logger.error('Error querying devices:', e)
         })
     })
@@ -65,6 +66,7 @@ export const getDeviceInfo = (
           }
         })
         .catch((e) => {
+          /* istanbul ignore next */
           clientServer.logger.error('Error querying devices:', e)
         })
     })
