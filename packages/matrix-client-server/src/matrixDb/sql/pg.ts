@@ -1,6 +1,6 @@
 import { type TwakeLogger } from '@twake/logger'
 import { type ClientConfig } from 'pg'
-import { type DbGetResult, type Config } from '../../types'
+import { type Config, type DbGetResult } from '../../types'
 import { type MatrixDBmodifiedBackend, type Collections } from '../'
 import { Pg } from '@twake/matrix-identity-server'
 

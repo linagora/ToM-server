@@ -2,6 +2,8 @@
   "cron_service": false,
   "database_engine": "sqlite",
   "database_host": "./src/__testData__/test.db",
+  "matrix_database_engine": "sqlite",
+  "matrix_database_host": "./src/__testData__/testMatrix.db",
   "database_vacuum_delay": 7200,
   "is_federated_identity_service": false,
   "key_delay": 3600,
@@ -14,8 +16,6 @@
   "template_dir": "./templates",
   "userdb_engine": "sqlite",
   "userdb_host": "./src/__testData__/test.db",
-  "matrix_database_engine": "sqlite",
-  "matrix_database_host": "./src/__testData__/testMatrix.db",
   "flows": [
     {
       "stages": ["m.login.dummy"]
