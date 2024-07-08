@@ -2,7 +2,11 @@
 import { getLogger, type TwakeLogger } from '@twake/logger'
 import sqlite3 from 'sqlite3'
 import { type Config } from '../types'
-import {type UserDBPg, type UserDBSQLite, UserDB}  from '@twake/matrix-identity-server'
+import {
+  type UserDBPg,
+  type UserDBSQLite,
+  UserDB
+} from '@twake/matrix-identity-server'
 
 const logger: TwakeLogger = getLogger()
 
@@ -19,9 +23,10 @@ const insertQuery2 =
 const matrixDbQueries = [
   'CREATE TABLE IF NOT EXISTS profiles( user_id TEXT NOT NULL, displayname TEXT, avatar_url TEXT, UNIQUE(user_id) )',
   'CREATE TABLE IF NOT EXISTS users( name TEXT, password_hash TEXT, creation_ts BIGINT, admin SMALLINT DEFAULT 0 NOT NULL, upgrade_ts BIGINT, is_guest SMALLINT DEFAULT 0 NOT NULL, appservice_id TEXT, consent_version TEXT, consent_server_notice_sent TEXT, user_type TEXT DEFAULT NULL, deactivated SMALLINT DEFAULT 0 NOT NULL, shadow_banned INT DEFAULT 0, consent_ts bigint, UNIQUE(name) )',
-  'CREATE TABLE user_ips ( user_id TEXT NOT NULL, access_token TEXT NOT NULL, device_id TEXT, ip TEXT NOT NULL, user_agent TEXT NOT NULL, last_seen BIGINT NOT NULL)',
-  'CREATE TABLE registration_tokens (token TEXT NOT NULL,  uses_allowed INT, pending INT NOT NULL,  completed INT NOT NULL, expiry_time BIGINT,UNIQUE (token))',
-  'CREATE TABLE IF NOT EXISTS "devices" (user_id TEXT NOT NULL, device_id TEXT NOT NULL, display_name TEXT, last_seen BIGINT, ip TEXT, user_agent TEXT, hidden BOOLEAN DEFAULT 0,CONSTRAINT device_uniqueness UNIQUE (user_id, device_id))'
+  'CREATE TABLE IF NOT EXISTS user_ips ( user_id TEXT NOT NULL, access_token TEXT NOT NULL, device_id TEXT, ip TEXT NOT NULL, user_agent TEXT NOT NULL, last_seen BIGINT NOT NULL)',
+  'CREATE TABLE IF NOT EXISTS registration_tokens (token TEXT NOT NULL,  uses_allowed INT, pending INT NOT NULL,  completed INT NOT NULL, expiry_time BIGINT,UNIQUE (token))',
+  'CREATE TABLE IF NOT EXISTS devices (user_id TEXT NOT NULL, device_id TEXT NOT NULL, display_name TEXT, last_seen BIGINT, ip TEXT, user_agent TEXT, hidden BOOLEAN DEFAULT 0,CONSTRAINT device_uniqueness UNIQUE (user_id, device_id))',
+  'CREATE TABLE IF NOT EXISTS account_data( user_id TEXT NOT NULL, account_data_type TEXT NOT NULL, stream_id BIGINT NOT NULL, content TEXT NOT NULL, instance_name TEXT, CONSTRAINT account_data_uniqueness UNIQUE (user_id, account_data_type))'
 ]
 
 // eslint-disable-next-line @typescript-eslint/promise-function-async
@@ -102,7 +107,7 @@ export const buildUserDB = (conf: Config): Promise<void> => {
 // eslint-disable-next-line @typescript-eslint/promise-function-async
 export const buildMatrixDb = (conf: Config): Promise<void> => {
   if (matrixDbCreated) return Promise.resolve()
-  const matrixDb = new sqlite3.Database(conf.matrix_database_host as string) 
+  const matrixDb = new sqlite3.Database(conf.matrix_database_host as string)
   return new Promise((resolve, reject) => {
     if (conf.matrix_database_engine === 'sqlite') {
       runQueries(matrixDb, matrixDbQueries, true)
