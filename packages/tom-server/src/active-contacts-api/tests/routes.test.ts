@@ -31,8 +31,8 @@ const idServer = new IdServer(
   {
     database_engine: 'sqlite',
     database_host: 'test.db',
-    rate_limiting_window: 10000,
-    rate_limiting_nb_requests: 100,
+    rate_limiting_window: 5000,
+    rate_limiting_nb_requests: 10,
     template_dir: './templates',
     userdb_host: './tokens.db'
   } as unknown as ConfigDescription,
@@ -110,29 +110,37 @@ describe('The active contacts API router', () => {
   it('should reject if rate limit is exceeded', async () => {
     let response
 
-    for (let i = 0; i < 101; i++) {
-      response = await supertest(app).get(PATH).set('Authorization', 'Bearer test')
+    for (let i = 0; i < 11; i++) {
+      response = await supertest(app)
+        .get(PATH)
+        .set('Authorization', 'Bearer test')
     }
 
     expect((response as unknown as Response).status).toEqual(429)
-    await new Promise((resolve) => setTimeout(resolve, 11000))
+    await new Promise((resolve) => setTimeout(resolve, 6000))
   })
 
   it('should not call the validation middleware if the Bearer token is not set', async () => {
-    const response = await supertest(app).get(PATH)
+    const response = await supertest(app).post(PATH).send({ contacts: 'test' })
 
     expect(response.status).toEqual(401)
     expect(middlewareSpy).not.toHaveBeenCalled()
   })
 
   it('should call the validation middleware if the Bearer token is set', async () => {
-    await supertest(app).get(PATH).set('Authorization', 'Bearer test')
+    await supertest(app)
+      .post(PATH)
+      .set('Authorization', 'Bearer test')
+      .send({ contacts: 'test' })
 
     expect(middlewareSpy).toHaveBeenCalled()
   })
 
   it('should call the validation middleware if the access_token is set in the query', async () => {
-    await supertest(app).get(PATH).query({ access_token: 'test' })
+    await supertest(app)
+      .post(PATH)
+      .query({ access_token: 'test' })
+      .send({ contact: 'test' })
 
     expect(middlewareSpy).toHaveBeenCalled()
   })
