@@ -25,11 +25,41 @@ export type Collections =
   | 'devices'
   | 'local_current_membership'
 
-
 type Get = (
   table: Collections,
-  fields?: string[],
-  filterFields?: Record<string, string | number | Array<string | number>>
+  fields: string[],
+  filterFields: Record<string, string | number | Array<string | number>>,
+  order?: string
+) => Promise<DbGetResult>
+type Get2 = (
+  table: Collections,
+  fields: string[],
+  filterFields1: Record<string, string | number | Array<string | number>>,
+  filterFields2: Record<string, string | number | Array<string | number>>,
+  order?: string
+) => Promise<DbGetResult>
+type GetJoin = (
+  tables: Array<Collections>,
+  fields: string[],
+  filterFields: Record<string, string | number | Array<string | number>>,
+  joinFields: Record<string, string>,
+  order?: string
+) => Promise<DbGetResult>
+type GetMax = (
+  table: Collections,
+  targetField: string,
+  fields: string[],
+  filterFields: Record<string, string | number | Array<string | number>>,
+  order?: string
+) => Promise<DbGetResult>
+type GetMaxJoin2 = (
+  tables: Array<Collections>,
+  targetField: string,
+  fields: string[],
+  filterFields1: Record<string, string | number | Array<string | number>>,
+  filterFields2: Record<string, string | number | Array<string | number>>,
+  joinFields: Record<string, string>,
+  order?: string
 ) => Promise<DbGetResult>
 
 type GetAll = (table: Collections, fields: string[]) => Promise<DbGetResult>
@@ -52,6 +82,11 @@ type DeleteEqual = (
 export interface MatrixDBmodifiedBackend {
   ready: Promise<void>
   get: Get
+  getJoin: GetJoin
+  getWhereEqualOrDifferent: Get2
+  getWhereEqualAndHigher: Get2
+  getMaxWhereEqual: GetMax
+  getMaxWhereEqualAndLowerJoin: GetMaxJoin2
   getAll: GetAll
   insert: Insert
   deleteEqual: DeleteEqual
@@ -98,14 +133,98 @@ class MatrixDBmodified implements MatrixDBmodifiedBackend {
     return this.db.getAll(table, fields)
   }
 
-  get = async (
+  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
+  get(
     table: Collections,
-    fields?: string[],
-    filterFields?: Record<string, string | number | Array<string | number>>
-  ): Promise<DbGetResult> => {
-    return await this.db.get(table, fields, filterFields)
+    fields: string[],
+    filterFields: Record<string, string | number | Array<string | number>>,
+    order?: string
+  ) {
+    return this.db.get(table, fields, filterFields, order)
   }
 
+  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
+  getJoin(
+    table: Array<Collections>,
+    fields: string[],
+    filterFields: Record<string, string | number | Array<string | number>>,
+    joinFields: Record<string, string>,
+    order?: string
+  ) {
+    return this.db.getJoin(table, fields, filterFields, joinFields, order)
+  }
+
+  //eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
+  getWhereEqualOrDifferent(
+    table: Collections,
+    fields: string[],
+    filterFields1: Record<string, string | number | Array<string | number>>,
+    filterFields2: Record<string, string | number | Array<string | number>>,
+    order?: string
+  ) {
+    return this.db.getWhereEqualOrDifferent(
+      table,
+      fields,
+      filterFields1,
+      filterFields2,
+      order
+    )
+  }
+
+  //eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
+  getWhereEqualAndHigher(
+    table: Collections,
+    fields: string[],
+    filterFields1: Record<string, string | number | Array<string | number>>,
+    filterFields2: Record<string, string | number | Array<string | number>>,
+    order?: string
+  ) {
+    return this.db.getWhereEqualAndHigher(
+      table,
+      fields,
+      filterFields1,
+      filterFields2,
+      order
+    )
+  }
+
+  //eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
+  getMaxWhereEqual(
+    table: Collections,
+    targetField: string,
+    fields: string[],
+    filterFields: Record<string, string | number | Array<string | number>>,
+    order?: string
+  ) {
+    return this.db.getMaxWhereEqual(
+      table,
+      targetField,
+      fields,
+      filterFields,
+      order
+    )
+  }
+
+  //eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
+  getMaxWhereEqualAndLowerJoin(
+    tables: Array<Collections>,
+    targetField: string,
+    fields: string[],
+    filterFields1: Record<string, string | number | Array<string | number>>,
+    filterFields2: Record<string, string | number | Array<string | number>>,
+    joinFields: Record<string, string>,
+    order?: string
+  ) {
+    return this.db.getMaxWhereEqualAndLowerJoin(
+      tables,
+      targetField,
+      fields,
+      filterFields1,
+      filterFields2,
+      joinFields,
+      order
+    )
+  }
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
   insert(table: Collections, values: Record<string, string | number>) {
     return this.db.insert(table, values)

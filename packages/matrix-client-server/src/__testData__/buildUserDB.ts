@@ -19,9 +19,11 @@ const insertQuery2 =
 const matrixDbQueries = [
   'CREATE TABLE IF NOT EXISTS profiles( user_id TEXT NOT NULL, displayname TEXT, avatar_url TEXT, UNIQUE(user_id) )',
   'CREATE TABLE IF NOT EXISTS users( name TEXT, password_hash TEXT, creation_ts BIGINT, admin SMALLINT DEFAULT 0 NOT NULL, upgrade_ts BIGINT, is_guest SMALLINT DEFAULT 0 NOT NULL, appservice_id TEXT, consent_version TEXT, consent_server_notice_sent TEXT, user_type TEXT DEFAULT NULL, deactivated SMALLINT DEFAULT 0 NOT NULL, shadow_banned INT DEFAULT 0, consent_ts bigint, UNIQUE(name) )',
-  'CREATE TABLE user_ips ( user_id TEXT NOT NULL, access_token TEXT NOT NULL, device_id TEXT, ip TEXT NOT NULL, user_agent TEXT NOT NULL, last_seen BIGINT NOT NULL)',
-  'CREATE TABLE registration_tokens (token TEXT NOT NULL,  uses_allowed INT, pending INT NOT NULL,  completed INT NOT NULL, expiry_time BIGINT,UNIQUE (token))',
-  'CREATE TABLE IF NOT EXISTS "devices" (user_id TEXT NOT NULL, device_id TEXT NOT NULL, display_name TEXT, last_seen BIGINT, ip TEXT, user_agent TEXT, hidden BOOLEAN DEFAULT 0,CONSTRAINT device_uniqueness UNIQUE (user_id, device_id))'
+  'CREATE TABLE IF NOT EXISTS user_ips ( user_id TEXT NOT NULL, access_token TEXT NOT NULL, device_id TEXT, ip TEXT NOT NULL, user_agent TEXT NOT NULL, last_seen BIGINT NOT NULL)',
+  'CREATE TABLE IF NOT EXISTS registration_tokens (token TEXT NOT NULL,  uses_allowed INT, pending INT NOT NULL,  completed INT NOT NULL, expiry_time BIGINT,UNIQUE (token))',
+  'CREATE TABLE IF NOT EXISTS "devices" (user_id TEXT NOT NULL, device_id TEXT NOT NULL, display_name TEXT, last_seen BIGINT, ip TEXT, user_agent TEXT, hidden BOOLEAN DEFAULT 0,CONSTRAINT device_uniqueness UNIQUE (user_id, device_id))',
+  'CREATE TABLE IF NOT EXISTS events( stream_ordering INTEGER PRIMARY KEY, topological_ordering BIGINT NOT NULL, event_id TEXT NOT NULL, type TEXT NOT NULL, room_id TEXT NOT NULL, content TEXT, unrecognized_keys TEXT, processed BOOL NOT NULL, outlier BOOL NOT NULL, depth BIGINT DEFAULT 0 NOT NULL, origin_server_ts BIGINT, received_ts BIGINT, sender TEXT, contains_url BOOLEAN, instance_name TEXT, state_key TEXT DEFAULT NULL, rejection_reason TEXT DEFAULT NULL, UNIQUE (event_id) )',
+  'CREATE TABLE IF NOT EXISTS room_memberships( event_id TEXT NOT NULL, user_id TEXT NOT NULL, sender TEXT NOT NULL, room_id TEXT NOT NULL, membership TEXT NOT NULL, forgotten INTEGER DEFAULT 0, display_name TEXT, avatar_url TEXT, UNIQUE (event_id) )'
 ]
 
 // eslint-disable-next-line @typescript-eslint/promise-function-async
