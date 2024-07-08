@@ -18,4 +18,3 @@
   "matrix_database_engine": "sqlite",
   "matrix_database_host": "./src/__testData__/testMatrix.db"
 }
-

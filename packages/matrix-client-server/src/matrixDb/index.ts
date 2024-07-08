@@ -25,6 +25,7 @@ export type Collections =
   | 'account_data'
   | 'devices'
   | 'local_current_membership'
+  | 'room_account_data'
 
 type Get = (
   table: Collections,

@@ -3,12 +3,12 @@ import {
   type IdentityServerDb,
   type Config as MIdentityServerConfig
 } from '@twake/matrix-identity-server'
-// import { type Policy } from '@twake/matrix-identity-server/dist/terms'
+import { type Policies } from '@twake/matrix-identity-server/dist/terms'
 
 export type Config = MIdentityServerConfig & {
-  flows: Array<Record<string, string[]>> // those two types will be changed later on
-  //  TODO : Correct typing
-  params: Record<string, any>
+  flows: flowContent
+  params: Record<string, { policies: Policies }> // For now, only Terms registration gives additional parameters in the request body so the params have this type.
+  // If another authentication type returns additional parameters, Policies needs to be changed to a more general type
 }
 
 export type DbGetResult = Array<

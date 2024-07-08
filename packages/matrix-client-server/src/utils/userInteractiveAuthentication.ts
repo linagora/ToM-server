@@ -70,7 +70,7 @@ const checkAuthentication = (
       return new Promise((resolve, reject) => {
         resolve() // Dummy authentication always succeeds
       })
-    case 'm.login.registration_token': // Only valid on the /register endpoint as per the spec
+    case 'm.login.registration_token': // Only valid on the /register endpoint as per the spec // TODO :
       return new Promise((resolve, reject) => {
         matrixDb
           .get(
