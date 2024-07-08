@@ -93,7 +93,6 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
           this.api.get = {
             '/_matrix/client/v3/account/whoami': whoami(this),
             '/_matrix/client/v3/admin/whois': whois(this),
-            '/_matrix/client/v3/register': badMethod
             '/_matrix/client/v3/register': badMethod,
             '/_matrix/client/v3/profile/:userId': getProfile(
               this.matrixDb,
@@ -111,7 +110,6 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
           this.api.post = {
             '/_matrix/client/v3/account/whoami': badMethod,
             '/_matrix/client/v3/admin/whois': badMethod,
-            '/_matrix/client/v3/register': register(this)
             '/_matrix/client/v3/register': register(this),
             '/_matrix/client/v3/profile/:userId': badMethod,
             '/_matrix/client/v3/profile/:userId/avatar_url': badMethod,
@@ -120,7 +118,6 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
           this.api.put = {
             '/_matrix/client/v3/account/whoami': badMethod,
             '/_matrix/client/v3/admin/whois': badMethod,
-            '/_matrix/client/v3/register': badMethod
             '/_matrix/client/v3/register': badMethod,
             '/_matrix/client/v3/profile/:userId': badMethod,
             '/_matrix/client/v3/profile/:userId/avatar_url':
