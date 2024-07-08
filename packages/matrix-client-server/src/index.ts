@@ -30,6 +30,8 @@ import whois from './admin/whois'
 import getAccountData from './user/account_data/getAccountData'
 import putAccountData from './user/account_data/putAccountData'
 import register from './register'
+import { getDevices, getDeviceInfo } from './devices/getDevices'
+import { changeDeviceName } from './devices/changeDevices'
 
 const tables = {
   ui_auth_sessions: 'session_id TEXT NOT NULL, stage_type TEXT NOT NULL'
@@ -109,7 +111,9 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
               this.logger
             ),
             '/_matrix/client/v3/user/:userId/account_data/:type':
-              getAccountData(this)
+              getAccountData(this),
+            '/_matrix/client/v3/devices': getDevices(this),
+            '/_matrix/client/v3/devices/:deviceId': getDeviceInfo(this)
           }
           this.api.post = {
             '/_matrix/client/v3/account/whoami': badMethod,
@@ -118,7 +122,9 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
             '/_matrix/client/v3/profile/:userId': badMethod,
             '/_matrix/client/v3/profile/:userId/avatar_url': badMethod,
             '/_matrix/client/v3/profile/:userId/displayname': badMethod,
-            '/_matrix/client/v3/user/:userId/account_data/:type': badMethod
+            '/_matrix/client/v3/user/:userId/account_data/:type': badMethod,
+            '/_matrix/client/v3/devices': badMethod,
+            '/_matrix/client/v3/devices/:deviceId': badMethod
           }
           this.api.put = {
             '/_matrix/client/v3/account/whoami': badMethod,
@@ -130,7 +136,9 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
             '/_matrix/client/v3/profile/:userId/displayname':
               changeDisplayname(this),
             '/_matrix/client/v3/user/:userId/account_data/:type':
-              putAccountData(this)
+              putAccountData(this),
+            '/_matrix/client/v3/devices': badMethod,
+            '/_matrix/client/v3/devices/:deviceId': changeDeviceName(this)
           }
           resolve(true)
         })
