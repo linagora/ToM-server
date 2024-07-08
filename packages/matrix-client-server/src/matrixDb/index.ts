@@ -297,6 +297,89 @@ class MatrixDBmodified implements MatrixDBmodifiedBackend {
   }
 
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
+  getJoin(
+    table: Collections[],
+    fields: string[],
+    filterFields: Record<string, string | number | Array<string | number>>,
+    joinFields: Record<string, string>,
+    order?: string
+  ) {
+    return this.db.getJoin(table, fields, filterFields, joinFields, order)
+  }
+
+  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
+  getWhereEqualOrDifferent(
+    table: Collections,
+    fields: string[],
+    filterFields1: Record<string, string | number | Array<string | number>>,
+    filterFields2: Record<string, string | number | Array<string | number>>,
+    order?: string
+  ) {
+    return this.db.getWhereEqualOrDifferent(
+      table,
+      fields,
+      filterFields1,
+      filterFields2,
+      order
+    )
+  }
+
+  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
+  getWhereEqualAndHigher(
+    table: Collections,
+    fields: string[],
+    filterFields1: Record<string, string | number | Array<string | number>>,
+    filterFields2: Record<string, string | number | Array<string | number>>,
+    order?: string
+  ) {
+    return this.db.getWhereEqualAndHigher(
+      table,
+      fields,
+      filterFields1,
+      filterFields2,
+      order
+    )
+  }
+
+  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
+  getMaxWhereEqual(
+    table: Collections,
+    targetField: string,
+    fields: string[],
+    filterFields: Record<string, string | number | Array<string | number>>,
+    order?: string
+  ) {
+    return this.db.getMaxWhereEqual(
+      table,
+      targetField,
+      fields,
+      filterFields,
+      order
+    )
+  }
+
+  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
+  getMaxWhereEqualAndLowerJoin(
+    tables: Collections[],
+    targetField: string,
+    fields: string[],
+    filterFields1: Record<string, string | number | Array<string | number>>,
+    filterFields2: Record<string, string | number | Array<string | number>>,
+    joinFields: Record<string, string>,
+    order?: string
+  ) {
+    return this.db.getMaxWhereEqualAndLowerJoin(
+      tables,
+      targetField,
+      fields,
+      filterFields1,
+      filterFields2,
+      joinFields,
+      order
+    )
+  }
+
+  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
   insert(table: Collections, values: Record<string, string | number>) {
     return this.db.insert(table, values)
   }
