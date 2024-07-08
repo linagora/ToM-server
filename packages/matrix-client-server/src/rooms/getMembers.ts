@@ -1,4 +1,4 @@
-import { errMsg } from '@twake/matrix-identity-server'
+import { errMsg, UserDB } from '@twake/matrix-identity-server'
 import MatrixClientServer from '..'
 import {
   epoch,
@@ -15,14 +15,23 @@ interface query_parameters {
   not_membership?: string
 }
 
-const createContent = (rows: any) => {
-  const content: { [key: string]: any } = {}
+const createChunk = (rows: any) => {
+  const chunk: ClientEvent[] = []
   for (const row of rows) {
-    if (content[row.user_id] !== undefined) {
-      content[row.user_id].push(row.membership)
-    }
+    chunk.push({
+      content: row.events_content,
+      event_id: row.events_event_id,
+      origin_server_ts: row.events_origin_server_ts,
+      room_id: row.events_room_id,
+      sender: row.events_sender,
+      type: row.events_type,
+      unsigned: {
+        age: epoch() - row.events_origin_server_ts,
+        membership: row.local_current_membership_membership
+      }
+    } as ClientEvent)
   }
-  return content
+  return chunk
 }
 
 const GetMembers = (ClientServer: MatrixClientServer): expressAppHandler => {
@@ -35,104 +44,92 @@ const GetMembers = (ClientServer: MatrixClientServer): expressAppHandler => {
     const params: query_parameters = (req as Request).query as query_parameters
     if (roomId.length != null) {
       ClientServer.authenticate(req, res, (data, id) => {
-        if (params.membership !== undefined) {
-          if (params.not_membership !== undefined) {
-            ClientServer.matrixDb
-              .getOrNot(
-                'local_current_membership',
-                ['user_id', 'membership'],
-                { membership: params.membership },
-                { membership: params.not_membership }
+        let userId = data.sub as string
+        // Check if the user is in the room
+        ClientServer.matrixDb
+          .get('local_current_membership', ['membership', 'event_id'], {
+            room_id: roomId,
+            user_id: userId
+          })
+          .then((rows) => {
+            if (rows.length === 0) {
+              send(
+                res,
+                403,
+                errMsg(
+                  'forbidden',
+                  'User has never been in the room - cannot retrieve members'
+                )
               )
-              .then((rows) => {
-                // TODO
-              })
-              .catch((err) => {
-                /* istanbul ignore next */
-                ClientServer.logger.error(err)
-                /* istanbul ignore next */
-                send(res, 500, errMsg('unknown', err))
-              })
-          } else {
-            ClientServer.matrixDb
-              .get('local_current_membership', ['user_id', 'membership'], {
-                room_id: roomId,
-                membership: params.membership
-              })
-              .then((rows) => {
-                if (rows.length === 0) {
-                  send(res, 404, errMsg('notFound', 'Members not found'))
-                  return
-                }
-                const content = createContent(rows)
-                const event_id = 'TODO'
-                const response: { [key: string]: [ClientEvent] } = {
-                  chunk: [
-                    {
-                      content: content,
-                      event_id: event_id,
-                      origin_server_ts: epoch(),
-                      room_id: roomId,
-                      sender: 'TODO',
-                      state_key: 'TODO',
-                      type: 'TODO',
-                      unsigned: {
-                        // TODO
-                      }
+              return
+            }
+            if (rows[0].membership === 'join') {
+              if (params.at) {
+                // Retrieve when the user joined the room
+                ClientServer.matrixDb
+                  .get('events', ['origin_server_ts'], {
+                    event_id: rows[0].event_id
+                  })
+                  .then((rows) => {
+                    if (rows.length === 0) {
+                      ClientServer.logger.error(
+                        'Event not found in events table despite being in local_current_membership'
+                      )
+                      send(res, 500, errMsg('unknown', 'Unexpected error'))
+                      return
                     }
-                  ]
-                }
-                send(res, 200, response)
-              })
-              .catch((err) => {
-                /* istanbul ignore next */
-                ClientServer.logger.error(err)
-                /* istanbul ignore next */
-                send(res, 500, errMsg('unknown', err))
-              })
-          }
-        } else {
-          if (params.not_membership !== undefined) {
-            // call to select where ... not equal ...
-            // send response
-          } else {
-            ClientServer.matrixDb
-              .get('local_current_membership', ['user_id', 'membership'], {
-                room_id: roomId
-              })
-              .then((rows) => {
-                if (rows.length === 0) {
-                  send(res, 404, errMsg('notFound', 'Members not found'))
-                  return
-                }
-                const content = createContent(rows)
-                const event_id = 'TODO'
-                const response: { [key: string]: [ClientEvent] } = {
-                  chunk: [
+                    let joinTs = rows[0].origin_server_ts
+                    // TODO CONTINUE THIS AFTER THE IMPLEMENTATION OF SYNC API AND MANAGEMENT OF PAGINATION TOKENS
+                  })
+                  .catch((err) => {
+                    /* istanbul ignore next */
+                    ClientServer.logger.error(err)
+                    /* istanbul ignore next */
+                    send(res, 500, errMsg('unknown', err))
+                  })
+              } else {
+                ClientServer.matrixDb
+                  .getWhereEqualOrDifferentJoin(
+                    ['local_current_membership', 'events'],
+                    [
+                      'local_current_membership.membership',
+                      'events.event_id',
+                      'events.content',
+                      'events.origin_server_ts',
+                      'events.room_id',
+                      'events.sender',
+                      'events.type'
+                    ],
                     {
-                      content: content,
-                      event_id: event_id,
-                      origin_server_ts: epoch(),
-                      room_id: roomId,
-                      sender: 'TODO',
-                      state_key: 'TODO',
-                      type: 'TODO',
-                      unsigned: {
-                        // TODO
-                      }
-                    }
-                  ]
-                }
-                send(res, 200, response)
-              })
-              .catch((err) => {
-                /* istanbul ignore next */
-                ClientServer.logger.error(err)
-                /* istanbul ignore next */
-                send(res, 500, errMsg('unknown', err))
-              })
-          }
-        }
+                      'local_current_membership.membership': params.membership,
+                      'local_current_membership.room_id': roomId
+                    },
+                    {
+                      'local_current_membership.membership':
+                        params.not_membership
+                    },
+                    { 'local_current_membership.event_id': 'events.event_id' }
+                  )
+                  .then((rows) => {
+                    let chunk = createChunk(rows)
+                    send(res, 200, { chunk: chunk })
+                  })
+                  .catch((err) => {
+                    /* istanbul ignore next */
+                    ClientServer.logger.error(err)
+                    /* istanbul ignore next */
+                    send(res, 500, errMsg('unknown', err))
+                  })
+              }
+            }
+            // TODO : add the case where the user is not in the room anymore
+          })
+          .catch((err) => {
+            /* istanbul ignore next */
+            ClientServer.logger.error(err)
+            /* istanbul ignore next */
+            send(res, 500, errMsg('unknown', err))
+          })
       })
     } else {
       send(res, 400, errMsg('missingParams'))
