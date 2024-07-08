@@ -21,6 +21,7 @@ import type { Config, ConfigurationFile, TwakeIdentityServer } from './types'
 import userInfoAPIRouter from './user-info-api'
 import VaultServer from './vault-api'
 import WellKnown from './wellKnown'
+import ActiveContacts from './active-contacts-api'
 
 export default class TwakeServer {
   conf: Config
@@ -141,12 +142,20 @@ export default class TwakeServer {
       this.logger
     )
 
+    const activeContactsApi = ActiveContacts(
+      this.idServer.db,
+      this.conf,
+      this.idServer.authenticate,
+      this.logger
+    )
+
     this.endpoints.use(privateNoteApi)
     this.endpoints.use(mutualRoolsApi)
     this.endpoints.use(vaultServer.endpoints)
     this.endpoints.use(roomTagsApi)
     this.endpoints.use(userInfoApi)
     this.endpoints.use(smsApi)
+    this.endpoints.use(activeContactsApi)
 
     if (
       this.conf.opensearch_is_activated != null &&
