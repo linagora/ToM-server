@@ -14,7 +14,6 @@ import defaultConfig from './__testData__/registerConf.json'
 import IdServer from './index'
 import { type Config } from './types'
 import { fillPoliciesDB } from './terms/index.post'
-
 jest.mock('node-fetch', () => jest.fn())
 const sendMailMock = jest.fn()
 jest.mock('nodemailer', () => ({
@@ -1584,9 +1583,9 @@ describe('_matrix/identity/v2/terms', () => {
     })
     const response2 = await request(app2)
       .post('/_matrix/identity/v2/terms')
-      .send({ user_accepts: policies.terms_of_service.en.url })
       .set('Accept', 'application/json')
       .set('Authorization', `Bearer ${validToken2}`)
+      .send({ user_accepts: policies.terms_of_service.en.url })
     expect(response2.statusCode).toBe(200)
     const response3 = await idServer2.db.get('userPolicies', ['accepted'], {
       user_id: userId,

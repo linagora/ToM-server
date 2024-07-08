@@ -25,6 +25,7 @@ export type Collections =
   | 'devices'
   | 'local_current_membership'
 
+
 type Get = (
   table: Collections,
   fields?: string[],
