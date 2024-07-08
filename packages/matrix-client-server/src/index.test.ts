@@ -948,5 +948,89 @@ describe('Use configuration file', () => {
         })
       })
     })
+
+    describe('/_matrix/client/v3/pushers', () => {
+      const testUserId = '@testuser:example.com'
+      const pushersData = {
+        id: 1,
+        app_display_name: 'Appy McAppface',
+        app_id: 'face.mcapp.appy.prod',
+        data: JSON.stringify({
+          url: 'https://example.com/_matrix/push/v1/notify'
+        }),
+        device_display_name: "Alice's Phone",
+        kind: 'http',
+        lang: 'en-US',
+        profile_tag: 'xyz',
+        pushkey: 'Xp/MzCt8/9DcSNE9cuiaoT5Ac55job3TdLSSmtmYl4A=',
+        ts: 123456789
+      }
+
+      beforeAll(async () => {
+        clientServer.matrixDb
+          .insert('pushers', { ...pushersData, user_name: testUserId })
+          .then(() => {
+            logger.info('Test user pusher created')
+          })
+          .catch((e) => {
+            logger.error('Error creating test user pusher:', e)
+          })
+      })
+
+      afterAll(async () => {
+        clientServer.matrixDb
+          .deleteEqual('pushers', 'user_name', testUserId)
+          .then(() => {
+            logger.info('Test user pusher deleted')
+          })
+          .catch((e) => {
+            logger.error('Error deleting test user pusher:', e)
+          })
+      })
+
+      it('should require authentication', async () => {
+        const response = await request(app)
+          .get('/_matrix/client/v3/pushers')
+          .set('Authorization', 'Bearer invalidToken')
+
+        expect(response.statusCode).toBe(401)
+      })
+
+      it('should send correct response with pushers data for the authenticated user', async () => {
+        const response = await request(app)
+          .get('/_matrix/client/v3/pushers')
+          .set('Authorization', `Bearer ${validToken}`)
+
+        expect(response.statusCode).toBe(200)
+        expect(response.body).toEqual({
+          pushers: [
+            {
+              app_display_name: 'Appy McAppface',
+              app_id: 'face.mcapp.appy.prod',
+              data: { url: 'https://example.com/_matrix/push/v1/notify' },
+              device_display_name: "Alice's Phone",
+              kind: 'http',
+              lang: 'en-US',
+              profile_tag: 'xyz',
+              pushkey: 'Xp/MzCt8/9DcSNE9cuiaoT5Ac55job3TdLSSmtmYl4A='
+            }
+          ]
+        })
+      })
+
+      it('should return an empty array if no pushers exist for the user', async () => {
+        await clientServer.matrixDb.deleteEqual(
+          'pushers',
+          'user_name',
+          testUserId
+        )
+        const response = await request(app)
+          .get('/_matrix/client/v3/pushers')
+          .set('Authorization', `Bearer ${validToken}`)
+
+        expect(response.statusCode).toBe(200)
+        expect(response.body).toEqual({ pushers: [] })
+      })
+    })
   })
 })

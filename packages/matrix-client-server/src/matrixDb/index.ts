@@ -24,7 +24,7 @@ export type Collections =
   | 'registration_tokens'
   | 'devices'
   | 'local_current_membership'
-
+  | 'pushers'
 
 type Get = (
   table: Collections,
