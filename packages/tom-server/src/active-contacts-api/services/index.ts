@@ -27,7 +27,7 @@ class ActiveContactsService implements IActiveContactsService {
   public get = async (userId: string): Promise<string | null> => {
     try {
       const ActiveContacts = (await this.db.get(
-        'ActiveContacts' as Collections,
+        'activeContacts' as Collections,
         ['contacts'],
         { userId }
       )) as unknown as ActiveAcountsData[]
@@ -55,7 +55,7 @@ class ActiveContactsService implements IActiveContactsService {
    */
   save = async (userId: string, contacts: string): Promise<void> => {
     try {
-      await this.db.insert('ActiveContacts' as Collections, {
+      await this.db.insert('activeContacts' as Collections, {
         userId,
         contacts
       })
@@ -77,7 +77,7 @@ class ActiveContactsService implements IActiveContactsService {
   delete = async (userId: string): Promise<void> => {
     try {
       await this.db.deleteEqual(
-        'ActiveContacts' as Collections,
+        'activeContacts' as Collections,
         'userId',
         userId
       )
