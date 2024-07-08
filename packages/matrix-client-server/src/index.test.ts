@@ -2375,5 +2375,222 @@ describe('Use configuration file', () => {
         expect(rows[0].displayname).toBe('New name')
       })
     })
+    describe('/_matrix/client/v3/devices', () => {
+      const testUserId = '@testuser:example.com'
+
+      beforeAll(async () => {
+        clientServer.matrixDb
+          .insert('devices', {
+            user_id: testUserId,
+            device_id: 'testdevice1',
+            display_name: 'Test Device 1',
+            last_seen: 1411996332123,
+            ip: '127.0.0.1',
+            user_agent: 'curl/7.31.0-DEV'
+          })
+          .then(() => {
+            clientServer.matrixDb
+              .insert('devices', {
+                user_id: testUserId,
+                device_id: 'testdevice2',
+                display_name: 'Test Device 2',
+                last_seen: 14119963321254,
+                ip: '127.0.0.2',
+                user_agent: 'curl/7.31.0-DEV'
+              })
+              .then(() => {
+                logger.info('Test device 2 created')
+              })
+              .catch((e) => {
+                logger.error('Error creating test 2 device:', e)
+              })
+            logger.info('Test device 1 created')
+          })
+          .catch((e) => {
+            logger.error('Error creating test 1 device:', e)
+          })
+      })
+
+      afterAll(async () => {
+        clientServer.matrixDb
+          .deleteEqual('devices', 'device_id', 'testdevice1')
+          .then(() => {
+            clientServer.matrixDb
+              .deleteEqual('devices', 'device_id', 'testdevice2')
+              .then(() => {
+                logger.info('Test device 2 deleted')
+              })
+              .catch((e) => {
+                logger.error('Error deleting test device 2:', e)
+              })
+            logger.info('Test device 1 deleted')
+          })
+          .catch((e) => {
+            logger.error('Error deleting test device 1:', e)
+          })
+      })
+
+      it('should return 401 if the user is not authenticated', async () => {
+        const response = await request(app)
+          .get('/_matrix/client/v3/devices')
+          .set('Authorization', 'Bearer invalidToken')
+
+        expect(response.statusCode).toBe(401)
+      })
+
+      it('should return all devices for the current user', async () => {
+        const response = await request(app)
+          .get('/_matrix/client/v3/devices')
+          .set('Authorization', `Bearer ${validToken}`)
+
+        expect(response.statusCode).toBe(200)
+
+        expect(response.body).toHaveProperty('devices')
+        expect(response.body.devices).toHaveLength(2)
+        expect(response.body.devices[0]).toHaveProperty('device_id')
+        expect(response.body.devices[0]).toHaveProperty('display_name')
+        expect(response.body.devices[0]).toHaveProperty('last_seen_ts')
+        expect(response.body.devices[0]).toHaveProperty('last_seen_ip')
+      })
+    })
+
+    describe('/_matrix/client/v3/devices/:deviceId', () => {
+      // eslint-disable-next-line @typescript-eslint/naming-convention
+      let _device_id: string
+      beforeAll(async () => {
+        _device_id = 'testdevice2_id'
+        await clientServer.matrixDb
+          .insert('devices', {
+            user_id: '@testuser:example.com',
+            device_id: _device_id,
+            display_name: 'testdevice2_name',
+            last_seen: 12345678,
+            ip: '127.0.0.1',
+            user_agent: 'curl/7.31.0-DEV',
+            hidden: 0
+          })
+          .then(() => {
+            logger.info('device inserted in db')
+          })
+          .catch((e) => {
+            logger.error('error when inserting device', e)
+          })
+        await clientServer.matrixDb
+          .insert('devices', {
+            user_id: '@testuser2:example.com',
+            device_id: 'another_device_id',
+            display_name: 'another_name',
+            last_seen: 12345678,
+            ip: '127.0.0.1',
+            user_agent: 'curl/7.31.0-DEV',
+            hidden: 0
+          })
+          .then(() => {
+            logger.info('another device inserted in db')
+          })
+          .catch((e) => {
+            logger.error('error when inserting another device', e)
+          })
+      })
+
+      describe('GET /_matrix/client/v3/devices/:deviceId', () => {
+        it('should return the device information for the given device ID', async () => {
+          const response = await request(app)
+            .get(`/_matrix/client/v3/devices/${_device_id}`)
+            .set('Authorization', `Bearer ${validToken}`)
+
+          expect(response.statusCode).toBe(200)
+
+          expect(response.body).toHaveProperty('device_id')
+          expect(response.body.device_id).toEqual(_device_id)
+          expect(response.body).toHaveProperty('display_name')
+          expect(response.body.display_name).toEqual('testdevice2_name')
+          expect(response.body).toHaveProperty('last_seen_ip')
+          expect(response.body.last_seen_ip).toEqual('127.0.0.1')
+          expect(response.body).toHaveProperty('last_seen_ts')
+          expect(response.body.last_seen_ts).toEqual(12345678)
+        })
+
+        it('should return 404 if the device ID does not exist', async () => {
+          const deviceId = 'NON_EXISTENT_DEVICE_ID'
+          const response = await request(app)
+            .get(`/_matrix/client/v3/devices/${deviceId}`)
+            .set('Authorization', `Bearer ${validToken}`)
+
+          expect(response.statusCode).toBe(404)
+        })
+
+        it('should return 404 if the user has no device with the given device Id', async () => {
+          const response = await request(app)
+            .get(`/_matrix/client/v3/devices/another_device_id`)
+            .set('Authorization', `Bearer ${validToken}`)
+
+          expect(response.statusCode).toBe(404)
+        })
+
+        it('should return 401 if the user is not authenticated', async () => {
+          const response = await request(app).get(
+            `/_matrix/client/v3/devices/${_device_id}`
+          )
+
+          expect(response.statusCode).toBe(401)
+        })
+      })
+
+      describe('PUT /_matrix/client/v3/devices/:deviceId', () => {
+        const updateData = {
+          display_name: 'updated_device_name'
+        }
+
+        it('should update the device information for the given device ID', async () => {
+          // Update the device
+          const response = await request(app)
+            .put(`/_matrix/client/v3/devices/${_device_id}`)
+            .set('Authorization', `Bearer ${validToken}`)
+            .send(updateData)
+          expect(response.statusCode).toBe(200)
+
+          // Verify the update in the database
+          const updatedDevice = await clientServer.matrixDb.get(
+            'devices',
+            ['device_id', 'display_name'],
+            { device_id: _device_id }
+          )
+
+          expect(updatedDevice[0]).toHaveProperty('device_id', _device_id)
+          expect(updatedDevice[0]).toHaveProperty(
+            'display_name',
+            updateData.display_name
+          )
+        })
+
+        it('should return 404 if the device ID does not exist', async () => {
+          const response = await request(app)
+            .put('/_matrix/client/v3/devices/NON_EXISTENT_DEVICE_ID')
+            .set('Authorization', `Bearer ${validToken}`)
+            .send(updateData)
+
+          expect(response.statusCode).toBe(404)
+        })
+
+        it('should return 404 if the user has no device with the given device ID', async () => {
+          const deviceId = 'another_device_id'
+          const response = await request(app)
+            .put(`/_matrix/client/v3/devices/${deviceId}`)
+            .set('Authorization', `Bearer ${validToken}`)
+            .send(updateData)
+
+          expect(response.statusCode).toBe(404)
+        })
+
+        it('should return 401 if the user is not authenticated', async () => {
+          const response = await request(app)
+            .put(`/_matrix/client/v3/devices/${_device_id}`)
+            .send(updateData)
+
+          expect(response.statusCode).toBe(401)
+        })
+      })
+    })
   })
 })
