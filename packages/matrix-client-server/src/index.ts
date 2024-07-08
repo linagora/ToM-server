@@ -27,6 +27,8 @@ import {
 import { changeAvatarUrl, changeDisplayname } from './profiles/changeProfiles'
 import whoami from './account/whoami'
 import whois from './admin/whois'
+import getAccountData from './user/account_data/getAccountData'
+import putAccountData from './user/account_data/putAccountData'
 import register from './register'
 import { getDevices, getDeviceInfo } from './devices/getDevices'
 import { changeDeviceName } from './devices/changeDevices'
@@ -109,6 +111,8 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
               this.matrixDb,
               this.logger
             ),
+            '/_matrix/client/v3/user/:userId/account_data/:type':
+              getAccountData(this),
             '/_matrix/client/v3/devices': getDevices(this),
             '/_matrix/client/v3/devices/:deviceId': getDeviceInfo(this),
             '/_matrix/client/v3/rooms/:roomId/event/:eventId': GetEventId(this)
@@ -120,6 +124,7 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
             '/_matrix/client/v3/profile/:userId': badMethod,
             '/_matrix/client/v3/profile/:userId/avatar_url': badMethod,
             '/_matrix/client/v3/profile/:userId/displayname': badMethod,
+            '/_matrix/client/v3/user/:userId/account_data/:type': badMethod,
             '/_matrix/client/v3/devices': badMethod,
             '/_matrix/client/v3/devices/:deviceId': badMethod,
             '/_matrix/client/v3/rooms/:roomId/event/:eventId': badMethod
@@ -133,6 +138,8 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
               changeAvatarUrl(this),
             '/_matrix/client/v3/profile/:userId/displayname':
               changeDisplayname(this),
+            '/_matrix/client/v3/user/:userId/account_data/:type':
+              putAccountData(this),
             '/_matrix/client/v3/devices': badMethod,
             '/_matrix/client/v3/devices/:deviceId': changeDeviceName(this),
             '/_matrix/client/v3/rooms/:roomId/event/:eventId': badMethod
