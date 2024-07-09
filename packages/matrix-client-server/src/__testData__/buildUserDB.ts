@@ -31,7 +31,11 @@ const matrixDbQueries = [
   'CREATE TABLE IF NOT EXISTS account_data( user_id TEXT NOT NULL, account_data_type TEXT NOT NULL, stream_id BIGINT NOT NULL, content TEXT NOT NULL, instance_name TEXT, CONSTRAINT account_data_uniqueness UNIQUE (user_id, account_data_type))',
   'CREATE TABLE IF NOT EXISTS room_account_data( user_id TEXT NOT NULL, room_id TEXT NOT NULL, account_data_type TEXT NOT NULL, stream_id BIGINT NOT NULL, content TEXT NOT NULL, instance_name TEXT, CONSTRAINT room_account_data_uniqueness UNIQUE (user_id, room_id, account_data_type) )',
   'CREATE TABLE IF NOT EXISTS profiles( user_id TEXT NOT NULL, displayname TEXT, avatar_url TEXT, UNIQUE(user_id) )',
-  'CREATE TABLE IF NOT EXISTS local_current_membership (room_id TEXT NOT NULL, user_id TEXT NOT NULL, event_id TEXT NOT NULL, membership TEXT NOT NULL)'
+  'CREATE TABLE IF NOT EXISTS local_current_membership (room_id TEXT NOT NULL, user_id TEXT NOT NULL, event_id TEXT NOT NULL, membership TEXT NOT NULL)',
+  'CREATE TABLE IF NOT EXISTS room_stats_state (room_id TEXT NOT NULL,name TEXT,canonical_alias TEXT,join_rules TEXT,history_visibility TEXT,encryption TEXT,avatar TEXT,guest_access TEXT,is_federatable BOOLEAN,topic TEXT, room_type TEXT)',
+  'CREATE TABLE IF NOT EXISTS room_aliases( room_alias TEXT NOT NULL, room_id TEXT NOT NULL, creator TEXT, UNIQUE (room_alias) )',
+  'CREATE TABLE IF NOT EXISTS rooms( room_id TEXT PRIMARY KEY NOT NULL, is_public BOOL, creator TEXT , room_version TEXT, has_auth_chain_index BOOLEAN)',
+  'CREATE TABLE IF NOT EXISTS room_tags( user_id TEXT NOT NULL, room_id TEXT NOT NULL, tag TEXT NOT NULL, content TEXT NOT NULL, CONSTRAINT room_tag_uniqueness UNIQUE (user_id, room_id, tag) )',
 ]
 
 // eslint-disable-next-line @typescript-eslint/promise-function-async
