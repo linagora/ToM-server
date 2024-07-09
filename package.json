@@ -65,6 +65,7 @@
     "@types/validator": "^13.11.7",
     "@typescript-eslint/eslint-plugin": "^5.54.1",
     "docker-compose": "^0.24.3",
+    "esbuild": "^0.20.2",
     "eslint": "^8.35.0",
     "eslint-config-prettier": "^8.8.0",
     "eslint-config-standard-with-typescript": "^34.0.0",
@@ -94,7 +95,7 @@
     "typescript": "^4.9.5"
   },
   "optionalDependencies": {
-    "@esbuild/darwin-arm64": "^0.23.0",
-    "@nx/nx-darwin-arm64": "^19.4.0"
+    "@nx/nx-darwin-arm64": "^19.4.0",
+    "@nx/nx-linux-x64-gnu": "^19.4.0"
   }
 }
