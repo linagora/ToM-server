@@ -34,7 +34,7 @@ import putRoomAccountData from './user/rooms/putRoomAccountData'
 import register from './register'
 import { getDevices, getDeviceInfo } from './devices/getDevices'
 import { changeDeviceName } from './devices/changeDevices'
-import GetEventId from './rooms/{roomId}/getEventId'
+import GetEventId from './rooms/roomId/getEventId'
 
 const tables = {
   ui_auth_sessions: 'session_id TEXT NOT NULL, stage_type TEXT NOT NULL'
