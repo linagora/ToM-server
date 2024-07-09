@@ -2488,116 +2488,116 @@ describe('Use configuration file', () => {
         expect(response2.body['m.room.message']).toBe('updated content')
       })
     })
-  })
+    describe('PUT /_matrix/client/v3/profile/{userId}', () => {
+      const testUserId = '@testuser:example.com'
 
-  describe('PUT /_matrix/client/v3/profile/{userId}', () => {
-    const testUserId = '@testuser:example.com'
-
-    beforeEach(async () => {
-      clientServer.matrixDb
-        .insert('profiles', {
-          user_id: testUserId,
-          displayname: 'Test User',
-          avatar_url: 'http://example.com/avatar.jpg'
-        })
-        .then(() => {
+      beforeAll(async () => {
+        try {
+          await clientServer.matrixDb.insert('profiles', {
+            user_id: testUserId,
+            displayname: 'Test User',
+            avatar_url: 'http://example.com/avatar.jpg'
+          })
           logger.info('Test user profile created')
-        })
-        .catch((e) => {
+        } catch (e) {
           logger.error('Error creating test user profile:', e)
-        })
-    })
+        }
+      })
 
-    afterEach(async () => {
-      clientServer.matrixDb
-        .deleteEqual('profiles', 'user_id', testUserId)
-        .then(() => {
+      afterAll(async () => {
+        try {
+          await clientServer.matrixDb.deleteEqual(
+            'profiles',
+            'user_id',
+            testUserId
+          )
           logger.info('Test user profile deleted')
-        })
-        .catch((e) => {
+        } catch (e) {
           logger.error('Error deleting test user profile:', e)
+        }
+      })
+
+      describe('/_matrix/client/v3/profile/{userId}/avatar_url', () => {
+        it('should require authentication', async () => {
+          await clientServer.cronTasks?.ready
+          const response = await request(app)
+            .put(`/_matrix/client/v3/profile/${testUserId}/avatar_url`)
+            .set('Authorization', 'Bearer invalidToken')
+            .set('Accept', 'application/json')
+          expect(response.statusCode).toBe(401)
         })
-    })
 
-    describe('/_matrix/client/v3/profile/{userId}/avatar_url', () => {
-      it('should require authentication', async () => {
-        await clientServer.cronTasks?.ready
-        const response = await request(app)
-          .put(`/_matrix/client/v3/profile/${testUserId}/avatar_url`)
-          .set('Authorization', 'Bearer invalidToken')
-          .set('Accept', 'application/json')
-        expect(response.statusCode).toBe(401)
+        it('should send correct response when updating the avatar_url of an existing user', async () => {
+          const response = await request(app)
+            .put(`/_matrix/client/v3/profile/${testUserId}/avatar_url`)
+            .set('Authorization', `Bearer ${validToken}`)
+            .send({ avatar_url: 'http://example.com/new_avatar.jpg' })
+
+          expect(response.statusCode).toBe(200)
+          expect(response.body).toEqual({})
+        })
+
+        it('should correctly update the avatar_url of an existing user', async () => {
+          const response = await request(app)
+            .put(`/_matrix/client/v3/profile/${testUserId}/avatar_url`)
+            .set('Authorization', `Bearer ${validToken}`)
+            .send({ avatar_url: 'http://example.com/new_avatar.jpg' })
+          expect(response.statusCode).toBe(200)
+          const rows = await clientServer.matrixDb.get(
+            'profiles',
+            ['avatar_url'],
+            { user_id: testUserId }
+          )
+
+          expect(rows.length).toBe(1)
+          expect(rows[0].avatar_url).toBe('http://example.com/new_avatar.jpg')
+        })
       })
 
-      it('should send correct response when updating the avatar_url of an existing user', async () => {
-        const response = await request(app)
-          .put(`/_matrix/client/v3/profile/${testUserId}/avatar_url`)
-          .set('Authorization', `Bearer ${validToken}`)
-          .send({ avatar_url: 'http://example.com/new_avatar.jpg' })
+      describe('/_matrix/client/v3/profile/{userId}/displayname', () => {
+        it('should require authentication', async () => {
+          await clientServer.cronTasks?.ready
+          const response = await request(app)
+            .put(`/_matrix/client/v3/profile/${testUserId}/displayname`)
+            .set('Authorization', 'Bearer invalidToken')
+            .set('Accept', 'application/json')
+          expect(response.statusCode).toBe(401)
+        })
 
-        expect(response.statusCode).toBe(200)
-        expect(response.body).toEqual({})
-      })
+        it('should send correct response when updating the display_name of an existing user', async () => {
+          const response = await request(app)
+            .put(`/_matrix/client/v3/profile/${testUserId}/displayname`)
+            .set('Authorization', `Bearer ${validToken}`)
+            .send({ displayname: 'New name' })
 
-      it('should correctly update the avatar_url of an existing user', async () => {
-        const response = await request(app)
-          .put(`/_matrix/client/v3/profile/${testUserId}/avatar_url`)
-          .set('Authorization', `Bearer ${validToken}`)
-          .send({ avatar_url: 'http://example.com/new_avatar.jpg' })
-        expect(response.statusCode).toBe(200)
-        const rows = await clientServer.matrixDb.get(
-          'profiles',
-          ['avatar_url'],
-          { user_id: testUserId }
-        )
+          expect(response.statusCode).toBe(200)
+          expect(response.body).toEqual({})
+        })
 
-        expect(rows.length).toBe(1)
-        expect(rows[0].avatar_url).toBe('http://example.com/new_avatar.jpg')
-      })
-    })
+        it('should correctly update the display_name of an existing user', async () => {
+          const response = await request(app)
+            .put(`/_matrix/client/v3/profile/${testUserId}/displayname`)
+            .set('Authorization', `Bearer ${validToken}`)
+            .send({ displayname: 'New name' })
+          expect(response.statusCode).toBe(200)
+          const rows = await clientServer.matrixDb.get(
+            'profiles',
+            ['displayname'],
+            { user_id: testUserId }
+          )
 
-    describe('/_matrix/client/v3/profile/{userId}/displayname', () => {
-      it('should require authentication', async () => {
-        await clientServer.cronTasks?.ready
-        const response = await request(app)
-          .put(`/_matrix/client/v3/profile/${testUserId}/displayname`)
-          .set('Authorization', 'Bearer invalidToken')
-          .set('Accept', 'application/json')
-        expect(response.statusCode).toBe(401)
-      })
-
-      it('should send correct response when updating the display_name of an existing user', async () => {
-        const response = await request(app)
-          .put(`/_matrix/client/v3/profile/${testUserId}/displayname`)
-          .set('Authorization', `Bearer ${validToken}`)
-          .send({ displayname: 'New name' })
-
-        expect(response.statusCode).toBe(200)
-        expect(response.body).toEqual({})
-      })
-
-      it('should correctly update the display_name of an existing user', async () => {
-        const response = await request(app)
-          .put(`/_matrix/client/v3/profile/${testUserId}/displayname`)
-          .set('Authorization', `Bearer ${validToken}`)
-          .send({ displayname: 'New name' })
-        expect(response.statusCode).toBe(200)
-        const rows = await clientServer.matrixDb.get(
-          'profiles',
-          ['displayname'],
-          { user_id: testUserId }
-        )
-
-        expect(rows.length).toBe(1)
-        expect(rows[0].displayname).toBe('New name')
+          expect(rows.length).toBe(1)
+          expect(rows[0].displayname).toBe('New name')
+        })
       })
     })
+
     describe('/_matrix/client/v3/devices', () => {
       const testUserId = '@testuser:example.com'
 
       beforeAll(async () => {
-        clientServer.matrixDb
-          .insert('devices', {
+        try {
+          await clientServer.matrixDb.insert('devices', {
             user_id: testUserId,
             device_id: 'testdevice1',
             display_name: 'Test Device 1',
@@ -2605,46 +2605,40 @@ describe('Use configuration file', () => {
             ip: '127.0.0.1',
             user_agent: 'curl/7.31.0-DEV'
           })
-          .then(() => {
-            clientServer.matrixDb
-              .insert('devices', {
-                user_id: testUserId,
-                device_id: 'testdevice2',
-                display_name: 'Test Device 2',
-                last_seen: 14119963321254,
-                ip: '127.0.0.2',
-                user_agent: 'curl/7.31.0-DEV'
-              })
-              .then(() => {
-                logger.info('Test device 2 created')
-              })
-              .catch((e) => {
-                logger.error('Error creating test 2 device:', e)
-              })
-            logger.info('Test device 1 created')
+          logger.info('Test device 1 created')
+
+          await clientServer.matrixDb.insert('devices', {
+            user_id: testUserId,
+            device_id: 'testdevice2',
+            display_name: 'Test Device 2',
+            last_seen: 14119963321254,
+            ip: '127.0.0.2',
+            user_agent: 'curl/7.31.0-DEV'
           })
-          .catch((e) => {
-            logger.error('Error creating test 1 device:', e)
-          })
+          logger.info('Test device 2 created')
+        } catch (e) {
+          logger.error('Error creating devices:', e)
+        }
       })
 
       afterAll(async () => {
-        clientServer.matrixDb
-          .deleteEqual('devices', 'device_id', 'testdevice1')
-          .then(() => {
-            clientServer.matrixDb
-              .deleteEqual('devices', 'device_id', 'testdevice2')
-              .then(() => {
-                logger.info('Test device 2 deleted')
-              })
-              .catch((e) => {
-                logger.error('Error deleting test device 2:', e)
-              })
-            logger.info('Test device 1 deleted')
-          })
-          .catch((e) => {
-            logger.error('Error deleting test device 1:', e)
-          })
+        try {
+          await clientServer.matrixDb.deleteEqual(
+            'devices',
+            'device_id',
+            'testdevice1'
+          )
+          logger.info('Test device 1 deleted')
+
+          await clientServer.matrixDb.deleteEqual(
+            'devices',
+            'device_id',
+            'testdevice2'
+          )
+          logger.info('Test device 2 deleted')
+        } catch (e) {
+          logger.error('Error deleting devices:', e)
+        }
       })
 
       it('should return 401 if the user is not authenticated', async () => {
@@ -2675,9 +2669,9 @@ describe('Use configuration file', () => {
       // eslint-disable-next-line @typescript-eslint/naming-convention
       let _device_id: string
       beforeAll(async () => {
-        _device_id = 'testdevice2_id'
-        await clientServer.matrixDb
-          .insert('devices', {
+        try {
+          _device_id = 'testdevice2_id'
+          await clientServer.matrixDb.insert('devices', {
             user_id: '@testuser:example.com',
             device_id: _device_id,
             display_name: 'testdevice2_name',
@@ -2686,14 +2680,8 @@ describe('Use configuration file', () => {
             user_agent: 'curl/7.31.0-DEV',
             hidden: 0
           })
-          .then(() => {
-            logger.info('device inserted in db')
-          })
-          .catch((e) => {
-            logger.error('error when inserting device', e)
-          })
-        await clientServer.matrixDb
-          .insert('devices', {
+
+          await clientServer.matrixDb.insert('devices', {
             user_id: '@testuser2:example.com',
             device_id: 'another_device_id',
             display_name: 'another_name',
@@ -2702,12 +2690,28 @@ describe('Use configuration file', () => {
             user_agent: 'curl/7.31.0-DEV',
             hidden: 0
           })
-          .then(() => {
-            logger.info('another device inserted in db')
-          })
-          .catch((e) => {
-            logger.error('error when inserting another device', e)
-          })
+          logger.info('Devices inserted in db')
+        } catch (e) {
+          logger.error('Error when inserting devices', e)
+        }
+      })
+
+      afterAll(async () => {
+        try {
+          await clientServer.matrixDb.deleteEqual(
+            'devices',
+            'device_id',
+            _device_id
+          )
+          await clientServer.matrixDb.deleteEqual(
+            'devices',
+            'device_id',
+            'another_device_id'
+          )
+          logger.info('Devices deleted from db')
+        } catch (e) {
+          logger.error('Error when deleting devices', e)
+        }
       })
 
       describe('GET /_matrix/client/v3/devices/:deviceId', () => {
@@ -3584,4 +3588,5 @@ describe('Use configuration file', () => {
       })
     })
   })
+})
 })
