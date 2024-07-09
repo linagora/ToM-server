@@ -34,19 +34,19 @@ services:
       - ./nginx/ssl/9da13359.0:/etc/ssl/certs/9da13359.0
     depends_on:
       - auth
-    environment: 
+    environment:
       - UID=${MYUID}
       - VIRTUAL_PORT=8008
       - VIRTUAL_HOST=matrix.example.com
     healthcheck:
-      test: ["CMD", "curl", "-fSs", "http://localhost:8008/health"]
+      test: ['CMD', 'curl', '-fSs', 'http://localhost:8008/health']
       interval: 10s
       timeout: 10s
       retries: 3
     networks:
       - twake_chat
     extra_hosts:
-      - "host.docker.internal:host-gateway"
+      - 'host.docker.internal:host-gateway'
 
   auth:
     image: yadd/lemonldap-ng-portal:2.16.1-bullseye
@@ -72,7 +72,7 @@ services:
       - 21390:389
     networks:
       - twake_chat
-  
+
   # opensearchdashboard:
   #   image: opensearchproject/opensearch-dashboards
   #   ports:
@@ -84,7 +84,7 @@ services:
   #     - DISABLE_SECURITY_DASHBOARDS_PLUGIN=true
   #   networks:
   #     - twake_chat
-  
+
   nginx-proxy:
     image: nginxproxy/nginx-proxy
     container_name: nginx-proxy-tom
