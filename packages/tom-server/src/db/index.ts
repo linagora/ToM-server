@@ -20,7 +20,8 @@ const initializeDb = (server: TwakeServer): Promise<void> => {
               roomTags:
                 'id varchar(64) PRIMARY KEY, authorId varchar(64), content text, roomId varchar(64)',
               userQuotas: 'user_id varchar(64) PRIMARY KEY, size int',
-              rooms: 'id varchar(64) PRIMARY KEY, filter varchar(64)'
+              rooms: 'id varchar(64) PRIMARY KEY, filter varchar(64)',
+              activeContacts: 'userId text PRIMARY KEY, contacts text'
             },
             {},
             {},
