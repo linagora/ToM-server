@@ -34,7 +34,8 @@ import putRoomAccountData from './user/rooms/putRoomAccountData'
 import register from './register'
 import { getDevices, getDeviceInfo } from './devices/getDevices'
 import { changeDeviceName } from './devices/changeDevices'
-import GetEventId from './rooms/{roomId}/getEventId'
+import GetEventId from './rooms/roomId/getEventId'
+import GetJoinedMembers from './rooms/roomId/getJoinedMembers'
 
 const tables = {
   ui_auth_sessions: 'session_id TEXT NOT NULL, stage_type TEXT NOT NULL'
@@ -119,7 +120,9 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
               getRoomAccountData(this),
             '/_matrix/client/v3/devices': getDevices(this),
             '/_matrix/client/v3/devices/:deviceId': getDeviceInfo(this),
-            '/_matrix/client/v3/rooms/:roomId/event/:eventId': GetEventId(this)
+            '/_matrix/client/v3/rooms/:roomId/event/:eventId': GetEventId(this),
+            '/_matrix/client/v3/rooms/:roomId/joined_members':
+              GetJoinedMembers(this)
           }
           this.api.post = {
             '/_matrix/client/v3/account/whoami': badMethod,
@@ -133,7 +136,8 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
               badMethod,
             '/_matrix/client/v3/devices': badMethod,
             '/_matrix/client/v3/devices/:deviceId': badMethod,
-            '/_matrix/client/v3/rooms/:roomId/event/:eventId': badMethod
+            '/_matrix/client/v3/rooms/:roomId/event/:eventId': badMethod,
+            '/_matrix/client/v3/rooms/:roomId/joined_members': badMethod
           }
           this.api.put = {
             '/_matrix/client/v3/account/whoami': badMethod,
@@ -150,7 +154,8 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
               putRoomAccountData(this),
             '/_matrix/client/v3/devices': badMethod,
             '/_matrix/client/v3/devices/:deviceId': changeDeviceName(this),
-            '/_matrix/client/v3/rooms/:roomId/event/:eventId': badMethod
+            '/_matrix/client/v3/rooms/:roomId/event/:eventId': badMethod,
+            '/_matrix/client/v3/rooms/:roomId/joined_members': badMethod
           }
           resolve(true)
         })

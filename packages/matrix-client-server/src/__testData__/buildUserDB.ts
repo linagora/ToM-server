@@ -29,7 +29,9 @@ const matrixDbQueries = [
   'CREATE TABLE IF NOT EXISTS room_memberships( event_id TEXT NOT NULL, user_id TEXT NOT NULL, sender TEXT NOT NULL, room_id TEXT NOT NULL, membership TEXT NOT NULL, forgotten INTEGER DEFAULT 0, display_name TEXT, avatar_url TEXT, UNIQUE (event_id) )',
   'CREATE TABLE IF NOT EXISTS devices (user_id TEXT NOT NULL, device_id TEXT NOT NULL, display_name TEXT, last_seen BIGINT, ip TEXT, user_agent TEXT, hidden BOOLEAN DEFAULT 0,CONSTRAINT device_uniqueness UNIQUE (user_id, device_id))',
   'CREATE TABLE IF NOT EXISTS account_data( user_id TEXT NOT NULL, account_data_type TEXT NOT NULL, stream_id BIGINT NOT NULL, content TEXT NOT NULL, instance_name TEXT, CONSTRAINT account_data_uniqueness UNIQUE (user_id, account_data_type))',
-  'CREATE TABLE room_account_data( user_id TEXT NOT NULL, room_id TEXT NOT NULL, account_data_type TEXT NOT NULL, stream_id BIGINT NOT NULL, content TEXT NOT NULL, instance_name TEXT, CONSTRAINT room_account_data_uniqueness UNIQUE (user_id, room_id, account_data_type) )'
+  'CREATE TABLE IF NOT EXISTS room_account_data( user_id TEXT NOT NULL, room_id TEXT NOT NULL, account_data_type TEXT NOT NULL, stream_id BIGINT NOT NULL, content TEXT NOT NULL, instance_name TEXT, CONSTRAINT room_account_data_uniqueness UNIQUE (user_id, room_id, account_data_type) )',
+  'CREATE TABLE IF NOT EXISTS profiles( user_id TEXT NOT NULL, displayname TEXT, avatar_url TEXT, UNIQUE(user_id) )',
+  'CREATE TABLE IF NOT EXISTS local_current_membership (room_id TEXT NOT NULL, user_id TEXT NOT NULL, event_id TEXT NOT NULL, membership TEXT NOT NULL)'
 ]
 
 // eslint-disable-next-line @typescript-eslint/promise-function-async
