@@ -1,7 +1,13 @@
 import { type Request, type Response } from 'express'
 import type http from 'http'
 import querystring from 'querystring'
-import { send, jsonContent, validateParameters, epoch } from './index'
+import {
+  send,
+  jsonContent,
+  validateParameters,
+  epoch,
+  toMatrixId
+} from './index'
 import { type TwakeLogger } from '@twake/logger'
 
 describe('Utility Functions', () => {
@@ -167,6 +173,17 @@ describe('Utility Functions', () => {
       jest.spyOn(Date, 'now').mockReturnValue(now)
 
       expect(epoch()).toBe(now)
+    })
+  })
+
+  describe('toMatrixId', () => {
+    it('should return a Matrix ID', () => {
+      expect(toMatrixId('localpart', 'server')).toBe('@localpart:server')
+    })
+    it('should throw an error for an invalid localpart', () => {
+      expect(() => toMatrixId('invalid localpart', 'example.com')).toThrow(
+        'Invalid localpart'
+      )
     })
   })
 })

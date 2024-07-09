@@ -303,6 +303,7 @@ describe('Use configuration file', () => {
       }
     })
     describe('/_matrix/client/v3/account/whoami', () => {
+      let asToken: string
       it('should reject missing token (', async () => {
         const response = await request(app)
           .get('/_matrix/client/v3/account/whoami')
@@ -344,6 +345,39 @@ describe('Use configuration file', () => {
           .set('Authorization', `Bearer ${validToken}`)
           .set('Accept', 'application/json')
         expect(response.statusCode).toBe(200)
+      })
+      it('should accept a valid appservice authentication', async () => {
+        asToken = conf.application_services[0].as_token
+        const registerResponse = await request(app)
+          .post('/_matrix/client/v3/register')
+          .query({ kind: 'user' })
+          .send({
+            auth: {
+              type: 'm.login.application_service',
+              username: '_irc_bridge_'
+            },
+            username: '_irc_bridge_'
+          })
+          .set('Authorization', `Bearer ${asToken}`)
+          .set('User-Agent', 'curl/7.31.0-DEV')
+          .set('X-Forwarded-For', '127.10.00')
+          .set('Accept', 'application/json')
+        expect(registerResponse.statusCode).toBe(200)
+        const response = await request(app)
+          .get('/_matrix/client/v3/account/whoami')
+          .query({ user_id: '@_irc_bridge_:matrix.org' })
+          .set('Authorization', `Bearer ${asToken}`)
+          .set('Accept', 'application/json')
+        expect(response.statusCode).toBe(200)
+        expect(response.body.user_id).toBe('@_irc_bridge_:matrix.org')
+      })
+      it('should refuse an appservice authentication with a user_id not registered in the appservice', async () => {
+        const response = await request(app)
+          .get('/_matrix/client/v3/account/whoami')
+          .query({ user_id: '@testuser:example.com' })
+          .set('Authorization', `Bearer ${asToken}`)
+          .set('Accept', 'application/json')
+        expect(response.statusCode).toBe(403)
       })
     })
 
@@ -484,6 +518,54 @@ describe('Use configuration file', () => {
           expect(response.statusCode).toBe(401)
           expect(response.body).toHaveProperty('error')
           expect(response.body).toHaveProperty('errcode')
+        })
+        it('should refuse autenticating an appservice without a token', async () => {
+          const response = await request(app)
+            .post('/_matrix/client/v3/register')
+            .set('User-Agent', 'curl/7.31.0-DEV')
+            .query({ kind: 'user' })
+            .send({
+              auth: {
+                type: 'm.login.application_service',
+                username: '_irc_bridge_'
+              }
+            })
+          expect(response.statusCode).toBe(401)
+          expect(response.body).toHaveProperty('error')
+          expect(response.body).toHaveProperty('errcode', 'M_MISSING_TOKEN')
+        })
+        it('should refuse authenticating an appservice with the wrong token', async () => {
+          const response = await request(app)
+            .post('/_matrix/client/v3/register')
+            .set('User-Agent', 'curl/7.31.0-DEV')
+            .set('Authorization', `Bearer wrongToken`)
+            .query({ kind: 'user' })
+            .send({
+              auth: {
+                type: 'm.login.application_service',
+                username: '_irc_bridge_'
+              }
+            })
+          expect(response.statusCode).toBe(401)
+          expect(response.body).toHaveProperty('error')
+          expect(response.body).toHaveProperty('errcode', 'M_UNKNOWN_TOKEN')
+        })
+        it('should refuse authenticating an appservice with a username it has not registered', async () => {
+          const asToken = conf.application_services[0].as_token
+          const response = await request(app)
+            .post('/_matrix/client/v3/register')
+            .set('User-Agent', 'curl/7.31.0-DEV')
+            .set('Authorization', `Bearer ${asToken}`)
+            .query({ kind: 'user' })
+            .send({
+              auth: {
+                type: 'm.login.application_service',
+                username: 'invalidUser'
+              }
+            })
+          expect(response.statusCode).toBe(401)
+          expect(response.body).toHaveProperty('error')
+          expect(response.body).toHaveProperty('errcode', 'M_INVALID_USERNAME')
         })
         it('should validate an authentication after the user has accepted the terms', async () => {
           const response = await request(app)
@@ -654,6 +736,19 @@ describe('Use configuration file', () => {
         expect(response.body).toHaveProperty('error')
         expect(response.body).toHaveProperty('errcode', 'M_USER_IN_USE')
       })
+      it('should refuse a request without User Agent', async () => {
+        const response = await request(app)
+          .post('/_matrix/client/v3/register')
+          .set('X-Forwarded-For', '203.0.113.195')
+          .query({ kind: 'user' })
+          .send({
+            username: 'newuser',
+            auth: { type: 'm.login.dummy', session: randomString(20) }
+          })
+        expect(response.statusCode).toBe(400)
+        expect(response.body).toHaveProperty('error')
+        expect(response.body).toHaveProperty('errcode', 'M_MISSING_PARAMS')
+      })
     })
     describe('/_matrix/client/v3/user/{userId}/account_data/{type}', () => {
       it('should reject invalid userId', async () => {
@@ -812,7 +907,6 @@ describe('Use configuration file', () => {
           )
           .set('Authorization', `Bearer ${validToken}`)
           .set('Accept', 'application/json')
-        console.log(response.body)
         expect(response.statusCode).toBe(404)
         expect(response.body).toHaveProperty('errcode', 'M_NOT_FOUND')
       })
@@ -823,7 +917,6 @@ describe('Use configuration file', () => {
           )
           .set('Authorization', `Bearer ${validToken}`)
           .set('Accept', 'application/json')
-        console.log(response.body)
         expect(response.statusCode).toBe(403)
         expect(response.body).toHaveProperty('errcode', 'M_FORBIDDEN')
       })
@@ -841,7 +934,6 @@ describe('Use configuration file', () => {
           )
           .set('Authorization', `Bearer ${validToken}`)
           .set('Accept', 'application/json')
-        console.log(response.body)
         expect(response.statusCode).toBe(200)
         expect(response.body['m.room.message']).toBe('test content')
       })

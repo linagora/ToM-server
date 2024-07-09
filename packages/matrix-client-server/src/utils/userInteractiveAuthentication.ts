@@ -6,11 +6,12 @@ import {
   type AuthenticationData,
   type ClientServerDb,
   type Config,
-  type flowContent
+  type flowContent,
+  type AppServiceRegistration
 } from '../types'
 import { Hash, randomString } from '@twake/crypto'
 import type MatrixDBmodified from '../matrixDb'
-import { errMsg, jsonContent, send } from '@twake/utils'
+import { errMsg, jsonContent, send, toMatrixId } from '@twake/utils'
 export type UiAuthFunction = (
   req: Request | http.IncomingMessage,
   res: Response | http.ServerResponse,
@@ -25,7 +26,9 @@ interface requestBody {
 // eslint-disable-next-line @typescript-eslint/promise-function-async
 const checkAuthentication = (
   auth: AuthenticationData,
-  matrixDb: MatrixDBmodified
+  matrixDb: MatrixDBmodified,
+  conf: Config,
+  req: Request | http.IncomingMessage
 ): Promise<void> => {
   switch (auth.type) {
     case 'm.login.password':
@@ -70,7 +73,7 @@ const checkAuthentication = (
       return new Promise((resolve, reject) => {
         resolve() // Dummy authentication always succeeds
       })
-    case 'm.login.registration_token': // Only valid on the /register endpoint as per the spec // TODO :
+    case 'm.login.registration_token': // Only valid on the /register endpoint as per the spec // TODO : add uses_allowed to config ?
       return new Promise((resolve, reject) => {
         matrixDb
           .get(
@@ -127,6 +130,39 @@ const checkAuthentication = (
       return new Promise((resolve, reject) => {
         resolve() // The client makes sure the user has accepted all the terms before sending the request indicating the user has accepted the terms
       })
+    case 'm.login.application_service':
+      return new Promise((resolve, reject) => {
+        const applicationServices = conf.application_services
+        const asTokens: string[] = applicationServices.map(
+          (as: AppServiceRegistration) => as.as_token
+        )
+        if (req.headers.authorization === undefined) {
+          reject(errMsg('missingToken'))
+        }
+        // @ts-expect-error req.headers.authorization is defined
+        const token = req.headers.authorization.split(' ')[1]
+        if (asTokens.includes(token)) {
+          // Check if the request is made by an application-service
+          const appService = applicationServices.find(
+            (as: AppServiceRegistration) => as.as_token === token
+          )
+          // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+          const userId = toMatrixId(auth.username, conf.server_name)
+          if (
+            // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+            appService?.namespaces.users &&
+            !appService?.namespaces.users.some((namespace) =>
+              new RegExp(namespace.regex).test(userId)
+            ) // check if the userId is registered by the appservice
+          ) {
+            reject(errMsg('invalidUsername'))
+          } else {
+            resolve()
+          }
+        } else {
+          reject(errMsg('unknownToken'))
+        }
+      })
   }
 }
 
@@ -147,8 +183,12 @@ const UiAuthenticate = (
         })
       } else {
         const auth = (obj as requestBody).auth as AuthenticationData
-        checkAuthentication(auth, matrixDb)
+        checkAuthentication(auth, matrixDb, conf, req)
           .then(() => {
+            if (auth.type === 'm.login.application_service') {
+              callback(obj)
+              return
+            }
             db.insert('ui_auth_sessions', {
               session_id: auth.session,
               stage_type: auth.type
@@ -203,6 +243,15 @@ const UiAuthenticate = (
               })
           })
           .catch((e) => {
+            if (auth.type === 'm.login.application_service') {
+              send(res, 401, {
+                errcode: e.errcode,
+                error: e.error,
+                flows: conf.flows,
+                params: conf.params
+              })
+              return
+            }
             db.get('ui_auth_sessions', ['stage_type'], {
               session_id: auth.session
             })

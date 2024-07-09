@@ -9,6 +9,7 @@ import {
 import { type Config } from '../types'
 import type UserDB from '../userdb'
 import { dbFieldsToHash, filter } from './changePepper'
+import { toMatrixId } from '@twake/utils'
 
 interface HashDetails {
   algorithms: string[]
@@ -140,7 +141,7 @@ export default async (
       logger
     )
   ).reduce<UpdatableFields>((acc, row) => {
-    acc[`@${row.uid as string}:${conf.server_name}`] = {
+    acc[toMatrixId(row.uid as string, conf.server_name)] = {
       email: row.mail as string,
       phone: row.mobile as string,
       active: isMatrixDbAvailable ? (row.active as number) : 1

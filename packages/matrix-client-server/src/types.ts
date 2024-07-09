@@ -5,10 +5,12 @@ import {
 } from '@twake/matrix-identity-server'
 import { type Policies } from '@twake/matrix-identity-server/dist/terms'
 
+// TODO : Put Policies in types.ts of matrix-identity-server to export it in the @twake/matrix-identity-server module and not in the dist/terms
 export type Config = MIdentityServerConfig & {
   flows: flowContent
   params: Record<string, { policies: Policies }> // For now, only Terms registration gives additional parameters in the request body so the params have this type.
   // If another authentication type returns additional parameters, Policies needs to be changed to a more general type
+  application_services: AppServiceRegistration[]
 }
 
 export type DbGetResult = Array<
@@ -16,7 +18,7 @@ export type DbGetResult = Array<
 >
 
 export interface ClientEvent {
-  content: { [key: string]: any }
+  content: Record<string, any>
   event_id: string
   origin_server_ts: number
   room_id: string
@@ -32,7 +34,7 @@ export interface EventContent {
   join_authorised_via_users_server?: boolean
   membership: string
   reason?: string
-  third_party_invite?: { [key: string]: any }
+  third_party_invite?: Record<string, any>
 }
 
 export interface EventFilter {
@@ -81,19 +83,9 @@ export interface signed {
 export interface UnsignedData {
   age?: number
   membership?: string
-  prev_content?: { [key: string]: any }
+  prev_content?: Record<string, any>
   redacted_because?: ClientEvent
   transaction_id?: string
-}
-
-export interface LocalMediaRepository {
-  media_id: string
-  media_length: string
-  user_id: string
-}
-
-export interface MatrixUser {
-  name: string
 }
 
 export interface UserQuota {
@@ -139,6 +131,7 @@ export type AuthenticationTypes =
   | 'm.login.dummy'
   | 'm.login.registration_token'
   | 'm.login.terms'
+  | 'm.login.application_service'
 
 interface PasswordAuth {
   type: 'm.login.password'
@@ -194,6 +187,11 @@ interface TermsAuth {
   session: string
 }
 
+interface ApplicationServiceAuth {
+  type: 'm.login.application_service'
+  username: string
+}
+
 export type AuthenticationData =
   | PasswordAuth
   | EmailAuth
@@ -202,9 +200,33 @@ export type AuthenticationData =
   | DummyAuth
   | TokenAuth
   | TermsAuth
+  | ApplicationServiceAuth
 
 export type flowContent = stagesContent[]
 
 interface stagesContent {
   stages: AuthenticationTypes[]
+}
+
+// https://spec.matrix.org/v1.11/application-service-api/#registration
+export interface AppServiceRegistration {
+  as_token: string
+  hs_token: string
+  id: string
+  namespaces: Namespaces
+  protocols?: string[]
+  rate_limited?: boolean
+  sender_localpart: string
+  url: string
+}
+
+interface Namespaces {
+  alias?: Namespace[]
+  rooms?: Namespace[]
+  users?: Namespace[]
+}
+
+interface Namespace {
+  exclusive: boolean
+  regex: string
 }
