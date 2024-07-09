@@ -170,7 +170,7 @@ class MatrixDBmodified implements MatrixDBmodifiedBackend {
     return this.db.getJoin(table, fields, filterFields, joinFields, order)
   }
 
-  //eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
+  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
   getWhereEqualOrDifferent(
     table: Collections,
     fields: string[],
@@ -187,7 +187,7 @@ class MatrixDBmodified implements MatrixDBmodifiedBackend {
     )
   }
 
-  //eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
+  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
   getWhereEqualAndHigher(
     table: Collections,
     fields: string[],
@@ -204,7 +204,7 @@ class MatrixDBmodified implements MatrixDBmodifiedBackend {
     )
   }
 
-  //eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
+  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
   getMaxWhereEqual(
     table: Collections,
     targetField: string,
@@ -221,7 +221,7 @@ class MatrixDBmodified implements MatrixDBmodifiedBackend {
     )
   }
 
-  //eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
+  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
   getMaxWhereEqualAndLowerJoin(
     tables: Array<Collections>,
     targetField: string,
@@ -241,6 +241,7 @@ class MatrixDBmodified implements MatrixDBmodifiedBackend {
       order
     )
   }
+
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
   insert(table: Collections, values: Record<string, string | number>) {
     return this.db.insert(table, values)
