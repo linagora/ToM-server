@@ -36,6 +36,8 @@ export const getRoomVisibility = (
       .catch((e) => {
         /* istanbul ignore next */
         clientServer.logger.error('Error querying room directory info:', e)
+        /* istanbul ignore next */
+        send(res, 500, errMsg('unknown', 'Error querying room directory info'))
       })
   }
 }
@@ -74,6 +76,12 @@ export const setRoomVisibility = (
               .catch((e) => {
                 /* istanbul ignore next */
                 clientServer.logger.error('Error updating room visibility:', e)
+                /* istanbul ignore next */
+                send(
+                  res,
+                  500,
+                  errMsg('unknown', 'Error updating room visibility')
+                )
               })
           }
         })

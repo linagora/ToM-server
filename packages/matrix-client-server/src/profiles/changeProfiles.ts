@@ -1,6 +1,7 @@
 import type MatrixClientServer from '../index'
 import { type Request } from 'express'
 import {
+  errMsg,
   send,
   type expressAppHandler,
   jsonContent,
@@ -40,6 +41,8 @@ export const changeAvatarUrl = (
             .catch((e) => {
               /* istanbul ignore next */
               clientServer.logger.error('Error querying profiles:', e)
+              /* istanbul ignore next */
+              send(res, 500, errMsg('unknown', 'Error querying profiles'))
             })
         })
       })
@@ -78,6 +81,8 @@ export const changeDisplayname = (
               .catch((e) => {
                 /* istanbul ignore next */
                 clientServer.logger.error('Error querying profiles:', e)
+                /* istanbul ignore next */
+                send(res, 500, errMsg('unknown', 'Error querying profiles'))
               })
           }
         )

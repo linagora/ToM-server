@@ -89,6 +89,8 @@ export const getAvatarUrl = (
         .catch((e) => {
           /* istanbul ignore next */
           logger.error('Error querying profiles:', e)
+          /* istanbul ignore next */
+          send(res, 500, errMsg('unknown', 'Error querying profiles'))
         })
     } else {
       send(res, 400, errMsg('missingParams', 'No user ID provided'))
@@ -135,6 +137,8 @@ export const getDisplayname = (
         .catch((e) => {
           /* istanbul ignore next */
           logger.error('Error querying profiles:', e)
+          /* istanbul ignore next */
+          send(res, 500, errMsg('unknown', 'Error querying profiles'))
         })
     } else {
       send(res, 400, errMsg('missingParams', 'No user ID provided'))
