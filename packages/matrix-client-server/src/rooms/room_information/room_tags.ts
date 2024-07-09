@@ -1,5 +1,6 @@
 import type MatrixClientServer from '../../'
 import {
+  errMsg,
   send,
   type expressAppHandler,
   jsonContent,
@@ -37,6 +38,12 @@ export const getUserRoomTags = (
                 'Error parsing room tag content:',
                 error
               )
+              /* istanbul ignore next */
+              send(
+                res,
+                500,
+                errMsg('unknown', 'Error parsing room tag content')
+              )
             }
           })
 
@@ -45,6 +52,8 @@ export const getUserRoomTags = (
         .catch((e) => {
           /* istanbul ignore next */
           clientServer.logger.error('Error querying room tags:', e)
+          /* istanbul ignore next */
+          send(res, 500, errMsg('unknown', 'Error querying room tags'))
         })
     })
   }
@@ -79,6 +88,8 @@ export const addUserRoomTag = (
             .catch((e) => {
               /* istanbul ignore next */
               clientServer.logger.error('Error inserting room tag:', e)
+              /* istanbul ignore next */
+              send(res, 500, errMsg('unknown', 'Error inserting room tag'))
             })
         })
       })
@@ -107,6 +118,8 @@ export const removeUserRoomTag = (
         .catch((e) => {
           /* istanbul ignore next */
           clientServer.logger.error('Error deleting room tag:', e)
+          /* istanbul ignore next */
+          send(res, 500, errMsg('unknown', 'Error deleting room tag'))
         })
     })
   }

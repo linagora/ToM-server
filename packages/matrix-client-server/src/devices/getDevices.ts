@@ -6,8 +6,8 @@ export const getDevices = (
   clientServer: MatrixClientServer
 ): expressAppHandler => {
   return (req, res) => {
-    clientServer.authenticate(req, res, (data, id) => {
-      const userId = data.sub
+    clientServer.authenticate(req, res, (token) => {
+      const userId = token.sub
 
       clientServer.matrixDb
         .get('devices', ['device_id', 'display_name', 'last_seen', 'ip'], {
@@ -37,8 +37,8 @@ export const getDeviceInfo = (
   clientServer: MatrixClientServer
 ): expressAppHandler => {
   return (req, res) => {
-    clientServer.authenticate(req, res, (data, id) => {
-      const userId = data.sub
+    clientServer.authenticate(req, res, (token) => {
+      const userId = token.sub
       const deviceId: string = (req as Request).params.deviceId
 
       clientServer.matrixDb
@@ -68,6 +68,8 @@ export const getDeviceInfo = (
         .catch((e) => {
           /* istanbul ignore next */
           clientServer.logger.error('Error querying devices:', e)
+          /* istanbul ignore next */
+          send(res, 500, errMsg('unknown', 'Error querying devices'))
         })
     })
   }
