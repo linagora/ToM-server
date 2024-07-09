@@ -10,22 +10,31 @@ export type Collections =
   | 'events'
   | 'state_events'
   | 'current_state_events'
-  | 'room_memberships'
-  | 'rooms'
-  | 'server_signature_keys'
-  | 'rejections'
   | 'event_forward_extremities'
   | 'event_backward_extremities'
+  | 'rooms'
+  | 'room_memberships'
+  | 'room_aliases'
+  | 'room_stats_state'
   | 'room_depth'
+  | 'room_tags'
+  | 'room_account_data'
+  | 'local_current_membership'
+  | 'server_signature_keys'
+  | 'rejections'
   | 'local_media_repository'
   | 'redactions'
-  | 'room_aliases'
   | 'user_ips'
   | 'registration_tokens'
   | 'account_data'
   | 'devices'
-  | 'local_current_membership'
-  | 'room_account_data'
+
+type sqlComparaisonOperator = '=' | '!=' | '>' | '<' | '>=' | '<=' | '<>'
+interface ISQLCondition {
+  field: string
+  operator: sqlComparaisonOperator
+  value: string | number
+}
 
 type Get = (
   table: Collections,
@@ -80,6 +89,10 @@ type DeleteEqual = (
   field: string,
   value: string | number
 ) => Promise<void>
+type DeleteWhere = (
+  table: Collections,
+  conditions: ISQLCondition | ISQLCondition[]
+) => Promise<void>
 
 export interface MatrixDBmodifiedBackend {
   ready: Promise<void>
@@ -92,6 +105,7 @@ export interface MatrixDBmodifiedBackend {
   getAll: GetAll
   insert: Insert
   deleteEqual: DeleteEqual
+  deleteWhere: DeleteWhere
   updateWithConditions: updateWithConditions
   close: () => void
 }
@@ -156,7 +170,7 @@ class MatrixDBmodified implements MatrixDBmodifiedBackend {
     return this.db.getJoin(table, fields, filterFields, joinFields, order)
   }
 
-  //eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
+  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
   getWhereEqualOrDifferent(
     table: Collections,
     fields: string[],
@@ -173,7 +187,7 @@ class MatrixDBmodified implements MatrixDBmodifiedBackend {
     )
   }
 
-  //eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
+  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
   getWhereEqualAndHigher(
     table: Collections,
     fields: string[],
@@ -190,7 +204,7 @@ class MatrixDBmodified implements MatrixDBmodifiedBackend {
     )
   }
 
-  //eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
+  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
   getMaxWhereEqual(
     table: Collections,
     targetField: string,
@@ -207,7 +221,7 @@ class MatrixDBmodified implements MatrixDBmodifiedBackend {
     )
   }
 
-  //eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
+  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
   getMaxWhereEqualAndLowerJoin(
     tables: Array<Collections>,
     targetField: string,
@@ -227,6 +241,7 @@ class MatrixDBmodified implements MatrixDBmodifiedBackend {
       order
     )
   }
+
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
   insert(table: Collections, values: Record<string, string | number>) {
     return this.db.insert(table, values)
@@ -235,6 +250,13 @@ class MatrixDBmodified implements MatrixDBmodifiedBackend {
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
   deleteEqual(table: Collections, field: string, value: string | number) {
     return this.db.deleteEqual(table, field, value)
+  }
+
+  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
+  deleteWhere(table: Collections, conditions: ISQLCondition | ISQLCondition[]) {
+    // Deletes from table where filters correspond to values
+    // Size of filters and values must be the same
+    return this.db.deleteWhere(table, conditions)
   }
 
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async

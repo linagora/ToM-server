@@ -21,8 +21,8 @@ export const changeDeviceName = (
 ): expressAppHandler => {
   return (req, res) => {
     const deviceId: string = (req as Request).params.deviceId
-    clientServer.authenticate(req, res, (data, id) => {
-      const userId = data.sub
+    clientServer.authenticate(req, res, (token) => {
+      const userId = token.sub
       jsonContent(req, res, clientServer.logger, (obj) => {
         validateParameters(res, schema, obj, clientServer.logger, (obj) => {
           // eslint-disable-next-line @typescript-eslint/naming-convention
@@ -51,6 +51,8 @@ export const changeDeviceName = (
             .catch((e) => {
               /* istanbul ignore next */
               clientServer.logger.error('Error querying profiles:', e)
+              /* istanbul ignore next */
+              send(res, 500, errMsg('unknown', 'Error querying profiles'))
             })
         })
       })

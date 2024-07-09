@@ -36,6 +36,16 @@ import { getDevices, getDeviceInfo } from './devices/getDevices'
 import { changeDeviceName } from './devices/changeDevices'
 import GetEventId from './rooms/roomId/getEventId'
 import GetJoinedMembers from './rooms/roomId/getJoinedMembers'
+import {
+  getUserRoomTags,
+  addUserRoomTag,
+  removeUserRoomTag
+} from './rooms/room_information/room_tags'
+import { getJoinedRooms } from './rooms/room_information/get_joined_rooms'
+import {
+  getRoomVisibility,
+  setRoomVisibility
+} from './rooms/room_information/room_visibilty'
 
 const tables = {
   ui_auth_sessions: 'session_id TEXT NOT NULL, stage_type TEXT NOT NULL'
@@ -46,6 +56,7 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
     get: Record<string, expressAppHandler>
     post: Record<string, expressAppHandler>
     put: Record<string, expressAppHandler>
+    delete: Record<string, expressAppHandler>
   }
 
   matrixDb: MatrixDBmodified
@@ -83,7 +94,7 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
         : undefined
     ) as Config
     super(serverConf, confDesc, logger, tables)
-    this.api = { get: {}, post: {}, put: {} }
+    this.api = { get: {}, post: {}, put: {}, delete: {} }
     this.matrixDb = new MatrixDBmodified(serverConf, this.logger)
     this.uiauthenticate = UiAuthenticate(
       this.db,
@@ -122,7 +133,12 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
             '/_matrix/client/v3/devices/:deviceId': getDeviceInfo(this),
             '/_matrix/client/v3/rooms/:roomId/event/:eventId': GetEventId(this),
             '/_matrix/client/v3/rooms/:roomId/joined_members':
-              GetJoinedMembers(this)
+              GetJoinedMembers(this),
+            '/_matrix/client/v3/user/:userId/rooms/:roomId/tags':
+              getUserRoomTags(this),
+            '/_matrix/client/v3/joined_rooms': getJoinedRooms(this),
+            '/_matrix/client/v3/directory/list/room/:roomId':
+              getRoomVisibility(this)
           }
           this.api.post = {
             '/_matrix/client/v3/account/whoami': badMethod,
@@ -137,7 +153,10 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
             '/_matrix/client/v3/devices': badMethod,
             '/_matrix/client/v3/devices/:deviceId': badMethod,
             '/_matrix/client/v3/rooms/:roomId/event/:eventId': badMethod,
-            '/_matrix/client/v3/rooms/:roomId/joined_members': badMethod
+            '/_matrix/client/v3/rooms/:roomId/joined_members': badMethod,
+            '/_matrix/client/v3/user/:userId/rooms/:roomId/tags': badMethod,
+            '/_matrix/client/v3/joined_rooms': badMethod,
+            '/_matrix/client/v3/directory/list/room/:roomId': badMethod
           }
           this.api.put = {
             '/_matrix/client/v3/account/whoami': badMethod,
@@ -155,7 +174,28 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
             '/_matrix/client/v3/devices': badMethod,
             '/_matrix/client/v3/devices/:deviceId': changeDeviceName(this),
             '/_matrix/client/v3/rooms/:roomId/event/:eventId': badMethod,
-            '/_matrix/client/v3/rooms/:roomId/joined_members': badMethod
+            '/_matrix/client/v3/rooms/:roomId/joined_members': badMethod,
+            '/_matrix/client/v3/user/:userId/rooms/:roomId/tags': badMethod,
+            '/_matrix/client/v3/user/:userId/rooms/:roomId/tags/:tag':
+              addUserRoomTag(this),
+            '/_matrix/client/v3/joined_rooms': badMethod,
+            '/_matrix/client/v3/directory/list/room/:roomId':
+              setRoomVisibility(this)
+          }
+          this.api.delete = {
+            '/_matrix/client/v3/account/whoami': badMethod,
+            '/_matrix/client/v3/admin/whois': badMethod,
+            '/_matrix/client/v3/register': badMethod,
+            '/_matrix/client/v3/profile/:userId': badMethod,
+            '/_matrix/client/v3/profile/:userId/avatar_url': badMethod,
+            '/_matrix/client/v3/profile/:userId/displayname': badMethod,
+            '/_matrix/client/v3/devices': badMethod,
+            '/_matrix/client/v3/devices/:deviceId': badMethod,
+            '/_matrix/client/v3/user/:userId/rooms/:roomId/tags': badMethod,
+            '/_matrix/client/v3/user/:userId/rooms/:roomId/tags/:tag':
+              removeUserRoomTag(this),
+            '/_matrix/client/v3/joined_rooms': badMethod,
+            '/_matrix/client/v3/directory/list/room/:roomId': badMethod
           }
           resolve(true)
         })

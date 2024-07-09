@@ -70,6 +70,7 @@ export default class MatrixIdentityServer<T extends string = never> {
     get: IdServerAPI
     post: IdServerAPI
     put?: IdServerAPI
+    delete?: IdServerAPI
   }
 
   db: IdentityServerDb<T>
