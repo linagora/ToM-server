@@ -30,6 +30,7 @@ export type Collections =
   | 'longTermKeypairs'
   | 'shortTermKeypairs'
   | 'userPolicies'
+  | 'activeContacts'
 
 const cleanByExpires: Collections[] = ['oneTimeTokens', 'attempts']
 
