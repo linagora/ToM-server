@@ -2578,6 +2578,7 @@ describe('Use configuration file', () => {
           const response = await request(app)
             .put(`/_matrix/client/v3/profile/${testUserId}/displayname`)
             .set('Authorization', `Bearer ${validToken}`)
+            .set('Accept', 'application/json')
             .send({ displayname: 'New name' })
           expect(response.statusCode).toBe(200)
           const rows = await clientServer.matrixDb.get(
@@ -2645,7 +2646,7 @@ describe('Use configuration file', () => {
         const response = await request(app)
           .get('/_matrix/client/v3/devices')
           .set('Authorization', 'Bearer invalidToken')
-
+          .set('Accept', 'application/json')
         expect(response.statusCode).toBe(401)
       })
 
@@ -3585,6 +3586,371 @@ describe('Use configuration file', () => {
         expect(response.statusCode).toBe(400)
         expect(response.body).toHaveProperty('error')
         expect(response.body).toHaveProperty('errcode', 'M_USER_IN_USE')
+      })
+    })
+
+    describe('/_matrix/client/v3/user/:userId/rooms/:roomId/tags', () => {
+      const testUserId = '@testuser:example.com'
+      const testRoomId = '!testroomid:example.com'
+
+      beforeAll(async () => {
+        try {
+          await clientServer.matrixDb.insert('room_tags', {
+            user_id: testUserId,
+            room_id: testRoomId,
+            tag: 'test_tag',
+            content: JSON.stringify({ order: 1 })
+          })
+          await clientServer.matrixDb.insert('room_tags', {
+            user_id: testUserId,
+            room_id: testRoomId,
+            tag: 'test_tag2',
+            content: JSON.stringify({ order: 0.5 })
+          })
+        } catch (e) {
+          logger.error('Error setting up test data:', e)
+        }
+      })
+
+      afterAll(async () => {
+        try {
+          await clientServer.matrixDb.deleteEqual(
+            'room_tags',
+            'tag',
+            'test_tag'
+          )
+          await clientServer.matrixDb.deleteEqual(
+            'room_tags',
+            'tag',
+            'test_tag2'
+          )
+        } catch (e) {
+          logger.error('Error tearing down test data:', e)
+        }
+      })
+      describe('GET', () => {
+        it('should require authentication', async () => {
+          const response = await request(app)
+            .get(
+              `/_matrix/client/v3/user/${testUserId}/rooms/${testRoomId}/tags`
+            )
+            .set('Authorization', 'Bearer invalidToken')
+            .set('Accept', 'application/json')
+          expect(response.statusCode).toBe(401)
+        })
+
+        it('should return the tags for the room', async () => {
+          const response = await request(app)
+            .get(
+              `/_matrix/client/v3/user/${testUserId}/rooms/${testRoomId}/tags`
+            )
+            .set('Authorization', `Bearer ${validToken}`)
+            .set('Accept', 'application/json')
+          expect(response.statusCode).toBe(200)
+          expect(response.body).toHaveProperty('tags')
+          expect(response.body.tags).toEqual({
+            test_tag: { order: 1 },
+            test_tag2: { order: 0.5 }
+          })
+        })
+      })
+
+      describe('PUT /_matrix/client/v3/user/:userId/rooms/:roomId/tags/:tag', () => {
+        const testTag = 'new_tag'
+
+        it('should require authentication', async () => {
+          const response = await request(app)
+            .put(
+              `/_matrix/client/v3/user/${testUserId}/rooms/${testRoomId}/tags/${testTag}`
+            )
+            .set('Authorization', 'Bearer invalidToken')
+            .set('Accept', 'application/json')
+            .send({ order: 0.2 })
+
+          expect(response.statusCode).toBe(401)
+        })
+
+        it('should add a tag to the room', async () => {
+          const response = await request(app)
+            .put(
+              `/_matrix/client/v3/user/${testUserId}/rooms/${testRoomId}/tags/${testTag}`
+            )
+            .set('Authorization', `Bearer ${validToken}`)
+            .send({ order: 0.2 })
+          expect(response.statusCode).toBe(200)
+          const rows = await clientServer.matrixDb.get(
+            'room_tags',
+            ['tag', 'content'],
+            {
+              user_id: testUserId,
+              room_id: testRoomId
+            }
+          )
+          expect(rows[0]).toEqual({
+            tag: testTag,
+            content: JSON.stringify({ order: 0.2 })
+          })
+        })
+      })
+
+      describe('DELETE /_matrix/client/v3/user/:userId/rooms/:roomId/tags/:tag', () => {
+        const testTag = 'test_tag'
+
+        it('should require authentication', async () => {
+          const response = await request(app)
+            .delete(
+              `/_matrix/client/v3/user/${testUserId}/rooms/${testRoomId}/tags/${testTag}`
+            )
+            .set('Authorization', 'Bearer invalidToken')
+            .set('Accept', 'application/json')
+
+          expect(response.statusCode).toBe(401)
+        })
+
+        it('should delete the tag from the room', async () => {
+          const response = await request(app)
+            .delete(
+              `/_matrix/client/v3/user/${testUserId}/rooms/${testRoomId}/tags/${testTag}`
+            )
+            .set('Authorization', `Bearer ${validToken}`)
+            .set('Accept', 'application/json')
+
+          expect(response.statusCode).toBe(200)
+          const rows = await clientServer.matrixDb.get('room_tags', ['tag'], {
+            user_id: testUserId,
+            room_id: testRoomId
+          })
+          expect(rows).not.toContainEqual({ tag: testTag })
+        })
+      })
+    })
+
+    describe('/_matrix/client/v3/joined_rooms', () => {
+      const testUserId = '@testuser:example.com'
+      const testRoomIds = ['!foo:example.com', '!bar:example.com']
+      const testRoomIdBan = '!ban:example.com'
+
+      beforeAll(async () => {
+        // Insert test data for joined rooms
+        try {
+          await Promise.all(
+            // eslint-disable-next-line @typescript-eslint/promise-function-async
+            testRoomIds.map((roomId) =>
+              clientServer.matrixDb.insert('local_current_membership', {
+                user_id: testUserId,
+                room_id: roomId,
+                membership: 'join',
+                event_id: randomString(20)
+              })
+            )
+          )
+
+          await clientServer.matrixDb.insert('local_current_membership', {
+            user_id: testUserId,
+            room_id: testRoomIdBan,
+            membership: 'ban',
+            event_id: randomString(20)
+          })
+        } catch (e) {
+          logger.error('Error setting up test data:', e)
+        }
+      })
+
+      afterAll(async () => {
+        // Clean up test data
+        await clientServer.matrixDb.deleteEqual(
+          'local_current_membership',
+          'user_id',
+          testUserId
+        )
+      })
+
+      it('should require authentication', async () => {
+        const response = await request(app)
+          .get('/_matrix/client/v3/joined_rooms')
+          .set('Authorization', 'Bearer invalidToken')
+          .set('Accept', 'application/json')
+        expect(response.statusCode).toBe(401)
+      })
+
+      it('should return the list of rooms the user has joined', async () => {
+        const response = await request(app)
+          .get('/_matrix/client/v3/joined_rooms')
+          .set('Authorization', `Bearer ${validToken}`)
+          .set('Accept', 'application/json')
+        expect(response.statusCode).toBe(200)
+        expect(response.body).toEqual({
+          joined_rooms: testRoomIds
+        })
+      })
+    })
+
+    describe('/_matrix/client/v3/directory/list/room/:roomId', () => {
+      describe('GET', () => {
+        const publicRoomId = '!testroomid:example.com'
+        const privateRoomId = '!private:example.com'
+
+        beforeAll(async () => {
+          // Insert test data for the room directory listing
+          try {
+            await clientServer.matrixDb.insert('rooms', {
+              room_id: publicRoomId,
+              is_public: 1
+            })
+
+            await clientServer.matrixDb.insert('rooms', {
+              room_id: privateRoomId,
+              is_public: 0
+            })
+
+            await clientServer.matrixDb.insert('rooms', {
+              room_id: '!anotherroomid:example.com'
+            })
+          } catch (e) {
+            logger.error('Error setting up test data:', e)
+          }
+        })
+
+        afterAll(async () => {
+          // Clean up test data
+          try {
+            await clientServer.matrixDb.deleteEqual(
+              'rooms',
+              'room_id',
+              publicRoomId
+            )
+
+            await clientServer.matrixDb.deleteEqual(
+              'rooms',
+              'room_id',
+              privateRoomId
+            )
+
+            await clientServer.matrixDb.deleteEqual(
+              'rooms',
+              'room_id',
+              '!anotherroomid:example.com'
+            )
+          } catch (e) {
+            logger.error('Error tearing down test data:', e)
+          }
+        })
+
+        it('should return the correct visibility for a public room', async () => {
+          const response = await request(app).get(
+            `/_matrix/client/v3/directory/list/room/${publicRoomId}`
+          )
+          expect(response.statusCode).toBe(200)
+          expect(response.body).toEqual({
+            visibility: 'public'
+          })
+        })
+
+        it('should return the correct visibility for a private room', async () => {
+          const response = await request(app).get(
+            `/_matrix/client/v3/directory/list/room/${privateRoomId}`
+          )
+          expect(response.statusCode).toBe(200)
+          expect(response.body).toEqual({
+            visibility: 'private'
+          })
+        })
+
+        it('should return private visibility if no visibility is set', async () => {
+          const response = await request(app).get(
+            `/_matrix/client/v3/directory/list/room/!anotherroomid:example.com`
+          )
+          expect(response.statusCode).toBe(200)
+          expect(response.body).toEqual({
+            visibility: 'private'
+          })
+        })
+
+        it('should return 404 if the room is not found', async () => {
+          const invalidRoomId = '!invalidroomid:example.com'
+          const response = await request(app).get(
+            `/_matrix/client/v3/directory/list/room/${invalidRoomId}`
+          )
+          expect(response.statusCode).toBe(404)
+          expect(response.body).toEqual({
+            errcode: 'M_NOT_FOUND',
+            error: 'Room not found'
+          })
+        })
+      })
+
+      describe('PUT', () => {
+        const testRoomId = '!testroomid:example.com'
+
+        beforeAll(async () => {
+          try {
+            // Insert test data for the room directory listing
+            await clientServer.matrixDb.insert('rooms', {
+              room_id: testRoomId,
+              is_public: 1
+            })
+          } catch (e) {
+            logger.error('Error setting up test data:', e)
+          }
+        })
+
+        afterAll(async () => {
+          // Clean up test data
+          try {
+            await clientServer.matrixDb.deleteEqual(
+              'rooms',
+              'room_id',
+              testRoomId
+            )
+          } catch (e) {
+            logger.error('Error tearing down test data:', e)
+          }
+        })
+
+        it('should require authentication', async () => {
+          const response = await request(app)
+            .put(`/_matrix/client/v3/directory/list/room/${testRoomId}`)
+            .set('Authorization', 'Bearer invalidToken')
+            .set('Accept', 'application/json')
+            .send({ visibility: 'private' })
+          expect(response.statusCode).toBe(401)
+        })
+
+        it('should return 400 invalidParams if wrong parameters given', async () => {
+          const response = await request(app)
+            .put(`/_matrix/client/v3/directory/list/room/${testRoomId}`)
+            .set('Authorization', `Bearer ${validToken}`)
+            .set('Accept', 'application/json')
+            .send({ visibility: 'wrongParams' })
+          expect(response.statusCode).toBe(400)
+          expect(response.body.errcode).toBe('M_INVALID_PARAM')
+        })
+
+        it('should update the visibility of the room', async () => {
+          const response = await request(app)
+            .put(`/_matrix/client/v3/directory/list/room/${testRoomId}`)
+            .set('Authorization', `Bearer ${validToken}`)
+            .send({ visibility: 'private' })
+          expect(response.statusCode).toBe(200)
+
+          const row = await clientServer.matrixDb.get('rooms', ['is_public'], {
+            room_id: testRoomId
+          })
+          expect(row[0].is_public).toBe(0)
+        })
+
+        it('should return 404 if the room is not found', async () => {
+          const invalidRoomId = '!invalidroomid:example.com'
+          const response = await request(app)
+            .put(`/_matrix/client/v3/directory/list/room/${invalidRoomId}`)
+            .set('Authorization', `Bearer ${validToken}`)
+            .send({ visibility: 'private' })
+          expect(response.statusCode).toBe(404)
+          expect(response.body).toEqual({
+            errcode: 'M_NOT_FOUND',
+            error: 'Room not found'
+          })
+        })
       })
     })
   })
