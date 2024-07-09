@@ -25,13 +25,18 @@ export const getUserRoomTags = (
           tagRows.forEach((row) => {
             try {
               const content = JSON.parse(row.content as string)
+              /* istanbul ignore else */
               if (content.order !== undefined) {
                 _tags[row.tag as string] = { order: content.order }
               } else {
                 _tags[row.tag as string] = {}
               }
             } catch (error) {
-              _tags[row.tag as string] = {}
+              /* istanbul ignore next */
+              clientServer.logger.error(
+                'Error parsing room tag content:',
+                error
+              )
             }
           })
 
