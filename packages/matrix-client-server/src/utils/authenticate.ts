@@ -1,8 +1,10 @@
+/* eslint-disable @typescript-eslint/strict-boolean-expressions */
 import { type TwakeLogger } from '@twake/logger'
 import { type Request, type Response } from 'express'
 import type http from 'http'
 import type MatrixDBmodified from '../matrixDb'
-import { epoch, errMsg, send } from '@twake/utils'
+import { epoch, errMsg, send, toMatrixId } from '@twake/utils'
+import { type AppServiceRegistration, type Config } from '../types'
 
 export interface tokenContent {
   sub: string
@@ -18,7 +20,8 @@ export type AuthenticationFunction = (
 
 const Authenticate = (
   matrixDb: MatrixDBmodified,
-  logger: TwakeLogger
+  logger: TwakeLogger,
+  conf: Config
 ): AuthenticationFunction => {
   const tokenRe = /^Bearer (\S+)$/
   return (req, res, callback) => {
@@ -30,7 +33,7 @@ const Authenticate = (
       }
       // @ts-expect-error req.query exists
     } else if (req.query && Object.keys(req.query).length > 0) {
-      // @ts-expect-error req.query.access_token may be null
+      // @ts-expect-error req.query exists
       token = req.query.access_token
     }
     if (token != null) {
@@ -39,15 +42,51 @@ const Authenticate = (
         .get('user_ips', ['user_id, device_id'], { access_token: token })
         .then((rows) => {
           if (rows.length === 0) {
-            throw Error()
+            const applicationServices = conf.application_services
+            const asTokens: string[] = applicationServices.map(
+              (as: AppServiceRegistration) => as.as_token
+            )
+            if (asTokens.includes(token as string)) {
+              // Check if the request is made by an application-service
+              const appService = applicationServices.find(
+                (as: AppServiceRegistration) => as.as_token === token
+              )
+              // @ts-expect-error req.query exists
+              const userId = req.query.user_id
+                ? // @ts-expect-error req.query exists
+                  req.query.user_id
+                : //  @ts-expect-error appService exists since we found a matching token
+                  toMatrixId(appService.sender_localpart, conf.server_name)
+              if (
+                appService?.namespaces.users &&
+                !appService?.namespaces.users.some((namespace) =>
+                  new RegExp(namespace.regex).test(userId)
+                ) // check if the userId is registered by the appservice
+              ) {
+                send(
+                  res,
+                  403,
+                  errMsg(
+                    'forbidden',
+                    'The appservice cannot masquerade as the user or has not registered them.'
+                  )
+                )
+                return
+              }
+              // Should we check if the userId is already registered in the database?
+              data = { sub: userId, epoch: epoch() }
+              callback(data, token)
+            } else {
+              throw new Error()
+            }
+          } else {
+            data = { sub: rows[0].user_id as string, epoch: epoch() }
+            data.sub = rows[0].user_id as string
+            if (rows[0].device_id) {
+              data.device_id = rows[0].device_id as string
+            }
+            callback(data, token)
           }
-          data = { sub: rows[0].user_id as string, epoch: epoch() }
-          data.sub = rows[0].user_id as string
-          // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
-          if (rows[0].device_id) {
-            data.device_id = rows[0].device_id as string
-          }
-          callback(data, token)
         })
         .catch((e) => {
           logger.warn('Access tried with an unkown token', req.headers)

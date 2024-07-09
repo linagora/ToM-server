@@ -102,7 +102,7 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
       serverConf,
       this.logger
     )
-    this.authenticate = Authenticate(this.matrixDb, this.logger)
+    this.authenticate = Authenticate(this.matrixDb, this.logger, this.conf)
     this.ready = new Promise((resolve, reject) => {
       this.ready
         .then(() => {
