@@ -14,7 +14,8 @@ describe('Vault controllers', () => {
   const dbManager: Partial<TwakeDB> = {
     get: jest.fn(),
     insert: jest.fn(),
-    deleteWhere: jest.fn()
+    deleteWhere: jest.fn(),
+    update: jest.fn()
   }
   let mockRequest: ITestRequest
   let mockResponse: Partial<Response>
@@ -69,6 +70,7 @@ describe('Vault controllers', () => {
   // Testing saveRecoveryWords
   it('should return response with status code 201 on save success', async () => {
     jest.spyOn(dbManager, 'insert').mockResolvedValue([{ words }])
+    jest.spyOn(dbManager, 'get').mockResolvedValue([])
     const handler: expressAppHandler = saveRecoveryWords(dbManager as TwakeDB)
     handler(mockRequest as Request, mockResponse as Response, nextFunction)
     await new Promise(process.nextTick)
@@ -78,10 +80,24 @@ describe('Vault controllers', () => {
   it('should call next function to throw error on saving failed', async () => {
     const errorMsg = 'Insert failed'
     jest.spyOn(dbManager, 'insert').mockRejectedValue(new Error(errorMsg))
+    jest.spyOn(dbManager, 'get').mockResolvedValue([])
     const handler: expressAppHandler = saveRecoveryWords(dbManager as TwakeDB)
     handler(mockRequest as Request, mockResponse as Response, nextFunction)
     await new Promise(process.nextTick)
     expect(nextFunction).toHaveBeenCalledWith(new Error(errorMsg))
+  })
+
+  it('should update the recoverywords when it already exists', async () => {
+    jest
+      .spyOn(dbManager, 'get')
+      .mockResolvedValue([{ words: 'Another sentence for the same user' }])
+    jest.spyOn(dbManager, 'update').mockResolvedValue([{ words }])
+    const handler: expressAppHandler = saveRecoveryWords(dbManager as TwakeDB)
+    handler(mockRequest as Request, mockResponse as Response, nextFunction)
+    await new Promise(process.nextTick)
+    expect(mockResponse.statusCode).toEqual(200)
+    expect(dbManager.update).toHaveBeenCalled()
+    expect(dbManager.insert).not.toHaveBeenCalled()
   })
 
   // Testing getRecoveryWords
