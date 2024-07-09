@@ -38,6 +38,7 @@ const buildUserDB = (conf: Config, recreate?: boolean): Promise<void> => {
                   'CREATE TABLE IF NOT EXISTS profiles (user_id text, displayname text)',
                   (err) => {
                     if (err != null) {
+                      console.error(err)
                       reject(err)
                     } else {
                       // Insert only dwho into profiles (user00-user30 should be inactive)

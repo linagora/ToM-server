@@ -1,0 +1,352 @@
+[
+  {
+    "_index": "mailbox_v2",
+    "_source": {
+      "attachments": [
+        {
+          "contentDisposition": "attachment",
+          "fileExtension": "txt",
+          "fileName": "message1.txt",
+          "mediaType": "text/plain",
+          "textContent": "May the Force be with you!"
+        }
+      ],
+      "bcc": [
+        {
+          "address": "hsolo@example.com",
+          "domain": "example.com",
+          "name": "Han Solo"
+        }
+      ],
+      "cc": [
+        {
+          "address": "c3po@example.com",
+          "domain": "example.com",
+          "name": "C-3PO"
+        }
+      ],
+      "date": "2024-02-22T12:30:00Z",
+      "from": [
+        {
+          "address": "lskywalker@example.com",
+          "domain": "example.com",
+          "name": "Luke Skywalker"
+        }
+      ],
+      "hasAttachment": true,
+      "headers": [
+        { "name": "Header1", "value": "Value1" },
+        { "name": "Header2", "value": "Value2" }
+      ],
+      "htmlBody": "<p>May the Force be with you!</p>",
+      "isAnswered": false,
+      "isDeleted": false,
+      "isDraft": false,
+      "isFlagged": true,
+      "isRecent": true,
+      "isUnread": false,
+      "mailboxId": "mailbox1",
+      "mediaType": "text/plain",
+      "messageId": "message1",
+      "mimeMessageID": "mimeMessageID1",
+      "modSeq": 12345,
+      "saveDate": "2024-02-22T12:30:00Z",
+      "sentDate": "2024-02-22T12:30:00Z",
+      "size": 1024,
+      "subject": ["Star Wars Message 1"],
+      "subtype": "subtype1",
+      "textBody": "May the Force be with you!",
+      "threadId": "thread1",
+      "to": [
+        {
+          "address": "jbinks@example.com",
+          "domain": "example.com",
+          "name": "Jar Jar Binks"
+        }
+      ],
+      "uid": 123456,
+      "userFlags": ["Flag1", "Flag2"]
+    }
+  },
+  {
+    "_index": "mailbox_v2",
+    "_source": {
+      "attachments": [
+        {
+          "contentDisposition": "attachment",
+          "fileExtension": "pdf",
+          "fileName": "attachment2.pdf",
+          "mediaType": "application/pdf",
+          "textContent": "The plans are in the droid."
+        }
+      ],
+      "bcc": [
+        {
+          "address": "myoda@example.com",
+          "domain": "example.com",
+          "name": "Master Yoda"
+        }
+      ],
+      "cc": [
+        {
+          "address": "lorgana@example.com",
+          "domain": "example.com",
+          "name": "Leia Organa"
+        }
+      ],
+      "date": "2024-02-23T14:45:00Z",
+      "from": [
+        {
+          "address": "okenobi@example.com",
+          "domain": "example.com",
+          "name": "Obi-Wan Kenobi"
+        }
+      ],
+      "hasAttachment": true,
+      "headers": [
+        { "name": "Header3", "value": "Value3" },
+        { "name": "Header4", "value": "Value4" }
+      ],
+      "htmlBody": "<p>The plans are in the droid.</p>",
+      "isAnswered": false,
+      "isDeleted": false,
+      "isDraft": true,
+      "isFlagged": false,
+      "isRecent": false,
+      "isUnread": true,
+      "mailboxId": "mailbox2",
+      "mediaType": "application/pdf",
+      "messageId": "message2",
+      "mimeMessageID": "mimeMessageID2",
+      "modSeq": 54321,
+      "saveDate": "2024-02-23T14:45:00Z",
+      "sentDate": "2024-02-23T14:45:00Z",
+      "size": 2048,
+      "subject": ["Star Wars Message 2"],
+      "subtype": "subtype2",
+      "textBody": "The plans are in the droid.",
+      "threadId": "thread2",
+      "to": [
+        {
+          "address": "lskywalker@example.com",
+          "domain": "example.com",
+          "name": "Luke Skywalker"
+        }
+      ],
+      "uid": 654321,
+      "userFlags": ["Flag3"]
+    }
+  },
+  {
+    "_index": "mailbox_v2",
+    "_source": {
+      "attachments": [
+        {
+          "contentDisposition": "attachment",
+          "fileExtension": "jpg",
+          "fileName": "image1.jpg",
+          "mediaType": "image/jpeg",
+          "textContent": "A beautiful galaxy far, far away."
+        }
+      ],
+      "bcc": [
+        {
+          "address": "okenobi@example.com",
+          "domain": "example.com",
+          "name": "Obi-Wan Kenobi"
+        }
+      ],
+      "cc": [
+        {
+          "address": "pamidala@example.com",
+          "domain": "example.com",
+          "name": "Padme Amidala"
+        }
+      ],
+      "date": "2024-02-24T10:15:00Z",
+      "from": [
+        {
+          "address": "dmaul@example.com",
+          "domain": "example.com",
+          "name": "Dark Maul"
+        }
+      ],
+      "hasAttachment": true,
+      "headers": [
+        { "name": "Header5", "value": "Value5" },
+        { "name": "Header6", "value": "Value6" }
+      ],
+      "htmlBody": "<p>A beautiful galaxy far, far away.</p>",
+      "isAnswered": true,
+      "isDeleted": false,
+      "isDraft": false,
+      "isFlagged": true,
+      "isRecent": true,
+      "isUnread": false,
+      "mailboxId": "mailbox3",
+      "mediaType": "image/jpeg",
+      "messageId": "message3",
+      "mimeMessageID": "mimeMessageID3",
+      "modSeq": 98765,
+      "saveDate": "2024-02-24T10:15:00Z",
+      "sentDate": "2024-02-24T10:15:00Z",
+      "size": 4096,
+      "subject": ["Star Wars Message 3"],
+      "subtype": "subtype3",
+      "textBody": "A beautiful galaxy far, far away.",
+      "threadId": "thread3",
+      "to": [
+        {
+          "address": "kren@example.com",
+          "domain": "example.com",
+          "name": "Kylo Ren"
+        }
+      ],
+      "uid": 987654,
+      "userFlags": ["Flag4", "Flag5"]
+    }
+  },
+  {
+    "_index": "mailbox_v2",
+    "_source": {
+      "attachments": [
+        {
+          "contentDisposition": "inline",
+          "fileExtension": "png",
+          "fileName": "image2.png",
+          "mediaType": "image/png",
+          "textContent": "May the pixels be with you."
+        }
+      ],
+      "bcc": [
+        {
+          "address": "chewbacca@example.com",
+          "domain": "example.com",
+          "name": "Chewbacca"
+        },
+        {
+          "address": "jbinks@example.com",
+          "domain": "example.com",
+          "name": "Jar Jar Binks"
+        }
+      ],
+      "cc": [
+        {
+          "address": "qjinn@example.com",
+          "domain": "example.com",
+          "name": "Qui-Gon Jinn"
+        }
+      ],
+      "date": "2024-02-25T08:45:00Z",
+      "from": [
+        {
+          "address": "lskywalker@example.com",
+          "domain": "example.com",
+          "name": "Luke Skywalker"
+        }
+      ],
+      "hasAttachment": true,
+      "headers": [
+        { "name": "Header7", "value": "Value7" },
+        { "name": "Header8", "value": "Value8" }
+      ],
+      "htmlBody": "<p>May the pixels be with you.</p>",
+      "isAnswered": false,
+      "isDeleted": true,
+      "isDraft": false,
+      "isFlagged": false,
+      "isRecent": true,
+      "isUnread": false,
+      "mailboxId": "mailbox4",
+      "mediaType": "image/png",
+      "messageId": "message4",
+      "mimeMessageID": "mimeMessageID4",
+      "modSeq": 13579,
+      "saveDate": "2024-02-25T08:45:00Z",
+      "sentDate": "2024-02-25T08:45:00Z",
+      "size": 8192,
+      "subject": ["Star Wars Message 4"],
+      "subtype": "subtype4",
+      "textBody": "May the pixels be with you.",
+      "threadId": "thread4",
+      "to": [
+        {
+          "address": "hsolo@example.com",
+          "domain": "example.com",
+          "name": "Han Solo"
+        }
+      ],
+      "uid": 1234567,
+      "userFlags": ["Flag6"]
+    }
+  },
+  {
+    "_index": "mailbox_v2",
+    "_source": {
+      "attachments": [
+        {
+          "contentDisposition": "attachment",
+          "fileExtension": "docx",
+          "fileName": "document1.docx",
+          "mediaType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          "textContent": "A long time ago in a galaxy far, far away."
+        }
+      ],
+      "bcc": [
+        {
+          "address": "lskywalker@example.com",
+          "domain": "example.com",
+          "name": "Luke Skywalker"
+        }
+      ],
+      "cc": [
+        {
+          "address": "myoda@example.com",
+          "domain": "example.com",
+          "name": "Master Yoda"
+        }
+      ],
+      "date": "2024-02-26T16:30:00Z",
+      "from": [
+        {
+          "address": "hsolo@example.com",
+          "domain": "example.com",
+          "name": "Han Solo"
+        }
+      ],
+      "hasAttachment": true,
+      "headers": [
+        { "name": "Header9", "value": "Value9" },
+        { "name": "Header10", "value": "Value10" }
+      ],
+      "htmlBody": "<p>A long time ago in a galaxy far, far away.</p>",
+      "isAnswered": true,
+      "isDeleted": false,
+      "isDraft": false,
+      "isFlagged": true,
+      "isRecent": false,
+      "isUnread": true,
+      "mailboxId": "mailbox5",
+      "mediaType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "messageId": "message5",
+      "mimeMessageID": "mimeMessageID5",
+      "modSeq": 24680,
+      "saveDate": "2024-02-26T16:30:00Z",
+      "sentDate": "2024-02-26T16:30:00Z",
+      "size": 16384,
+      "subject": ["Star Wars Message 5"],
+      "subtype": "subtype5",
+      "textBody": "A long time ago in a galaxy far, far away.",
+      "threadId": "thread5",
+      "to": [
+        {
+          "address": "chewbacca@example.com",
+          "domain": "example.com",
+          "name": "Chewbacca"
+        }
+      ],
+      "uid": 2345678,
+      "userFlags": ["Flag7", "Flag8"]
+    }
+  }
+]
