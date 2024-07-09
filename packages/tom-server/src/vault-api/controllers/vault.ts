@@ -21,7 +21,7 @@ export const saveRecoveryWords = (db: TwakeDB): expressAppHandler => {
             .then((_) => {
               res
                 .status(200)
-                .json({ message: 'Recovery words updated sucessfully' })
+                .json({ message: 'Updated recovery words sucessfully' })
             })
             .catch((err) => {
               next(err)
@@ -32,7 +32,7 @@ export const saveRecoveryWords = (db: TwakeDB): expressAppHandler => {
             .then((_) => {
               res
                 .status(201)
-                .json({ message: 'Recovery words saved sucessfully' })
+                .json({ message: 'Saved recovery words sucessfully' })
             })
             .catch((err) => {
               next(err)
