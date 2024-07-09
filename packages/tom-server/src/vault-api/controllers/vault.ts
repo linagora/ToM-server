@@ -1,4 +1,6 @@
+/* eslint-disable no-useless-return */
 import { type TwakeDB } from '../../db'
+import type { Collections } from '../../types'
 import { VaultAPIError, type expressAppHandler } from '../utils'
 
 export type VaultController = (db: TwakeDB) => expressAppHandler
@@ -9,14 +11,34 @@ export const methodNotAllowed: expressAppHandler = (req, res, next) => {
 
 export const saveRecoveryWords = (db: TwakeDB): expressAppHandler => {
   return (req, res, next) => {
-    const data: Record<string, string> = {
-      userId: req.token.content.sub,
-      words: req.body.words
-    }
-    // @ts-expect-error 'recoveryWords' isn't declared in Collection
-    db.insert('recoveryWords', data)
-      .then((_) => {
-        res.status(201).json({ message: 'Saved recovery words sucessfully' })
+    const { words } = req.body
+    const userId = req.token.content.sub
+
+    db.get('recoveryWords' as Collections, ['words'], { userId })
+      .then((data) => {
+        if (data.length > 0) {
+          db.update('recoveryWords' as Collections, { words }, 'userId', userId)
+            .then((_) => {
+              res
+                .status(200)
+                .json({ message: 'Recovery words updated sucessfully' })
+            })
+            .catch((err) => {
+              next(err)
+              return
+            })
+        } else {
+          db.insert('recoveryWords' as Collections, { userId, words })
+            .then((_) => {
+              res
+                .status(201)
+                .json({ message: 'Recovery words saved sucessfully' })
+            })
+            .catch((err) => {
+              next(err)
+              return
+            })
+        }
       })
       .catch((err) => {
         next(err)
