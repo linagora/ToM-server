@@ -88,7 +88,7 @@ const updateUsers = async <T extends string = never>(
   const timestamp = epoch()
   users.forEach((user) => {
     const uid = user.uid as string
-    const matrixAddress = toMatrixId(uid,conf.server_name)
+    const matrixAddress = toMatrixId(uid, conf.server_name)
     const pos = knownUids.indexOf(uid)
     const isMatrixUser = matrixUsers.includes(uid)
     const data = {
@@ -150,7 +150,8 @@ const updateUsers = async <T extends string = never>(
   const seen: Record<string, boolean> = {}
   knownUids.forEach((uid, i) => {
     if (!uids.includes(uid)) {
-      if (!seen[uid]) updates.push(setInactive(toMatrixId(uid,conf.server_name)))
+      if (!seen[uid])
+        updates.push(setInactive(toMatrixId(uid, conf.server_name)))
       seen[uid] = true
     }
   })

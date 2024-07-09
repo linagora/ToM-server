@@ -92,7 +92,10 @@ const _search = (
                   ] = true
                 })
                 rows.forEach((row) => {
-                  row.address = toMatrixId(row.uid as string, idServer.conf.server_name)
+                  row.address = toMatrixId(
+                    row.uid as string,
+                    idServer.conf.server_name
+                  )
                   if (mUids[row.uid as string]) {
                     matches.push(row)
                   } else {

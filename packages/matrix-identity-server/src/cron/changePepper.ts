@@ -138,7 +138,7 @@ const updateHashes = <T extends string = never>(
                   db,
                   logger,
                   rows.reduce((res, row) => {
-                    res[toMatrixId(row.uid as string,conf.server_name)] = {
+                    res[toMatrixId(row.uid as string, conf.server_name)] = {
                       email: row.mail as string,
                       phone: row.mobile as string,
                       active: isMatrixDbAvailable ? (row.active as number) : 1
