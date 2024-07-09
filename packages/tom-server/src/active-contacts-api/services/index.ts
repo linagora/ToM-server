@@ -55,6 +55,23 @@ class ActiveContactsService implements IActiveContactsService {
    */
   save = async (userId: string, contacts: string): Promise<void> => {
     try {
+      const existing = await this.db.get(
+        'activeContacts' as Collections,
+        ['contacts'],
+        { userId }
+      )
+
+      if (existing.length > 0) {
+        await this.db.update(
+          'activeContacts' as Collections,
+          { contacts },
+          'userId',
+          userId
+        )
+        this.logger.info('active contacts updated successfully')
+        return
+      }
+
       await this.db.insert('activeContacts' as Collections, {
         userId,
         contacts

@@ -91,6 +91,7 @@ describe('the active contacts API controller', () => {
 
   describe('active contacts save', () => {
     it('should try to save active contacts', async () => {
+      dbMock.get.mockResolvedValue([])
       dbMock.insert.mockResolvedValue([])
 
       const response = await supertest(app)

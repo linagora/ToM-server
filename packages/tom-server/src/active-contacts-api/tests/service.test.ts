@@ -6,7 +6,8 @@ describe('The active contacts service', () => {
   const dbMock = {
     get: jest.fn(),
     insert: jest.fn(),
-    deleteEqual: jest.fn()
+    deleteEqual: jest.fn(),
+    update: jest.fn()
   }
 
   const loggerMock = {
@@ -22,6 +23,7 @@ describe('The active contacts service', () => {
 
   it('should save active contacts for a user', async () => {
     dbMock.insert.mockResolvedValue(undefined)
+    dbMock.get.mockResolvedValue([])
 
     await expect(
       activeContactsService.save('test', 'contact')
@@ -31,6 +33,22 @@ describe('The active contacts service', () => {
       userId: 'test',
       contacts: 'contact'
     })
+  })
+
+  it('should update active contacts for a user if there are existing ones', async () => {
+    dbMock.get.mockResolvedValue([{ userId: 'test', contacts: 'test contact' }])
+    dbMock.update.mockResolvedValue(undefined)
+
+    await expect(
+      activeContactsService.save('test', 'contact')
+    ).resolves.not.toThrow()
+
+    expect(dbMock.update).toHaveBeenCalledWith(
+      'activeContacts',
+      { contacts: 'contact' },
+      'userId',
+      'test'
+    )
   })
 
   it('should fetch active contacts for a user', async () => {
