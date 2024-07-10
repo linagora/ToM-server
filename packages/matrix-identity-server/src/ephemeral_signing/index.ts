@@ -41,37 +41,31 @@ const SignEd25519 = <T extends string = never>(
             send(res, 400, errMsg('invalidParam', 'invalid Matrix user ID'))
           } else {
             idServer.db
-              .get('oneTimeTokens', ['data'], { id: token })
-              .then((rows) => {
-                if (rows.length === 0) {
-                  send(res, 404, errMsg('invalidParam', 'token not found'))
-                } else {
-                  const parsedData = JSON.parse(rows[0].data as string)
-                  const sender = parsedData.sender
-                  const newToken = randomString(64)
-                  const identifier = nacl.randomBytes(8)
-                  let identifierHex = naclUtil.encodeBase64(identifier)
-                  identifierHex = toBase64Url(identifierHex)
-                  send(
-                    res,
-                    200,
-                    signJson(
-                      { mxid, sender, token: newToken },
-                      privateKey,
-                      idServer.conf.server_name,
-                      `ed25519:${identifierHex}`
-                    )
+              .verifyInvitationToken(token)
+              .then((data) => {
+                // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
+                // @ts-ignore
+                const sender = data.sender as string
+                const newToken = randomString(64)
+                const identifier = nacl.randomBytes(8)
+                let identifierHex = naclUtil.encodeBase64(identifier)
+                identifierHex = toBase64Url(identifierHex)
+                send(
+                  res,
+                  200,
+                  signJson(
+                    { mxid, sender, token: newToken },
+                    privateKey,
+                    idServer.conf.server_name,
+                    `ed25519:${identifierHex}`
                   )
-                }
+                )
               })
               .catch((err) => {
                 /* istanbul ignore next */
-                idServer.logger.error(
-                  'Error while fetching one-time token',
-                  err
-                )
+                idServer.logger.error('Token denied', err)
                 /* istanbul ignore next */
-                send(res, 400, errMsg('unknown', err))
+                send(res, 404, errMsg('notFound', err))
               })
           }
         })

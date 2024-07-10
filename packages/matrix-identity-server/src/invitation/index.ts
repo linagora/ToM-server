@@ -55,12 +55,13 @@ const preConfigureTemplate = (
   )
 }
 
+// TODO : don't forget to modify this : cf matrix.to or other method
 const inviteLink = (
-  method: 'matrix' | 'twake',
+  method: 'matrix.org' | 'twake.org',
   address: string,
   name: string
 ): string => {
-  return `https://${medium}/${address}/${name}`
+  return `https://${method}/${address}/${name}`
 }
 
 const mailBody = (
@@ -86,14 +87,12 @@ const mailBody = (
       .replace(/__date__/g, new Date().toUTCString())
       // initialize message id
       .replace(/__messageid__/g, randomString(32))
-      .replace(/__room_name__/g, room_name ?? '')
-      .replace(/__room_avatar__/g, room_avatar ?? '')
-      .replace(/__room_type__/g, room_type ?? '')
-      .replace(/__link__/g, inviteLink('matrix', dst, room_name))
+      .replace(/__room_name__/g, room_name)
+      .replace(/__room_avatar__/g, room_avatar)
+      .replace(/__room_type__/g, room_type)
+      .replace(/__link__/g, inviteLink('matrix.org', dst, room_name))
   )
 }
-
-const invitationDelay = 3155760000 // 100 years in seconds
 
 // To complete if another 3PID is added for this endpoint
 const validMediums: string[] = ['email']
@@ -162,6 +161,7 @@ const StoreInvit = <T extends string = never>(
                 send(res, 400, errMsg('invalidEmail'))
                 return
               }
+            // TODO : add phone number validation
           }
           // Call to the lookup API to check for any existing third-party identifiers
           try {
@@ -203,23 +203,29 @@ const StoreInvit = <T extends string = never>(
                 ...(obj as storeInvitationArgs),
                 key: ephemeralKey
               }
-              const _token = await idServer.db.createToken(
-                objWithKey,
-                invitationDelay
+              const _token = await idServer.db.createInvitationToken(
+                _address,
+                objWithKey
               )
-              // send email
-              void transport.sendMail({
-                to: _address,
-                raw: mailBody(
-                  verificationTemplate,
-                  (obj as storeInvitationArgs).sender_display_name ?? '*****',
-                  _address,
-                  (obj as storeInvitationArgs).room_name ?? '*****',
-                  (obj as storeInvitationArgs).room_avatar_url ?? '*****',
-                  (obj as storeInvitationArgs).room_type ?? '*****'
-                )
-              })
-              // send 200 response
+              // Send email/sms
+              switch (_medium) {
+                case 'email':
+                  void transport.sendMail({
+                    to: _address,
+                    raw: mailBody(
+                      verificationTemplate,
+                      (obj as storeInvitationArgs).sender_display_name ??
+                        '*****',
+                      _address,
+                      (obj as storeInvitationArgs).room_name ?? '*****',
+                      (obj as storeInvitationArgs).room_avatar_url ?? '*****',
+                      (obj as storeInvitationArgs).room_type ?? '*****'
+                    )
+                  })
+                  break
+                // TODO : add sms sending
+              }
+              // Send 200 response
               const redactedAddress = redactAddress(_address)
               idServer.db
                 .getKeys('current')
@@ -240,16 +246,20 @@ const StoreInvit = <T extends string = never>(
                   }
                   send(res, 200, responseBody)
                 })
-                .catch((e) => {
+                .catch((err) => {
                   /* istanbul ignore next */
                   idServer.logger.debug(
                     'Error while getting the current key',
-                    e
+                    err
                   )
                   /* istanbul ignore next */
-                  throw e
+                  send(res, 500, errMsg('unknown', err))
                 })
             } else {
+              /* istanbul ignore next */
+              idServer.logger.error(
+                'Unexpected response statusCode from the /_matrix/identity/v2/lookup API'
+              )
               send(
                 res,
                 500,
@@ -259,14 +269,14 @@ const StoreInvit = <T extends string = never>(
                 )
               )
             }
-          } catch (e) {
+          } catch (err) {
             /* istanbul ignore next */
-            idServer.logger.debug(
+            idServer.logger.error(
               'Error while making a call to the lookup API (/_matrix/identity/v2/lookup)',
-              e
+              err
             )
             /* istanbul ignore next */
-            throw e
+            send(res, 500, errMsg('unknown', err as string))
           }
         })
       })
