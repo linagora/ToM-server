@@ -126,7 +126,8 @@ export const epoch = (): number => {
 export const toMatrixId = (localpart: string, serverName: string): string => {
   // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
   if (!localpart.match(/^[a-z0-9_\-\.=/]+$/)) {
-    throw new Error('Invalid localpart')
+    // eslint-disable-next-line @typescript-eslint/no-throw-literal
+    throw errMsg('invalidUsername')
   }
   return `@${localpart}:${serverName}`
 }
