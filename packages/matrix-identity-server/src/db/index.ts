@@ -34,7 +34,7 @@ const tables: Record<Collections, string> = {
   oneTimeTokens: 'id varchar(64) PRIMARY KEY, expires int, data text',
   hashes:
     'hash varchar(48) PRIMARY KEY, pepper varchar(32), type varchar(8), value text, active integer',
-  invitationTokens: 'id varchar(64) PRIMARY KEY, data text, address text',
+  invitationTokens: 'id varchar(64) PRIMARY KEY, address text, data text',
   keys: 'name varchar(32) PRIMARY KEY, data text',
   longTermKeypairs:
     'name text PRIMARY KEY, keyID varchar(64), public text, private text',
@@ -564,6 +564,53 @@ class IdentityServerDb<T extends string = never>
   // eslint-disable-next-line @typescript-eslint/promise-function-async
   createToken(data: object, expires?: number): Promise<string> {
     return this.createOneTimeToken(data, expires)
+  }
+
+  // eslint-disable-next-line @typescript-eslint/promise-function-async
+  createInvitationToken(address: string, data: object): Promise<string> {
+    /* istanbul ignore if */
+    if (this.db == null) {
+      throw new Error('Wait for database to be ready')
+    }
+    const id = randomString(64)
+    return new Promise((resolve, reject) => {
+      this.db
+        .insert('invitationTokens', {
+          id,
+          address,
+          data: JSON.stringify(data)
+        })
+        .then(() => {
+          resolve(id)
+        })
+        .catch((err) => {
+          /* istanbul ignore next */
+          this.logger.error('Failed to insert token', err)
+        })
+    })
+  }
+
+  // eslint-disable-next-line @typescript-eslint/promise-function-async
+  verifyInvitationToken(id: string): Promise<object> {
+    /* istanbul ignore if */
+    if (this.db == null) {
+      throw new Error('Wait for database to be ready')
+    }
+    return new Promise((resolve, reject) => {
+      this.db
+        .get('invitationTokens', ['data', 'address'], { id })
+        .then((rows) => {
+          /* istanbul ignore else */
+          if (rows.length > 0) {
+            resolve(JSON.parse(rows[0].data as string))
+          } else {
+            reject(new Error('Unknown token'))
+          }
+        })
+        .catch((e) => {
+          reject(e)
+        })
+    })
   }
 
   // eslint-disable-next-line @typescript-eslint/promise-function-async

@@ -92,6 +92,31 @@ describe('Id Server DB', () => {
       .catch(done)
   })
 
+  it('should provide verification-token', (done) => {
+    idDb = new IdDb(baseConf, logger)
+    idDb.ready
+      .then(() => {
+        idDb
+          .createInvitationToken('randomMailorPhone', { a: 1 })
+          .then((token) => {
+            expect(token).toMatch(/^[a-zA-Z0-9]+$/)
+            idDb
+              .verifyInvitationToken(token)
+              .then((data) => {
+                // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
+                // @ts-ignore
+                expect(data.a).toEqual(1)
+                clearTimeout(idDb.cleanJob)
+                idDb.close()
+                done()
+              })
+              .catch((e) => done(e))
+          })
+          .catch((e) => done(e))
+      })
+      .catch((e) => done(e))
+  })
+
   it('should provide match()', (done) => {
     idDb = new IdDb(baseConf, logger)
     idDb.ready
