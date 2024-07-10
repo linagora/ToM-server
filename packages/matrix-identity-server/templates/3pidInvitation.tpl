@@ -12,8 +12,8 @@ Content-Type: text/plain; charset=UTF-8
 Content-Disposition: inline
 Hello,
 
-You have been invited to join a Matrix room by __inviter_name__. If you possess a Matrix account, please consider binding this email address to your account in order to accept the invitation.
-
+You have been invited to join a Matrix room by __inviter_name__. 
+Please click on the following link to accept the invitation: __link__
 
 About Matrix:
 Matrix is an open standard for interoperable, decentralised, real-time communication over IP. It can be used to power Instant Messaging, VoIP/WebRTC signalling, Internet of Things communication - or anywhere you need a standard HTTP API for publishing and subscribing to data whilst tracking the conversation history.
@@ -40,20 +40,8 @@ body {
 <body>
 <p>Hello,</p>
 
-<p>You have been invited to join a Matrix room by __inviter_name__. If you possess a Matrix account, please consider binding this email address to your account in order to accept the invitation.</p>
+<p>You have been invited to join a Matrix room by __inviter_name__. Please click on the following link to accept the invitation: <a href="__link__">__link__</a></p>
 
-<p>If your client requires a code, the code is __token__</p>
-
-<br>
-<p>Invitation Details:</p>
-<ul>
-<li><strong>Inviter:</strong> __inviter_name__ (display name: __inviter_display_name__)</li>
-<li><strong>Room Name:</strong> __room_name__</li>
-<li><strong>Room Type:</strong> __room_type__</li>
-<li><strong>Room Avatar:</strong> <img src="__room_avatar__" alt="Room Avatar" /></li>
-</ul>
-
-<br>
 <p>About Matrix:</p>
 
 <p>Matrix is an open standard for interoperable, decentralised, real-time communication over IP. It can be used to power Instant Messaging, VoIP/WebRTC signalling, Internet of Things communication - or anywhere you need a standard HTTP API for publishing and subscribing to data whilst tracking the conversation history.</p>
@@ -64,4 +52,3 @@ body {
 </html>
 
 --__multipart_boundary__--
-
