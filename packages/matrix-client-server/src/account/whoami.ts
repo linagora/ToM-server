@@ -14,15 +14,8 @@ const whoami = (clientServer: MatrixClientServer): expressAppHandler => {
         .get('users', ['name', 'is_guest'], { name: data.sub })
         .then((rows) => {
           if (rows.length === 0) {
-            // istanbul ignore next // TODO : Test this after implementing /register endpoint
-            send(
-              res,
-              403,
-              errMsg(
-                'forbidden',
-                'The appservice cannot masquerade as the user or has not registered them.'
-              )
-            )
+            // istanbul ignore next // might remove the istanbul ignore if an endpoint other than /register modifies the users table
+            send(res, 403, errMsg('invalidUsername'))
           }
           const isGuest = rows[0].is_guest !== 0
           const body: responseBody = { user_id: data.sub, is_guest: isGuest }

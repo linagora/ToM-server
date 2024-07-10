@@ -16,5 +16,22 @@
   "userdb_engine": "sqlite",
   "userdb_host": "./src/__testData__/test.db",
   "matrix_database_engine": "sqlite",
-  "matrix_database_host": "./src/__testData__/testMatrix.db"
+  "matrix_database_host": "./src/__testData__/testMatrix.db",
+  "application_services": [
+    {
+      "id": "test",
+      "hs_token": "hsTokenTestwdakZQunWWNe3DZitAerw9aNqJ2a6HVp0sJtg7qTJWXcHnBjgN0NL",
+      "as_token": "as_token_test",
+      "url": "http://localhost:3000",
+      "sender_localpart": "sender_localpart_test",
+      "namespaces": {
+        "users": [
+          {
+            "exclusive": false,
+            "regex": "@_irc_bridge_.*"
+          }
+        ]
+      }
+    }
+  ]
 }

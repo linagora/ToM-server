@@ -122,3 +122,12 @@ export const validateParameters: validateParametersType = (
 export const epoch = (): number => {
   return Date.now()
 }
+
+export const toMatrixId = (localpart: string, serverName: string): string => {
+  // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+  if (!localpart.match(/^[a-z0-9_\-\.=/]+$/)) {
+    // eslint-disable-next-line @typescript-eslint/no-throw-literal
+    throw errMsg('invalidUsername')
+  }
+  return `@${localpart}:${serverName}`
+}

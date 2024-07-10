@@ -1,5 +1,5 @@
 import { type TwakeLogger } from '@twake/logger'
-import { errMsg, send } from '@twake/utils'
+import { errMsg, send, toMatrixId } from '@twake/utils'
 import { type Response } from 'express'
 import type http from 'http'
 import type TwakeIdentityServer from '..'
@@ -70,7 +70,7 @@ const _search = (
             const end = start + (data.limit ?? 30)
             rows = rows.slice(start, end)
             const mUid = rows.map((v) => {
-              return `@${v.uid as string}:${idServer.conf.server_name}`
+              return toMatrixId(v.uid as string, idServer.conf.server_name)
             })
             /**
              * For the record, this can be replaced by a call to
@@ -92,9 +92,10 @@ const _search = (
                   ] = true
                 })
                 rows.forEach((row) => {
-                  row.address = `@${row.uid as string}:${
+                  row.address = toMatrixId(
+                    row.uid as string,
                     idServer.conf.server_name
-                  }`
+                  )
                   if (mUids[row.uid as string]) {
                     matches.push(row)
                   } else {
