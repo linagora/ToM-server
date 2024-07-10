@@ -55,6 +55,14 @@ const preConfigureTemplate = (
   )
 }
 
+const inviteLink = (
+  method: 'matrix' | 'twake',
+  address: string,
+  name: string
+): string => {
+  return `https://${medium}/${address}/${name}`
+}
+
 const mailBody = (
   template: string,
   // eslint-disable-next-line @typescript-eslint/naming-convention
@@ -81,6 +89,7 @@ const mailBody = (
       .replace(/__room_name__/g, room_name ?? '')
       .replace(/__room_avatar__/g, room_avatar ?? '')
       .replace(/__room_type__/g, room_type ?? '')
+      .replace(/__link__/g, inviteLink('matrix', dst, room_name))
   )
 }
 
@@ -134,6 +143,7 @@ const StoreInvit = <T extends string = never>(
   return (req, res) => {
     idServer.authenticate(req, res, (_data, _id) => {
       jsonContent(req, res, idServer.logger, (obj) => {
+        // eslint-disable-next-line @typescript-eslint/no-misused-promises
         validateParameters(res, schema, obj, idServer.logger, async (obj) => {
           const _address = (obj as storeInvitationArgs).address
           const _medium = (obj as storeInvitationArgs).medium
