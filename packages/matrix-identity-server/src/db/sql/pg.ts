@@ -559,7 +559,7 @@ class Pg<T extends string> extends SQL<T> implements IdDbBackend<T> {
             ','
           )}, ${minmax}(${targetField}) AS max_${targetFieldAlias} FROM ${tables.join(
             ','
-          )} ${condition}`,
+          )} ${condition} HAVING COUNT(*) > 0`, // HAVING COUNT(*) > 0 is to avoid returning a row with NULL values
           values,
           (err, rows) => {
             err ? reject(err) : resolve(rows.rows)
