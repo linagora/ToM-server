@@ -106,14 +106,22 @@ type GetJoin<T> = (
   joinFields: Record<string, string>,
   order?: string
 ) => Promise<DbGetResult>
-type GetMax<T> = (
+type GetMinMax<T> = (
   table: T,
   targetField: string,
   fields: string[],
   filterFields: Record<string, string | number | Array<string | number>>,
   order?: string
 ) => Promise<DbGetResult>
-type GetMaxJoin2<T> = (
+type GetMinMax2<T> = (
+  table: T,
+  targetField: string,
+  fields: string[],
+  filterFields1: Record<string, string | number | Array<string | number>>,
+  filterFields2: Record<string, string | number | Array<string | number>>,
+  order?: string
+) => Promise<DbGetResult>
+type GetMinMaxJoin2<T> = (
   tables: Array<T>,
   targetField: string,
   fields: string[],
@@ -170,8 +178,10 @@ export interface IdDbBackend<T> {
   getJoin: GetJoin<T>
   getWhereEqualOrDifferent: Get2<T>
   getWhereEqualAndHigher: Get2<T>
-  getMaxWhereEqual: GetMax<T>
-  getMaxWhereEqualAndLowerJoin: GetMaxJoin2<T>
+  getMaxWhereEqual: GetMinMax<T>
+  getMaxWhereEqualAndLower: GetMinMax2<T>
+  getMinWhereEqualAndHigher: GetMinMax2<T>
+  getMaxWhereEqualAndLowerJoin: GetMinMaxJoin2<T>
   getCount: GetCount<T>
   getAll: GetAll<T>
   getHigherThan: Get<T>
@@ -376,6 +386,44 @@ class IdentityServerDb<T extends string = never>
       targetField,
       fields,
       filterFields,
+      order
+    )
+  }
+
+  //eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
+  getMaxWhereEqualAndLower(
+    table: Collections | T,
+    targetField: string,
+    fields: string[],
+    filterFields1: Record<string, string | number | Array<string | number>>,
+    filterFields2: Record<string, string | number | Array<string | number>>,
+    order?: string
+  ) {
+    return this.db.getMaxWhereEqualAndLower(
+      table,
+      targetField,
+      fields,
+      filterFields1,
+      filterFields2,
+      order
+    )
+  }
+
+  //eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
+  getMinWhereEqualAndHigher(
+    table: Collections | T,
+    targetField: string,
+    fields: string[],
+    filterFields1: Record<string, string | number | Array<string | number>>,
+    filterFields2: Record<string, string | number | Array<string | number>>,
+    order?: string
+  ) {
+    return this.db.getMinWhereEqualAndHigher(
+      table,
+      targetField,
+      fields,
+      filterFields1,
+      filterFields2,
       order
     )
   }
