@@ -29,8 +29,9 @@ export type Collections =
   | 'mappings'
   | 'longTermKeypairs'
   | 'shortTermKeypairs'
+  | 'userHistory'
   | 'userPolicies'
-  | 'activeContacts'
+  | 'userQuotas'
 
 const cleanByExpires: Collections[] = ['oneTimeTokens', 'attempts']
 
