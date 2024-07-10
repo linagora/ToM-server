@@ -30,8 +30,6 @@ interface registerRequestBody {
   username?: string
 }
 
-const localPartRe = /^[a-z0-9._=/+-]+$/
-
 const createUser = (
   otherPromise: Promise<DbGetResult>,
   clientServer: MatrixClientServer,
@@ -101,10 +99,6 @@ const register = (clientServer: MatrixClientServer): expressAppHandler => {
         const deviceId = body.device_id ?? randomString(20) // Length chosen arbitrarily
         const username = body.username ?? randomString(9) // Length chosen to match the localpart restrictions for a Matrix userId
         const userId = toMatrixId(username, clientServer.conf.server_name)
-        if (!localPartRe.test(username)) {
-          send(res, 400, errMsg('invalidUsername'))
-          return
-        }
         clientServer.matrixDb
           .get('users', ['name'], {
             name: userId
