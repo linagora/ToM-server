@@ -1659,7 +1659,7 @@ describe('Use configuration file', () => {
         })
       })
 
-      describe('PUT /_matrix/client/v3/devices/:deviceId', () => {
+      describe('PUT', () => {
         const updateData = {
           display_name: 'updated_device_name'
         }
