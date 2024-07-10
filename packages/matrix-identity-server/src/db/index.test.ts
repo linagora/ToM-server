@@ -956,6 +956,27 @@ describe('Id Server DB', () => {
         .catch((e) => done(e))
     })
 
+    it('should not return a null row if the conditions are not matched', (done) => {
+      idDb = new IdDb(baseConf, logger)
+      idDb.ready.then(() => {
+        idDb
+          .insert('accessTokens', { id: '1', data: '{}' })
+          .then(() => {
+            idDb
+              .getMaxWhereEqual('accessTokens', 'id', ['id', 'data'], {
+                id: '2'
+              })
+              .then((rows) => {
+                expect(rows.length).toBe(0)
+                clearTimeout(idDb.cleanJob)
+                idDb.close()
+                done()
+              })
+          })
+          .catch((e) => done(e))
+      })
+    })
+
     it('should get max entry with corresponding equal condition', (done) => {
       idDb = new IdDb(baseConf, logger)
       idDb.ready
