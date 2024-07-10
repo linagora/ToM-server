@@ -186,6 +186,7 @@ const StoreInvit = <T extends string = never>(
   return (req, res) => {
     idServer.authenticate(req, res, (_data, _id) => {
       jsonContent(req, res, idServer.logger, (obj) => {
+        // eslint-disable-next-line @typescript-eslint/no-misused-promises
         validateParameters(res, schema, obj, idServer.logger, async (obj) => {
           try {
             const medium = (obj as storeInvitationArgs).medium
