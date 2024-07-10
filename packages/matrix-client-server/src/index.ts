@@ -46,6 +46,7 @@ import {
   getRoomVisibility,
   setRoomVisibility
 } from './rooms/room_information/room_visibilty'
+import { getRoomAliases } from './rooms/room_information/room_aliases'
 
 const tables = {
   ui_auth_sessions: 'session_id TEXT NOT NULL, stage_type TEXT NOT NULL'
@@ -138,7 +139,8 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
               getUserRoomTags(this),
             '/_matrix/client/v3/joined_rooms': getJoinedRooms(this),
             '/_matrix/client/v3/directory/list/room/:roomId':
-              getRoomVisibility(this)
+              getRoomVisibility(this),
+            '/_matrix/client/v3/rooms/:roomId/aliases': getRoomAliases(this)
           }
           this.api.post = {
             '/_matrix/client/v3/account/whoami': badMethod,
@@ -156,7 +158,8 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
             '/_matrix/client/v3/rooms/:roomId/joined_members': badMethod,
             '/_matrix/client/v3/user/:userId/rooms/:roomId/tags': badMethod,
             '/_matrix/client/v3/joined_rooms': badMethod,
-            '/_matrix/client/v3/directory/list/room/:roomId': badMethod
+            '/_matrix/client/v3/directory/list/room/:roomId': badMethod,
+            '/_matrix/client/v3/rooms/{roomId}/aliases': badMethod
           }
           this.api.put = {
             '/_matrix/client/v3/account/whoami': badMethod,
@@ -180,7 +183,8 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
               addUserRoomTag(this),
             '/_matrix/client/v3/joined_rooms': badMethod,
             '/_matrix/client/v3/directory/list/room/:roomId':
-              setRoomVisibility(this)
+              setRoomVisibility(this),
+            '/_matrix/client/v3/rooms/{roomId}/aliases': badMethod
           }
           this.api.delete = {
             '/_matrix/client/v3/account/whoami': badMethod,
@@ -195,7 +199,8 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
             '/_matrix/client/v3/user/:userId/rooms/:roomId/tags/:tag':
               removeUserRoomTag(this),
             '/_matrix/client/v3/joined_rooms': badMethod,
-            '/_matrix/client/v3/directory/list/room/:roomId': badMethod
+            '/_matrix/client/v3/directory/list/room/:roomId': badMethod,
+            '/_matrix/client/v3/rooms/{roomId}/aliases': badMethod
           }
           resolve(true)
         })
