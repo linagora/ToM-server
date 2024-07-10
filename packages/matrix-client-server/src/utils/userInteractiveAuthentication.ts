@@ -229,7 +229,7 @@ const UiAuthenticate = (
                       e
                     )
                     // istanbul ignore next
-                    send(res, 400, errMsg('unknown'))
+                    send(res, 400, e)
                   })
               })
               .catch((e) => {
@@ -239,7 +239,7 @@ const UiAuthenticate = (
                   e
                 )
                 // istanbul ignore next
-                send(res, 400, errMsg('unknown'))
+                send(res, 400, e)
               })
           })
           .catch((e) => {
@@ -275,7 +275,7 @@ const UiAuthenticate = (
                   e
                 )
                 // istanbul ignore next
-                send(res, 400, errMsg('unknown'))
+                send(res, 400, e)
               })
           })
       }

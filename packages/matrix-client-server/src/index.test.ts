@@ -547,7 +547,7 @@ describe('Use configuration file', () => {
           expect(response.body).toHaveProperty('error')
           expect(response.body).toHaveProperty('errcode', 'M_UNKNOWN_TOKEN')
         })
-        it('should refuse authenticating an appservice with a username it has not registered', async () => {
+        it('should refuse authenticating an appservice with a username that is too long', async () => {
           const asToken = conf.application_services[0].as_token
           const response = await request(app)
             .post('/_matrix/client/v3/register')
@@ -558,6 +558,23 @@ describe('Use configuration file', () => {
               auth: {
                 type: 'm.login.application_service',
                 username: 'invalidUser'
+              }
+            })
+          expect(response.statusCode).toBe(401)
+          expect(response.body).toHaveProperty('error')
+          expect(response.body).toHaveProperty('errcode', 'M_INVALID_USERNAME')
+        })
+        it('should refuse authenticating an appservice with a username it has not registered', async () => {
+          const asToken = conf.application_services[0].as_token
+          const response = await request(app)
+            .post('/_matrix/client/v3/register')
+            .set('User-Agent', 'curl/7.31.0-DEV')
+            .set('Authorization', `Bearer ${asToken}`)
+            .query({ kind: 'user' })
+            .send({
+              auth: {
+                type: 'm.login.application_service',
+                username: 'user'
               }
             })
           expect(response.statusCode).toBe(401)
@@ -689,6 +706,7 @@ describe('Use configuration file', () => {
             },
             username: '@localhost:example.com'
           })
+        console.log(response.body)
         expect(response.statusCode).toBe(400)
         expect(response.body).toHaveProperty('error')
         expect(response.body).toHaveProperty('errcode', 'M_INVALID_USERNAME')
