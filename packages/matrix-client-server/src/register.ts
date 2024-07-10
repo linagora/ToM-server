@@ -87,12 +87,10 @@ const register = (clientServer: MatrixClientServer): expressAppHandler => {
     // @ts-expect-error req.headers exists
     const ip = req.headers['x-forwarded-for'] ?? req.ip
     const accessToken = randomString(64)
-    if (!req.headers['user-agent']) {
-      clientServer.logger.error('Missing User-Agent header')
-      send(res, 400, errMsg('missingParams'))
-      return
+    let userAgent = 'undefined'
+    if (req.headers['user-agent']) {
+      userAgent = req.headers['user-agent']
     }
-    const userAgent = req.headers['user-agent']
     if (parameters.kind === 'user') {
       clientServer.uiauthenticate(req, res, (obj) => {
         const body = obj as unknown as registerRequestBody
