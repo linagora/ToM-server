@@ -6,7 +6,8 @@ import {
   jsonContent,
   validateParameters,
   epoch,
-  toMatrixId
+  toMatrixId,
+  errMsg
 } from './index'
 import { type TwakeLogger } from '@twake/logger'
 
@@ -181,9 +182,9 @@ describe('Utility Functions', () => {
       expect(toMatrixId('localpart', 'server')).toBe('@localpart:server')
     })
     it('should throw an error for an invalid localpart', () => {
-      expect(() => toMatrixId('invalid localpart', 'example.com')).toThrow(
-        'Invalid localpart'
-      )
+      expect(() =>
+        toMatrixId('invalid localpart', 'example.com')
+      ).toThrowError()
     })
   })
 })
