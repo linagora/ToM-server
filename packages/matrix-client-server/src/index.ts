@@ -50,6 +50,7 @@ import { getRoomAliases } from './rooms/room_information/room_aliases'
 import RequestTokenPasswordEmail from './account/password/email/requestToken'
 import RequestTokenEmail from './register/email/requestToken'
 import SubmitTokenEmail from './register/email/submitToken'
+import getTimestampToEvent from './rooms/roomId/getTimestampToEvent'
 
 const tables = {
   ui_auth_sessions: 'session_id TEXT NOT NULL, stage_type TEXT NOT NULL'
@@ -147,7 +148,9 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
             '/_matrix/client/v3/account/password/email/requestToken': badMethod,
             '/_matrix/client/v3/register/email/requestToken': badMethod,
             '/_matrix/client/v3/register/email/submitToken':
-              SubmitTokenEmail(this)
+              SubmitTokenEmail(this),
+            '/_matrix/client/v3/rooms/:roomId/timestamp_to_event':
+              getTimestampToEvent(this)
           }
           this.api.post = {
             '/_matrix/client/v3/account/whoami': badMethod,
@@ -172,7 +175,8 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
             '/_matrix/client/v3/register/email/requestToken':
               RequestTokenEmail(this),
             '/_matrix/client/v3/register/email/submitToken':
-              SubmitTokenEmail(this)
+              SubmitTokenEmail(this),
+            '/_matrix/client/v3/user/:roomId/timestamp_to_event': badMethod
           }
           this.api.put = {
             '/_matrix/client/v3/account/whoami': badMethod,
@@ -200,7 +204,8 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
             '/_matrix/client/v3/rooms/{roomId}/aliases': badMethod,
             '/_matrix/client/v3/account/password/email/requestToken': badMethod,
             '/_matrix/client/v3/register/email/requestToken': badMethod,
-            '/_matrix/client/v3/register/email/submitToken': badMethod
+            '/_matrix/client/v3/register/email/submitToken': badMethod,
+            '/_matrix/client/v3/user/:roomId/timestamp_to_event': badMethod
           }
           this.api.delete = {
             '/_matrix/client/v3/account/whoami': badMethod,
