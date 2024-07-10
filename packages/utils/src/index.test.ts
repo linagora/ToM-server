@@ -6,8 +6,7 @@ import {
   jsonContent,
   validateParameters,
   epoch,
-  toMatrixId,
-  errMsg
+  toMatrixId
 } from './index'
 import { type TwakeLogger } from '@twake/logger'
 
