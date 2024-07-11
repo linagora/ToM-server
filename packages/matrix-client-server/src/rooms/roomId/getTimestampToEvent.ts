@@ -36,7 +36,6 @@ const GetTimestampToEvent = (
             }
           )
           .then((rows) => {
-            console.log(rows)
             if (rows.length === 0) {
               send(
                 res,
@@ -63,7 +62,6 @@ const GetTimestampToEvent = (
             { origin_server_ts: params.ts }
           )
           .then((rows) => {
-            console.log(rows)
             if (rows.length === 0) {
               send(
                 res,
