@@ -684,20 +684,21 @@ describe('Use configuration file', () => {
           await Promise.all(
             // eslint-disable-next-line @typescript-eslint/promise-function-async
             testRoomIds.map((roomId) =>
-              clientServer.matrixDb.insert('local_current_membership', {
+              clientServer.matrixDb.insert('room_memberships', {
                 user_id: testUserId,
                 room_id: roomId,
                 membership: 'join',
-                event_id: randomString(20)
+                event_id: randomString(20),
+                sender: '@admin:example.com'
               })
             )
           )
-
-          await clientServer.matrixDb.insert('local_current_membership', {
+          await clientServer.matrixDb.insert('room_memberships', {
             user_id: testUserId,
             room_id: testRoomIdBan,
             membership: 'ban',
-            event_id: randomString(20)
+            event_id: randomString(20),
+            sender: '@admin:example.com'
           })
         } catch (e) {
           logger.error('Error setting up test data:', e)
@@ -705,12 +706,16 @@ describe('Use configuration file', () => {
       })
 
       afterAll(async () => {
-        // Clean up test data
-        await clientServer.matrixDb.deleteEqual(
-          'local_current_membership',
-          'user_id',
-          testUserId
-        )
+        try {
+          // Clean up test data
+          await clientServer.matrixDb.deleteEqual(
+            'room_memberships',
+            'sender',
+            '@admin:example.com'
+          )
+        } catch (e) {
+          logger.error('Error tearing down test data:', e)
+        }
       })
 
       it('should require authentication', async () => {
