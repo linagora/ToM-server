@@ -237,7 +237,7 @@ class MatrixDBmodified implements MatrixDBmodifiedBackend {
     )
   }
 
-  //eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
+  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
   getMaxWhereEqualAndLower(
     table: Collections,
     targetField: string,
@@ -256,7 +256,7 @@ class MatrixDBmodified implements MatrixDBmodifiedBackend {
     )
   }
 
-  //eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
+  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
   getMinWhereEqualAndHigher(
     table: Collections,
     targetField: string,
