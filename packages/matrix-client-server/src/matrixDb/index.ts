@@ -77,7 +77,7 @@ type GetMinMax2 = (
   order?: string
 ) => Promise<DbGetResult>
 type GetMinMaxJoin2 = (
-  tables: Array<Collections>,
+  tables: Collections[],
   targetField: string,
   fields: string[],
   filterFields1: Record<string, string | number | Array<string | number>>,
@@ -236,7 +236,7 @@ class MatrixDBmodified implements MatrixDBmodifiedBackend {
     )
   }
 
-  //eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
+  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
   getMaxWhereEqualAndLower(
     table: Collections,
     targetField: string,
@@ -255,7 +255,7 @@ class MatrixDBmodified implements MatrixDBmodifiedBackend {
     )
   }
 
-  //eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
+  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
   getMinWhereEqualAndHigher(
     table: Collections,
     targetField: string,

@@ -173,14 +173,14 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
             '/_matrix/client/v3/user/:userId/rooms/:roomId/tags': badMethod,
             '/_matrix/client/v3/joined_rooms': badMethod,
             '/_matrix/client/v3/directory/list/room/:roomId': badMethod,
-            '/_matrix/client/v3/rooms/{roomId}/aliases': badMethod,
+            '/_matrix/client/v3/rooms/:roomId/aliases': badMethod,
             '/_matrix/client/v3/account/password/email/requestToken':
               RequestTokenPasswordEmail(this),
             '/_matrix/client/v3/register/email/requestToken':
               RequestTokenEmail(this),
             '/_matrix/client/v3/register/email/submitToken':
               SubmitTokenEmail(this),
-            '/_matrix/client/v3/user/:roomId/timestamp_to_event': badMethod
+            '/_matrix/client/v3/rooms/:roomId/timestamp_to_event': badMethod
           }
           this.api.put = {
             '/_matrix/client/v3/account/whoami': badMethod,
@@ -205,11 +205,11 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
             '/_matrix/client/v3/joined_rooms': badMethod,
             '/_matrix/client/v3/directory/list/room/:roomId':
               setRoomVisibility(this),
-            '/_matrix/client/v3/rooms/{roomId}/aliases': badMethod,
+            '/_matrix/client/v3/rooms/:roomId/aliases': badMethod,
             '/_matrix/client/v3/account/password/email/requestToken': badMethod,
             '/_matrix/client/v3/register/email/requestToken': badMethod,
             '/_matrix/client/v3/register/email/submitToken': badMethod,
-            '/_matrix/client/v3/user/:roomId/timestamp_to_event': badMethod
+            '/_matrix/client/v3/rooms/:roomId/timestamp_to_event': badMethod
           }
           this.api.delete = {
             '/_matrix/client/v3/account/whoami': badMethod,
@@ -225,7 +225,7 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
               removeUserRoomTag(this),
             '/_matrix/client/v3/joined_rooms': badMethod,
             '/_matrix/client/v3/directory/list/room/:roomId': badMethod,
-            '/_matrix/client/v3/rooms/{roomId}/aliases': badMethod,
+            '/_matrix/client/v3/rooms/:roomId/aliases': badMethod,
             '/_matrix/client/v3/account/password/email/requestToken': badMethod,
             '/_matrix/client/v3/register/email/requestToken': badMethod,
             '/_matrix/client/v3/register/email/submitToken': badMethod
