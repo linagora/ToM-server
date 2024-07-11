@@ -274,7 +274,11 @@ class MatrixDBmodified implements MatrixDBmodifiedBackend {
   }
 
   // eslint-disable-next-line @typescript-eslint/promise-function-async
-  createOneTimeToken(sessionId: string, expires?: number): Promise<string> {
+  createOneTimeToken(
+    sessionId: string,
+    expires?: number,
+    nextLink?: string
+  ): Promise<string> {
     /* istanbul ignore if */
     if (this.db == null) {
       throw new Error('Wait for database to be ready')
@@ -284,18 +288,26 @@ class MatrixDBmodified implements MatrixDBmodifiedBackend {
     const expiresForDb =
       epoch() + 1000 * (expires != null && expires > 0 ? expires : 600)
     return new Promise((resolve, reject) => {
+      const insertData: Record<string, any> = {
+        token,
+        expires: expiresForDb,
+        session_id: sessionId
+      }
+      // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+      if (nextLink) {
+        insertData.next_link = nextLink
+      }
+
       this.db
-        .insert('threepid_validation_token', {
-          token,
-          expires: expiresForDb,
-          session_id: sessionId
-        })
+        .insert('threepid_validation_token', insertData)
         .then(() => {
           resolve(token)
         })
         .catch((err) => {
           /* istanbul ignore next */
           this.logger.error('Failed to insert token', err)
+          /* istanbul ignore next */
+          reject(err)
         })
     })
   }
@@ -314,7 +326,11 @@ class MatrixDBmodified implements MatrixDBmodifiedBackend {
     }
     return new Promise((resolve, reject) => {
       this.db
-        .get('threepid_validation_token', ['session_id', 'expires'], { token })
+        .get(
+          'threepid_validation_token',
+          ['session_id', 'expires', 'next_link'],
+          { token }
+        )
         .then((rows) => {
           /* istanbul ignore else */
           if (rows.length > 0 && (rows[0].expires as number) >= epoch()) {
@@ -322,13 +338,20 @@ class MatrixDBmodified implements MatrixDBmodifiedBackend {
               .get('threepid_validation_session', ['client_secret'], {
                 session_id: rows[0].session_id
               })
-              .then((rows2) => {
+              .then((validationRows) => {
+                const body: any = {}
+                // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+                if (rows[0].next_link) {
+                  body.next_link = rows[0].next_link
+                }
                 resolve({
+                  ...body,
                   session_id: rows[0].session_id,
-                  client_secret: rows2[0].client_secret
+                  client_secret: validationRows[0].client_secret
                 })
               })
               .catch((e) => {
+                // istanbul ignore next
                 reject(e)
               })
           } else {

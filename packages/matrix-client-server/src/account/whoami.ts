@@ -13,9 +13,10 @@ const whoami = (clientServer: MatrixClientServer): expressAppHandler => {
       clientServer.matrixDb
         .get('users', ['name', 'is_guest'], { name: data.sub })
         .then((rows) => {
+          // istanbul ignore if // might remove the istanbul ignore if an endpoint other than /register modifies the users table
           if (rows.length === 0) {
-            // istanbul ignore next // might remove the istanbul ignore if an endpoint other than /register modifies the users table
             send(res, 403, errMsg('invalidUsername'))
+            return
           }
           const isGuest = rows[0].is_guest !== 0
           const body: responseBody = { user_id: data.sub, is_guest: isGuest }

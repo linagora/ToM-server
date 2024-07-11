@@ -16,6 +16,7 @@ interface Parameters {
 interface Token {
   client_secret: string
   session_id: string
+  next_link?: string
 }
 
 // TODO : Redirect to next_link from requestToken if present
@@ -35,7 +36,7 @@ const SubmitToken = (clientServer: MatrixClientServer): expressAppHandler => {
               (data as Token).session_id === parameters.sid &&
               (data as Token).client_secret === parameters.client_secret
             ) {
-              clientServer.db
+              clientServer.matrixDb
                 .deleteToken(parameters.token as string)
                 .then(() => {
                   clientServer.matrixDb
@@ -54,11 +55,34 @@ const SubmitToken = (clientServer: MatrixClientServer): expressAppHandler => {
                       ]
                     )
                     .then(() => {
+                      if (
+                        req.method === 'GET' &&
+                        (data as Token).next_link !== undefined
+                      ) {
+                        res.writeHead(302, {
+                          Location: (data as Token).next_link
+                        })
+                        res.end()
+                        return
+                      }
                       send(res, 200, { success: true })
                     })
-                    .catch((e) => {})
+                    .catch((e) => {
+                      // istanbul ignore next
+                      clientServer.logger.error(
+                        'Error while updating the validation session informations',
+                        e
+                      )
+                      // istanbul ignore next
+                      send(res, 500, e)
+                    })
                 })
-                .catch((e) => {})
+                .catch((e) => {
+                  // istanbul ignore next
+                  clientServer.logger.error('Error while deleting the token', e)
+                  // istanbul ignore next
+                  send(res, 500, e)
+                })
             } else {
               /* istanbul ignore next */
               send(res, 400, errMsg('invalidParam', 'sid or secret mismatch'))
@@ -69,7 +93,10 @@ const SubmitToken = (clientServer: MatrixClientServer): expressAppHandler => {
             send(
               res,
               400,
-              errMsg('invalidParam', 'Unknown or expired token' + (e as string))
+              errMsg(
+                'invalidParam',
+                'Unknown or expired token ' + (e as string)
+              )
             )
           })
       } else {
