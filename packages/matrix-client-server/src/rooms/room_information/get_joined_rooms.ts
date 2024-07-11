@@ -8,9 +8,10 @@ export const getJoinedRooms = (
     clientServer.authenticate(req, res, (token) => {
       const userId = token.sub
       clientServer.matrixDb
-        .get('local_current_membership', ['room_id'], {
+        .get('room_memberships', ['room_id'], {
           user_id: userId,
-          membership: 'join'
+          membership: 'join',
+          forgotten: 0
         })
         .then((roomsResult) => {
           const roomIds = roomsResult.map((row) => row.room_id) as string[]
