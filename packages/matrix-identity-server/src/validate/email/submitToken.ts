@@ -20,6 +20,8 @@ interface MailToken {
   next_link?: string
 }
 
+// TODO : Redirect to next_link from requestToken if present
+
 const SubmitToken = <T extends string = never>(
   idServer: MatrixIdentityServer<T>
 ): expressAppHandler => {
