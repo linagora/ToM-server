@@ -12,7 +12,7 @@ Content-Type: text/plain; charset=UTF-8
 Content-Disposition: inline
 Hello,
 
-You have been invited to join a Matrix room by __inviter_name__. 
+You have been invited to join the __room_name__ Matrix room by __inviter_name__. 
 Please click on the following link to accept the invitation: __link__
 
 About Matrix:
@@ -40,7 +40,7 @@ body {
 <body>
 <p>Hello,</p>
 
-<p>You have been invited to join a Matrix room by __inviter_name__. Please click on the following link to accept the invitation: <a href="__link__">__link__</a></p>
+<p>You have been invited to join the __room_name__ Matrix room by __inviter_name__. Please click on the following link to accept the invitation: <a href="__link__">__link__</a></p>
 
 <p>About Matrix:</p>
 
