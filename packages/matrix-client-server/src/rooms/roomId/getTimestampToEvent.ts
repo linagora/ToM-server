@@ -20,7 +20,6 @@ const GetTimestampToEvent = (
       send(res, 400, errMsg('invalidParam', 'Invalid parameters'))
       return
     }
-    // TODO : introduce rate-limiting
     ClientServer.authenticate(req, res, (data, id) => {
       if (params.dir === 'b') {
         ClientServer.matrixDb
