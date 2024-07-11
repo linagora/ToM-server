@@ -47,6 +47,7 @@ import {
   setRoomVisibility
 } from './rooms/room_information/room_visibilty'
 import { getRoomAliases } from './rooms/room_information/room_aliases'
+import getTimestampToEvent from './rooms/roomId/getTimestampToEvent'
 
 const tables = {
   ui_auth_sessions: 'session_id TEXT NOT NULL, stage_type TEXT NOT NULL'
@@ -140,7 +141,9 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
             '/_matrix/client/v3/joined_rooms': getJoinedRooms(this),
             '/_matrix/client/v3/directory/list/room/:roomId':
               getRoomVisibility(this),
-            '/_matrix/client/v3/rooms/:roomId/aliases': getRoomAliases(this)
+            '/_matrix/client/v3/rooms/:roomId/aliases': getRoomAliases(this),
+            '/_matrix/client/v3/rooms/:roomId/timestamp_to_event':
+              getTimestampToEvent(this)
           }
           this.api.post = {
             '/_matrix/client/v3/account/whoami': badMethod,
@@ -159,7 +162,8 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
             '/_matrix/client/v3/user/:userId/rooms/:roomId/tags': badMethod,
             '/_matrix/client/v3/joined_rooms': badMethod,
             '/_matrix/client/v3/directory/list/room/:roomId': badMethod,
-            '/_matrix/client/v3/rooms/{roomId}/aliases': badMethod
+            '/_matrix/client/v3/rooms/{roomId}/aliases': badMethod,
+            '/_matrix/client/v3/user/:roomId/timestamp_to_event': badMethod
           }
           this.api.put = {
             '/_matrix/client/v3/account/whoami': badMethod,
@@ -184,7 +188,8 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
             '/_matrix/client/v3/joined_rooms': badMethod,
             '/_matrix/client/v3/directory/list/room/:roomId':
               setRoomVisibility(this),
-            '/_matrix/client/v3/rooms/{roomId}/aliases': badMethod
+            '/_matrix/client/v3/rooms/{roomId}/aliases': badMethod,
+            '/_matrix/client/v3/user/:roomId/timestamp_to_event': badMethod
           }
           this.api.delete = {
             '/_matrix/client/v3/account/whoami': badMethod,

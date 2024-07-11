@@ -449,7 +449,8 @@ class SQLite<T extends string> extends SQL<T> implements IdDbBackend<T> {
     )
   }
 
-  _getMax(
+  _getMinMax(
+    minmax: 'MIN' | 'MAX',
     tables: Array<T>,
     targetField: string,
     fields?: string[],
@@ -559,9 +560,9 @@ class SQLite<T extends string> extends SQL<T> implements IdDbBackend<T> {
         const stmt = this.db.prepare(
           `SELECT ${fields.join(
             ','
-          )}, MAX(${targetField}) AS max_${targetFieldAlias} FROM ${tables.join(
+          )}, ${minmax}(${targetField}) AS max_${targetFieldAlias} FROM ${tables.join(
             ','
-          )} ${condition}`
+          )} ${condition} HAVING COUNT(*) > 0` // HAVING COUNT(*) > 0 is to avoid returning a row with NULL values
         )
         stmt.all(
           values,
@@ -588,7 +589,8 @@ class SQLite<T extends string> extends SQL<T> implements IdDbBackend<T> {
     filterFields?: Record<string, string | number | Array<string | number>>,
     order?: string
   ): Promise<DbGetResult> {
-    return this._getMax(
+    return this._getMinMax(
+      'MAX',
       [table],
       targetField,
       fields,
@@ -597,6 +599,52 @@ class SQLite<T extends string> extends SQL<T> implements IdDbBackend<T> {
       undefined,
       undefined,
       undefined,
+      undefined,
+      order
+    )
+  }
+
+  getMaxWhereEqualAndLower(
+    table: T,
+    targetField: string,
+    fields?: string[],
+    filterFields1?: Record<string, string | number | Array<string | number>>,
+    filterFields2?: Record<string, string | number | Array<string | number>>,
+    order?: string
+  ): Promise<DbGetResult> {
+    return this._getMinMax(
+      'MAX',
+      [table],
+      targetField,
+      fields,
+      '=',
+      filterFields1,
+      '<',
+      ' AND ',
+      filterFields2,
+      undefined,
+      order
+    )
+  }
+
+  getMinWhereEqualAndHigher(
+    table: T,
+    targetField: string,
+    fields?: string[],
+    filterFields1?: Record<string, string | number | Array<string | number>>,
+    filterFields2?: Record<string, string | number | Array<string | number>>,
+    order?: string
+  ): Promise<DbGetResult> {
+    return this._getMinMax(
+      'MIN',
+      [table],
+      targetField,
+      fields,
+      '=',
+      filterFields1,
+      '>',
+      ' AND ',
+      filterFields2,
       undefined,
       order
     )
@@ -611,13 +659,14 @@ class SQLite<T extends string> extends SQL<T> implements IdDbBackend<T> {
     joinFields?: Record<string, string>,
     order?: string
   ): Promise<DbGetResult> {
-    return this._getMax(
+    return this._getMinMax(
+      'MAX',
       tables,
       targetField,
       fields,
       '=',
       filterFields1,
-      '<=',
+      '<',
       ' AND ',
       filterFields2,
       joinFields,

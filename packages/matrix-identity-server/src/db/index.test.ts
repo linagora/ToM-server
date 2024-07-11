@@ -53,11 +53,11 @@ describe('Id Server DB', () => {
                 idDb.close()
                 done()
               })
-              .catch((e) => done(e))
+              .catch(done)
           })
-          .catch((e) => done(e))
+          .catch(done)
       })
-      .catch((e) => done(e))
+      .catch(done)
   })
 
   it('should provide one-time-token', (done) => {
@@ -85,11 +85,11 @@ describe('Id Server DB', () => {
                     done()
                   })
               })
-              .catch((e) => done(e))
+              .catch(done)
           })
-          .catch((e) => done(e))
+          .catch(done)
       })
-      .catch((e) => done(e))
+      .catch(done)
   })
 
   it('should provide match()', (done) => {
@@ -114,13 +114,13 @@ describe('Id Server DB', () => {
                     idDb.close()
                     done()
                   })
-                  .catch((e) => done(e))
+                  .catch(done)
               })
-              .catch((e) => done(e))
+              .catch(done)
           })
-          .catch((e) => done(e))
+          .catch(done)
       })
-      .catch((e) => done(e))
+      .catch(done)
   })
 
   it('should update', (done) => {
@@ -143,13 +143,13 @@ describe('Id Server DB', () => {
                     idDb.close()
                     done()
                   })
-                  .catch((e) => done(e))
+                  .catch(done)
               })
-              .catch((e) => done(e))
+              .catch(done)
           })
-          .catch((e) => done(e))
+          .catch(done)
       })
-      .catch((e) => done(e))
+      .catch(done)
   })
 
   it('should return entry on update', (done) => {
@@ -168,11 +168,11 @@ describe('Id Server DB', () => {
                 idDb.close()
                 done()
               })
-              .catch((e) => done(e))
+              .catch(done)
           })
-          .catch((e) => done(e))
+          .catch(done)
       })
-      .catch((e) => done(e))
+      .catch(done)
   })
 
   it('should update records matching both conditions', (done) => {
@@ -277,9 +277,9 @@ describe('Id Server DB', () => {
             idDb.close()
             done()
           })
-          .catch((e) => done(e))
+          .catch(done)
       })
-      .catch((e) => done(e))
+      .catch(done)
   })
 
   it('should return count without value', (done) => {
@@ -300,13 +300,13 @@ describe('Id Server DB', () => {
                     idDb.close()
                     done()
                   })
-                  .catch((e) => done(e))
+                  .catch(done)
               })
-              .catch((e) => done(e))
+              .catch(done)
           })
-          .catch((e) => done(e))
+          .catch(done)
       })
-      .catch((e) => done(e))
+      .catch(done)
   })
 
   it('should return count with value', (done) => {
@@ -332,15 +332,15 @@ describe('Id Server DB', () => {
                         idDb.close()
                         done()
                       })
-                      .catch((e) => done(e))
+                      .catch(done)
                   })
-                  .catch((e) => done(e))
+                  .catch(done)
               })
-              .catch((e) => done(e))
+              .catch(done)
           })
-          .catch((e) => done(e))
+          .catch(done)
       })
-      .catch((e) => done(e))
+      .catch(done)
   })
 
   it('should delete lower than value', (done) => {
@@ -361,13 +361,13 @@ describe('Id Server DB', () => {
                     idDb.close()
                     done()
                   })
-                  .catch((e) => done(e))
+                  .catch(done)
               })
-              .catch((e) => done(e))
+              .catch(done)
           })
-          .catch((e) => done(e))
+          .catch(done)
       })
-      .catch((e) => done(e))
+      .catch(done)
   })
 
   it('should delete lines with specified filters', (done) => {
@@ -404,13 +404,13 @@ describe('Id Server DB', () => {
                     idDb.close()
                     done()
                   })
-                  .catch((e) => done(e))
+                  .catch(done)
               })
-              .catch((e) => done(e))
+              .catch(done)
           })
-          .catch((e) => done(e))
+          .catch(done)
       })
-      .catch((e) => done(e))
+      .catch(done)
   })
 
   it('should delete records matching both conditions', (done) => {
@@ -555,11 +555,11 @@ describe('Id Server DB', () => {
                   idDb.close()
                   done()
                 })
-                .catch((e) => done(e))
+                .catch(done)
             })
-            .catch((e) => done(e))
+            .catch(done)
         })
-        .catch((e) => done(e))
+        .catch(done)
     })
 
     it('should get entry with corresponding higher than condition', (done) => {
@@ -585,14 +585,14 @@ describe('Id Server DB', () => {
                         idDb.close()
                         done()
                       })
-                      .catch((e) => done(e))
+                      .catch(done)
                   })
-                  .catch((e) => done(e))
+                  .catch(done)
               })
-              .catch((e) => done(e))
+              .catch(done)
           })
         })
-        .catch((e) => done(e))
+        .catch(done)
     })
 
     it('should get entry with corresponding multiple conditions', (done) => {
@@ -618,14 +618,14 @@ describe('Id Server DB', () => {
                         idDb.close()
                         done()
                       })
-                      .catch((e) => done(e))
+                      .catch(done)
                   })
-                  .catch((e) => done(e))
+                  .catch(done)
               })
-              .catch((e) => done(e))
+              .catch(done)
           })
         })
-        .catch((e) => done(e))
+        .catch(done)
     })
 
     it('should sort entry by order', (done) => {
@@ -648,13 +648,13 @@ describe('Id Server DB', () => {
                       idDb.close()
                       done()
                     })
-                    .catch((e) => done(e))
+                    .catch(done)
                 })
-                .catch((e) => done(e))
+                .catch(done)
             })
-            .catch((e) => done(e))
+            .catch(done)
         })
-        .catch((e) => done(e))
+        .catch(done)
     })
 
     it('should get entry with corresponding join conditions', (done) => {
@@ -691,17 +691,17 @@ describe('Id Server DB', () => {
                               idDb.close()
                               done()
                             })
-                            .catch((e) => done(e))
+                            .catch(done)
                         })
-                        .catch((e) => done(e))
+                        .catch(done)
                     })
-                    .catch((e) => done(e))
+                    .catch(done)
                 })
-                .catch((e) => done(e))
+                .catch(done)
             })
-            .catch((e) => done(e))
+            .catch(done)
         })
-        .catch((e) => done(e))
+        .catch(done)
     })
 
     it('should get entry with corresponding equal or different conditions', (done) => {
@@ -739,15 +739,15 @@ describe('Id Server DB', () => {
                           idDb.close()
                           done()
                         })
-                        .catch((e) => done(e))
+                        .catch(done)
                     })
-                    .catch((e) => done(e))
+                    .catch(done)
                 })
-                .catch((e) => done(e))
+                .catch(done)
             })
-            .catch((e) => done(e))
+            .catch(done)
         })
-        .catch((e) => done(e))
+        .catch(done)
     })
 
     it('should get entry with corresponding equal and higher conditions', (done) => {
@@ -784,15 +784,36 @@ describe('Id Server DB', () => {
                           idDb.close()
                           done()
                         })
-                        .catch((e) => done(e))
+                        .catch(done)
                     })
-                    .catch((e) => done(e))
+                    .catch(done)
                 })
-                .catch((e) => done(e))
+                .catch(done)
             })
-            .catch((e) => done(e))
+            .catch(done)
         })
-        .catch((e) => done(e))
+        .catch(done)
+    })
+
+    it('should not return a null row if the conditions are not matched', (done) => {
+      idDb = new IdDb(baseConf, logger)
+      idDb.ready.then(() => {
+        idDb
+          .insert('accessTokens', { id: '1', data: '{}' })
+          .then(() => {
+            idDb
+              .getMaxWhereEqual('accessTokens', 'id', ['id', 'data'], {
+                id: '2'
+              })
+              .then((rows) => {
+                expect(rows.length).toBe(0)
+                clearTimeout(idDb.cleanJob)
+                idDb.close()
+                done()
+              })
+          })
+          .catch(done)
+      })
     })
 
     it('should get max entry with corresponding equal condition', (done) => {
@@ -817,14 +838,14 @@ describe('Id Server DB', () => {
                         idDb.close()
                         done()
                       })
-                      .catch((e) => done(e))
+                      .catch(done)
                   })
-                  .catch((e) => done(e))
+                  .catch(done)
               })
-              .catch((e) => done(e))
+              .catch(done)
           })
         })
-        .catch((e) => done(e))
+        .catch(done)
     })
 
     it('should get max entry with corresponding lower condition and select all fields if not specified', (done) => {
@@ -852,14 +873,14 @@ describe('Id Server DB', () => {
                         idDb.close()
                         done()
                       })
-                      .catch((e) => done(e))
+                      .catch(done)
                   })
-                  .catch((e) => done(e))
+                  .catch(done)
               })
-              .catch((e) => done(e))
+              .catch(done)
           })
         })
-        .catch((e) => done(e))
+        .catch(done)
     })
 
     it('should get max entry with multiple corresponding equal conditions', (done) => {
@@ -884,14 +905,94 @@ describe('Id Server DB', () => {
                         idDb.close()
                         done()
                       })
-                      .catch((e) => done(e))
+                      .catch(done)
                   })
-                  .catch((e) => done(e))
+                  .catch(done)
               })
-              .catch((e) => done(e))
+              .catch(done)
           })
         })
-        .catch((e) => done(e))
+        .catch(done)
+    })
+
+    it('should get max entry with corresponding equal and lower conditions', (done) => {
+      idDb = new IdDb(baseConf, logger)
+      idDb.ready
+        .then(() => {
+          idDb.insert('accessTokens', { id: '1', data: '{}' }).then(() => {
+            idDb
+              .insert('accessTokens', { id: '2', data: '{}' })
+              .then(() => {
+                idDb
+                  .insert('accessTokens', { id: '3', data: '{wrong_data}' })
+                  .then(() => {
+                    idDb
+                      .getMaxWhereEqualAndLower(
+                        'accessTokens',
+                        'id',
+                        ['id', 'data'],
+                        {
+                          data: '{}'
+                        },
+                        { id: '4' }
+                      )
+                      .then((rows) => {
+                        expect(rows.length).toBe(1)
+                        expect(rows[0].id).toEqual('2')
+                        expect(rows[0].data).toEqual('{}')
+                        clearTimeout(idDb.cleanJob)
+                        idDb.close()
+                        done()
+                      })
+                      .catch(done)
+                  })
+                  .catch(done)
+              })
+              .catch(done)
+          })
+        })
+        .catch(done)
+    })
+
+    it('should get min entry with corresponding equal and higher conditions', (done) => {
+      idDb = new IdDb(baseConf, logger)
+      idDb.ready
+        .then(() => {
+          idDb
+            .insert('accessTokens', { id: '1', data: '{wrong_data}' })
+            .then(() => {
+              idDb
+                .insert('accessTokens', { id: '2', data: '{}' })
+                .then(() => {
+                  idDb
+                    .insert('accessTokens', { id: '3', data: '{}' })
+                    .then(() => {
+                      idDb
+                        .getMinWhereEqualAndHigher(
+                          'accessTokens',
+                          'id',
+                          ['id', 'data'],
+                          {
+                            data: '{}'
+                          },
+                          { id: '0' }
+                        )
+                        .then((rows) => {
+                          expect(rows.length).toBe(1)
+                          expect(rows[0].id).toEqual('2')
+                          expect(rows[0].data).toEqual('{}')
+                          clearTimeout(idDb.cleanJob)
+                          idDb.close()
+                          done()
+                        })
+                        .catch(done)
+                    })
+                    .catch(done)
+                })
+                .catch(done)
+            })
+        })
+        .catch(done)
     })
 
     it('should get max entry with corresponding equal and lower conditions on multiple joined tables', (done) => {
@@ -965,24 +1066,24 @@ describe('Id Server DB', () => {
                                             idDb.close()
                                             done()
                                           })
-                                          .catch((e) => done(e))
+                                          .catch(done)
                                       })
-                                      .catch((e) => done(e))
+                                      .catch(done)
                                   })
-                                  .catch((e) => done(e))
+                                  .catch(done)
                               })
-                              .catch((e) => done(e))
+                              .catch(done)
                           })
-                          .catch((e) => done(e))
+                          .catch(done)
                       })
-                      .catch((e) => done(e))
+                      .catch(done)
                   })
-                  .catch((e) => done(e))
+                  .catch(done)
               })
-              .catch((e) => done(e))
+              .catch(done)
           })
         })
-        .catch((e) => done(e))
+        .catch(done)
     })
   })
 
@@ -1003,7 +1104,7 @@ describe('Id Server DB', () => {
             done(e)
           })
       })
-      .catch((e) => done(e))
+      .catch(done)
   })
 
   it('should return entry when creating new keyPair ', (done) => {
@@ -1023,11 +1124,11 @@ describe('Id Server DB', () => {
                 idDb.close()
                 done()
               })
-              .catch((e) => done(e))
+              .catch(done)
           })
-          .catch((e) => done(e))
+          .catch(done)
       })
-      .catch((e) => done(e))
+      .catch(done)
   })
 
   it('should delete a key from the shortKey pairs table', (done) => {
@@ -1053,14 +1154,14 @@ describe('Id Server DB', () => {
                         idDb.close()
                         done()
                       })
-                      .catch((e) => done(e))
+                      .catch(done)
                   })
-                  .catch((e) => done(e))
+                  .catch(done)
               })
-              .catch((e) => done(e))
+              .catch(done)
           })
-          .catch((e) => done(e))
+          .catch(done)
       })
-      .catch((e) => done(e))
+      .catch(done)
   })
 })

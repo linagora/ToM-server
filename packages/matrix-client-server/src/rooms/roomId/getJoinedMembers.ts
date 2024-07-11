@@ -58,7 +58,6 @@ const GetJoinedMembers = (
                   display_name: row.profiles_displayname as string
                 }
               }
-              console.log(joined)
               send(res, 200, { joined: joined })
             })
             .catch((err) => {
