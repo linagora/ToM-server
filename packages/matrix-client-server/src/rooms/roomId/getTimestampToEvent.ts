@@ -49,6 +49,12 @@ const GetTimestampToEvent = (
             }
             send(res, 200, rows[0])
           })
+          .catch((err) => {
+            /* istanbul ignore next */
+            ClientServer.logger.error(err)
+            /* istanbul ignore next */
+            send(res, 500, errMsg('unknown', err))
+          })
       }
       if (params.dir === 'f') {
         ClientServer.matrixDb
@@ -74,6 +80,12 @@ const GetTimestampToEvent = (
               return
             }
             send(res, 200, rows[0])
+          })
+          .catch((err) => {
+            /* istanbul ignore next */
+            ClientServer.logger.error(err)
+            /* istanbul ignore next */
+            send(res, 500, errMsg('unknown', err))
           })
       }
     })
