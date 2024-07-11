@@ -57,11 +57,15 @@ const preConfigureTemplate = (
 
 // TODO : don't forget to modify this : cf matrix.to or other method
 const inviteLink = (
-  method: 'matrix.org' | 'twake.org',
-  address: string,
-  name: string
+  server: string,
+  senderId: string,
+  roomAlias?: string
 ): string => {
-  return `https://${method}/${address}/${name}`
+  if (roomAlias != null) {
+    return `https://${server}/#/${roomAlias}`
+  } else {
+    return `https://${server}/#/${senderId}`
+  }
 }
 
 const mailBody = (
@@ -69,13 +73,16 @@ const mailBody = (
   // eslint-disable-next-line @typescript-eslint/naming-convention
   inviter_name: string,
   // eslint-disable-next-line @typescript-eslint/naming-convention
+  sender_user_id: string,
   dst: string,
   // eslint-disable-next-line @typescript-eslint/naming-convention
   room_name: string,
   // eslint-disable-next-line @typescript-eslint/naming-convention
   room_avatar: string,
   // eslint-disable-next-line @typescript-eslint/naming-convention
-  room_type: string
+  room_type: string,
+  // eslint-disable-next-line @typescript-eslint/naming-convention
+  room_alias?: string
 ): string => {
   return (
     template
@@ -90,7 +97,7 @@ const mailBody = (
       .replace(/__room_name__/g, room_name)
       .replace(/__room_avatar__/g, room_avatar)
       .replace(/__room_type__/g, room_type)
-      .replace(/__link__/g, inviteLink('matrix.org', dst, room_name))
+      .replace(/__link__/g, inviteLink('matrix.to', sender_user_id, room_alias))
   )
 }
 
@@ -216,10 +223,12 @@ const StoreInvit = <T extends string = never>(
                       verificationTemplate,
                       (obj as storeInvitationArgs).sender_display_name ??
                         '*****',
+                      (obj as storeInvitationArgs).sender,
                       _address,
                       (obj as storeInvitationArgs).room_name ?? '*****',
                       (obj as storeInvitationArgs).room_avatar_url ?? '*****',
-                      (obj as storeInvitationArgs).room_type ?? '*****'
+                      (obj as storeInvitationArgs).room_type ?? '*****',
+                      (obj as storeInvitationArgs).room_alias
                     )
                   })
                   break
