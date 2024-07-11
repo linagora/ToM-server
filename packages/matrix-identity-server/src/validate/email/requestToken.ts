@@ -15,7 +15,7 @@ import Mailer from '../../utils/mailer'
 interface RequestTokenArgs {
   client_secret: string
   email: string
-  next_link?: string
+  next_link?: string // Store it in the db if present to redirect to it after validation with submitToken
   send_attempt: number
 }
 

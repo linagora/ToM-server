@@ -67,10 +67,7 @@ const putRoomAccountData = (
             })
             .catch((e) => {
               // istanbul ignore next
-              clientServer.logger.error(
-                "Error updating user's presence state",
-                e
-              )
+              clientServer.logger.error("Error updating user's account data", e)
               // istanbul ignore next
               send(res, 500, errMsg('unknown'))
             })
