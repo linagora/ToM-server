@@ -11,7 +11,6 @@ import { getSubmitUrl } from './register/email/requestToken'
 
 process.env.TWAKE_CLIENT_SERVER_CONF =
   './src/__testData__/requestTokenConf.json'
-
 jest.mock('node-fetch', () => jest.fn())
 const sendMailMock = jest.fn()
 jest.mock('nodemailer', () => ({
