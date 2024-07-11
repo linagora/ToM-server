@@ -77,6 +77,9 @@ const bind = <T extends string = never>(
                   })
                   return
                 }
+
+                // TODO : hook for any pending invite and call the onbind api : https://spec.matrix.org/v1.11/client-server-api/#room-aliases
+
                 idServer.db
                   .get('keys', ['data'], { name: 'pepper' })
                   .then(async (pepperRow) => {
