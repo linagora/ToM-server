@@ -149,12 +149,8 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
             '/_matrix/client/v3/register/email/requestToken': badMethod,
             '/_matrix/client/v3/register/email/submitToken':
               SubmitTokenEmail(this),
-            '/_matrix/client/v3/rooms/:roomId/timestamp_to_event':
-              getTimestampToEvent(this),
-            '/_matrix/client/v3/account/password/email/requestToken': badMethod,
-            '/_matrix/client/v3/register/email/requestToken': badMethod,
-            '/_matrix/client/v3/register/email/submitToken':
-              SubmitTokenEmail(this)
+            '/_matrix/client/v3/user/:roomId/timestamp_to_event':
+              getTimestampToEvent(this)
           }
           this.api.post = {
             '/_matrix/client/v3/account/whoami': badMethod,
@@ -228,7 +224,8 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
             '/_matrix/client/v3/rooms/{roomId}/aliases': badMethod,
             '/_matrix/client/v3/account/password/email/requestToken': badMethod,
             '/_matrix/client/v3/register/email/requestToken': badMethod,
-            '/_matrix/client/v3/register/email/submitToken': badMethod
+            '/_matrix/client/v3/register/email/submitToken': badMethod,
+            '/_matrix/client/v3/user/:roomId/timestamp_to_event': badMethod
           }
           resolve(true)
         })
