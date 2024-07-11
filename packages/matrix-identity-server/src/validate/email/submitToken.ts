@@ -38,7 +38,6 @@ const SubmitToken = <T extends string = never>(
               (data as mailToken).sid === prms.sid &&
               (data as mailToken).client_secret === prms.client_secret
             ) {
-              // TODO REGISTER (data as mailToken).mail
               idServer.db
                 .deleteToken(prms.token as string)
                 .then(() => {
