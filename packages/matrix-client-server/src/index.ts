@@ -150,7 +150,11 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
             '/_matrix/client/v3/register/email/submitToken':
               SubmitTokenEmail(this),
             '/_matrix/client/v3/rooms/:roomId/timestamp_to_event':
-              getTimestampToEvent(this)
+              getTimestampToEvent(this),
+            '/_matrix/client/v3/account/password/email/requestToken': badMethod,
+            '/_matrix/client/v3/register/email/requestToken': badMethod,
+            '/_matrix/client/v3/register/email/submitToken':
+              SubmitTokenEmail(this)
           }
           this.api.post = {
             '/_matrix/client/v3/account/whoami': badMethod,
