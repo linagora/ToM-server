@@ -1,0 +1,50 @@
+{
+  "cron_service": false,
+  "database_engine": "sqlite",
+  "database_host": "./src/__testData__/testPresence.db",
+  "matrix_database_engine": "sqlite",
+  "matrix_database_host": "./src/__testData__/testMatrixPresence.db",
+  "database_vacuum_delay": 7200,
+  "is_federated_identity_service": false,
+  "key_delay": 3600,
+  "keys_depth": 5,
+  "mail_link_delay": 7200,
+  "rate_limiting_window": 10000,
+  "server_name": "matrix.org",
+  "smtp_sender": "yadd@debian.org",
+  "smtp_server": "localhost",
+  "template_dir": "./templates",
+  "userdb_engine": "sqlite",
+  "userdb_host": "./src/__testData__/testPresence.db",
+  "flows": [
+    {
+      "stages": ["m.login.dummy"]
+    },
+    {
+      "stages": ["m.login.password", "m.login.registration_token"]
+    },
+    {
+      "stages": ["m.login.terms", "m.login.password"]
+    },
+    {
+      "stages": ["m.login.registration_token", "m.login.dummy"]
+    }
+  ],
+  "params": {
+    "m.login.terms": {
+      "policies": {
+        "terms_of_service": {
+          "version": "1.2",
+          "en": {
+            "name": "Terms of Service",
+            "url": "https://example.org/somewhere/terms-1.2-en.html"
+          },
+          "fr": {
+            "name": "Conditions d'utilisation",
+            "url": "https://example.org/somewhere/terms-1.2-fr.html"
+          }
+        }
+      }
+    }
+  }
+}
