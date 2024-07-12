@@ -55,7 +55,7 @@ const preConfigureTemplate = (
   )
 }
 
-// TODO : don't forget to modify this : cf matrix.to or other method
+// TODO : modify this if necessary
 const inviteLink = (
   server: string,
   senderId: string,
@@ -102,38 +102,62 @@ const mailBody = (
 }
 
 // To complete if another 3PID is added for this endpoint
-const validMediums: string[] = ['email']
+const validMediums: string[] = ['email', 'msisdn']
 
 // Regular expressions for different mediums
 const validEmailRe = /^\w[+.-\w]*\w@\w[.-\w]*\w\.\w{2,6}$/
+const validPhoneRe = /^(\+[1-9]\d{0,2})?\d{4,14}$/
 
-const redactAddress = (address: string): string => {
-  // Assuming that the address is a valid email address
-  const atIndex = address.indexOf('@')
-  const localPart = address.slice(0, atIndex)
-  const domainPart = address.slice(atIndex + 1)
+const redactAddress = (medium: string, address: string): string => {
+  switch (medium) {
+    case 'email': {
+      const atIndex = address.indexOf('@')
+      const localPart = address.slice(0, atIndex)
+      const domainPart = address.slice(atIndex + 1)
 
-  const replaceRandomCharacters = (
-    str: string,
-    redactionRatio: number
-  ): string => {
-    const chars = str.split('')
-    const redactionCount = Math.ceil(chars.length * redactionRatio)
+      const redactedLocalPart = replaceLastCharacters(localPart)
+      const redactedDomainPart = replaceLastCharacters(domainPart)
 
-    for (let i = 0; i < redactionCount; i++) {
-      const index = i * Math.floor(chars.length / redactionCount)
-      chars[index] = '*'
+      return `${redactedLocalPart}@${redactedDomainPart}`
     }
+    case 'msisdn':
+      return replaceLastCharacters(address)
+    /* istanbul ignore next : call to redactAddress is done after checking if the medium was valid */
+    default:
+      return address
+  }
+}
 
-    return chars.join('')
+const replaceLastCharacters = (
+  str: string,
+  redactionRatio: number = 0.4
+): string => {
+  const chars = str.split('')
+  const redactionCount = Math.ceil(chars.length * redactionRatio)
+
+  // Replace the last `redactionCount` characters with '*'
+  for (let i = chars.length - redactionCount; i < chars.length; i++) {
+    chars[i] = '*'
   }
 
-  const redactionRatio = 0.3 // Redact 30% of the characters
-  const redactedLocalPart = replaceRandomCharacters(localPart, redactionRatio)
-  const redactedDomainPart = replaceRandomCharacters(domainPart, redactionRatio)
-
-  return `${redactedLocalPart}@${redactedDomainPart}`
+  return chars.join('')
 }
+
+// const redactEmailAddress = (address: string): string => {
+//   // Assuming that the address is a valid email address
+//   const atIndex = address.indexOf('@')
+//   const localPart = address.slice(0, atIndex)
+//   const domainPart = address.slice(atIndex + 1)
+
+//   const redactedLocalPart = replaceLastCharacters(localPart)
+//   const redactedDomainPart = replaceLastCharacters(domainPart)
+
+//   return `${redactedLocalPart}@${redactedDomainPart}`
+// }
+
+// const redactPhoneNumber = (phoneNumber: string): string => {
+//   return replaceLastCharacters(phoneNumber)
+// }
 
 const StoreInvit = <T extends string = never>(
   idServer: MatrixIdentityServer<T>
@@ -165,10 +189,16 @@ const StoreInvit = <T extends string = never>(
           switch (_medium) {
             case 'email':
               if (!validEmailRe.test(_address)) {
-                send(res, 400, errMsg('invalidEmail'))
+                send(res, 400, errMsg('invalidParam', 'Invalid email address.'))
                 return
               }
-            // TODO : add phone number validation
+              break
+            case 'msisdn':
+              if (!validPhoneRe.test(_address)) {
+                send(res, 400, errMsg('invalidParam', 'Invalid phone number.'))
+                return
+              }
+              break
           }
           // Call to the lookup API to check for any existing third-party identifiers
           try {
@@ -232,10 +262,12 @@ const StoreInvit = <T extends string = never>(
                     )
                   })
                   break
-                // TODO : add sms sending
+                case 'msisdn':
+                  // TO DO implement smsSender
+                  break
               }
               // Send 200 response
-              const redactedAddress = redactAddress(_address)
+              const redactedAddress = redactAddress(_medium, _address)
               idServer.db
                 .getKeys('current')
                 .then((keys) => {
