@@ -126,6 +126,19 @@ describe('Use configuration file', () => {
       expect(response.statusCode).toBe(400)
       expect(sendMailMock).not.toHaveBeenCalled()
     })
+    it('should refuse an invalid next_link', async () => {
+      const response = await request(app)
+        .post('/_matrix/client/v3/register/email/requestToken')
+        .set('Accept', 'application/json')
+        .send({
+          client_secret: 'mysecret',
+          email: 'yadd@debian.org',
+          next_link: 'wrong link',
+          send_attempt: 1
+        })
+      expect(response.statusCode).toBe(400)
+      expect(sendMailMock).not.toHaveBeenCalled()
+    })
     it('should accept valid email registration query', async () => {
       const response = await request(app)
         .post('/_matrix/client/v3/register/email/requestToken')
@@ -216,6 +229,17 @@ describe('Use configuration file', () => {
         .set('Accept', 'application/json')
       expect(response.statusCode).toBe(400)
     })
+    it('should reject registration with wrong parameters', async () => {
+      const response = await request(app)
+        .post('/_matrix/client/v3/register/email/submitToken')
+        .send({
+          token,
+          client_secret: 'wrongclientsecret',
+          sid: 'wrongSid'
+        })
+        .set('Accept', 'application/json')
+      expect(response.statusCode).toBe(400)
+    })
     it('should accept to register mail after click', async () => {
       const response = await request(app)
         .post('/_matrix/client/v3/register/email/submitToken')
@@ -263,7 +287,9 @@ describe('Use configuration file', () => {
           sid
         })
       expect(response.status).toBe(302)
-      expect(response.headers.location).toBe('http://localhost:8090')
+      expect(response.headers.location).toBe(
+        new URL('http://localhost:8090').toString()
+      )
     })
   })
 
@@ -290,6 +316,19 @@ describe('Use configuration file', () => {
           client_secret: 'my',
           email: 'yadd@debian.org',
           next_link: 'http://localhost:8090',
+          send_attempt: 1
+        })
+      expect(response.statusCode).toBe(400)
+      expect(sendMailMock).not.toHaveBeenCalled()
+    })
+    it('should refuse an invalid next_link', async () => {
+      const response = await request(app)
+        .post('/_matrix/client/v3/account/password/email/requestToken')
+        .set('Accept', 'application/json')
+        .send({
+          client_secret: 'mysecret',
+          email: 'yadd@debian.org',
+          next_link: 'wrong link',
           send_attempt: 1
         })
       expect(response.statusCode).toBe(400)

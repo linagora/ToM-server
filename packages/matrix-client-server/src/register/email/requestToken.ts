@@ -3,6 +3,7 @@ import fs from 'fs'
 import { type Config } from '../../types'
 import {
   errMsg,
+  isValidUrl,
   jsonContent,
   send,
   validateParameters,
@@ -86,6 +87,8 @@ export const mailBody = (
           sid
         }).toString()
       )
+    // set token
+    // .replace(/__token__/g, secret) // This part is commented out for now since I don't know what the code is supposed to be TODO : Send a correct code
   )
 }
 
@@ -153,6 +156,9 @@ const RequestToken = (clientServer: MatrixClientServer): expressAppHandler => {
           send(res, 400, errMsg('invalidParam', 'invalid client_secret'))
         } else if (!validEmailRe.test(dst)) {
           send(res, 400, errMsg('invalidEmail'))
+          // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+        } else if (nextLink && !isValidUrl(nextLink)) {
+          send(res, 400, errMsg('invalidParam', 'invalid next_link'))
         } else {
           clientServer.matrixDb
             .get('user_threepids', ['user_id'], { address: dst })
