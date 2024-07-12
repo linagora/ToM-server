@@ -10,7 +10,6 @@ export type Config = MIdentityServerConfig & {
   login_flows: loginFlowContent
   authentication_flows: authenticationFlowContent
   application_services: AppServiceRegistration[]
-  sms_folder: string
   is_registration_enabled: boolean
   sms_folder: string
 }
