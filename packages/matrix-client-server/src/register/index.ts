@@ -29,6 +29,11 @@ interface registerRequestBody {
 const localPartRe = /^[a-z0-9._=/+-]+$/
 
 const register = (clientServer: MatrixClientServer): expressAppHandler => {
+  if (!clientServer.conf.is_registration_enabled) {
+    return (req, res) => {
+      send(res, 404, { error: 'Registration is disabled' })
+    }
+  }
   return (req, res) => {
     // @ts-expect-error req.query exists
     const prms = req.query as parameters

@@ -55,6 +55,7 @@ import SubmitTokenEmail from './register/email/submitToken'
 import getTimestampToEvent from './rooms/roomId/getTimestampToEvent'
 import getStatus from './presence/getStatus'
 import putStatus from './presence/putStatus'
+import getLogin from './login/getLogin'
 
 const tables = {
   ui_auth_sessions: 'session_id TEXT NOT NULL, stage_type TEXT NOT NULL'

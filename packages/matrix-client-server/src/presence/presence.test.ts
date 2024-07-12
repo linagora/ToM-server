@@ -193,5 +193,12 @@ describe('Use configuration file', () => {
         })
       })
     })
+    describe('/_matrix/client/v3/register', () => {
+      // Test put here since presence doesn't need registration so we can modify the config without consequence
+      it('should return 404 if registration is disabled', async () => {
+        const response = await request(app).post('/_matrix/client/v3/register')
+        expect(response.statusCode).toBe(404)
+      })
+    })
   })
 })

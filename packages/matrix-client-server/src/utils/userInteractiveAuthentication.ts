@@ -6,7 +6,6 @@ import {
   type AuthenticationData,
   type ClientServerDb,
   type Config,
-  type flowContent,
   type AppServiceRegistration
 } from '../types'
 import { Hash, randomString } from '@twake/crypto'
@@ -201,14 +200,16 @@ const UiAuthenticate = (
                     const completed: string[] = rows.map(
                       (row) => row.stage_type as string
                     )
-                    const authOver = (
-                      conf.authentication_flows.flows as unknown as flowContent
-                    ).some((flow) => {
-                      return (
-                        flow.stages.length === completed.length &&
-                        flow.stages.every((stage) => completed.includes(stage))
-                      )
-                    })
+                    const authOver = conf.authentication_flows.flows.some(
+                      (flow) => {
+                        return (
+                          flow.stages.length === completed.length &&
+                          flow.stages.every((stage) =>
+                            completed.includes(stage)
+                          )
+                        )
+                      }
+                    )
 
                     // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
                     if (authOver) {
