@@ -121,9 +121,9 @@ describe('Vault API server', () => {
   })
 
   it('reject not allowed method with 405', async () => {
-    const response = await request(app).put(endpoint)
+    const response = await request(app).patch(endpoint)
     expect(response.statusCode).toBe(405)
-    expect(response.body).toStrictEqual({
+    expect(response.body).toStrictEqual({ 
       error: 'Method not allowed'
     })
   })
