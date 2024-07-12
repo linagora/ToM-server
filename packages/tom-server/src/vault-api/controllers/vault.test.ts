@@ -92,16 +92,24 @@ describe('Vault controllers', () => {
     expect(nextFunction).toHaveBeenCalledWith(new Error(errorMsg))
   })
 
-  it('should update the recoverywords when it already exists', async () => {
+  it('should return a 409 response when recovery words already exists', async () => {
     jest
       .spyOn(dbManager, 'get')
       .mockResolvedValue([{ words: 'Another sentence for the same user' }])
-    jest.spyOn(dbManager, 'update').mockResolvedValue([{ words }])
     const handler: expressAppHandler = saveRecoveryWords(dbManager as TwakeDB)
     handler(mockRequest as Request, mockResponse as Response, nextFunction)
     await new Promise(process.nextTick)
-    expect(mockResponse.statusCode).toEqual(200)
-    expect(dbManager.update).toHaveBeenCalled()
+    expect(mockResponse.statusCode).toEqual(409)
+    expect(dbManager.insert).not.toHaveBeenCalled()
+  })
+
+  it('should return a 400 error if the body does not contain recovery words', async () => {
+    jest.spyOn(dbManager, 'get').mockResolvedValue([])
+    const handler: expressAppHandler = saveRecoveryWords(dbManager as TwakeDB)
+    const emptyRequest = { ...mockRequest, body: {} }
+    handler(emptyRequest as Request, mockResponse as Response, nextFunction)
+    await new Promise(process.nextTick)
+    expect(mockResponse.statusCode).toEqual(400)
     expect(dbManager.insert).not.toHaveBeenCalled()
   })
 
