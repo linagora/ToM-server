@@ -112,12 +112,12 @@ export const updateRecoveryWords = (db: TwakeDB): expressAppHandler => {
     const userId: string = req.token.content.sub
     const { words } = req.body
 
-    if (words === undefined || words.length === 0) {
-      res.status(400).json({ message: 'Missing recovery sentence' })
-      return
-    }
-
     try {
+      if (words === undefined || words.length === 0) {
+        res.status(400).json({ message: 'Missing recovery sentence' })
+        return
+      }
+
       const data = await db.get('recoveryWords' as Collections, ['words'], {
         userId
       })
