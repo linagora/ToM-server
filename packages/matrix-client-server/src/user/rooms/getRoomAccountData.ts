@@ -56,7 +56,7 @@ const getRoomAccountData = (
         })
         .catch((e) => {
           // istanbul ignore next
-          clientServer.logger.error("Error retrieving user's presence state", e)
+          clientServer.logger.error("Error retrieving user's account data", e)
           // istanbul ignore next
           send(res, 500, errMsg('unknown'))
         })

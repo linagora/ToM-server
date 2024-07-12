@@ -6,7 +6,8 @@ import {
   jsonContent,
   validateParameters,
   epoch,
-  toMatrixId
+  toMatrixId,
+  isValidUrl
 } from './index'
 import { type TwakeLogger } from '@twake/logger'
 
@@ -184,6 +185,37 @@ describe('Utility Functions', () => {
       expect(() =>
         toMatrixId('invalid localpart', 'example.com')
       ).toThrowError()
+    })
+  })
+  describe('isValidUrl', () => {
+    it('should return false for a non-string input', () => {
+      // @ts-expect-error Testing non-string input
+      expect(isValidUrl(12345)).toBe(false)
+      // @ts-expect-error Testing non-string input
+      expect(isValidUrl(null)).toBe(false)
+      // @ts-expect-error Testing non-string input
+      expect(isValidUrl(undefined)).toBe(false)
+    })
+    it('should return false for an empty string', () => {
+      expect(isValidUrl('')).toBe(false)
+    })
+    it('should return false for an invalid URL with invalid characters', () => {
+      expect(isValidUrl('https://exam ple.com')).toBe(false)
+    })
+    it('should return true for a valid URL with query parameters', () => {
+      expect(isValidUrl('https://example.com/path?name=value')).toBe(true)
+    })
+
+    it('should return true for a valid URL with a port number', () => {
+      expect(isValidUrl('https://example.com:8080')).toBe(true)
+    })
+
+    it('should return false for an invalid URL missing scheme', () => {
+      expect(isValidUrl('example.com')).toBe(false)
+    })
+
+    it('should return false for an invalid URL missing domain', () => {
+      expect(isValidUrl('http://')).toBe(false)
     })
   })
 })

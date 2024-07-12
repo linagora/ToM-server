@@ -100,7 +100,7 @@ type Get2<T> = (
   order?: string
 ) => Promise<DbGetResult>
 type GetJoin<T> = (
-  tables: Array<T>,
+  tables: T[],
   fields: string[],
   filterFields: Record<string, string | number | Array<string | number>>,
   joinFields: Record<string, string>,
@@ -122,7 +122,7 @@ type GetMinMax2<T> = (
   order?: string
 ) => Promise<DbGetResult>
 type GetMinMaxJoin2<T> = (
-  tables: Array<T>,
+  tables: T[],
   targetField: string,
   fields: string[],
   filterFields1: Record<string, string | number | Array<string | number>>,
@@ -339,7 +339,7 @@ class IdentityServerDb<T extends string = never>
     return this.db.getJoin(table, fields, filterFields, joinFields, order)
   }
 
-  //eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
+  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
   getWhereEqualOrDifferent(
     table: Collections | T,
     fields: string[],
@@ -356,7 +356,7 @@ class IdentityServerDb<T extends string = never>
     )
   }
 
-  //eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
+  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
   getWhereEqualAndHigher(
     table: Collections | T,
     fields: string[],
@@ -373,7 +373,7 @@ class IdentityServerDb<T extends string = never>
     )
   }
 
-  //eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
+  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
   getMaxWhereEqual(
     table: Collections | T,
     targetField: string,
@@ -390,7 +390,7 @@ class IdentityServerDb<T extends string = never>
     )
   }
 
-  //eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
+  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
   getMaxWhereEqualAndLower(
     table: Collections | T,
     targetField: string,
@@ -409,7 +409,7 @@ class IdentityServerDb<T extends string = never>
     )
   }
 
-  //eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
+  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
   getMinWhereEqualAndHigher(
     table: Collections | T,
     targetField: string,
@@ -428,7 +428,7 @@ class IdentityServerDb<T extends string = never>
     )
   }
 
-  //eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
+  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
   getMaxWhereEqualAndLowerJoin(
     tables: Array<T | Collections>,
     targetField: string,
@@ -523,10 +523,18 @@ class IdentityServerDb<T extends string = never>
   }
 
   // eslint-disable-next-line @typescript-eslint/promise-function-async
-  createOneTimeToken(data: object, expires?: number): Promise<string> {
+  createOneTimeToken(
+    data: object,
+    expires?: number,
+    nextLink?: string
+  ): Promise<string> {
     /* istanbul ignore if */
     if (this.db == null) {
       throw new Error('Wait for database to be ready')
+    }
+    // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+    if (nextLink) {
+      data = { ...data, next_link: nextLink }
     }
     const id = randomString(64)
     // default: expires in 600 s

@@ -5,6 +5,7 @@ import type MatrixIdentityServer from '../../index'
 import { type Config } from '../../types'
 import {
   errMsg,
+  isValidUrl,
   jsonContent,
   send,
   validateParameters,
@@ -15,7 +16,7 @@ import Mailer from '../../utils/mailer'
 interface RequestTokenArgs {
   client_secret: string
   email: string
-  next_link?: string
+  next_link?: string // Store it in the db if present to redirect to it after validation with submitToken
   send_attempt: number
 }
 
@@ -76,6 +77,8 @@ const mailBody = (
           sid
         }).toString()
       )
+    // set token
+    // .replace(/__token__/g, secret) // This part is commented out for now since I don't know what the code is supposed to be TODO : Send a correct code
   )
 }
 
@@ -86,7 +89,8 @@ const fillTable = <T extends string = never>(
   sendAttempt: number,
   verificationTemplate: string,
   transport: Mailer,
-  res: any
+  res: any,
+  nextLink?: string
 ): void => {
   const sid = randomString(64)
   idServer.db
@@ -96,7 +100,8 @@ const fillTable = <T extends string = never>(
         email: dst,
         client_secret: clientSecret
       },
-      idServer.conf.mail_link_delay
+      idServer.conf.mail_link_delay,
+      nextLink
     )
     .then((token) => {
       void transport.sendMail({
@@ -149,11 +154,15 @@ const RequestToken = <T extends string = never>(
           const clientSecret = (obj as RequestTokenArgs).client_secret
           const sendAttempt = (obj as RequestTokenArgs).send_attempt
           const dst = (obj as RequestTokenArgs).email
-
+          const nextLink = (obj as RequestTokenArgs).next_link
           if (!clientSecretRe.test(clientSecret)) {
             send(res, 400, errMsg('invalidParam', 'invalid client_secret'))
           } else if (!validEmailRe.test(dst)) {
             send(res, 400, errMsg('invalidEmail'))
+          }
+          // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+          else if (nextLink && !isValidUrl(nextLink)) {
+            send(res, 400, errMsg('invalidParam', 'invalid next_link'))
           } else {
             idServer.db
               .get('mappings', ['send_attempt', 'session_id'], {
@@ -179,7 +188,8 @@ const RequestToken = <T extends string = never>(
                           sendAttempt,
                           verificationTemplate,
                           transport,
-                          res
+                          res,
+                          nextLink
                         )
                       })
                       .catch((err) => {
@@ -197,7 +207,8 @@ const RequestToken = <T extends string = never>(
                     sendAttempt,
                     verificationTemplate,
                     transport,
-                    res
+                    res,
+                    nextLink
                   )
                 }
               })

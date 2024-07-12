@@ -209,7 +209,7 @@ class Pg<T extends string> extends SQL<T> implements IdDbBackend<T> {
   }
 
   _get(
-    tables: Array<T>,
+    tables: T[],
     fields?: string[],
     op1?: string,
     filterFields1?: Record<string, string | number | Array<string | number>>,
@@ -296,13 +296,13 @@ class Pg<T extends string> extends SQL<T> implements IdDbBackend<T> {
             ? buildCondition(op3, filterFields3)
             : ''
 
-        condition += condition1 != '' ? 'WHERE ' + condition1 : ''
+        condition += condition1 !== '' ? 'WHERE ' + condition1 : ''
         condition +=
-          condition2 != ''
+          condition2 !== ''
             ? (condition ? ` ${linkop1} ` : 'WHERE ') + condition2
             : ''
         condition +=
-          condition3 != ''
+          condition3 !== ''
             ? (condition ? ` ${linkop2} ` : 'WHERE ') + condition3
             : ''
 
@@ -358,7 +358,7 @@ class Pg<T extends string> extends SQL<T> implements IdDbBackend<T> {
   }
 
   getJoin(
-    tables: Array<T>,
+    tables: T[],
     fields?: string[],
     filterFields?: Record<string, string | number | Array<string | number>>,
     joinFields?: Record<string, string>,
@@ -450,7 +450,7 @@ class Pg<T extends string> extends SQL<T> implements IdDbBackend<T> {
 
   _getMinMax(
     minmax: 'MIN' | 'MAX',
-    tables: Array<T>,
+    tables: T[],
     targetField: string,
     fields?: string[],
     op1?: string,
@@ -480,7 +480,7 @@ class Pg<T extends string> extends SQL<T> implements IdDbBackend<T> {
             return field
           })
         }
-        let targetFieldAlias: string = targetField.replace(/\./g, '_')
+        const targetFieldAlias: string = targetField.replace(/\./g, '_')
 
         let index = 0
 
@@ -530,9 +530,9 @@ class Pg<T extends string> extends SQL<T> implements IdDbBackend<T> {
             ? buildCondition(op2, filterFields2)
             : ''
 
-        condition += condition1 != '' ? 'WHERE ' + condition1 : ''
+        condition += condition1 !== '' ? 'WHERE ' + condition1 : ''
         condition +=
-          condition2 != ''
+          condition2 !== ''
             ? (condition ? ` ${linkop} ` : 'WHERE ') + condition2
             : ''
 
@@ -638,7 +638,7 @@ class Pg<T extends string> extends SQL<T> implements IdDbBackend<T> {
   }
 
   getMaxWhereEqualAndLowerJoin(
-    tables: Array<T>,
+    tables: T[],
     targetField: string,
     fields: string[],
     filterFields1?: Record<string, string | number | Array<string | number>>,

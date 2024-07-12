@@ -1,5 +1,5 @@
 import fs from 'fs'
-import request from 'supertest'
+import request, { type Response } from 'supertest'
 import express from 'express'
 import ClientServer from './index'
 import { buildMatrixDb, buildUserDB } from './__testData__/buildUserDB'
@@ -303,6 +303,20 @@ describe('Use configuration file', () => {
     })
     describe('/_matrix/client/v3/account/whoami', () => {
       let asToken: string
+      it('should reject if more than 100 requests are done in less than 10 seconds', async () => {
+        let token
+        let response
+        // eslint-disable-next-line @typescript-eslint/no-for-in-array, @typescript-eslint/no-unused-vars
+        for (const i in [...Array(101).keys()]) {
+          token = Number(i) % 2 === 0 ? `Bearer ${validToken}` : 'falsy_token'
+          response = await request(app)
+            .get('/_matrix/client/v3/account/whoami')
+            .set('Authorization', token)
+            .set('Accept', 'application/json')
+        }
+        expect((response as Response).statusCode).toEqual(429)
+        await new Promise((resolve) => setTimeout(resolve, 11000))
+      })
       it('should reject missing token (', async () => {
         const response = await request(app)
           .get('/_matrix/client/v3/account/whoami')
@@ -716,7 +730,6 @@ describe('Use configuration file', () => {
             },
             username: '@localhost:example.com'
           })
-        console.log(response.body)
         expect(response.statusCode).toBe(400)
         expect(response.body).toHaveProperty('error')
         expect(response.body).toHaveProperty('errcode', 'M_INVALID_USERNAME')

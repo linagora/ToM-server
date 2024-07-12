@@ -495,6 +495,20 @@ describe('Use configuration file', () => {
           expect(response.statusCode).toBe(400)
           expect(sendMailMock).not.toHaveBeenCalled()
         })
+        it('should refuse an invalid next_link', async () => {
+          const response = await request(app)
+            .post('/_matrix/identity/v2/validate/email/requestToken')
+            .set('Authorization', `Bearer ${validToken}`)
+            .set('Accept', 'application/json')
+            .send({
+              client_secret: 'mysecret',
+              email: 'yadd@debian.org',
+              next_link: 'wrong link',
+              send_attempt: 1
+            })
+          expect(response.statusCode).toBe(400)
+          expect(sendMailMock).not.toHaveBeenCalled()
+        })
         it('should accept valid email registration query', async () => {
           const response = await request(app)
             .post('/_matrix/identity/v2/validate/email/requestToken')
@@ -573,10 +587,21 @@ describe('Use configuration file', () => {
               .set('Accept', 'application/json')
             expect(response.statusCode).toBe(400)
           })
+          it('should reject registration with wrong parameters', async () => {
+            const response = await request(app)
+              .post('/_matrix/identity/v2/validate/email/submitToken')
+              .send({
+                token,
+                client_secret: 'wrongclientsecret',
+                sid: 'wrongSid'
+              })
+              .set('Accept', 'application/json')
+            expect(response.statusCode).toBe(400)
+          })
           it('should accept to register mail after click', async () => {
             const response = await request(app)
-              .get('/_matrix/identity/v2/validate/email/submitToken')
-              .query({
+              .post('/_matrix/identity/v2/validate/email/submitToken')
+              .send({
                 token,
                 client_secret: 'mysecret',
                 sid
@@ -595,6 +620,35 @@ describe('Use configuration file', () => {
               })
               .set('Accept', 'application/json')
             expect(response.statusCode).toBe(400)
+          })
+          it('should redirect to the next_link if it was provided in requestToken with the GET method', async () => {
+            const requestTokenResponse = await request(app)
+              .post('/_matrix/identity/v2/validate/email/requestToken')
+              .set('Authorization', `Bearer ${validToken}`)
+              .set('Accept', 'application/json')
+              .send({
+                client_secret: 'my_secret2',
+                email: 'abc@abcd.fr',
+                next_link: 'http://localhost:8090',
+                send_attempt: 1
+              })
+            expect(requestTokenResponse.statusCode).toBe(200)
+            expect(sendMailMock.mock.calls[0][0].raw).toMatch(
+              /token=([a-zA-Z0-9]{64})&client_secret=my_secret2&sid=([a-zA-Z0-9]{64})/
+            )
+            sid = RegExp.$2
+            token = RegExp.$1
+            const response = await request(app)
+              .get('/_matrix/identity/v2/validate/email/submitToken')
+              .query({
+                client_secret: 'my_secret2',
+                token,
+                sid
+              })
+            expect(response.status).toBe(302)
+            expect(response.headers.location).toBe(
+              new URL('http://localhost:8090').toString()
+            )
           })
         })
       })
@@ -682,8 +736,8 @@ describe('Use configuration file', () => {
         */
         it('should return 200 if a valid session is found', async () => {
           const responseSubmitToken = await request(app)
-            .get('/_matrix/identity/v2/validate/email/submitToken')
-            .query({
+            .post('/_matrix/identity/v2/validate/email/submitToken')
+            .send({
               token,
               client_secret: 'newsecret',
               sid

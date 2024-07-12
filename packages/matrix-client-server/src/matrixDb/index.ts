@@ -2,6 +2,8 @@ import { type TwakeLogger } from '@twake/logger'
 import { type Config, type DbGetResult } from '../types'
 import MatrixDBPg from './sql/pg'
 import MatrixDBSQLite from './sql/sqlite'
+import { randomString } from '@twake/crypto'
+import { epoch } from '@twake/utils'
 
 export type Collections =
   | 'users'
@@ -28,6 +30,9 @@ export type Collections =
   | 'registration_tokens'
   | 'account_data'
   | 'devices'
+  | 'threepid_validation_token'
+  | 'threepid_validation_session'
+  | 'user_threepids'
   | 'presence'
 
 type sqlComparaisonOperator = '=' | '!=' | '>' | '<' | '>=' | '<=' | '<>'
@@ -51,7 +56,7 @@ type Get2 = (
   order?: string
 ) => Promise<DbGetResult>
 type GetJoin = (
-  tables: Array<Collections>,
+  tables: Collections[],
   fields: string[],
   filterFields: Record<string, string | number | Array<string | number>>,
   joinFields: Record<string, string>,
@@ -73,7 +78,7 @@ type GetMinMax2 = (
   order?: string
 ) => Promise<DbGetResult>
 type GetMinMaxJoin2 = (
-  tables: Array<Collections>,
+  tables: Collections[],
   targetField: string,
   fields: string[],
   filterFields1: Record<string, string | number | Array<string | number>>,
@@ -172,7 +177,7 @@ class MatrixDBmodified implements MatrixDBmodifiedBackend {
 
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
   getJoin(
-    table: Array<Collections>,
+    table: Collections[],
     fields: string[],
     filterFields: Record<string, string | number | Array<string | number>>,
     joinFields: Record<string, string>,
@@ -232,7 +237,7 @@ class MatrixDBmodified implements MatrixDBmodifiedBackend {
     )
   }
 
-  //eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
+  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
   getMaxWhereEqualAndLower(
     table: Collections,
     targetField: string,
@@ -251,7 +256,7 @@ class MatrixDBmodified implements MatrixDBmodifiedBackend {
     )
   }
 
-  //eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
+  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
   getMinWhereEqualAndHigher(
     table: Collections,
     targetField: string,
@@ -272,7 +277,7 @@ class MatrixDBmodified implements MatrixDBmodifiedBackend {
 
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
   getMaxWhereEqualAndLowerJoin(
-    tables: Array<Collections>,
+    tables: Collections[],
     targetField: string,
     fields: string[],
     filterFields1: Record<string, string | number | Array<string | number>>,
@@ -315,6 +320,122 @@ class MatrixDBmodified implements MatrixDBmodifiedBackend {
     conditions: Array<{ field: string; value: string | number }>
   ) {
     return this.db.updateWithConditions(table, values, conditions)
+  }
+
+  // eslint-disable-next-line @typescript-eslint/promise-function-async
+  createOneTimeToken(
+    sessionId: string,
+    expires?: number,
+    nextLink?: string
+  ): Promise<string> {
+    /* istanbul ignore if */
+    if (this.db == null) {
+      throw new Error('Wait for database to be ready')
+    }
+    const token = randomString(64)
+    // default: expires in 600 s
+    const expiresForDb =
+      epoch() + 1000 * (expires != null && expires > 0 ? expires : 600)
+    return new Promise((resolve, reject) => {
+      const insertData: Record<string, any> = {
+        token,
+        expires: expiresForDb,
+        session_id: sessionId
+      }
+      // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+      if (nextLink) {
+        insertData.next_link = nextLink
+      }
+
+      this.db
+        .insert('threepid_validation_token', insertData)
+        .then(() => {
+          resolve(token)
+        })
+        .catch((err) => {
+          /* istanbul ignore next */
+          this.logger.error('Failed to insert token', err)
+          /* istanbul ignore next */
+          reject(err)
+        })
+    })
+  }
+
+  // No difference in creation between a token and a one-time-token
+  // eslint-disable-next-line @typescript-eslint/promise-function-async
+  createToken(sessionId: string, expires?: number): Promise<string> {
+    return this.createOneTimeToken(sessionId, expires)
+  }
+
+  // eslint-disable-next-line @typescript-eslint/promise-function-async
+  verifyToken(token: string): Promise<object> {
+    /* istanbul ignore if */
+    if (this.db == null) {
+      throw new Error('Wait for database to be ready')
+    }
+    return new Promise((resolve, reject) => {
+      this.db
+        .get(
+          'threepid_validation_token',
+          ['session_id', 'expires', 'next_link'],
+          { token }
+        )
+        .then((rows) => {
+          /* istanbul ignore else */
+          if (rows.length > 0 && (rows[0].expires as number) >= epoch()) {
+            this.db
+              .get('threepid_validation_session', ['client_secret'], {
+                session_id: rows[0].session_id
+              })
+              .then((validationRows) => {
+                const body: any = {}
+                // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+                if (rows[0].next_link) {
+                  body.next_link = rows[0].next_link
+                }
+                resolve({
+                  ...body,
+                  session_id: rows[0].session_id,
+                  client_secret: validationRows[0].client_secret
+                })
+              })
+              .catch((e) => {
+                // istanbul ignore next
+                reject(e)
+              })
+          } else {
+            reject(
+              new Error(
+                'Token expired' + (rows[0].expires as number).toString()
+              )
+            )
+          }
+        })
+        .catch((e) => {
+          reject(e)
+        })
+    })
+  }
+
+  // eslint-disable-next-line @typescript-eslint/promise-function-async
+  deleteToken(token: string): Promise<void> {
+    /* istanbul ignore if */
+    if (this.db == null) {
+      throw new Error('Wait for database to be ready')
+    }
+    return new Promise((resolve, reject) => {
+      this.db
+        .deleteEqual('threepid_validation_token', 'token', token)
+        .then(() => {
+          resolve()
+        })
+        .catch((e) => {
+          /* istanbul ignore next */
+          this.logger.info(`Token ${token} already deleted`, e)
+          /* istanbul ignore next */
+          resolve()
+        })
+    })
   }
 
   close(): void {

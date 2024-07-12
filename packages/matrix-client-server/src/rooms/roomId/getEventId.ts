@@ -1,4 +1,4 @@
-import MatrixClientServer from '../..'
+import type MatrixClientServer from '../..'
 import { epoch, errMsg, send, type expressAppHandler } from '@twake/utils'
 import { type ClientEvent } from '../../types'
 
@@ -38,7 +38,7 @@ const GetEventId = (ClientServer: MatrixClientServer): expressAppHandler => {
             return
           }
           // Check if the user has permission to retrieve this event
-          const userId = data.sub as string
+          const userId = data.sub
           ClientServer.matrixDb
             .getMaxWhereEqualAndLowerJoin(
               ['room_memberships', 'events'],
