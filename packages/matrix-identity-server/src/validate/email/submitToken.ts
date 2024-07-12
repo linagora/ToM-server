@@ -13,13 +13,12 @@ interface parameters {
   sid?: string
 }
 
-interface mailToken {
+interface MailToken {
   client_secret: string
   mail: string
   sid: string
+  next_link?: string
 }
-
-// TODO : Redirect to next_link from requestToken if present
 
 const SubmitToken = <T extends string = never>(
   idServer: MatrixIdentityServer<T>
@@ -35,8 +34,8 @@ const SubmitToken = <T extends string = never>(
           .verifyToken(prms.token)
           .then((data) => {
             if (
-              (data as mailToken).sid === prms.sid &&
-              (data as mailToken).client_secret === prms.client_secret
+              (data as MailToken).sid === prms.sid &&
+              (data as MailToken).client_secret === prms.client_secret
             ) {
               idServer.db
                 .deleteToken(prms.token as string)
@@ -45,13 +44,28 @@ const SubmitToken = <T extends string = never>(
                     .updateAnd(
                       'mappings',
                       { valid: 1, submit_time: epoch() },
-                      { field: 'session_id', value: (data as mailToken).sid },
+                      { field: 'session_id', value: (data as MailToken).sid },
                       {
                         field: 'client_secret',
-                        value: (data as mailToken).client_secret
+                        value: (data as MailToken).client_secret
                       }
                     )
                     .then(() => {
+                      if (
+                        req.method === 'GET' &&
+                        // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+                        (data as MailToken).next_link
+                      ) {
+                        const redirectUrl = new URL(
+                          // @ts-expect-error : We check that next_link is not null beforehand
+                          (data as Token).next_link
+                        ).toString()
+                        res.writeHead(302, {
+                          Location: redirectUrl
+                        })
+                        res.end()
+                        return
+                      }
                       send(res, 200, { success: true })
                     })
                     .catch((e) => {})

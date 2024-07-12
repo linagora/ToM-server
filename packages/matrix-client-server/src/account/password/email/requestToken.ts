@@ -1,6 +1,7 @@
 import fs from 'fs'
 import {
   errMsg,
+  isValidUrl,
   jsonContent,
   send,
   validateParameters,
@@ -56,6 +57,9 @@ const RequestToken = (clientServer: MatrixClientServer): expressAppHandler => {
           send(res, 400, errMsg('invalidParam', 'invalid client_secret'))
         } else if (!validEmailRe.test(dst)) {
           send(res, 400, errMsg('invalidEmail'))
+          // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+        } else if (nextLink && !isValidUrl(nextLink)) {
+          send(res, 400, errMsg('invalidParam', 'invalid next_link'))
         } else {
           clientServer.matrixDb
             .get('user_threepids', ['user_id'], { address: dst })

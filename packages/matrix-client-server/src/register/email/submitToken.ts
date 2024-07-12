@@ -55,12 +55,15 @@ const SubmitToken = (clientServer: MatrixClientServer): expressAppHandler => {
                       ]
                     )
                     .then(() => {
-                      if (
-                        req.method === 'GET' &&
-                        (data as Token).next_link !== undefined
-                      ) {
+                      // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+                      if (req.method === 'GET' && (data as Token).next_link) {
+                        const redirectUrl = new URL(
+                          // @ts-expect-error : We check that next_link is not null beforehand
+                          (data as Token).next_link
+                        ).toString()
+
                         res.writeHead(302, {
-                          Location: (data as Token).next_link
+                          Location: redirectUrl
                         })
                         res.end()
                         return

@@ -523,10 +523,18 @@ class IdentityServerDb<T extends string = never>
   }
 
   // eslint-disable-next-line @typescript-eslint/promise-function-async
-  createOneTimeToken(data: object, expires?: number): Promise<string> {
+  createOneTimeToken(
+    data: object,
+    expires?: number,
+    nextLink?: string
+  ): Promise<string> {
     /* istanbul ignore if */
     if (this.db == null) {
       throw new Error('Wait for database to be ready')
+    }
+    // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+    if (nextLink) {
+      data = { ...data, next_link: nextLink }
     }
     const id = randomString(64)
     // default: expires in 600 s
