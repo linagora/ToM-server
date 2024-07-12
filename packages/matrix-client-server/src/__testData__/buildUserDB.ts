@@ -36,6 +36,7 @@ const matrixDbQueries = [
   'CREATE TABLE IF NOT EXISTS room_aliases( room_alias TEXT NOT NULL, room_id TEXT NOT NULL, creator TEXT, UNIQUE (room_alias) )',
   'CREATE TABLE IF NOT EXISTS rooms( room_id TEXT PRIMARY KEY NOT NULL, is_public BOOL, creator TEXT , room_version TEXT, has_auth_chain_index BOOLEAN)',
   'CREATE TABLE IF NOT EXISTS room_tags( user_id TEXT NOT NULL, room_id TEXT NOT NULL, tag TEXT NOT NULL, content TEXT NOT NULL, CONSTRAINT room_tag_uniqueness UNIQUE (user_id, room_id, tag) )',
+  'CREATE TABLE IF NOT EXISTS presence (user_id TEXT NOT NULL, state VARCHAR(20), status_msg TEXT, mtime BIGINT, UNIQUE (user_id))'
 ]
 
 // eslint-disable-next-line @typescript-eslint/promise-function-async

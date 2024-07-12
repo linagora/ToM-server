@@ -28,6 +28,7 @@ export type Collections =
   | 'registration_tokens'
   | 'account_data'
   | 'devices'
+  | 'presence'
 
 type sqlComparaisonOperator = '=' | '!=' | '>' | '<' | '>=' | '<=' | '<>'
 interface ISQLCondition {
