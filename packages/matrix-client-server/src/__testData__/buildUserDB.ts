@@ -38,7 +38,8 @@ const matrixDbQueries = [
   'CREATE TABLE IF NOT EXISTS room_tags( user_id TEXT NOT NULL, room_id TEXT NOT NULL, tag TEXT NOT NULL, content TEXT NOT NULL, CONSTRAINT room_tag_uniqueness UNIQUE (user_id, room_id, tag) )',
   'CREATE TABLE IF NOT EXISTS "user_threepids" ( user_id TEXT NOT NULL, medium TEXT NOT NULL, address TEXT NOT NULL, validated_at BIGINT NOT NULL, added_at BIGINT NOT NULL, CONSTRAINT medium_address UNIQUE (medium, address) )',
   'CREATE TABLE threepid_validation_session (session_id TEXT PRIMARY KEY,medium TEXT NOT NULL,address TEXT NOT NULL,client_secret TEXT NOT NULL,last_send_attempt BIGINT NOT NULL,validated_at BIGINT)',
-  'CREATE TABLE threepid_validation_token (token TEXT PRIMARY KEY,session_id TEXT NOT NULL,next_link TEXT,expires BIGINT NOT NULL)'
+  'CREATE TABLE threepid_validation_token (token TEXT PRIMARY KEY,session_id TEXT NOT NULL,next_link TEXT,expires BIGINT NOT NULL)',
+  'CREATE TABLE IF NOT EXISTS presence (user_id TEXT NOT NULL, state VARCHAR(20), status_msg TEXT, mtime BIGINT, UNIQUE (user_id))'
 ]
 
 // eslint-disable-next-line @typescript-eslint/promise-function-async
