@@ -391,14 +391,14 @@ describe('Use configuration file', () => {
               .set('Accept', 'application/json')
             expect(response.statusCode).toBe(200)
             expect(response.body).toHaveProperty('joined')
-            expect(response.body.joined['@testuser:example.com']).toBeDefined
+            expect(response.body.joined['@testuser:example.com']).toBeDefined()
             expect(
               response.body.joined['@testuser:example.com']
             ).toHaveProperty('display_name', 'Test User')
             expect(
               response.body.joined['@testuser:example.com']
             ).toHaveProperty('avatar_url', 'http://example.com/avatar.jpg')
-            expect(response.body.joined['@admin:example.com']).toBeDefined
+            expect(response.body.joined['@admin:example.com']).toBeDefined()
             expect(response.body.joined['@admin:example.com']).toHaveProperty(
               'display_name',
               'Admin User'

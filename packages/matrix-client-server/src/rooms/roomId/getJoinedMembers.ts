@@ -1,4 +1,4 @@
-import MatrixClientServer from '../..'
+import type MatrixClientServer from '../..'
 import { errMsg, send, type expressAppHandler } from '@twake/utils'
 import { type RoomMember } from '../../types'
 
@@ -18,7 +18,7 @@ const GetJoinedMembers = (
     const roomId: string = ((req as Request).params as parameters).roomId
     ClientServer.authenticate(req, res, (data, id) => {
       // Check if the user has permission to retrieve this event
-      const userId = data.sub as string
+      const userId: string = data.sub
       ClientServer.matrixDb
         .get('local_current_membership', ['membership'], {
           user_id: userId,
@@ -51,14 +51,14 @@ const GetJoinedMembers = (
               { 'local_current_membership.user_id': 'profiles.user_id' }
             )
             .then((rows) => {
-              const joined: { [key: string]: RoomMember } = {}
+              const joined: Record<string, RoomMember> = {}
               for (const row of rows) {
                 joined[row.profiles_user_id as string] = {
                   avatar_url: row.profiles_avatar_url as string,
                   display_name: row.profiles_displayname as string
                 }
               }
-              send(res, 200, { joined: joined })
+              send(res, 200, { joined })
             })
             .catch((err) => {
               /* istanbul ignore next */
