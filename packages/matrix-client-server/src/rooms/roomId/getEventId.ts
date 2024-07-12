@@ -68,17 +68,17 @@ const GetEventId = (ClientServer: MatrixClientServer): expressAppHandler => {
                 return
               }
               const event = rows[0]
-              const response = {
-                content: event.content,
-                event_id: event.event_id,
-                origin_server_ts: event.origin_server_ts,
-                room_id: event.room_id,
-                sender: event.sender,
-                type: event.type,
+              const response: ClientEvent = {
+                content: event.content as Record<string, any>,
+                event_id: event.event_id as string,
+                origin_server_ts: event.origin_server_ts as number,
+                room_id: event.room_id as string,
+                sender: event.sender as string,
+                type: event.type as string,
                 unsigned: {
                   age: epoch() - (event.origin_server_ts as number)
                 }
-              } as ClientEvent
+              }
               if (event.state_key !== null) {
                 response.state_key = event.state_key as string
               }
