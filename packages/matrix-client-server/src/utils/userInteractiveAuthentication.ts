@@ -6,7 +6,6 @@ import {
   type AuthenticationData,
   type ClientServerDb,
   type Config,
-  type flowContent,
   type AppServiceRegistration,
   type ThreepidCreds
 } from '../types'
