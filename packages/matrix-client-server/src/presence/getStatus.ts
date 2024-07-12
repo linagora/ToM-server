@@ -20,6 +20,7 @@ const getStatus = (clientServer: MatrixClientServer): expressAppHandler => {
           })
           .then((rows) => {
             if (rows.length === 0) {
+              clientServer.logger.error('No presence state for this user')
               send(res, 404, {
                 errcode: 'M_UNKNOWN',
                 error:
