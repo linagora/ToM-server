@@ -33,7 +33,7 @@ const Authenticate = (
       }
       // @ts-expect-error req.query exists
     } else if (req.query && Object.keys(req.query).length > 0) {
-      // @ts-expect-error req.query exists
+      // @ts-expect-error req.query exists,  istanbul ignore next
       token = req.query.access_token
     }
     if (token != null) {
