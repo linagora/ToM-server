@@ -17,7 +17,6 @@
   "userdb_host": "./src/__testData__/test.db",
   "matrix_database_engine": "sqlite",
   "matrix_database_host": "./src/__testData__/testMatrix.db",
-
   "login_flows": {
     "flows": [
       {
