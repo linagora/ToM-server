@@ -237,7 +237,7 @@ class SQLite<T extends string> extends SQL<T> implements IdDbBackend<T> {
           op: string,
           filterFields: Record<string, string | number | Array<string | number>>
         ): string => {
-          let local_condition = ''
+          let localCondition = ''
 
           Object.keys(filterFields)
             .filter(
@@ -246,9 +246,9 @@ class SQLite<T extends string> extends SQL<T> implements IdDbBackend<T> {
                 filterFields[key].toString() !== [].toString()
             )
             .forEach((key) => {
-              local_condition += local_condition !== '' ? ' AND ' : ''
+              localCondition += localCondition !== '' ? ' AND ' : ''
               if (Array.isArray(filterFields[key])) {
-                local_condition += `(${(
+                localCondition += `(${(
                   filterFields[key] as Array<string | number>
                 )
                   .map((val) => {
@@ -260,10 +260,10 @@ class SQLite<T extends string> extends SQL<T> implements IdDbBackend<T> {
               } else {
                 index++
                 values.push(filterFields[key].toString())
-                local_condition += `${key}${op}$${index}`
+                localCondition += `${key}${op}$${index}`
               }
             })
-          return local_condition
+          return localCondition
         }
 
         const condition1 =
@@ -274,12 +274,14 @@ class SQLite<T extends string> extends SQL<T> implements IdDbBackend<T> {
             : ''
         const condition2 =
           op2 != null &&
+          linkop1 != null &&
           filterFields2 != null &&
           Object.keys(filterFields2).length > 0
             ? buildCondition(op2, filterFields2)
             : ''
         const condition3 =
           op3 != null &&
+          linkop2 != null &&
           filterFields3 != null &&
           Object.keys(filterFields3).length > 0
             ? buildCondition(op3, filterFields3)
@@ -288,15 +290,17 @@ class SQLite<T extends string> extends SQL<T> implements IdDbBackend<T> {
         condition += condition1 !== '' ? 'WHERE ' + condition1 : ''
         condition +=
           condition2 !== ''
-            ? (condition ? ` ${linkop1} ` : 'WHERE ') + condition2
+            ? // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+              (condition !== '' ? ` ${linkop1} ` : 'WHERE ') + condition2
             : ''
         condition +=
           condition3 !== ''
-            ? (condition ? ` ${linkop2} ` : 'WHERE ') + condition3
+            ? // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+              (condition !== '' ? ` ${linkop2} ` : 'WHERE ') + condition3
             : ''
 
         if (joinFields != null) {
-          let join_condition = ''
+          let joinCondition = ''
           Object.keys(joinFields)
             .filter(
               (key) =>
@@ -304,11 +308,11 @@ class SQLite<T extends string> extends SQL<T> implements IdDbBackend<T> {
                 joinFields[key].toString() !== [].toString()
             )
             .forEach((key) => {
-              join_condition += join_condition !== '' ? ' AND ' : ''
-              join_condition += `${key}=${joinFields[key]}`
+              joinCondition += joinCondition !== '' ? ' AND ' : ''
+              joinCondition += `${key}=${joinFields[key]}`
             })
           condition += condition !== '' ? ' AND ' : 'WHERE '
-          condition += join_condition
+          condition += joinCondition
         }
 
         if (order != null) condition += ` ORDER BY ${order}`
@@ -489,7 +493,7 @@ class SQLite<T extends string> extends SQL<T> implements IdDbBackend<T> {
           op: string,
           filterFields: Record<string, string | number | Array<string | number>>
         ): string => {
-          let local_condition = ''
+          let localCondition = ''
 
           Object.keys(filterFields)
             .filter(
@@ -498,9 +502,9 @@ class SQLite<T extends string> extends SQL<T> implements IdDbBackend<T> {
                 filterFields[key].toString() !== [].toString()
             )
             .forEach((key) => {
-              local_condition += local_condition !== '' ? ' AND ' : ''
+              localCondition += localCondition !== '' ? ' AND ' : ''
               if (Array.isArray(filterFields[key])) {
-                local_condition += `(${(
+                localCondition += `(${(
                   filterFields[key] as Array<string | number>
                 )
                   .map((val) => {
@@ -512,10 +516,10 @@ class SQLite<T extends string> extends SQL<T> implements IdDbBackend<T> {
               } else {
                 index++
                 values.push(filterFields[key].toString())
-                local_condition += `${key}${op}$${index}`
+                localCondition += `${key}${op}$${index}`
               }
             })
-          return local_condition
+          return localCondition
         }
 
         const condition1 =
@@ -526,6 +530,7 @@ class SQLite<T extends string> extends SQL<T> implements IdDbBackend<T> {
             : ''
         const condition2 =
           op2 != null &&
+          linkop != null &&
           filterFields2 != null &&
           Object.keys(filterFields2).length > 0
             ? buildCondition(op2, filterFields2)
@@ -534,11 +539,12 @@ class SQLite<T extends string> extends SQL<T> implements IdDbBackend<T> {
         condition += condition1 !== '' ? 'WHERE ' + condition1 : ''
         condition +=
           condition2 !== ''
-            ? (condition ? ` ${linkop} ` : 'WHERE ') + condition2
+            ? // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+              (condition !== '' ? ` ${linkop} ` : 'WHERE ') + condition2
             : ''
 
         if (joinFields != null) {
-          let join_condition = ''
+          let joinCondition = ''
           Object.keys(joinFields)
             .filter(
               (key) =>
@@ -546,11 +552,11 @@ class SQLite<T extends string> extends SQL<T> implements IdDbBackend<T> {
                 joinFields[key].toString() !== [].toString()
             )
             .forEach((key) => {
-              join_condition += join_condition !== '' ? ' AND ' : ''
-              join_condition += `${key}=${joinFields[key]}`
+              joinCondition += joinCondition !== '' ? ' AND ' : ''
+              joinCondition += `${key}=${joinFields[key]}`
             })
           condition += condition !== '' ? ' AND ' : 'WHERE '
-          condition += join_condition
+          condition += joinCondition
         }
 
         if (order != null) condition += ` ORDER BY ${order}`
