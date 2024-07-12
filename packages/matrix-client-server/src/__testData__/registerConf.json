@@ -17,7 +17,6 @@
   "template_dir": "./templates",
   "userdb_engine": "sqlite",
   "userdb_host": "./src/__testData__/test.db",
-
   "login_flows": {
     "flows": [
       {
