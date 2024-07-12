@@ -1,6 +1,7 @@
+/* eslint-disable @typescript-eslint/no-misused-promises */
 /* eslint-disable no-useless-return */
 import { type TwakeDB } from '../../db'
-import type { Collections } from '../../types'
+import { type Collections } from '../../types'
 import { VaultAPIError, type expressAppHandler } from '../utils'
 
 export type VaultController = (db: TwakeDB) => expressAppHandler
@@ -9,40 +10,38 @@ export const methodNotAllowed: expressAppHandler = (req, res, next) => {
   throw new VaultAPIError('Method not allowed', 405)
 }
 
+/**
+ * Save use recovery words
+ *
+ * @param {TwakeDB} db - the database instance
+ * @retuns {expressAppHandler} - the express handler
+ */
 export const saveRecoveryWords = (db: TwakeDB): expressAppHandler => {
-  return (req, res, next) => {
+  return async (req, res, next) => {
     const { words } = req.body
     const userId = req.token.content.sub
 
-    db.get('recoveryWords' as Collections, ['words'], { userId })
-      .then((data) => {
-        if (data.length > 0) {
-          db.update('recoveryWords' as Collections, { words }, 'userId', userId)
-            .then((_) => {
-              res
-                .status(200)
-                .json({ message: 'Updated recovery words sucessfully' })
-            })
-            .catch((err) => {
-              next(err)
-              return
-            })
-        } else {
-          db.insert('recoveryWords' as Collections, { userId, words })
-            .then((_) => {
-              res
-                .status(201)
-                .json({ message: 'Saved recovery words sucessfully' })
-            })
-            .catch((err) => {
-              next(err)
-              return
-            })
-        }
+    try {
+      if (words === undefined || words.length === 0) {
+        res.status(400).json({ error: 'Missing recovery words' })
+        return
+      }
+
+      const data = await db.get('recoveryWords' as Collections, ['words'], {
+        userId
       })
-      .catch((err) => {
-        next(err)
-      })
+
+      if (data.length > 0) {
+        res.status(409).json({ error: 'User already has recovery words' })
+        return
+      } else {
+        await db.insert('recoveryWords' as Collections, { userId, words })
+        res.status(201).json({ message: 'Saved recovery words successfully' })
+        return
+      }
+    } catch (err) {
+      next(err)
+    }
   }
 }
 
@@ -99,5 +98,46 @@ export const deleteRecoveryWords = (db: TwakeDB): expressAppHandler => {
       .catch((err) => {
         next(err)
       })
+  }
+}
+
+/**
+ * Update recovery words in database
+ *
+ * @param {TwakeDB} db - the database instance
+ * @returns {expressAppHandler} - the express controller handler
+ */
+export const updateRecoveryWords = (db: TwakeDB): expressAppHandler => {
+  return async (req, res, next) => {
+    const userId: string = req.token.content.sub
+    const { words } = req.body
+
+    if (words === undefined || words.length === 0) {
+      res.status(400).json({ message: 'Missing recovery sentence' })
+      return
+    }
+
+    try {
+      const data = await db.get('recoveryWords' as Collections, ['words'], {
+        userId
+      })
+
+      if (data.length === 0) {
+        res.status(404).json({ message: 'User has no recovery sentence' })
+        return
+      }
+
+      await db.update(
+        'recoveryWords' as Collections,
+        { words },
+        'userId',
+        userId
+      )
+
+      res.status(200).json({ message: 'Updated recovery words successfully' })
+      return
+    } catch (err) {
+      next(err)
+    }
   }
 }
