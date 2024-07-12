@@ -9,7 +9,6 @@ import { type Policies } from '@twake/matrix-identity-server/dist/terms'
 export type Config = MIdentityServerConfig & {
   login_flows: LoginFlowContent
   application_services: AppServiceRegistration[]
-  sms_folder: string
   is_registration_enabled: boolean
 }
 
