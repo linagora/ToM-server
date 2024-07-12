@@ -1,11 +1,11 @@
 import {
   errMsg,
-  type expressAppHandler,
+  expressAppHandler,
   jsonContent,
   send,
   validateParameters
 } from '@twake/utils'
-import type MatrixClientServer from '..'
+import MatrixClientServer from '..'
 import { type UserIdentifier } from '../types'
 
 interface LoginRequestBody {
