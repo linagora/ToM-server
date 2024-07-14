@@ -27,7 +27,7 @@
   "ldap_uid_field": "uid",
   "ldap_uri": "",
   "ldap_user": "",
-  "ldapjs_opts": {},
+  "ldapts_opts": {},
   "logging": {
     "log_level": "info",
     "log_transports": [
