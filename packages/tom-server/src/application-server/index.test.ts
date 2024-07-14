@@ -5,7 +5,7 @@ import express from 'express'
 import fs from 'fs'
 import type * as http from 'http'
 import { load } from 'js-yaml'
-import ldapjs from 'ldapjs'
+import ldapts from 'ldapts'
 import * as fetch from 'node-fetch'
 import os from 'os'
 import path from 'path'
@@ -369,7 +369,7 @@ describe('ApplicationServer', () => {
               '@askywalker:example.com'
             ])
           )
-          const client = ldapjs.createClient({
+          const client = new ldapts.Client({
             url: `ldap://${startedLdap.getHost()}:${ldapHostPort}/`
           })
           client.bind('cn=admin,dc=example,dc=com', 'admin', (err) => {

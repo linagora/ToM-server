@@ -57,7 +57,7 @@
     "toad-cache": "^3.7.0"
   },
   "optionalDependencies": {
-    "ldapjs": "^2.3.3",
+    "ldapts": "^7.1.0",
     "node-cache": "^5.1.2",
     "pg": "^8.10.0",
     "redis": "^4.6.6",
