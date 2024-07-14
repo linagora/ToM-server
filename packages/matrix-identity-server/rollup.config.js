@@ -4,7 +4,7 @@ export default config([
   'express',
   'fs',
   'generic-pool',
-  'ldapjs',
+  'ldapts',
   'matrix-resolve',
   'node-cron',
   'querystring',
