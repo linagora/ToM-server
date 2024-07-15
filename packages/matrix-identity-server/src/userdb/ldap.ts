@@ -106,7 +106,6 @@ class UserDBLDAP implements UserDBBackend {
                     return 0
                   })
               }
-              console.error('DEBUG', entries)
               client.unbind().catch((e) => {})
               resolve(entries)
             })
