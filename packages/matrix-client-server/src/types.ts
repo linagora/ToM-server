@@ -11,6 +11,7 @@ export type Config = MIdentityServerConfig & {
   params: Record<string, { policies: Policies }> // For now, only Terms registration gives additional parameters in the request body so the params have this type.
   // If another authentication type returns additional parameters, Policies needs to be changed to a more general type
   application_services: AppServiceRegistration[]
+  sms_folder: string
 }
 
 export type DbGetResult = Array<

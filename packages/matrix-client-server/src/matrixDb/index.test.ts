@@ -44,7 +44,8 @@ const baseConf: Config = {
         }
       }
     }
-  }
+  },
+  sms_folder: './src/__testData__/sms'
 }
 
 describe('Matrix DB', () => {

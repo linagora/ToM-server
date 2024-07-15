@@ -63,5 +63,6 @@
         ]
       }
     }
-  ]
+  ],
+  "sms_folder": "./src/__testData__/sms"
 }
