@@ -75,10 +75,7 @@ export class TwakeRoom implements ITwakeRoomModel {
     return ldapFilter.matches(user)
   }
 
-  private static _getLdapFilter(
-    attribute: string,
-    value: string
-  ): ldapts.Filter {
+  private static _getLdapFilter(attribute: string, value: string) {
     if (value.includes('*')) {
       const filterValues = value.split('*')
       return new SubstringFilter({
