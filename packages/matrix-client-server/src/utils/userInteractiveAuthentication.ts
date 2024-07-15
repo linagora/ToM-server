@@ -6,7 +6,6 @@ import {
   type AuthenticationData,
   type ClientServerDb,
   type Config,
-  type flowContent,
   type AppServiceRegistration
 } from '../types'
 import { Hash, randomString } from '@twake/crypto'
@@ -177,8 +176,8 @@ const UiAuthenticate = (
       // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
       if (!(obj as requestBody).auth) {
         send(res, 401, {
-          flows: conf.flows,
-          params: conf.params,
+          flows: conf.authentication_flows.flows,
+          params: conf.authentication_flows.params,
           session: randomString(12) // Chose 12 arbitrarily according to a spec example
         })
       } else {
@@ -201,22 +200,24 @@ const UiAuthenticate = (
                     const completed: string[] = rows.map(
                       (row) => row.stage_type as string
                     )
-                    const authOver = (
-                      conf.flows as unknown as flowContent
-                    ).some((flow) => {
-                      return (
-                        flow.stages.length === completed.length &&
-                        flow.stages.every((stage) => completed.includes(stage))
-                      )
-                    })
+                    const authOver = conf.authentication_flows.flows.some(
+                      (flow) => {
+                        return (
+                          flow.stages.length === completed.length &&
+                          flow.stages.every((stage) =>
+                            completed.includes(stage)
+                          )
+                        )
+                      }
+                    )
 
                     // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
                     if (authOver) {
                       callback(obj) // what arguments to use in callback ?
                     } else {
                       send(res, 401, {
-                        flows: conf.flows,
-                        params: conf.params,
+                        flows: conf.authentication_flows.flows,
+                        params: conf.authentication_flows.params,
                         session: auth.session,
                         completed
                       })
@@ -247,8 +248,8 @@ const UiAuthenticate = (
               send(res, 401, {
                 errcode: e.errcode,
                 error: e.error,
-                flows: conf.flows,
-                params: conf.params
+                flows: conf.authentication_flows.flows,
+                params: conf.authentication_flows.params
               })
               return
             }
@@ -263,8 +264,8 @@ const UiAuthenticate = (
                   errcode: e.errcode,
                   error: e.error,
                   completed,
-                  flows: conf.flows,
-                  params: conf.params,
+                  flows: conf.authentication_flows.flows,
+                  params: conf.authentication_flows.params,
                   session: auth.session
                 })
               })
