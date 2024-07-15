@@ -12,10 +12,12 @@ import {
 import type MatrixClientServer from '../../index'
 import SmsSender from '../../utils/smsSender'
 import { getSubmitUrl } from '../email/requestToken'
+import parsePhoneNumberFromString, { type CountryCode } from 'libphonenumber-js'
 
 interface RequestTokenArgs {
   client_secret: string
-  email: string
+  country: string
+  phone_number: string
   next_link?: string
   send_attempt: number
   id_server?: string
@@ -24,15 +26,32 @@ interface RequestTokenArgs {
 
 const schema = {
   client_secret: true,
-  email: true,
+  country: true,
+  phone_number: true,
   next_link: false,
   send_attempt: true,
   id_server: false,
   id_access_token: false
 }
 
-const clientSecretRe = /^[0-9a-zA-Z.=_-]{6,255}$/
-const validEmailRe = /^\w[+.-\w]*\w@\w[.-\w]*\w\.\w{2,6}$/
+const clientSecretRegex = /^[0-9a-zA-Z.=_-]{6,255}$/
+const validCountryRegex = /^[A-Z]{2}$/ // ISO 3166-1 alpha-2 as per the spec : https://spec.matrix.org/v1.11/client-server-api/#post_matrixclientv3registermsisdnrequesttoken
+const validPhoneNumberRegex = /^\+?[1-9]\d{1,14}$/
+
+export const formatPhoneNumber = (
+  rawNumber: string,
+  countryCode: string
+): string => {
+  const phoneNumber = parsePhoneNumberFromString(
+    rawNumber,
+    countryCode as CountryCode
+  )
+  // eslint-disable-next-line @typescript-eslint/prefer-optional-chain, @typescript-eslint/strict-boolean-expressions
+  if (phoneNumber) {
+    return phoneNumber.number
+  }
+  return ''
+}
 
 export const preConfigureTemplate = (
   template: string,
@@ -85,7 +104,7 @@ export const fillTable = (
   clientServer.matrixDb
     .createOneTimeToken(sid, clientServer.conf.mail_link_delay, nextLink)
     .then((token) => {
-      void transport.sendMail({
+      void transport.sendSMS({
         to: dst,
         raw: smsBody(verificationTemplate, token, clientSecret, sid)
       })
@@ -102,14 +121,14 @@ export const fillTable = (
         })
         .catch((err) => {
           // istanbul ignore next
-          clientServer.logger.error('Insertion error', err)
+          console.error('Insertion error:', err)
           // istanbul ignore next
           send(res, 400, errMsg('unknown', err))
         })
     })
     .catch((err) => {
       /* istanbul ignore next */
-      clientServer.logger.error('Token error', err)
+      console.error('Token error:', err)
       /* istanbul ignore next */
       send(res, 400, errMsg('unknown', err))
     })
@@ -129,15 +148,19 @@ const RequestToken = (clientServer: MatrixClientServer): expressAppHandler => {
       validateParameters(res, schema, obj, clientServer.logger, (obj) => {
         const clientSecret = (obj as RequestTokenArgs).client_secret
         const sendAttempt = (obj as RequestTokenArgs).send_attempt
-        const dst = (obj as RequestTokenArgs).email
+        const country = (obj as RequestTokenArgs).country
+        const phoneNumber = (obj as RequestTokenArgs).phone_number
+        const dst = formatPhoneNumber(phoneNumber, country)
         const nextLink = (obj as RequestTokenArgs).next_link
-        if (!clientSecretRe.test(clientSecret)) {
-          send(res, 400, errMsg('invalidParam', 'invalid client_secret'))
-        } else if (!validEmailRe.test(dst)) {
-          send(res, 400, errMsg('invalidEmail'))
+        if (!clientSecretRegex.test(clientSecret)) {
+          send(res, 400, errMsg('invalidParam', 'Invalid client_secret'))
+        } else if (!validCountryRegex.test(country)) {
+          send(res, 400, errMsg('invalidParam', 'Invalid country'))
           // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
         } else if (nextLink && !isValidUrl(nextLink)) {
-          send(res, 400, errMsg('invalidParam', 'invalid next_link'))
+          send(res, 400, errMsg('invalidParam', 'Invalid next_link'))
+        } else if (!validPhoneNumberRegex.test(dst)) {
+          send(res, 400, errMsg('invalidParam', 'Invalid phone number'))
         } else {
           clientServer.matrixDb
             .get('user_threepids', ['user_id'], { address: dst })
@@ -190,7 +213,7 @@ const RequestToken = (clientServer: MatrixClientServer): expressAppHandler => {
                           })
                           .catch((err) => {
                             // istanbul ignore next
-                            clientServer.logger.error('Deletion error', err)
+                            console.error('Deletion error:', err)
                             // istanbul ignore next
                             send(res, 400, errMsg('unknown', err))
                           })
@@ -211,7 +234,7 @@ const RequestToken = (clientServer: MatrixClientServer): expressAppHandler => {
                   })
                   .catch((err) => {
                     /* istanbul ignore next */
-                    clientServer.logger.error('Send_attempt error', err)
+                    console.error('Send_attempt error:', err)
                     /* istanbul ignore next */
                     send(res, 400, errMsg('unknown', err))
                   })
@@ -219,7 +242,7 @@ const RequestToken = (clientServer: MatrixClientServer): expressAppHandler => {
             })
             .catch((err) => {
               /* istanbul ignore next */
-              clientServer.logger.error('Send_attempt error', err)
+              console.error('Send_attempt error:', err)
               /* istanbul ignore next */
               send(res, 400, errMsg('unknown', err))
             })
