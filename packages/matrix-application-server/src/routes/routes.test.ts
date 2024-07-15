@@ -38,15 +38,17 @@ describe('MASRouter', () => {
     const stack = router.routes.stack
     expect(stack).toHaveLength(4)
     for (let i = 0; i < 3; i++) {
-      expect(stack[i].route.path).toEqual(expectedPaths[i])
-      expect(stack[i].route.methods).toStrictEqual(
+      expect(stack[i].route?.path).toEqual(expectedPaths[i])
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+      expect((stack[i].route as any).methods).toStrictEqual(
         expectedRoutes[expectedPaths[i]]
       )
     }
-    expect(stack[3].route.path.toString()).toEqual(
+    expect(stack[3].route?.path.toString()).toEqual(
       '/^\\/(users|rooms|transactions)\\/[a-zA-Z0-9]*/g'
     )
-    expect(stack[3].route.methods).toStrictEqual({ _all: true })
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+    expect((stack[3].route as any).methods).toStrictEqual({ _all: true })
   })
 
   it('should add route', () => {
@@ -82,8 +84,9 @@ describe('MASRouter', () => {
     const stack = router.routes.stack
     expect(stack).toHaveLength(9)
     for (let i = 4; i < 9; i++) {
-      expect(stack[i].route.path).toEqual(newRoutes[keys[i - 4]].path)
-      expect(stack[i].route.methods).toStrictEqual(
+      expect(stack[i].route?.path).toEqual(newRoutes[keys[i - 4]].path)
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+      expect((stack[i].route as any).methods).toStrictEqual(
         newRoutes[keys[i - 4]].methods
       )
     }

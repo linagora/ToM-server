@@ -112,11 +112,11 @@ export default class MatrixIdentityServer {
         ? '/etc/twake/identity-server.conf'
         : undefined
     ) as Config
-    this.conf.federation_servers =
-      typeof this.conf.federation_servers === 'object'
-        ? this.conf.federation_servers
-        : typeof this.conf.federation_servers === 'string'
-        ? (this.conf.federation_servers as string)
+    this.conf.federated_identity_services =
+      typeof this.conf.federated_identity_services === 'object'
+        ? this.conf.federated_identity_services
+        : typeof this.conf.federated_identity_services === 'string'
+        ? (this.conf.federated_identity_services as string)
             .split(/[,\s]+/)
             .filter((addr) => addr.match(hostnameRe))
         : []

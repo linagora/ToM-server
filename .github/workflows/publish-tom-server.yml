@@ -19,7 +19,7 @@ jobs:
         uses: tj-actions/changed-files@v41
         with:
           files: |
-            packages/federation-server/**/*
+            packages/federated-identity-service/**/*
             .github/workflows/**
       - name: Publish to dockerhub
         uses: elgohr/Publish-Docker-Github-Action@v5

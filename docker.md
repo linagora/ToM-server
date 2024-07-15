@@ -2,7 +2,7 @@
 
 Image are published in docker hub:
  * [The ToM Server itself](https://hub.docker.com/r/linagora/tom-server)
- * [The Federation Identity Server](https://hub.docker.com/r/linagora/tom-federation-server)
+ * [The Federated Identity Service](https://hub.docker.com/r/linagora/tom-federated-identity-service)
 
 ## The ToM server image
 

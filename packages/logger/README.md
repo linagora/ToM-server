@@ -9,9 +9,9 @@ Logger is based on [winston library](https://github.com/winstonjs/winston). This
 ### Environment variables
 
 Three environment variables are available:
-* LOG_TRANSPORTS: selects the "interface" to display logs. It must be equal to "Console" or "File" or event both "Console,File"
-* LOG_LEVEL: selects the level of logs that should be displayed (available values from the most restrictive to the less restrictive: "error", "warn", "info", "http", "verbose", "debug", "silly")
-* LOG_FILE: enables to specify the path to the file where logs should be written if LOG_TRANSPORTS is equal or contains the value "File"
+* `LOG_TRANSPORTS`: selects the "interface" to display logs. It must be equal to "Console" or "File" or event both "Console,File"
+* `LOG_LEVEL`: selects the level of logs that should be displayed (available values from the most restrictive to the less restrictive: "error", "warn", "info", "http", "verbose", "debug", "silly")
+* `LOG_FILE`: enables to specify the path to the file where logs should be written if `LOG_TRANSPORTS` is equal or contains the value "File"
 
 ```
 LOG_TRANSPORTS=File
@@ -23,9 +23,9 @@ LOG_FILE=etc/twake/winston.log
 
 All winston's [core configuration properties](https://github.com/winstonjs/winston#logging) except `format` and `levels` can be set in a JSON configuration file. The property `transports` is set through the field `log_transports` which is detailed in the following part.  
 There are three more available properties:
-* default_meta: javascript object containing metadata that should be displayed in the log message
-* exception_handlers: array containing transports which specify where uncaughtException events should be displayed (see [winston documention](https://github.com/winstonjs/winston#exceptions))
-* rejection_handlers: array containing transports which specify where uncaughtRejection events should be displayed (see [winston documention](https://github.com/winstonjs/winston#rejections))
+* `default_meta`: javascript object containing metadata that should be displayed in the log message
+* `exception_handlers`: array containing transports which specify where uncaughtException events should be displayed (see [winston documention](https://github.com/winstonjs/winston#exceptions))
+* `rejection_handlers`: array containing transports which specify where uncaughtRejection events should be displayed (see [winston documention](https://github.com/winstonjs/winston#rejections))
 
 These properties should be the value of a `logging` field
 

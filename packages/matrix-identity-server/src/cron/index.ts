@@ -9,7 +9,7 @@ import { type Config } from '../types'
 import type UserDB from '../userdb'
 import updateHashes from './changePepper'
 import checkQuota from './check-quota'
-import updateFederationHashes from './update-federation-hashes'
+import updateFederatedIdentityHashes from './update-federated-identity-hashes'
 import updateUsers from './updateUsers'
 
 class CronTasks {
@@ -56,16 +56,16 @@ class CronTasks {
       ]
 
       if (
-        conf.federation_servers != null &&
-        conf.federation_servers.length > 0
+        conf.federated_identity_services != null &&
+        conf.federated_identity_services.length > 0
       ) {
         logger.debug(
-          `Federation_servers set to [${conf.federation_servers.join(
+          `federated_identity_services set to [${conf.federated_identity_services.join(
             ', '
           )}], add task`
         )
         cronTasks.push(
-          this._addUpdateFederationServerHashesJob(conf, userDB, logger)
+          this._addUpdateFederatedIdentityHashesJob(conf, userDB, logger)
         )
       }
       await Promise.all(cronTasks)
@@ -192,19 +192,19 @@ class CronTasks {
   }
 
   /**
-   * Adds the federation server hashes job.
+   * Adds the federated identity service hashes job.
    *
    * @param {Config} conf - the config
    * @param {UserDB} userDB - the user db instance
    * @param {TwakeLogger} logger - the logger
    */
-  private readonly _addUpdateFederationServerHashesJob = async (
+  private readonly _addUpdateFederatedIdentityHashesJob = async (
     conf: Config,
     userDB: UserDB,
     logger: TwakeLogger
   ): Promise<void> => {
     const cronString: string =
-      conf.update_federation_hashes_cron ?? '3 3 3 * * *'
+      conf.update_federated_identity_hashes_cron ?? '3 3 3 * * *'
 
     if (!cron.validate(cronString)) {
       // istanbul ignore next
@@ -214,8 +214,10 @@ class CronTasks {
     const task = cron.schedule(
       cronString,
       () => {
-        updateFederationHashes(conf, userDB, logger)
-          .then(() => logger.debug('Federation hashes update succeeded'))
+        updateFederatedIdentityHashes(conf, userDB, logger)
+          .then(() =>
+            logger.debug('Federated identity hashes update succeeded')
+          )
           .catch((e: Error) => {
             // istanbul ignore next
             logger.error(`${e.message}. Reason: ${e.cause as string}`)
@@ -224,7 +226,7 @@ class CronTasks {
       this.options
     )
 
-    logger.debug('Add task federationUpdates')
+    logger.debug('Add task federatedIdentityUpdates')
     this.tasks.push(task)
   }
 }

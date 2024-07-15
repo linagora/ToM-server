@@ -21,6 +21,7 @@ import type { Config, ConfigurationFile, TwakeIdentityServer } from './types'
 import userInfoAPIRouter from './user-info-api'
 import VaultServer from './vault-api'
 import WellKnown from './wellKnown'
+import ActiveContacts from './active-contacts-api'
 
 export default class TwakeServer {
   conf: Config
@@ -103,8 +104,11 @@ export default class TwakeServer {
 
   private async _initServer(confDesc?: ConfigDescription): Promise<boolean> {
     await this.idServer.ready
+    this.logger.debug('idServer initialized')
     await this.matrixDb.ready
+    this.logger.debug('Connected to Matrix DB')
     await initializeDb(this)
+    this.logger.debug('Main database initialized')
 
     const vaultServer = new VaultServer(
       this.idServer.db,
@@ -138,12 +142,20 @@ export default class TwakeServer {
       this.logger
     )
 
+    const activeContactsApi = ActiveContacts(
+      this.idServer.db,
+      this.conf,
+      this.idServer.authenticate,
+      this.logger
+    )
+
     this.endpoints.use(privateNoteApi)
     this.endpoints.use(mutualRoolsApi)
     this.endpoints.use(vaultServer.endpoints)
     this.endpoints.use(roomTagsApi)
     this.endpoints.use(userInfoApi)
     this.endpoints.use(smsApi)
+    this.endpoints.use(activeContactsApi)
 
     if (
       this.conf.opensearch_is_activated != null &&
@@ -161,6 +173,7 @@ export default class TwakeServer {
       await searchEngineApi.ready
       this._openSearchClient = searchEngineApi.openSearchRepository
       this.endpoints.use(searchEngineApi.router.routes)
+      this.logger.debug('OpenSearch initialized')
     }
 
     Object.keys(this.idServer.api.get).forEach((k) => {

@@ -1,9 +1,9 @@
 import { type TwakeLogger } from '@twake/logger'
-import MatrixDB from '../matrixDb'
-import type UserDB from '../userdb'
 import type IdentityServerDb from '../db'
 import updateHash, { type UpdatableFields } from '../lookup/updateHash'
+import MatrixDB from '../matrixDb'
 import { type Config, type DbGetResult } from '../types'
+import type UserDB from '../userdb'
 import { epoch } from '../utils'
 
 /**
@@ -30,9 +30,10 @@ const updateUsers = async (
   ]
   const isMatrixDbAvailable: boolean =
     Boolean(conf.matrix_database_host) && Boolean(conf.matrix_database_engine)
-  const isFederationServerSet =
-    (conf.federation_servers != null && conf.federation_servers?.length > 0) ||
-    conf.is_federation_server
+  const isFederatedIdentityServiceSet =
+    (conf.federated_identity_services != null &&
+      conf.federated_identity_services?.length > 0) ||
+    conf.is_federated_identity_service
 
   if (isMatrixDbAvailable) {
     promises.push(
@@ -104,7 +105,7 @@ const updateUsers = async (
             ? db.update('userHistory', data, 'address', matrixAddress)
             : db.insert('userHistory', data)
         )
-      if (!isFederationServerSet || isMatrixUser) {
+      if (!isFederatedIdentityServiceSet || isMatrixUser) {
         usersToUpdate[matrixAddress] = {
           email: user.mail as string,
           phone: user.mobile as string,

@@ -9,9 +9,9 @@ jobs:
     name: Build And Test
     uses: ./.github/workflows/build-and-test.yml
     secrets: inherit
-  publish-federation-server:
-    name: Publish Federation Server
-    uses: ./.github/workflows/publish-tom-federation-server.yml
+  publish-federated-identity-service:
+    name: Publish Federated Identity Service
+    uses: ./.github/workflows/publish-tom-federated-identity-service.yml
     needs: [test]
     secrets: inherit
   publish-tom-server:
@@ -22,10 +22,5 @@ jobs:
   publish-matrix-invite:
     name: Publish Matrix Invite
     uses: ./.github/workflows/publish-matrix-invite.yml
-    needs: [test]
-    secrets: inherit
-  upadte-docs:
-    name: Update Docs
-    uses: ./.github/workflows/update-docs.yml
     needs: [test]
     secrets: inherit

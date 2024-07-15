@@ -43,7 +43,7 @@ test:
     - npm
   script:
     - cp /etc/hosts ~/hosts.new
-    - sed -i "s#\tdocker#\tdocker auth.example.com matrix.example.com matrix1.example.com matrix2.example.com matrix3.example.com federation.example.com#g" ~/hosts.new
+    - sed -i "s#\tdocker#\tdocker auth.example.com matrix.example.com matrix1.example.com matrix2.example.com matrix3.example.com federated-identity.example.com#g" ~/hosts.new
     - cp -f ~/hosts.new /etc/hosts
     - apt-get update && apt-get --assume-yes install ca-certificates curl gnupg coreutils
     - install -m 0755 -d /etc/apt/keyrings
