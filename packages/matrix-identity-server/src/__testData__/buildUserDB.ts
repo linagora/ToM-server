@@ -11,9 +11,12 @@ const logger: TwakeLogger = getLogger()
 let created = false
 let matrixDbCreated = false
 
-const createQuery = 'CREATE TABLE IF NOT EXISTS users (uid varchar(8), mobile varchar(12), mail varchar(32))'
-const insertQuery = "INSERT INTO users VALUES('dwho', '33612345678', 'dwho@company.com')"
-const insertQuery2 = "INSERT INTO users VALUES('rtyler', '33687654321', 'rtyler@company.com')"
+const createQuery =
+  'CREATE TABLE IF NOT EXISTS users (uid varchar(8), mobile varchar(12), mail varchar(32))'
+const insertQuery =
+  "INSERT INTO users VALUES('dwho', '33612345678', 'dwho@company.com')"
+const insertQuery2 =
+  "INSERT INTO users VALUES('rtyler', '33687654321', 'rtyler@company.com')"
 const mCreateQuery = 'CREATE TABLE IF NOT EXISTS users (name text)'
 const mInsertQuery = "INSERT INTO users VALUES('@dwho:company.com')"
 
@@ -24,25 +27,29 @@ const buildUserDB = (conf: Config): Promise<void> => {
   return new Promise((resolve, reject) => {
     /* istanbul ignore else */
     if (conf.userdb_engine === 'sqlite') {
-      userDb.ready.then(() => {
-        (userDb.db as UserDBSQLite).db?.run(createQuery, () => {
-          (userDb.db as UserDBSQLite).db?.run(insertQuery, () => {
-            (userDb.db as UserDBSQLite).db?.run(insertQuery2).close((err) => {
-              /* istanbul ignore if */
-              if(err != null) {
-                reject(err)
-              } else {
-                logger.close()
-                created = true
-                resolve()
-              }
+      userDb.ready
+        .then(() => {
+          ;(userDb.db as UserDBSQLite).db?.run(createQuery, () => {
+            ;(userDb.db as UserDBSQLite).db?.run(insertQuery, () => {
+              ;(userDb.db as UserDBSQLite).db
+                ?.run(insertQuery2)
+                .close((err) => {
+                  /* istanbul ignore if */
+                  if (err != null) {
+                    reject(err)
+                  } else {
+                    logger.close()
+                    created = true
+                    resolve()
+                  }
+                })
             })
           })
         })
-      }).catch(reject)
+        .catch(reject)
     } else {
-      (userDb.db as UserDBPg).db?.query(createQuery, () => {
-        (userDb.db as UserDBPg).db?.query(insertQuery, () => {
+      ;(userDb.db as UserDBPg).db?.query(createQuery, () => {
+        ;(userDb.db as UserDBPg).db?.query(insertQuery, () => {
           logger.close()
           created = true
           resolve()
@@ -57,12 +64,12 @@ export const buildMatrixDb = (conf: Config): Promise<void> => {
   if (matrixDbCreated) return Promise.resolve()
   const matrixDb = new sqlite3.Database(conf.matrix_database_host as string)
   return new Promise((resolve, reject) => {
-      /* istanbul ignore else */
-      if (conf.matrix_database_engine === 'sqlite') {
+    /* istanbul ignore else */
+    if (conf.matrix_database_engine === 'sqlite') {
       matrixDb.run(mCreateQuery, () => {
         matrixDb.run(mInsertQuery).close((err) => {
           /* istanbul ignore if */
-          if(err != null) {
+          if (err != null) {
             reject(err)
           } else {
             matrixDbCreated = true
