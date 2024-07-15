@@ -1,11 +1,11 @@
 import {
   errMsg,
-  expressAppHandler,
+  type expressAppHandler,
   jsonContent,
   send,
   validateParameters
 } from '@twake/utils'
-import MatrixClientServer from '..'
+import type MatrixClientServer from '..'
 import { type UserIdentifier } from '../types'
 
 interface LoginRequestBody {
@@ -28,22 +28,23 @@ const schema = {
   type: true
 }
 
-const postLogin = (clientServer: MatrixClientServer): expressAppHandler => {
-  return (req, res) => {
-    jsonContent(req, res, clientServer.logger, (obj) => {
-      validateParameters(res, schema, obj, clientServer.logger, (obj) => {
-        const body = obj as LoginRequestBody
-        switch (body.type) {
-          case 'm.login.password':
-            // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
-            if (!body.password) {
-              clientServer.logger.error('Missing password')
-              send(res, 400, errMsg('missingParam', 'password'))
-              return
-            }
-            d
-        }
-      })
-    })
-  }
-}
+// Commented out since it's unfinished
+
+// const postLogin = (clientServer: MatrixClientServer): expressAppHandler => {
+//   return (req, res) => {
+//     jsonContent(req, res, clientServer.logger, (obj) => {
+//       validateParameters(res, schema, obj, clientServer.logger, (obj) => {
+//         const body = obj as LoginRequestBody
+//         switch (body.type) {
+//           case 'm.login.password':
+//             // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+//             if (!body.password) {
+//               clientServer.logger.error('Missing password')
+//               send(res, 400, errMsg('missingParam', 'password'))
+//               return
+//             }
+//         }
+//       })
+//     })
+//   }
+// }
