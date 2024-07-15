@@ -23,7 +23,7 @@ class UserInfoService implements IUserInfoService {
       }
 
       if (
-        userInfo.some((u) => u.givenName === undefined || u.sn === undefined)
+        userInfo.some((u) => u.givenName === undefined && u.sn === undefined)
       ) {
         return null
       }
