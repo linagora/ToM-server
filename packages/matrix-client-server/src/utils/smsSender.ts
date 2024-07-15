@@ -2,6 +2,7 @@ import fs from 'fs/promises'
 import path from 'path'
 import { type Config } from '../types'
 
+// TODO : Modify this class to effectively send SMS messages and not just write in a file
 class SmsSender {
   private readonly folderPath: string
 
