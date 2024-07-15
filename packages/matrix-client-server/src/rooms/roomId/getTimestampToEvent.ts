@@ -1,5 +1,5 @@
-import MatrixClientServer from '../..'
-import { errMsg, expressAppHandler, send } from '@twake/utils'
+import type MatrixClientServer from '../..'
+import { errMsg, type expressAppHandler, send } from '@twake/utils'
 
 interface query_parameters {
   dir: 'b' | 'f'
