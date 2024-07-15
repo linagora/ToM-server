@@ -18,8 +18,9 @@ To initialize the server, simply launch [`./init`](./init)
 Just launch [`./run`](./run).
 
 To see logs:
- * SSO logs: `docker compose logs auth`
- * Synapse logs are in `synapse-data/homeserver.log`
+
+- SSO logs: `docker compose logs auth`
+- Synapse logs are in `synapse-data/homeserver.log`
 
 The Matrix-Synapse server runs on https://matrix.example.com/ (API only), and the SSO on https://auth.example.com/ _(certificate invalid of course)_
 
@@ -32,8 +33,10 @@ Password is the login.
 ## Test the server
 
 You can use any Matrix client, but to just test is server is up:
- * Download **llng** tool from [Simple OIDC client repo](https://github.com/linagora/simple-oidc-client)
- * Launch the following command
+
+- Download **llng** tool from [Simple OIDC client repo](https://github.com/linagora/simple-oidc-client)
+- Launch the following command
+
 ```shell
 llng --llng-server auth.example.com --matrix-server matrix.example.com:443 \
      --login dwho --password dwho matrix_token
