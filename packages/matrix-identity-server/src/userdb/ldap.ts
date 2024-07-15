@@ -2,6 +2,7 @@ import { type TwakeLogger } from '@twake/logger'
 import ldapts, { type Client, type SearchOptions } from 'ldapts'
 import { type Config, type DbGetResult } from '../types'
 import { type UserDBBackend } from './index'
+import { isBuffer, isArray } from 'lodash'
 
 class UserDBLDAP implements UserDBBackend {
   base: string
@@ -75,19 +76,24 @@ class UserDBLDAP implements UserDBBackend {
                 if (fields != null && fields.length > 0) {
                   fields.forEach((k) => {
                     res[k] = (
-                      typeof entry[k] === 'string'
-                        ? entry[k]
-                        : entry[k].toString()
+                      isBuffer(entry[k])
+                        ? entry[k].toString()
+                        : isArray(entry[k])
+                        ? entry[k][0]
+                        : entry[k]
                     ) as string
                   })
                 } else {
                   Object.keys(entry).forEach((k) => {
                     if (k !== 'controls')
                       res[k] = (
-                        typeof entry[k] === 'string'
-                          ? entry[k]
-                          : entry[k].toString()
+                        isBuffer(entry[k])
+                          ? entry[k].toString()
+                          : isArray(entry[k])
+                          ? entry[k][0]
+                          : entry[k]
                       ) as string
+                    console.debug(k, res[k])
                   })
                 }
                 let realEntry = false
