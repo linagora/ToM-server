@@ -123,6 +123,14 @@ describe('Use configuration file', () => {
     expect(response.statusCode).toBe(405)
   })
 
+  it('should return true if provided user is hosted on local server', async () => {
+    expect(clientServer.isMine('@testuser:example.com')).toBe(true)
+  })
+
+  it('should return false if provided user is hosted on remote server', async () => {
+    expect(clientServer.isMine('@testuser:remote.com')).toBe(false)
+  })
+
   describe('/_matrix/client/v3/profile/:userId', () => {
     describe('GET', () => {
       const testUserId = '@testuser:example.com'
@@ -212,7 +220,6 @@ describe('Use configuration file', () => {
           const response = await request(app).get(
             '/_matrix/client/v3/profile/@nonexistentuser:example.com/avatar_url'
           )
-
           expect(response.statusCode).toBe(404)
           expect(response.body.errcode).toBe('M_NOT_FOUND')
           expect(response.body).toHaveProperty('error')
@@ -222,7 +229,6 @@ describe('Use configuration file', () => {
           const response = await request(app).get(
             '/_matrix/client/v3/profile/@incompleteuser:example.com/avatar_url'
           )
-
           expect(response.statusCode).toBe(404)
           expect(response.body.errcode).toBe('M_NOT_FOUND')
           expect(response.body).toHaveProperty('error')
@@ -378,11 +384,11 @@ describe('Use configuration file', () => {
         expect(registerResponse.statusCode).toBe(200)
         const response = await request(app)
           .get('/_matrix/client/v3/account/whoami')
-          .query({ user_id: '@_irc_bridge_:matrix.org' })
+          .query({ user_id: '@_irc_bridge_:example.com' })
           .set('Authorization', `Bearer ${asToken}`)
           .set('Accept', 'application/json')
         expect(response.statusCode).toBe(200)
-        expect(response.body.user_id).toBe('@_irc_bridge_:matrix.org')
+        expect(response.body.user_id).toBe('@_irc_bridge_:example.com')
       })
       it('should refuse an appservice authentication with a user_id not registered in the appservice', async () => {
         const response = await request(app)
@@ -395,7 +401,7 @@ describe('Use configuration file', () => {
       it('should ensure a normal user cannot access the account of an appservice', async () => {
         const response = await request(app)
           .get('/_matrix/client/v3/account/whoami')
-          .query({ user_id: '@_irc_bridge_:matrix.org' })
+          .query({ user_id: '@_irc_bridge_:example.com' })
           .set('Authorization', `Bearer ${validToken}`)
           .set('Accept', 'application/json')
         expect(response.body).toHaveProperty('user_id', '@testuser:example.com') // not _irc_bridge_ (appservice account)
@@ -1069,6 +1075,14 @@ describe('Use configuration file', () => {
         const testUserId = '@testuser:example.com'
         beforeAll(async () => {
           try {
+            await clientServer.matrixDb.insert('users', {
+              name: '@testuser2:example.com',
+              admin: 1
+            })
+            await clientServer.matrixDb.insert('users', {
+              name: '@testuser3:example.com',
+              admin: 0
+            })
             await clientServer.matrixDb.insert('profiles', {
               user_id: testUserId,
               displayname: 'Test User',
@@ -1083,6 +1097,16 @@ describe('Use configuration file', () => {
         afterAll(async () => {
           try {
             await clientServer.matrixDb.deleteEqual(
+              'users',
+              'name',
+              '@testuser2:example.com'
+            )
+            await clientServer.matrixDb.deleteEqual(
+              'users',
+              'name',
+              '@testuser3:example.com'
+            )
+            await clientServer.matrixDb.deleteEqual(
               'profiles',
               'user_id',
               testUserId
@@ -1093,9 +1117,8 @@ describe('Use configuration file', () => {
           }
         })
 
-        describe('/_matrix/client/v3/profile/{userId}/avatar_url', () => {
+        describe('/_matrix/client/v3/profile/:userId/avatar_url', () => {
           it('should require authentication', async () => {
-            await clientServer.cronTasks?.ready
             const response = await request(app)
               .put(`/_matrix/client/v3/profile/${testUserId}/avatar_url`)
               .set('Authorization', 'Bearer invalidToken')
@@ -1103,7 +1126,49 @@ describe('Use configuration file', () => {
             expect(response.statusCode).toBe(401)
           })
 
-          it('should send correct response when updating the avatar_url of an existing user', async () => {
+          it('should return 400 if the target user is on a remote server', async () => {
+            const response = await request(app)
+              .put(
+                `/_matrix/client/v3/profile/@testuser:anotherexample.com/avatar_url`
+              )
+              .set('Authorization', `Bearer ${validToken}`)
+              .set('Accept', 'application/json')
+              .send({ avatar_url: 'http://example.com/new_avatar.jpg' })
+            expect(response.statusCode).toBe(400)
+          })
+
+          it('should return 403 if the requester is not admin and is not the target user', async () => {
+            const response = await request(app)
+              .put(
+                `/_matrix/client/v3/profile/@testuser2:example.com/avatar_url`
+              )
+              .set('Authorization', `Bearer ${validToken}`)
+              .set('Accept', 'application/json')
+              .send({ avatar_url: 'http://example.com/new_avatar.jpg' })
+            expect(response.statusCode).toBe(403)
+          })
+
+          it('should return 400 if provided avatar_url is too long', async () => {
+            const response = await request(app)
+              .put(`/_matrix/client/v3/profile/${testUserId}/avatar_url`)
+              .set('Authorization', `Bearer ${validToken}`)
+              .set('Accept', 'application/json')
+              .send({ avatar_url: randomString(2049) })
+            expect(response.statusCode).toBe(400)
+            expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
+          })
+
+          it('should send correct response when requester is admin and target user is on local server', async () => {
+            const response = await request(app)
+              .put(`/_matrix/client/v3/profile/${testUserId}/avatar_url`)
+              .set('Authorization', `Bearer ${validToken2}`)
+              .send({ avatar_url: 'http://example.com/new_avatar.jpg' })
+
+            expect(response.statusCode).toBe(200)
+            expect(response.body).toEqual({})
+          })
+
+          it('should send correct response when requester is target user (on local server)', async () => {
             const response = await request(app)
               .put(`/_matrix/client/v3/profile/${testUserId}/avatar_url`)
               .set('Authorization', `Bearer ${validToken}`)
@@ -1140,10 +1205,42 @@ describe('Use configuration file', () => {
             expect(response.statusCode).toBe(401)
           })
 
-          it('should send correct response when updating the display_name of an existing user', async () => {
+          it('should return 400 if the target user is on a remote server', async () => {
+            const response = await request(app)
+              .put(
+                `/_matrix/client/v3/profile/@testuser:anotherexample.com/displayname`
+              )
+              .set('Authorization', `Bearer ${validToken}`)
+              .set('Accept', 'application/json')
+              .send({ displayname: 'New name' })
+            expect(response.statusCode).toBe(400)
+          })
+
+          it('should return 403 if the requester is not admin and is not the target user', async () => {
+            const response = await request(app)
+              .put(
+                `/_matrix/client/v3/profile/@testuser2:example.com/displayname`
+              )
+              .set('Authorization', `Bearer ${validToken}`)
+              .set('Accept', 'application/json')
+              .send({ displayname: 'New name' })
+            expect(response.statusCode).toBe(403)
+          })
+
+          it('should return 400 if provided display_name is too long', async () => {
             const response = await request(app)
               .put(`/_matrix/client/v3/profile/${testUserId}/displayname`)
               .set('Authorization', `Bearer ${validToken}`)
+              .set('Accept', 'application/json')
+              .send({ displayname: randomString(257) })
+            expect(response.statusCode).toBe(400)
+            expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
+          })
+
+          it('should send correct response when requester is admin and target user is on local server', async () => {
+            const response = await request(app)
+              .put(`/_matrix/client/v3/profile/${testUserId}/displayname`)
+              .set('Authorization', `Bearer ${validToken2}`)
               .send({ displayname: 'New name' })
 
             expect(response.statusCode).toBe(200)
