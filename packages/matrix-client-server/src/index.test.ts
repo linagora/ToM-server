@@ -409,11 +409,11 @@ describe('Use configuration file', () => {
         expect(registerResponse.statusCode).toBe(200)
         const response = await request(app)
           .get('/_matrix/client/v3/account/whoami')
-          .query({ user_id: '@_irc_bridge_:matrix.org' })
+          .query({ user_id: '@_irc_bridge_:example.com' })
           .set('Authorization', `Bearer ${asToken}`)
           .set('Accept', 'application/json')
         expect(response.statusCode).toBe(200)
-        expect(response.body.user_id).toBe('@_irc_bridge_:matrix.org')
+        expect(response.body.user_id).toBe('@_irc_bridge_:example.com')
       })
       it('should refuse an appservice authentication with a user_id not registered in the appservice', async () => {
         const response = await request(app)
@@ -426,7 +426,7 @@ describe('Use configuration file', () => {
       it('should ensure a normal user cannot access the account of an appservice', async () => {
         const response = await request(app)
           .get('/_matrix/client/v3/account/whoami')
-          .query({ user_id: '@_irc_bridge_:matrix.org' })
+          .query({ user_id: '@_irc_bridge_:example.com' })
           .set('Authorization', `Bearer ${validToken}`)
           .set('Accept', 'application/json')
         expect(response.body).toHaveProperty('user_id', '@testuser:example.com') // not _irc_bridge_ (appservice account)
