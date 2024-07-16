@@ -141,7 +141,7 @@ interface PasswordAuth {
   session: string
 }
 
-interface ThreepidCreds {
+export interface ThreepidCreds {
   sid: string
   client_secret: string
   id_server: string
