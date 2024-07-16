@@ -1221,7 +1221,7 @@ describe('Use configuration file', () => {
           .set('Authorization', `Bearer ${validToken}`)
           .set('Accept', 'application/json')
           .send({
-            address: '+1234',
+            phone: '123',
             medium: 'msisdn',
             room_id: '!room:matrix.org',
             sender: '@dwho:matrix.org'
@@ -1337,15 +1337,16 @@ describe('Use configuration file', () => {
           .set('Authorization', `Bearer ${validToken}`)
           .set('Accept', 'application/json')
           .send({
-            address: '+33612345678',
+            phone: '33612345678',
             medium: 'msisdn',
             room_id: '!room:matrix.org',
             sender: '@dwho:matrix.org'
           })
+        console.log(response.body)
         expect(response.statusCode).toBe(200)
         // TODO : add call to smsMock when it will be implemented
         expect(response.body).toHaveProperty('display_name')
-        expect(response.body.display_name).not.toBe('+33612345678')
+        expect(response.body.display_name).not.toBe('33612345678')
         expect(response.body).toHaveProperty('public_keys')
         expect(response.body).toHaveProperty('token')
         expect(response.body.token).toMatch(/^[a-zA-Z0-9]{64}$/)

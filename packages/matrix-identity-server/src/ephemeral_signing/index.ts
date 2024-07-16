@@ -62,9 +62,7 @@ const SignEd25519 = <T extends string = never>(
                 )
               })
               .catch((err) => {
-                /* istanbul ignore next */
                 idServer.logger.error('Token denied', err)
-                /* istanbul ignore next */
                 send(res, 404, errMsg('notFound', err))
               })
           }

@@ -581,11 +581,13 @@ class IdentityServerDb<T extends string = never>
           data: JSON.stringify(data)
         })
         .then(() => {
+          this.logger.info(`Invitation token created for ${address}`)
           resolve(id)
         })
         .catch((err) => {
           /* istanbul ignore next */
           this.logger.error('Failed to insert token', err)
+          reject(err)
         })
     })
   }
@@ -608,6 +610,8 @@ class IdentityServerDb<T extends string = never>
           }
         })
         .catch((e) => {
+          /* istanbul ignore next */
+          this.logger.error('Failed to get token', e)
           reject(e)
         })
     })

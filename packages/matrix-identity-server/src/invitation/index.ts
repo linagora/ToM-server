@@ -14,6 +14,7 @@ import Mailer from '../utils/mailer'
 
 interface storeInvitationArgs {
   address: string
+  phone: string
   medium: string
   room_alias?: string
   room_avatar_url?: string
@@ -27,7 +28,8 @@ interface storeInvitationArgs {
 }
 
 const schema = {
-  address: true,
+  address: false,
+  phone: false,
   medium: true,
   room_alias: false,
   room_avatar_url: false,
@@ -106,7 +108,7 @@ const validMediums: string[] = ['email', 'msisdn']
 
 // Regular expressions for different mediums
 const validEmailRe = /^\w[+.-\w]*\w@\w[.-\w]*\w\.\w{2,6}$/
-const validPhoneRe = /^(\+[1-9]\d{0,2})?\d{4,14}$/
+const validPhoneRe = /^\d{4,16}$/
 
 const redactAddress = (medium: string, address: string): string => {
   switch (medium) {
@@ -143,22 +145,6 @@ const replaceLastCharacters = (
   return chars.join('')
 }
 
-// const redactEmailAddress = (address: string): string => {
-//   // Assuming that the address is a valid email address
-//   const atIndex = address.indexOf('@')
-//   const localPart = address.slice(0, atIndex)
-//   const domainPart = address.slice(atIndex + 1)
-
-//   const redactedLocalPart = replaceLastCharacters(localPart)
-//   const redactedDomainPart = replaceLastCharacters(domainPart)
-
-//   return `${redactedLocalPart}@${redactedDomainPart}`
-// }
-
-// const redactPhoneNumber = (phoneNumber: string): string => {
-//   return replaceLastCharacters(phoneNumber)
-// }
-
 const StoreInvit = <T extends string = never>(
   idServer: MatrixIdentityServer<T>
 ): expressAppHandler => {
@@ -175,9 +161,8 @@ const StoreInvit = <T extends string = never>(
       jsonContent(req, res, idServer.logger, (obj) => {
         // eslint-disable-next-line @typescript-eslint/no-misused-promises
         validateParameters(res, schema, obj, idServer.logger, async (obj) => {
-          const _address = (obj as storeInvitationArgs).address
-          const _medium = (obj as storeInvitationArgs).medium
-          if (!validMediums.includes(_medium)) {
+          const medium = (obj as storeInvitationArgs).medium
+          if (!validMediums.includes(medium)) {
             send(
               res,
               400,
@@ -185,19 +170,22 @@ const StoreInvit = <T extends string = never>(
             )
             return
           }
+          const address = (obj as storeInvitationArgs).address
+          const phone = (obj as storeInvitationArgs).phone
+          let mediumAddress: string = ''
           // Check the validity of the media
-          switch (_medium) {
+          switch (medium) {
             case 'email':
-              if (!validEmailRe.test(_address)) {
+              if (address == null || !validEmailRe.test(address)) {
                 send(res, 400, errMsg('invalidParam', 'Invalid email address.'))
                 return
-              }
+              } else mediumAddress = address
               break
             case 'msisdn':
-              if (!validPhoneRe.test(_address)) {
+              if (phone == null || !validPhoneRe.test(phone)) {
                 send(res, 400, errMsg('invalidParam', 'Invalid phone number.'))
                 return
-              }
+              } else mediumAddress = phone
               break
           }
           // Call to the lookup API to check for any existing third-party identifiers
@@ -217,13 +205,12 @@ const StoreInvit = <T extends string = never>(
                   'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                  addresses: [_address],
+                  addresses: [mediumAddress],
                   algorithm: 'sha256',
                   pepper: _pepper
                 })
               }
             )
-
             if (response.status === 200) {
               send(res, 400, {
                 errcode: 'M_THREEPID_IN_USE',
@@ -232,6 +219,7 @@ const StoreInvit = <T extends string = never>(
                 mxid: (obj as storeInvitationArgs).sender
               })
             } else if (response.status === 400) {
+              // Create invitation token
               const ephemeralKey = await idServer.db.createKeypair(
                 'shortTerm',
                 'curve25519'
@@ -240,21 +228,21 @@ const StoreInvit = <T extends string = never>(
                 ...(obj as storeInvitationArgs),
                 key: ephemeralKey
               }
-              const _token = await idServer.db.createInvitationToken(
-                _address,
+              const token = await idServer.db.createInvitationToken(
+                mediumAddress,
                 objWithKey
               )
               // Send email/sms
-              switch (_medium) {
+              switch (medium) {
                 case 'email':
                   void transport.sendMail({
-                    to: _address,
+                    to: address,
                     raw: mailBody(
                       verificationTemplate,
                       (obj as storeInvitationArgs).sender_display_name ??
                         '*****',
                       (obj as storeInvitationArgs).sender,
-                      _address,
+                      address,
                       (obj as storeInvitationArgs).room_name ?? '*****',
                       (obj as storeInvitationArgs).room_avatar_url ?? '*****',
                       (obj as storeInvitationArgs).room_type ?? '*****',
@@ -263,11 +251,11 @@ const StoreInvit = <T extends string = never>(
                   })
                   break
                 case 'msisdn':
-                  // TO DO implement smsSender
+                  // TODO implement smsSender
                   break
               }
               // Send 200 response
-              const redactedAddress = redactAddress(_medium, _address)
+              const redactedAddress = redactAddress(medium, mediumAddress)
               idServer.db
                 .getKeys('current')
                 .then((keys) => {
@@ -283,7 +271,7 @@ const StoreInvit = <T extends string = never>(
                         public_key: ephemeralKey.privateKey
                       }
                     ],
-                    token: _token
+                    token
                   }
                   send(res, 200, responseBody)
                 })
