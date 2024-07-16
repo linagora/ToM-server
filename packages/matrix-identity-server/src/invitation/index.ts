@@ -150,22 +150,6 @@ const replaceLastCharacters = (
   return chars.join('')
 }
 
-// const redactEmailAddress = (address: string): string => {
-//   // Assuming that the address is a valid email address
-//   const atIndex = address.indexOf('@')
-//   const localPart = address.slice(0, atIndex)
-//   const domainPart = address.slice(atIndex + 1)
-
-//   const redactedLocalPart = replaceLastCharacters(localPart)
-//   const redactedDomainPart = replaceLastCharacters(domainPart)
-
-//   return `${redactedLocalPart}@${redactedDomainPart}`
-// }
-
-// const redactPhoneNumber = (phoneNumber: string): string => {
-//   return replaceLastCharacters(phoneNumber)
-// }
-
 const StoreInvit = <T extends string = never>(
   idServer: MatrixIdentityServer<T>
 ): expressAppHandler => {
