@@ -12,13 +12,7 @@ Future implementations may include :
 
 import type MatrixClientServer from '../index'
 import { type Request } from 'express'
-import {
-  errMsg,
-  send,
-  type expressAppHandler,
-  jsonContent,
-  validateParameters
-} from '../../../matrix-identity-server/src/utils'
+
 import {
   send,
   type expressAppHandler,
@@ -162,8 +156,6 @@ export const changeDisplayname = (
         propagate: Whether this change also applies to the user's membership events.
     */
     const userId: string = (req as Request).params.userId
-
-    console.log('i am here displayname')
 
     // eslint-disable-next-line @typescript-eslint/no-misused-promises
     clientServer.authenticate(req, res, async (token) => {
