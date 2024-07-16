@@ -31,7 +31,8 @@ beforeAll((done) => {
     database_engine: 'sqlite',
     base_url: 'http://example.com/',
     userdb_engine: 'sqlite',
-    matrix_database_engine: 'sqlite'
+    matrix_database_engine: 'sqlite',
+    server_name: 'example.com'
   }
   if (process.env.TEST_PG === 'yes') {
     conf.database_engine = 'pg'
