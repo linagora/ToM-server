@@ -13,7 +13,6 @@ export type Config = MIdentityServerConfig & {
   sms_folder: string
   is_registration_enabled: boolean
   sms_folder: string
-  is_registration_enabled: boolean
 }
 
 export type DbGetResult = Array<
