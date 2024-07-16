@@ -31,7 +31,8 @@ beforeAll((done) => {
     database_engine: 'sqlite',
     base_url: 'http://example.com/',
     userdb_engine: 'sqlite',
-    matrix_database_engine: 'sqlite'
+    matrix_database_engine: 'sqlite',
+    server_name: 'example.com'
   }
   if (process.env.TEST_PG === 'yes') {
     conf.database_engine = 'pg'
@@ -1090,6 +1091,14 @@ describe('Use configuration file', () => {
         const testUserId = '@testuser:example.com'
         beforeAll(async () => {
           try {
+            await clientServer.matrixDb.insert('users', {
+              name: '@testuser2:example.com',
+              admin: 1
+            })
+            await clientServer.matrixDb.insert('users', {
+              name: '@testuser3:example.com',
+              admin: 0
+            })
             await clientServer.matrixDb.insert('profiles', {
               user_id: testUserId,
               displayname: 'Test User',
@@ -1103,6 +1112,16 @@ describe('Use configuration file', () => {
 
         afterAll(async () => {
           try {
+            await clientServer.matrixDb.deleteEqual(
+              'users',
+              'name',
+              '@testuser2:example.com'
+            )
+            await clientServer.matrixDb.deleteEqual(
+              'users',
+              'name',
+              '@testuser3:example.com'
+            )
             await clientServer.matrixDb.deleteEqual(
               'profiles',
               'user_id',
@@ -1124,7 +1143,49 @@ describe('Use configuration file', () => {
             expect(response.statusCode).toBe(401)
           })
 
-          it('should send correct response when updating the avatar_url of an existing user', async () => {
+          it('should return 400 if the target user is on a remote server', async () => {
+            const response = await request(app)
+              .put(
+                `/_matrix/client/v3/profile/@testuser:anotherexample.com/avatar_url`
+              )
+              .set('Authorization', `Bearer ${validToken}`)
+              .set('Accept', 'application/json')
+              .send({ avatar_url: 'http://example.com/new_avatar.jpg' })
+            expect(response.statusCode).toBe(400)
+          })
+
+          it('should return 403 if the requester is not admin and is not the target user', async () => {
+            const response = await request(app)
+              .put(
+                `/_matrix/client/v3/profile/@testuser2:example.com/avatar_url`
+              )
+              .set('Authorization', `Bearer ${validToken}`)
+              .set('Accept', 'application/json')
+              .send({ avatar_url: 'http://example.com/new_avatar.jpg' })
+            expect(response.statusCode).toBe(403)
+          })
+
+          it('should return 400 if provided avatar_url is too long', async () => {
+            const response = await request(app)
+              .put(`/_matrix/client/v3/profile/${testUserId}/avatar_url`)
+              .set('Authorization', `Bearer ${validToken}`)
+              .set('Accept', 'application/json')
+              .send({ avatar_url: randomString(2049) })
+            expect(response.statusCode).toBe(400)
+            expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
+          })
+
+          it('should send correct response when requester is admin and target user is on local server', async () => {
+            const response = await request(app)
+              .put(`/_matrix/client/v3/profile/${testUserId}/avatar_url`)
+              .set('Authorization', `Bearer ${validToken2}`)
+              .send({ avatar_url: 'http://example.com/new_avatar.jpg' })
+
+            expect(response.statusCode).toBe(200)
+            expect(response.body).toEqual({})
+          })
+
+          it('should send correct response when requester is target user (on local server)', async () => {
             const response = await request(app)
               .put(`/_matrix/client/v3/profile/${testUserId}/avatar_url`)
               .set('Authorization', `Bearer ${validToken}`)
@@ -1161,10 +1222,42 @@ describe('Use configuration file', () => {
             expect(response.statusCode).toBe(401)
           })
 
-          it('should send correct response when updating the display_name of an existing user', async () => {
+          it('should return 400 if the target user is on a remote server', async () => {
+            const response = await request(app)
+              .put(
+                `/_matrix/client/v3/profile/@testuser:anotherexample.com/displayname`
+              )
+              .set('Authorization', `Bearer ${validToken}`)
+              .set('Accept', 'application/json')
+              .send({ displayname: 'New name' })
+            expect(response.statusCode).toBe(400)
+          })
+
+          it('should return 403 if the requester is not admin and is not the target user', async () => {
+            const response = await request(app)
+              .put(
+                `/_matrix/client/v3/profile/@testuser2:example.com/displayname`
+              )
+              .set('Authorization', `Bearer ${validToken}`)
+              .set('Accept', 'application/json')
+              .send({ displayname: 'New name' })
+            expect(response.statusCode).toBe(403)
+          })
+
+          it('should return 400 if provided display_name is too long', async () => {
             const response = await request(app)
               .put(`/_matrix/client/v3/profile/${testUserId}/displayname`)
               .set('Authorization', `Bearer ${validToken}`)
+              .set('Accept', 'application/json')
+              .send({ displayname: randomString(257) })
+            expect(response.statusCode).toBe(400)
+            expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
+          })
+
+          it('should send correct response when requester is admin and target user is on local server', async () => {
+            const response = await request(app)
+              .put(`/_matrix/client/v3/profile/${testUserId}/displayname`)
+              .set('Authorization', `Bearer ${validToken2}`)
               .send({ displayname: 'New name' })
 
             expect(response.statusCode).toBe(200)

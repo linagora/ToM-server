@@ -124,18 +124,10 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
             '/_matrix/client/v3/account/whoami': whoami(this),
             '/_matrix/client/v3/admin/whois': whois(this),
             '/_matrix/client/v3/register': badMethod,
-            '/_matrix/client/v3/profile/:userId': getProfile(
-              this.matrixDb,
-              this.logger
-            ),
-            '/_matrix/client/v3/profile/:userId/avatar_url': getAvatarUrl(
-              this.matrixDb,
-              this.logger
-            ),
-            '/_matrix/client/v3/profile/:userId/displayname': getDisplayname(
-              this.matrixDb,
-              this.logger
-            ),
+            '/_matrix/client/v3/profile/:userId': getProfile(this),
+            '/_matrix/client/v3/profile/:userId/avatar_url': getAvatarUrl(this),
+            '/_matrix/client/v3/profile/:userId/displayname':
+              getDisplayname(this),
             '/_matrix/client/v3/user/:userId/account_data/:type':
               getAccountData(this),
             '/_matrix/client/v3/user/:userId/rooms/:roomId/account_data/:type':
@@ -275,6 +267,12 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
         /* istanbul ignore next */
         .catch(reject)
     })
+  }
+
+  // Class methods that determiens if a user is hosted in the server or in a remote one
+  isMine(userId: string): boolean {
+    const parts = userId.split(':')
+    return parts[1] === this.conf.server_name
   }
 
   cleanJobs(): void {

@@ -1,11 +1,17 @@
-import type MatrixDBmodified from '../matrixDb'
-import { type TwakeLogger } from '@twake/logger'
+/*
+As specified in the Matrix Protocol, access to the profile information of another user is allowed on the local server,
+and may be allowed on remote servers via federation.
+
+TO DO : implement the ability to access the profile information of another user on a remote server via federation.
+TO DO : implement the ability to close access to the profile information of another user on the local server.
+*/
+
+import type MatrixClientServer from '../'
 import { type Request } from 'express'
 import { errMsg, send, type expressAppHandler } from '@twake/utils'
 
 export const getProfile = (
-  matrixDb: MatrixDBmodified,
-  logger: TwakeLogger
+  clientServer: MatrixClientServer
 ): expressAppHandler => {
   return (req, res) => {
     const userId: string = (req as Request).params.userId
@@ -15,45 +21,41 @@ export const getProfile = (
       typeof userId === 'string' &&
       userId.length > 0
     ) {
-      matrixDb
-        .get('profiles', ['displayname', 'avatar_url'], {
-          user_id: userId
-        })
-        .then((rows) => {
-          if (rows.length === 0) {
-            logger.info('Profile not found')
-            send(res, 404, errMsg('notFound', 'Profile not found'))
-          } else {
-            // logger.info('Profile found:', rows[0])
-            send(res, 200, {
-              avatar_url: rows[0].avatar_url,
-              displayname: rows[0].displayname
-            })
-          }
-        })
-        .catch((e) => {
-          /* istanbul ignore next */
-          send(
-            res,
-            403,
-            errMsg(
-              'forbidden',
-              'Profile lookup over federation is disabled on this homeserver'
-            )
-          )
-          /* istanbul ignore next */
-          logger.error('Error querying profiles:', e)
-        })
+      if (clientServer.isMine(userId)) {
+        clientServer.matrixDb
+          .get('profiles', ['displayname', 'avatar_url'], {
+            user_id: userId
+          })
+          .then((rows) => {
+            if (rows.length === 0) {
+              clientServer.logger.info('Profile not found')
+              send(res, 404, errMsg('notFound', 'Profile not found'))
+            } else {
+              // logger.info('Profile found:', rows[0])
+              send(res, 200, {
+                avatar_url: rows[0].avatar_url,
+                displayname: rows[0].displayname
+              })
+            }
+          })
+          .catch((e) => {
+            /* istanbul ignore next */
+            send(res, 500, errMsg('unknown', e))
+            /* istanbul ignore next */
+            clientServer.logger.error('Error querying profiles:', e)
+          })
+      } else {
+        // TO DO : Have a look on remote server via federation
+      }
     } else {
       send(res, 400, errMsg('missingParams', 'No user ID provided'))
-      logger.debug('No user ID provided')
+      clientServer.logger.debug('No user ID provided')
     }
   }
 }
 
 export const getAvatarUrl = (
-  matrixDb: MatrixDBmodified,
-  logger: TwakeLogger
+  clientServer: MatrixClientServer
 ): expressAppHandler => {
   return (req, res) => {
     const userId: string = (req as Request).params.userId
@@ -63,45 +65,39 @@ export const getAvatarUrl = (
       typeof userId === 'string' &&
       userId.length > 0
     ) {
-      matrixDb
-        .get('profiles', ['avatar_url'], {
-          user_id: userId
-        })
-        .then((rows) => {
-          if (rows.length === 0) {
-            logger.info('No avatar found')
-            send(res, 404, errMsg('notFound', 'This user does not exist'))
-          } else {
-            if (rows[0].avatar_url === null) {
-              logger.info('No avatar found')
-              send(
-                res,
-                404,
-                errMsg('notFound', 'No avatar found for this user')
-              )
+      if (clientServer.isMine(userId)) {
+        clientServer.matrixDb
+          .get('profiles', ['avatar_url'], {
+            user_id: userId
+          })
+          .then((rows) => {
+            if (rows.length === 0) {
+              clientServer.logger.info('User not found')
+              send(res, 404, errMsg('notFound', 'User not found'))
             } else {
               send(res, 200, {
                 avatar_url: rows[0].avatar_url
               })
             }
-          }
-        })
-        .catch((e) => {
-          /* istanbul ignore next */
-          logger.error('Error querying profiles:', e)
-          /* istanbul ignore next */
-          send(res, 500, errMsg('unknown', 'Error querying profiles'))
-        })
+          })
+          .catch((e) => {
+            /* istanbul ignore next */
+            send(res, 500, errMsg('unknown', e))
+            /* istanbul ignore next */
+            clientServer.logger.error('Error querying profiles:', e)
+          })
+      } else {
+        // TO DO : Have a look on remote server via federation
+      }
     } else {
       send(res, 400, errMsg('missingParams', 'No user ID provided'))
-      logger.debug('No user ID provided')
+      clientServer.logger.debug('No user ID provided')
     }
   }
 }
 
 export const getDisplayname = (
-  matrixDb: MatrixDBmodified,
-  logger: TwakeLogger
+  clientServer: MatrixClientServer
 ): expressAppHandler => {
   return (req, res) => {
     const userId: string = (req as Request).params.userId
@@ -111,38 +107,33 @@ export const getDisplayname = (
       typeof userId === 'string' &&
       userId.length > 0
     ) {
-      matrixDb
-        .get('profiles', ['displayname'], {
-          user_id: userId
-        })
-        .then((rows) => {
-          if (rows.length === 0) {
-            logger.info('No display_name found')
-            send(res, 404, errMsg('notFound', 'This user does not exist'))
-          } else {
-            if (rows[0].displayname === null) {
-              logger.info('No display_name found')
-              send(
-                res,
-                404,
-                errMsg('notFound', 'No display_name found for this user')
-              )
+      if (clientServer.isMine(userId)) {
+        clientServer.matrixDb
+          .get('profiles', ['displayname'], {
+            user_id: userId
+          })
+          .then((rows) => {
+            if (rows.length === 0) {
+              clientServer.logger.info('User not found')
+              send(res, 404, errMsg('notFound', 'User not found'))
             } else {
               send(res, 200, {
                 displayname: rows[0].displayname
               })
             }
-          }
-        })
-        .catch((e) => {
-          /* istanbul ignore next */
-          logger.error('Error querying profiles:', e)
-          /* istanbul ignore next */
-          send(res, 500, errMsg('unknown', 'Error querying profiles'))
-        })
+          })
+          .catch((e) => {
+            /* istanbul ignore next */
+            send(res, 500, errMsg('unknown', e))
+            /* istanbul ignore next */
+            clientServer.logger.error('Error querying profiles:', e)
+          })
+      } else {
+        // TO DO : Have a look on remote server via federation
+      }
     } else {
       send(res, 400, errMsg('missingParams', 'No user ID provided'))
-      logger.debug('No user ID provided')
+      clientServer.logger.debug('No user ID provided')
     }
   }
 }
