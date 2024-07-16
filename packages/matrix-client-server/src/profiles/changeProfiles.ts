@@ -68,11 +68,19 @@ export const changeAvatarUrl = (
     // eslint-disable-next-line @typescript-eslint/no-misused-promises
     clientServer.authenticate(req, res, async (token) => {
       const requesterUserId = token.sub
-      // Check wether requester is admin or not
-      const requester = await clientServer.matrixDb.get('users', ['is_admin'], {
-        name: requesterUserId
-      })
-      const byAdmin = requester[0].is_admin
+      let byAdmin = 0
+      try {
+        // Check wether requester is admin or not
+        const response = await clientServer.matrixDb.get('users', ['admin'], {
+          name: requesterUserId
+        })
+        byAdmin = response[0].admin as number
+      } catch (e) {
+        /* istanbul ignore next */
+        clientServer.logger.error('Error checking admin:', e)
+        /* istanbul ignore next */
+        send(res, 500, errMsg('unknown', 'Error checking admin'))
+      }
 
       jsonContent(req, res, clientServer.logger, (obj) => {
         validateParameters(res, schema, obj, clientServer.logger, (obj) => {
@@ -155,14 +163,28 @@ export const changeDisplayname = (
     */
     const userId: string = (req as Request).params.userId
 
+    console.log('i am here displayname')
+
     // eslint-disable-next-line @typescript-eslint/no-misused-promises
     clientServer.authenticate(req, res, async (token) => {
       const requesterUserId = token.sub
       // Check wether requester is admin or not
-      const requester = await clientServer.matrixDb.get('users', ['is_admin'], {
-        name: requesterUserId
-      })
-      const byAdmin = requester[0].is_admin
+      let byAdmin = 0
+      try {
+        console.log('checking admin')
+        const response = await clientServer.matrixDb.get('users', ['admin'], {
+          name: requesterUserId
+        })
+        console.log('got admin')
+        byAdmin = response[0].admin as number
+      } catch (e) {
+        /* istanbul ignore next */
+        clientServer.logger.error('Error checking admin:', e)
+        /* istanbul ignore next */
+        send(res, 500, errMsg('unknown', 'Error checking admin'))
+      }
+
+      console.log('finished checking admin')
 
       jsonContent(req, res, clientServer.logger, (obj) => {
         validateParameters(
