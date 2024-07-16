@@ -24,7 +24,7 @@ describe('SmsSender', () => {
 
   it('should write SMS content to the correct file', async () => {
     const sender = new SmsSender(conf)
-    const smsData = { to: '+1234567890', raw: 'Test SMS content' }
+    const smsData = { to: '1234567890', raw: 'Test SMS content' }
     const fileName = `sms_${smsData.to}_${Date.now()}.txt`
     const filePath = path.join(conf.sms_folder, fileName)
 
@@ -48,7 +48,7 @@ describe('SmsSender', () => {
   it('should log a message when SMS content is written successfully', async () => {
     console.log = jest.fn()
     const sender = new SmsSender(conf)
-    const smsData = { to: '+1234567890', raw: 'Test SMS content' }
+    const smsData = { to: '1234567890', raw: 'Test SMS content' }
 
     await sender.sendSMS(smsData)
 
@@ -63,7 +63,7 @@ describe('SmsSender', () => {
       new Error('Failed to write file')
     )
     const sender = new SmsSender(conf)
-    const smsData = { to: '+1234567890', raw: 'Test SMS content' }
+    const smsData = { to: '1234567890', raw: 'Test SMS content' }
 
     await expect(sender.sendSMS(smsData)).rejects.toThrow(
       'Failed to write file'

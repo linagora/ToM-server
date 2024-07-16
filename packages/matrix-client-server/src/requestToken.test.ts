@@ -382,7 +382,7 @@ describe('Use configuration file', () => {
         })
       expect(response.statusCode).toBe(200)
       const sentSMS = sendSMSMock.mock.calls[0][0]
-      expect(sentSMS.to).toBe('+447700900001')
+      expect(sentSMS.to).toBe('447700900001')
       const rawMessage = sentSMS.raw
       expect(rawMessage).toMatch(
         /token=([a-zA-Z0-9]{64})&client_secret=mysecret&sid=([a-zA-Z0-9]{64})/
@@ -425,7 +425,7 @@ describe('Use configuration file', () => {
         })
       expect(response.statusCode).toBe(200)
       const sentSMS = sendSMSMock.mock.calls[0][0]
-      expect(sentSMS.to).toBe('+447700900001')
+      expect(sentSMS.to).toBe('447700900001')
       const rawMessage = sentSMS.raw
       expect(rawMessage).toMatch(
         /token=([a-zA-Z0-9]{64})&client_secret=mysecret&sid=([a-zA-Z0-9]{64})/
@@ -443,7 +443,7 @@ describe('Use configuration file', () => {
       await clientServer.matrixDb.insert('user_threepids', {
         user_id: '@xg:localhost',
         medium: 'msisdn',
-        address: '+33648394785',
+        address: '33648394785',
         validated_at: epoch(),
         added_at: epoch()
       })
@@ -651,7 +651,7 @@ describe('Use configuration file', () => {
       await clientServer.matrixDb.insert('user_threepids', {
         user_id: '@newphoneuser:localhost',
         medium: 'msisdn',
-        address: '+447700900001',
+        address: '447700900001',
         validated_at: epoch(),
         added_at: epoch()
       })
@@ -668,7 +668,7 @@ describe('Use configuration file', () => {
         })
       expect(response.statusCode).toBe(200)
       const sentSMS = sendSMSMock.mock.calls[0][0]
-      expect(sentSMS.to).toBe('+447700900001')
+      expect(sentSMS.to).toBe('447700900001')
       const rawMessage = sentSMS.raw
       expect(rawMessage).toMatch(
         /token=([a-zA-Z0-9]{64})&client_secret=mysecret&sid=([a-zA-Z0-9]{64})/
@@ -711,7 +711,7 @@ describe('Use configuration file', () => {
         })
       expect(response.statusCode).toBe(200)
       const sentSMS = sendSMSMock.mock.calls[0][0]
-      expect(sentSMS.to).toBe('+447700900001')
+      expect(sentSMS.to).toBe('447700900001')
       const rawMessage = sentSMS.raw
       expect(rawMessage).toMatch(
         /token=([a-zA-Z0-9]{64})&client_secret=mysecret&sid=([a-zA-Z0-9]{64})/
