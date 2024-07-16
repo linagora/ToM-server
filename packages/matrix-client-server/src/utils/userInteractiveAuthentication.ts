@@ -14,12 +14,108 @@ import { errMsg, jsonContent, send, toMatrixId } from '@twake/utils'
 export type UiAuthFunction = (
   req: Request | http.IncomingMessage,
   res: Response | http.ServerResponse,
-  callback: (data: any, userId: string) => void
+  allowedFlows: AuthenticationFlowContent,
+  callback: (data: any, userId: string | null) => void
 ) => void
 
 interface requestBody {
   auth?: AuthenticationData
   [key: string]: any // others parameters given in request body
+}
+
+const getParams = (type: AuthenticationTypes): any => {
+  // for now only terms has params, spec is unclear about the other types. Add params here if needed in other endpoints
+  switch (type) {
+    case 'm.login.terms':
+      return {
+        policies: {
+          terms_of_service: {
+            version: '1.2',
+            en: {
+              name: 'Terms of Service',
+              url: 'https://example.org/somewhere/terms-1.2-en.html'
+            },
+            fr: {
+              name: "Conditions d'utilisation",
+              url: 'https://example.org/somewhere/terms-1.2-fr.html'
+            }
+          }
+        }
+      }
+    default:
+      return {}
+  }
+}
+
+// allowedFlows for endpoints other than register. Subject to change after implementing other endpoints that require UIAuth
+export const allowedFlows: AuthenticationFlowContent = {
+  flows: [
+    {
+      stages: ['m.login.application_service']
+    },
+    {
+      stages: ['m.login.email.identity']
+    },
+    {
+      stages: ['m.login.msisdn']
+    },
+    {
+      stages: ['m.login.password']
+    },
+    {
+      stages: ['m.login.recaptcha']
+    },
+    {
+      stages: ['m.login.dummy']
+    },
+    {
+      stages: ['m.login.sso']
+    }
+  ],
+  params: {
+    // Aside from terms, the other two params are useless for now, but I leave them here in case they become useful in the future
+    // If we want to add params, we change the getParams function in utils/userInteractiveAuthentication.ts
+    'm.login.application_service': getParams('m.login.application_service'),
+    'm.login.msisdn': getParams('m.login.msisdn'),
+    'm.login.email.identity': getParams('m.login.email.identity'),
+    'm.login.password': getParams('m.login.password'),
+    'm.login.recaptcha': getParams('m.login.recaptcha'),
+    'm.login.dummy': getParams('m.login.dummy'),
+    'm.login.sso': getParams('m.login.sso')
+  }
+}
+
+// Allowed flow stages for /register endpoint.
+// Doesn't contain password, email and msisdn since the user isn't registered yet (spec is unclear about this, only my interpretation)
+export const registerAllowedFlows: AuthenticationFlowContent = {
+  flows: [
+    {
+      stages: ['m.login.application_service']
+    },
+    {
+      stages: ['m.login.terms', 'm.login.dummy'] // m.login.dummy added for testing purposes. This variable and the one before need to be updated before going into production (maybe add them to the config ?)
+    },
+    {
+      stages: ['m.login.registration_token']
+    },
+    {
+      stages: ['m.login.sso']
+    },
+    {
+      stages: ['m.login.recaptcha']
+    },
+    {
+      stages: ['m.login.dummy']
+    }
+  ],
+  params: {
+    // Aside from terms, the other two params are useless for now, but I leave them here in case they become useful in the future
+    // If we want to add params, we change the getParams function in utils/userInteractiveAuthentication.ts
+    'm.login.application_service': getParams('m.login.application_service'),
+    'm.login.registration_token': getParams('m.login.registration_token'),
+    'm.login.terms': getParams('m.login.terms'),
+    'm.login.sso': getParams('m.login.sso')
+  }
 }
 
 // eslint-disable-next-line @typescript-eslint/promise-function-async
@@ -45,7 +141,18 @@ const checkAuthentication = (
                 if (rows.length === 0) {
                   throw new Error()
                 } else {
-                  resolve(rows[0].name as string)
+                  if (
+                    rows[0].name === (auth.identifier as MatrixIdentifier).user
+                  ) {
+                    // Maybe should also check that the user account isn't shadowbanned nor deactivated (check that rows[0].shadow_banned/deactivated ===0), spec is unclear
+                    // We only consider the case where the identifier is a MatrixIdentifier
+                    // since the only table that has a password field is the users table
+                    // which only contains a "name" field with the userId and no address field
+                    // meaning we can't access it without the userId associated to that password
+                    resolve(rows[0].name)
+                  } else {
+                    reject(errMsg('forbidden'))
+                  }
                 }
               })
               .catch((e) => {
@@ -56,6 +163,10 @@ const checkAuthentication = (
             // istanbul ignore next
             reject(e)
           })
+      })
+    case 'm.login.sso':
+      return new Promise((resolve, reject) => {
+        // TODO : Complete this after implementing fallback mechanism : https://spec.matrix.org/v1.11/client-server-api/#fallback
       })
     case 'm.login.msisdn':
     case 'm.login.email.identity': // Both cases are handled the same through their threepid_creds
@@ -204,7 +315,7 @@ const UiAuthenticate = (
   conf: Config,
   logger: TwakeLogger
 ): UiAuthFunction => {
-  return (req, res, callback) => {
+  return (req, res, allowedFlows, callback) => {
     jsonContent(req, res, logger, (obj) => {
       // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
       if (!(obj as requestBody).auth) {
@@ -233,16 +344,12 @@ const UiAuthenticate = (
                     const completed: string[] = rows.map(
                       (row) => row.stage_type as string
                     )
-                    const authOver = conf.authentication_flows.flows.some(
-                      (flow) => {
-                        return (
-                          flow.stages.length === completed.length &&
-                          flow.stages.every((stage) =>
-                            completed.includes(stage)
-                          )
-                        )
-                      }
-                    )
+                    const authOver = allowedFlows.flows.some((flow) => {
+                      return (
+                        flow.stages.length === completed.length &&
+                        flow.stages.every((stage) => completed.includes(stage))
+                      )
+                    })
 
                     // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
                     if (authOver) {
