@@ -163,6 +163,8 @@ export const changeDisplayname = (
     */
     const userId: string = (req as Request).params.userId
 
+    console.log('i am here displayname')
+
     // eslint-disable-next-line @typescript-eslint/no-misused-promises
     clientServer.authenticate(req, res, async (token) => {
       const requesterUserId = token.sub
