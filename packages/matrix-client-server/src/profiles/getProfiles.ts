@@ -46,6 +46,7 @@ export const getProfile = (
           })
       } else {
         // TO DO : Have a look on remote server via federation
+        send(res, 500, errMsg('unknown', 'Cannot get profile of a remote user'))
       }
     } else {
       send(res, 400, errMsg('missingParams', 'No user ID provided'))
@@ -75,9 +76,13 @@ export const getAvatarUrl = (
               clientServer.logger.info('User not found')
               send(res, 404, errMsg('notFound', 'User not found'))
             } else {
-              send(res, 200, {
-                avatar_url: rows[0].avatar_url
-              })
+              if (rows[0].avatar_url === null) {
+                send(res, 404, errMsg('notFound', 'Avatar not found'))
+              } else {
+                send(res, 200, {
+                  avatar_url: rows[0].avatar_url
+                })
+              }
             }
           })
           .catch((e) => {
@@ -88,6 +93,7 @@ export const getAvatarUrl = (
           })
       } else {
         // TO DO : Have a look on remote server via federation
+        send(res, 500, errMsg('unknown', 'Cannot get profile of a remote user'))
       }
     } else {
       send(res, 400, errMsg('missingParams', 'No user ID provided'))
@@ -117,9 +123,13 @@ export const getDisplayname = (
               clientServer.logger.info('User not found')
               send(res, 404, errMsg('notFound', 'User not found'))
             } else {
-              send(res, 200, {
-                displayname: rows[0].displayname
-              })
+              if (rows[0].displayname === null) {
+                send(res, 404, errMsg('notFound', 'Displayname not found'))
+              } else {
+                send(res, 200, {
+                  displayname: rows[0].displayname
+                })
+              }
             }
           })
           .catch((e) => {
@@ -130,6 +140,7 @@ export const getDisplayname = (
           })
       } else {
         // TO DO : Have a look on remote server via federation
+        send(res, 500, errMsg('unknown', 'Cannot get profile of a remote user'))
       }
     } else {
       send(res, 400, errMsg('missingParams', 'No user ID provided'))
