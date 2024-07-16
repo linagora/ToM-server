@@ -7,7 +7,8 @@ import {
   type ClientServerDb,
   type Config,
   type flowContent,
-  type AppServiceRegistration
+  type AppServiceRegistration,
+  type ThreepidCreds
 } from '../types'
 import { Hash, randomString } from '@twake/crypto'
 import type MatrixDBmodified from '../matrixDb'
@@ -15,7 +16,7 @@ import { errMsg, jsonContent, send, toMatrixId } from '@twake/utils'
 export type UiAuthFunction = (
   req: Request | http.IncomingMessage,
   res: Response | http.ServerResponse,
-  callback: (data: any) => void
+  callback: (data: any, userId: string) => void
 ) => void
 
 interface requestBody {
@@ -29,7 +30,8 @@ const checkAuthentication = (
   matrixDb: MatrixDBmodified,
   conf: Config,
   req: Request | http.IncomingMessage
-): Promise<void> => {
+): Promise<string> => {
+  // It returns a Promise<string> so that it can return the userId of the authenticated user for endpoints other than /register. For register and dummy auth we return ''.
   switch (auth.type) {
     case 'm.login.password':
       return new Promise((resolve, reject) => {
@@ -45,7 +47,7 @@ const checkAuthentication = (
                 if (rows.length === 0) {
                   throw new Error()
                 } else {
-                  resolve()
+                  resolve(rows[0].name as string)
                 }
               })
               .catch((e) => {
@@ -57,13 +59,45 @@ const checkAuthentication = (
             reject(e)
           })
       })
-    case 'm.login.email.identity':
-      return new Promise((resolve, reject) => {
-        // TODO : After implementing POST /_matrix/client/v3/account/password/email/requestToken, use it to validate this authentication type
-      })
     case 'm.login.msisdn':
+    case 'm.login.email.identity': // Both cases are handled the same through their threepid_creds
       return new Promise((resolve, reject) => {
-        // TODO : After implementing POST /_matrix/client/v3/account/password/msisdn/requestToken, use it to validate this authentication type
+        const threepidCreds: ThreepidCreds = auth.threepid_creds
+        matrixDb
+          .get('threepid_validation_session', ['address', 'validated_at'], {
+            client_secret: threepidCreds.client_secret,
+            session_id: threepidCreds.sid
+          })
+          .then((sessionRows) => {
+            if (sessionRows.length === 0) {
+              reject(errMsg('noValidSession'))
+              return
+            }
+            // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+            if (!sessionRows[0].validated_at) {
+              reject(errMsg('sessionNotValidated'))
+              return
+            }
+            matrixDb
+              .get('user_threepids', ['user_id'], {
+                address: sessionRows[0].address
+              })
+              .then((rows) => {
+                if (rows.length === 0) {
+                  reject(errMsg('threepidNotFound'))
+                } else {
+                  resolve(rows[0].user_id as string)
+                }
+              })
+              .catch((e) => {
+                // istanbul ignore next
+                reject(e)
+              })
+          })
+          .catch((e) => {
+            // istanbul ignore next
+            reject(e)
+          })
       })
     case 'm.login.recaptcha':
       return new Promise((resolve, reject) => {
@@ -71,7 +105,7 @@ const checkAuthentication = (
       })
     case 'm.login.dummy':
       return new Promise((resolve, reject) => {
-        resolve() // Dummy authentication always succeeds
+        resolve('') // Dummy authentication always succeeds
       })
     case 'm.login.registration_token': // Only valid on the /register endpoint as per the spec // TODO : add uses_allowed to config ?
       return new Promise((resolve, reject) => {
@@ -108,7 +142,7 @@ const checkAuthentication = (
                       [{ field: 'token', value: auth.token }]
                     )
                     .then(() => {
-                      resolve()
+                      resolve('')
                     })
                     .catch((e) => {
                       // istanbul ignore next
@@ -128,9 +162,9 @@ const checkAuthentication = (
       })
     case 'm.login.terms': // Only valid on the /register endpoint as per the spec
       return new Promise((resolve, reject) => {
-        resolve() // The client makes sure the user has accepted all the terms before sending the request indicating the user has accepted the terms
+        resolve('') // The client makes sure the user has accepted all the terms before sending the request indicating the user has accepted the terms
       })
-    case 'm.login.application_service':
+    case 'm.login.application_service': // TODO : Check the structure of the ApplicationServiceAuth in the spec.
       return new Promise((resolve, reject) => {
         const applicationServices = conf.application_services
         const asTokens: string[] = applicationServices.map(
@@ -157,7 +191,7 @@ const checkAuthentication = (
           ) {
             reject(errMsg('invalidUsername'))
           } else {
-            resolve()
+            resolve(userId)
           }
         } else {
           reject(errMsg('unknownToken'))
@@ -177,16 +211,15 @@ const UiAuthenticate = (
       // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
       if (!(obj as requestBody).auth) {
         send(res, 401, {
-          flows: conf.flows,
-          params: conf.params,
+          ...conf.authentication_flows,
           session: randomString(12) // Chose 12 arbitrarily according to a spec example
         })
       } else {
         const auth = (obj as requestBody).auth as AuthenticationData
         checkAuthentication(auth, matrixDb, conf, req)
-          .then(() => {
+          .then((userId) => {
             if (auth.type === 'm.login.application_service') {
-              callback(obj)
+              callback(obj, userId) // Arguments of callback are subject to change
               return
             }
             db.insert('ui_auth_sessions', {
@@ -202,7 +235,7 @@ const UiAuthenticate = (
                       (row) => row.stage_type as string
                     )
                     const authOver = (
-                      conf.flows as unknown as flowContent
+                      conf.authentication_flows.flows as unknown as flowContent
                     ).some((flow) => {
                       return (
                         flow.stages.length === completed.length &&
@@ -212,11 +245,10 @@ const UiAuthenticate = (
 
                     // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
                     if (authOver) {
-                      callback(obj) // what arguments to use in callback ?
+                      callback(obj, userId) // Arguments of callback are subject to change
                     } else {
                       send(res, 401, {
-                        flows: conf.flows,
-                        params: conf.params,
+                        ...conf.authentication_flows,
                         session: auth.session,
                         completed
                       })
@@ -247,8 +279,7 @@ const UiAuthenticate = (
               send(res, 401, {
                 errcode: e.errcode,
                 error: e.error,
-                flows: conf.flows,
-                params: conf.params
+                ...conf.authentication_flows
               })
               return
             }
@@ -263,8 +294,7 @@ const UiAuthenticate = (
                   errcode: e.errcode,
                   error: e.error,
                   completed,
-                  flows: conf.flows,
-                  params: conf.params,
+                  ...conf.authentication_flows,
                   session: auth.session
                 })
               })
