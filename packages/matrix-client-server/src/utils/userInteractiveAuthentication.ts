@@ -7,7 +7,9 @@ import {
   type ClientServerDb,
   type Config,
   type AppServiceRegistration,
-  type ThreepidCreds
+  type ThreepidCreds,
+  type AuthenticationFlowContent,
+  type AuthenticationTypes
 } from '../types'
 import { Hash, randomString } from '@twake/crypto'
 import type MatrixDBmodified from '../matrixDb'
@@ -325,7 +327,7 @@ const UiAuthenticate = (
       // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
       if (!(obj as requestBody).auth) {
         send(res, 401, {
-          ...conf.authentication_flows,
+          ...allowedFlows,
           session: randomString(12) // Chose 12 arbitrarily according to a spec example
         })
       } else {
@@ -360,7 +362,7 @@ const UiAuthenticate = (
                       callback(obj, userId) // Arguments of callback are subject to change
                     } else {
                       send(res, 401, {
-                        ...conf.authentication_flows,
+                        ...allowedFlows,
                         session: auth.session,
                         completed
                       })
@@ -391,7 +393,7 @@ const UiAuthenticate = (
               send(res, 401, {
                 errcode: e.errcode,
                 error: e.error,
-                ...conf.authentication_flows
+                ...allowedFlows
               })
               return
             }
@@ -406,7 +408,7 @@ const UiAuthenticate = (
                   errcode: e.errcode,
                   error: e.error,
                   completed,
-                  ...conf.authentication_flows,
+                  ...allowedFlows,
                   session: auth.session
                 })
               })
