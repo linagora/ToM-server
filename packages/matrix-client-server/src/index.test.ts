@@ -30,8 +30,7 @@ beforeAll((done) => {
     database_engine: 'sqlite',
     base_url: 'http://example.com/',
     userdb_engine: 'sqlite',
-    matrix_database_engine: 'sqlite',
-    server_name: 'example.com'
+    matrix_database_engine: 'sqlite'
   }
   if (process.env.TEST_PG === 'yes') {
     conf.database_engine = 'pg'
@@ -223,7 +222,6 @@ describe('Use configuration file', () => {
           const response = await request(app).get(
             '/_matrix/client/v3/profile/@nonexistentuser:example.com/avatar_url'
           )
-
           expect(response.statusCode).toBe(404)
           expect(response.body.errcode).toBe('M_NOT_FOUND')
           expect(response.body).toHaveProperty('error')
@@ -233,7 +231,6 @@ describe('Use configuration file', () => {
           const response = await request(app).get(
             '/_matrix/client/v3/profile/@incompleteuser:example.com/avatar_url'
           )
-
           expect(response.statusCode).toBe(404)
           expect(response.body.errcode).toBe('M_NOT_FOUND')
           expect(response.body).toHaveProperty('error')
@@ -2725,9 +2722,8 @@ describe('Use configuration file', () => {
           }
         })
 
-        describe('/_matrix/client/v3/profile/{userId}/avatar_url', () => {
+        describe('/_matrix/client/v3/profile/:userId/avatar_url', () => {
           it('should require authentication', async () => {
-            await clientServer.cronTasks?.ready
             const response = await request(app)
               .put(`/_matrix/client/v3/profile/${testUserId}/avatar_url`)
               .set('Authorization', 'Bearer invalidToken')
