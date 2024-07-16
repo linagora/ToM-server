@@ -1,3 +1,4 @@
+import { randomString } from '@twake/crypto'
 import fs from 'fs'
 import {
   errMsg,
@@ -8,17 +9,18 @@ import {
   type expressAppHandler
 } from '@twake/utils'
 import type MatrixClientServer from '../../../index'
-import Mailer from '../../../utils/mailer'
+import SmsSender from '../../../utils/smsSender'
+import { getSubmitUrl } from '../../../register/email/requestToken'
 import {
   fillTable,
-  getSubmitUrl,
+  formatPhoneNumber,
   preConfigureTemplate
-} from '../../../register/email/requestToken'
-import { randomString } from '@twake/crypto'
+} from '../../../register/msisdn/requestToken'
 
 interface RequestTokenArgs {
   client_secret: string
-  email: string
+  country: string
+  phone_number: string
   next_link?: string
   send_attempt: number
   id_server?: string
@@ -27,21 +29,23 @@ interface RequestTokenArgs {
 
 const schema = {
   client_secret: true,
-  email: true,
+  country: true,
+  phone_number: true,
   next_link: false,
   send_attempt: true,
   id_server: false,
   id_access_token: false
 }
 
-const clientSecretRe = /^[0-9a-zA-Z.=_-]{6,255}$/
-const validEmailRe = /^\w[+.-\w]*\w@\w[.-\w]*\w\.\w{2,6}$/
+const clientSecretRegex = /^[0-9a-zA-Z.=_-]{6,255}$/
+const validCountryRegex = /^[A-Z]{2}$/ // ISO 3166-1 alpha-2 as per the spec : https://spec.matrix.org/v1.11/client-server-api/#post_matrixclientv3registermsisdnrequesttoken
+const validPhoneNumberRegex = /^[1-9]\d{1,14}$/
 
 const RequestToken = (clientServer: MatrixClientServer): expressAppHandler => {
-  const transport = new Mailer(clientServer.conf)
+  const transport = new SmsSender(clientServer.conf)
   const verificationTemplate = preConfigureTemplate(
     fs
-      .readFileSync(`${clientServer.conf.template_dir}/mailVerification.tpl`)
+      .readFileSync(`${clientServer.conf.template_dir}/smsVerification.tpl`)
       .toString(),
     clientServer.conf,
     transport
@@ -51,15 +55,19 @@ const RequestToken = (clientServer: MatrixClientServer): expressAppHandler => {
       validateParameters(res, schema, obj, clientServer.logger, (obj) => {
         const clientSecret = (obj as RequestTokenArgs).client_secret
         const sendAttempt = (obj as RequestTokenArgs).send_attempt
-        const dst = (obj as RequestTokenArgs).email
+        const country = (obj as RequestTokenArgs).country
+        const phoneNumber = (obj as RequestTokenArgs).phone_number
+        const dst = formatPhoneNumber(phoneNumber, country)
         const nextLink = (obj as RequestTokenArgs).next_link
-        if (!clientSecretRe.test(clientSecret)) {
-          send(res, 400, errMsg('invalidParam', 'invalid client_secret'))
-        } else if (!validEmailRe.test(dst)) {
-          send(res, 400, errMsg('invalidEmail'))
+        if (!clientSecretRegex.test(clientSecret)) {
+          send(res, 400, errMsg('invalidParam', 'Invalid client_secret'))
+        } else if (!validCountryRegex.test(country)) {
+          send(res, 400, errMsg('invalidParam', 'Invalid country'))
           // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
         } else if (nextLink && !isValidUrl(nextLink)) {
-          send(res, 400, errMsg('invalidParam', 'invalid next_link'))
+          send(res, 400, errMsg('invalidParam', 'Invalid next_link'))
+        } else if (!validPhoneNumberRegex.test(dst)) {
+          send(res, 400, errMsg('invalidParam', 'Invalid phone number'))
         } else {
           clientServer.matrixDb
             .get('user_threepids', ['user_id'], { address: dst })
@@ -113,7 +121,7 @@ const RequestToken = (clientServer: MatrixClientServer): expressAppHandler => {
                           })
                           .catch((err) => {
                             // istanbul ignore next
-                            clientServer.logger.error('Deletion error', err)
+                            console.error('Deletion error:', err)
                             // istanbul ignore next
                             send(res, 500, errMsg('unknown', err))
                           })
@@ -135,7 +143,7 @@ const RequestToken = (clientServer: MatrixClientServer): expressAppHandler => {
                   })
                   .catch((err) => {
                     /* istanbul ignore next */
-                    clientServer.logger.error('Send_attempt error', err)
+                    console.error('Send_attempt error:', err)
                     /* istanbul ignore next */
                     send(res, 500, errMsg('unknown', err))
                   })
@@ -143,7 +151,7 @@ const RequestToken = (clientServer: MatrixClientServer): expressAppHandler => {
             })
             .catch((err) => {
               /* istanbul ignore next */
-              clientServer.logger.error('Error getting userID :', err)
+              console.error('Error getting userID :', err)
               /* istanbul ignore next */
               send(res, 500, errMsg('unknown', err))
             })

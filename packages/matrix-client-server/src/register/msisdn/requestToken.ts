@@ -1,4 +1,6 @@
+import { randomString } from '@twake/crypto'
 import fs from 'fs'
+import { type Config } from '../../types'
 import {
   errMsg,
   isValidUrl,
@@ -7,18 +9,15 @@ import {
   validateParameters,
   type expressAppHandler
 } from '@twake/utils'
-import type MatrixClientServer from '../../../index'
-import Mailer from '../../../utils/mailer'
-import {
-  fillTable,
-  getSubmitUrl,
-  preConfigureTemplate
-} from '../../../register/email/requestToken'
-import { randomString } from '@twake/crypto'
+import type MatrixClientServer from '../../index'
+import SmsSender from '../../utils/smsSender'
+import { getSubmitUrl } from '../email/requestToken'
+import parsePhoneNumberFromString, { type CountryCode } from 'libphonenumber-js'
 
 interface RequestTokenArgs {
   client_secret: string
-  email: string
+  country: string
+  phone_number: string
   next_link?: string
   send_attempt: number
   id_server?: string
@@ -27,21 +26,121 @@ interface RequestTokenArgs {
 
 const schema = {
   client_secret: true,
-  email: true,
+  country: true,
+  phone_number: true,
   next_link: false,
   send_attempt: true,
   id_server: false,
   id_access_token: false
 }
 
-const clientSecretRe = /^[0-9a-zA-Z.=_-]{6,255}$/
-const validEmailRe = /^\w[+.-\w]*\w@\w[.-\w]*\w\.\w{2,6}$/
+const clientSecretRegex = /^[0-9a-zA-Z.=_-]{6,255}$/
+const validCountryRegex = /^[A-Z]{2}$/ // ISO 3166-1 alpha-2 as per the spec : https://spec.matrix.org/v1.11/client-server-api/#post_matrixclientv3registermsisdnrequesttoken
+const validPhoneNumberRegex = /^[1-9]\d{1,14}$/
+
+export const formatPhoneNumber = (
+  rawNumber: string,
+  countryCode: string
+): string => {
+  const phoneNumber = parsePhoneNumberFromString(
+    rawNumber,
+    countryCode as CountryCode
+  )
+  // eslint-disable-next-line @typescript-eslint/prefer-optional-chain, @typescript-eslint/strict-boolean-expressions
+  if (phoneNumber) {
+    // Remove the leading '+' if it exists according to MSISDN convention
+    return phoneNumber.number.startsWith('+')
+      ? phoneNumber.number.slice(1)
+      : phoneNumber.number
+  }
+  return ''
+}
+
+export const preConfigureTemplate = (
+  template: string,
+  conf: Config,
+  transport: SmsSender
+): string => {
+  const baseUrl =
+    /* istanbul ignore next */
+    getSubmitUrl(conf)
+  return (
+    template
+      // prepare link
+      .replace(/__link__/g, `${baseUrl}?__linkQuery__`)
+  )
+}
+
+export const smsBody = (
+  template: string,
+  token: string,
+  secret: string,
+  sid: string
+): string => {
+  return (
+    template
+      // set link parameters
+      .replace(
+        /__linkQuery__/g,
+        new URLSearchParams({
+          token,
+          client_secret: secret,
+          sid
+        }).toString()
+      )
+    // set token
+  )
+}
+
+export const fillTable = (
+  clientServer: MatrixClientServer,
+  dst: string,
+  clientSecret: string,
+  sendAttempt: number,
+  verificationTemplate: string,
+  transport: SmsSender,
+  res: any,
+  sid: string,
+  nextLink?: string
+): void => {
+  clientServer.matrixDb
+    .createOneTimeToken(sid, clientServer.conf.mail_link_delay, nextLink)
+    .then((token) => {
+      void transport.sendSMS({
+        to: dst,
+        raw: smsBody(verificationTemplate, token, clientSecret, sid)
+      })
+      clientServer.matrixDb
+        .insert('threepid_validation_session', {
+          client_secret: clientSecret,
+          address: dst,
+          medium: 'msisdn',
+          session_id: sid,
+          last_send_attempt: sendAttempt
+        })
+        .then(() => {
+          send(res, 200, { sid, submit_url: getSubmitUrl(clientServer.conf) })
+        })
+        .catch((err) => {
+          // istanbul ignore next
+          console.error('Insertion error:', err)
+          // istanbul ignore next
+          send(res, 500, errMsg('unknown', err))
+        })
+    })
+    .catch((err) => {
+      /* istanbul ignore next */
+      console.error('Token error:', err)
+      /* istanbul ignore next */
+      send(res, 500, errMsg('unknown', err))
+    })
+}
 
 const RequestToken = (clientServer: MatrixClientServer): expressAppHandler => {
-  const transport = new Mailer(clientServer.conf)
+  const transport = new SmsSender(clientServer.conf)
   const verificationTemplate = preConfigureTemplate(
     fs
-      .readFileSync(`${clientServer.conf.template_dir}/mailVerification.tpl`)
+      .readFileSync(`${clientServer.conf.template_dir}/smsVerification.tpl`)
       .toString(),
     clientServer.conf,
     transport
@@ -51,21 +150,25 @@ const RequestToken = (clientServer: MatrixClientServer): expressAppHandler => {
       validateParameters(res, schema, obj, clientServer.logger, (obj) => {
         const clientSecret = (obj as RequestTokenArgs).client_secret
         const sendAttempt = (obj as RequestTokenArgs).send_attempt
-        const dst = (obj as RequestTokenArgs).email
+        const country = (obj as RequestTokenArgs).country
+        const phoneNumber = (obj as RequestTokenArgs).phone_number
+        const dst = formatPhoneNumber(phoneNumber, country)
         const nextLink = (obj as RequestTokenArgs).next_link
-        if (!clientSecretRe.test(clientSecret)) {
-          send(res, 400, errMsg('invalidParam', 'invalid client_secret'))
-        } else if (!validEmailRe.test(dst)) {
-          send(res, 400, errMsg('invalidEmail'))
+        if (!clientSecretRegex.test(clientSecret)) {
+          send(res, 400, errMsg('invalidParam', 'Invalid client_secret'))
+        } else if (!validCountryRegex.test(country)) {
+          send(res, 400, errMsg('invalidParam', 'Invalid country'))
           // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
         } else if (nextLink && !isValidUrl(nextLink)) {
-          send(res, 400, errMsg('invalidParam', 'invalid next_link'))
+          send(res, 400, errMsg('invalidParam', 'Invalid next_link'))
+        } else if (!validPhoneNumberRegex.test(dst)) {
+          send(res, 400, errMsg('invalidParam', 'Invalid phone number'))
         } else {
           clientServer.matrixDb
             .get('user_threepids', ['user_id'], { address: dst })
             .then((rows) => {
-              if (rows.length === 0) {
-                send(res, 400, errMsg('threepidNotFound'))
+              if (rows.length > 0) {
+                send(res, 400, errMsg('threepidInUse'))
               } else {
                 clientServer.matrixDb
                   .get(
@@ -113,7 +216,7 @@ const RequestToken = (clientServer: MatrixClientServer): expressAppHandler => {
                           })
                           .catch((err) => {
                             // istanbul ignore next
-                            clientServer.logger.error('Deletion error', err)
+                            console.error('Deletion error:', err)
                             // istanbul ignore next
                             send(res, 500, errMsg('unknown', err))
                           })
@@ -135,7 +238,7 @@ const RequestToken = (clientServer: MatrixClientServer): expressAppHandler => {
                   })
                   .catch((err) => {
                     /* istanbul ignore next */
-                    clientServer.logger.error('Send_attempt error', err)
+                    console.error('Send_attempt error:', err)
                     /* istanbul ignore next */
                     send(res, 500, errMsg('unknown', err))
                   })
@@ -143,7 +246,7 @@ const RequestToken = (clientServer: MatrixClientServer): expressAppHandler => {
             })
             .catch((err) => {
               /* istanbul ignore next */
-              clientServer.logger.error('Error getting userID :', err)
+              console.error('Error getting userID :', err)
               /* istanbul ignore next */
               send(res, 500, errMsg('unknown', err))
             })

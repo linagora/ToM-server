@@ -17,7 +17,8 @@ const baseConf: Config = {
   userdb_engine: 'sqlite',
   cron_service: false,
   matrix_database_engine: 'sqlite',
-  matrix_database_host: './src/__testData__/matrixTestdb.db'
+  matrix_database_host: './src/__testData__/matrixTestdb.db',
+  sms_folder: './src/__testData__/sms'
 }
 
 describe('Matrix DB', () => {

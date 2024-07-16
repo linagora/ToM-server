@@ -48,7 +48,9 @@ import {
 } from './rooms/room_information/room_visibilty'
 import { getRoomAliases } from './rooms/room_information/room_aliases'
 import RequestTokenPasswordEmail from './account/password/email/requestToken'
+import RequestTokenPasswordMsisdn from './account/password/msisdn/requestToken'
 import RequestTokenEmail from './register/email/requestToken'
+import RequestTokenMsisdn from './register/msisdn/requestToken'
 import SubmitTokenEmail from './register/email/submitToken'
 import getTimestampToEvent from './rooms/roomId/getTimestampToEvent'
 import getStatus from './presence/getStatus'
@@ -149,7 +151,12 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
               getRoomVisibility(this),
             '/_matrix/client/v3/rooms/:roomId/aliases': getRoomAliases(this),
             '/_matrix/client/v3/account/password/email/requestToken': badMethod,
+            '/_matrix/client/v3/account/password/msisdn/requestToken':
+              badMethod,
             '/_matrix/client/v3/register/email/requestToken': badMethod,
+            '/_matrix/client/v3/register/msisdn/requestToken': badMethod,
+            '/_matrix/client/v3/account/3pid/email/requestToken ': badMethod,
+            '/_matrix/client/v3/account/3pid/msisdn/requestToken ': badMethod,
             '/_matrix/client/v3/register/email/submitToken':
               SubmitTokenEmail(this),
             '/_matrix/client/v3/rooms/:roomId/timestamp_to_event':
@@ -177,8 +184,16 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
             '/_matrix/client/v3/rooms/:roomId/aliases': badMethod,
             '/_matrix/client/v3/account/password/email/requestToken':
               RequestTokenPasswordEmail(this),
+            '/_matrix/client/v3/account/password/msisdn/requestToken':
+              RequestTokenPasswordMsisdn(this),
             '/_matrix/client/v3/register/email/requestToken':
               RequestTokenEmail(this),
+            '/_matrix/client/v3/register/msisdn/requestToken':
+              RequestTokenMsisdn(this),
+            '/_matrix/client/v3/account/3pid/email/requestToken':
+              RequestTokenEmail(this),
+            '/_matrix/client/v3/account/3pid/msisdn/requestToken':
+              RequestTokenMsisdn(this),
             '/_matrix/client/v3/register/email/submitToken':
               SubmitTokenEmail(this),
             '/_matrix/client/v3/rooms/:roomId/timestamp_to_event': badMethod,
@@ -211,7 +226,12 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
               setRoomVisibility(this),
             '/_matrix/client/v3/rooms/:roomId/aliases': badMethod,
             '/_matrix/client/v3/account/password/email/requestToken': badMethod,
+            '/_matrix/client/v3/account/password/msisdn/requestToken':
+              badMethod,
             '/_matrix/client/v3/register/email/requestToken': badMethod,
+            '/_matrix/client/v3/register/msisdn/requestToken': badMethod,
+            '/_matrix/client/v3/account/3pid/email/requestToken ': badMethod,
+            '/_matrix/client/v3/account/3pid/msisdn/requestToken ': badMethod,
             '/_matrix/client/v3/register/email/submitToken': badMethod,
             '/_matrix/client/v3/rooms/:roomId/timestamp_to_event': badMethod,
             '/_matrix/client/v3/user/:roomId/timestamp_to_event': badMethod,
@@ -234,7 +254,12 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
             '/_matrix/client/v3/directory/list/room/:roomId': badMethod,
             '/_matrix/client/v3/rooms/:roomId/aliases': badMethod,
             '/_matrix/client/v3/account/password/email/requestToken': badMethod,
+            '/_matrix/client/v3/account/password/msisdn/requestToken':
+              badMethod,
             '/_matrix/client/v3/register/email/requestToken': badMethod,
+            '/_matrix/client/v3/register/msisdn/requestToken': badMethod,
+            '/_matrix/client/v3/account/3pid/email/requestToken ': badMethod,
+            '/_matrix/client/v3/account/3pid/msisdn/requestToken ': badMethod,
             '/_matrix/client/v3/register/email/submitToken': badMethod,
             '/_matrix/client/v3/rooms/:roomId/timestamp_to_event': badMethod,
             '/_matrix/client/v3/presence/:userId/status': badMethod,

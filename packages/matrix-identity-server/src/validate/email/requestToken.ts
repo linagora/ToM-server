@@ -77,8 +77,6 @@ const mailBody = (
           sid
         }).toString()
       )
-    // set token
-    // .replace(/__token__/g, secret) // This part is commented out for now since I don't know what the code is supposed to be TODO : Send a correct code
   )
 }
 
@@ -182,6 +180,7 @@ const RequestToken = <T extends string = never>(
                       )
                       .then(() => {
                         fillTable(
+                          // The calls to send are made in this function
                           idServer,
                           dst,
                           clientSecret,
@@ -201,6 +200,7 @@ const RequestToken = <T extends string = never>(
                   }
                 } else {
                   fillTable(
+                    // The calls to send are made in this function
                     idServer,
                     dst,
                     clientSecret,

@@ -59,6 +59,7 @@
     "@twake/matrix-identity-server": "*",
     "@twake/utils": "*",
     "express": "^4.19.2",
+    "libphonenumber-js": "^1.11.4",
     "node-fetch": "^3.3.0"
   }
 }
