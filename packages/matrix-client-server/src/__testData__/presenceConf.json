@@ -16,35 +16,67 @@
   "template_dir": "./templates",
   "userdb_engine": "sqlite",
   "userdb_host": "./src/__testData__/testPresence.db",
-  "flows": [
-    {
-      "stages": ["m.login.dummy"]
-    },
-    {
-      "stages": ["m.login.password", "m.login.registration_token"]
-    },
-    {
-      "stages": ["m.login.terms", "m.login.password"]
-    },
-    {
-      "stages": ["m.login.registration_token", "m.login.dummy"]
-    }
-  ],
-  "params": {
-    "m.login.terms": {
-      "policies": {
-        "terms_of_service": {
-          "version": "1.2",
-          "en": {
-            "name": "Terms of Service",
-            "url": "https://example.org/somewhere/terms-1.2-en.html"
-          },
-          "fr": {
-            "name": "Conditions d'utilisation",
-            "url": "https://example.org/somewhere/terms-1.2-fr.html"
+  "authentication_flows": {
+    "flows": [
+      {
+        "stages": ["m.login.dummy"]
+      },
+      {
+        "stages": ["m.login.password", "m.login.dummy"]
+      },
+      {
+        "stages": ["m.login.terms", "m.login.password"]
+      },
+      {
+        "stages": ["m.login.registration_token", "m.login.dummy"]
+      }
+    ],
+    "params": {
+      "m.login.terms": {
+        "policies": {
+          "terms_of_service": {
+            "version": "1.2",
+            "en": {
+              "name": "Terms of Service",
+              "url": "https://example.org/somewhere/terms-1.2-en.html"
+            },
+            "fr": {
+              "name": "Conditions d'utilisation",
+              "url": "https://example.org/somewhere/terms-1.2-fr.html"
+            }
           }
         }
       }
     }
-  }
+  },
+  "login_flows": {
+    "flows": [
+      {
+        "type": "m.login.password"
+      },
+      {
+        "get_login_token": true,
+        "type": "m.login.token"
+      }
+    ]
+  },
+  "application_services": [
+    {
+      "id": "test",
+      "hs_token": "hsTokenTestwdakZQunWWNe3DZitAerw9aNqJ2a6HVp0sJtg7qTJWXcHnBjgN0NL",
+      "as_token": "as_token_test",
+      "url": "http://localhost:3000",
+      "sender_localpart": "sender_localpart_test",
+      "namespaces": {
+        "users": [
+          {
+            "exclusive": false,
+            "regex": "@_irc_bridge_.*"
+          }
+        ]
+      }
+    }
+  ],
+  "sms_folder": "./src/__testData__/sms",
+  "is_registration_enabled": true
 }

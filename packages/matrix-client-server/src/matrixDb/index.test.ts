@@ -10,6 +10,7 @@ jest.mock('node-fetch', () => jest.fn())
 
 const logger: TwakeLogger = getLogger()
 
+// @ts-expect-error TS doesn't understand that the config is valid
 const baseConf: Config = {
   ...DefaultConfig,
   database_engine: 'sqlite',
@@ -17,34 +18,6 @@ const baseConf: Config = {
   cron_service: false,
   matrix_database_engine: 'sqlite',
   matrix_database_host: './src/__testData__/matrixTestdb.db',
-  flows: [
-    {
-      stages: ['m.login.dummy', 'm.login.dummy']
-    },
-    {
-      stages: ['m.login.password', 'm.login.email.identity']
-    },
-    {
-      stages: ['m.login.registration_token', 'm.login.dummy']
-    }
-  ],
-  params: {
-    'm.login.terms': {
-      policies: {
-        terms_of_service: {
-          version: '1.2',
-          en: {
-            name: 'Terms of Service',
-            url: 'https://example.org/somewhere/terms-1.2-en.html'
-          },
-          fr: {
-            name: "Conditions d'utilisation",
-            url: 'https://example.org/somewhere/terms-1.2-fr.html'
-          }
-        }
-      }
-    }
-  },
   sms_folder: './src/__testData__/sms'
 }
 

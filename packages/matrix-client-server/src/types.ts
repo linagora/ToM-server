@@ -7,11 +7,11 @@ import { type Policies } from '@twake/matrix-identity-server/dist/terms'
 
 // TODO : Put Policies in types.ts of matrix-identity-server to export it in the @twake/matrix-identity-server module and not in the dist/terms
 export type Config = MIdentityServerConfig & {
-  flows: flowContent
-  params: Record<string, { policies: Policies }> // For now, only Terms registration gives additional parameters in the request body so the params have this type.
-  // If another authentication type returns additional parameters, Policies needs to be changed to a more general type
+  login_flows: loginFlowContent
+  authentication_flows: authenticationFlowContent
   application_services: AppServiceRegistration[]
   sms_folder: string
+  is_registration_enabled: boolean
 }
 
 export type DbGetResult = Array<
@@ -203,10 +203,25 @@ export type AuthenticationData =
   | TermsAuth
   | ApplicationServiceAuth
 
+export interface authenticationFlowContent {
+  flows: flowContent
+  params: Record<string, { policies: Policies }> // For now, only Terms registration gives additional parameters in the request body so the params have this type.
+  // If another authentication type returns additional parameters, Policies needs to be changed to a more general type}
+}
+
 export type flowContent = stagesContent[]
+
+export interface loginFlowContent {
+  flows: LoginFlow[]
+}
 
 interface stagesContent {
   stages: AuthenticationTypes[]
+}
+
+interface LoginFlow {
+  get_login_token?: string
+  type: AuthenticationTypes
 }
 
 // https://spec.matrix.org/v1.11/application-service-api/#registration
