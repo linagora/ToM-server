@@ -180,6 +180,7 @@ const RequestToken = <T extends string = never>(
                       )
                       .then(() => {
                         fillTable(
+                          // The calls to send are made in this function
                           idServer,
                           dst,
                           clientSecret,
@@ -199,6 +200,7 @@ const RequestToken = <T extends string = never>(
                   }
                 } else {
                   fillTable(
+                    // The calls to send are made in this function
                     idServer,
                     dst,
                     clientSecret,
