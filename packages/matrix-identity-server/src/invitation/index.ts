@@ -251,7 +251,7 @@ const StoreInvit = <T extends string = never>(
                       (obj as storeInvitationArgs).room_name ?? '*****',
                       (obj as storeInvitationArgs).room_avatar_url ?? '*****',
                       (obj as storeInvitationArgs).room_type ?? '*****',
-                      idServer.conf.invitation_server_name,
+                      idServer.conf.invitation_server_name ?? 'matrix.to',
                       (obj as storeInvitationArgs).room_alias
                     )
                   })
