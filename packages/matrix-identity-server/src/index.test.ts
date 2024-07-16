@@ -1407,6 +1407,7 @@ describe('Use configuration file', () => {
             room_id: '!room:matrix.org',
             sender: '@dwho:matrix.org'
           })
+        console.log(response.body)
         expect(response.statusCode).toBe(200)
         expect(mockSend).toHaveBeenCalled()
         expect(response.body).toHaveProperty('display_name')
