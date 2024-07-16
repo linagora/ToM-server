@@ -1,3 +1,14 @@
+/*
+This file implements the getDevices and getDeviceInfo functions, which are used to retrieve information about devices associated with a user. 
+The getDevices function returns a list of devices, while the getDeviceInfo function returns information about a specific device. 
+These functions are used to provide device management functionality in the Matrix client server : https://spec.matrix.org/v1.11/client-server-api/#get_matrixclientv3devices
+
+One of the main differences between the implementation in the Twake codebase and the equivalent implementation in the Synapse codebase 
+is that for now we are not updating the last_ip field of a device when it is looked upon by a user (as it is done here).
+
+It can be done by looking up the ip of the client (stored in the user_ips table) and updating the ip field of the device in the devices table.
+*/
+
 import { errMsg, type expressAppHandler, send } from '@twake/utils'
 import type MatrixClientServer from '../index'
 import { type Request } from 'express'
