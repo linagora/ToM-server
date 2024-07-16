@@ -15,6 +15,7 @@ import type MatrixClientServer from '..'
 import { type DbGetResult } from '@twake/matrix-identity-server'
 import type { ServerResponse } from 'http'
 import type e from 'express'
+import { registerAllowedFlows } from '../utils/userInteractiveAuthentication'
 
 interface Parameters {
   kind: 'guest' | 'user'
@@ -144,7 +145,7 @@ const register = (clientServer: MatrixClientServer): expressAppHandler => {
     const accessToken = randomString(64)
     const userAgent = req.headers['user-agent'] ?? 'undefined'
     if (parameters.kind === 'user') {
-      clientServer.uiauthenticate(req, res, (obj) => {
+      clientServer.uiauthenticate(req, res, registerAllowedFlows, (obj) => {
         const body = obj as unknown as registerRequestBody
         const deviceId = body.device_id ?? randomString(20) // Length chosen arbitrarily
         const username = body.username ?? randomString(9) // Length chosen to match the localpart restrictions for a Matrix userId

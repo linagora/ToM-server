@@ -7,8 +7,7 @@ import { type Policies } from '@twake/matrix-identity-server/dist/terms'
 
 // TODO : Put Policies in types.ts of matrix-identity-server to export it in the @twake/matrix-identity-server module and not in the dist/terms
 export type Config = MIdentityServerConfig & {
-  login_flows: loginFlowContent
-  authentication_flows: authenticationFlowContent
+  login_flows: LoginFlowContent
   application_services: AppServiceRegistration[]
   is_registration_enabled: boolean
   sms_folder: string
@@ -144,8 +143,8 @@ interface PasswordAuth {
 export interface ThreepidCreds {
   sid: string
   client_secret: string
-  id_server: string
-  id_access_token: string
+  id_server?: string
+  id_access_token?: string
 }
 
 interface EmailAuth {
@@ -193,6 +192,11 @@ interface ApplicationServiceAuth {
   username: string
 }
 
+interface SsoAuth {
+  type: 'm.login.sso'
+  session: string
+}
+
 export type AuthenticationData =
   | PasswordAuth
   | EmailAuth
@@ -202,8 +206,9 @@ export type AuthenticationData =
   | TokenAuth
   | TermsAuth
   | ApplicationServiceAuth
+  | SsoAuth
 
-export interface authenticationFlowContent {
+export interface AuthenticationFlowContent {
   flows: flowContent
   params: Record<string, { policies: Policies }> // For now, only Terms registration gives additional parameters in the request body so the params have this type.
   // If another authentication type returns additional parameters, Policies needs to be changed to a more general type}
@@ -211,7 +216,7 @@ export interface authenticationFlowContent {
 
 export type flowContent = stagesContent[]
 
-export interface loginFlowContent {
+export interface LoginFlowContent {
   flows: LoginFlow[]
 }
 
