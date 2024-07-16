@@ -2,8 +2,8 @@
 As specified in the Matrix Protocol, access to the profile information of another user is allowed on the local server,
 and may be allowed on remote servers via federation.
 
-TO DO : implement the ability to access the profile information of another user on a remote server via federation.
-TO DO : implement the ability to close access to the profile information of another user on the local server.
+TODO : implement the ability to access the profile information of another user on a remote server via federation.
+TODO : implement the ability to close access to the profile information of another user on the local server.
 */
 
 import type MatrixClientServer from '../'
@@ -45,7 +45,7 @@ export const getProfile = (
             clientServer.logger.error('Error querying profiles:', e)
           })
       } else {
-        // TO DO : Have a look on remote server via federation
+        // TODO : Have a look on remote server via federation
         send(res, 500, errMsg('unknown', 'Cannot get profile of a remote user'))
       }
     } else {
@@ -92,7 +92,7 @@ export const getAvatarUrl = (
             clientServer.logger.error('Error querying profiles:', e)
           })
       } else {
-        // TO DO : Have a look on remote server via federation
+        // TODO : Have a look on remote server via federation
         send(res, 500, errMsg('unknown', 'Cannot get profile of a remote user'))
       }
     } else {
@@ -139,7 +139,7 @@ export const getDisplayname = (
             clientServer.logger.error('Error querying profiles:', e)
           })
       } else {
-        // TO DO : Have a look on remote server via federation
+        // TODO : Have a look on remote server via federation
         send(res, 500, errMsg('unknown', 'Cannot get profile of a remote user'))
       }
     } else {

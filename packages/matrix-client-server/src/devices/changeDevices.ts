@@ -1,3 +1,10 @@
+/*
+This file implements the changeDeviceName functions, which is used to update the display name of a device associated with a user.
+These functions are used to provide device management functionality in the Matrix client server : https://spec.matrix.org/v1.11/client-server-api/#get_matrixclientv3devices
+
+TODO : Add checks to ensure that the user has the rigths to change the device name.
+*/
+
 import {
   errMsg,
   type expressAppHandler,
@@ -26,13 +33,17 @@ export const changeDeviceName = (
       jsonContent(req, res, clientServer.logger, (obj) => {
         validateParameters(res, schema, obj, clientServer.logger, (obj) => {
           // eslint-disable-next-line @typescript-eslint/naming-convention
-          const _display_name = (obj as changeDeviceNameArgs).display_name
+          const new_display_name = (obj as changeDeviceNameArgs).display_name
 
           clientServer.matrixDb
-            .updateWithConditions('devices', { display_name: _display_name }, [
-              { field: 'device_id', value: deviceId },
-              { field: 'user_id', value: userId }
-            ])
+            .updateWithConditions(
+              'devices',
+              { display_name: new_display_name },
+              [
+                { field: 'device_id', value: deviceId },
+                { field: 'user_id', value: userId }
+              ]
+            )
             .then((rows) => {
               if (rows.length === 0) {
                 send(

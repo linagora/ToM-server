@@ -58,7 +58,7 @@ export const changeAvatarUrl = (
       newAvatarUrl: The avatar_url to give this user.
       byAdmin: Whether this change was made by an administrator.
 
-      TO DO : The following arguments are not used in this function, 
+      TODO : The following arguments are not used in this function, 
       but are used in the equivalent function in the Synapse codebase:
         deactivation: Whether this change was made while deactivating the user.
         propagate: Whether this change also applies to the user's membership events.
@@ -109,7 +109,7 @@ export const changeAvatarUrl = (
             return
           }
 
-          // TO DO: check if changing displayname is allowed according to config settings
+          // TODO: check if changing displayname is allowed according to config settings
 
           if (newAvatarUrl.length > MAX_AVATAR_URL_LEN) {
             send(
@@ -156,14 +156,12 @@ export const changeDisplayname = (
       newDisplayname: The displayname to give this user.
       byAdmin: Whether this change was made by an administrator.
 
-      TO DO : The following arguments are not used in this function, 
+      TODO : The following arguments are not used in this function, 
       but are used in the equivalent function in the Synapse codebase:
         deactivation: Whether this change was made while deactivating the user.
         propagate: Whether this change also applies to the user's membership events.
     */
     const userId: string = (req as Request).params.userId
-
-    console.log('i am here displayname')
 
     // eslint-disable-next-line @typescript-eslint/no-misused-promises
     clientServer.authenticate(req, res, async (token) => {
@@ -171,11 +169,9 @@ export const changeDisplayname = (
       // Check wether requester is admin or not
       let byAdmin = 0
       try {
-        console.log('checking admin')
         const response = await clientServer.matrixDb.get('users', ['admin'], {
           name: requesterUserId
         })
-        console.log('got admin')
         byAdmin = response[0].admin as number
       } catch (e) {
         /* istanbul ignore next */
@@ -183,8 +179,6 @@ export const changeDisplayname = (
         /* istanbul ignore next */
         send(res, 500, errMsg('unknown', 'Error checking admin'))
       }
-
-      console.log('finished checking admin')
 
       jsonContent(req, res, clientServer.logger, (obj) => {
         validateParameters(
@@ -218,7 +212,7 @@ export const changeDisplayname = (
               return
             }
 
-            // TO DO: check if changing displayname is allowed according to config settings
+            // TODO: check if changing displayname is allowed according to config settings
 
             if (newDisplayname.length > MAX_DISPLAYNAME_LEN) {
               send(
