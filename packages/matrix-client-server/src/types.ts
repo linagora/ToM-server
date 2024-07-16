@@ -12,7 +12,6 @@ export type Config = MIdentityServerConfig & {
   application_services: AppServiceRegistration[]
   sms_folder: string
   is_registration_enabled: boolean
-  sms_folder: string
 }
 
 export type DbGetResult = Array<
