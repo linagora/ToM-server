@@ -36,7 +36,7 @@ const schema = {
 
 const clientSecretRegex = /^[0-9a-zA-Z.=_-]{6,255}$/
 const validCountryRegex = /^[A-Z]{2}$/ // ISO 3166-1 alpha-2 as per the spec : https://spec.matrix.org/v1.11/client-server-api/#post_matrixclientv3registermsisdnrequesttoken
-const validPhoneNumberRegex = /^\+?[1-9]\d{1,14}$/
+const validPhoneNumberRegex = /^[1-9]\d{1,14}$/
 
 export const formatPhoneNumber = (
   rawNumber: string,
@@ -48,7 +48,10 @@ export const formatPhoneNumber = (
   )
   // eslint-disable-next-line @typescript-eslint/prefer-optional-chain, @typescript-eslint/strict-boolean-expressions
   if (phoneNumber) {
-    return phoneNumber.number
+    // Remove the leading '+' if it exists according to MSISDN convention
+    return phoneNumber.number.startsWith('+')
+      ? phoneNumber.number.slice(1)
+      : phoneNumber.number
   }
   return ''
 }
