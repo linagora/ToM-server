@@ -84,6 +84,8 @@ const mailBody = (
   // eslint-disable-next-line @typescript-eslint/naming-convention
   room_type: string,
   // eslint-disable-next-line @typescript-eslint/naming-convention
+  server_name_creating_invitation: string,
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   room_alias?: string
 ): string => {
   return (
@@ -99,7 +101,10 @@ const mailBody = (
       .replace(/__room_name__/g, room_name)
       .replace(/__room_avatar__/g, room_avatar)
       .replace(/__room_type__/g, room_type)
-      .replace(/__link__/g, inviteLink('matrix.to', sender_user_id, room_alias))
+      .replace(
+        /__link__/g,
+        inviteLink(server_name_creating_invitation, sender_user_id, room_alias)
+      )
   )
 }
 
@@ -246,6 +251,7 @@ const StoreInvit = <T extends string = never>(
                       (obj as storeInvitationArgs).room_name ?? '*****',
                       (obj as storeInvitationArgs).room_avatar_url ?? '*****',
                       (obj as storeInvitationArgs).room_type ?? '*****',
+                      idServer.conf.invitation_server_name,
                       (obj as storeInvitationArgs).room_alias
                     )
                   })
