@@ -9,8 +9,8 @@ import { type Policies } from '@twake/matrix-identity-server/dist/terms'
 export type Config = MIdentityServerConfig & {
   login_flows: LoginFlowContent
   application_services: AppServiceRegistration[]
-  is_registration_enabled: boolean
   sms_folder: string
+  is_registration_enabled: boolean
 }
 
 export type DbGetResult = Array<
@@ -166,10 +166,10 @@ interface RecaptchaAuth {
 }
 
 // TODO : Implement fallback to handle SSO authentication : https://spec.matrix.org/v1.11/client-server-api/#fallback
-// interface SsoAuth {
-//   type: AuthenticationTypes.Sso
-//   session: string
-// }
+interface SsoAuth {
+  type: 'm.login.sso'
+  session: string
+}
 
 interface DummyAuth {
   type: 'm.login.dummy'
@@ -190,11 +190,6 @@ interface TermsAuth {
 interface ApplicationServiceAuth {
   type: 'm.login.application_service'
   username: string
-}
-
-interface SsoAuth {
-  type: 'm.login.sso'
-  session: string
 }
 
 export type AuthenticationData =
