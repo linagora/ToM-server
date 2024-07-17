@@ -1,27 +1,20 @@
 import type MatrixClientServer from '../..'
 import { errMsg, type expressAppHandler, send } from '@twake/utils'
-
-interface query_parameters {
-  dir: 'b' | 'f'
-  ts: number
-}
+import { type Request } from 'express'
 
 const GetTimestampToEvent = (
   ClientServer: MatrixClientServer
 ): expressAppHandler => {
   return (req, res) => {
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-expect-error
     const roomId: string = (req as Request).params.roomId
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-expect-error
-    const params: query_parameters = (req as Request).query
-    if (params.dir !== 'b' && params.dir !== 'f') {
+    const dir: string = (req as Request).query.dir as string
+    const ts: number = Number((req as Request).query.ts as string)
+    if ((dir !== 'b' && dir !== 'f') || isNaN(ts)) {
       send(res, 400, errMsg('invalidParam', 'Invalid parameters'))
       return
     }
     ClientServer.authenticate(req, res, (data, id) => {
-      if (params.dir === 'b') {
+      if (dir === 'b') {
         ClientServer.matrixDb
           .getMaxWhereEqualAndLower(
             'events',
@@ -31,7 +24,7 @@ const GetTimestampToEvent = (
               room_id: roomId
             },
             {
-              origin_server_ts: params.ts
+              origin_server_ts: ts
             }
           )
           .then((rows) => {
@@ -41,7 +34,7 @@ const GetTimestampToEvent = (
                 404,
                 errMsg(
                   'notFound',
-                  `Unable to find event from ${params.ts} in backward direction`
+                  `Unable to find event from ${ts} in backward direction`
                 )
               )
               return
@@ -55,7 +48,7 @@ const GetTimestampToEvent = (
             send(res, 500, errMsg('unknown', err))
           })
       }
-      if (params.dir === 'f') {
+      if (dir === 'f') {
         ClientServer.matrixDb
           .getMinWhereEqualAndHigher(
             'events',
@@ -64,7 +57,7 @@ const GetTimestampToEvent = (
             {
               room_id: roomId
             },
-            { origin_server_ts: params.ts }
+            { origin_server_ts: ts }
           )
           .then((rows) => {
             if (rows.length === 0) {
@@ -73,7 +66,7 @@ const GetTimestampToEvent = (
                 404,
                 errMsg(
                   'notFound',
-                  `Unable to find event from ${params.ts} in forward direction`
+                  `Unable to find event from ${ts} in forward direction`
                 )
               )
               return

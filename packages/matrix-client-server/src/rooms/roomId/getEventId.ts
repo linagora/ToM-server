@@ -1,18 +1,13 @@
 import type MatrixClientServer from '../..'
 import { epoch, errMsg, send, type expressAppHandler } from '@twake/utils'
 import { type ClientEvent } from '../../types'
-
-interface parameters {
-  eventId: string
-  roomId: string
-}
+import { type Request } from 'express'
 
 const GetEventId = (ClientServer: MatrixClientServer): expressAppHandler => {
   return (req, res) => {
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-expect-error
-    const prms: parameters = (req as Request).params as parameters
     ClientServer.authenticate(req, res, (data, id) => {
+      const eventId = (req as Request).params.eventId
+      const roomId = (req as Request).params.roomId
       ClientServer.matrixDb
         .get(
           'events',
@@ -26,8 +21,8 @@ const GetEventId = (ClientServer: MatrixClientServer): expressAppHandler => {
             'type'
           ],
           {
-            event_id: prms.eventId,
-            room_id: prms.roomId
+            event_id: eventId,
+            room_id: roomId
           }
         )
         .then((rows) => {
@@ -46,7 +41,7 @@ const GetEventId = (ClientServer: MatrixClientServer): expressAppHandler => {
               ['room_memberships.membership'],
               {
                 'room_memberships.user_id': userId,
-                'room_memberships.room_id': prms.roomId
+                'room_memberships.room_id': roomId
               },
               {
                 'events.origin_server_ts': rows[0].origin_server_ts

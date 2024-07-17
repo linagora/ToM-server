@@ -1,24 +1,19 @@
 import type MatrixClientServer from '../..'
 import { errMsg, send, type expressAppHandler } from '@twake/utils'
 import { type RoomMember } from '../../types'
+import { type Request } from 'express'
 
 // TODO : Manage the case where it is an Application Service, in which case any of the AS’s users must be in the room for it to work.
 // cf https://spec.matrix.org/v1.11/client-server-api/#get_matrixclientv3roomsroomidjoined_members
-
-interface parameters {
-  roomId: string
-}
 
 const GetJoinedMembers = (
   ClientServer: MatrixClientServer
 ): expressAppHandler => {
   return (req, res) => {
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-expect-error
-    const roomId: string = ((req as Request).params as parameters).roomId
-    ClientServer.authenticate(req, res, (data, id) => {
+    const roomId: string = (req as Request).params.roomId
+    ClientServer.authenticate(req, res, (token) => {
       // Check if the user has permission to retrieve this event
-      const userId: string = data.sub
+      const userId: string = token.sub
       ClientServer.matrixDb
         .get('local_current_membership', ['membership'], {
           user_id: userId,
