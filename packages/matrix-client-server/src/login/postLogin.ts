@@ -47,3 +47,5 @@ const postLogin = (clientServer: MatrixClientServer): expressAppHandler => {
     })
   }
 }
+
+export default postLogin
