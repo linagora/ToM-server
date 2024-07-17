@@ -16,7 +16,6 @@
   "template_dir": "./templates",
   "userdb_engine": "sqlite",
   "userdb_host": "./src/__testData__/testLogin.db",
-
   "login_flows": {
     "flows": [
       {
@@ -45,5 +44,6 @@
       }
     }
   ],
+  "sms_folder": "./src/__testData__/sms",
   "is_registration_enabled": true
 }
