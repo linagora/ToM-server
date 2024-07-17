@@ -1,5 +1,5 @@
 import type { TwakeLogger } from '@twake/logger'
-import type { twakeDbCollections, TwakeDB } from '../../types'
+import type { TwakeDB, twakeDbCollections } from '../../types'
 import type { ActiveAcountsData, IActiveContactsService } from '../types'
 
 class ActiveContactsService implements IActiveContactsService {
@@ -54,6 +54,23 @@ class ActiveContactsService implements IActiveContactsService {
    */
   save = async (userId: string, contacts: string): Promise<void> => {
     try {
+      const existing = await this.db.get(
+        'activeContacts' as twakeDbCollections,
+        ['contacts'],
+        { userId }
+      )
+
+      if (existing.length > 0) {
+        await this.db.update(
+          'activeContacts' as twakeDbCollections,
+          { contacts },
+          'userId',
+          userId
+        )
+        this.logger.info('active contacts updated successfully')
+        return
+      }
+
       await this.db.insert('activeContacts' as twakeDbCollections, {
         userId,
         contacts

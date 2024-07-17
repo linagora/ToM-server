@@ -1,4 +1,26 @@
-# Twake-Chat server repository
+# Twake-Chat Matrix extension server
+
+<br />
+<div align="center">
+  <a href="https://github.com/linagora/twake-on-matrix">
+    <img src="https://github.com/artembru/ToM-server/assets/146178981/4a5da817-466f-4d4a-8804-3881b672bc42">
+  </a>
+
+
+
+
+  <p align="center">
+    <a href="https://twake-chat.com">Website</a>
+    •
+    <a href="https://beta.twake.app/web/#/rooms">View Demo</a>
+    •
+    <a href="https://github.com/linagora/twake-on-matrix/issues">Report Bug</a>
+    •
+    <a href="https://hosted.weblate.org/projects/linagora/twake-matrix/#repository">Translate Twake></a>
+</p>
+</div>
+
+---
 
 This repository is a multi-packages repository. See [Modules](#modules) for details.
 

@@ -121,7 +121,7 @@ describe('Vault API server', () => {
   })
 
   it('reject not allowed method with 405', async () => {
-    const response = await request(app).put(endpoint)
+    const response = await request(app).patch(endpoint)
     expect(response.statusCode).toBe(405)
     expect(response.body).toStrictEqual({
       error: 'Method not allowed'
@@ -145,7 +145,7 @@ describe('Vault API server', () => {
       .set('Authorization', `Bearer ${accessToken}`)
     expect(response.statusCode).toBe(201)
     expect(response.body).toStrictEqual({
-      message: 'Saved recovery words sucessfully'
+      message: 'Saved recovery words successfully'
     })
   })
 
@@ -205,7 +205,7 @@ describe('Vault API server', () => {
       .set('Authorization', `Bearer ${unsavedToken}`)
     expect(response.statusCode).toBe(201)
     expect(response.body).toStrictEqual({
-      message: 'Saved recovery words sucessfully'
+      message: 'Saved recovery words successfully'
     })
     await removeUserInAccessTokenTable(unsavedToken)
     await removeUserInRecoveryWordsTable(matrixServerResponseBody.user_id)
@@ -232,6 +232,18 @@ describe('Vault API server', () => {
     expect(response.statusCode).toBe(404)
     expect(response.body).toStrictEqual({
       error: 'User has no recovery sentence'
+    })
+  })
+
+  it('should update words in the dabase if the connected user have some', async () => {
+    const response = await request(app)
+      .put(endpoint)
+      .send({ words })
+      .set('Authorization', `Bearer ${accessToken}`)
+
+    expect(response.statusCode).toBe(200)
+    expect(response.body).toStrictEqual({
+      message: 'Updated recovery words successfully'
     })
   })
 

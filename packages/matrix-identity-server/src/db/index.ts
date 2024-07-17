@@ -24,6 +24,7 @@ export type Collections =
   | 'userHistory'
   | 'userPolicies'
   | 'userQuotas'
+  | 'activeContacts'
 
 const cleanByExpires: Collections[] = ['oneTimeTokens', 'attempts']
 

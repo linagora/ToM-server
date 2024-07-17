@@ -6,6 +6,7 @@ import {
   getRecoveryWords,
   methodNotAllowed,
   saveRecoveryWords,
+  updateRecoveryWords,
   type VaultController
 } from './controllers/vault'
 import isAuth, { type tokenDetail } from './middlewares/auth'
@@ -154,6 +155,49 @@ export default class TwakeVaultAPI {
        *        $ref: '#/components/responses/InternalServerError'
        */
       .delete(...this._middlewares(deleteRecoveryWords))
+      /**
+       * @openapi
+       * '/_twake/recoveryWords':
+       *  put:
+       *    tags:
+       *    - Vault API
+       *    description: Update stored connected user recovery words in database
+       *    requestBody:
+       *      description: Object containing the recovery words of the connected user
+       *      required: true
+       *      content:
+       *        application/json:
+       *          schema:
+       *            type: object
+       *            properties:
+       *              words:
+       *                type: string
+       *                description: The new recovery words of the connected user
+       *            required:
+       *              - words
+       *          example:
+       *            words: This is the updated recovery sentence of rtyler
+       *    responses:
+       *      200:
+       *        description: Success
+       *        content:
+       *          application/json:
+       *            schema:
+       *              type: object
+       *              properties:
+       *                message:
+       *                  type: string
+       *                  description: Message indicating that words have been successfully updated
+       *              example:
+       *                message: Updated recovery words sucessfully
+       *      401:
+       *        $ref: '#/components/responses/Unauthorized'
+       *      500:
+       *        $ref: '#/components/responses/InternalServerError'
+       *      400:
+       *        description: Bad request
+       */
+      .put(...this._middlewares(updateRecoveryWords))
       .all(allowCors, methodNotAllowed, errorMiddleware)
   }
 
