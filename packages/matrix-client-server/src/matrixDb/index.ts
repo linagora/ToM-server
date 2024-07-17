@@ -36,6 +36,7 @@ export type Collections =
   | 'presence'
   | 'access_tokens'
   | 'refresh_tokens'
+  | 'user_filters'
 
 type sqlComparaisonOperator = '=' | '!=' | '>' | '<' | '>=' | '<=' | '<>'
 interface ISQLCondition {
