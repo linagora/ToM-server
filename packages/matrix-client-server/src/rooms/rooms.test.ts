@@ -477,12 +477,23 @@ describe('Use configuration file', () => {
             }
           })
 
-          it('should return 400 if the query parameters are incorrect', async () => {
+          it('should return 400 if the query parameter for direction is incorrect', async () => {
             const response = await request(app)
               .get(
                 '/_matrix/client/v3/rooms/!testroom:example.com/timestamp_to_event'
               )
               .query({ dir: 'unsupported_string', ts: 500 })
+              .set('Authorization', `Bearer ${validToken}`)
+              .set('Accept', 'application/json')
+            expect(response.statusCode).toBe(400)
+          })
+
+          it('should return 400 if the query parameter for timestamp is incorrect', async () => {
+            const response = await request(app)
+              .get(
+                '/_matrix/client/v3/rooms/!testroom:example.com/timestamp_to_event'
+              )
+              .query({ dir: 'f', ts: 'NaN' })
               .set('Authorization', `Bearer ${validToken}`)
               .set('Accept', 'application/json')
             expect(response.statusCode).toBe(400)
