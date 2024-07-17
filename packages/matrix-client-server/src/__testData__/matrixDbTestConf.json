@@ -4,6 +4,7 @@
   "database_engine": "sqlite",
   "database_host": "./src/__testData__/test.db",
   "database_vacuum_delay": 7200,
+  "invitation_server_name": "matrix.to",
   "is_federated_identity_service": false,
   "key_delay": 3600,
   "keys_depth": 5,

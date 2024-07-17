@@ -10,48 +10,51 @@ export type SupportedDatabases = 'sqlite' | 'pg'
 
 export type Collections =
   | 'accessTokens'
-  | 'oneTimeTokens'
+  | 'activeContacts'
   | 'attempts'
-  | 'keys'
+  | 'oneTimeTokens'
   | 'hashes'
+  | 'invitationTokens'
+  | 'keys'
+  | 'longTermKeypairs'
+  | 'mappings'
   | 'privateNotes'
   | 'roomTags'
-  | 'userHistory'
-  | 'userQuotas'
-  | 'mappings'
-  | 'longTermKeypairs'
   | 'shortTermKeypairs'
+  | 'userHistory'
   | 'userPolicies'
-  | 'activeContacts'
+  | 'userQuotas'
 
 const cleanByExpires: Collections[] = ['oneTimeTokens', 'attempts']
 
 const tables: Record<Collections, string> = {
   accessTokens: 'id varchar(64) PRIMARY KEY, data text',
-  oneTimeTokens: 'id varchar(64) PRIMARY KEY, expires int, data text',
+  activeContacts: 'userId text PRIMARY KEY, contacts text',
   attempts: 'email text PRIMARY KEY, expires int, attempt int',
-  keys: 'name varchar(32) PRIMARY KEY, data text',
+  oneTimeTokens: 'id varchar(64) PRIMARY KEY, expires int, data text',
   hashes:
     'hash varchar(48) PRIMARY KEY, pepper varchar(32), type varchar(8), value text, active integer',
+  invitationTokens: 'id varchar(64) PRIMARY KEY, address text, data text',
+  keys: 'name varchar(32) PRIMARY KEY, data text',
+  longTermKeypairs:
+    'name text PRIMARY KEY, keyID varchar(64), public text, private text',
+  mappings:
+    'client_secret varchar(255) PRIMARY KEY, session_id varchar(12), medium varchar(8), valid integer, address text, submit_time integer, send_attempt integer',
   privateNotes:
     'id varchar(64) PRIMARY KEY, authorId varchar(64), content text, targetId varchar(64)',
   roomTags:
     'id varchar(64) PRIMARY KEY, authorId varchar(64), content text, roomId varchar(64)',
-  userHistory: 'address text PRIMARY KEY, active integer, timestamp integer',
-  userQuotas: 'user_id varchar(64) PRIMARY KEY, size int',
-  mappings:
-    'client_secret varchar(255) PRIMARY KEY, session_id varchar(12), medium varchar(8), valid integer, address text, submit_time integer, send_attempt integer',
-  longTermKeypairs:
-    'name text PRIMARY KEY, keyID varchar(64), public text, private text',
   shortTermKeypairs:
     'keyID varchar(64) PRIMARY KEY, public text, private text, active integer',
+  userHistory: 'address text PRIMARY KEY, active integer, timestamp integer',
   userPolicies: 'user_id text, policy_name text, accepted integer',
-  activeContacts: 'userId text PRIMARY KEY, contacts text'
+  userQuotas: 'user_id varchar(64) PRIMARY KEY, size int'
 }
 
 const indexes: Partial<Record<Collections, string[]>> = {
-  oneTimeTokens: ['expires'],
   attempts: ['expires'],
+  invitationTokens: ['address'],
+  oneTimeTokens: ['expires'],
   userHistory: ['timestamp']
 }
 
@@ -561,6 +564,57 @@ class IdentityServerDb<T extends string = never>
   // eslint-disable-next-line @typescript-eslint/promise-function-async
   createToken(data: object, expires?: number): Promise<string> {
     return this.createOneTimeToken(data, expires)
+  }
+
+  // eslint-disable-next-line @typescript-eslint/promise-function-async
+  createInvitationToken(address: string, data: object): Promise<string> {
+    /* istanbul ignore if */
+    if (this.db == null) {
+      throw new Error('Wait for database to be ready')
+    }
+    const id = randomString(64)
+    return new Promise((resolve, reject) => {
+      this.db
+        .insert('invitationTokens', {
+          id,
+          address,
+          data: JSON.stringify(data)
+        })
+        .then(() => {
+          this.logger.info(`Invitation token created for ${address}`)
+          resolve(id)
+        })
+        .catch((err) => {
+          /* istanbul ignore next */
+          this.logger.error('Failed to insert token', err)
+          reject(err)
+        })
+    })
+  }
+
+  // eslint-disable-next-line @typescript-eslint/promise-function-async
+  verifyInvitationToken(id: string): Promise<object> {
+    /* istanbul ignore if */
+    if (this.db == null) {
+      throw new Error('Wait for database to be ready')
+    }
+    return new Promise((resolve, reject) => {
+      this.db
+        .get('invitationTokens', ['data', 'address'], { id })
+        .then((rows) => {
+          /* istanbul ignore else */
+          if (rows.length > 0) {
+            resolve(JSON.parse(rows[0].data as string))
+          } else {
+            reject(new Error('Unknown token'))
+          }
+        })
+        .catch((e) => {
+          /* istanbul ignore next */
+          this.logger.error('Failed to get token', e)
+          reject(e)
+        })
+    })
   }
 
   // eslint-disable-next-line @typescript-eslint/promise-function-async

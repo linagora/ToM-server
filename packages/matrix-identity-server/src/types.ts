@@ -18,6 +18,7 @@ export interface Config {
   database_vacuum_delay: number
   federated_identity_services?: string[] | null
   hashes_rate_limit?: number
+  invitation_server_name?: string
   is_federated_identity_service: boolean
   key_delay: number
   keys_depth: number

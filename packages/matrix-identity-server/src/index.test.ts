@@ -759,7 +759,7 @@ describe('Use configuration file', () => {
 
       describe('/_matrix/identity/v2/3pid/bind', () => {
         it('should find the 3pid - matrixID association after binding', async () => {
-          const response_request_token = await request(app)
+          const responseRequestToken = await request(app)
             .post('/_matrix/identity/v2/validate/email/requestToken')
             .set('Authorization', `Bearer ${validToken}`)
             .set('Accept', 'application/json')
@@ -769,22 +769,22 @@ describe('Use configuration file', () => {
               next_link: 'http://localhost:8090',
               send_attempt: 1
             })
-          expect(response_request_token.statusCode).toBe(200)
+          expect(responseRequestToken.statusCode).toBe(200)
           expect(sendMailMock.mock.calls[0][0].to).toBe('ab@abc.fr')
           expect(sendMailMock.mock.calls[0][0].raw).toMatch(
             /token=([a-zA-Z0-9]{64})&client_secret=mysecret2&sid=([a-zA-Z0-9]{64})/
           )
-          const bind_token = RegExp.$1
-          const bind_sid = RegExp.$2
-          const response_submit_token = await request(app)
+          const bindToken = RegExp.$1
+          const bindSid = RegExp.$2
+          const responseSubmitToken = await request(app)
             .post('/_matrix/identity/v2/validate/email/submitToken')
             .send({
-              token: bind_token,
+              token: bindToken,
               client_secret: 'mysecret2',
-              sid: bind_sid
+              sid: bindSid
             })
             .set('Accept', 'application/json')
-          expect(response_submit_token.statusCode).toBe(200)
+          expect(responseSubmitToken.statusCode).toBe(200)
           const longKeyPair: {
             publicKey: string
             privateKey: string
@@ -795,17 +795,17 @@ describe('Use configuration file', () => {
             public: longKeyPair.publicKey,
             private: longKeyPair.privateKey
           })
-          const response_bind = await request(app)
+          const responseBind = await request(app)
             .post('/_matrix/identity/v2/3pid/bind')
             .set('Authorization', `Bearer ${validToken}`)
             .set('Accept', 'application/json')
             .send({
               client_secret: 'mysecret2',
-              sid: bind_sid,
+              sid: bindSid,
               mxid: '@ab:abc.fr'
             })
-          expect(response_bind.statusCode).toBe(200)
-          expect(response_bind.body).toHaveProperty('signatures')
+          expect(responseBind.statusCode).toBe(200)
+          expect(responseBind.body).toHaveProperty('signatures')
           await idServer.cronTasks?.ready
           const response = await request(app)
             .get('/_matrix/identity/v2/hash_details')
@@ -817,7 +817,7 @@ describe('Use configuration file', () => {
           const hash = new Hash()
           await hash.ready
           const computedHash = hash.sha256(`ab@abc.fr mail ${pepper}`)
-          const response_lookup = await request(app)
+          const responseLookup = await request(app)
             .post('/_matrix/identity/v2/lookup')
             .send({
               addresses: [computedHash],
@@ -826,8 +826,8 @@ describe('Use configuration file', () => {
             })
             .set('Authorization', `Bearer ${validToken}`)
             .set('Accept', 'application/json')
-          expect(response_lookup.statusCode).toBe(200)
-          expect(response_lookup.body.mappings).toEqual({
+          expect(responseLookup.statusCode).toBe(200)
+          expect(responseLookup.body.mappings).toEqual({
             [computedHash]: '@ab:abc.fr'
           })
         })
@@ -962,7 +962,7 @@ describe('Use configuration file', () => {
           expect(response.statusCode).toBe(400)
         })
         it('should refuse incompatible session_id and client_secret', async () => {
-          const response_request_token = await request(app)
+          const responseRequestToken = await request(app)
             .post('/_matrix/identity/v2/validate/email/requestToken')
             .set('Authorization', `Bearer ${validToken}`)
             .set('Accept', 'application/json')
@@ -971,15 +971,15 @@ describe('Use configuration file', () => {
               email: 'unbind@unbind.fr',
               send_attempt: 1
             })
-          expect(response_request_token.statusCode).toBe(200)
+          expect(responseRequestToken.statusCode).toBe(200)
           expect(sendMailMock).toHaveBeenCalled()
           expect(sendMailMock.mock.calls[0][0].to).toBe('unbind@unbind.fr')
           expect(sendMailMock.mock.calls[0][0].raw).toMatch(
             /token=([a-zA-Z0-9]{64})&client_secret=mysecret4&sid=([a-zA-Z0-9]{64})/
           )
           token4 = RegExp.$1
-          sid4 = response_request_token.body.sid
-          const response_submit_token = await request(app)
+          sid4 = responseRequestToken.body.sid
+          const responseSubmitToken = await request(app)
             .post('/_matrix/identity/v2/validate/email/submitToken')
             .send({
               token: token4,
@@ -987,8 +987,8 @@ describe('Use configuration file', () => {
               sid: sid4
             })
             .set('Accept', 'application/json')
-          expect(response_submit_token.statusCode).toBe(200)
-          const response_bind = await request(app)
+          expect(responseSubmitToken.statusCode).toBe(200)
+          const responseBind = await request(app)
             .post('/_matrix/identity/v2/3pid/bind')
             .set('Authorization', `Bearer ${validToken}`)
             .set('Accept', 'application/json')
@@ -997,7 +997,7 @@ describe('Use configuration file', () => {
               sid: sid4,
               mxid: '@unbind:unbind.fr'
             })
-          expect(response_bind.statusCode).toBe(200)
+          expect(responseBind.statusCode).toBe(200)
           const response = await request(app)
             .post('/_matrix/identity/v2/3pid/unbind')
             .set('Authorization', `Bearer ${validToken}`)
@@ -1213,7 +1213,21 @@ describe('Use configuration file', () => {
             sender: '@dwho:matrix.org'
           })
         expect(response.statusCode).toBe(400)
-        expect(response.body.errcode).toEqual('M_INVALID_EMAIL')
+        expect(response.body.errcode).toEqual('M_INVALID_PARAM')
+      })
+      it('should reject an invalid phone number', async () => {
+        const response = await request(app)
+          .post('/_matrix/identity/v2/store-invite')
+          .set('Authorization', `Bearer ${validToken}`)
+          .set('Accept', 'application/json')
+          .send({
+            phone: '123',
+            medium: 'msisdn',
+            room_id: '!room:matrix.org',
+            sender: '@dwho:matrix.org'
+          })
+        expect(response.statusCode).toBe(400)
+        expect(response.body.errcode).toEqual('M_INVALID_PARAM')
       })
       it('should alert if the lookup API did not behave as expected', async () => {
         const mockResponse = Promise.resolve({
@@ -1271,7 +1285,7 @@ describe('Use configuration file', () => {
         expect(response.statusCode).toBe(400)
         expect(response.body.errcode).toBe('M_THREEPID_IN_USE')
       })
-      it('should accept a valid request', async () => {
+      it('should accept a valid email request', async () => {
         const mockResponse = Promise.resolve({
           ok: false,
           status: 400,
@@ -1300,6 +1314,39 @@ describe('Use configuration file', () => {
         expect(sendMailMock.mock.calls[0][0].to).toBe('xg@xnr.fr')
         expect(response.body).toHaveProperty('display_name')
         expect(response.body.display_name).not.toBe('xg@xnr.fr')
+        expect(response.body).toHaveProperty('public_keys')
+        expect(response.body).toHaveProperty('token')
+        expect(response.body.token).toMatch(/^[a-zA-Z0-9]{64}$/)
+      })
+      it('should accept a valid phone number request', async () => {
+        const mockResponse = Promise.resolve({
+          ok: false,
+          status: 400,
+          json: () => {
+            return {
+              errcode: 'M_INVALID_PEPPER',
+              error: 'Unknown or invalid pepper - has it been rotated?'
+            }
+          }
+        })
+        // @ts-expect-error mock is unknown
+        fetch.mockImplementation(async () => await mockResponse)
+        await mockResponse
+        const response = await request(app)
+          .post('/_matrix/identity/v2/store-invite')
+          .set('Authorization', `Bearer ${validToken}`)
+          .set('Accept', 'application/json')
+          .send({
+            phone: '33612345678',
+            medium: 'msisdn',
+            room_id: '!room:matrix.org',
+            sender: '@dwho:matrix.org'
+          })
+        console.log(response.body)
+        expect(response.statusCode).toBe(200)
+        // TODO : add call to smsMock when it will be implemented
+        expect(response.body).toHaveProperty('display_name')
+        expect(response.body.display_name).not.toBe('33612345678')
         expect(response.body).toHaveProperty('public_keys')
         expect(response.body).toHaveProperty('token')
         expect(response.body.token).toMatch(/^[a-zA-Z0-9]{64}$/)
@@ -1346,7 +1393,7 @@ describe('Use configuration file', () => {
         // @ts-expect-error mock is unknown
         fetch.mockImplementation(async () => await mockResponse)
         await mockResponse
-        const response_store_invit = await request(app)
+        const responseStoreInvite = await request(app)
           .post('/_matrix/identity/v2/store-invite')
           .set('Authorization', `Bearer ${validToken}`)
           .set('Accept', 'application/json')
@@ -1356,8 +1403,8 @@ describe('Use configuration file', () => {
             room_id: '!room:matrix.org',
             sender: '@dwho:matrix.org'
           })
-        expect(response_store_invit.statusCode).toBe(200)
-        token = response_store_invit.body.token
+        expect(responseStoreInvite.statusCode).toBe(200)
+        token = responseStoreInvite.body.token
         const response = await request(app)
           .post('/_matrix/identity/v2/sign-ed25519')
           .set('Authorization', `Bearer ${validToken}`)
@@ -1365,7 +1412,7 @@ describe('Use configuration file', () => {
           .send({
             mxid: 'invalid_mxid',
             private_key: keyPair.privateKey,
-            token: token
+            token
           })
         expect(response.statusCode).toBe(400)
       })
@@ -1401,7 +1448,7 @@ describe('Use configuration file', () => {
           .send({
             mxid: '@test:matrix.org',
             private_key: keyPair.privateKey,
-            token: token
+            token
           })
         expect(response.statusCode).toBe(200)
         expect(response.body).toHaveProperty('signatures')

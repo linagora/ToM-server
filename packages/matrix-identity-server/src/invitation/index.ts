@@ -14,6 +14,7 @@ import Mailer from '../utils/mailer'
 
 interface storeInvitationArgs {
   address: string
+  phone: string
   medium: string
   room_alias?: string
   room_avatar_url?: string
@@ -27,7 +28,8 @@ interface storeInvitationArgs {
 }
 
 const schema = {
-  address: true,
+  address: false,
+  phone: false,
   medium: true,
   room_alias: false,
   room_avatar_url: false,
@@ -55,18 +57,36 @@ const preConfigureTemplate = (
   )
 }
 
+// TODO : modify this if necessary
+const inviteLink = (
+  server: string,
+  senderId: string,
+  roomAlias?: string
+): string => {
+  if (roomAlias != null) {
+    return `https://${server}/#/${roomAlias}`
+  } else {
+    return `https://${server}/#/${senderId}`
+  }
+}
+
 const mailBody = (
   template: string,
   // eslint-disable-next-line @typescript-eslint/naming-convention
   inviter_name: string,
   // eslint-disable-next-line @typescript-eslint/naming-convention
+  sender_user_id: string,
   dst: string,
   // eslint-disable-next-line @typescript-eslint/naming-convention
   room_name: string,
   // eslint-disable-next-line @typescript-eslint/naming-convention
   room_avatar: string,
   // eslint-disable-next-line @typescript-eslint/naming-convention
-  room_type: string
+  room_type: string,
+  // eslint-disable-next-line @typescript-eslint/naming-convention
+  server_name_creating_invitation: string,
+  // eslint-disable-next-line @typescript-eslint/naming-convention
+  room_alias?: string
 ): string => {
   return (
     template
@@ -78,46 +98,56 @@ const mailBody = (
       .replace(/__date__/g, new Date().toUTCString())
       // initialize message id
       .replace(/__messageid__/g, randomString(32))
-      .replace(/__room_name__/g, room_name ?? '')
-      .replace(/__room_avatar__/g, room_avatar ?? '')
-      .replace(/__room_type__/g, room_type ?? '')
+      .replace(/__room_name__/g, room_name)
+      .replace(/__room_avatar__/g, room_avatar)
+      .replace(/__room_type__/g, room_type)
+      .replace(
+        /__link__/g,
+        inviteLink(server_name_creating_invitation, sender_user_id, room_alias)
+      )
   )
 }
 
-const invitationDelay = 3155760000 // 100 years in seconds
-
 // To complete if another 3PID is added for this endpoint
-const validMediums: string[] = ['email']
+const validMediums: string[] = ['email', 'msisdn']
 
 // Regular expressions for different mediums
 const validEmailRe = /^\w[+.-\w]*\w@\w[.-\w]*\w\.\w{2,6}$/
+const validPhoneRe = /^\d{4,16}$/
 
-const redactAddress = (address: string): string => {
-  // Assuming that the address is a valid email address
-  const atIndex = address.indexOf('@')
-  const localPart = address.slice(0, atIndex)
-  const domainPart = address.slice(atIndex + 1)
+const redactAddress = (medium: string, address: string): string => {
+  switch (medium) {
+    case 'email': {
+      const atIndex = address.indexOf('@')
+      const localPart = address.slice(0, atIndex)
+      const domainPart = address.slice(atIndex + 1)
 
-  const replaceRandomCharacters = (
-    str: string,
-    redactionRatio: number
-  ): string => {
-    const chars = str.split('')
-    const redactionCount = Math.ceil(chars.length * redactionRatio)
+      const redactedLocalPart = replaceLastCharacters(localPart)
+      const redactedDomainPart = replaceLastCharacters(domainPart)
 
-    for (let i = 0; i < redactionCount; i++) {
-      const index = i * Math.floor(chars.length / redactionCount)
-      chars[index] = '*'
+      return `${redactedLocalPart}@${redactedDomainPart}`
     }
+    case 'msisdn':
+      return replaceLastCharacters(address)
+    /* istanbul ignore next : call to redactAddress is done after checking if the medium was valid */
+    default:
+      return address
+  }
+}
 
-    return chars.join('')
+const replaceLastCharacters = (
+  str: string,
+  redactionRatio: number = 0.4
+): string => {
+  const chars = str.split('')
+  const redactionCount = Math.ceil(chars.length * redactionRatio)
+
+  // Replace the last `redactionCount` characters with '*'
+  for (let i = chars.length - redactionCount; i < chars.length; i++) {
+    chars[i] = '*'
   }
 
-  const redactionRatio = 0.3 // Redact 30% of the characters
-  const redactedLocalPart = replaceRandomCharacters(localPart, redactionRatio)
-  const redactedDomainPart = replaceRandomCharacters(domainPart, redactionRatio)
-
-  return `${redactedLocalPart}@${redactedDomainPart}`
+  return chars.join('')
 }
 
 const StoreInvit = <T extends string = never>(
@@ -134,10 +164,10 @@ const StoreInvit = <T extends string = never>(
   return (req, res) => {
     idServer.authenticate(req, res, (_data, _id) => {
       jsonContent(req, res, idServer.logger, (obj) => {
+        // eslint-disable-next-line @typescript-eslint/no-misused-promises
         validateParameters(res, schema, obj, idServer.logger, async (obj) => {
-          const _address = (obj as storeInvitationArgs).address
-          const _medium = (obj as storeInvitationArgs).medium
-          if (!validMediums.includes(_medium)) {
+          const medium = (obj as storeInvitationArgs).medium
+          if (!validMediums.includes(medium)) {
             send(
               res,
               400,
@@ -145,13 +175,23 @@ const StoreInvit = <T extends string = never>(
             )
             return
           }
+          const address = (obj as storeInvitationArgs).address
+          const phone = (obj as storeInvitationArgs).phone
+          let mediumAddress: string = ''
           // Check the validity of the media
-          switch (_medium) {
+          switch (medium) {
             case 'email':
-              if (!validEmailRe.test(_address)) {
-                send(res, 400, errMsg('invalidEmail'))
+              if (address == null || !validEmailRe.test(address)) {
+                send(res, 400, errMsg('invalidParam', 'Invalid email address.'))
                 return
-              }
+              } else mediumAddress = address
+              break
+            case 'msisdn':
+              if (phone == null || !validPhoneRe.test(phone)) {
+                send(res, 400, errMsg('invalidParam', 'Invalid phone number.'))
+                return
+              } else mediumAddress = phone
+              break
           }
           // Call to the lookup API to check for any existing third-party identifiers
           try {
@@ -170,13 +210,12 @@ const StoreInvit = <T extends string = never>(
                   'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                  addresses: [_address],
+                  addresses: [mediumAddress],
                   algorithm: 'sha256',
                   pepper: _pepper
                 })
               }
             )
-
             if (response.status === 200) {
               send(res, 400, {
                 errcode: 'M_THREEPID_IN_USE',
@@ -185,6 +224,7 @@ const StoreInvit = <T extends string = never>(
                 mxid: (obj as storeInvitationArgs).sender
               })
             } else if (response.status === 400) {
+              // Create invitation token
               const ephemeralKey = await idServer.db.createKeypair(
                 'shortTerm',
                 'curve25519'
@@ -193,24 +233,35 @@ const StoreInvit = <T extends string = never>(
                 ...(obj as storeInvitationArgs),
                 key: ephemeralKey
               }
-              const _token = await idServer.db.createToken(
-                objWithKey,
-                invitationDelay
+              const token = await idServer.db.createInvitationToken(
+                mediumAddress,
+                objWithKey
               )
-              // send email
-              void transport.sendMail({
-                to: _address,
-                raw: mailBody(
-                  verificationTemplate,
-                  (obj as storeInvitationArgs).sender_display_name ?? '*****',
-                  _address,
-                  (obj as storeInvitationArgs).room_name ?? '*****',
-                  (obj as storeInvitationArgs).room_avatar_url ?? '*****',
-                  (obj as storeInvitationArgs).room_type ?? '*****'
-                )
-              })
-              // send 200 response
-              const redactedAddress = redactAddress(_address)
+              // Send email/sms
+              switch (medium) {
+                case 'email':
+                  void transport.sendMail({
+                    to: address,
+                    raw: mailBody(
+                      verificationTemplate,
+                      (obj as storeInvitationArgs).sender_display_name ??
+                        '*****',
+                      (obj as storeInvitationArgs).sender,
+                      address,
+                      (obj as storeInvitationArgs).room_name ?? '*****',
+                      (obj as storeInvitationArgs).room_avatar_url ?? '*****',
+                      (obj as storeInvitationArgs).room_type ?? '*****',
+                      idServer.conf.invitation_server_name ?? 'matrix.to',
+                      (obj as storeInvitationArgs).room_alias
+                    )
+                  })
+                  break
+                case 'msisdn':
+                  // TODO implement smsSender
+                  break
+              }
+              // Send 200 response
+              const redactedAddress = redactAddress(medium, mediumAddress)
               idServer.db
                 .getKeys('current')
                 .then((keys) => {
@@ -226,20 +277,24 @@ const StoreInvit = <T extends string = never>(
                         public_key: ephemeralKey.privateKey
                       }
                     ],
-                    token: _token
+                    token
                   }
                   send(res, 200, responseBody)
                 })
-                .catch((e) => {
+                .catch((err) => {
                   /* istanbul ignore next */
                   idServer.logger.debug(
                     'Error while getting the current key',
-                    e
+                    err
                   )
                   /* istanbul ignore next */
-                  throw e
+                  send(res, 500, errMsg('unknown', err))
                 })
             } else {
+              /* istanbul ignore next */
+              idServer.logger.error(
+                'Unexpected response statusCode from the /_matrix/identity/v2/lookup API'
+              )
               send(
                 res,
                 500,
@@ -249,14 +304,14 @@ const StoreInvit = <T extends string = never>(
                 )
               )
             }
-          } catch (e) {
+          } catch (err) {
             /* istanbul ignore next */
-            idServer.logger.debug(
+            idServer.logger.error(
               'Error while making a call to the lookup API (/_matrix/identity/v2/lookup)',
-              e
+              err
             )
             /* istanbul ignore next */
-            throw e
+            send(res, 500, errMsg('unknown', err as string))
           }
         })
       })
