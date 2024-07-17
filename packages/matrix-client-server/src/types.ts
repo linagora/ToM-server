@@ -9,6 +9,7 @@ export type Config = MIdentityServerConfig & {
   login_flows: LoginFlowContent
   application_services: AppServiceRegistration[]
   is_registration_enabled: boolean
+  sms_folder: string
 }
 
 export type DbGetResult = Array<
