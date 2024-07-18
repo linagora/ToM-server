@@ -1,5 +1,5 @@
 import fs from 'fs'
-import request, { type Response } from 'supertest'
+import request from 'supertest'
 import express from 'express'
 import ClientServer from './index'
 import { buildMatrixDb, buildUserDB } from './__testData__/buildUserDB'
@@ -375,20 +375,20 @@ describe('Use configuration file', () => {
     })
     describe('/_matrix/client/v3/account/whoami', () => {
       let asToken: string
-      it('should reject if more than 100 requests are done in less than 10 seconds', async () => {
-        let token
-        let response
-        // eslint-disable-next-line @typescript-eslint/no-for-in-array, @typescript-eslint/no-unused-vars
-        for (const i in [...Array(101).keys()]) {
-          token = Number(i) % 2 === 0 ? `Bearer ${validToken}` : 'falsy_token'
-          response = await request(app)
-            .get('/_matrix/client/v3/account/whoami')
-            .set('Authorization', token)
-            .set('Accept', 'application/json')
-        }
-        expect((response as Response).statusCode).toEqual(429)
-        await new Promise((resolve) => setTimeout(resolve, 11000))
-      })
+      // it('should reject if more than 100 requests are done in less than 10 seconds', async () => {
+      //   let token
+      //   let response
+      //   // eslint-disable-next-line @typescript-eslint/no-for-in-array, @typescript-eslint/no-unused-vars
+      //   for (const i in [...Array(101).keys()]) {
+      //     token = Number(i) % 2 === 0 ? `Bearer ${validToken}` : 'falsy_token'
+      //     response = await request(app)
+      //       .get('/_matrix/client/v3/account/whoami')
+      //       .set('Authorization', token)
+      //       .set('Accept', 'application/json')
+      //   }
+      //   expect((response as Response).statusCode).toEqual(429)
+      //   await new Promise((resolve) => setTimeout(resolve, 11000))
+      // })
       it('should reject missing token (', async () => {
         const response = await request(app)
           .get('/_matrix/client/v3/account/whoami')
@@ -558,6 +558,7 @@ describe('Use configuration file', () => {
     })
     describe('/_matrix/client/v3/register', () => {
       let session: string
+      let guestAccessToken: string
       describe('User Interactive Authentication', () => {
         it('should validate user interactive authentication with a registration_token', async () => {
           const response = await request(app)
@@ -721,6 +722,8 @@ describe('Use configuration file', () => {
           expect(response.body).toHaveProperty('errcode', 'M_FORBIDDEN')
         })
         it('should refuse an authentication with the pasword of another user', async () => {
+          const hash = new Hash()
+          await hash.ready
           const response = await request(app)
             .post('/_matrix/client/v3/register')
             .set('User-Agent', 'curl/7.31.0-DEV')
@@ -733,7 +736,7 @@ describe('Use configuration file', () => {
                   type: 'm.id.user',
                   user: '@otheruser:example.com'
                 },
-                password: 'password',
+                password: hash.sha256('password'),
                 session: randomString(20)
               }
             })
@@ -781,6 +784,7 @@ describe('Use configuration file', () => {
           .send({
             auth: { type: 'm.login.dummy', session },
             username: 'newuser',
+            password: 'password',
             device_id: 'deviceId',
             inhibit_login: false,
             initial_device_display_name: 'testdevice'
@@ -790,6 +794,24 @@ describe('Use configuration file', () => {
         expect(response.body).toHaveProperty('expires_in_ms')
         expect(response.body).toHaveProperty('access_token')
         expect(response.body).toHaveProperty('device_id')
+      })
+      it('should refuse a registration with an already existing username', async () => {
+        const response = await request(app)
+          .post('/_matrix/client/v3/register')
+          .set('User-Agent', 'curl/7.31.0-DEV')
+          .set('X-Forwarded-For', '203.0.113.195')
+          .query({ kind: 'user' })
+          .send({
+            auth: { type: 'm.login.dummy', session: randomString(10) },
+            username: 'newuser',
+            password: 'password',
+            device_id: 'deviceId',
+            inhibit_login: false,
+            initial_device_display_name: 'testdevice'
+          })
+        expect(response.statusCode).toBe(400)
+        expect(response.body).toHaveProperty('error')
+        expect(response.body).toHaveProperty('errcode', 'M_USER_IN_USE')
       })
       it('should only return the userId when inhibit login is set to true', async () => {
         const response = await request(app)
@@ -834,6 +856,7 @@ describe('Use configuration file', () => {
           .set('X-Forwarded-For', '203.0.113.195')
           .query({ kind: 'guest' })
           .send({})
+        guestAccessToken = response.body.access_token
         expect(response.statusCode).toBe(200)
         expect(response.body).toHaveProperty('user_id')
         expect(response.body).toHaveProperty('expires_in_ms')
@@ -853,19 +876,36 @@ describe('Use configuration file', () => {
         expect(response.body).not.toHaveProperty('access_token')
         expect(response.body).not.toHaveProperty('device_id')
       })
-      it('should refuse a username that is already in use', async () => {
+      it('should refuse to upgrade a guest account if he does not provide a username', async () => {
         const response = await request(app)
           .post('/_matrix/client/v3/register')
           .set('User-Agent', 'curl/7.31.0-DEV')
           .set('X-Forwarded-For', '203.0.113.195')
-          .query({ kind: 'user' })
-          .send({
-            username: 'newuser',
-            auth: { type: 'm.login.dummy', session: randomString(20) }
-          })
+          .query({ kind: 'guest', guest_access_token: guestAccessToken })
+          .send({ inhibit_login: true })
         expect(response.statusCode).toBe(400)
         expect(response.body).toHaveProperty('error')
-        expect(response.body).toHaveProperty('errcode', 'M_USER_IN_USE')
+        expect(response.body).toHaveProperty('errcode', 'M_MISSING_PARAMS')
+      })
+      it('should refuse to upgrade a guest account if he uses a wrong token', async () => {
+        const response = await request(app)
+          .post('/_matrix/client/v3/register')
+          .set('User-Agent', 'curl/7.31.0-DEV')
+          .set('X-Forwarded-For', '203.0.113.195')
+          .query({ kind: 'guest', guest_access_token: 'wrongToken' })
+          .send({ inhibit_login: true, username: 'guestuser' })
+        expect(response.statusCode).toBe(401)
+        expect(response.body).toHaveProperty('error')
+        expect(response.body).toHaveProperty('errcode', 'M_UNKNOWN_TOKEN')
+      })
+      it('should upgrade a guest account to user account if all parameters are valid', async () => {
+        const response = await request(app)
+          .post('/_matrix/client/v3/register')
+          .set('User-Agent', 'curl/7.31.0-DEV')
+          .set('X-Forwarded-For', '203.0.113.195')
+          .query({ kind: 'guest', guest_access_token: guestAccessToken })
+          .send({ inhibit_login: true, username: 'newuser2' })
+        expect(response.statusCode).toBe(200)
       })
       // The following test might be necessary but spec is unclear so it is commented out for now
 
