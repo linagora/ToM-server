@@ -9,7 +9,6 @@ import { getLogger, type TwakeLogger } from '@twake/logger'
 import { randomString } from '@twake/crypto'
 import { setupTokens, validToken, validToken2 } from '../utils/setupTokens'
 
-process.env.TWAKE_CLIENT_SERVER_CONF = './src/__testData__/registerConf.json'
 jest.mock('node-fetch', () => jest.fn())
 
 let conf: Config
@@ -22,11 +21,7 @@ beforeAll((done) => {
   // @ts-expect-error TS doesn't understand that the config is valid
   conf = {
     ...defaultConfig,
-    cron_service: false,
-    database_engine: 'sqlite',
     base_url: 'http://example.com/',
-    userdb_engine: 'sqlite',
-    matrix_database_engine: 'sqlite',
     matrix_database_host: './src/__testData__/testMatrixRoom.db',
     userdb_host: './src/__testData__/testRoom.db',
     database_host: './src/__testData__/testRoom.db'
@@ -63,7 +58,7 @@ afterAll(() => {
 
 describe('Use configuration file', () => {
   beforeAll((done) => {
-    clientServer = new ClientServer()
+    clientServer = new ClientServer(conf)
     app = express()
     clientServer.ready
       .then(() => {

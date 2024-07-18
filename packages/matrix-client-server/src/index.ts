@@ -57,6 +57,8 @@ import getStatus from './presence/getStatus'
 import putStatus from './presence/putStatus'
 import getLogin from './login/getLogin'
 import add from './account/3pid/add'
+import PostFilter from './filter/postFilter'
+import GetFilter from './filter/getFilter'
 import refresh from './refresh'
 
 const tables = {
@@ -158,7 +160,9 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
             '/_matrix/client/v3/presence/:userId/status': getStatus(this),
             '/_matrix/client/v3/login': getLogin(this),
             '/_matrix/client/v3/account/3pid/add': badMethod,
-            '/_matrix/client/v3/refresh': badMethod
+            '/_matrix/client/v3/refresh': badMethod,
+            '/_matrix/client/v3/user/:userId/filter': badMethod,
+            '/_matrix/client/v3/user/:userId/filter/:filterId': GetFilter(this)
           }
           this.api.post = {
             '/_matrix/client/v3/account/whoami': badMethod,
@@ -197,7 +201,9 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
             '/_matrix/client/v3/presence/:userId/status': badMethod,
             '/_matrix/client/v3/login': badMethod,
             '/_matrix/client/v3/account/3pid/add': add(this),
-            '/_matrix/client/v3/refresh': refresh(this)
+            '/_matrix/client/v3/refresh': refresh(this),
+            '/_matrix/client/v3/user/:userId/filter': PostFilter(this),
+            '/_matrix/client/v3/user/:userId/filter/:filterId': badMethod
           }
           this.api.put = {
             '/_matrix/client/v3/account/whoami': badMethod,
@@ -236,7 +242,9 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
             '/_matrix/client/v3/presence/:userId/status': putStatus(this),
             '/_matrix/client/v3/login': badMethod,
             '/_matrix/client/v3/account/3pid/add': badMethod,
-            '/_matrix/client/v3/refresh': badMethod
+            '/_matrix/client/v3/refresh': badMethod,
+            '/_matrix/client/v3/user/:userId/filter': badMethod,
+            '/_matrix/client/v3/user/:userId/filter/:filterId': badMethod
           }
           this.api.delete = {
             '/_matrix/client/v3/account/whoami': badMethod,
@@ -265,7 +273,9 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
             '/_matrix/client/v3/presence/:userId/status': badMethod,
             '/_matrix/client/v3/login': badMethod,
             '/_matrix/client/v3/account/3pid/add': badMethod,
-            '/_matrix/client/v3/refresh': badMethod
+            '/_matrix/client/v3/refresh': badMethod,
+            '/_matrix/client/v3/user/:userId/filter': badMethod,
+            '/_matrix/client/v3/user/:userId/filter/:filterId': badMethod
           }
           resolve(true)
         })

@@ -34,11 +34,7 @@ beforeAll((done) => {
   // @ts-expect-error TS doesn't understand that the config is valid
   conf = {
     ...defaultConfig,
-    cron_service: false,
-    database_engine: 'sqlite',
-    base_url: 'http://example.com/',
-    userdb_engine: 'sqlite',
-    matrix_database_engine: 'sqlite'
+    base_url: 'http://example.com/'
   }
   if (process.env.TEST_PG === 'yes') {
     conf.database_engine = 'pg'
