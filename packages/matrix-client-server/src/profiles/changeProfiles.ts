@@ -43,7 +43,7 @@ export const changeAvatarUrl = (
   clientServer: MatrixClientServer
 ): expressAppHandler => {
   return (req, res) => {
-    /* 
+    /*
     Sets the avatar_url of a user
 
     Arguments to take into account :
@@ -52,7 +52,7 @@ export const changeAvatarUrl = (
       newAvatarUrl: The avatar_url to give this user.
       byAdmin: Whether this change was made by an administrator.
 
-      TODO : The following arguments are not used in this function, 
+      TODO : The following arguments are not used in this function,
       but are used in the equivalent function in the Synapse codebase:
         deactivation: Whether this change was made while deactivating the user.
         propagate: Whether this change also applies to the user's membership events.
@@ -141,7 +141,7 @@ export const changeDisplayname = (
   clientServer: MatrixClientServer
 ): expressAppHandler => {
   return (req, res) => {
-    /* 
+    /*
     Set the displayname of a user
 
     Arguments to take into account :
@@ -150,7 +150,7 @@ export const changeDisplayname = (
       newDisplayname: The displayname to give this user.
       byAdmin: Whether this change was made by an administrator.
 
-      TODO : The following arguments are not used in this function, 
+      TODO : The following arguments are not used in this function,
       but are used in the equivalent function in the Synapse codebase:
         deactivation: Whether this change was made while deactivating the user.
         propagate: Whether this change also applies to the user's membership events.

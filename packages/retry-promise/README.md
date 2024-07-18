@@ -29,7 +29,7 @@ const allPromises = RetryPromise.all([
         fetch(URL_1)
           .then(val => resolve())
           .catch(reject)
-      }), 
+      }),
       new RetryPromise((resolve, reject) => {
         fetch(URL_2)
           .then(val => resolve())
@@ -42,7 +42,7 @@ const allSettledtPromises = RetryPromise.allSettled([
         fetch(URL_1)
           .then(val => resolve())
           .catch(reject)
-      }), 
+      }),
       new RetryPromise((resolve, reject) => {
         fetch(URL_2)
           .then(val => resolve())
