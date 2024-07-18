@@ -9,6 +9,7 @@ import { getLogger, type TwakeLogger } from '@twake/logger'
 import { randomString } from '@twake/crypto'
 import { setupTokens, validToken, validToken2 } from '../utils/setupTokens'
 
+process.env.TWAKE_CLIENT_SERVER_CONF = './src/__testData__/registerConf.json'
 jest.mock('node-fetch', () => jest.fn())
 
 let conf: Config
