@@ -1,6 +1,45 @@
-FROM node:18
+# Base for final image
+FROM debian:bookworm-slim as node-minimal
 
-env BASE_URL= \
+RUN apt update && \
+    apt -y dist-upgrade && \
+    apt -y install nodejs && \
+    apt autoremove -y && \
+    apt clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Temporary image to build app
+FROM debian:bookworm-slim as builder
+
+RUN apt update && \
+    apt -y dist-upgrade && \
+    apt -y install nodejs npm && \
+    apt autoremove -y && \
+    apt clean && \
+    rm -rf /var/lib/apt/lists/*
+
+WORKDIR /usr/src/app
+
+# COPIES
+# 1. Files
+COPY package*.json .njsscan *.js *.json *.mjs LICENSE ./
+
+# 2. Directories
+COPY .husky ./.husky/
+COPY packages ./packages/
+COPY landing /usr/src/app/landing
+#COPY node_modules ./node_modules/
+
+# Build and clean
+
+RUN npm install && npm run build && \
+    rm -rf node_modules */*/node_modules && \
+    npm install --production --ignore-scripts && \
+    npm cache clean --force
+
+FROM node-minimal as tom-server
+
+ENV BASE_URL= \
     CRON_SERVICE= \
     CROWDSEC_URI= \
     CROWDSEC_KEY= \
@@ -54,15 +93,9 @@ env BASE_URL= \
     RATE_LIMITING_NB_REQUESTS= \
     TRUSTED_PROXIES=
 
-RUN apt update && apt -y dist-upgrade
+COPY --from=1 /usr/src/app /usr/src/app/
 
 WORKDIR /usr/src/app
-
-COPY package*.json ./
-
-COPY . .
-
-RUN npm install && npm run build && npm cache clean --force
 
 EXPOSE 3000
 CMD [ "node", "/usr/src/app/server.mjs" ]

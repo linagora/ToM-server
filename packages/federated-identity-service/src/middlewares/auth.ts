@@ -1,17 +1,14 @@
 import { type TwakeLogger } from '@twake/logger'
-import {
-  MatrixErrors,
-  Utils,
-  type tokenContent
-} from '@twake/matrix-identity-server'
+import { errMsg, send } from '@twake/utils'
+import { Utils, type tokenContent } from '@twake/matrix-identity-server'
 import { type NextFunction, type Response } from 'express'
-import { type AuthRequest, type IdentityServerDb } from '../types'
+import { type AuthRequest, type FdServerDb } from '../types'
 import { convertToIPv6 } from '../utils/ip-address'
 
 const tokenTrustedServer = 'TOKEN_TRUSTED_SERVER'
 
 export const Authenticate = (
-  db: IdentityServerDb,
+  db: FdServerDb,
   trustedServersList: string[],
   trustXForwardedForHeader: boolean,
   logger: TwakeLogger
@@ -56,7 +53,7 @@ export const Authenticate = (
             token = re[1]
           }
           // @ts-expect-error req.query exists
-        } else if (req.query != null) {
+        } else if (req.query && Object.keys(req.query).length > 0) {
           // @ts-expect-error req.query.access_token may be null
           token = req.query.access_token
         }
@@ -66,10 +63,10 @@ export const Authenticate = (
               callbackMethod(JSON.parse(rows[0].data as string), token)
             })
             .catch((e) => {
-              Utils.send(res, 401, MatrixErrors.errMsg('unAuthorized'))
+              send(res, 401, errMsg('unAuthorized'))
             })
         } else {
-          Utils.send(res, 401, MatrixErrors.errMsg('unAuthorized'))
+          send(res, 401, errMsg('unAuthorized'))
         }
       }
     } catch (error) {
@@ -82,7 +79,7 @@ export const Authenticate = (
         httpMethod: request.method,
         endpointPath: request.originalUrl
       })
-      Utils.send(res, 401, MatrixErrors.errMsg('unAuthorized'))
+      send(res, 401, errMsg('unAuthorized'))
     }
   }
 }

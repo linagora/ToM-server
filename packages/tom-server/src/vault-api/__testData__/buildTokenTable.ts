@@ -21,22 +21,27 @@ const buildTokenTable = (conf: Config): Promise<void> => {
             token.content
           )}')`,
           () => {
-            dbManager.run('CREATE TABLE users (uid varchar(8), mobile varchar(12), mail varchar(32))', () => {
-              dbManager.close((err) => {
-                /* istanbul ignore if */
-                if(err != null) {
-                  console.error(err)
-                  reject(err)
-                } else {
-                  resolve()
-                }
-              })
-            })
+            dbManager.run(
+              'CREATE TABLE users (uid varchar(8), mobile varchar(12), mail varchar(32))',
+              () => {
+                dbManager.close((err) => {
+                  /* istanbul ignore if */
+                  if (err != null) {
+                    console.error(err)
+                    reject(err)
+                  } else {
+                    resolve()
+                  }
+                })
+              }
+            )
           }
         )
     )
 
-    matrixDbManager.run('CREATE TABLE users (uid varchar(8), name varchar(32), mobile varchar(12), mail varchar(32))')
+    matrixDbManager.run(
+      'CREATE TABLE users (uid varchar(8), name varchar(32), mobile varchar(12), mail varchar(32))'
+    )
   })
 }
 

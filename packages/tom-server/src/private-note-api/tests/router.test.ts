@@ -24,7 +24,7 @@ const mockLogger: Partial<TwakeLogger> = {
 }
 
 jest
-  .spyOn(IdentityServerDb.default.prototype, 'get')
+  .spyOn(IdentityServerDb.prototype, 'get')
   .mockResolvedValue([{ data: '"test"' }])
 
 const idServer = new IdServer(

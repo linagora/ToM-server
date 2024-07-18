@@ -4,15 +4,20 @@ import MatrixIdentityServer from '@twake/matrix-identity-server'
 import { Router } from 'express'
 import fs from 'fs'
 import defaultConfig from './config.json'
-import initializeDb from './db'
 import { Authenticate } from './middlewares/auth'
 import Routes from './routes/routes'
-import { type Config } from './types'
+import { type Config, type FdServerDb, type fdDbCollections } from './types'
 import { isIpLiteral, isNetwork } from './utils/ip-address'
 
-export default class FederatedIdentityService extends MatrixIdentityServer {
+const tables = {
+  hashByServer:
+    'hash varchar(48), server text, pepper text, PRIMARY KEY (hash, server, pepper)'
+}
+
+export default class FederatedIdentityService extends MatrixIdentityServer<fdDbCollections> {
   routes = Router()
   declare conf: Config
+  declare db: FdServerDb
   constructor(
     conf?: Partial<Config>,
     confDesc?: ConfigDescription,
@@ -30,7 +35,7 @@ export default class FederatedIdentityService extends MatrixIdentityServer {
         ? conf
         : undefined
     ) as Config
-    super(serverConf, confDesc, logger)
+    super(serverConf, confDesc, logger, tables)
     this.conf.trusted_servers_addresses =
       typeof this.conf.trusted_servers_addresses === 'string'
         ? (this.conf.trusted_servers_addresses as string)
@@ -57,10 +62,6 @@ export default class FederatedIdentityService extends MatrixIdentityServer {
     const superReady = this.ready
     this.ready = new Promise((resolve, reject) => {
       superReady
-        // eslint-disable-next-line @typescript-eslint/promise-function-async
-        .then(() => {
-          return initializeDb(this.db, this.conf, this.logger)
-        })
         .then(() => {
           this.routes = Routes(
             this.api,

@@ -9,17 +9,17 @@ services:
       - ./nginx/ssl/auth.example.com.crt:/etc/ssl/certs/ca-certificates.crt
     depends_on:
       - auth
-    environment: 
+    environment:
       - UID=${MYUID}
       - VIRTUAL_PORT=8008
       - VIRTUAL_HOST=matrix.example.com
     healthcheck:
-      test: ["CMD", "curl", "-fSs", "http://localhost:8008/health"]
+      test: ['CMD', 'curl', '-fSs', 'http://localhost:8008/health']
       interval: 10s
       timeout: 10s
       retries: 3
     extra_hosts:
-      - "host.docker.internal:host-gateway"
+      - 'host.docker.internal:host-gateway'
 
   auth:
     image: yadd/lemonldap-ng-portal:2.18.2-9
@@ -33,7 +33,7 @@ services:
       - PORTAL=https://auth.example.com
       - VIRTUAL_HOST=auth.example.com
     extra_hosts:
-      - "host.docker.internal:host-gateway"
+      - 'host.docker.internal:host-gateway'
 
   nginx-proxy:
     image: nginxproxy/nginx-proxy

@@ -123,7 +123,7 @@ describe('Vault API server', () => {
   it('reject not allowed method with 405', async () => {
     const response = await request(app).patch(endpoint)
     expect(response.statusCode).toBe(405)
-    expect(response.body).toStrictEqual({ 
+    expect(response.body).toStrictEqual({
       error: 'Method not allowed'
     })
   })
@@ -174,7 +174,6 @@ describe('Vault API server', () => {
     const recoverySentence = 'This is another recovery sentence'
     await new Promise<void>((resolve, reject) => {
       vaultApiServer.db
-        // @ts-expect-error recoveryWords not in Collections
         ?.insert('recoveryWords', {
           userId: matrixServerResponseBody.user_id,
           words: recoverySentence
@@ -281,7 +280,6 @@ describe('Vault API server', () => {
     // eslint-disable-next-line @typescript-eslint/return-await
     return new Promise<void>((resolve, reject) => {
       vaultApiServer.db
-        // @ts-expect-error matrixTokens isn't member of Collections
         ?.deleteEqual('matrixTokens', 'id', accessToken)
         .then(() => {
           resolve()
@@ -296,7 +294,6 @@ describe('Vault API server', () => {
     // eslint-disable-next-line @typescript-eslint/return-await
     return new Promise<void>((resolve, reject) => {
       vaultApiServer.db
-        // @ts-expect-error recoveryWords not in Collections
         ?.deleteEqual('recoveryWords', 'userId', userId)
         .then(() => {
           resolve()

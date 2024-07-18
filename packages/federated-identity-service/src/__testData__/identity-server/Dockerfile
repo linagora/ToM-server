@@ -11,6 +11,7 @@ COPY ./packages/logger ./packages/logger
 COPY ./packages/crypto ./packages/crypto
 COPY ./packages/config-parser ./packages/config-parser
 COPY ./packages/matrix-resolve ./packages/matrix-resolve
+COPY ./packages/utils ./packages/utils
 COPY ./.husky .husky
 COPY ./lerna.json ./
 COPY ./tsconfig-build.json ./

@@ -49,11 +49,11 @@ const mockRequestDefaultProperties: Partial<Request> = {
 }
 
 jest
-  .spyOn(IdentityServerDb.default.prototype, 'get')
+  .spyOn(IdentityServerDb.prototype, 'get')
   .mockResolvedValue([{ id: token.value, data: JSON.stringify(token.content) }])
 
 jest
-  .spyOn(IdentityServerDb.default.prototype, 'insert')
+  .spyOn(IdentityServerDb.prototype, 'insert')
   .mockResolvedValue([{ id: token.value, data: JSON.stringify(token.content) }])
 
 const idServer = new IdServer(

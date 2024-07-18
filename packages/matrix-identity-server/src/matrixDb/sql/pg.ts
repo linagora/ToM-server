@@ -1,11 +1,11 @@
 import { type TwakeLogger } from '@twake/logger'
 import { type ClientConfig } from 'pg'
+import { type Collections } from '..'
 import { type MatrixDBBackend } from '../'
-import { type Collections } from '../../db'
 import Pg from '../../db/sql/pg'
 import { type Config } from '../../types'
 
-class MatrixDBPg extends Pg implements MatrixDBBackend {
+class MatrixDBPg extends Pg<Collections> implements MatrixDBBackend {
   // eslint-disable-next-line @typescript-eslint/promise-function-async
   createDatabases(
     conf: Config,

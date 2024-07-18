@@ -1,11 +1,8 @@
 import { type TwakeLogger } from '@twake/logger'
-import { Utils, errMsg, type tokenContent } from '@twake/matrix-identity-server'
+import { type tokenContent } from '@twake/matrix-identity-server'
+import { epoch, errMsg, send } from '@twake/utils'
 import fetch from 'node-fetch'
-import {
-  type AuthenticationFunction,
-  type Config,
-  type IdentityServerDb
-} from '../../types'
+import type { AuthenticationFunction, Config, TwakeDB } from '../../types'
 
 export interface WhoAmIResponse {
   user_id?: string
@@ -14,7 +11,7 @@ export interface WhoAmIResponse {
 }
 
 const Authenticate = (
-  db: IdentityServerDb,
+  db: TwakeDB,
   conf: Config,
   logger: TwakeLogger
 ): AuthenticationFunction => {
@@ -27,12 +24,11 @@ const Authenticate = (
         token = re[1]
       }
       // @ts-expect-error req.query exists
-    } else if (req.query != null) {
+    } else if (req.query && Object.keys(req.query).length > 0) {
       // @ts-expect-error req.query.access_token may be null
       token = req.query.access_token
     }
     if (token != null) {
-      // @ts-expect-error matrixTokens not in Collections
       db.get('matrixTokens', ['data'], { id: token })
         .then((rows) => {
           if (rows.length === 0) {
@@ -59,10 +55,9 @@ const Authenticate = (
               if (uid != null) {
                 const data: tokenContent = {
                   sub: uid,
-                  epoch: Utils.epoch()
+                  epoch: epoch()
                 }
                 // STORE
-                // @ts-expect-error recoveryWords not in Collections
                 db.insert('matrixTokens', {
                   // eslint-disable-next-line n/no-callback-literal
                   // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
@@ -79,19 +74,19 @@ const Authenticate = (
                 callback(data, token)
               } else {
                 logger.warn('Bad token', userInfo)
-                Utils.send(res, 401, errMsg('unAuthorized'))
+                send(res, 401, errMsg('unAuthorized'))
               }
             })
             .catch((e) => {
               /* istanbul ignore next */
               logger.debug('Fetch error', e)
               /* istanbul ignore next */
-              Utils.send(res, 401, errMsg('unAuthorized'))
+              send(res, 401, errMsg('unAuthorized'))
             })
         })
     } else {
       logger.warn('Access tried without token', req.headers)
-      Utils.send(res, 401, errMsg('unAuthorized'))
+      send(res, 401, errMsg('unAuthorized'))
     }
   }
 }

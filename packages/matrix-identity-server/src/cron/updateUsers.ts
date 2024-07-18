@@ -4,7 +4,7 @@ import updateHash, { type UpdatableFields } from '../lookup/updateHash'
 import MatrixDB from '../matrixDb'
 import { type Config, type DbGetResult } from '../types'
 import type UserDB from '../userdb'
-import { epoch } from '../utils'
+import { epoch, toMatrixId } from '@twake/utils'
 
 /**
  * updateUsers is a cron task that reads users from UserDB and find which of
@@ -12,9 +12,9 @@ import { epoch } from '../utils'
  * @param idServer Matrix identity server
  * @returns Promise<void>
  */
-const updateUsers = async (
+const updateUsers = async <T extends string = never>(
   conf: Config,
-  db: IdentityServerDb,
+  db: IdentityServerDb<T>,
   userDB: UserDB,
   logger: TwakeLogger
 ): Promise<void> => {
@@ -88,7 +88,7 @@ const updateUsers = async (
   const timestamp = epoch()
   users.forEach((user) => {
     const uid = user.uid as string
-    const matrixAddress = `@${uid}:${conf.server_name}`
+    const matrixAddress = toMatrixId(uid, conf.server_name)
     const pos = knownUids.indexOf(uid)
     const isMatrixUser = matrixUsers.includes(uid)
     const data = {
@@ -150,7 +150,8 @@ const updateUsers = async (
   const seen: Record<string, boolean> = {}
   knownUids.forEach((uid, i) => {
     if (!uids.includes(uid)) {
-      if (!seen[uid]) updates.push(setInactive(`@${uid}:${conf.server_name}`))
+      if (!seen[uid])
+        updates.push(setInactive(toMatrixId(uid, conf.server_name)))
       seen[uid] = true
     }
   })

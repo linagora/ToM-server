@@ -1,6 +1,5 @@
 import type { TwakeLogger } from '@twake/logger'
-import type { TwakeDB } from '../../db'
-import type { Collections } from '../../types'
+import type { TwakeDB, twakeDbCollections } from '../../types'
 import type { ActiveAcountsData, IActiveContactsService } from '../types'
 
 class ActiveContactsService implements IActiveContactsService {
@@ -27,7 +26,7 @@ class ActiveContactsService implements IActiveContactsService {
   public get = async (userId: string): Promise<string | null> => {
     try {
       const ActiveContacts = (await this.db.get(
-        'activeContacts' as Collections,
+        'activeContacts' as twakeDbCollections,
         ['contacts'],
         { userId }
       )) as unknown as ActiveAcountsData[]
@@ -56,14 +55,14 @@ class ActiveContactsService implements IActiveContactsService {
   save = async (userId: string, contacts: string): Promise<void> => {
     try {
       const existing = await this.db.get(
-        'activeContacts' as Collections,
+        'activeContacts' as twakeDbCollections,
         ['contacts'],
         { userId }
       )
 
       if (existing.length > 0) {
         await this.db.update(
-          'activeContacts' as Collections,
+          'activeContacts' as twakeDbCollections,
           { contacts },
           'userId',
           userId
@@ -72,7 +71,7 @@ class ActiveContactsService implements IActiveContactsService {
         return
       }
 
-      await this.db.insert('activeContacts' as Collections, {
+      await this.db.insert('activeContacts' as twakeDbCollections, {
         userId,
         contacts
       })
@@ -94,7 +93,7 @@ class ActiveContactsService implements IActiveContactsService {
   delete = async (userId: string): Promise<void> => {
     try {
       await this.db.deleteEqual(
-        'activeContacts' as Collections,
+        'activeContacts' as twakeDbCollections,
         'userId',
         userId
       )

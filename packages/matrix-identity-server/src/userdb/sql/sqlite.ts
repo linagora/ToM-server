@@ -1,9 +1,8 @@
-import { type Collections } from '../../db'
-import { type UserDBBackend } from '..'
-import { type Config } from '../../types'
+import { type Collections, type UserDBBackend } from '..'
 import SQLite from '../../db/sql/sqlite'
+import { type Config } from '../../types'
 
-class UserDBSQLite extends SQLite implements UserDBBackend {
+class UserDBSQLite extends SQLite<Collections> implements UserDBBackend {
   // eslint-disable-next-line @typescript-eslint/promise-function-async
   createDatabases(
     conf: Config,
@@ -27,6 +26,9 @@ class UserDBSQLite extends SQLite implements UserDBBackend {
           if (db == null) {
             reject(new Error('Database not created'))
           }
+          db.run(
+            'CREATE TABLE IF NOT EXISTS users (uid varchar(255), mobile text, mail test)'
+          )
           resolve()
         })
         .catch((e) => {

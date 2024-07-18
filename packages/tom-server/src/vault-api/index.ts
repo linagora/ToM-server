@@ -1,7 +1,6 @@
 import { Router } from 'express'
 import defaultConfDesc from '../config.json'
-import { type TwakeDB } from '../db'
-import { type AuthenticationFunction } from '../types'
+import type { AuthenticationFunction, TwakeDB } from '../types'
 import {
   deleteRecoveryWords,
   getRecoveryWords,

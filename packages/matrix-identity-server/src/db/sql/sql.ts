@@ -13,43 +13,28 @@ export type CreateDbMethod = (
   >
 ) => Promise<void>
 
-const tables: Record<Collections, string> = {
-  accessTokens: 'id varchar(64) PRIMARY KEY, data text',
-  oneTimeTokens: 'id varchar(64) PRIMARY KEY, expires int, data text',
-  attempts: 'email text PRIMARY KEY, expires int, attempt int',
-  keys: 'name varchar(32) PRIMARY KEY, data text',
-  hashes:
-    'hash varchar(48) PRIMARY KEY, pepper varchar(32), type varchar(8), value text, active integer',
-  privateNotes:
-    'id varchar(64) PRIMARY KEY, authorId varchar(64), content text, targetId varchar(64)',
-  roomTags:
-    'id varchar(64) PRIMARY KEY, authorId varchar(64), content text, roomId varchar(64)',
-  userHistory: 'address text PRIMARY KEY, active integer, timestamp integer',
-  userQuotas: 'user_id varchar(64) PRIMARY KEY, size int',
-  activeContacts: 'userId text PRIMARY KEY, contacts text'
+type sqlComparaisonOperator = '=' | '!=' | '>' | '<' | '>=' | '<=' | '<>'
+
+export interface ISQLCondition {
+  field: string
+  operator: sqlComparaisonOperator
+  value: string | number
 }
 
-const indexes: Partial<Record<Collections, string[]>> = {
-  oneTimeTokens: ['expires'],
-  attempts: ['expires'],
-  userHistory: ['timestamp']
-}
-
-const initializeValues: Partial<
-  Record<Collections, Array<Record<string, string | number>>>
-> = {
-  keys: [
-    { name: 'pepper', data: '' },
-    { name: 'previousPepper', data: '' }
-  ]
-}
-
-abstract class SQL {
+abstract class SQL<T extends string> {
   db?: SQLiteDatabase | PgDatabase
   ready: Promise<void>
   cleanJob?: NodeJS.Timeout
 
-  constructor(conf: Config, private readonly logger: TwakeLogger) {
+  constructor(
+    conf: Config,
+    private readonly logger: TwakeLogger,
+    tables?: Record<T, string>,
+    indexes?: Partial<Record<T, string[]>>,
+    initializeValues?: Partial<
+      Record<T, Array<Record<string, string | number>>>
+    >
+  ) {
     // @ts-expect-error method is defined in child class
     this.ready = this.createDatabases(
       conf,
@@ -62,7 +47,7 @@ abstract class SQL {
 
   // eslint-disable-next-line @typescript-eslint/promise-function-async
   getCount(
-    table: Collections,
+    table: T,
     field: string,
     value?: string | number | string[]
   ): Promise<number> {
@@ -82,11 +67,7 @@ abstract class SQL {
   }
 
   // eslint-disable-next-line @typescript-eslint/promise-function-async
-  getAll(
-    table: string,
-    fields: string[],
-    order?: string
-  ): Promise<DbGetResult> {
+  getAll(table: T, fields: string[], order?: string): Promise<DbGetResult> {
     // @ts-expect-error implemented later
     return this.get(table, fields, undefined, order)
   }

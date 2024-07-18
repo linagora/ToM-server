@@ -86,7 +86,7 @@ beforeAll(async () => {
           })
           await new Promise((resolve, reject) => {
             testdb.run(
-              'CREATE TABLE users (name varchar(64) PRIMARY KEY)',
+              'CREATE TABLE IF NOT EXISTS users (name varchar(64) PRIMARY KEY)',
               (e: unknown) => {
                 if (e !== null)
                   reject(

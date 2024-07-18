@@ -9,6 +9,7 @@ import updateHash, { type UpdatableFields } from '../lookup/updateHash'
 import MatrixDB from '../matrixDb'
 import { type Config, type DbGetResult } from '../types'
 import type UserDB from '../userdb'
+import { toMatrixId } from '@twake/utils'
 
 export const dbFieldsToHash = ['mobile', 'mail']
 
@@ -66,9 +67,9 @@ export const filter = async (
 }
 
 // eslint-disable-next-line @typescript-eslint/promise-function-async
-const updateHashes = (
+const updateHashes = <T extends string = never>(
   conf: Config,
-  db: IdentityServerDb,
+  db: IdentityServerDb<T>,
   userDB: UserDB,
   logger: TwakeLogger
 ): Promise<void> => {
@@ -137,7 +138,7 @@ const updateHashes = (
                   db,
                   logger,
                   rows.reduce((res, row) => {
-                    res[`@${row.uid as string}:${conf.server_name}`] = {
+                    res[toMatrixId(row.uid as string, conf.server_name)] = {
                       email: row.mail as string,
                       phone: row.mobile as string,
                       active: isMatrixDbAvailable ? (row.active as number) : 1

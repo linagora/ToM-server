@@ -1,13 +1,12 @@
 /* eslint-disable no-useless-return */
 import type { Response, NextFunction } from 'express'
-import type { TwakeDB } from '../../db'
 import type {
   IActiveContactsService,
   IActiveContactsApiController
 } from '../types'
 import type { TwakeLogger } from '@twake/logger'
 import ActiveContactsService from '../services'
-import type { AuthRequest } from '../../types'
+import type { AuthRequest, TwakeDB } from '../../types'
 
 export default class ActiveContactsApiController
   implements IActiveContactsApiController
