@@ -4,12 +4,11 @@ import express from 'express'
 import ClientServer from '../index'
 import { buildMatrixDb, buildUserDB } from '../__testData__/buildUserDB'
 import { type Config } from '../types'
-import defaultConfig from '../__testData__/matrixDbTestConf.json'
+import defaultConfig from '../__testData__/registerConf.json'
 import { getLogger, type TwakeLogger } from '@twake/logger'
 import { setupTokens, validToken } from '../utils/setupTokens'
 
-process.env.TWAKE_CLIENT_SERVER_CONF =
-  './src/__testData__/matrixDbTestConf.json'
+process.env.TWAKE_CLIENT_SERVER_CONF = './src/__testData__/registerConf.json'
 jest.mock('node-fetch', () => jest.fn())
 
 let conf: Config

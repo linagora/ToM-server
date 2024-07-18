@@ -1,7 +1,7 @@
 import MatrixDBmodified from './index'
 import { type TwakeLogger, getLogger } from '@twake/logger'
 import { type Config, type DbGetResult } from '../types'
-import DefaultConfig from '../__testData__/matrixDbTestConf.json'
+import DefaultConfig from '../__testData__/registerConf.json'
 import fs from 'fs'
 import { randomString } from '@twake/crypto'
 import { buildMatrixDb } from '../__testData__/buildUserDB'
