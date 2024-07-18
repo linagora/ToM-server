@@ -3,7 +3,7 @@ import request, { type Response } from 'supertest'
 import express from 'express'
 import ClientServer from './index'
 import { buildMatrixDb, buildUserDB } from './__testData__/buildUserDB'
-import { type flowContent, type Config } from './types'
+import { type Config } from './types'
 import defaultConfig from './__testData__/registerConf.json'
 import { getLogger, type TwakeLogger } from '@twake/logger'
 import { Hash, randomString } from '@twake/crypto'
@@ -491,7 +491,6 @@ describe('Use configuration file', () => {
       })
     })
     describe('/_matrix/client/v3/register', () => {
-      let flows: flowContent
       let session: string
       describe('User Interactive Authentication', () => {
         it('should validate user interactive authentication with a registration_token', async () => {
@@ -501,7 +500,6 @@ describe('Use configuration file', () => {
             .set('X-Forwarded-For', '203.0.113.195')
             .query({ kind: 'user' })
             .send({}) // empty request to get authentication types
-          flows = response.body.flows
           session = response.body.session
           await clientServer.matrixDb.insert('registration_tokens', {
             token: validToken,
@@ -515,13 +513,16 @@ describe('Use configuration file', () => {
             .set('X-Forwarded-For', '203.0.113.195')
             .query({ kind: 'user' })
             .send({
-              auth: { type: flows[3].stages[0], token: validToken, session }
+              auth: {
+                type: 'm.login.registration_token',
+                token: validToken,
+                session
+              }
             })
-          expect(response2.statusCode).toBe(401)
-          expect(response2.body).toHaveProperty('flows')
-          expect(response2.body).toHaveProperty('session')
-          expect(response2.body).toHaveProperty('completed')
-          expect(response2.body.completed).toEqual([flows[3].stages[0]])
+          expect(response2.statusCode).toBe(200)
+          expect(response2.body).toHaveProperty('user_id')
+          expect(response2.body).toHaveProperty('access_token')
+          expect(response2.body).toHaveProperty('device_id')
         })
         it('should invalidate a registration_token after it has been used too many times for user-interactive-authentication', async () => {
           await clientServer.matrixDb.insert('registration_tokens', {
@@ -537,7 +538,7 @@ describe('Use configuration file', () => {
             .query({ kind: 'user' })
             .send({
               auth: {
-                type: flows[3].stages[0],
+                type: 'm.login.registration_token',
                 token: 'exampleToken',
                 session: randomString(20)
               }
@@ -653,6 +654,27 @@ describe('Use configuration file', () => {
           expect(response.body).toHaveProperty('error')
           expect(response.body).toHaveProperty('errcode', 'M_FORBIDDEN')
         })
+        it('should refuse an authentication with the pasword of another user', async () => {
+          const response = await request(app)
+            .post('/_matrix/client/v3/register')
+            .set('User-Agent', 'curl/7.31.0-DEV')
+            .set('X-Forwarded-For', '203.0.113.195')
+            .query({ kind: 'user' })
+            .send({
+              auth: {
+                type: 'm.login.password',
+                identifier: {
+                  type: 'm.id.user',
+                  user: '@otheruser:example.com'
+                },
+                password: 'password',
+                session: randomString(20)
+              }
+            })
+          expect(response.statusCode).toBe(401)
+          expect(response.body).toHaveProperty('error')
+          expect(response.body).toHaveProperty('errcode', 'M_FORBIDDEN')
+        })
         it('should accept an authentication with a correct password', async () => {
           const response = await request(app)
             .post('/_matrix/client/v3/register')
@@ -682,7 +704,6 @@ describe('Use configuration file', () => {
         expect(response.statusCode).toBe(401)
         expect(response.body).toHaveProperty('flows')
         expect(response.body).toHaveProperty('session')
-        flows = response.body.flows
         session = response.body.session
       })
       it('should run the register endpoint after authentication was completed', async () => {
@@ -692,7 +713,7 @@ describe('Use configuration file', () => {
           .set('X-Forwarded-For', '203.0.113.195')
           .query({ kind: 'user' })
           .send({
-            auth: { type: flows[0].stages[0], session },
+            auth: { type: 'm.login.dummy', session },
             username: 'newuser',
             device_id: 'deviceId',
             inhibit_login: false,
@@ -711,7 +732,7 @@ describe('Use configuration file', () => {
           .set('X-Forwarded-For', '203.0.113.195')
           .query({ kind: 'user' })
           .send({
-            auth: { type: flows[0].stages[0], session: randomString(20) },
+            auth: { type: 'm.login.dummy', session: randomString(20) },
             username: 'new_user',
             device_id: 'device_Id',
             inhibit_login: true,
