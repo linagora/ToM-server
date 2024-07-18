@@ -22,7 +22,7 @@ jobs:
     name: DevSkim
     uses: ./.github/workflows/devskim.yml
     secrets: inherit
-  njsscan: 
+  njsscan:
     name: njsscan
     uses: ./.github/workflows/njsscan.yml
     secrets: inherit
