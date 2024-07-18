@@ -44,4 +44,4 @@ jobs:
           push: true
           tags: |
             linagora/tom-server:latest
-            linagora/tom-server:${{ steps.date.outputs.date }}"
+            linagora/tom-server:${{ steps.date.outputs.date }}
