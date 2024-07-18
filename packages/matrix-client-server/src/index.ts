@@ -56,7 +56,6 @@ import getTimestampToEvent from './rooms/roomId/getTimestampToEvent'
 import getStatus from './presence/getStatus'
 import putStatus from './presence/putStatus'
 import getLogin from './login/getLogin'
-import bind from './account/3pid/bind'
 import add from './account/3pid/add'
 import bind from './account/3pid/bind'
 

@@ -22,7 +22,7 @@ interface Parameters {
   guest_access_token?: string // If a guest wants to upgrade his account, from spec : https://spec.matrix.org/v1.11/client-server-api/#guest-access
 }
 
-interface registerRequestBody {
+interface RegisterRequestBody {
   auth?: AuthenticationData
   device_id?: string
   inhibit_login?: boolean
@@ -33,7 +33,7 @@ interface registerRequestBody {
 }
 
 const sendSuccessResponse = (
-  body: registerRequestBody,
+  body: RegisterRequestBody,
   res: e.Response | ServerResponse,
   userId: string,
   accessToken: string,
@@ -42,12 +42,16 @@ const sendSuccessResponse = (
   if (body.inhibit_login) {
     send(res, 200, { user_id: userId })
   } else {
-    send(res, 200, {
-      access_token: accessToken,
-      device_id: deviceId,
-      user_id: userId,
-      expires_in_ms: 60000 // Arbitrary value, should probably be defined in the server config
-    })
+    if (!body.refresh_token) {
+      send(res, 200, {
+        access_token: accessToken,
+        device_id: deviceId,
+        user_id: userId,
+        expires_in_ms: 60000 // Arbitrary value, should probably be defined in the server config
+      })
+    } else {
+      // TODO : Implement this after implementing the /refresh endpoint
+    }
   }
 }
 const createUser = (
@@ -58,7 +62,7 @@ const createUser = (
   deviceId: string,
   ip: string,
   userAgent: string,
-  body: registerRequestBody,
+  body: RegisterRequestBody,
   res: e.Response | ServerResponse,
   kind: string,
   password?: string
@@ -146,7 +150,7 @@ const register = (clientServer: MatrixClientServer): expressAppHandler => {
     const userAgent = req.headers['user-agent'] ?? 'undefined'
     if (parameters.kind === 'user') {
       clientServer.uiauthenticate(req, res, registerAllowedFlows, (obj) => {
-        const body = obj as unknown as registerRequestBody
+        const body = obj as unknown as RegisterRequestBody
         const deviceId = body.device_id ?? randomString(20) // Length chosen arbitrarily
         const username = body.username ?? randomString(9) // Length chosen to match the localpart restrictions for a Matrix userId
         const userId = toMatrixId(username, clientServer.conf.server_name)
@@ -165,7 +169,7 @@ const register = (clientServer: MatrixClientServer): expressAppHandler => {
                 .then((deviceRows) => {
                   let initial_device_display_name
                   if (deviceRows.length > 0) {
-                    // TODO : Refresh access tokens using refresh tokens and invalidate the previous access_token associated with the device after implementing the /refresh
+                    // TODO : Refresh access tokens using refresh tokens and invalidate the previous access_token associated with the device after implementing the /refresh endpoint
                   } else {
                     initial_device_display_name =
                       body.initial_device_display_name ?? randomString(20) // Length chosen arbitrarily
@@ -207,8 +211,9 @@ const register = (clientServer: MatrixClientServer): expressAppHandler => {
       })
     } else {
       jsonContent(req, res, clientServer.logger, (obj) => {
-        const body = obj as unknown as registerRequestBody
+        const body = obj as unknown as RegisterRequestBody
         if (parameters.guest_access_token) {
+          // Case where the guest user wants to upgrade his account : https://spec.matrix.org/v1.11/client-server-api/#guest-access
           if (!body.username) {
             clientServer.logger.error(
               'Username is required to upgrade a guest account'

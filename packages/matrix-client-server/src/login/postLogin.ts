@@ -39,9 +39,7 @@ const postLogin = (clientServer: MatrixClientServer): expressAppHandler => {
             if (!body.password) {
               clientServer.logger.error('Missing password')
               send(res, 400, errMsg('missingParam', 'password'))
-              return
             }
-            d
         }
       })
     })

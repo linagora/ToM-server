@@ -32,9 +32,11 @@ const Authenticate = (
         token = re[1]
       }
       // @ts-expect-error req.query exists
+      // istanbul ignore if
     } else if (req.query && Object.keys(req.query).length > 0) {
-      // @ts-expect-error req.query exists,  istanbul ignore next
-      token = req.query.access_token
+      // @ts-expect-error req.query exists
+      // istanbul ignore next
+      token = req.query.access_token // access tokens as query parameters are deprecated
     }
     if (token != null) {
       let data: TokenContent

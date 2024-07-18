@@ -23,6 +23,7 @@ const schema = {
 
 const clientSecretRegex = /^[0-9a-zA-Z.=_-]{6,255}$/
 const sidRegex = /^[0-9a-zA-Z.=_-]{1,255}$/
+const matrixIdRegex = /^@[0-9a-zA-Z._=-]+:[0-9a-zA-Z.-]+$/
 
 const add = (clientServer: MatrixClientServer): expressAppHandler => {
   return (req, res) => {
@@ -65,6 +66,10 @@ const add = (clientServer: MatrixClientServer): expressAppHandler => {
                 if (rows.length > 0) {
                   send(res, 400, errMsg('threepidInUse'))
                 } else {
+                  if (!matrixIdRegex.test(userId as string)) {
+                    send(res, 400, errMsg('invalidParam', 'Invalid user ID'))
+                    return
+                  }
                   clientServer.matrixDb
                     .insert('user_threepids', {
                       user_id: userId as string,
