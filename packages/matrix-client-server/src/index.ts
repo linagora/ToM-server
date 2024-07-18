@@ -57,6 +57,8 @@ import getStatus from './presence/getStatus'
 import putStatus from './presence/putStatus'
 import getLogin from './login/getLogin'
 import add from './account/3pid/add'
+import PostFilter from './filter/postFilter'
+import GetFilter from './filter/getFilter'
 import refresh from './refresh'
 import openIdRequestToken from './user/openid/requestToken'
 
