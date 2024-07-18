@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/promise-function-async */
 /* eslint-disable @typescript-eslint/naming-convention */
 /* eslint-disable @typescript-eslint/strict-boolean-expressions */
 import {
@@ -9,7 +10,7 @@ import {
   toMatrixId
 } from '@twake/utils'
 import { type AuthenticationData } from '../types'
-import { randomString } from '@twake/crypto'
+import { Hash, randomString } from '@twake/crypto'
 import type MatrixClientServer from '..'
 import { type DbGetResult } from '@twake/matrix-identity-server'
 import type { ServerResponse } from 'http'
@@ -31,8 +32,26 @@ interface registerRequestBody {
   username?: string
 }
 
+const sendSuccessResponse = (
+  body: registerRequestBody,
+  res: e.Response | ServerResponse,
+  userId: string,
+  accessToken: string,
+  deviceId: string
+): void => {
+  if (body.inhibit_login) {
+    send(res, 200, { user_id: userId })
+  } else {
+    send(res, 200, {
+      access_token: accessToken,
+      device_id: deviceId,
+      user_id: userId,
+      expires_in_ms: 60000 // Arbitrary value, should probably be defined in the server config
+    })
+  }
+}
 const createUser = (
-  otherPromise: Promise<DbGetResult>,
+  display_name: string,
   clientServer: MatrixClientServer,
   userId: string,
   accessToken: string,
@@ -41,7 +60,8 @@ const createUser = (
   userAgent: string,
   body: registerRequestBody,
   res: e.Response | ServerResponse,
-  kind: string
+  kind: string,
+  password?: string
 ): void => {
   const userPromise = clientServer.matrixDb.insert('users', {
     name: userId,
@@ -130,19 +150,8 @@ const register = (clientServer: MatrixClientServer): expressAppHandler => {
                   } else {
                     initial_device_display_name =
                       body.initial_device_display_name ?? randomString(20) // Length chosen arbitrarily
-                    const newDevicePromise = clientServer.matrixDb.insert(
-                      'devices',
-                      {
-                        user_id: userId,
-                        device_id: deviceId,
-                        display_name: initial_device_display_name,
-                        last_seen: epoch(),
-                        ip,
-                        user_agent: userAgent
-                      }
-                    )
                     createUser(
-                      newDevicePromise,
+                      initial_device_display_name,
                       clientServer,
                       userId,
                       accessToken,
@@ -151,7 +160,8 @@ const register = (clientServer: MatrixClientServer): expressAppHandler => {
                       userAgent,
                       body,
                       res,
-                      'user'
+                      'user',
+                      body.password
                     )
                   }
                 })
@@ -179,32 +189,96 @@ const register = (clientServer: MatrixClientServer): expressAppHandler => {
     } else {
       jsonContent(req, res, clientServer.logger, (obj) => {
         const body = obj as unknown as registerRequestBody
-        const deviceId = randomString(20) // Length chosen arbitrarily
-        const username = randomString(9) // Length chosen to match the localpart restrictions for a Matrix userId
-        const initial_device_display_name = body.initial_device_display_name
-          ? body.initial_device_display_name
-          : randomString(20) // Length chosen arbitrarily
-
-        const devicePromise = clientServer.matrixDb.insert('devices', {
-          user_id: toMatrixId(username, clientServer.conf.server_name),
-          device_id: deviceId,
-          display_name: initial_device_display_name,
-          last_seen: epoch(),
-          ip,
-          user_agent: userAgent
-        })
-        createUser(
-          devicePromise,
-          clientServer,
-          toMatrixId(username, clientServer.conf.server_name),
-          accessToken,
-          deviceId,
-          ip,
-          userAgent,
-          body,
-          res,
-          'guest'
-        )
+        if (parameters.guest_access_token) {
+          if (!body.username) {
+            clientServer.logger.error(
+              'Username is required to upgrade a guest account'
+            )
+            send(res, 400, errMsg('missingParams'))
+            return
+          }
+          const username = body.username
+          const userId = toMatrixId(username, clientServer.conf.server_name)
+          clientServer.matrixDb
+            .get('access_tokens', ['user_id', 'device_id'], {
+              token: parameters.guest_access_token
+            })
+            .then((rows) => {
+              if (rows.length === 0) {
+                clientServer.logger.error('Unknown guest access token')
+                send(res, 401, errMsg('unknownToken'))
+                return
+              }
+              const deviceId = body.device_id ?? (rows[0].device_id as string)
+              const updateUsersPromise =
+                clientServer.matrixDb.updateWithConditions(
+                  'users',
+                  { is_guest: 0, user_type: 'user', name: userId },
+                  [{ field: 'name', value: rows[0].user_id as string }]
+                )
+              const updateUserIpsPromise =
+                clientServer.matrixDb.updateWithConditions(
+                  'user_ips',
+                  { user_id: userId },
+                  [
+                    {
+                      field: 'access_token',
+                      value: parameters.guest_access_token as string
+                    }
+                  ]
+                )
+              const updateDevicePromise =
+                clientServer.matrixDb.updateWithConditions(
+                  'devices',
+                  { user_id: userId, device_id: deviceId },
+                  [{ field: 'user_id', value: rows[0].user_id as string }]
+                )
+              Promise.all([
+                updateUsersPromise,
+                updateUserIpsPromise,
+                updateDevicePromise
+              ])
+                .then(() => {
+                  sendSuccessResponse(body, res, userId, accessToken, deviceId)
+                })
+                .catch((e) => {
+                  // istanbul ignore next
+                  clientServer.logger.error(
+                    "Error while updating guest's informations",
+                    e
+                  )
+                  // istanbul ignore next
+                  send(res, 500, e)
+                })
+            })
+            .catch((e) => {
+              // istanbul ignore next
+              clientServer.logger.error(
+                "Error while getting the guest's old user_id",
+                e
+              )
+              // istanbul ignore next
+              send(res, 500, e)
+            })
+        } else {
+          const deviceId = randomString(20) // Length chosen arbitrarily
+          const username = randomString(9) // Length chosen to match the localpart restrictions for a Matrix userId
+          const initial_device_display_name = body.initial_device_display_name
+            ? body.initial_device_display_name
+            : randomString(20) // Length chosen arbitrarily
+          createUser(
+            initial_device_display_name,
+            clientServer,
+            toMatrixId(username, clientServer.conf.server_name),
+            accessToken,
+            deviceId,
+            ip,
+            userAgent,
+            body,
+            res,
+            'guest'
+          )
+        }
       })
     }
   }
