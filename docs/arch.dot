@@ -1,4 +1,4 @@
-digraph { 
+digraph {
   nodesep=1
   subgraph cluster_external {
     style=dotted

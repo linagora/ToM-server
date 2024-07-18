@@ -19,10 +19,10 @@
  * `JITSI_BASE_URL`: example `https://jitsi.linagora.com`
  * 5 strings to set if Jitsi is strictly reserved for Twake users:
    * `JITSI_JWT_ALGORITHM`: example: `HS256`
-   * `JITSI_JWT_ISSUER`: 
-   * `JITSI_SECRET`: 
-   * `JITSI_PREFERRED_DOMAIN`: 
-   * `JITSI_USE_JWT`: 
+   * `JITSI_JWT_ISSUER`:
+   * `JITSI_SECRET`:
+   * `JITSI_PREFERRED_DOMAIN`:
+   * `JITSI_USE_JWT`:
  * `MATRIX_SERVER`: Matrix server. Example: `matrix.company.com`
  * `MATRIX_DATABASE_ENGINE`: `sqlite` or `pg`
  * `MATRIX_DATABASE_HOST`:

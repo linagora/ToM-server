@@ -367,9 +367,9 @@ describe('Federated identity service', () => {
               {
                 mappings: {},
                 inactive_mappings: {},
-                third_party_mappings: { 
+                third_party_mappings: {
                   'identity2.example.com:443': ['gxkUW11GNrH5YASQhG_I7ijwdUBoMpqqSCc_OtbpOm0']
-                  } 
+                  }
                 }
               }
             */

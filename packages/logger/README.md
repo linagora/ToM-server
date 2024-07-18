@@ -21,7 +21,7 @@ LOG_FILE=etc/twake/winston.log
 
 ### Configuration File
 
-All winston's [core configuration properties](https://github.com/winstonjs/winston#logging) except `format` and `levels` can be set in a JSON configuration file. The property `transports` is set through the field `log_transports` which is detailed in the following part.  
+All winston's [core configuration properties](https://github.com/winstonjs/winston#logging) except `format` and `levels` can be set in a JSON configuration file. The property `transports` is set through the field `log_transports` which is detailed in the following part.
 There are three more available properties:
 * `default_meta`: javascript object containing metadata that should be displayed in the log message
 * `exception_handlers`: array containing transports which specify where uncaughtException events should be displayed (see [winston documention](https://github.com/winstonjs/winston#exceptions))
@@ -43,7 +43,7 @@ NB: Winston `level` property is named `log_level`
 
 #### Format
 
-This loggger has a predefined format which is:  
+This loggger has a predefined format which is:
 `LEVEL | Date in ISO format | log message`
 
 Between date and log message it is possible to add request details:
@@ -56,17 +56,17 @@ Between date and log message it is possible to add request details:
 
 Any other detail can be added and it will be displayed after `log message  `
 
-Aditionnal details are displayed in the following order:  
+Aditionnal details are displayed in the following order:
 `LEVEL | Date in ISO format | ip | matrixUserId | httpMethod | requestURL | endpointPath | status | log message | additionnal details`
 
 #### Transports
 
 In this module, logger's `log_transports` field is set to an array of objects which contain two properties:
 * type: winston transport that the logger should use. "Console" and "File" transports listed in this [winston documentation](https://github.com/winstonjs/winston/blob/master/docs/transports.md#built-in-to-winston) are available. The field's value must be the transport name and must start with a capital letter ("Console", "File").
-* options: object containing selected transport options, they are all detailed on this [page](https://github.com/winstonjs/winston/blob/master/docs/transports.md#built-in-to-winston). 
+* options: object containing selected transport options, they are all detailed on this [page](https://github.com/winstonjs/winston/blob/master/docs/transports.md#built-in-to-winston).
 
 NB: It is not specified in winston documentation but transport options can also contain the following properties:
-* level: a string that specifies which logger level is associated with this transport 
+* level: a string that specifies which logger level is associated with this transport
 * silent: boolean flag indicating whether to suppress output
 * handleExceptions: boolean flag indicating that transport should log uncaughtException events
 * handleRejections: boolean flag indicating that transport should log uncaughtRejection events
@@ -114,8 +114,8 @@ This module enables to configure transports based on the [winston-daily-rotate-f
 
 ### Default values
 
-All default values are defined in the configuration description file `src/config.json` or your custom description object.  
-For the following properties: log_level, silent, exit_on_error if they are `null` or `undefined` both in configuration and description files then the default values will come from winston library.  
+All default values are defined in the configuration description file `src/config.json` or your custom description object.
+For the following properties: log_level, silent, exit_on_error if they are `null` or `undefined` both in configuration and description files then the default values will come from winston library.
 Transports options default values will come from winston library too, except for `filename` option
 
 #### Logs in file
@@ -325,7 +325,7 @@ logger.silly(
 )
 // Output: SILLY | 2028-12-08T21:36:22.011Z | @dwho:example.com | GET | /example/how/to/use/logger | 200 | This is a silly message
 
-// Methods won't crash if they are called with unsupported additionnal detail 
+// Methods won't crash if they are called with unsupported additionnal detail
 logger.debug(
   'This is an debug message',
   {
