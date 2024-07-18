@@ -53,6 +53,12 @@ const getParams = (type: AuthenticationTypes): any => {
 }
 
 // allowedFlows for endpoints other than register. Subject to change after implementing other endpoints that require UIAuth
+// TODO : Maybe add this in the config and most importantly remove the flow that only contains m.login.dummmy
+// WARNING : m.login.dummy cannot be left as a valid flow on its own in production, it is only for testing purposes.
+// Else, all endpoints that require authentication that use this flow will authenticate the user as having userId = ''
+// Flows cannot end with m.login.dummy either or the same thing will happen. If we want to differentiate a flow that is a subset of another flow
+// We put m.login.dummy at the start and not at the end as done in the spec : https://spec.matrix.org/v1.11/client-server-api/#dummy-auth
+// The differentiation is the same but we will send the right userId to the endpoint.
 export const allowedFlows: AuthenticationFlowContent = {
   flows: [
     {
@@ -90,6 +96,7 @@ export const allowedFlows: AuthenticationFlowContent = {
   }
 }
 
+// TODO : Maybe add this in the config and most importantly remove the flow that only contains m.login.dummmy.
 // Allowed flow stages for /register endpoint.
 // Doesn't contain password, email and msisdn since the user isn't registered yet (spec is unclear about this, only my interpretation)
 export const registerAllowedFlows: AuthenticationFlowContent = {
@@ -146,18 +153,12 @@ const checkAuthentication = (
                 if (rows.length === 0) {
                   throw new Error()
                 } else {
-                  if (
-                    rows[0].name === (auth.identifier as MatrixIdentifier).user
-                  ) {
-                    // Maybe should also check that the user account isn't shadowbanned nor deactivated (check that rows[0].shadow_banned/deactivated ===0), spec is unclear
-                    // We only consider the case where the identifier is a MatrixIdentifier
-                    // since the only table that has a password field is the users table
-                    // which only contains a "name" field with the userId and no address field
-                    // meaning we can't access it without the userId associated to that password
-                    resolve(rows[0].name)
-                  } else {
-                    reject(errMsg('forbidden'))
-                  }
+                  // Maybe should also check that the user account isn't shadowbanned nor deactivated (check that rows[0].shadow_banned/deactivated ===0), spec is unclear
+                  // We only consider the case where the identifier is a MatrixIdentifier
+                  // since the only table that has a password field is the users table
+                  // which only contains a "name" field with the userId and no address field
+                  // meaning we can't access it without the userId associated to that password
+                  resolve(rows[0].name as string)
                 }
               })
               .catch((e) => {
@@ -194,7 +195,8 @@ const checkAuthentication = (
             }
             matrixDb
               .get('user_threepids', ['user_id'], {
-                address: sessionRows[0].address
+                address: sessionRows[0].address,
+                medium: auth.type === 'm.login.msisdn' ? 'msisdn' : 'email' // So that you can't validate with an email if you're in the msisdn flow and vice versa
               })
               .then((rows) => {
                 if (rows.length === 0) {
@@ -297,7 +299,10 @@ const checkAuthentication = (
             (as: AppServiceRegistration) => as.as_token === token
           )
           // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
-          const userId = toMatrixId(auth.username, conf.server_name)
+          const userId = auth.username
+            ? toMatrixId(auth.username, conf.server_name)
+            : // @ts-expect-error : appService is defined since asTokens contains token
+              toMatrixId(appService?.sender_localpart, conf.server_name)
           if (
             // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
             appService?.namespaces.users &&
@@ -402,6 +407,7 @@ const UiAuthenticate = (
             })
               .then((rows) => {
                 const completed: string[] = rows.map(
+                  // istanbul ignore next
                   (row) => row.stage_type as string
                 )
                 send(res, 401, {

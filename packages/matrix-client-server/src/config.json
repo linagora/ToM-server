@@ -56,11 +56,20 @@
   "login_flows": {
     "flows": [
       {
+        "type": "m.login.sso",
+        "identity_providers": {
+          "id": "oidc-twake",
+          "name": "Connect with Twake"
+        }
+      },
+      {
         "type": "m.login.password"
       },
       {
-        "get_login_token": true,
         "type": "m.login.token"
+      },
+      {
+        "type": "m.login.application_service"
       }
     ]
   },
