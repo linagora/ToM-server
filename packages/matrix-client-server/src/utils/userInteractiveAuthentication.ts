@@ -6,7 +6,10 @@ import {
   type AuthenticationData,
   type ClientServerDb,
   type Config,
-  type AppServiceRegistration
+  type AppServiceRegistration,
+  type ThreepidCreds,
+  type AuthenticationFlowContent,
+  type AuthenticationTypes
 } from '../types'
 import { Hash, randomString } from '@twake/crypto'
 import type MatrixDBmodified from '../matrixDb'
@@ -14,12 +17,110 @@ import { errMsg, jsonContent, send, toMatrixId } from '@twake/utils'
 export type UiAuthFunction = (
   req: Request | http.IncomingMessage,
   res: Response | http.ServerResponse,
-  callback: (data: any) => void
+  allowedFlows: AuthenticationFlowContent,
+  callback: (data: any, userId: string | null) => void
 ) => void
 
 interface requestBody {
   auth?: AuthenticationData
   [key: string]: any // others parameters given in request body
+}
+
+const getParams = (type: AuthenticationTypes): any => {
+  // for now only terms has params, spec is unclear about the other types. Add params here if needed in other endpoints
+  // For production,maybe these params should be included in the config. The values here are only illustrative and taken from examples in the spec, they are not relevant and should be adapted before deployment.
+  // TODO : Modify this before deployment
+  switch (type) {
+    case 'm.login.terms':
+      return {
+        policies: {
+          terms_of_service: {
+            version: '1.2',
+            en: {
+              name: 'Terms of Service',
+              url: 'https://example.org/somewhere/terms-1.2-en.html'
+            },
+            fr: {
+              name: "Conditions d'utilisation",
+              url: 'https://example.org/somewhere/terms-1.2-fr.html'
+            }
+          }
+        }
+      }
+    default:
+      return {}
+  }
+}
+
+// allowedFlows for endpoints other than register. Subject to change after implementing other endpoints that require UIAuth
+export const allowedFlows: AuthenticationFlowContent = {
+  flows: [
+    {
+      stages: ['m.login.application_service']
+    },
+    {
+      stages: ['m.login.email.identity']
+    },
+    {
+      stages: ['m.login.msisdn']
+    },
+    {
+      stages: ['m.login.password']
+    },
+    {
+      stages: ['m.login.recaptcha']
+    },
+    {
+      stages: ['m.login.dummy']
+    },
+    {
+      stages: ['m.login.sso']
+    }
+  ],
+  params: {
+    // Aside from terms, the other two params are useless for now, but I leave them here in case they become useful in the future
+    // If we want to add params, we change the getParams function in utils/userInteractiveAuthentication.ts
+    'm.login.application_service': getParams('m.login.application_service'),
+    'm.login.msisdn': getParams('m.login.msisdn'),
+    'm.login.email.identity': getParams('m.login.email.identity'),
+    'm.login.password': getParams('m.login.password'),
+    'm.login.recaptcha': getParams('m.login.recaptcha'),
+    'm.login.dummy': getParams('m.login.dummy'),
+    'm.login.sso': getParams('m.login.sso')
+  }
+}
+
+// Allowed flow stages for /register endpoint.
+// Doesn't contain password, email and msisdn since the user isn't registered yet (spec is unclear about this, only my interpretation)
+export const registerAllowedFlows: AuthenticationFlowContent = {
+  flows: [
+    {
+      stages: ['m.login.application_service']
+    },
+    {
+      stages: ['m.login.terms', 'm.login.dummy'] // m.login.dummy added for testing purposes. This variable and the one before need to be updated before going into production (maybe add them to the config ?)
+    },
+    {
+      stages: ['m.login.registration_token']
+    },
+    {
+      stages: ['m.login.sso']
+    },
+    {
+      stages: ['m.login.recaptcha']
+    },
+    {
+      stages: ['m.login.dummy']
+    }
+  ],
+  params: {
+    // Aside from terms, the other two params are useless for now, but I leave them here in case they become useful in the future
+    // If we want to add params, we change the getParams function in utils/userInteractiveAuthentication.ts
+    'm.login.application_service': getParams('m.login.application_service'),
+    'm.login.registration_token': getParams('m.login.registration_token'),
+    'm.login.terms': getParams('m.login.terms'),
+    'm.login.sso': getParams('m.login.sso')
+  }
 }
 
 // eslint-disable-next-line @typescript-eslint/promise-function-async
@@ -28,7 +129,8 @@ const checkAuthentication = (
   matrixDb: MatrixDBmodified,
   conf: Config,
   req: Request | http.IncomingMessage
-): Promise<void> => {
+): Promise<string> => {
+  // It returns a Promise<string> so that it can return the userId of the authenticated user for endpoints other than /register. For register and dummy auth we return ''.
   switch (auth.type) {
     case 'm.login.password':
       return new Promise((resolve, reject) => {
@@ -44,7 +146,18 @@ const checkAuthentication = (
                 if (rows.length === 0) {
                   throw new Error()
                 } else {
-                  resolve()
+                  if (
+                    rows[0].name === (auth.identifier as MatrixIdentifier).user
+                  ) {
+                    // Maybe should also check that the user account isn't shadowbanned nor deactivated (check that rows[0].shadow_banned/deactivated ===0), spec is unclear
+                    // We only consider the case where the identifier is a MatrixIdentifier
+                    // since the only table that has a password field is the users table
+                    // which only contains a "name" field with the userId and no address field
+                    // meaning we can't access it without the userId associated to that password
+                    resolve(rows[0].name)
+                  } else {
+                    reject(errMsg('forbidden'))
+                  }
                 }
               })
               .catch((e) => {
@@ -56,13 +169,49 @@ const checkAuthentication = (
             reject(e)
           })
       })
-    case 'm.login.email.identity':
+    case 'm.login.sso':
       return new Promise((resolve, reject) => {
-        // TODO : After implementing POST /_matrix/client/v3/account/password/email/requestToken, use it to validate this authentication type
+        // TODO : Complete this after implementing fallback mechanism : https://spec.matrix.org/v1.11/client-server-api/#fallback
       })
     case 'm.login.msisdn':
+    case 'm.login.email.identity': // Both cases are handled the same through their threepid_creds
       return new Promise((resolve, reject) => {
-        // TODO : After implementing POST /_matrix/client/v3/account/password/msisdn/requestToken, use it to validate this authentication type
+        const threepidCreds: ThreepidCreds = auth.threepid_creds
+        matrixDb
+          .get('threepid_validation_session', ['address', 'validated_at'], {
+            client_secret: threepidCreds.client_secret,
+            session_id: threepidCreds.sid
+          })
+          .then((sessionRows) => {
+            if (sessionRows.length === 0) {
+              reject(errMsg('noValidSession'))
+              return
+            }
+            // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+            if (!sessionRows[0].validated_at) {
+              reject(errMsg('sessionNotValidated'))
+              return
+            }
+            matrixDb
+              .get('user_threepids', ['user_id'], {
+                address: sessionRows[0].address
+              })
+              .then((rows) => {
+                if (rows.length === 0) {
+                  reject(errMsg('threepidNotFound'))
+                } else {
+                  resolve(rows[0].user_id as string)
+                }
+              })
+              .catch((e) => {
+                // istanbul ignore next
+                reject(e)
+              })
+          })
+          .catch((e) => {
+            // istanbul ignore next
+            reject(e)
+          })
       })
     case 'm.login.recaptcha':
       return new Promise((resolve, reject) => {
@@ -70,7 +219,7 @@ const checkAuthentication = (
       })
     case 'm.login.dummy':
       return new Promise((resolve, reject) => {
-        resolve() // Dummy authentication always succeeds
+        resolve('') // Dummy authentication always succeeds
       })
     case 'm.login.registration_token': // Only valid on the /register endpoint as per the spec // TODO : add uses_allowed to config ?
       return new Promise((resolve, reject) => {
@@ -107,7 +256,7 @@ const checkAuthentication = (
                       [{ field: 'token', value: auth.token }]
                     )
                     .then(() => {
-                      resolve()
+                      resolve('')
                     })
                     .catch((e) => {
                       // istanbul ignore next
@@ -127,9 +276,9 @@ const checkAuthentication = (
       })
     case 'm.login.terms': // Only valid on the /register endpoint as per the spec
       return new Promise((resolve, reject) => {
-        resolve() // The client makes sure the user has accepted all the terms before sending the request indicating the user has accepted the terms
+        resolve('') // The client makes sure the user has accepted all the terms before sending the request indicating the user has accepted the terms
       })
-    case 'm.login.application_service':
+    case 'm.login.application_service': // TODO : Check the structure of the ApplicationServiceAuth in the spec.
       return new Promise((resolve, reject) => {
         const applicationServices = conf.application_services
         const asTokens: string[] = applicationServices.map(
@@ -156,7 +305,7 @@ const checkAuthentication = (
           ) {
             reject(errMsg('invalidUsername'))
           } else {
-            resolve()
+            resolve(userId)
           }
         } else {
           reject(errMsg('unknownToken'))
@@ -171,21 +320,20 @@ const UiAuthenticate = (
   conf: Config,
   logger: TwakeLogger
 ): UiAuthFunction => {
-  return (req, res, callback) => {
+  return (req, res, allowedFlows, callback) => {
     jsonContent(req, res, logger, (obj) => {
       // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
       if (!(obj as requestBody).auth) {
         send(res, 401, {
-          flows: conf.authentication_flows.flows,
-          params: conf.authentication_flows.params,
+          ...allowedFlows,
           session: randomString(12) // Chose 12 arbitrarily according to a spec example
         })
       } else {
         const auth = (obj as requestBody).auth as AuthenticationData
         checkAuthentication(auth, matrixDb, conf, req)
-          .then(() => {
+          .then((userId) => {
             if (auth.type === 'm.login.application_service') {
-              callback(obj)
+              callback(obj, userId) // Arguments of callback are subject to change
               return
             }
             db.insert('ui_auth_sessions', {
@@ -200,24 +348,19 @@ const UiAuthenticate = (
                     const completed: string[] = rows.map(
                       (row) => row.stage_type as string
                     )
-                    const authOver = conf.authentication_flows.flows.some(
-                      (flow) => {
-                        return (
-                          flow.stages.length === completed.length &&
-                          flow.stages.every((stage) =>
-                            completed.includes(stage)
-                          )
-                        )
-                      }
-                    )
+                    const authOver = allowedFlows.flows.some((flow) => {
+                      return (
+                        flow.stages.length === completed.length &&
+                        flow.stages.every((stage) => completed.includes(stage))
+                      )
+                    })
 
                     // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
                     if (authOver) {
-                      callback(obj) // what arguments to use in callback ?
+                      callback(obj, userId) // Arguments of callback are subject to change
                     } else {
                       send(res, 401, {
-                        flows: conf.authentication_flows.flows,
-                        params: conf.authentication_flows.params,
+                        ...allowedFlows,
                         session: auth.session,
                         completed
                       })
@@ -248,8 +391,7 @@ const UiAuthenticate = (
               send(res, 401, {
                 errcode: e.errcode,
                 error: e.error,
-                flows: conf.authentication_flows.flows,
-                params: conf.authentication_flows.params
+                ...allowedFlows
               })
               return
             }
@@ -264,8 +406,7 @@ const UiAuthenticate = (
                   errcode: e.errcode,
                   error: e.error,
                   completed,
-                  flows: conf.authentication_flows.flows,
-                  params: conf.authentication_flows.params,
+                  ...allowedFlows,
                   session: auth.session
                 })
               })

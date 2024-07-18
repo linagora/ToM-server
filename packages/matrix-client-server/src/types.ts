@@ -3,15 +3,13 @@ import {
   type IdentityServerDb,
   type Config as MIdentityServerConfig
 } from '@twake/matrix-identity-server'
-import { type Policies } from '@twake/matrix-identity-server/dist/terms'
 
 // TODO : Put Policies in types.ts of matrix-identity-server to export it in the @twake/matrix-identity-server module and not in the dist/terms
 export type Config = MIdentityServerConfig & {
-  login_flows: loginFlowContent
-  authentication_flows: authenticationFlowContent
+  login_flows: LoginFlowContent
   application_services: AppServiceRegistration[]
-  sms_folder: string
   is_registration_enabled: boolean
+  sms_folder: string
 }
 
 export type DbGetResult = Array<
@@ -141,11 +139,11 @@ interface PasswordAuth {
   session: string
 }
 
-interface ThreepidCreds {
+export interface ThreepidCreds {
   sid: string
   client_secret: string
-  id_server: string
-  id_access_token: string
+  id_server?: string
+  id_access_token?: string
 }
 
 interface EmailAuth {
@@ -167,10 +165,10 @@ interface RecaptchaAuth {
 }
 
 // TODO : Implement fallback to handle SSO authentication : https://spec.matrix.org/v1.11/client-server-api/#fallback
-// interface SsoAuth {
-//   type: AuthenticationTypes.Sso
-//   session: string
-// }
+interface SsoAuth {
+  type: 'm.login.sso'
+  session: string
+}
 
 interface DummyAuth {
   type: 'm.login.dummy'
@@ -202,16 +200,16 @@ export type AuthenticationData =
   | TokenAuth
   | TermsAuth
   | ApplicationServiceAuth
+  | SsoAuth
 
-export interface authenticationFlowContent {
+export interface AuthenticationFlowContent {
   flows: flowContent
-  params: Record<string, { policies: Policies }> // For now, only Terms registration gives additional parameters in the request body so the params have this type.
-  // If another authentication type returns additional parameters, Policies needs to be changed to a more general type}
+  params: Record<string, any> // TODO : Fix any typing when we implement params for authentication types other than m.login.terms
 }
 
 export type flowContent = stagesContent[]
 
-export interface loginFlowContent {
+export interface LoginFlowContent {
   flows: LoginFlow[]
 }
 
