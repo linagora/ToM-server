@@ -32,27 +32,29 @@ export const buildUserDB = (conf: Partial<Config>): Promise<void> => {
 export const deleteUserDB = (conf: Partial<Config>): Promise<void> => {
   return new Promise((resolve, reject) => {
     const matrixDb = new sqlite3.Database(conf.matrix_database_host)
-    matrixDb.run(
-      'DROP TABLE users',
-      (err) => {
-        if (err != null) {
-          reject(err)
-        } else {
-          resolve()
-        }
+    matrixDb.run('DROP TABLE users', (err) => {
+      if (err != null) {
+        reject(err)
+      } else {
+        resolve()
       }
-    )
+    })
   })
 }
 
 // eslint-disable-next-line @typescript-eslint/promise-function-async
-export const addUser = (conf: Partial<Config>, usersIds: string[]): Promise<void> => {
+export const addUser = (
+  conf: Partial<Config>,
+  usersIds: string[]
+): Promise<void> => {
   return new Promise((resolve, reject) => {
     const matrixDb = new sqlite3.Database(conf.matrix_database_host)
     usersIds.forEach((userId) => {
       matrixDb.run(
-        // columns headers: name|password_hash|creation_ts(seconds)|admin|upgrade_ts|is_guest|appservice_id|consent_version|consent_server_notice_sent|user_type|deactivated|shadow_banned|consent_ts|approved 
-        `INSERT INTO users VALUES('${userId}', '', ${Math.floor(Date.now() / 1000)}, 0, '', 0, '', '', '', '', 0, 0, '', 1)`,
+        // columns headers: name|password_hash|creation_ts(seconds)|admin|upgrade_ts|is_guest|appservice_id|consent_version|consent_server_notice_sent|user_type|deactivated|shadow_banned|consent_ts|approved
+        `INSERT INTO users VALUES('${userId}', '', ${Math.floor(
+          Date.now() / 1000
+        )}, 0, '', 0, '', '', '', '', 0, 0, '', 1)`,
         (err) => {
           if (err != null) {
             reject(err)

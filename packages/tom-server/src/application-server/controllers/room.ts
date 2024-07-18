@@ -9,9 +9,9 @@ import lodash from 'lodash'
 import fetch, { type Response as FetchResponse } from 'node-fetch'
 import type TwakeApplicationServer from '..'
 import type TwakeServer from '../..'
-import { type TwakeDB } from '../../db'
-import { allMatrixErrorCodes } from '../../types'
+import { type TwakeDB, allMatrixErrorCodes } from '../../types'
 import { TwakeRoom } from '../models/room'
+import { toMatrixId } from '@twake/utils'
 const { intersection } = lodash
 
 const domainRe =
@@ -36,7 +36,10 @@ export const createRoom = (
       if (!hostnameRe.test(twakeServer.conf.matrix_server)) {
         throw Error('Bad matrix_server_name')
       }
-      const appServiceMatrixId = `@${appServer.appServiceRegistration.senderLocalpart}:${twakeServer.conf.server_name}`
+      const appServiceMatrixId = toMatrixId(
+        appServer.appServiceRegistration.senderLocalpart,
+        twakeServer.conf.server_name
+      )
       // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
       const roomAliasName = `_twake_${req.body.aliasName}`
       const rooms = await twakeServer.matrixDb.get('room_aliases', undefined, {
@@ -133,11 +136,11 @@ export const createRoom = (
         twakeServer.matrixDb.getAll('users', ['name'])
       ])
 
-      const ldapUsersIds = ldapUsers.map(
-        (user) =>
-          `@${user[twakeServer.conf.ldap_uid_field as string] as string}:${
-            twakeServer.conf.server_name
-          }`
+      const ldapUsersIds = ldapUsers.map((user) =>
+        toMatrixId(
+          user[twakeServer.conf.ldap_uid_field as string] as string,
+          twakeServer.conf.server_name
+        )
       )
       const matrixUsersIds = matrixUsers.map((user) => user.name as string)
 

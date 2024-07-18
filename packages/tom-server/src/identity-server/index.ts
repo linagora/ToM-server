@@ -7,14 +7,16 @@ import MatrixIdentityServer, {
   type MatrixDB
 } from '@twake/matrix-identity-server'
 import defaultConfig from '../config.json'
-import { type Config } from '../types'
+import type { Config, TwakeDB, twakeDbCollections } from '../types'
+import { tables } from '../utils'
 import autocompletion from './lookup/autocompletion'
 import diff from './lookup/diff'
 import Authenticate from './utils/authenticate'
 
 export type { WhoAmIResponse } from './utils/authenticate'
 
-export default class AugmentedIdentityServer extends MatrixIdentityServer {
+export default class TwakeIdentityServer extends MatrixIdentityServer<twakeDbCollections> {
+  declare db: TwakeDB
   declare conf: Config
   constructor(
     public matrixDb: MatrixDB,
@@ -24,7 +26,7 @@ export default class AugmentedIdentityServer extends MatrixIdentityServer {
   ) {
     // istanbul ignore if
     if (confDesc == null) confDesc = defaultConfig
-    super(conf, confDesc, logger)
+    super(conf, confDesc, logger, tables)
     this.authenticate = Authenticate(this.db, this.conf, this.logger)
     const superReady = this.ready
     this.ready = new Promise((resolve, reject) => {

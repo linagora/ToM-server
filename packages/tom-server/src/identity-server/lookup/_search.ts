@@ -1,8 +1,8 @@
 import { type TwakeLogger } from '@twake/logger'
-import { errMsg, Utils } from '@twake/matrix-identity-server'
+import { errMsg, send, toMatrixId } from '@twake/utils'
 import { type Response } from 'express'
 import type http from 'http'
-import type AugmentedIdentityServer from '..'
+import type TwakeIdentityServer from '..'
 
 type SearchFunction = (res: Response | http.ServerResponse, data: Query) => void
 
@@ -26,7 +26,7 @@ export const SearchFields = new Set<string>([
 ])
 
 const _search = (
-  idServer: AugmentedIdentityServer,
+  idServer: TwakeIdentityServer,
   logger: TwakeLogger
 ): SearchFunction => {
   return (res, data) => {
@@ -34,7 +34,7 @@ const _search = (
       /* istanbul ignore next */
       logger.error('Autocompletion error', e)
       /* istanbul ignore next */
-      Utils.send(res, 500, errMsg('unknown', e))
+      send(res, 500, errMsg('unknown', e))
     }
     let fields = data.fields
     let scope = data.scope
@@ -64,13 +64,13 @@ const _search = (
         .then((rows) => {
           if (rows.length === 0) {
             /* istanbul ignore next */
-            Utils.send(res, 200, { matches: [], inactive_matches: [] })
+            send(res, 200, { matches: [], inactive_matches: [] })
           } else {
             const start = data.offset ?? 0
             const end = start + (data.limit ?? 30)
             rows = rows.slice(start, end)
             const mUid = rows.map((v) => {
-              return `@${v.uid as string}:${idServer.conf.server_name}`
+              return toMatrixId(v.uid as string, idServer.conf.server_name)
             })
             /**
              * For the record, this can be replaced by a call to
@@ -92,23 +92,24 @@ const _search = (
                   ] = true
                 })
                 rows.forEach((row) => {
-                  row.address = `@${row.uid as string}:${
+                  row.address = toMatrixId(
+                    row.uid as string,
                     idServer.conf.server_name
-                  }`
+                  )
                   if (mUids[row.uid as string]) {
                     matches.push(row)
                   } else {
                     inactive_matches.push(row)
                   }
                 })
-                Utils.send(res, 200, { matches, inactive_matches })
+                send(res, 200, { matches, inactive_matches })
               })
               .catch(sendError)
           }
         })
         .catch(sendError)
     } else {
-      Utils.send(res, 400, errMsg('invalidParam'))
+      send(res, 400, errMsg('invalidParam'))
     }
   }
 }

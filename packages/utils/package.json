@@ -1,0 +1,54 @@
+{
+  "name": "@twake/utils",
+  "version": "0.0.1",
+  "description": "Utilitary methods for Twake server",
+  "keywords": [
+    "matrix",
+    "twake"
+  ],
+  "homepage": "https://ci.linagora.com/publicgroup/oss/twake/tom-server",
+  "bugs": {
+    "url": "https://ci.linagora.com/publicgroup/oss/twake/tom-server/-/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://ci.linagora.com/publicgroup/oss/twake/tom-server.git"
+  },
+  "license": "AGPL-3.0-or-later",
+  "authors": [
+    {
+      "name": "Xavier Guimard",
+      "email": "yadd@debian.org"
+    },
+    {
+      "name": "Mathias Perez",
+      "email": "mathias.perez.2022@polytechnique.org"
+    },
+    {
+      "name": "Hippolyte Wallaert",
+      "email": "hippolyte.wallaert.2022@polytechnique.org"
+    },
+    {
+      "name": "Amine Chraibi",
+      "email": "amine.chraibi.2022@polytechnique.org"
+    }
+  ],
+  "type": "module",
+  "exports": {
+    "import": "./dist/index.js"
+  },
+  "main": "dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "package.json",
+    "dist",
+    "*.md"
+  ],
+  "scripts": {
+    "build": "rollup -c",
+    "test": "jest"
+  },
+  "dependencies": {
+    "@twake/logger": "*"
+  }
+}

@@ -1,0 +1,140 @@
+# Configuration file for Synapse.
+#
+# This is a YAML file: see [1] for a quick introduction. Note in particular
+# that *indentation is important*: all the elements of a list or dictionary
+# should have the same indentation.
+#
+# [1] https://docs.ansible.com/ansible/latest/reference_appendices/YAMLSyntax.html
+#
+# For more information on how to configure Synapse, including a complete accounting of
+# each option, go to docs/usage/configuration/config_documentation.md or
+# https://element-hq.github.io/synapse/latest/usage/configuration/config_documentation.html
+server_name: 'example.com'
+public_baseurl: 'https://matrix.example.com/'
+suppress_key_server_warning: true
+
+pid_file: /data/homeserver.pid
+
+#web_client_location: 'https://fluffychat.example.com/'
+presence:
+  enabled: true
+
+listeners:
+  - port: 8008
+    tls: false
+    type: http
+    x_forwarded: true
+    resources:
+      - names: [client]
+        compress: true
+      - names: [federation]
+        compress: false
+
+database:
+  name: sqlite3
+  args:
+    database: /data/homeserver.db
+log_config: '/data/matrix.example.com.log.config'
+media_store_path: /data/media_store
+uploads_path: /data/uploads
+max_upload_size: '100M'
+max_image_pixels: '32M'
+dynamic_thumbnails: false
+thumbnail_sizes:
+  - width: 32
+    height: 32
+    method: crop
+  - width: 96
+    height: 96
+    method: crop
+  - width: 320
+    height: 240
+    method: scale
+  - width: 640
+    height: 480
+    method: scale
+  - width: 800
+    height: 600
+    method: scale
+url_preview_enabled: true
+url_preview_ip_range_blacklist:
+  - '192.168.254.0/24'
+max_spider_size: '10M'
+url_preview_accept_language:
+
+enable_registration: false
+account_validity:
+
+bcrypt_rounds: 12
+allow_guest_access: False
+
+trusted_third_party_id_servers:
+  - matrix.org
+  - vector.im
+  - riot.im
+
+enable_metrics: true
+
+report_stats: true
+macaroon_secret_key: 'ZZ=.PN_w4&OY~UGamp_Vhq#e^csHeDJ2_6O#iSJDQs@goul+gb'
+form_secret: 'E:u*OOR_0GInF_qtO#NiP_s:mZzhoytDEmkJUo+IYGsyQ1Vl3@'
+#signing_key_path: "/data/keys/matrix.example.com.signing.key"
+trusted_key_servers:
+  - server_name: 'matrix.org'
+    accept_keys_insecurely: true
+  #- server_name: "twake_root_server"
+  #  verify_keys:
+  #    "ed25519:auto": "aabbccddeeff..."
+
+## SSO
+
+password_config:
+  enabled: false
+
+# Old fashion: prefer separated oidc_providers files
+oidc_providers:
+  - idp_id: lemon
+    idp_name: Connect with Twake
+    enabled: true
+    issuer: 'https://auth.example.com'
+    client_id: 'matrix1'
+    client_secret: 'matrix1'
+    scopes: ['openid', 'profile', 'email']
+
+    discover: true
+    #authorization_endpoint: "https://auth.example.com/oauth2/authorize"
+    #token_endpoint: "https://auth.example.com/oauth2/token"
+    #userinfo_endpoint: "https://auth.example.com/oauth2/userinfo"
+    #jwks_uri: "https://auth.example.com/oauth2/jwks"
+
+    backchannel_logout_enabled: true
+    backchannel_logout_is_soft: true
+
+    user_profile_method: 'userinfo_endpoint'
+    user_mapping_provider:
+      config:
+        subject_claim: 'sub'
+        localpart_template: '{{ user.preferred_username }}'
+        display_name_template: '{{ user.name }}'
+
+# Whether to allow non server admin to create groups on this server
+enable_group_creation: false
+#group_creation_prefix: "unofficial/"
+
+user_directory:
+  search_all_users: true
+
+e2e_key_export: true
+encryption_enabled: true
+
+# FOR TEST ONLY
+accept_keys_insecurely: true
+federation_verify_certificates: false
+
+# TODO: identity_server integration
+# * invite_client_location
+# * account_threepid_delegates
+default_identity_server: https://tom.example.com
+
+# Used for auto-registrating the admin. NOTE : this string MUST NOT be shared anywhere!
+registration_shared_secret: astringthatyoumustnevershare

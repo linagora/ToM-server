@@ -32,8 +32,8 @@ type _Update = (
 ) => Promise<void>
 
 // eslint-disable-next-line @typescript-eslint/promise-function-async
-const updateHash = (
-  db: IdentityServerDb,
+const updateHash = <T extends string = never>(
+  db: IdentityServerDb<T>,
   logger: TwakeLogger,
   data: UpdatableFields,
   pepper?: string

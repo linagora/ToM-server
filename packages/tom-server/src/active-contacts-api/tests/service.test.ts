@@ -1,5 +1,5 @@
 import type { TwakeLogger } from '@twake/logger'
-import type { IdentityServerDb } from '../../types'
+import type { TwakeDB } from '../../types'
 import ActiveContactsService from '../services'
 
 describe('The active contacts service', () => {
@@ -17,7 +17,7 @@ describe('The active contacts service', () => {
   }
 
   const activeContactsService = new ActiveContactsService(
-    dbMock as unknown as IdentityServerDb,
+    dbMock as unknown as TwakeDB,
     loggerMock as unknown as TwakeLogger
   )
 

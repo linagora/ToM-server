@@ -42,7 +42,7 @@ describe('cron tasks', () => {
           try {
             await new Promise((resolve, reject) => {
               testdb.run(
-                'CREATE TABLE users (name varchar(64) PRIMARY KEY)',
+                'CREATE TABLE IF NOT EXISTS users (name varchar(64) PRIMARY KEY)',
                 (e: unknown) => {
                   if (e !== null)
                     reject(
@@ -67,7 +67,7 @@ describe('cron tasks', () => {
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
         // @ts-ignore run is a sqlite3 method only
         userDB.db.db.run(
-          'CREATE TABLE users (uid varchar(8), mobile varchar(12), mail varchar(32))',
+          'CREATE TABLE IF NOT EXISTS users (uid varchar(8), mobile varchar(12), mail varchar(32))',
           () => {
             resolve()
           }

@@ -1,9 +1,10 @@
 import { supportedHashes } from '@twake/crypto'
-import { send, type expressAppHandler } from '../utils'
-import { errMsg } from '../utils/errors'
 import type MatrixIdentityServer from '..'
+import { errMsg, send, type expressAppHandler } from '@twake/utils'
 
-const hashDetails = (idServer: MatrixIdentityServer): expressAppHandler => {
+const hashDetails = <T extends string = never>(
+  idServer: MatrixIdentityServer<T>
+): expressAppHandler => {
   return (req, res) => {
     idServer.authenticate(req, res, (tokenContent, id) => {
       idServer.db

@@ -1,6 +1,11 @@
 import type MatrixIdentityServer from '../..'
-import { jsonContent, send, type expressAppHandler } from '../../utils'
-import { errMsg } from '../../utils/errors'
+import {
+  epoch,
+  errMsg,
+  jsonContent,
+  send,
+  type expressAppHandler
+} from '@twake/utils'
 
 interface parameters {
   client_secret?: string
@@ -8,13 +13,16 @@ interface parameters {
   sid?: string
 }
 
-interface mailToken {
+interface MailToken {
   client_secret: string
   mail: string
   sid: string
+  next_link?: string
 }
 
-const SubmitToken = (idServer: MatrixIdentityServer): expressAppHandler => {
+const SubmitToken = <T extends string = never>(
+  idServer: MatrixIdentityServer<T>
+): expressAppHandler => {
   return (req, res) => {
     const realMethod = (prms: parameters): void => {
       if (
@@ -26,14 +34,41 @@ const SubmitToken = (idServer: MatrixIdentityServer): expressAppHandler => {
           .verifyToken(prms.token)
           .then((data) => {
             if (
-              (data as mailToken).sid === prms.sid &&
-              (data as mailToken).client_secret === prms.client_secret
+              (data as MailToken).sid === prms.sid &&
+              (data as MailToken).client_secret === prms.client_secret
             ) {
-              // TODO REGISTER (data as mailToken).mail
               idServer.db
                 .deleteToken(prms.token as string)
                 .then(() => {
-                  send(res, 200, { success: true })
+                  idServer.db
+                    .updateAnd(
+                      'mappings',
+                      { valid: 1, submit_time: epoch() },
+                      { field: 'session_id', value: (data as MailToken).sid },
+                      {
+                        field: 'client_secret',
+                        value: (data as MailToken).client_secret
+                      }
+                    )
+                    .then(() => {
+                      if (
+                        req.method === 'GET' &&
+                        // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+                        (data as MailToken).next_link
+                      ) {
+                        const redirectUrl = new URL(
+                          // @ts-expect-error : We check that next_link is not null beforehand
+                          (data as Token).next_link
+                        ).toString()
+                        res.writeHead(302, {
+                          Location: redirectUrl
+                        })
+                        res.end()
+                        return
+                      }
+                      send(res, 200, { success: true })
+                    })
+                    .catch((e) => {})
                 })
                 .catch((e) => {})
             } else {

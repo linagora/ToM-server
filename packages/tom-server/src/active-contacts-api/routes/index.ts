@@ -4,11 +4,7 @@ import {
   type TwakeLogger,
   type Config as LoggerConfig
 } from '@twake/logger'
-import type {
-  AuthenticationFunction,
-  Config,
-  IdentityServerDb
-} from '../../types'
+import type { AuthenticationFunction, Config, TwakeDB } from '../../types'
 import { Router } from 'express'
 import authMiddleware from '../../utils/middlewares/auth.middleware'
 import ActiveContactsApiController from '../controllers'
@@ -17,7 +13,7 @@ import ActiveContactsApiValidationMiddleWare from '../middlewares'
 export const PATH = '/_twake/v1/activecontacts'
 
 export default (
-  db: IdentityServerDb,
+  db: TwakeDB,
   config: Config,
   authenticator: AuthenticationFunction,
   defaultLogger?: TwakeLogger

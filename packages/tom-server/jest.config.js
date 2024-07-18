@@ -6,7 +6,7 @@ export default {
   setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
   moduleNameMapper: {
     ...jestConfigBase.moduleNameMapper,
-    "node-fetch": "<rootDir>/../../node_modules/node-fetch-jest",
+    'node-fetch': '<rootDir>/../../node_modules/node-fetch-jest'
   },
   clearMocks: true
 }
