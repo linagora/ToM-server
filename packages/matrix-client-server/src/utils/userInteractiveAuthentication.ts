@@ -25,6 +25,8 @@ interface requestBody {
 
 const getParams = (type: AuthenticationTypes): any => {
   // for now only terms has params, spec is unclear about the other types. Add params here if needed in other endpoints
+  // For production,maybe these params should be included in the config. The values here are only illustrative and taken from examples in the spec, they are not relevant and should be adapted before deployment.
+  // TODO : Modify this before deployment
   switch (type) {
     case 'm.login.terms':
       return {

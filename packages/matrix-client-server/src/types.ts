@@ -191,11 +191,6 @@ interface ApplicationServiceAuth {
   username: string
 }
 
-interface SsoAuth {
-  type: 'm.login.sso'
-  session: string
-}
-
 export type AuthenticationData =
   | PasswordAuth
   | EmailAuth
