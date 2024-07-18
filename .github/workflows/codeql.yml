@@ -67,7 +67,7 @@ jobs:
         # For more details on CodeQL's query packs, refer to: https://docs.github.com/en/code-security/code-scanning/automatically-scanning-your-code-for-vulnerabilities-and-errors/configuring-code-scanning#using-queries-in-ql-packs
         # queries: security-extended,security-and-quality
         config: |
-          paths-ignore: 
+          paths-ignore:
             - docs
             - '**/__testData__/**'
             - '**/*.test.ts'

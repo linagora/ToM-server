@@ -11,8 +11,8 @@ RUN apt-get update && \
         curl \
         gpg \
         wget && \
-    curl https://ltb-project.org/documentation/_static/ltb-project-debian-keyring.gpg | gpg --dearmor > /usr/share/keyrings/ltb-project-debian-keyring.gpg && \
-    echo "deb [arch=amd64 signed-by=/usr/share/keyrings/ltb-project-debian-keyring.gpg] https://ltb-project.org/debian/openldap25/bullseye bullseye main" > /etc/apt/sources.list.d/ltb-project.list && \
+    curl https://ltb-project.org/documentation/_static/RPM-GPG-KEY-LTB-project | gpg --dearmor > /usr/share/keyrings/ltb-project-openldap-archive-keyring.gpg && \
+    echo "deb [arch=amd64 signed-by=/usr/share/keyrings/ltb-project-openldap-archive-keyring.gpg] https://ltb-project.org/debian/openldap25/bullseye bullseye main" > /etc/apt/sources.list.d/ltb-project.list && \
     apt-get update && \
     apt-get install -y openldap-ltb openldap-ltb-contrib-overlays openldap-ltb-mdb-utils ldap-utils && \
     apt-get clean && \
@@ -21,8 +21,6 @@ RUN apt-get update && \
 # Copy configuration files
 COPY ./ldif/config-20230322180123.ldif /var/backups/openldap/
 COPY ./ldif/base_ldap_users.ldif /tmp
-COPY ./start.sh /tmp
-COPY ./ldif/update_password.ldif /tmp
 
 # Configure LDAP
 RUN rm -rf /usr/local/openldap/var/lib/ldap /usr/local/openldap/etc/openldap/slapd.d && \
@@ -33,7 +31,7 @@ RUN rm -rf /usr/local/openldap/var/lib/ldap /usr/local/openldap/etc/openldap/sla
     usr/local/openldap/sbin/slapd-cli restoreconfig -b /var/backups/openldap/config-20230322180123.ldif && \
     mkdir -p /usr/local/openldap/var/lib/ldap/data && \
     chown -R ldap:ldap /usr/local/openldap/var/lib/ldap/data && \
-    /usr/local/openldap/sbin/slapadd -F /usr/local/openldap/etc/openldap/slapd.d/ -b "dc=docker,dc=localhost" -l /tmp/base_ldap_users.ldif
+    /usr/local/openldap/sbin/slapadd -F /usr/local/openldap/etc/openldap/slapd.d/ -b "dc=example,dc=com" -l /tmp/base_ldap_users.ldif
 
 # Expose LDAP port
 EXPOSE 389
@@ -42,6 +40,5 @@ EXPOSE 389
 VOLUME /usr/local/openldap/var/openldap-data
 
 # Set the entrypoint script
-#CMD ["/usr/local/openldap/libexec/slapd", "-h", "ldap://*", "-u", "ldap", "-g", "ldap", "-d", "256"]
-CMD ["/tmp/start.sh"]
+CMD ["/usr/local/openldap/libexec/slapd", "-h", "ldap://*", "-u", "ldap", "-g", "ldap", "-d", "256"]
 

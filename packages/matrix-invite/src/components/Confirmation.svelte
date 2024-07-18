@@ -7,7 +7,7 @@
 
   let { domain }: Props = $props();
   let existingDomains: string[];
-  
+
   preferredDomains.subscribe(domains => {
     existingDomains = domains;
   })

@@ -756,7 +756,7 @@ describe('Use configuration file', () => {
           expect(response.body.errcode).toBe('M_SESSION_NOT_VALIDATED')
           expect(response.statusCode).toBe(400)
         })
-        /* Works if the validationTime is set to 0 millisecond in 3pid/getValidated3pid.ts 
+        /* Works if the validationTime is set to 0 millisecond in 3pid/getValidated3pid.ts
         it('should return 400 if the session is expired', async () => {
           const responseSubmitToken = await request(app)
             .get('/_matrix/identity/v2/validate/email/submitToken')
