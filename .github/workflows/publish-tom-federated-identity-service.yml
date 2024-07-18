@@ -27,6 +27,7 @@ jobs:
           name: linagora/tom-federated-identity-service
           username: ${{ secrets.DOCKERHUB_USER }}
           password: ${{ secrets.DOCKERHUB_PASSWORD }}
+          platforms: linux/amd64,linux/arm64,linux/arm/v7,linux/arm/v6
           workdir: "${{ github.workspace }}"
           context: .
           buildoptions: "-t linagora/tom-federated-identity-service -f packages/federated-identity-service/Dockerfile"
