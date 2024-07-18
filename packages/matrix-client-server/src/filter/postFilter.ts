@@ -11,7 +11,11 @@ import type { Request } from 'express'
 import { randomString } from '@twake/crypto'
 
 const schema = {
-  filter: true
+  account_data: false,
+  event_fields: false,
+  event_format: false,
+  presence: false,
+  room: false
 }
 
 const PostFilter = (clientServer: MatrixClientServer): expressAppHandler => {

@@ -3,13 +3,10 @@ import request from 'supertest'
 import express from 'express'
 import ClientServer from './index'
 import { buildMatrixDb, buildUserDB } from './__testData__/buildUserDB'
-import { type Config } from './types'
-import defaultConfig from './__testData__/matrixDbTestConf.json'
+import { type Config, type Filter } from './types'
+import defaultConfig from './__testData__/registerConf.json'
 import { getLogger, type TwakeLogger } from '@twake/logger'
 import { randomString } from '@twake/crypto'
-
-process.env.TWAKE_CLIENT_SERVER_CONF =
-  './src/__testData__/matrixDbTestConf.json'
 
 jest.mock('node-fetch', () => jest.fn())
 const sendMailMock = jest.fn()
@@ -38,11 +35,7 @@ beforeAll((done) => {
   // @ts-expect-error TS doesn't understand that the config is valid
   conf = {
     ...defaultConfig,
-    cron_service: false,
-    database_engine: 'sqlite',
     base_url: 'http://example.com/',
-    userdb_engine: 'sqlite',
-    matrix_database_engine: 'sqlite',
     matrix_database_host: 'src/__testData__/userTestMatrix.db',
     userdb_host: 'src/__testData__/userTest.db',
     database_host: 'src/__testData__/userTest.db'
@@ -83,7 +76,7 @@ beforeEach(() => {
 
 describe('Use configuration file', () => {
   beforeAll((done) => {
-    clientServer = new ClientServer()
+    clientServer = new ClientServer(conf)
     app = express()
     clientServer.ready
       .then(() => {
@@ -421,6 +414,110 @@ describe('Use configuration file', () => {
             expect(response2.body['m.room.message']).toBe('updated content')
           })
         })
+      })
+      describe('/_matrix/client/v3/user/:userId/filter', () => {
+        beforeAll(async () => {
+          try {
+            await clientServer.matrixDb.insert('user_filters', {
+              user_id: '@testuser:example.com',
+              filter_id: '1234',
+              filter_json: JSON.stringify({ filter: true })
+            })
+            await clientServer.matrixDb.insert('user_filters', {
+              user_id: '@testuser2:example.com',
+              filter_id: '1235',
+              filter_json: JSON.stringify({ filter: true })
+            })
+            await clientServer.matrixDb.insert('user_filters', {
+              user_id: '@testuser:example2.com',
+              filter_id: '1234',
+              filter_json: JSON.stringify({ filter: true })
+            })
+            logger.info('Filters inserted')
+          } catch (e) {
+            logger.error('Error inserting filters in db', e)
+          }
+        })
+        afterAll(async () => {
+          try {
+            await clientServer.matrixDb.deleteEqual(
+              'user_filters',
+              'user_id',
+              '@testuser:example.com'
+            )
+            await clientServer.matrixDb.deleteEqual(
+              'user_filters',
+              'user_id',
+              '@testuser2:example.com'
+            )
+            await clientServer.matrixDb.deleteEqual(
+              'user_filters',
+              'user_id',
+              '@testuser:example2.com'
+            )
+            logger.info('Filters deleted')
+          } catch (e) {
+            logger.error('Error deleting filters in db', e)
+          }
+        })
+        const filter: Filter = {
+          event_fields: ['type', 'content', 'sender'],
+          event_format: 'client',
+          presence: {
+            not_senders: ['@alice:example.com'],
+            types: ['m.presence']
+          },
+          room: {
+            ephemeral: {
+              not_rooms: ['!726s6s6q:example.com'],
+              not_senders: ['@spam:example.com'],
+              types: ['m.receipt', 'm.typing']
+            },
+            state: {
+              not_rooms: ['!726s6s6q:example.com'],
+              types: ['m.room.*']
+            },
+            timeline: {
+              limit: 10,
+              not_rooms: ['!726s6s6q:example.com'],
+              not_senders: ['@spam:example.com'],
+              types: ['m.room.message']
+            }
+          }
+        }
+
+        describe('POST', () => {
+          // TODO : think about this - maybe change the validate parameters method
+          // it('should reject invalid parameters', async () => {
+          //   // Missing filter
+          //   const response = await request(app)
+          //     .post('/_matrix/client/v3/user/@testuser:example.com/filter')
+          //     .set('Authorization', `Bearer ${validToken}`)
+          //     .set('Accept', 'application/json')
+          //     .send({ notAFilterField: 'test' })
+          //   expect(response.statusCode).toBe(400)
+          //   expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
+          // })
+          it('should reject posting a filter for an other userId', async () => {
+            const response = await request(app)
+              .post('/_matrix/client/v3/user/@testuser2:example.com/filter')
+              .set('Authorization', `Bearer ${validToken}`)
+              .set('Accept', 'application/json')
+              .send(filter)
+            expect(response.statusCode).toBe(403)
+            expect(response.body).toHaveProperty('errcode', 'M_FORBIDDEN')
+          })
+          it('should reject posting a filter for an other server name', async () => {
+            const response = await request(app)
+              .post('/_matrix/client/v3/user/@testuser:example2.com/filter')
+              .set('Authorization', `Bearer ${validToken}`)
+              .set('Accept', 'application/json')
+              .send(filter)
+            expect(response.statusCode).toBe(403)
+            expect(response.body).toHaveProperty('errcode', 'M_FORBIDDEN')
+          })
+        })
+        // describe('GET', () => {})
       })
     })
   })
