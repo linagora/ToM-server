@@ -59,6 +59,7 @@ import getLogin from './login/getLogin'
 import add from './account/3pid/add'
 import bind from './account/3pid/bind'
 import refresh from './refresh'
+import bind from './account/3pid/bind'
 
 const tables = {
   ui_auth_sessions: 'session_id TEXT NOT NULL, stage_type TEXT NOT NULL'
