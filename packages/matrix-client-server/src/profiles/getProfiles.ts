@@ -28,29 +28,44 @@ export const getProfile = (
           })
           .then((rows) => {
             if (rows.length === 0) {
-              clientServer.logger.info('Profile not found')
-              send(res, 404, errMsg('notFound', 'Profile not found'))
+              send(
+                res,
+                404,
+                errMsg('notFound', 'Profile not found'),
+                clientServer.logger
+              )
             } else {
-              // logger.info('Profile found:', rows[0])
-              send(res, 200, {
-                avatar_url: rows[0].avatar_url,
-                displayname: rows[0].displayname
-              })
+              send(
+                res,
+                200,
+                {
+                  avatar_url: rows[0].avatar_url,
+                  displayname: rows[0].displayname
+                },
+                clientServer.logger
+              )
             }
           })
           .catch((e) => {
             /* istanbul ignore next */
-            send(res, 500, errMsg('unknown', e))
-            /* istanbul ignore next */
-            clientServer.logger.error('Error querying profiles:', e)
+            send(res, 500, errMsg('unknown', e), clientServer.logger)
           })
       } else {
         // TODO : Have a look on remote server via federation
-        send(res, 500, errMsg('unknown', 'Cannot get profile of a remote user'))
+        send(
+          res,
+          500,
+          errMsg('unknown', 'Cannot get profile of a remote user'),
+          clientServer.logger
+        )
       }
     } else {
-      send(res, 400, errMsg('missingParams', 'No user ID provided'))
-      clientServer.logger.debug('No user ID provided')
+      send(
+        res,
+        400,
+        errMsg('missingParams', 'No user ID provided'),
+        clientServer.logger
+      )
     }
   }
 }
@@ -73,31 +88,52 @@ export const getAvatarUrl = (
           })
           .then((rows) => {
             if (rows.length === 0) {
-              clientServer.logger.info('User not found')
-              send(res, 404, errMsg('notFound', 'User not found'))
+              send(
+                res,
+                404,
+                errMsg('notFound', 'User not found'),
+                clientServer.logger
+              )
             } else {
               if (rows[0].avatar_url === null) {
-                send(res, 404, errMsg('notFound', 'Avatar not found'))
+                send(
+                  res,
+                  404,
+                  errMsg('notFound', 'Avatar not found'),
+                  clientServer.logger
+                )
               } else {
-                send(res, 200, {
-                  avatar_url: rows[0].avatar_url
-                })
+                send(
+                  res,
+                  200,
+                  {
+                    avatar_url: rows[0].avatar_url
+                  },
+                  clientServer.logger
+                )
               }
             }
           })
           .catch((e) => {
             /* istanbul ignore next */
-            send(res, 500, errMsg('unknown', e))
-            /* istanbul ignore next */
-            clientServer.logger.error('Error querying profiles:', e)
+            send(res, 500, errMsg('unknown', e), clientServer.logger)
           })
       } else {
         // TODO : Have a look on remote server via federation
-        send(res, 500, errMsg('unknown', 'Cannot get profile of a remote user'))
+        send(
+          res,
+          500,
+          errMsg('unknown', 'Cannot get profile of a remote user'),
+          clientServer.logger
+        )
       }
     } else {
-      send(res, 400, errMsg('missingParams', 'No user ID provided'))
-      clientServer.logger.debug('No user ID provided')
+      send(
+        res,
+        400,
+        errMsg('missingParams', 'No user ID provided'),
+        clientServer.logger
+      )
     }
   }
 }
@@ -120,31 +156,52 @@ export const getDisplayname = (
           })
           .then((rows) => {
             if (rows.length === 0) {
-              clientServer.logger.info('User not found')
-              send(res, 404, errMsg('notFound', 'User not found'))
+              send(
+                res,
+                404,
+                errMsg('notFound', 'User not found'),
+                clientServer.logger
+              )
             } else {
               if (rows[0].displayname === null) {
-                send(res, 404, errMsg('notFound', 'Displayname not found'))
+                send(
+                  res,
+                  404,
+                  errMsg('notFound', 'Displayname not found'),
+                  clientServer.logger
+                )
               } else {
-                send(res, 200, {
-                  displayname: rows[0].displayname
-                })
+                send(
+                  res,
+                  200,
+                  {
+                    displayname: rows[0].displayname
+                  },
+                  clientServer.logger
+                )
               }
             }
           })
           .catch((e) => {
             /* istanbul ignore next */
-            send(res, 500, errMsg('unknown', e))
-            /* istanbul ignore next */
-            clientServer.logger.error('Error querying profiles:', e)
+            send(res, 500, errMsg('unknown', e), clientServer.logger)
           })
       } else {
         // TODO : Have a look on remote server via federation
-        send(res, 500, errMsg('unknown', 'Cannot get profile of a remote user'))
+        send(
+          res,
+          500,
+          errMsg('unknown', 'Cannot get profile of a remote user'),
+          clientServer.logger
+        )
       }
     } else {
-      send(res, 400, errMsg('missingParams', 'No user ID provided'))
-      clientServer.logger.debug('No user ID provided')
+      send(
+        res,
+        400,
+        errMsg('missingParams', 'No user ID provided'),
+        clientServer.logger
+      )
     }
   }
 }
