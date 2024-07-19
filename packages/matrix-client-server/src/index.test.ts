@@ -326,6 +326,53 @@ describe('Use configuration file', () => {
         expect(response.body).toHaveProperty('refresh_token')
       })
     })
+    describe('/_matrix/client/v3/refresh', () => {
+      it('should refuse a request without refresh token', async () => {
+        const response = await request(app)
+          .post('/_matrix/client/v3/refresh')
+          .send({})
+        expect(response.statusCode).toBe(400)
+        expect(response.body.errcode).toBe('M_MISSING_PARAMS')
+      })
+      it('should refuse a request with an unknown refresh token', async () => {
+        const response = await request(app)
+          .post('/_matrix/client/v3/refresh')
+          .send({ refresh_token: 'unknownToken' })
+        expect(response.statusCode).toBe(400)
+        expect(response.body.errcode).toBe('M_UNKNOWN_TOKEN')
+      })
+      it('should refuse a request with an expired refresh token', async () => {
+        await clientServer.matrixDb.insert('refresh_tokens', {
+          id: 0,
+          user_id: 'expiredUser',
+          device_id: 'expiredDevice',
+          token: 'expiredToken',
+          expiry_ts: 0
+        })
+        const response = await request(app)
+          .post('/_matrix/client/v3/refresh')
+          .send({ refresh_token: 'expiredToken' })
+        expect(response.statusCode).toBe(401)
+        expect(response.body.errcode).toBe('INVALID_TOKEN')
+      })
+      it('should send the next request token if the token sent in the request has such a field in the DB', async () => {
+        const response = await request(app)
+          .post('/_matrix/client/v3/refresh')
+          .send({ refresh_token: validRefreshToken1 })
+        expect(response.statusCode).toBe(200)
+        expect(response.body).toHaveProperty('access_token')
+        expect(response.body).toHaveProperty('refresh_token')
+        expect(response.body.refresh_token).toBe(validRefreshToken2)
+      })
+      it('should generate a new refresh token  and access token if there was no next token in the DB', async () => {
+        const response = await request(app)
+          .post('/_matrix/client/v3/refresh')
+          .send({ refresh_token: validRefreshToken2 })
+        expect(response.statusCode).toBe(200)
+        expect(response.body).toHaveProperty('access_token')
+        expect(response.body).toHaveProperty('refresh_token')
+      })
+    })
     describe('/_matrix/client/v3/account/whoami', () => {
       let asToken: string
       it('should reject if more than 100 requests are done in less than 10 seconds', async () => {
