@@ -17,10 +17,19 @@ export type expressAppHandler = (
 export const send = (
   res: Response | http.ServerResponse,
   status: number,
-  body: string | object
+  body: string | object,
+  logger?: TwakeLogger
 ): void => {
   /* istanbul ignore next */
   const content = typeof body === 'string' ? body : JSON.stringify(body)
+  if (logger != null) {
+    const logMessage = `Sending status ${status} with content ${content}`
+    if (status >= 200 && status < 300) {
+      logger.info(logMessage)
+    } else {
+      logger.error(logMessage)
+    }
+  }
   res.writeHead(status, {
     'Content-Type': 'application/json; charset=utf-8',
     'Content-Length': Buffer.byteLength(content, 'utf-8'),
