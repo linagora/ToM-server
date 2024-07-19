@@ -88,6 +88,16 @@ const RequestToken = (clientServer: MatrixClientServer): expressAppHandler => {
             errMsg('invalidParam', 'Invalid phone number'),
             clientServer.logger
           )
+        } else if (
+          typeof sendAttempt !== 'number' ||
+          sendAttempt > 1000000000
+        ) {
+          send(
+            res,
+            400,
+            errMsg('invalidParam', 'Invalid send attempt'),
+            clientServer.logger
+          )
         } else {
           clientServer.matrixDb
             .get('user_threepids', ['user_id'], { address: dst })

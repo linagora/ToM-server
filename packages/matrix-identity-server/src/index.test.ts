@@ -555,6 +555,34 @@ describe('Use configuration file', () => {
           expect(response.statusCode).toBe(400)
           expect(sendMailMock).not.toHaveBeenCalled()
         })
+        it('should refuse a send attempt that is not a number', async () => {
+          const response = await request(app)
+            .post('/_matrix/identity/v2/validate/email/requestToken')
+            .set('Authorization', `Bearer ${validToken}`)
+            .set('Accept', 'application/json')
+            .send({
+              client_secret: 'mysecret',
+              email: 'yadd@debian.org',
+              next_link: 'http://localhost:8090',
+              send_attempt: 'NaN'
+            })
+          expect(response.statusCode).toBe(400)
+          expect(sendMailMock).not.toHaveBeenCalled()
+        })
+        it('should refuse a send attempt that is too large', async () => {
+          const response = await request(app)
+            .post('/_matrix/identity/v2/validate/email/requestToken')
+            .set('Authorization', `Bearer ${validToken}`)
+            .set('Accept', 'application/json')
+            .send({
+              client_secret: 'mysecret',
+              email: 'yadd@debian.org',
+              next_link: 'http://localhost:8090',
+              send_attempt: 99999999999
+            })
+          expect(response.statusCode).toBe(400)
+          expect(sendMailMock).not.toHaveBeenCalled()
+        })
         it('should accept valid email registration query', async () => {
           const response = await request(app)
             .post('/_matrix/identity/v2/validate/email/requestToken')
