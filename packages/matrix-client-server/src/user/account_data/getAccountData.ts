@@ -20,17 +20,22 @@ const getAccountData = (
       !matrixIdRegex.test(parameters.userId) ||
       !eventTypeRegex.test(parameters.type)
     ) {
-      send(res, 400, errMsg('invalidParam'))
+      send(res, 400, errMsg('invalidParam'), clientServer.logger)
       return
     }
     clientServer.authenticate(req, res, (data, token) => {
       if (parameters.userId !== data.sub) {
         // The config is only visible to the user that set the account data
-        send(res, 403, {
-          errcode: 'M_FORBIDDEN',
-          error:
-            'The access token provided is not authorized to update this user’s account data.'
-        })
+        send(
+          res,
+          403,
+          {
+            errcode: 'M_FORBIDDEN',
+            error:
+              'The access token provided is not authorized to update this user’s account data.'
+          },
+          clientServer.logger
+        )
         return
       }
       clientServer.matrixDb
@@ -40,22 +45,25 @@ const getAccountData = (
         })
         .then((rows) => {
           if (rows.length === 0) {
-            send(res, 404, {
-              errcode: 'M_NOT_FOUND',
-              error:
-                'No account data has been provided for this user with the given type.'
-            })
+            send(
+              res,
+              404,
+              {
+                errcode: 'M_NOT_FOUND',
+                error:
+                  'No account data has been provided for this user with the given type.'
+              },
+              clientServer.logger
+            )
           } else {
             const body: Record<string, string> = {}
             body[parameters.type] = rows[0].content as string
-            send(res, 200, body)
+            send(res, 200, body, clientServer.logger)
           }
         })
         .catch((e) => {
-          // istanbul ignore next
-          clientServer.logger.error("Error retrieving user's account data", e)
-          // istanbul ignore next
-          send(res, 500, errMsg('unknown'))
+          /* istanbul ignore next */
+          send(res, 500, errMsg('unknown', e), clientServer.logger)
         })
     })
   }
