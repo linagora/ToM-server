@@ -366,23 +366,23 @@ const UiAuthenticate = (
                     }
                   })
                   .catch((e) => {
-                    // istanbul ignore next
+                    /* istanbul ignore next */
                     logger.error(
                       'Error while retrieving session credentials from the database during User-Interactive Authentication',
                       e
                     )
-                    // istanbul ignore next
-                    send(res, 400, e)
+                    /* istanbul ignore next */
+                    send(res, 400, e, logger)
                   })
               })
               .catch((e) => {
-                // istanbul ignore next
+                /* istanbul ignore next */
                 logger.error(
                   'Error while inserting session credentials into the database during User-Interactive Authentication',
                   e
                 )
-                // istanbul ignore next
-                send(res, 400, e)
+                /* istanbul ignore next */
+                send(res, 400, e, logger)
               })
           })
           .catch((e) => {
@@ -412,13 +412,13 @@ const UiAuthenticate = (
                 })
               })
               .catch((e) => {
-                // istanbul ignore next
+                /* istanbul ignore next */
                 logger.error(
                   'Error while retrieving session credentials from the database during User-Interactive Authentication',
                   e
                 )
-                // istanbul ignore next
-                send(res, 400, e)
+                /* istanbul ignore next */
+                send(res, 400, e, logger)
               })
           })
       }
