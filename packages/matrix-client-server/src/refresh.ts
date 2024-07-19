@@ -45,13 +45,13 @@ const generateTokens = (
     device_id: refreshTokenData.device_id,
     token: newAccessToken,
     valid_until_ms: currentTimestamp + 64000, // TODO: Set valid_until_ms based on server config, current value is arbitrary
-    refresh_token_id: refreshTokenData.id,
+    refresh_token_id: nextRefreshTokenId,
     used: 0
-  })
+  }) // TODO : Handle 'puppets_user_id' if relevant
   const updateOldAccessToken = clientServer.matrixDb.updateWithConditions(
     'access_tokens',
     { used: 1 },
-    [{ field: 'refresh_token', value: oldRefreshToken }]
+    [{ field: 'refresh_token_id', value: refreshTokenData.id }]
   ) // Invalidate the old access token
 
   Promise.all([
@@ -66,33 +66,31 @@ const generateTokens = (
       })
     })
     .catch((e) => {
+      // istanbul ignore next
       clientServer.logger.error('Error generating tokens', e)
+      // istanbul ignore next
       send(res, 500, e)
     })
 }
+
 const refresh = (clientServer: MatrixClientServer): expressAppHandler => {
   return (req, res) => {
     jsonContent(req, res, clientServer.logger, (obj) => {
       validateParameters(res, schema, obj, clientServer.logger, (obj) => {
         const refreshToken = (obj as RequestBody).refresh_token
-        // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
-        if (!refreshToken) {
-          clientServer.logger.error('Missing refresh token')
-          send(res, 400, errMsg('missingParam', 'refresh_token'))
-        }
         clientServer.matrixDb
           .get('refresh_tokens', ['*'], { token: refreshToken })
           .then((rows) => {
             if (rows.length === 0) {
               clientServer.logger.error('Unknown refresh token', refreshToken)
               send(res, 400, errMsg('unknownToken'))
+              return
             }
             const refreshTokenData = rows[0] as unknown as RefreshTokenData
             const currentTimestamp = epoch()
-
             if (
-              // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
-              refreshTokenData.expiry_ts &&
+              refreshTokenData.expiry_ts !== undefined &&
+              refreshTokenData.expiry_ts !== null &&
               refreshTokenData.expiry_ts < currentTimestamp
             ) {
               send(
@@ -105,13 +103,13 @@ const refresh = (clientServer: MatrixClientServer): expressAppHandler => {
 
             // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
             if (refreshTokenData.next_token_id) {
-              // Return the existing next token if it already exists
               clientServer.matrixDb
                 .get('refresh_tokens', ['token'], {
                   id: refreshTokenData.next_token_id
                 })
                 .then((nextTokenRows) => {
                   if (nextTokenRows.length === 0) {
+                    // istanbul ignore next
                     send(
                       res,
                       500,
@@ -138,7 +136,9 @@ const refresh = (clientServer: MatrixClientServer): expressAppHandler => {
                   )
                 })
                 .catch((e) => {
+                  // istanbul ignore next
                   clientServer.logger.error('Error retrieving next token', e)
+                  // istanbul ignore next
                   send(res, 500, e)
                 })
             } else {
@@ -173,6 +173,7 @@ const refresh = (clientServer: MatrixClientServer): expressAppHandler => {
             }
           })
           .catch((error) => {
+            // istanbul ignore next
             clientServer.logger.error('Error fetching refresh token', error)
             send(
               res,
