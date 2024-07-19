@@ -15,13 +15,16 @@ export const getJoinedRooms = (
         })
         .then((roomsResult) => {
           const roomIds = roomsResult.map((row) => row.room_id) as string[]
-          send(res, 200, { joined_rooms: roomIds })
+          send(res, 200, { joined_rooms: roomIds }, clientServer.logger)
         })
         .catch((e) => {
           /* istanbul ignore next */
-          clientServer.logger.error('Error querying joined rooms:', e)
-          /* istanbul ignore next */
-          send(res, 500, errMsg('unknown', 'Error querying joined rooms'))
+          send(
+            res,
+            500,
+            errMsg('unknown', 'Error querying joined rooms'),
+            clientServer.logger
+          )
         })
     })
   }

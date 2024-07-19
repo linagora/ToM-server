@@ -34,26 +34,24 @@ export const getUserRoomTags = (
               }
             } catch (error) {
               /* istanbul ignore next */
-              clientServer.logger.error(
-                'Error parsing room tag content:',
-                error
-              )
-              /* istanbul ignore next */
               send(
                 res,
                 500,
-                errMsg('unknown', 'Error parsing room tag content')
+                errMsg('unknown', 'Error parsing room tag content'),
+                clientServer.logger
               )
             }
           })
-
-          send(res, 200, { tags: _tags })
+          send(res, 200, { tags: _tags }, clientServer.logger)
         })
         .catch((e) => {
           /* istanbul ignore next */
-          clientServer.logger.error('Error querying room tags:', e)
-          /* istanbul ignore next */
-          send(res, 500, errMsg('unknown', 'Error querying room tags'))
+          send(
+            res,
+            500,
+            errMsg('unknown', 'Error querying room tags'),
+            clientServer.logger
+          )
         })
     })
   }
