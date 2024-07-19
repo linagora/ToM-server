@@ -59,6 +59,10 @@ const putAccountData = (
             send(res, 400, errMsg('invalidParam', 'Content is too long'))
             return
           }
+          if (!contentRegex.test((obj as PutRequestBody).content)) {
+            send(res, 400, errMsg('invalidParam', 'Content is too long'))
+            return
+          }
           clientServer.matrixDb
             .updateWithConditions(
               'account_data',
