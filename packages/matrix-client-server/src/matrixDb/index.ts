@@ -34,7 +34,7 @@ export type Collections =
   | 'threepid_validation_session'
   | 'user_threepids'
   | 'presence'
-
+  | 'open_id_tokens'
 type sqlComparaisonOperator = '=' | '!=' | '>' | '<' | '>=' | '<=' | '<>'
 interface ISQLCondition {
   field: string
