@@ -149,6 +149,36 @@ describe('Use configuration file', () => {
             .send({ presence: 'offline', status_msg: 'I am offline' })
           expect(response.statusCode).toBe(403)
         })
+        it('should reject a state that wants to set a wrong presence status', async () => {
+          const response = await request(app)
+            .put('/_matrix/client/v3/presence/@testuser:example.com/status')
+            .set('Authorization', `Bearer ${validToken}`)
+            .set('Accept', 'application/json')
+            .send({ presence: 'wrongStatus', status_msg: 'I am offline' })
+          expect(response.statusCode).toBe(400)
+          expect(response.body).toHaveProperty(
+            'error',
+            'Invalid presence state'
+          )
+          expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
+        })
+        it('should reject a state that wants to set a status message that is too long', async () => {
+          let statusMsg = ''
+          for (let i = 0; i < 2050; i++) {
+            statusMsg += 'a'
+          }
+          const response = await request(app)
+            .put('/_matrix/client/v3/presence/@testuser:example.com/status')
+            .set('Authorization', `Bearer ${validToken}`)
+            .set('Accept', 'application/json')
+            .send({ presence: 'online', status_msg: statusMsg })
+          expect(response.statusCode).toBe(400)
+          expect(response.body).toHaveProperty(
+            'error',
+            'Status message is too long'
+          )
+          expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
+        })
         it('should reject a request with a userId that does not match the regex', async () => {
           const response = await request(app)
             .put('/_matrix/client/v3/presence/invalidUserId/status')
