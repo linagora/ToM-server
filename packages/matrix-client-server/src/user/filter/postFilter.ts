@@ -5,8 +5,8 @@ import {
   send,
   validateParametersStrict
 } from '@twake/utils'
-import type MatrixClientServer from '..'
-import type { Filter } from '../types'
+import type MatrixClientServer from '../..'
+import type { Filter } from '../../types'
 import type { Request } from 'express'
 import { randomString } from '@twake/crypto'
 

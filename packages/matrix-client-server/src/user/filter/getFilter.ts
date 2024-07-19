@@ -1,4 +1,4 @@
-import type MatrixClientServer from '..'
+import type MatrixClientServer from '../..'
 import { errMsg, send, type expressAppHandler } from '@twake/utils'
 import { type Request } from 'express'
 

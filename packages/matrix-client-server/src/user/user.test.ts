@@ -1,10 +1,10 @@
 import fs from 'fs'
 import request from 'supertest'
 import express from 'express'
-import ClientServer from './index'
-import { buildMatrixDb, buildUserDB } from './__testData__/buildUserDB'
-import { type Config, type Filter } from './types'
-import defaultConfig from './__testData__/registerConf.json'
+import ClientServer from '../index'
+import { buildMatrixDb, buildUserDB } from '../__testData__/buildUserDB'
+import { type Config, type Filter } from '../types'
+import defaultConfig from '../__testData__/registerConf.json'
 import { getLogger, type TwakeLogger } from '@twake/logger'
 import { randomString } from '@twake/crypto'
 
@@ -15,15 +15,6 @@ jest.mock('nodemailer', () => ({
     sendMail: sendMailMock
   }))
 }))
-
-const sendSMSMock = jest.fn()
-jest.mock('./utils/smsSender', () => {
-  return jest.fn().mockImplementation(() => {
-    return {
-      sendSMS: sendSMSMock
-    }
-  })
-})
 
 let conf: Config
 let clientServer: ClientServer
