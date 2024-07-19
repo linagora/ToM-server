@@ -79,15 +79,17 @@ type validateParametersType = (
   desc: validateParametersSchema,
   content: Record<string, string>,
   logger: TwakeLogger,
-  callback: (obj: object) => void
+  callback: (obj: object) => void,
+  acceptAdditionalParameters?: boolean
 ) => void
 
-export const validateParameters: validateParametersType = (
+const _validateParameters: validateParametersType = (
   res,
   desc,
   content,
   logger,
-  callback
+  callback,
+  acceptAdditionalParameters
 ) => {
   const missingParameters: string[] = []
   const additionalParameters: string[] = []
@@ -113,10 +115,42 @@ export const validateParameters: validateParametersType = (
       }
     })
     if (additionalParameters.length > 0) {
-      logger.warn('Additional parameters', additionalParameters)
+      if (acceptAdditionalParameters == null || acceptAdditionalParameters) {
+        logger.warn('Additional parameters', additionalParameters)
+      } else {
+        logger.error('Additional parameters', additionalParameters)
+        send(
+          res,
+          400,
+          errMsg(
+            'unknownParam',
+            `Unknown additional parameters ${additionalParameters.join(', ')}`
+          )
+        )
+      }
     }
     callback(content)
   }
+}
+
+export const validateParameters: validateParametersType = (
+  res,
+  desc,
+  content,
+  logger,
+  callback
+) => {
+  _validateParameters(res, desc, content, logger, callback, true)
+}
+
+export const validateParametersStrict: validateParametersType = (
+  res,
+  desc,
+  content,
+  logger,
+  callback
+) => {
+  _validateParameters(res, desc, content, logger, callback, false)
 }
 
 export const epoch = (): number => {
