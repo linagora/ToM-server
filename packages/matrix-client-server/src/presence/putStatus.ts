@@ -62,6 +62,22 @@ const putStatus = (clientServer: MatrixClientServer): expressAppHandler => {
               )
               return
             }
+            if (
+              (obj as PutRequestBody).presence !== 'offline' &&
+              (obj as PutRequestBody).presence !== 'online' &&
+              (obj as PutRequestBody).presence !== 'unavailable'
+            ) {
+              send(res, 400, errMsg('invalidParam', 'Invalid presence state'))
+              return
+            }
+            if (!statusMsgRegex.test((obj as PutRequestBody).status_msg)) {
+              send(
+                res,
+                400,
+                errMsg('invalidParam', 'Status message is too long')
+              )
+              return
+            }
             clientServer.matrixDb
               .updateWithConditions(
                 'presence',
