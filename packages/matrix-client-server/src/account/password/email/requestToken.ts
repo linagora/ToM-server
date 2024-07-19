@@ -60,6 +60,11 @@ const RequestToken = (clientServer: MatrixClientServer): expressAppHandler => {
           // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
         } else if (nextLink && !isValidUrl(nextLink)) {
           send(res, 400, errMsg('invalidParam', 'invalid next_link'))
+        } else if (
+          typeof sendAttempt !== 'number' ||
+          sendAttempt > 1000000000
+        ) {
+          send(res, 400, errMsg('invalidParam', 'Invalid send attempt'))
         } else {
           clientServer.matrixDb
             .get('user_threepids', ['user_id'], { address: dst })

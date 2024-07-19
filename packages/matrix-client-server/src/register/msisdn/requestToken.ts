@@ -163,6 +163,11 @@ const RequestToken = (clientServer: MatrixClientServer): expressAppHandler => {
           send(res, 400, errMsg('invalidParam', 'Invalid next_link'))
         } else if (!validPhoneNumberRegex.test(dst)) {
           send(res, 400, errMsg('invalidParam', 'Invalid phone number'))
+        } else if (
+          typeof sendAttempt !== 'number' ||
+          sendAttempt > 1000000000
+        ) {
+          send(res, 400, errMsg('invalidParam', 'Invalid send attempt'))
         } else {
           clientServer.matrixDb
             .get('user_threepids', ['user_id'], { address: dst })

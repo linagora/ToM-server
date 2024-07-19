@@ -161,6 +161,11 @@ const RequestToken = <T extends string = never>(
           // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
           else if (nextLink && !isValidUrl(nextLink)) {
             send(res, 400, errMsg('invalidParam', 'invalid next_link'))
+          } else if (
+            typeof sendAttempt !== 'number' ||
+            sendAttempt > 1000000000
+          ) {
+            send(res, 400, errMsg('invalidParam', 'Invalid send attempt'))
           } else {
             idServer.db
               .get('mappings', ['send_attempt', 'session_id'], {
