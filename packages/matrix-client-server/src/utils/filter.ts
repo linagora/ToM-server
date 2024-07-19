@@ -382,13 +382,7 @@ export class RoomFilter {
 // This function is used to get the type of event
 function getTypeRoomEvent(event_type: string): string {
   const roomEvents = {
-    account_data: [
-      'm.tag',
-      'm.push_rules',
-      'm.ignored_user_list',
-      'm.direct',
-      'm.user_devices'
-    ],
+    account_data: ['m.tag'],
     ephemeral: [
       'm.typing',
       'm.receipt',
@@ -445,6 +439,9 @@ function getTypeAllEvent(event_type: string): string {
     ],
     presence: ['m.presence']
   }
+
+  // If not in any of the above categories, it is a room event
+  // In the roomFilter we check again the event type so it is assured that the event is a correct room event
 
   for (const [type, events] of Object.entries(allEvents)) {
     if (events.includes(event_type)) {
