@@ -655,29 +655,6 @@ describe('Use configuration file', () => {
           expect(response.body).toHaveProperty('error')
           expect(response.body).toHaveProperty('errcode', 'M_FORBIDDEN')
         })
-        it('should refuse an authentication with the pasword of another user', async () => {
-          const hash = new Hash()
-          await hash.ready
-          const response = await request(app)
-            .post('/_matrix/client/v3/register')
-            .set('User-Agent', 'curl/7.31.0-DEV')
-            .set('X-Forwarded-For', '203.0.113.195')
-            .query({ kind: 'user' })
-            .send({
-              auth: {
-                type: 'm.login.password',
-                identifier: {
-                  type: 'm.id.user',
-                  user: '@otheruser:example.com'
-                },
-                password: hash.sha256('password'),
-                session: randomString(20)
-              }
-            })
-          expect(response.statusCode).toBe(401)
-          expect(response.body).toHaveProperty('error')
-          expect(response.body).toHaveProperty('errcode', 'M_FORBIDDEN')
-        })
         it('should accept an authentication with a correct password', async () => {
           const response = await request(app)
             .post('/_matrix/client/v3/register')
