@@ -2511,6 +2511,21 @@ describe('Use configuration file', () => {
           expect(response.statusCode).toBe(403)
           expect(response.body).toHaveProperty('errcode', 'M_FORBIDDEN')
         })
+        it('should refuse content that is too long', async () => {
+          let content = ''
+          for (let i = 0; i < 10000; i++) {
+            content += 'a'
+          }
+          const response = await request(app)
+            .put(
+              '/_matrix/client/v3/user/@testuser:example.com/account_data/m.room.message'
+            )
+            .set('Authorization', `Bearer ${validToken}`)
+            .set('Accept', 'application/json')
+            .send({ content })
+          expect(response.statusCode).toBe(400)
+          expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
+        })
         it('should update account data', async () => {
           const response = await request(app)
             .put(
@@ -2652,6 +2667,21 @@ describe('Use configuration file', () => {
               .send({ content: 'new content' })
             expect(response.statusCode).toBe(403)
             expect(response.body).toHaveProperty('errcode', 'M_FORBIDDEN')
+          })
+          it('should refuse content that is too long', async () => {
+            let content = ''
+            for (let i = 0; i < 10000; i++) {
+              content += 'a'
+            }
+            const response = await request(app)
+              .put(
+                '/_matrix/client/v3/user/@testuser:example.com/rooms/!roomId:example.com/account_data/m.room.message'
+              )
+              .set('Authorization', `Bearer ${validToken}`)
+              .set('Accept', 'application/json')
+              .send({ content })
+            expect(response.statusCode).toBe(400)
+            expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
           })
           it('should update account data', async () => {
             const response = await request(app)
