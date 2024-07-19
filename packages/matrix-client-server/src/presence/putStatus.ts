@@ -18,7 +18,9 @@ const schema = {
 }
 
 const matrixIdRegex = /^@[0-9a-zA-Z._=-]+:[0-9a-zA-Z.-]+$/
+const statusMsgRegex = /^.{0,2048}$/
 
+// If status message is longer than 2048 characters, we refuse it to prevent clients from sending too long messages that could crash the DB. This value is arbitrary and could be changed
 // NB : Maybe the function should update the presence_stream table of the matrixDB,
 // TODO : reread the code after implementing streams-related endpoints
 const putStatus = (clientServer: MatrixClientServer): expressAppHandler => {
@@ -42,6 +44,22 @@ const putStatus = (clientServer: MatrixClientServer): expressAppHandler => {
                 'You cannot set the presence state of another user'
               )
               send(res, 403, errMsg('forbidden'), clientServer.logger)
+              return
+            }
+            if (
+              (obj as PutRequestBody).presence !== 'offline' &&
+              (obj as PutRequestBody).presence !== 'online' &&
+              (obj as PutRequestBody).presence !== 'unavailable'
+            ) {
+              send(res, 400, errMsg('invalidParam', 'Invalid presence state'))
+              return
+            }
+            if (!statusMsgRegex.test((obj as PutRequestBody).status_msg)) {
+              send(
+                res,
+                400,
+                errMsg('invalidParam', 'Status message is too long')
+              )
               return
             }
             clientServer.matrixDb
