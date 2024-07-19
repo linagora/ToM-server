@@ -485,6 +485,7 @@ describe('Use configuration file', () => {
             }
           }
         }
+        let filterId: string
 
         describe('POST', () => {
           // TODO : think about this - maybe change the validate parameters method
@@ -516,8 +517,59 @@ describe('Use configuration file', () => {
             expect(response.statusCode).toBe(403)
             expect(response.body).toHaveProperty('errcode', 'M_FORBIDDEN')
           })
+          it('should post a filter', async () => {
+            const response = await request(app)
+              .post('/_matrix/client/v3/user/@testuser:example.com/filter')
+              .set('Authorization', `Bearer ${validToken}`)
+              .set('Accept', 'application/json')
+              .send(filter)
+            expect(response.statusCode).toBe(200)
+            expect(response.body).toHaveProperty('filter_id')
+            filterId = response.body.filter_id
+          })
         })
-        // describe('GET', () => {})
+        describe('GET', () => {
+          it('should reject getting a filter for an other userId', async () => {
+            const response = await request(app)
+              .get(
+                `/_matrix/client/v3/user/@testuser2:example.com/filter/${filterId}`
+              )
+              .set('Authorization', `Bearer ${validToken}`)
+              .set('Accept', 'application/json')
+            expect(response.statusCode).toBe(403)
+            expect(response.body).toHaveProperty('errcode', 'M_FORBIDDEN')
+          })
+          it('should reject getting a filter for an other server name', async () => {
+            const response = await request(app)
+              .get(
+                `/_matrix/client/v3/user/@testuser:example2.com/filter/${filterId}`
+              )
+              .set('Authorization', `Bearer ${validToken}`)
+              .set('Accept', 'application/json')
+            expect(response.statusCode).toBe(403)
+            expect(response.body).toHaveProperty('errcode', 'M_FORBIDDEN')
+          })
+          it('should reject getting a filter that does not exist', async () => {
+            const response = await request(app)
+              .get(
+                `/_matrix/client/v3/user/@testuser:example.com/filter/invalidFilterId`
+              )
+              .set('Authorization', `Bearer ${validToken}`)
+              .set('Accept', 'application/json')
+            expect(response.statusCode).toBe(404)
+            expect(response.body).toHaveProperty('errcode', 'M_NOT_FOUND')
+          })
+          it('should get a filter', async () => {
+            const response = await request(app)
+              .get(
+                `/_matrix/client/v3/user/@testuser:example.com/filter/${filterId}`
+              )
+              .set('Authorization', `Bearer ${validToken}`)
+              .set('Accept', 'application/json')
+            expect(response.statusCode).toBe(200)
+            expect(response.body).toEqual(filter)
+          })
+        })
       })
     })
   })
