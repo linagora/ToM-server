@@ -54,6 +54,9 @@ export const errCodes = {
   // No access token was specified for the request
   missingToken: 'M_MISSING_TOKEN',
 
+  // The registration token has been used too many times or has expired and is now invalid.
+  invalidToken: 'INVALID_TOKEN',
+
   // Request contained valid JSON, but it was malformed in some way, e.g. missing required keys, invalid values for keys
   badJson: 'M_BAD_JSON',
 
@@ -121,10 +124,7 @@ export const errCodes = {
   resourceLimitExceeded: 'M_RESOURCE_LIMIT_EXCEEDED',
 
   // The user is unable to reject an invite to join the server notices room. See the Server Notices module for more information.
-  cannotLeaveServerNoticeRoom: 'M_CANNOT_LEAVE_SERVER_NOTICE_ROOM',
-
-  // The registration token has been used too many times and is now invalid.
-  tokenMax: 'TOKEN_USED_TOO_MANY_TIMES'
+  cannotLeaveServerNoticeRoom: 'M_CANNOT_LEAVE_SERVER_NOTICE_ROOM'
 } as const
 
 export const defaultMsg = (s: string): string => {

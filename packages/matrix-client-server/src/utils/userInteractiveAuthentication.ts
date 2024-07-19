@@ -247,7 +247,9 @@ const checkAuthentication = (
                   pending + completed + 1 > usesAllowed &&
                   usesAllowed !== null
                 ) {
-                  reject(errMsg('tokenMax'))
+                  reject(
+                    errMsg('invalidToken', 'Token has been used too many times')
+                  )
                 } else {
                   matrixDb
                     .updateWithConditions(
