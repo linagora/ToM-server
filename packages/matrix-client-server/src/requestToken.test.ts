@@ -149,6 +149,36 @@ describe('Use configuration file', () => {
       expect(response.statusCode).toBe(400)
       expect(sendMailMock).not.toHaveBeenCalled()
     })
+    it('should refuse a send_attempt that is not a number', async () => {
+      const response = await request(app)
+        .post('/_matrix/client/v3/register/email/requestToken')
+        .set('Accept', 'application/json')
+        .send({
+          client_secret: 'mysecret',
+          email: 'yadd@debian.org',
+          next_link: 'http://localhost:8090',
+          send_attempt: 'NaN'
+        })
+      expect(response.statusCode).toBe(400)
+      expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
+      expect(response.body).toHaveProperty('error', 'Invalid send attempt')
+      expect(sendMailMock).not.toHaveBeenCalled()
+    })
+    it('should refuse a send_attempt that is too large', async () => {
+      const response = await request(app)
+        .post('/_matrix/client/v3/register/email/requestToken')
+        .set('Accept', 'application/json')
+        .send({
+          client_secret: 'mysecret',
+          email: 'yadd@debian.org',
+          next_link: 'http://localhost:8090',
+          send_attempt: 999999999999
+        })
+      expect(response.statusCode).toBe(400)
+      expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
+      expect(response.body).toHaveProperty('error', 'Invalid send attempt')
+      expect(sendMailMock).not.toHaveBeenCalled()
+    })
     it('should accept valid email registration query', async () => {
       const response = await request(app)
         .post('/_matrix/client/v3/register/email/requestToken')
@@ -368,6 +398,38 @@ describe('Use configuration file', () => {
       expect(response.body).toHaveProperty('error', 'Invalid next_link')
       expect(sendSMSMock).not.toHaveBeenCalled()
     })
+    it('should refuse a send_attempt that is not a number', async () => {
+      const response = await request(app)
+        .post('/_matrix/client/v3/register/msisdn/requestToken')
+        .set('Accept', 'application/json')
+        .send({
+          client_secret: 'mysecret',
+          phone_number: '0618384839',
+          country: 'FR',
+          next_link: 'http://localhost:8090',
+          send_attempt: 'NaN'
+        })
+      expect(response.statusCode).toBe(400)
+      expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
+      expect(response.body).toHaveProperty('error', 'Invalid send attempt')
+      expect(sendSMSMock).not.toHaveBeenCalled()
+    })
+    it('should refuse a send_attempt that is too large', async () => {
+      const response = await request(app)
+        .post('/_matrix/client/v3/register/msisdn/requestToken')
+        .set('Accept', 'application/json')
+        .send({
+          client_secret: 'mysecret',
+          phone_number: '0618384839',
+          country: 'FR',
+          next_link: 'http://localhost:8090',
+          send_attempt: 999999999999
+        })
+      expect(response.statusCode).toBe(400)
+      expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
+      expect(response.body).toHaveProperty('error', 'Invalid send attempt')
+      expect(sendSMSMock).not.toHaveBeenCalled()
+    })
     // this test is expected to work with the current behaviour of the sendSMS function which is to write in a file, and not to send a real SMS
     it('should accept valid phone number registration query', async () => {
       const response = await request(app)
@@ -502,6 +564,36 @@ describe('Use configuration file', () => {
       expect(response.statusCode).toBe(400)
       expect(sendMailMock).not.toHaveBeenCalled()
     })
+    it('should refuse a send_attempt that is not a number', async () => {
+      const response = await request(app)
+        .post('/_matrix/client/v3/account/password/email/requestToken')
+        .set('Accept', 'application/json')
+        .send({
+          client_secret: 'mysecret',
+          email: 'yadd@debian.org',
+          next_link: 'http://localhost:8090',
+          send_attempt: 'NaN'
+        })
+      expect(response.statusCode).toBe(400)
+      expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
+      expect(response.body).toHaveProperty('error', 'Invalid send attempt')
+      expect(sendMailMock).not.toHaveBeenCalled()
+    })
+    it('should refuse a send_attempt that is too large', async () => {
+      const response = await request(app)
+        .post('/_matrix/client/v3/account/password/email/requestToken')
+        .set('Accept', 'application/json')
+        .send({
+          client_secret: 'mysecret',
+          email: 'yadd@debian.org',
+          next_link: 'http://localhost:8090',
+          send_attempt: 999999999999
+        })
+      expect(response.statusCode).toBe(400)
+      expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
+      expect(response.body).toHaveProperty('error', 'Invalid send attempt')
+      expect(sendMailMock).not.toHaveBeenCalled()
+    })
     it('should accept valid email registration query', async () => {
       await clientServer.matrixDb.insert('user_threepids', {
         user_id: '@newuser:localhost',
@@ -627,6 +719,38 @@ describe('Use configuration file', () => {
       expect(response.statusCode).toBe(400)
       expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
       expect(response.body).toHaveProperty('error', 'Invalid client_secret')
+      expect(sendSMSMock).not.toHaveBeenCalled()
+    })
+    it('should refuse a send_attempt that is not a number', async () => {
+      const response = await request(app)
+        .post('/_matrix/client/v3/account/password/msisdn/requestToken')
+        .set('Accept', 'application/json')
+        .send({
+          client_secret: 'mysecret',
+          phone_number: '0618384839',
+          country: 'FR',
+          next_link: 'http://localhost:8090',
+          send_attempt: 'NaN'
+        })
+      expect(response.statusCode).toBe(400)
+      expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
+      expect(response.body).toHaveProperty('error', 'Invalid send attempt')
+      expect(sendSMSMock).not.toHaveBeenCalled()
+    })
+    it('should refuse a send_attempt that is too large', async () => {
+      const response = await request(app)
+        .post('/_matrix/client/v3/account/password/msisdn/requestToken')
+        .set('Accept', 'application/json')
+        .send({
+          client_secret: 'mysecret',
+          phone_number: '0618384839',
+          country: 'FR',
+          next_link: 'http://localhost:8090',
+          send_attempt: 999999999999
+        })
+      expect(response.statusCode).toBe(400)
+      expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
+      expect(response.body).toHaveProperty('error', 'Invalid send attempt')
       expect(sendSMSMock).not.toHaveBeenCalled()
     })
     it('should refuse an invalid next_link', async () => {
