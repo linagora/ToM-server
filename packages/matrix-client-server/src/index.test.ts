@@ -7,6 +7,7 @@ import { type Config } from './types'
 import defaultConfig from './__testData__/registerConf.json'
 import { getLogger, type TwakeLogger } from '@twake/logger'
 import { Hash, randomString } from '@twake/crypto'
+import { epoch } from '@twake/utils'
 
 process.env.TWAKE_CLIENT_SERVER_CONF = './src/__testData__/registerConf.json'
 jest.mock('node-fetch', () => jest.fn())
@@ -269,13 +270,21 @@ describe('Use configuration file', () => {
   })
 
   let validToken: string
+  let validToken1: string
   let validToken2: string
   let validToken3: string
+  let validRefreshToken1: string
+  let validRefreshToken2: string
   describe('Endpoints with authentication', () => {
     beforeAll(async () => {
       validToken = randomString(64)
+      validToken1 = randomString(64)
       validToken2 = randomString(64)
       validToken3 = randomString(64)
+      const validRefreshTokenId1 = randomString(64)
+      const validRefreshTokenId2 = randomString(64)
+      validRefreshToken1 = randomString(64)
+      validRefreshToken2 = randomString(64)
       try {
         await clientServer.matrixDb.insert('user_ips', {
           user_id: '@testuser:example.com',
@@ -303,9 +312,106 @@ describe('Use configuration file', () => {
           user_agent: 'curl/7.31.0-DEV',
           last_seen: 1411996332123
         })
+
+        await clientServer.matrixDb.insert('refresh_tokens', {
+          id: validRefreshTokenId2,
+          user_id: '@seconduser:example.com',
+          device_id: 'seconddevice',
+          token: validRefreshToken2
+        })
+        await clientServer.matrixDb.insert('access_tokens', {
+          id: validRefreshTokenId1,
+          user_id: '@thirduser:example.com',
+          device_id: 'thirddevice',
+          token: randomString(64),
+          refresh_token_id: validRefreshTokenId2
+        })
+        await clientServer.matrixDb.insert('refresh_tokens', {
+          id: validRefreshTokenId1,
+          user_id: '@firstuser:example.com',
+          device_id: 'firstdevice',
+          token: validRefreshToken1,
+          next_token_id: validRefreshTokenId2
+        })
+        await clientServer.matrixDb.insert('access_tokens', {
+          id: randomString(64),
+          user_id: '@firstuser:example.com',
+          device_id: 'firstdevice',
+          token: validToken1,
+          valid_until_ms: epoch() + 64000,
+          refresh_token_id: validRefreshTokenId1
+        })
+        await clientServer.matrixDb.insert('access_tokens', {
+          id: randomString(64),
+          user_id: '@testuser:example.com',
+          device_id: 'testdevice',
+          token: validToken,
+          valid_until_ms: epoch() + 64000
+        })
+
+        await clientServer.matrixDb.insert('access_tokens', {
+          user_id: '@testuser2:example.com',
+          device_id: 'testdevice2',
+          token: validToken2,
+          valid_until_ms: epoch() + 64000
+        })
+
+        await clientServer.matrixDb.insert('access_tokens', {
+          user_id: '@testuser3:example.com',
+          device_id: 'testdevice3',
+          token: validToken3,
+          valid_until_ms: epoch() + 64000
+        })
       } catch (e) {
         logger.error('Error creating tokens for authentification', e)
       }
+    })
+    describe('/_matrix/client/v3/refresh', () => {
+      it('should refuse a request without refresh token', async () => {
+        const response = await request(app)
+          .post('/_matrix/client/v3/refresh')
+          .send({})
+        expect(response.statusCode).toBe(400)
+        expect(response.body.errcode).toBe('M_MISSING_PARAMS')
+      })
+      it('should refuse a request with an unknown refresh token', async () => {
+        const response = await request(app)
+          .post('/_matrix/client/v3/refresh')
+          .send({ refresh_token: 'unknownToken' })
+        expect(response.statusCode).toBe(400)
+        expect(response.body.errcode).toBe('M_UNKNOWN_TOKEN')
+      })
+      it('should refuse a request with an expired refresh token', async () => {
+        await clientServer.matrixDb.insert('refresh_tokens', {
+          id: 0,
+          user_id: 'expiredUser',
+          device_id: 'expiredDevice',
+          token: 'expiredToken',
+          expiry_ts: 0
+        })
+        const response = await request(app)
+          .post('/_matrix/client/v3/refresh')
+          .send({ refresh_token: 'expiredToken' })
+        expect(response.statusCode).toBe(401)
+        expect(response.body.errcode).toBe('INVALID_TOKEN')
+      })
+      it('should send the next request token if the token sent in the request has such a field in the DB', async () => {
+        const response = await request(app)
+          .post('/_matrix/client/v3/refresh')
+          .send({ refresh_token: validRefreshToken1 })
+        expect(response.statusCode).toBe(200)
+        expect(response.body).toHaveProperty('access_token')
+        expect(response.body).toHaveProperty('refresh_token')
+        expect(response.body.refresh_token).toBe(validRefreshToken2)
+      })
+      it('should generate a new refresh token  and access token if there was no next token in the DB', async () => {
+        const response = await request(app)
+          .post('/_matrix/client/v3/refresh')
+          .send({ refresh_token: validRefreshToken2 })
+        expect(response.statusCode).toBe(200)
+        expect(response.body).toHaveProperty('access_token')
+        expect(response.body).toHaveProperty('refresh_token')
+      })
     })
     describe('/_matrix/client/v3/account/whoami', () => {
       let asToken: string
