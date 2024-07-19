@@ -488,17 +488,16 @@ describe('Use configuration file', () => {
         let filterId: string
 
         describe('POST', () => {
-          // TODO : think about this - maybe change the validate parameters method
-          // it('should reject invalid parameters', async () => {
-          //   // Missing filter
-          //   const response = await request(app)
-          //     .post('/_matrix/client/v3/user/@testuser:example.com/filter')
-          //     .set('Authorization', `Bearer ${validToken}`)
-          //     .set('Accept', 'application/json')
-          //     .send({ notAFilterField: 'test' })
-          //   expect(response.statusCode).toBe(400)
-          //   expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
-          // })
+          it('should reject invalid parameters', async () => {
+            // Additional parameters not supported
+            const response = await request(app)
+              .post('/_matrix/client/v3/user/@testuser:example.com/filter')
+              .set('Authorization', `Bearer ${validToken}`)
+              .set('Accept', 'application/json')
+              .send({ notAFilterField: 'test' })
+            expect(response.statusCode).toBe(400)
+            expect(response.body).toHaveProperty('errcode', 'UNKNWON_PARAM')
+          })
           it('should reject posting a filter for an other userId', async () => {
             const response = await request(app)
               .post('/_matrix/client/v3/user/@testuser2:example.com/filter')
