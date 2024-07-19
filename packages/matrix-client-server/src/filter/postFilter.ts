@@ -28,6 +28,10 @@ const PostFilter = (clientServer: MatrixClientServer): expressAppHandler => {
           // we consider for the moment that the user is only allowed to make requests for his own user id
           const userId = (req as Request).params.userId
           if (userId !== token.sub || !clientServer.isMine(userId)) {
+            clientServer.logger.error(
+              'Forbidden user id for posting a filter:',
+              userId
+            )
             send(res, 403, errMsg('forbidden'))
             return
           }
@@ -40,10 +44,13 @@ const PostFilter = (clientServer: MatrixClientServer): expressAppHandler => {
               filter_json: JSON.stringify(filter) // TODO : clarify the type of the filter_json (bytea, string ???)
             })
             .then(() => {
+              clientServer.logger.info('Inserted filter:', filterId)
               send(res, 200, { filter_id: filterId })
             })
             .catch((e) => {
+              /* istanbul ignore next */
               clientServer.logger.error('Error while inserting filter:', e)
+              /* istanbul ignore next */
               send(res, 500, errMsg('unknown', e))
             })
         })
