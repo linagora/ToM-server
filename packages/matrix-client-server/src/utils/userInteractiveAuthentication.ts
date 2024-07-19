@@ -324,10 +324,15 @@ const UiAuthenticate = (
     jsonContent(req, res, logger, (obj) => {
       // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
       if (!(obj as requestBody).auth) {
-        send(res, 401, {
-          ...allowedFlows,
-          session: randomString(12) // Chose 12 arbitrarily according to a spec example
-        })
+        send(
+          res,
+          401,
+          {
+            ...allowedFlows,
+            session: randomString(12) // Chose 12 arbitrarily according to a spec example
+          },
+          logger
+        )
       } else {
         const auth = (obj as requestBody).auth as AuthenticationData
         checkAuthentication(auth, matrixDb, conf, req)
@@ -359,40 +364,50 @@ const UiAuthenticate = (
                     if (authOver) {
                       callback(obj, userId) // Arguments of callback are subject to change
                     } else {
-                      send(res, 401, {
-                        ...allowedFlows,
-                        session: auth.session,
-                        completed
-                      })
+                      send(
+                        res,
+                        401,
+                        {
+                          ...allowedFlows,
+                          session: auth.session,
+                          completed
+                        },
+                        logger
+                      )
                     }
                   })
                   .catch((e) => {
-                    // istanbul ignore next
+                    /* istanbul ignore next */
                     logger.error(
                       'Error while retrieving session credentials from the database during User-Interactive Authentication',
                       e
                     )
-                    // istanbul ignore next
-                    send(res, 400, e)
+                    /* istanbul ignore next */
+                    send(res, 400, e, logger)
                   })
               })
               .catch((e) => {
-                // istanbul ignore next
+                /* istanbul ignore next */
                 logger.error(
                   'Error while inserting session credentials into the database during User-Interactive Authentication',
                   e
                 )
-                // istanbul ignore next
-                send(res, 400, e)
+                /* istanbul ignore next */
+                send(res, 400, e, logger)
               })
           })
           .catch((e) => {
             if (auth.type === 'm.login.application_service') {
-              send(res, 401, {
-                errcode: e.errcode,
-                error: e.error,
-                ...allowedFlows
-              })
+              send(
+                res,
+                401,
+                {
+                  errcode: e.errcode,
+                  error: e.error,
+                  ...allowedFlows
+                },
+                logger
+              )
               return
             }
             db.get('ui_auth_sessions', ['stage_type'], {
@@ -402,22 +417,27 @@ const UiAuthenticate = (
                 const completed: string[] = rows.map(
                   (row) => row.stage_type as string
                 )
-                send(res, 401, {
-                  errcode: e.errcode,
-                  error: e.error,
-                  completed,
-                  ...allowedFlows,
-                  session: auth.session
-                })
+                send(
+                  res,
+                  401,
+                  {
+                    errcode: e.errcode,
+                    error: e.error,
+                    completed,
+                    ...allowedFlows,
+                    session: auth.session
+                  },
+                  logger
+                )
               })
               .catch((e) => {
-                // istanbul ignore next
+                /* istanbul ignore next */
                 logger.error(
                   'Error while retrieving session credentials from the database during User-Interactive Authentication',
                   e
                 )
-                // istanbul ignore next
-                send(res, 400, e)
+                /* istanbul ignore next */
+                send(res, 400, e, logger)
               })
           })
       }

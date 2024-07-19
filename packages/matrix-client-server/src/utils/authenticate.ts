@@ -69,7 +69,8 @@ const Authenticate = (
                   errMsg(
                     'forbidden',
                     'The appservice cannot masquerade as the user or has not registered them.'
-                  )
+                  ),
+                  logger
                 )
                 return
               }
@@ -90,11 +91,11 @@ const Authenticate = (
         })
         .catch((e) => {
           logger.warn('Access tried with an unkown token', req.headers)
-          send(res, 401, errMsg('unknownToken'))
+          send(res, 401, errMsg('unknownToken'), logger)
         })
     } else {
       logger.warn('Access tried without token', req.headers)
-      send(res, 401, errMsg('missingToken'))
+      send(res, 401, errMsg('missingToken'), logger)
     }
   }
 }
