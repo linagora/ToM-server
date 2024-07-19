@@ -71,9 +71,12 @@ export const changeAvatarUrl = (
         byAdmin = response[0].admin as number
       } catch (e) {
         /* istanbul ignore next */
-        clientServer.logger.error('Error checking admin:', e)
-        /* istanbul ignore next */
-        send(res, 500, errMsg('unknown', 'Error checking admin'))
+        send(
+          res,
+          500,
+          errMsg('unknown', 'Error checking admin'),
+          clientServer.logger
+        )
       }
 
       jsonContent(req, res, clientServer.logger, (obj) => {
@@ -86,7 +89,8 @@ export const changeAvatarUrl = (
             send(
               res,
               400,
-              errMsg('unknown', 'Cannot change displayname of a remote user')
+              errMsg('unknown', 'Cannot change displayname of a remote user'),
+              clientServer.logger
             )
             return
           }
@@ -98,7 +102,8 @@ export const changeAvatarUrl = (
               errMsg(
                 'forbidden',
                 'Cannot change displayname of another user when not admin'
-              )
+              ),
+              clientServer.logger
             )
             return
           }
@@ -112,7 +117,8 @@ export const changeAvatarUrl = (
               errMsg(
                 'invalidParam',
                 `Avatar url too long. Max length is + ${MAX_AVATAR_URL_LEN}`
-              )
+              ),
+              clientServer.logger
             )
             return
           }
@@ -123,13 +129,16 @@ export const changeAvatarUrl = (
             ])
             .then(() => {
               clientServer.logger.debug('AvatarUrl updated')
-              send(res, 200, {})
+              send(res, 200, {}, clientServer.logger)
             })
             .catch((e) => {
               /* istanbul ignore next */
-              clientServer.logger.error('Error querying profiles:', e)
-              /* istanbul ignore next */
-              send(res, 500, errMsg('unknown', 'Error querying profiles'))
+              send(
+                res,
+                500,
+                errMsg('unknown', 'Error querying profiles'),
+                clientServer.logger
+              )
             })
         })
       })
@@ -171,7 +180,12 @@ export const changeDisplayname = (
         /* istanbul ignore next */
         clientServer.logger.error('Error checking admin:', e)
         /* istanbul ignore next */
-        send(res, 500, errMsg('unknown', 'Error checking admin'))
+        send(
+          res,
+          500,
+          errMsg('unknown', 'Error checking admin'),
+          clientServer.logger
+        )
       }
 
       jsonContent(req, res, clientServer.logger, (obj) => {
@@ -189,7 +203,8 @@ export const changeDisplayname = (
               send(
                 res,
                 400,
-                errMsg('unknown', 'Cannot change displayname of a remote user')
+                errMsg('unknown', 'Cannot change displayname of a remote user'),
+                clientServer.logger
               )
               return
             }
@@ -201,7 +216,8 @@ export const changeDisplayname = (
                 errMsg(
                   'forbidden',
                   'Cannot change displayname of another user when not admin'
-                )
+                ),
+                clientServer.logger
               )
               return
             }
@@ -215,7 +231,8 @@ export const changeDisplayname = (
                 errMsg(
                   'invalidParam',
                   `Displayname too long. Max length is + ${MAX_DISPLAYNAME_LEN}`
-                )
+                ),
+                clientServer.logger
               )
               return
             }
@@ -228,13 +245,16 @@ export const changeDisplayname = (
               )
               .then(() => {
                 clientServer.logger.debug('Displayname updated')
-                send(res, 200, {})
+                send(res, 200, {}, clientServer.logger)
               })
               .catch((e) => {
                 /* istanbul ignore next */
-                clientServer.logger.error('Error querying profiles:', e)
-                /* istanbul ignore next */
-                send(res, 500, errMsg('unknown', 'Error querying profiles'))
+                send(
+                  res,
+                  500,
+                  errMsg('unknown', 'Error querying profiles'),
+                  clientServer.logger
+                )
               })
           }
         )
