@@ -3,7 +3,7 @@ import {
   type expressAppHandler,
   jsonContent,
   send,
-  validateParameters
+  validateParametersStrict
 } from '@twake/utils'
 import type MatrixClientServer from '..'
 import type { Filter } from '../types'
