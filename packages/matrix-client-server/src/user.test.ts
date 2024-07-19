@@ -496,7 +496,7 @@ describe('Use configuration file', () => {
               .set('Accept', 'application/json')
               .send({ notAFilterField: 'test' })
             expect(response.statusCode).toBe(400)
-            expect(response.body).toHaveProperty('errcode', 'UNKNWON_PARAM')
+            expect(response.body).toHaveProperty('errcode', 'UNKNOWN_PARAM')
           })
           it('should reject posting a filter for an other userId', async () => {
             const response = await request(app)
