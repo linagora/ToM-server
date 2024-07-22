@@ -29,11 +29,21 @@ const add = (clientServer: MatrixClientServer): expressAppHandler => {
     clientServer.uiauthenticate(req, res, allowedFlows, (obj, userId) => {
       validateParameters(res, schema, obj, clientServer.logger, (obj) => {
         if (!clientSecretRegex.test((obj as RequestBody).client_secret)) {
-          send(res, 400, errMsg('invalidParam', 'Invalid client_secret'))
+          send(
+            res,
+            400,
+            errMsg('invalidParam', 'Invalid client_secret'),
+            clientServer.logger
+          )
           return
         }
         if (!sidRegex.test((obj as RequestBody).sid)) {
-          send(res, 400, errMsg('invalidParam', 'Invalid session ID'))
+          send(
+            res,
+            400,
+            errMsg('invalidParam', 'Invalid session ID'),
+            clientServer.logger
+          )
           return
         }
         const body = obj as RequestBody
@@ -49,12 +59,12 @@ const add = (clientServer: MatrixClientServer): expressAppHandler => {
           )
           .then((sessionRows) => {
             if (sessionRows.length === 0) {
-              send(res, 400, errMsg('noValidSession'))
+              send(res, 400, errMsg('noValidSession'), clientServer.logger)
               return
             }
             // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
             if (!sessionRows[0].validated_at) {
-              send(res, 400, errMsg('sessionNotValidated'))
+              send(res, 400, errMsg('sessionNotValidated'), clientServer.logger)
               return
             }
             clientServer.matrixDb
@@ -63,7 +73,7 @@ const add = (clientServer: MatrixClientServer): expressAppHandler => {
               })
               .then((rows) => {
                 if (rows.length > 0) {
-                  send(res, 400, errMsg('threepidInUse'))
+                  send(res, 400, errMsg('threepidInUse'), clientServer.logger)
                 } else {
                   clientServer.matrixDb
                     .insert('user_threepids', {
@@ -74,16 +84,15 @@ const add = (clientServer: MatrixClientServer): expressAppHandler => {
                       added_at: epoch()
                     })
                     .then(() => {
-                      send(res, 200, {})
+                      send(res, 200, {}, clientServer.logger)
                     })
                     .catch((e) => {
                       // istanbul ignore next
                       clientServer.logger.error(
-                        'Error while inserting user_threepids',
-                        e
+                        'Error while inserting user_threepids'
                       )
                       // istanbul ignore next
-                      send(res, 400, errMsg('unknown', e))
+                      send(res, 400, errMsg('unknown', e), clientServer.logger)
                     })
                 }
               })
