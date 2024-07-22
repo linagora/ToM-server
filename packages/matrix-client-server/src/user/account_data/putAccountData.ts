@@ -22,6 +22,7 @@ const schema = {
 
 const matrixIdRegex = /^@[0-9a-zA-Z._=-]+:[0-9a-zA-Z.-]+$/
 const eventTypeRegex = /^(?:[a-z]+(?:\.[a-z][a-z0-9]*)*)$/ // Following Java's package naming convention as per : https://spec.matrix.org/v1.11/#events
+const contentRegex = /^.{0,2048}$/ // Prevent the client from sending too long messages that could crash the DB. This value is arbitrary and could be changed
 
 const putAccountData = (
   clientServer: MatrixClientServer
@@ -52,6 +53,10 @@ const putAccountData = (
               },
               clientServer.logger
             )
+            return
+          }
+          if (!contentRegex.test((obj as PutRequestBody).content)) {
+            send(res, 400, errMsg('invalidParam', 'Content is too long'))
             return
           }
           clientServer.matrixDb

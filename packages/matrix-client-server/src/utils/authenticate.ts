@@ -41,7 +41,13 @@ const Authenticate = (
     if (token != null) {
       let data: TokenContent
       matrixDb
-        .get('user_ips', ['user_id, device_id'], { access_token: token })
+        .get(
+          'access_tokens',
+          ['user_id, device_id', 'refresh_token_id', 'used'],
+          {
+            token
+          }
+        )
         .then((rows) => {
           if (rows.length === 0) {
             const applicationServices = conf.application_services
@@ -83,12 +89,36 @@ const Authenticate = (
               throw new Error()
             }
           } else {
+            if (rows[0].used === 1) {
+              logger.error('Access tried with an invalid token', req.headers)
+              send(
+                res,
+                401,
+                errMsg('invalidToken', 'Access token has been refreshed')
+              )
+              return
+            }
             data = { sub: rows[0].user_id as string, epoch: epoch() }
             data.sub = rows[0].user_id as string
             if (rows[0].device_id) {
               data.device_id = rows[0].device_id as string
             }
-            callback(data, token)
+            matrixDb
+              .deleteWhere('refresh_tokens', {
+                // Invalidate the old refresh token and access token (condition ON DELETE CASCADE) once the new access token is used
+                field: 'next_token_id',
+                value: rows[0].refresh_token_id as number,
+                operator: '='
+              })
+              .then(() => {
+                callback(data, token)
+              })
+              .catch((e) => {
+                // istanbul ignore next
+                logger.error('Error deleting the old refresh token', e)
+                // istanbul ignore next
+                send(res, 500, errMsg('unknown', e))
+              })
           }
         })
         .catch((e) => {

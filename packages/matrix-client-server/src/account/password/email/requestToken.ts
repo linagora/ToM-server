@@ -10,7 +10,7 @@ import {
 import type MatrixClientServer from '../../../index'
 import Mailer from '../../../utils/mailer'
 import {
-  fillTable,
+  fillTableAndSend,
   getSubmitUrl,
   preConfigureTemplate
 } from '../../../register/email/requestToken'
@@ -36,6 +36,7 @@ const schema = {
 
 const clientSecretRe = /^[0-9a-zA-Z.=_-]{6,255}$/
 const validEmailRe = /^\w[+.-\w]*\w@\w[.-\w]*\w\.\w{2,6}$/
+const maxAttemps = 1000000000
 
 const RequestToken = (clientServer: MatrixClientServer): expressAppHandler => {
   const transport = new Mailer(clientServer.conf)
@@ -68,6 +69,16 @@ const RequestToken = (clientServer: MatrixClientServer): expressAppHandler => {
             res,
             400,
             errMsg('invalidParam', 'invalid next_link'),
+            clientServer.logger
+          )
+        } else if (
+          typeof sendAttempt !== 'number' ||
+          sendAttempt > maxAttemps
+        ) {
+          send(
+            res,
+            400,
+            errMsg('invalidParam', 'Invalid send attempt'),
             clientServer.logger
           )
         } else {
@@ -113,7 +124,7 @@ const RequestToken = (clientServer: MatrixClientServer): expressAppHandler => {
                             }
                           ])
                           .then(() => {
-                            fillTable(
+                            fillTableAndSend(
                               // The calls to send are made in this function
                               clientServer,
                               dst,
@@ -128,7 +139,7 @@ const RequestToken = (clientServer: MatrixClientServer): expressAppHandler => {
                           })
                           .catch((err) => {
                             // istanbul ignore next
-                            clientServer.logger.error('Deletion error')
+                            clientServer.logger.error('Deletion error', err)
                             // istanbul ignore next
                             send(
                               res,
@@ -139,7 +150,7 @@ const RequestToken = (clientServer: MatrixClientServer): expressAppHandler => {
                           })
                       }
                     } else {
-                      fillTable(
+                      fillTableAndSend(
                         // The calls to send are made in this function
                         clientServer,
                         dst,
@@ -155,7 +166,7 @@ const RequestToken = (clientServer: MatrixClientServer): expressAppHandler => {
                   })
                   .catch((err) => {
                     /* istanbul ignore next */
-                    clientServer.logger.error('Send_attempt error')
+                    clientServer.logger.error('Send_attempt error', err)
                     /* istanbul ignore next */
                     send(res, 500, errMsg('unknown', err), clientServer.logger)
                   })
@@ -163,7 +174,7 @@ const RequestToken = (clientServer: MatrixClientServer): expressAppHandler => {
             })
             .catch((err) => {
               /* istanbul ignore next */
-              clientServer.logger.error('Error getting userID')
+              clientServer.logger.error('Error getting userID :', err)
               /* istanbul ignore next */
               send(res, 500, errMsg('unknown', err), clientServer.logger)
             })

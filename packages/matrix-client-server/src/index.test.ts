@@ -7,6 +7,13 @@ import { type Config } from './types'
 import defaultConfig from './__testData__/registerConf.json'
 import { getLogger, type TwakeLogger } from '@twake/logger'
 import { Hash, randomString } from '@twake/crypto'
+import {
+  setupTokens,
+  validToken,
+  validToken2,
+  validRefreshToken1,
+  validRefreshToken2
+} from './utils/setupTokens'
 
 process.env.TWAKE_CLIENT_SERVER_CONF = './src/__testData__/registerConf.json'
 jest.mock('node-fetch', () => jest.fn())
@@ -268,44 +275,56 @@ describe('Use configuration file', () => {
     })
   })
 
-  let validToken: string
-  let validToken2: string
-  let validToken3: string
   describe('Endpoints with authentication', () => {
     beforeAll(async () => {
-      validToken = randomString(64)
-      validToken2 = randomString(64)
-      validToken3 = randomString(64)
-      try {
-        await clientServer.matrixDb.insert('user_ips', {
-          user_id: '@testuser:example.com',
-          device_id: 'testdevice',
-          access_token: validToken,
-          ip: '127.0.0.1',
-          user_agent: 'curl/7.31.0-DEV',
-          last_seen: 1411996332123
+      await setupTokens(clientServer, logger)
+    })
+    describe('/_matrix/client/v3/refresh', () => {
+      it('should refuse a request without refresh token', async () => {
+        const response = await request(app)
+          .post('/_matrix/client/v3/refresh')
+          .send({})
+        expect(response.statusCode).toBe(400)
+        expect(response.body.errcode).toBe('M_MISSING_PARAMS')
+      })
+      it('should refuse a request with an unknown refresh token', async () => {
+        const response = await request(app)
+          .post('/_matrix/client/v3/refresh')
+          .send({ refresh_token: 'unknownToken' })
+        expect(response.statusCode).toBe(400)
+        expect(response.body.errcode).toBe('M_UNKNOWN_TOKEN')
+      })
+      it('should refuse a request with an expired refresh token', async () => {
+        await clientServer.matrixDb.insert('refresh_tokens', {
+          id: 0,
+          user_id: 'expiredUser',
+          device_id: 'expiredDevice',
+          token: 'expiredToken',
+          expiry_ts: 0
         })
-
-        await clientServer.matrixDb.insert('user_ips', {
-          user_id: '@testuser2:example.com',
-          device_id: 'testdevice2',
-          access_token: validToken2,
-          ip: '137.0.0.1',
-          user_agent: 'curl/7.31.0-DEV',
-          last_seen: 1411996332123
-        })
-
-        await clientServer.matrixDb.insert('user_ips', {
-          user_id: '@testuser3:example.com',
-          device_id: 'testdevice3',
-          access_token: validToken3,
-          ip: '147.0.0.1',
-          user_agent: 'curl/7.31.0-DEV',
-          last_seen: 1411996332123
-        })
-      } catch (e) {
-        logger.error('Error creating tokens for authentification', e)
-      }
+        const response = await request(app)
+          .post('/_matrix/client/v3/refresh')
+          .send({ refresh_token: 'expiredToken' })
+        expect(response.statusCode).toBe(401)
+        expect(response.body.errcode).toBe('INVALID_TOKEN')
+      })
+      it('should send the next request token if the token sent in the request has such a field in the DB', async () => {
+        const response = await request(app)
+          .post('/_matrix/client/v3/refresh')
+          .send({ refresh_token: validRefreshToken1 })
+        expect(response.statusCode).toBe(200)
+        expect(response.body).toHaveProperty('access_token')
+        expect(response.body).toHaveProperty('refresh_token')
+        expect(response.body.refresh_token).toBe(validRefreshToken2)
+      })
+      it('should generate a new refresh token  and access token if there was no next token in the DB', async () => {
+        const response = await request(app)
+          .post('/_matrix/client/v3/refresh')
+          .send({ refresh_token: validRefreshToken2 })
+        expect(response.statusCode).toBe(200)
+        expect(response.body).toHaveProperty('access_token')
+        expect(response.body).toHaveProperty('refresh_token')
+      })
     })
     describe('/_matrix/client/v3/account/whoami', () => {
       let asToken: string
@@ -944,6 +963,21 @@ describe('Use configuration file', () => {
           expect(response.statusCode).toBe(403)
           expect(response.body).toHaveProperty('errcode', 'M_FORBIDDEN')
         })
+        it('should refuse content that is too long', async () => {
+          let content = ''
+          for (let i = 0; i < 10000; i++) {
+            content += 'a'
+          }
+          const response = await request(app)
+            .put(
+              '/_matrix/client/v3/user/@testuser:example.com/account_data/m.room.message'
+            )
+            .set('Authorization', `Bearer ${validToken}`)
+            .set('Accept', 'application/json')
+            .send({ content })
+          expect(response.statusCode).toBe(400)
+          expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
+        })
         it('should update account data', async () => {
           const response = await request(app)
             .put(
@@ -1085,6 +1119,21 @@ describe('Use configuration file', () => {
               .send({ content: 'new content' })
             expect(response.statusCode).toBe(403)
             expect(response.body).toHaveProperty('errcode', 'M_FORBIDDEN')
+          })
+          it('should refuse content that is too long', async () => {
+            let content = ''
+            for (let i = 0; i < 10000; i++) {
+              content += 'a'
+            }
+            const response = await request(app)
+              .put(
+                '/_matrix/client/v3/user/@testuser:example.com/rooms/!roomId:example.com/account_data/m.room.message'
+              )
+              .set('Authorization', `Bearer ${validToken}`)
+              .set('Accept', 'application/json')
+              .send({ content })
+            expect(response.statusCode).toBe(400)
+            expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
           })
           it('should update account data', async () => {
             const response = await request(app)
@@ -1498,6 +1547,16 @@ describe('Use configuration file', () => {
           )
         })
 
+        it('should return 400 if the display_name is too long', async () => {
+          const response = await request(app)
+            .put(`/_matrix/client/v3/devices/${_device_id}`)
+            .set('Authorization', `Bearer ${validToken}`)
+            .send({ display_name: randomString(257) })
+
+          expect(response.statusCode).toBe(400)
+          expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
+        })
+
         it('should return 404 if the device ID does not exist', async () => {
           const response = await request(app)
             .put('/_matrix/client/v3/devices/NON_EXISTENT_DEVICE_ID')
@@ -1677,6 +1736,19 @@ describe('Use configuration file', () => {
           expect(row[0].is_public).toBe(0)
         })
 
+        it('should update the visibility of the room', async () => {
+          const response = await request(app)
+            .put(`/_matrix/client/v3/directory/list/room/${testRoomId}`)
+            .set('Authorization', `Bearer ${validToken}`)
+            .send({ visibility: 'public' })
+          expect(response.statusCode).toBe(200)
+
+          const row = await clientServer.matrixDb.get('rooms', ['is_public'], {
+            room_id: testRoomId
+          })
+          expect(row[0].is_public).toBe(1)
+        })
+
         it('should return 404 if the room is not found', async () => {
           const invalidRoomId = '!invalidroomid:example.com'
           const response = await request(app)
@@ -1776,6 +1848,15 @@ describe('Use configuration file', () => {
           .set('Authorization', 'Bearer invalidToken')
           .set('Accept', 'application/json')
         expect(response.statusCode).toBe(401)
+      })
+
+      it('should return 400 if the room ID is invalid', async () => {
+        const response = await request(app)
+          .get(`/_matrix/client/v3/rooms/invalid_room_id/aliases`)
+          .set('Authorization', `Bearer ${validToken2}`)
+          .set('Accept', 'application/json')
+        expect(response.statusCode).toBe(400)
+        expect(response.body.errcode).toEqual('M_INVALID_PARAM')
       })
 
       it('should return the list of aliases for a world_readable room for any user', async () => {

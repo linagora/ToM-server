@@ -29,6 +29,7 @@ const schema = {
 
 const clientSecretRe = /^[0-9a-zA-Z.=_-]{6,255}$/
 const validEmailRe = /^\w[+.-\w]*\w@\w[.-\w]*\w\.\w{2,6}$/
+const maxAttemps = 1000000000
 
 const preConfigureTemplate = (
   template: string,
@@ -80,7 +81,7 @@ const mailBody = (
   )
 }
 
-const fillTable = <T extends string = never>(
+const fillTableAndSend = <T extends string = never>(
   idServer: MatrixIdentityServer<T>,
   dst: string,
   clientSecret: string,
@@ -161,6 +162,11 @@ const RequestToken = <T extends string = never>(
           // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
           else if (nextLink && !isValidUrl(nextLink)) {
             send(res, 400, errMsg('invalidParam', 'invalid next_link'))
+          } else if (
+            typeof sendAttempt !== 'number' ||
+            sendAttempt > maxAttemps
+          ) {
+            send(res, 400, errMsg('invalidParam', 'Invalid send attempt'))
           } else {
             idServer.db
               .get('mappings', ['send_attempt', 'session_id'], {
@@ -179,7 +185,7 @@ const RequestToken = <T extends string = never>(
                         { field: 'session_id', value: rows[0].session_id }
                       )
                       .then(() => {
-                        fillTable(
+                        fillTableAndSend(
                           // The calls to send are made in this function
                           idServer,
                           dst,
@@ -199,7 +205,7 @@ const RequestToken = <T extends string = never>(
                       })
                   }
                 } else {
-                  fillTable(
+                  fillTableAndSend(
                     // The calls to send are made in this function
                     idServer,
                     dst,
