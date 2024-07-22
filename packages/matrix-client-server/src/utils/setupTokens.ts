@@ -113,7 +113,7 @@ export async function setupTokens(
       last_send_attempt: 1,
       validated_at: epoch()
     }) // Validated session
-    
+
     await clientServer.matrixDb.insert('user_threepids', {
       user_id: '@validated:example.com',
       medium: 'email',
