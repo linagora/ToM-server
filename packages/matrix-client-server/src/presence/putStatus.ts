@@ -27,8 +27,12 @@ const putStatus = (clientServer: MatrixClientServer): expressAppHandler => {
     // @ts-expect-error
     const userId: string = req.params.userId as string
     if (!matrixIdRegex.test(userId)) {
-      clientServer.logger.warn('Invalid user ID')
-      send(res, 400, errMsg('invalidParam'))
+      send(
+        res,
+        400,
+        errMsg('invalidParam', 'Invalid user ID'),
+        clientServer.logger
+      )
     } else {
       clientServer.authenticate(req, res, (data, id) => {
         jsonContent(req, res, clientServer.logger, (obj) => {
@@ -37,7 +41,7 @@ const putStatus = (clientServer: MatrixClientServer): expressAppHandler => {
               clientServer.logger.warn(
                 'You cannot set the presence state of another user'
               )
-              send(res, 403, errMsg('forbidden'))
+              send(res, 403, errMsg('forbidden'), clientServer.logger)
               return
             }
             clientServer.matrixDb
@@ -50,16 +54,15 @@ const putStatus = (clientServer: MatrixClientServer): expressAppHandler => {
                 [{ field: 'user_id', value: userId }]
               )
               .then(() => {
-                send(res, 200, {})
+                send(res, 200, {}, clientServer.logger)
               })
               .catch((e) => {
                 // istanbul ignore next
                 clientServer.logger.error(
-                  "Error updating user's presence state",
-                  e
+                  "Error updating user's presence state"
                 )
                 // istanbul ignore next
-                send(res, 500, errMsg('unknown'))
+                send(res, 500, errMsg('unknown', e), clientServer.logger)
               })
           })
         })

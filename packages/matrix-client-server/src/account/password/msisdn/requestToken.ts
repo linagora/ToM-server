@@ -60,20 +60,40 @@ const RequestToken = (clientServer: MatrixClientServer): expressAppHandler => {
         const dst = formatPhoneNumber(phoneNumber, country)
         const nextLink = (obj as RequestTokenArgs).next_link
         if (!clientSecretRegex.test(clientSecret)) {
-          send(res, 400, errMsg('invalidParam', 'Invalid client_secret'))
+          send(
+            res,
+            400,
+            errMsg('invalidParam', 'Invalid client_secret'),
+            clientServer.logger
+          )
         } else if (!validCountryRegex.test(country)) {
-          send(res, 400, errMsg('invalidParam', 'Invalid country'))
+          send(
+            res,
+            400,
+            errMsg('invalidParam', 'Invalid country'),
+            clientServer.logger
+          )
           // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
         } else if (nextLink && !isValidUrl(nextLink)) {
-          send(res, 400, errMsg('invalidParam', 'Invalid next_link'))
+          send(
+            res,
+            400,
+            errMsg('invalidParam', 'Invalid next_link'),
+            clientServer.logger
+          )
         } else if (!validPhoneNumberRegex.test(dst)) {
-          send(res, 400, errMsg('invalidParam', 'Invalid phone number'))
+          send(
+            res,
+            400,
+            errMsg('invalidParam', 'Invalid phone number'),
+            clientServer.logger
+          )
         } else {
           clientServer.matrixDb
             .get('user_threepids', ['user_id'], { address: dst })
             .then((rows) => {
               if (rows.length === 0) {
-                send(res, 400, errMsg('threepidNotFound'))
+                send(res, 400, errMsg('threepidNotFound'), clientServer.logger)
               } else {
                 clientServer.matrixDb
                   .get(
@@ -87,10 +107,15 @@ const RequestToken = (clientServer: MatrixClientServer): expressAppHandler => {
                   .then((rows) => {
                     if (rows.length > 0) {
                       if (sendAttempt === rows[0].last_send_attempt) {
-                        send(res, 200, {
-                          sid: rows[0].session_id,
-                          submit_url: getSubmitUrl(clientServer.conf)
-                        })
+                        send(
+                          res,
+                          200,
+                          {
+                            sid: rows[0].session_id,
+                            submit_url: getSubmitUrl(clientServer.conf)
+                          },
+                          clientServer.logger
+                        )
                       } else {
                         clientServer.matrixDb
                           .deleteWhere('threepid_validation_session', [
@@ -121,9 +146,14 @@ const RequestToken = (clientServer: MatrixClientServer): expressAppHandler => {
                           })
                           .catch((err) => {
                             // istanbul ignore next
-                            console.error('Deletion error:', err)
+                            clientServer.logger.error('Deletion error')
                             // istanbul ignore next
-                            send(res, 500, errMsg('unknown', err))
+                            send(
+                              res,
+                              500,
+                              errMsg('unknown', err),
+                              clientServer.logger
+                            )
                           })
                       }
                     } else {
@@ -143,17 +173,17 @@ const RequestToken = (clientServer: MatrixClientServer): expressAppHandler => {
                   })
                   .catch((err) => {
                     /* istanbul ignore next */
-                    console.error('Send_attempt error:', err)
+                    clientServer.logger.error('Send_attempt error')
                     /* istanbul ignore next */
-                    send(res, 500, errMsg('unknown', err))
+                    send(res, 500, errMsg('unknown', err), clientServer.logger)
                   })
               }
             })
             .catch((err) => {
               /* istanbul ignore next */
-              console.error('Error getting userID :', err)
+              clientServer.logger.error('Error getting userID')
               /* istanbul ignore next */
-              send(res, 500, errMsg('unknown', err))
+              send(res, 500, errMsg('unknown', err), clientServer.logger)
             })
         }
       })

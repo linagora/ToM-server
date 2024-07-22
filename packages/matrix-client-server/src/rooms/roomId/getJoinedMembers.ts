@@ -32,7 +32,8 @@ const GetJoinedMembers = (
               errMsg(
                 'notFound',
                 'User not in the room - cannot retrieve members'
-              )
+              ),
+              ClientServer.logger
             )
             return
           }
@@ -62,16 +63,12 @@ const GetJoinedMembers = (
             })
             .catch((err) => {
               /* istanbul ignore next */
-              ClientServer.logger.error(err)
-              /* istanbul ignore next */
-              send(res, 500, errMsg('unknown', err))
+              send(res, 500, errMsg('unknown', err), ClientServer.logger)
             })
         })
         .catch((err) => {
           /* istanbul ignore next */
-          ClientServer.logger.error(err)
-          /* istanbul ignore next */
-          send(res, 500, errMsg('unknown', err))
+          send(res, 500, errMsg('unknown', err), ClientServer.logger)
         })
     })
   }

@@ -34,11 +34,13 @@ export const getDevices = (
               last_seen_ts: row.last_seen
             }
           })
-          send(res, 200, { devices: _devices })
+          send(res, 200, { devices: _devices }, clientServer.logger)
         })
         .catch((e) => {
           /* istanbul ignore next */
-          clientServer.logger.error('Error querying devices:', e)
+          clientServer.logger.error('Error querying devices')
+          /* istanbul ignore next */
+          send(res, 500, errMsg('unknown', e), clientServer.logger)
         })
     })
   }
@@ -65,22 +67,28 @@ export const getDeviceInfo = (
               errMsg(
                 'notFound',
                 'The current user has no device with the given ID'
-              )
+              ),
+              clientServer.logger
             )
           } else {
-            send(res, 200, {
-              device_id: deviceId,
-              display_name: rows[0].display_name,
-              last_seen_ip: rows[0].ip,
-              last_seen_ts: rows[0].last_seen
-            })
+            send(
+              res,
+              200,
+              {
+                device_id: deviceId,
+                display_name: rows[0].display_name,
+                last_seen_ip: rows[0].ip,
+                last_seen_ts: rows[0].last_seen
+              },
+              clientServer.logger
+            )
           }
         })
         .catch((e) => {
           /* istanbul ignore next */
-          clientServer.logger.error('Error querying devices:', e)
+          clientServer.logger.error('Error querying devices:')
           /* istanbul ignore next */
-          send(res, 500, errMsg('unknown', 'Error querying devices'))
+          send(res, 500, errMsg('unknown', e), clientServer.logger)
         })
     })
   }

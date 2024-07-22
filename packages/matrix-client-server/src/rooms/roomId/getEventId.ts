@@ -32,9 +32,12 @@ const GetEventId = (ClientServer: MatrixClientServer): expressAppHandler => {
         )
         .then((rows) => {
           if (rows.length === 0) {
-            /* istanbul ignore next */
-            ClientServer.logger.error('Event not found')
-            send(res, 404, errMsg('notFound', 'Cannot retrieve event'))
+            send(
+              res,
+              404,
+              errMsg('notFound', 'Cannot retrieve event : event not found'),
+              ClientServer.logger
+            )
             return
           }
           // Check if the user has permission to retrieve this event
@@ -60,11 +63,15 @@ const GetEventId = (ClientServer: MatrixClientServer): expressAppHandler => {
                 rows2.length === 0 ||
                 rows2[0].room_memberships_membership !== 'join'
               ) {
-                /* istanbul ignore next */
-                ClientServer.logger.error(
-                  'User not in the room at the time of the event'
+                send(
+                  res,
+                  404,
+                  errMsg(
+                    'notFound',
+                    'Cannot retrieve event : User not in the room at the time of the event'
+                  ),
+                  ClientServer.logger
                 )
-                send(res, 404, errMsg('notFound', 'Cannot retrieve event'))
                 return
               }
               const event = rows[0]
@@ -86,14 +93,10 @@ const GetEventId = (ClientServer: MatrixClientServer): expressAppHandler => {
             })
             .catch((err) => {
               /* istanbul ignore next */
-              ClientServer.logger.error(err)
-              /* istanbul ignore next */
               send(res, 500, errMsg('unknown', err))
             })
         })
         .catch((err) => {
-          /* istanbul ignore next */
-          ClientServer.logger.error(err)
           /* istanbul ignore next */
           send(res, 500, errMsg('unknown', err))
         })

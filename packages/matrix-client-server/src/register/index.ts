@@ -61,30 +61,40 @@ const createUser = (
   Promise.all([otherPromise, userPromise, userIpPromise])
     .then(() => {
       if (body.inhibit_login) {
-        send(res, 200, { user_id: userId })
+        send(res, 200, { user_id: userId }, clientServer.logger)
       } else {
-        send(res, 200, {
-          access_token: accessToken,
-          device_id: deviceId,
-          user_id: userId,
-          expires_in_ms: 60000 // Arbitrary value, should probably be defined in the server config
-        })
+        send(
+          res,
+          200,
+          {
+            access_token: accessToken,
+            device_id: deviceId,
+            user_id: userId,
+            expires_in_ms: 60000 // Arbitrary value, should probably be defined in the server config
+          },
+          clientServer.logger
+        )
       }
     })
     .catch((e) => {
       // istanbul ignore next
       clientServer.logger.error('Error while registering a user', e)
       // istanbul ignore next
-      send(res, 500, {
-        error: 'Error while registering a user'
-      })
+      send(
+        res,
+        500,
+        {
+          error: 'Error while registering a user'
+        },
+        clientServer.logger
+      )
     })
 }
 
 const register = (clientServer: MatrixClientServer): expressAppHandler => {
   if (!clientServer.conf.is_registration_enabled) {
     return (req, res) => {
-      send(res, 404, { error: 'Registration is disabled' })
+      send(res, 404, { error: 'Registration is disabled' }, clientServer.logger)
     }
   }
   return (req, res) => {
@@ -107,7 +117,7 @@ const register = (clientServer: MatrixClientServer): expressAppHandler => {
           })
           .then((rows) => {
             if (rows.length > 0) {
-              send(res, 400, errMsg('userInUse'))
+              send(res, 400, errMsg('userInUse'), clientServer.logger)
             } else {
               clientServer.matrixDb
                 .get('devices', ['display_name', 'user_id'], {
@@ -152,7 +162,7 @@ const register = (clientServer: MatrixClientServer): expressAppHandler => {
                     e
                   )
                   // istanbul ignore next
-                  send(res, 500, e)
+                  send(res, 500, e, clientServer.logger)
                 })
             }
           })
@@ -163,7 +173,7 @@ const register = (clientServer: MatrixClientServer): expressAppHandler => {
               e
             )
             // istanbul ignore next
-            send(res, 500, e)
+            send(res, 500, e, clientServer.logger)
           })
       })
     } else {
