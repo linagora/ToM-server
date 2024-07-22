@@ -58,6 +58,7 @@ import putStatus from './presence/putStatus'
 import getLogin from './login/getLogin'
 import add from './account/3pid/add'
 import refresh from './refresh'
+import openIdRequestToken from './user/openid/requestToken'
 
 const tables = {
   ui_auth_sessions: 'session_id TEXT NOT NULL, stage_type TEXT NOT NULL'
