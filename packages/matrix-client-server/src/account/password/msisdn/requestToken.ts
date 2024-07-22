@@ -12,7 +12,7 @@ import type MatrixClientServer from '../../../index'
 import SmsSender from '../../../utils/smsSender'
 import { getSubmitUrl } from '../../../register/email/requestToken'
 import {
-  fillTable,
+  fillTableAndSend,
   formatPhoneNumber,
   preConfigureTemplate
 } from '../../../register/msisdn/requestToken'
@@ -142,7 +142,7 @@ const RequestToken = (clientServer: MatrixClientServer): expressAppHandler => {
                             }
                           ])
                           .then(() => {
-                            fillTable(
+                            fillTableAndSend(
                               // The calls to send are made in this function
                               clientServer,
                               dst,
@@ -168,7 +168,7 @@ const RequestToken = (clientServer: MatrixClientServer): expressAppHandler => {
                           })
                       }
                     } else {
-                      fillTable(
+                      fillTableAndSend(
                         // The calls to send are made in this function
                         clientServer,
                         dst,

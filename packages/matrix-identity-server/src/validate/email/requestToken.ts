@@ -81,7 +81,7 @@ const mailBody = (
   )
 }
 
-const fillTable = <T extends string = never>(
+const fillTableAndSend = <T extends string = never>(
   idServer: MatrixIdentityServer<T>,
   dst: string,
   clientSecret: string,
@@ -185,7 +185,7 @@ const RequestToken = <T extends string = never>(
                         { field: 'session_id', value: rows[0].session_id }
                       )
                       .then(() => {
-                        fillTable(
+                        fillTableAndSend(
                           // The calls to send are made in this function
                           idServer,
                           dst,
@@ -205,7 +205,7 @@ const RequestToken = <T extends string = never>(
                       })
                   }
                 } else {
-                  fillTable(
+                  fillTableAndSend(
                     // The calls to send are made in this function
                     idServer,
                     dst,

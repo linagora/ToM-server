@@ -10,7 +10,7 @@ import {
 import type MatrixClientServer from '../../../index'
 import Mailer from '../../../utils/mailer'
 import {
-  fillTable,
+  fillTableAndSend,
   getSubmitUrl,
   preConfigureTemplate
 } from '../../../register/email/requestToken'
@@ -124,7 +124,7 @@ const RequestToken = (clientServer: MatrixClientServer): expressAppHandler => {
                             }
                           ])
                           .then(() => {
-                            fillTable(
+                            fillTableAndSend(
                               // The calls to send are made in this function
                               clientServer,
                               dst,
@@ -150,7 +150,7 @@ const RequestToken = (clientServer: MatrixClientServer): expressAppHandler => {
                           })
                       }
                     } else {
-                      fillTable(
+                      fillTableAndSend(
                         // The calls to send are made in this function
                         clientServer,
                         dst,

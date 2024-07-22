@@ -91,7 +91,7 @@ export const mailBody = (
   )
 }
 
-export const fillTable = (
+export const fillTableAndSend = (
   clientServer: MatrixClientServer,
   dst: string,
   clientSecret: string,
@@ -124,13 +124,23 @@ export const fillTable = (
             { sid, submit_url: getSubmitUrl(clientServer.conf) },
             clientServer.logger
           )
+          send(
+            res,
+            200,
+            { sid, submit_url: getSubmitUrl(clientServer.conf) },
+            clientServer.logger
+          )
         })
         .catch((err) => {
+          // istanbul ignore next
+          clientServer.logger.error('Insertion error', err)
           // istanbul ignore next
           send(res, 500, errMsg('unknown', err), clientServer.logger)
         })
     })
     .catch((err) => {
+      /* istanbul ignore next */
+      clientServer.logger.error('Token error', err)
       /* istanbul ignore next */
       send(res, 500, errMsg('unknown', err), clientServer.logger)
     })
@@ -222,7 +232,7 @@ const RequestToken = (clientServer: MatrixClientServer): expressAppHandler => {
                             }
                           ])
                           .then(() => {
-                            fillTable(
+                            fillTableAndSend(
                               // The calls to send are made in this function
                               clientServer,
                               dst,
@@ -237,6 +247,8 @@ const RequestToken = (clientServer: MatrixClientServer): expressAppHandler => {
                           })
                           .catch((err) => {
                             // istanbul ignore next
+                            clientServer.logger.error('Deletion error', err)
+                            // istanbul ignore next
                             send(
                               res,
                               500,
@@ -246,7 +258,7 @@ const RequestToken = (clientServer: MatrixClientServer): expressAppHandler => {
                           })
                       }
                     } else {
-                      fillTable(
+                      fillTableAndSend(
                         // The calls to send are made in this function
                         clientServer,
                         dst,
