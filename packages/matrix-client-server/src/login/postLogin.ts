@@ -1,11 +1,11 @@
 import {
   errMsg,
-  expressAppHandler,
+  type expressAppHandler,
   jsonContent,
   send,
   validateParameters
 } from '@twake/utils'
-import MatrixClientServer from '..'
+import type MatrixClientServer from '..'
 import { type UserIdentifier } from '../types'
 
 interface LoginRequestBody {
@@ -37,8 +37,12 @@ const postLogin = (clientServer: MatrixClientServer): expressAppHandler => {
           case 'm.login.password':
             // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
             if (!body.password) {
-              clientServer.logger.error('Missing password')
-              send(res, 400, errMsg('missingParam', 'password'))
+              send(
+                res,
+                400,
+                errMsg('missingParam', 'Missing password'),
+                clientServer.logger
+              )
               // return
             }
         }
