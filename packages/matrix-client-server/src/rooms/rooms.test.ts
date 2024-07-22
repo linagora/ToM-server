@@ -588,6 +588,39 @@ describe('Use configuration file', () => {
           expect(response.statusCode).toBe(401)
         })
 
+        it('should return 400 if the user_id is invalid', async () => {
+          const response = await request(app)
+            .get(
+              `/_matrix/client/v3/user/invalid_user_id/rooms/${testRoomId}/tags`
+            )
+            .set('Authorization', `Bearer ${validToken}`)
+            .set('Accept', 'application/json')
+
+          expect(response.statusCode).toBe(400)
+        })
+
+        it('should return 400 if the room_id is invalid', async () => {
+          const response = await request(app)
+            .get(
+              `/_matrix/client/v3/user/${testUserId}/rooms/invalid_room_id/tags`
+            )
+            .set('Authorization', `Bearer ${validToken}`)
+            .set('Accept', 'application/json')
+
+          expect(response.statusCode).toBe(400)
+        })
+
+        it('should return 403 if the requesting user is not the target user', async () => {
+          const response = await request(app)
+            .get(
+              `/_matrix/client/v3/user/${testUserId}/rooms/${testRoomId}/tags`
+            )
+            .set('Authorization', `Bearer ${validToken2}`)
+            .set('Accept', 'application/json')
+
+          expect(response.statusCode).toBe(403)
+        })
+
         it('should return the tags for the room', async () => {
           const response = await request(app)
             .get(
@@ -617,6 +650,80 @@ describe('Use configuration file', () => {
             .send({ order: 0.2 })
 
           expect(response.statusCode).toBe(401)
+        })
+
+        it('should return 400 if the order is not a number', async () => {
+          const response = await request(app)
+            .put(
+              `/_matrix/client/v3/user/${testUserId}/rooms/${testRoomId}/tags/${testTag}`
+            )
+            .set('Authorization', `Bearer ${validToken}`)
+            .set('Accept', 'application/json')
+            .send({ order: 'invalid_order' })
+
+          expect(response.statusCode).toBe(400)
+        })
+
+        it('should return 400 if the order is less than 0', async () => {
+          const response = await request(app)
+            .put(
+              `/_matrix/client/v3/user/${testUserId}/rooms/${testRoomId}/tags/${testTag}`
+            )
+            .set('Authorization', `Bearer ${validToken}`)
+            .set('Accept', 'application/json')
+            .send({ order: -1 })
+
+          expect(response.statusCode).toBe(400)
+        })
+
+        it('should return 400 if the tag is too long', async () => {
+          const response = await request(app)
+            .put(
+              `/_matrix/client/v3/user/${testUserId}/rooms/${testRoomId}/tags/${'a'.repeat(
+                256
+              )}`
+            )
+            .set('Authorization', `Bearer ${validToken}`)
+            .set('Accept', 'application/json')
+            .send({ order: 0.2 })
+
+          expect(response.statusCode).toBe(400)
+        })
+
+        it('should return 400 if the user_id is invalid', async () => {
+          const response = await request(app)
+            .put(
+              `/_matrix/client/v3/user/invalid_user_id/rooms/${testRoomId}/tags/${testTag}`
+            )
+            .set('Authorization', `Bearer ${validToken}`)
+            .set('Accept', 'application/json')
+            .send({ order: 0.2 })
+
+          expect(response.statusCode).toBe(400)
+        })
+
+        it('should return 400 if the room_id is invalid', async () => {
+          const response = await request(app)
+            .put(
+              `/_matrix/client/v3/user/${testUserId}/rooms/invalid_room_id/tags/${testTag}`
+            )
+            .set('Authorization', `Bearer ${validToken}`)
+            .set('Accept', 'application/json')
+            .send({ order: 0.2 })
+
+          expect(response.statusCode).toBe(400)
+        })
+
+        it('should return 403 if the requesting user is not the target user', async () => {
+          const response = await request(app)
+            .put(
+              `/_matrix/client/v3/user/${testUserId}/rooms/${testRoomId}/tags/${testTag}`
+            )
+            .set('Authorization', `Bearer ${validToken2}`)
+            .set('Accept', 'application/json')
+            .send({ order: 0.2 })
+
+          expect(response.statusCode).toBe(403)
         })
 
         it('should add a tag to the room', async () => {
@@ -654,6 +761,39 @@ describe('Use configuration file', () => {
             .set('Accept', 'application/json')
 
           expect(response.statusCode).toBe(401)
+        })
+
+        it('should return 400 if the user_id is invalid', async () => {
+          const response = await request(app)
+            .delete(
+              `/_matrix/client/v3/user/invalid_user_id/rooms/${testRoomId}/tags/${testTag}`
+            )
+            .set('Authorization', `Bearer ${validToken}`)
+            .set('Accept', 'application/json')
+
+          expect(response.statusCode).toBe(400)
+        })
+
+        it('should return 400 if the room_id is invalid', async () => {
+          const response = await request(app)
+            .delete(
+              `/_matrix/client/v3/user/${testUserId}/rooms/invalid_room_id/tags/${testTag}`
+            )
+            .set('Authorization', `Bearer ${validToken}`)
+            .set('Accept', 'application/json')
+
+          expect(response.statusCode).toBe(400)
+        })
+
+        it('should return 403 if the requesting user is not the target user', async () => {
+          const response = await request(app)
+            .delete(
+              `/_matrix/client/v3/user/${testUserId}/rooms/${testRoomId}/tags/${testTag}`
+            )
+            .set('Authorization', `Bearer ${validToken2}`)
+            .set('Accept', 'application/json')
+
+          expect(response.statusCode).toBe(403)
         })
 
         it('should delete the tag from the room', async () => {
