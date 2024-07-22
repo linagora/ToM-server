@@ -26,7 +26,8 @@ describe('Utility Functions', () => {
     mockLogger = {
       error: jest.fn(),
       warn: jest.fn(),
-      log: jest.fn()
+      log: jest.fn(),
+      info: jest.fn()
     } as unknown as TwakeLogger
   })
 
@@ -46,6 +47,22 @@ describe('Utility Functions', () => {
         JSON.stringify({ message: 'ok' })
       )
       expect(mockResponse.end).toHaveBeenCalled()
+    })
+
+    it('should log the response status with info if status code in 200-299', () => {
+      send(mockResponse as Response, 200, { message: 'ok' }, mockLogger)
+
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        'Sending status 200 with content {"message":"ok"}'
+      )
+    })
+
+    it('should log the response status with error if status code not in 200-299', () => {
+      send(mockResponse as Response, 400, { message: 'error' }, mockLogger)
+
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        'Sending status 400 with content {"message":"error"}'
+      )
     })
   })
 
