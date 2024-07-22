@@ -6,8 +6,7 @@ import { buildMatrixDb, buildUserDB } from '../__testData__/buildUserDB'
 import { type Config } from '../types'
 import defaultConfig from '../__testData__/registerConf.json'
 import { getLogger, type TwakeLogger } from '@twake/logger'
-import { randomString } from '@twake/crypto'
-
+import { setupTokens, validToken, validToken2 } from '../utils/setupTokens'
 jest.mock('node-fetch', () => jest.fn())
 const sendMailMock = jest.fn()
 jest.mock('nodemailer', () => ({
@@ -94,45 +93,9 @@ describe('Use configuration file', () => {
     clientServer.cleanJobs()
   })
 
-  let validToken: string
-  let validToken2: string
-  let validToken3: string
-
   describe('Endpoints with authentication', () => {
     beforeAll(async () => {
-      validToken = randomString(64)
-      validToken2 = randomString(64)
-      validToken3 = randomString(64)
-      try {
-        await clientServer.matrixDb.insert('user_ips', {
-          user_id: '@testuser:example.com',
-          device_id: 'testdevice',
-          access_token: validToken,
-          ip: '127.0.0.1',
-          user_agent: 'curl/7.31.0-DEV',
-          last_seen: 1411996332123
-        })
-
-        await clientServer.matrixDb.insert('user_ips', {
-          user_id: '@testuser2:example.com',
-          device_id: 'testdevice2',
-          access_token: validToken2,
-          ip: '137.0.0.1',
-          user_agent: 'curl/7.31.0-DEV',
-          last_seen: 1411996332123
-        })
-
-        await clientServer.matrixDb.insert('user_ips', {
-          user_id: '@testuser3:example.com',
-          device_id: 'testdevice3',
-          access_token: validToken3,
-          ip: '147.0.0.1',
-          user_agent: 'curl/7.31.0-DEV',
-          last_seen: 1411996332123
-        })
-      } catch (e) {
-        logger.error('Error creating tokens for authentification', e)
-      }
+      await setupTokens(clientServer, logger)
     })
 
     describe('/_matrix/client/v3/user/:userId', () => {
@@ -405,6 +368,39 @@ describe('Use configuration file', () => {
             expect(response2.body['m.room.message']).toBe('updated content')
           })
         })
+      })
+    })
+    describe('/_matrix/client/v3/user/:userId/openid/request_token', () => {
+      it('should reject invalid userId', async () => {
+        const response = await request(app)
+          .post('/_matrix/client/v3/user/invalidUserId/openid/request_token')
+          .set('Authorization', `Bearer ${validToken}`)
+          .set('Accept', 'application/json')
+        expect(response.statusCode).toBe(400)
+        expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
+      })
+      it('should reject a userId that does not match the token', async () => {
+        const response = await request(app)
+          .post(
+            '/_matrix/client/v3/user/@testuser:example.com/openid/request_token'
+          )
+          .set('Authorization', `Bearer ${validToken2}`)
+          .set('Accept', 'application/json')
+        expect(response.statusCode).toBe(403)
+        expect(response.body).toHaveProperty('errcode', 'M_FORBIDDEN')
+      })
+      it('should return a token on a valid attempt', async () => {
+        const response = await request(app)
+          .post(
+            '/_matrix/client/v3/user/@testuser:example.com/openid/request_token'
+          )
+          .set('Authorization', `Bearer ${validToken}`)
+          .set('Accept', 'application/json')
+        expect(response.statusCode).toBe(200)
+        expect(response.body).toHaveProperty('access_token')
+        expect(response.body).toHaveProperty('expires_in')
+        expect(response.body).toHaveProperty('matrix_server_name')
+        expect(response.body).toHaveProperty('token_type')
       })
     })
   })
