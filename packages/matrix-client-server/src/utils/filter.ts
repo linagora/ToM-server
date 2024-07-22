@@ -78,9 +78,9 @@ export class Filter {
 export const MAX_LIMIT = 50 // The maximum limit of events that can be returned in a single request (avoid resource exhaustion)
 export class EventFilter {
   public limit: number
-  readonly types: string[] | null
+  readonly types: string[]
   readonly not_types: string[]
-  readonly senders: string[] | null
+  readonly senders: string[]
   readonly not_senders: string[]
 
   constructor(filter_json: JsonMapping, logger?: TwakeLogger) {
@@ -119,7 +119,7 @@ export class EventFilter {
     return this.senders?.length === 0
   }
 
-  protected get(element: string): string[] | null {
+  protected get(element: string): string[] {
     if (element === 'senders') {
       return this.senders
     } else if (element === 'types') {
@@ -258,7 +258,7 @@ export class RoomEventFilter extends EventFilter {
   }
 
   // Overriding method to include room field
-  protected get(element: string): string[] | null {
+  protected get(element: string): string[] {
     if (element === 'senders') {
       return this.senders
     } else if (element === 'types') {
