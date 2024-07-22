@@ -35,6 +35,18 @@ export const changeDeviceName = (
           // eslint-disable-next-line @typescript-eslint/naming-convention
           const new_display_name = (obj as changeDeviceNameArgs).display_name
 
+          if (new_display_name.length > 255) {
+            send(
+              res,
+              400,
+              errMsg(
+                'invalidParam',
+                'The display name must be less than 255 characters'
+              )
+            )
+            return
+          }
+
           clientServer.matrixDb
             .updateWithConditions(
               'devices',
