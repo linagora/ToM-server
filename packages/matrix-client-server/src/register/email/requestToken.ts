@@ -124,12 +124,6 @@ export const fillTableAndSend = (
             { sid, submit_url: getSubmitUrl(clientServer.conf) },
             clientServer.logger
           )
-          send(
-            res,
-            200,
-            { sid, submit_url: getSubmitUrl(clientServer.conf) },
-            clientServer.logger
-          )
         })
         .catch((err) => {
           // istanbul ignore next
