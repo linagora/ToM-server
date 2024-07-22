@@ -58,6 +58,7 @@ import putStatus from './presence/putStatus'
 import getLogin from './login/getLogin'
 import add from './account/3pid/add'
 import refresh from './refresh'
+import available from './register/available'
 
 const tables = {
   ui_auth_sessions: 'session_id TEXT NOT NULL, stage_type TEXT NOT NULL'
@@ -158,7 +159,8 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
             '/_matrix/client/v3/presence/:userId/status': getStatus(this),
             '/_matrix/client/v3/login': getLogin(this),
             '/_matrix/client/v3/account/3pid/add': badMethod,
-            '/_matrix/client/v3/refresh': badMethod
+            '/_matrix/client/v3/refresh': badMethod,
+            '/_matrix/client/v3/register/available': available(this)
           }
           this.api.post = {
             '/_matrix/client/v3/account/whoami': badMethod,
@@ -197,7 +199,8 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
             '/_matrix/client/v3/presence/:userId/status': badMethod,
             '/_matrix/client/v3/login': badMethod,
             '/_matrix/client/v3/account/3pid/add': add(this),
-            '/_matrix/client/v3/refresh': refresh(this)
+            '/_matrix/client/v3/refresh': refresh(this),
+            '/_matrix/client/v3/register/available': badMethod
           }
           this.api.put = {
             '/_matrix/client/v3/account/whoami': badMethod,
@@ -236,7 +239,8 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
             '/_matrix/client/v3/presence/:userId/status': putStatus(this),
             '/_matrix/client/v3/login': badMethod,
             '/_matrix/client/v3/account/3pid/add': badMethod,
-            '/_matrix/client/v3/refresh': badMethod
+            '/_matrix/client/v3/refresh': badMethod,
+            '/_matrix/client/v3/register/available': badMethod
           }
           this.api.delete = {
             '/_matrix/client/v3/account/whoami': badMethod,
@@ -265,7 +269,8 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
             '/_matrix/client/v3/presence/:userId/status': badMethod,
             '/_matrix/client/v3/login': badMethod,
             '/_matrix/client/v3/account/3pid/add': badMethod,
-            '/_matrix/client/v3/refresh': badMethod
+            '/_matrix/client/v3/refresh': badMethod,
+            '/_matrix/client/v3/register/available': badMethod
           }
           resolve(true)
         })
