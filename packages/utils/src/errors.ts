@@ -14,6 +14,9 @@ export const errCodes = {
   // The request contained one or more invalid parameters.
   invalidParam: 'M_INVALID_PARAM',
 
+  // The request contained unsupported additional parameters.
+  unknownParam: 'UNKNOWN_PARAM',
+
   // The session has not been validated.
   sessionNotValidated: 'M_SESSION_NOT_VALIDATED',
 

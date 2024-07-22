@@ -20,7 +20,12 @@ export const getRoomAliases = (
         )
 
         if (historyResponse.length === 0) {
-          send(res, 400, errMsg('invalidParam', 'Invalid room id'))
+          send(
+            res,
+            400,
+            errMsg('invalidParam', 'Invalid room id'),
+            clientServer.logger
+          )
           return
         }
 
@@ -52,7 +57,8 @@ export const getRoomAliases = (
             errMsg(
               'forbidden',
               'The user is not permitted to retrieve the list of local aliases for the room'
-            )
+            ),
+            clientServer.logger
           )
         } else {
           // Fetch the room aliases
@@ -62,13 +68,11 @@ export const getRoomAliases = (
             { room_id: roomId }
           )
           const roomAliases = aliasRows.map((row) => row.room_alias)
-          send(res, 200, { aliases: roomAliases })
+          send(res, 200, { aliases: roomAliases }, clientServer.logger)
         }
       } catch (e) {
         /* istanbul ignore next */
-        clientServer.logger.error(e)
-        /* istanbul ignore next */
-        send(res, 500, errMsg('unknown', e as string))
+        send(res, 500, errMsg('unknown', e as string), clientServer.logger)
       }
     })
   }
