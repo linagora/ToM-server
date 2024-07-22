@@ -19,21 +19,39 @@ This might be sub-optimal so it might be interesting to refactor the code to use
 
 import { type ClientEvent } from '../types'
 
+import { validEventTypes } from '@twake/utils'
+
 type JsonMapping = Record<string, any>
 
 export class Filter {
-  public account_data: AccountDataFilter
-  public event_fields: string[]
   public event_format: string
-  public presence: PresenceFilter
-  public room: RoomFilter
+  public event_fields: string[]
+  public account_data?: AccountDataFilter
+  public presence?: PresenceFilter
+  public room?: RoomFilter
 
   constructor(filter_json: JsonMapping) {
-    this.account_data = new AccountDataFilter(filter_json.account_data)
-    this.event_fields = filter_json.event_fields || []
-    this.event_format = filter_json.event_format || 'client'
-    this.presence = new PresenceFilter(filter_json.presence)
-    this.room = new RoomFilter(filter_json.room)
+    this.account_data = filter_json.account_data
+      ? new AccountDataFilter(filter_json.account_data)
+      : undefined
+
+    this.presence = filter_json.presence
+      ? new PresenceFilter(filter_json.presence)
+      : undefined
+
+    this.room = filter_json.room ? new RoomFilter(filter_json.room) : undefined
+
+    const eventFormat = filter_json.event_format || 'client'
+    if (!verifyEventFormat(eventFormat)) {
+      throw new Error('Invalid event format')
+    }
+    this.event_format = eventFormat
+
+    const eventFields = filter_json.event_fields || []
+    if (!verifyEventFields(eventFormat, eventFields)) {
+      throw new Error('Invalid event_fields')
+    }
+    this.event_fields = eventFields
   }
 
   public check(event: ClientEvent): boolean {
@@ -41,13 +59,17 @@ export class Filter {
 
     switch (event_type) {
       case 'account_data':
-        return this.account_data.check(event)
+        return this.account_data ? this.account_data.check(event) : true
 
       case 'presence':
-        return this.presence.check(event)
+        return this.presence ? this.presence.check(event) : true
 
       case 'room':
-        return this.room.state.check(event)
+        return this.room
+          ? this.room.state
+            ? this.room.state.check(event)
+            : true
+          : true
 
       default:
         throw new Error('Invalid event type in Filter')
@@ -55,39 +77,37 @@ export class Filter {
   }
 }
 
-class BasicFilter {
+const MAX_LIMIT = 50 // The maximum limit of events that can be returned in a single request (avoid resource exhaustion)
+class EventFilter {
   public limit: number
-  readonly types: string[] | null
+  readonly types: string[]
   readonly not_types: string[]
-  readonly senders: string[] | null
+  readonly senders: string[]
   readonly not_senders: string[]
 
-  public event_fields: string[]
-  public event_format: string
-
-  constructor(
-    filter_json: JsonMapping,
-    event_fields: string[] = [],
-    event_format: string = 'client'
-  ) {
-    this.limit = filter_json.limit || 10
-    this.types = filter_json.types || null
-    this.not_types = filter_json.not_types || []
-    this.senders = filter_json.senders || null
-    this.not_senders = filter_json.not_senders || []
-    this.event_fields = event_fields
-    this.event_format = event_format
+  constructor(filter_json: JsonMapping) {
+    this.limit = Math.min(filter_json.limit || 10, MAX_LIMIT)
+    this.types = filter_json.types ? removeUnvalidTypes(filter_json.types) : []
+    this.not_types = filter_json.not_types
+      ? removeUnvalidTypes(filter_json.not_types)
+      : []
+    this.senders = filter_json.senders
+      ? removeUnvalidIds(filter_json.senders)
+      : []
+    this.not_senders = filter_json.not_senders
+      ? removeUnvalidIds(filter_json.not_senders)
+      : []
   }
 
   filtersAllTypes(): boolean {
-    return this.types === null || this.not_types.includes('*')
+    return this.types.length === 0 || this.not_types.includes('*')
   }
 
   filtersAllSenders(): boolean {
-    return this.senders === null || this.not_senders.includes('*')
+    return this.senders.length === 0 || this.not_senders.includes('*')
   }
 
-  protected get(element: string): string[] | null {
+  protected get(element: string): string[] {
     if (element === 'senders') {
       return this.senders
     } else if (element === 'types') {
@@ -156,10 +176,10 @@ function _matchesWildcard(
     m.tag_order: Stores the order of tags for the user.
     m.user_devices: Stores information about the user's devices.
 */
-class AccountDataFilter extends BasicFilter {}
+class AccountDataFilter extends EventFilter {}
 
 // Filters: m.presence
-class PresenceFilter extends BasicFilter {}
+class PresenceFilter extends EventFilter {}
 
 /* Filters:
     m.room.message: Represents a message sent to a room.
@@ -200,32 +220,33 @@ class PresenceFilter extends BasicFilter {}
     User-Defined Events
         m.custom.event: Allows users to define and use custom events. These are not standardized and can vary between implementations.
 */
-class RoomEventFilter extends BasicFilter {
-  public contains_url: boolean | null
+
+class RoomEventFilter extends EventFilter {
   public include_redundant_members: boolean
   public lazy_load_members: boolean
   public unread_thread_notifications: boolean
   public not_rooms: string[]
   public rooms: string[]
+  public contains_url?: boolean
 
-  constructor(
-    filter_json: JsonMapping,
-    event_fields: string[] = [],
-    event_format: string = 'client'
-  ) {
-    super(filter_json, event_fields, event_format)
-    this.contains_url = filter_json.contains_url || null
-    this.not_rooms = filter_json.not_rooms || []
-    this.rooms = filter_json.rooms || []
+  constructor(filter_json: JsonMapping) {
+    super(filter_json)
+    this.not_rooms = filter_json.not_rooms
+      ? removeInvalidRoomIds(filter_json.not_rooms)
+      : []
+    this.rooms = filter_json.rooms
+      ? removeInvalidRoomIds(filter_json.rooms)
+      : []
     this.include_redundant_members =
       filter_json.include_redundant_members || false
     this.lazy_load_members = filter_json.lazy_load_members || false
     this.unread_thread_notifications =
       filter_json.unread_thread_notifications || false
+    this.contains_url = filter_json.contains_url
   }
 
   // Overriding method to include room field
-  protected get(element: string): string[] | null {
+  protected get(element: string): string[] {
     if (element === 'senders') {
       return this.senders
     } else if (element === 'types') {
@@ -296,22 +317,30 @@ class RoomEventFilter extends BasicFilter {
 
 // The include leave key is used to include rooms that the user has left in the sync response.
 export class RoomFilter {
-  public account_data: RoomEventFilter
-  public ephemeral: RoomEventFilter
   public include_leave: boolean
   public not_rooms: string[]
   public rooms: string[]
-  public state: RoomEventFilter
-  public timeline: RoomEventFilter
+  public account_data?: RoomEventFilter
+  public ephemeral?: RoomEventFilter
+  public state?: RoomEventFilter
+  public timeline?: RoomEventFilter
 
   constructor(filter_json: JsonMapping) {
-    this.account_data = new RoomEventFilter(filter_json.account_data)
-    this.ephemeral = new RoomEventFilter(filter_json.ephemeral)
+    this.account_data = filter_json.account_data
+      ? new RoomEventFilter(filter_json.account_data)
+      : undefined
+    this.ephemeral = filter_json.ephemeral
+      ? new RoomEventFilter(filter_json.ephemeral)
+      : undefined
     this.include_leave = filter_json.include_leave || false
     this.not_rooms = filter_json.not_rooms || []
     this.rooms = filter_json.rooms || []
-    this.state = new RoomEventFilter(filter_json.state)
-    this.timeline = new RoomEventFilter(filter_json.timeline)
+    this.state = filter_json.state
+      ? new RoomEventFilter(filter_json.state)
+      : undefined
+    this.timeline = filter_json.timeline
+      ? new RoomEventFilter(filter_json.timeline)
+      : undefined
   }
 
   // Overriding method to include room field
@@ -361,16 +390,16 @@ export class RoomFilter {
 
     switch (event_type) {
       case 'account_data':
-        return this.account_data.check(event)
+        return this.account_data ? this.account_data.check(event) : true
 
       case 'ephemeral':
-        return this.ephemeral.check(event)
+        return this.ephemeral ? this.ephemeral.check(event) : true
 
       case 'state':
-        return this.state.check(event)
+        return this.state ? this.state.check(event) : true
 
       case 'timeline':
-        return this.timeline.check(event)
+        return this.timeline ? this.timeline.check(event) : true
 
       default:
         throw new Error('Invalid event type in RoomFilter')
@@ -449,4 +478,73 @@ function getTypeAllEvent(event_type: string): string {
     }
   }
   return 'room'
+}
+
+/* Data verification methods */
+
+const verifyEventFormat = (event_format?: string): boolean => {
+  return (
+    event_format === undefined ||
+    event_format === 'client' ||
+    event_format === 'federation'
+  )
+}
+
+const validClientEventFields = Object.freeze(
+  new Set<string>([
+    'content',
+    'event_id',
+    'origin_server_ts',
+    'room_id',
+    'sender',
+    'state_key',
+    'type',
+    'unsigned'
+  ])
+)
+
+const verifyEventFields = (
+  event_format: string,
+  event_fields?: string[]
+): boolean => {
+  if (!event_fields) {
+    return true
+  }
+
+  if (event_format === 'client') {
+    return event_fields.every((field) => {
+      const [fieldName, subField] = field.split('.')
+      return (
+        validClientEventFields.has(fieldName) &&
+        (subField === undefined || subField.length <= 30) &&
+        field.split('.').length <= 2
+      )
+    })
+  }
+
+  if (event_format === 'federation') {
+    // TODO: Implement restrictions for federationEventFields
+    return true
+  }
+
+  return false
+}
+
+const removeUnvalidTypes = (types: string[]): string[] => {
+  return types.filter((type) =>
+    validEventTypes.some((eventType) => _matchesWildcard(eventType, type))
+  )
+}
+
+const removeUnvalidIds = (senders: string[]): string[] => {
+  const matrixIdRegex = /^@[0-9a-zA-Z._=-]+:[0-9a-zA-Z.-]+$/
+  return senders.filter((sender) => matrixIdRegex.test(sender))
+}
+
+const removeInvalidRoomIds = (rooms: string[]): string[] => {
+  if (!rooms) {
+    return []
+  }
+  const roomIdRegex = /^![0-9a-zA-Z._=/+-]+:[0-9a-zA-Z.-]+$/
+  return rooms.filter((room) => roomIdRegex.test(room))
 }
