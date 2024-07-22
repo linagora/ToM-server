@@ -7,8 +7,7 @@ import { buildMatrixDb, buildUserDB } from '../../__testData__/buildUserDB'
 import { type Config } from '../../types'
 import defaultConfig from '../../__testData__/3pidConf.json'
 import { getLogger, type TwakeLogger } from '@twake/logger'
-import { randomString } from '@twake/crypto'
-import { epoch } from '@twake/utils'
+import { setupTokens, validToken } from '../../utils/setupTokens'
 
 process.env.TWAKE_CLIENT_SERVER_CONF = './src/__testData__/3pidConf.json'
 jest.mock('node-fetch', () => jest.fn())
@@ -107,60 +106,9 @@ describe('Use configuration file', () => {
     jest.mock('node-fetch', () => jest.fn())
   })
 
-  let validToken: string
-  let validToken2: string
-  let validToken3: string
   describe('Endpoints with authentication', () => {
     beforeAll(async () => {
-      validToken = randomString(64)
-      validToken2 = randomString(64)
-      validToken3 = randomString(64)
-      try {
-        await clientServer.matrixDb.insert('user_ips', {
-          user_id: '@testuser:example.com',
-          device_id: 'testdevice',
-          access_token: validToken,
-          ip: '127.0.0.1',
-          user_agent: 'curl/7.31.0-DEV',
-          last_seen: 1411996332123
-        })
-
-        await clientServer.matrixDb.insert('user_ips', {
-          user_id: '@testuser2:example.com',
-          device_id: 'testdevice2',
-          access_token: validToken2,
-          ip: '137.0.0.1',
-          user_agent: 'curl/7.31.0-DEV',
-          last_seen: 1411996332123
-        })
-
-        await clientServer.matrixDb.insert('user_ips', {
-          user_id: '@testuser3:example.com',
-          device_id: 'testdevice3',
-          access_token: validToken3,
-          ip: '147.0.0.1',
-          user_agent: 'curl/7.31.0-DEV',
-          last_seen: 1411996332123
-        })
-
-        await clientServer.matrixDb.insert('threepid_validation_session', {
-          session_id: 'validatedSession',
-          medium: 'email',
-          address: 'validated@example.com',
-          client_secret: 'validatedSecret',
-          last_send_attempt: 1,
-          validated_at: epoch()
-        }) // Validated session
-        await clientServer.matrixDb.insert('user_threepids', {
-          user_id: '@validated:example.com',
-          medium: 'email',
-          address: 'validated@example.com',
-          validated_at: epoch(),
-          added_at: epoch()
-        })
-      } catch (e) {
-        logger.error('Error creating tokens for authentification', e)
-      }
+      await setupTokens(clientServer, logger)
     })
     describe('/_matrix/client/v3/account/3pid/add', () => {
       let sid: string
@@ -269,8 +217,12 @@ describe('Use configuration file', () => {
             sid,
             client_secret: 'mysecret',
             auth: {
-              type: 'm.login.dummy',
-              session: 'authSession9'
+              type: 'm.login.email.identity',
+              session: 'newsession',
+              threepid_creds: {
+                sid: 'validatedSession',
+                client_secret: 'validatedSecret'
+              }
             }
           })
         expect(response.statusCode).toBe(400)
@@ -368,13 +320,25 @@ describe('Use configuration file', () => {
         expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
       })
     })
-    describe('/_matrix/client/v3/account/3pid/bind', () => {
+    describe('3PID Bind Endpoint', () => {
       it('should return 200 on a successful bind', async () => {
-        const mockResponse = Promise.resolve({
+        const mockResolveResponse = Promise.resolve({
           ok: true,
           status: 200,
           json: () => {
             return {
+              email: 'dwho@example.com',
+              'm.server': 'matrix.example.com:8448'
+            }
+          }
+        })
+
+        const mockBindResponse = Promise.resolve({
+          ok: true,
+          status: 200,
+          // eslint-disable-next-line @typescript-eslint/promise-function-async
+          json: () =>
+            Promise.resolve({
               medium: 'email',
               address: 'localhost@example.com',
               mxid: '@testuser:example.com',
@@ -382,12 +346,15 @@ describe('Use configuration file', () => {
               not_before: 1234567890,
               signatures: {},
               ts: 1234567890
-            }
-          }
+            })
         })
+
         // @ts-expect-error mock is unknown
-        fetch.mockImplementation(async () => await mockResponse)
-        await mockResponse
+        fetch.mockImplementationOnce(async () => await mockResolveResponse)
+
+        // @ts-expect-error mock is unknown
+        fetch.mockImplementationOnce(async () => await mockBindResponse)
+
         const response = await request(app)
           .post('/_matrix/client/v3/account/3pid/bind')
           .set('Authorization', `Bearer ${validToken}`)
@@ -395,25 +362,42 @@ describe('Use configuration file', () => {
           .send({
             client_secret: 'mysecret',
             id_access_token: 'myaccesstoken',
-            id_server: 'http://localhost:8090',
+            id_server: 'matrix.example.com',
             sid: 'mysid'
           })
+
         expect(response.statusCode).toBe(200)
       })
+
       it('should return an error if bind fails', async () => {
-        const mockResponse = Promise.resolve({
-          ok: false,
-          status: 400,
+        const mockResolveResponse = Promise.resolve({
+          ok: true,
+          status: 200,
           json: () => {
             return {
-              errcode: 'M_SESSION_NOT_VALIDATED',
-              error: 'This validation session has not yet been completed'
+              email: 'dwho@example.com',
+              'm.server': 'matrix.example.com:8448'
             }
           }
         })
+
+        const mockBindResponse = Promise.resolve({
+          ok: false,
+          status: 400,
+          // eslint-disable-next-line @typescript-eslint/promise-function-async
+          json: () =>
+            Promise.resolve({
+              errcode: 'M_SESSION_NOT_VALIDATED',
+              error: 'This validation session has not yet been completed'
+            })
+        })
+
         // @ts-expect-error mock is unknown
-        fetch.mockImplementation(async () => await mockResponse)
-        await mockResponse
+        fetch.mockImplementationOnce(async () => await mockResolveResponse)
+
+        // @ts-expect-error mock is unknown
+        fetch.mockImplementationOnce(async () => await mockBindResponse)
+
         const response = await request(app)
           .post('/_matrix/client/v3/account/3pid/bind')
           .set('Authorization', `Bearer ${validToken}`)
@@ -421,9 +405,10 @@ describe('Use configuration file', () => {
           .send({
             client_secret: 'mysecret',
             id_access_token: 'myaccesstoken',
-            id_server: 'http://localhost:8090',
+            id_server: 'matrix.example.com',
             sid: 'mysid'
           })
+
         expect(response.statusCode).toBe(400)
         expect(response.body).toHaveProperty(
           'errcode',
