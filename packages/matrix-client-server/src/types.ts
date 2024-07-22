@@ -10,6 +10,11 @@ export type Config = MIdentityServerConfig & {
   application_services: AppServiceRegistration[]
   is_registration_enabled: boolean
   sms_folder: string
+  media?: MediaConfig
+}
+
+interface MediaConfig {
+  uploadSizeLim?: number
 }
 
 export type DbGetResult = Array<
