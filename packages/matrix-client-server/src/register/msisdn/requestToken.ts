@@ -37,6 +37,7 @@ const schema = {
 const clientSecretRegex = /^[0-9a-zA-Z.=_-]{6,255}$/
 const validCountryRegex = /^[A-Z]{2}$/ // ISO 3166-1 alpha-2 as per the spec : https://spec.matrix.org/v1.11/client-server-api/#post_matrixclientv3registermsisdnrequesttoken
 const validPhoneNumberRegex = /^[1-9]\d{1,14}$/
+const maxAttemps = 1000000000
 
 export const formatPhoneNumber = (
   rawNumber: string,
@@ -186,7 +187,7 @@ const RequestToken = (clientServer: MatrixClientServer): expressAppHandler => {
           )
         } else if (
           typeof sendAttempt !== 'number' ||
-          sendAttempt > 1000000000
+          sendAttempt > maxAttemps
         ) {
           send(res, 400, errMsg('invalidParam', 'Invalid send attempt'), clientServer.logger)
         } else {
