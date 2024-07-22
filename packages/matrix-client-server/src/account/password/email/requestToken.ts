@@ -36,6 +36,7 @@ const schema = {
 
 const clientSecretRe = /^[0-9a-zA-Z.=_-]{6,255}$/
 const validEmailRe = /^\w[+.-\w]*\w@\w[.-\w]*\w\.\w{2,6}$/
+const maxAttemps = 1000000000
 
 const RequestToken = (clientServer: MatrixClientServer): expressAppHandler => {
   const transport = new Mailer(clientServer.conf)
@@ -72,7 +73,7 @@ const RequestToken = (clientServer: MatrixClientServer): expressAppHandler => {
           )
         } else if (
           typeof sendAttempt !== 'number' ||
-          sendAttempt > 1000000000
+          sendAttempt > maxAttemps
         ) {
           send(
             res,
