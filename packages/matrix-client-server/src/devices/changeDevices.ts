@@ -52,18 +52,19 @@ export const changeDeviceName = (
                   errMsg(
                     'notFound',
                     'The current user has no device with the given ID'
-                  )
+                  ),
+                  clientServer.logger
                 )
               } else {
                 clientServer.logger.debug('Device Name updated')
-                send(res, 200, {})
+                send(res, 200, {}, clientServer.logger)
               }
             })
             .catch((e) => {
               /* istanbul ignore next */
-              clientServer.logger.error('Error querying profiles:', e)
+              clientServer.logger.error('Error querying profiles:')
               /* istanbul ignore next */
-              send(res, 500, errMsg('unknown', 'Error querying profiles'))
+              send(res, 500, errMsg('unknown', e), clientServer.logger)
             })
         })
       })

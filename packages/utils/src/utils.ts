@@ -17,10 +17,19 @@ export type expressAppHandler = (
 export const send = (
   res: Response | http.ServerResponse,
   status: number,
-  body: string | object
+  body: string | object,
+  logger?: TwakeLogger
 ): void => {
   /* istanbul ignore next */
   const content = typeof body === 'string' ? body : JSON.stringify(body)
+  if (logger != null) {
+    const logMessage = `Sending status ${status} with content ${content}`
+    if (status >= 200 && status < 300) {
+      logger.info(logMessage)
+    } else {
+      logger.error(logMessage)
+    }
+  }
   res.writeHead(status, {
     'Content-Type': 'application/json; charset=utf-8',
     'Content-Length': Buffer.byteLength(content, 'utf-8'),
@@ -79,15 +88,17 @@ type validateParametersType = (
   desc: validateParametersSchema,
   content: Record<string, string>,
   logger: TwakeLogger,
-  callback: (obj: object) => void
+  callback: (obj: object) => void,
+  acceptAdditionalParameters?: boolean
 ) => void
 
-export const validateParameters: validateParametersType = (
+const _validateParameters: validateParametersType = (
   res,
   desc,
   content,
   logger,
-  callback
+  callback,
+  acceptAdditionalParameters
 ) => {
   const missingParameters: string[] = []
   const additionalParameters: string[] = []
@@ -113,10 +124,42 @@ export const validateParameters: validateParametersType = (
       }
     })
     if (additionalParameters.length > 0) {
-      logger.warn('Additional parameters', additionalParameters)
+      if (acceptAdditionalParameters == null || acceptAdditionalParameters) {
+        logger.warn('Additional parameters', additionalParameters)
+      } else {
+        logger.error('Additional parameters', additionalParameters)
+        send(
+          res,
+          400,
+          errMsg(
+            'unknownParam',
+            `Unknown additional parameters ${additionalParameters.join(', ')}`
+          )
+        )
+      }
     }
     callback(content)
   }
+}
+
+export const validateParameters: validateParametersType = (
+  res,
+  desc,
+  content,
+  logger,
+  callback
+) => {
+  _validateParameters(res, desc, content, logger, callback, true)
+}
+
+export const validateParametersStrict: validateParametersType = (
+  res,
+  desc,
+  content,
+  logger,
+  callback
+) => {
+  _validateParameters(res, desc, content, logger, callback, false)
 }
 
 export const epoch = (): number => {

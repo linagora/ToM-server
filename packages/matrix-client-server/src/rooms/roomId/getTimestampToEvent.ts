@@ -17,7 +17,12 @@ const GetTimestampToEvent = (
     // @ts-expect-error
     const params: query_parameters = (req as Request).query
     if (params.dir !== 'b' && params.dir !== 'f') {
-      send(res, 400, errMsg('invalidParam', 'Invalid parameters'))
+      send(
+        res,
+        400,
+        errMsg('invalidParam', 'Invalid parameters'),
+        ClientServer.logger
+      )
       return
     }
     ClientServer.authenticate(req, res, (data, id) => {
@@ -42,7 +47,8 @@ const GetTimestampToEvent = (
                 errMsg(
                   'notFound',
                   `Unable to find event from ${params.ts} in backward direction`
-                )
+                ),
+                ClientServer.logger
               )
               return
             }
@@ -50,9 +56,7 @@ const GetTimestampToEvent = (
           })
           .catch((err) => {
             /* istanbul ignore next */
-            ClientServer.logger.error(err)
-            /* istanbul ignore next */
-            send(res, 500, errMsg('unknown', err))
+            send(res, 500, errMsg('unknown', err), ClientServer.logger)
           })
       }
       if (params.dir === 'f') {
@@ -74,7 +78,8 @@ const GetTimestampToEvent = (
                 errMsg(
                   'notFound',
                   `Unable to find event from ${params.ts} in forward direction`
-                )
+                ),
+                ClientServer.logger
               )
               return
             }
@@ -82,9 +87,7 @@ const GetTimestampToEvent = (
           })
           .catch((err) => {
             /* istanbul ignore next */
-            ClientServer.logger.error(err)
-            /* istanbul ignore next */
-            send(res, 500, errMsg('unknown', err))
+            send(res, 500, errMsg('unknown', err), ClientServer.logger)
           })
       }
     })

@@ -60,23 +60,27 @@ const whois = (clientServer: MatrixClientServer): expressAppHandler => {
               }
               devices[deviceId].sessions.push(sessions[mappings[deviceId]])
             })
-            send(res, 200, {
-              user_id: prms.userId,
-              devices
-            })
+            send(
+              res,
+              200,
+              {
+                user_id: prms.userId,
+                devices
+              },
+              clientServer.logger
+            )
           })
-          .catch((err) => {
+          .catch((e) => {
             // istanbul ignore next
             clientServer.logger.error(
-              'Error retrieving user informations from the MatrixDB',
-              err
+              'Error retrieving user informations from the MatrixDB'
             )
             // istanbul ignore next
-            send(res, 500, errMsg('unknown'))
+            send(res, 500, errMsg('unknown', e), clientServer.logger)
           })
       })
     } else {
-      send(res, 400, errMsg('missingParams'))
+      send(res, 400, errMsg('missingParams'), clientServer.logger)
     }
   }
 }

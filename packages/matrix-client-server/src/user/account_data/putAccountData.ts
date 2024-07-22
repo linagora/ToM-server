@@ -35,7 +35,7 @@ const putAccountData = (
       !matrixIdRegex.test(parameters.userId) ||
       !eventTypeRegex.test(parameters.type)
     ) {
-      send(res, 400, errMsg('invalidParam'))
+      send(res, 400, errMsg('invalidParam'), clientServer.logger)
       return
     }
     clientServer.authenticate(req, res, (data, token) => {
@@ -43,11 +43,16 @@ const putAccountData = (
         validateParameters(res, schema, obj, clientServer.logger, (obj) => {
           if (parameters.userId !== data.sub) {
             // The config is only visible to the user that set the account data
-            send(res, 403, {
-              errcode: 'M_FORBIDDEN',
-              error:
-                'The access token provided is not authorized to update this user’s account data.'
-            })
+            send(
+              res,
+              403,
+              {
+                errcode: 'M_FORBIDDEN',
+                error:
+                  'The access token provided is not authorized to update this user’s account data.'
+              },
+              clientServer.logger
+            )
             return
           }
           if (!contentRegex.test((obj as PutRequestBody).content)) {
@@ -64,13 +69,11 @@ const putAccountData = (
               ]
             )
             .then(() => {
-              send(res, 200, {})
+              send(res, 200, {}, clientServer.logger)
             })
             .catch((e) => {
-              // istanbul ignore next
-              clientServer.logger.error("Error updating user's account data", e)
-              // istanbul ignore next
-              send(res, 500, errMsg('unknown'))
+              /* istanbul ignore next */
+              send(res, 500, errMsg('unknown', e), clientServer.logger)
             })
         })
       })

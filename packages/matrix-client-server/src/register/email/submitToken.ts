@@ -68,7 +68,7 @@ const SubmitToken = (clientServer: MatrixClientServer): expressAppHandler => {
                         res.end()
                         return
                       }
-                      send(res, 200, { success: true })
+                      send(res, 200, { success: true }, clientServer.logger)
                     })
                     .catch((e) => {
                       // istanbul ignore next
@@ -77,33 +77,38 @@ const SubmitToken = (clientServer: MatrixClientServer): expressAppHandler => {
                         e
                       )
                       // istanbul ignore next
-                      send(res, 500, e)
+                      send(res, 500, e, clientServer.logger)
                     })
                 })
                 .catch((e) => {
                   // istanbul ignore next
                   clientServer.logger.error('Error while deleting the token', e)
                   // istanbul ignore next
-                  send(res, 500, e)
+                  send(res, 500, e, clientServer.logger)
                 })
             } else {
               /* istanbul ignore next */
-              send(res, 400, errMsg('invalidParam', 'sid or secret mismatch'))
+              send(
+                res,
+                400,
+                errMsg('invalidParam', 'sid or secret mismatch'),
+                clientServer.logger
+              )
             }
           })
           .catch((e) => {
-            clientServer.logger.error('Token error', e)
             send(
               res,
               400,
               errMsg(
                 'invalidParam',
                 'Unknown or expired token ' + (e as string)
-              )
+              ),
+              clientServer.logger
             )
           })
       } else {
-        send(res, 400, errMsg('missingParams'))
+        send(res, 400, errMsg('missingParams'), clientServer.logger)
       }
     }
     if (req.method === 'GET') {
@@ -116,7 +121,12 @@ const SubmitToken = (clientServer: MatrixClientServer): expressAppHandler => {
       })
     } else {
       /* istanbul ignore next */
-      send(res, 400, errMsg('unAuthorized', 'Unauthorized method'))
+      send(
+        res,
+        400,
+        errMsg('unAuthorized', 'Unauthorized method'),
+        clientServer.logger
+      )
     }
   }
 }

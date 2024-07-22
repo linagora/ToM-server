@@ -7,7 +7,8 @@ import {
   validateParameters,
   epoch,
   toMatrixId,
-  isValidUrl
+  isValidUrl,
+  validateParametersStrict
 } from './index'
 import { type TwakeLogger } from '@twake/logger'
 
@@ -25,7 +26,8 @@ describe('Utility Functions', () => {
     mockLogger = {
       error: jest.fn(),
       warn: jest.fn(),
-      log: jest.fn()
+      log: jest.fn(),
+      info: jest.fn()
     } as unknown as TwakeLogger
   })
 
@@ -45,6 +47,22 @@ describe('Utility Functions', () => {
         JSON.stringify({ message: 'ok' })
       )
       expect(mockResponse.end).toHaveBeenCalled()
+    })
+
+    it('should log the response status with info if status code in 200-299', () => {
+      send(mockResponse as Response, 200, { message: 'ok' }, mockLogger)
+
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        'Sending status 200 with content {"message":"ok"}'
+      )
+    })
+
+    it('should log the response status with error if status code not in 200-299', () => {
+      send(mockResponse as Response, 400, { message: 'error' }, mockLogger)
+
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        'Sending status 400 with content {"message":"error"}'
+      )
     })
   })
 
@@ -102,6 +120,7 @@ describe('Utility Functions', () => {
         headers: { 'content-type': 'application/json' },
         on: (event: string, callback: any) => {
           if (event === 'data') {
+            // eslint-disable-next-line n/no-callback-literal
             callback('invalid json')
           }
           if (event === 'end') {
@@ -150,6 +169,46 @@ describe('Utility Functions', () => {
       const content = { key: 'value' }
 
       validateParameters(
+        mockResponse as Response,
+        desc,
+        content,
+        mockLogger,
+        () => {
+          // No-op
+        }
+      )
+
+      expect(mockResponse.writeHead).toHaveBeenCalledWith(
+        400,
+        expect.any(Object)
+      )
+      expect(mockResponse.write).toHaveBeenCalled()
+      expect(mockResponse.end).toHaveBeenCalled()
+    })
+
+    it('should log a warning for additional parameters', () => {
+      const desc = { key: true }
+      const content = { key: 'value', extra: 'extra' }
+
+      validateParameters(
+        mockResponse as Response,
+        desc,
+        content,
+        mockLogger,
+        () => {
+          // No-op
+        }
+      )
+
+      expect(mockLogger.warn).toHaveBeenCalled()
+      expect(mockResponse.writeHead).not.toHaveBeenCalled()
+    })
+
+    it('should return an error for additional parameters in strict mode', () => {
+      const desc = { key: true }
+      const content = { key: 'value', extra: 'extra' }
+
+      validateParametersStrict(
         mockResponse as Response,
         desc,
         content,
