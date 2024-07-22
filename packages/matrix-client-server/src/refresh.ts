@@ -27,7 +27,7 @@ const schema = {
   refresh_token: true
 }
 
-const generateTokens = (
+const generateAndSendToken = (
   clientServer: MatrixClientServer,
   res: any,
   oldRefreshToken: string,
@@ -124,7 +124,7 @@ const refresh = (clientServer: MatrixClientServer): expressAppHandler => {
                       operator: '='
                     })
                   const newRefreshToken = nextTokenRows[0].token as string
-                  generateTokens(
+                  generateAndSendToken(
                     clientServer,
                     res,
                     refreshToken,
@@ -160,7 +160,7 @@ const refresh = (clientServer: MatrixClientServer): expressAppHandler => {
                   { next_token_id: newRefreshTokenId },
                   [{ field: 'token', value: refreshToken }]
                 )
-              generateTokens(
+              generateAndSendToken(
                 clientServer,
                 res,
                 refreshToken,
