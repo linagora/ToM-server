@@ -38,7 +38,7 @@
       "namespaces": {
         "users": [
           {
-            "exclusive": false,
+            "exclusive": true,
             "regex": "@_irc_bridge_.*"
           }
         ]
