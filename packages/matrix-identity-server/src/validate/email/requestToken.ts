@@ -29,6 +29,7 @@ const schema = {
 
 const clientSecretRe = /^[0-9a-zA-Z.=_-]{6,255}$/
 const validEmailRe = /^\w[+.-\w]*\w@\w[.-\w]*\w\.\w{2,6}$/
+const maxAttemps = 1000000000
 
 const preConfigureTemplate = (
   template: string,
@@ -163,7 +164,7 @@ const RequestToken = <T extends string = never>(
             send(res, 400, errMsg('invalidParam', 'invalid next_link'))
           } else if (
             typeof sendAttempt !== 'number' ||
-            sendAttempt > 1000000000
+            sendAttempt > maxAttemps
           ) {
             send(res, 400, errMsg('invalidParam', 'Invalid send attempt'))
           } else {
