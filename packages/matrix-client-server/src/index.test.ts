@@ -3065,6 +3065,16 @@ describe('Use configuration file', () => {
           )
         })
 
+        it('should return 400 if the display_name is too long', async () => {
+          const response = await request(app)
+            .put(`/_matrix/client/v3/devices/${_device_id}`)
+            .set('Authorization', `Bearer ${validToken}`)
+            .send({ display_name: randomString(257) })
+
+          expect(response.statusCode).toBe(400)
+          expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
+        })
+
         it('should return 404 if the device ID does not exist', async () => {
           const response = await request(app)
             .put('/_matrix/client/v3/devices/NON_EXISTENT_DEVICE_ID')
@@ -4544,6 +4554,19 @@ describe('Use configuration file', () => {
           expect(row[0].is_public).toBe(0)
         })
 
+        it('should update the visibility of the room', async () => {
+          const response = await request(app)
+            .put(`/_matrix/client/v3/directory/list/room/${testRoomId}`)
+            .set('Authorization', `Bearer ${validToken}`)
+            .send({ visibility: 'public' })
+          expect(response.statusCode).toBe(200)
+
+          const row = await clientServer.matrixDb.get('rooms', ['is_public'], {
+            room_id: testRoomId
+          })
+          expect(row[0].is_public).toBe(1)
+        })
+
         it('should return 404 if the room is not found', async () => {
           const invalidRoomId = '!invalidroomid:example.com'
           const response = await request(app)
@@ -4643,6 +4666,15 @@ describe('Use configuration file', () => {
           .set('Authorization', 'Bearer invalidToken')
           .set('Accept', 'application/json')
         expect(response.statusCode).toBe(401)
+      })
+
+      it('should return 400 if the room ID is invalid', async () => {
+        const response = await request(app)
+          .get(`/_matrix/client/v3/rooms/invalid_room_id/aliases`)
+          .set('Authorization', `Bearer ${validToken2}`)
+          .set('Accept', 'application/json')
+        expect(response.statusCode).toBe(400)
+        expect(response.body.errcode).toEqual('M_INVALID_PARAM')
       })
 
       it('should return the list of aliases for a world_readable room for any user', async () => {
