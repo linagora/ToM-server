@@ -10,7 +10,7 @@ export type Config = MIdentityServerConfig & {
   application_services: AppServiceRegistration[]
   is_registration_enabled: boolean
   sms_folder: string
-  media?: MediaConfig
+  media?: MediaConfig | null
 }
 
 interface MediaConfig {

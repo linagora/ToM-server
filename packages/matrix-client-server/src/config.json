@@ -30,6 +30,7 @@
   "matrix_database_password": null,
   "matrix_database_ssl": false,
   "matrix_database_user": null,
+  "media" : null,
   "pepperCron": "0 0 * * *",
   "policies": null,
   "rate_limiting_window": 600000,

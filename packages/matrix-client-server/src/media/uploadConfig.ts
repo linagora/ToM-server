@@ -7,6 +7,8 @@ const getUploadConfig = (
   return (req, res) => {
     if (
       clientServer.conf.media === undefined ||
+      clientServer.conf.media === null ||
+      clientServer.conf.media.uploadSizeLim === undefined ||
       clientServer.conf.media.uploadSizeLim === null
     ) {
       send(res, 500, errMsg('unknown', 'No upload config found'))

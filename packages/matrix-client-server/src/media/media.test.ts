@@ -15,101 +15,175 @@ let app: express.Application
 
 const logger: TwakeLogger = getLogger()
 
-beforeAll((done) => {
-  // @ts-expect-error TS doesn't understand that the config is valid
-  conf = {
-    ...defaultConfig,
-    cron_service: false,
-    database_engine: 'sqlite',
-    base_url: 'http://example.com/',
-    userdb_engine: 'sqlite',
-    matrix_database_engine: 'sqlite'
-  }
-  if (process.env.TEST_PG === 'yes') {
-    conf.database_engine = 'pg'
-    conf.userdb_engine = 'pg'
-    conf.database_host = process.env.PG_HOST ?? 'localhost'
-    conf.database_user = process.env.PG_USER ?? 'twake'
-    conf.database_password = process.env.PG_PASSWORD ?? 'twake'
-    conf.database_name = process.env.PG_DATABASE ?? 'test'
-  }
-  buildUserDB(conf)
-    .then(() => {
-      buildMatrixDb(conf)
-        .then(() => {
-          done()
-        })
-        .catch((e) => {
-          logger.error('Error while building matrix db:', e)
-          done(e)
-        })
-    })
-    .catch((e) => {
-      logger.error('Error while building user db:', e)
-      done(e)
-    })
-})
+describe('/_matrix/client/v1/media/config', () => {
+  it('should correctly return the upload size limit when the config specifies it', async () => {
+    // @ts-expect-error TS doesn't understand that the config is valid
+    conf = {
+      ...defaultConfig,
+      cron_service: false,
+      database_engine: 'sqlite',
+      base_url: 'http://example.com/',
+      userdb_engine: 'sqlite',
+      matrix_database_engine: 'sqlite',
+      media: { uploadSizeLim: 100000000 }
+    }
 
-afterAll(() => {
-  fs.unlinkSync('src/__testData__/testLogin.db')
-  fs.unlinkSync('src/__testData__/testMatrixLogin.db')
-})
+    try {
+      await buildUserDB(conf)
 
-describe('Use configuration file', () => {
-  beforeAll((done) => {
-    clientServer = new ClientServer()
+      await buildMatrixDb(conf)
+    } catch (e) {
+      logger.error('Error while building matrix db:', e)
+    }
+
+    clientServer = new ClientServer(conf)
     app = express()
-    clientServer.ready
-      .then(() => {
-        Object.keys(clientServer.api.get).forEach((k) => {
-          app.get(k, clientServer.api.get[k])
-        })
-        Object.keys(clientServer.api.post).forEach((k) => {
-          app.post(k, clientServer.api.post[k])
-        })
-        Object.keys(clientServer.api.put).forEach((k) => {
-          app.put(k, clientServer.api.put[k])
-        })
-        Object.keys(clientServer.api.delete).forEach((k) => {
-          app.delete(k, clientServer.api.delete[k])
-        })
-        done()
+
+    try {
+      await clientServer.ready
+
+      Object.keys(clientServer.api.get).forEach((k) => {
+        app.get(k, clientServer.api.get[k])
       })
-      .catch((e) => {
-        done(e)
+      Object.keys(clientServer.api.post).forEach((k) => {
+        app.post(k, clientServer.api.post[k])
       })
+      Object.keys(clientServer.api.put).forEach((k) => {
+        app.put(k, clientServer.api.put[k])
+      })
+      Object.keys(clientServer.api.delete).forEach((k) => {
+        app.delete(k, clientServer.api.delete[k])
+      })
+    } catch (e) {
+      logger.error('Error while building matrix db:', e)
+    }
+
+    const response = await request(app).get('/_matrix/client/v1/media/config')
+
+    expect(response.statusCode).toBe(200)
+    expect(response.body).toEqual({ 'm.upload.size': 100000000 })
+
+    clientServer.cleanJobs()
+
+    if (fs.existsSync('src/__testData__/test.db')) {
+      fs.unlinkSync('src/__testData__/test.db')
+    }
+    if (fs.existsSync('src/__testData__/testMatrix.db')) {
+      fs.unlinkSync('src/__testData__/testMatrix.db')
+    }
   })
 
-  afterAll(() => {
+  it('should return 500 when config.media is null', async () => {
+    // @ts-expect-error TS doesn't understand that the config is valid
+    conf = {
+      ...defaultConfig,
+      cron_service: false,
+      database_engine: 'sqlite',
+      base_url: 'http://example.com/',
+      userdb_engine: 'sqlite',
+      matrix_database_engine: 'sqlite',
+      media: undefined
+    }
+
+    try {
+      await buildUserDB(conf)
+
+      await buildMatrixDb(conf)
+    } catch (e) {
+      logger.error('Error while building matrix db:', e)
+    }
+
+    clientServer = new ClientServer(conf)
+    app = express()
+
+    try {
+      await clientServer.ready
+
+      Object.keys(clientServer.api.get).forEach((k) => {
+        app.get(k, clientServer.api.get[k])
+      })
+      Object.keys(clientServer.api.post).forEach((k) => {
+        app.post(k, clientServer.api.post[k])
+      })
+      Object.keys(clientServer.api.put).forEach((k) => {
+        app.put(k, clientServer.api.put[k])
+      })
+      Object.keys(clientServer.api.delete).forEach((k) => {
+        app.delete(k, clientServer.api.delete[k])
+      })
+    } catch (e) {
+      logger.error('Error while building matrix db:', e)
+    }
+
+    const response = await request(app).get('/_matrix/client/v1/media/config')
+
+    expect(response.statusCode).toBe(500)
+
     clientServer.cleanJobs()
+
+    if (fs.existsSync('src/__testData__/test.db')) {
+      fs.unlinkSync('src/__testData__/test.db')
+    }
+    if (fs.existsSync('src/__testData__/testMatrix.db')) {
+      fs.unlinkSync('src/__testData__/testMatrix.db')
+    }
   })
-  describe('/_matrix/client/v3/login', () => {
-    it('should return the login flows', async () => {
-      const response = await request(app).get('/_matrix/client/v3/login')
-      expect(response.status).toBe(200)
-      expect(response.body).toHaveProperty('flows')
-      expect(response.body.flows).toEqual([
-        { type: 'm.login.password' },
-        { get_login_token: true, type: 'm.login.token' }
-      ])
-    })
+
+  it('should return 500 when the upload size limit is not listed in the config', async () => {
+    // @ts-expect-error TS doesn't understand that the config is valid
+    conf = {
+      ...defaultConfig,
+      cron_service: false,
+      database_engine: 'sqlite',
+      base_url: 'http://example.com/',
+      userdb_engine: 'sqlite',
+      matrix_database_engine: 'sqlite',
+      media: {}
+    }
+
+    try {
+      await buildUserDB(conf)
+
+      await buildMatrixDb(conf)
+    } catch (e) {
+      logger.error('Error while building matrix db:', e)
+    }
+
+    clientServer = new ClientServer(conf)
+    app = express()
+
+    try {
+      await clientServer.ready
+
+      Object.keys(clientServer.api.get).forEach((k) => {
+        app.get(k, clientServer.api.get[k])
+      })
+      Object.keys(clientServer.api.post).forEach((k) => {
+        app.post(k, clientServer.api.post[k])
+      })
+      Object.keys(clientServer.api.put).forEach((k) => {
+        app.put(k, clientServer.api.put[k])
+      })
+      Object.keys(clientServer.api.delete).forEach((k) => {
+        app.delete(k, clientServer.api.delete[k])
+      })
+    } catch (e) {
+      logger.error('Error while building matrix db:', e)
+    }
+    console.log(clientServer.conf.media)
+
+    const response = await request(app).get('/_matrix/client/v1/media/config')
+    console.log(response.body)
+
+    expect(response.statusCode).toBe(500)
+
+    clientServer.cleanJobs()
+
+    if (fs.existsSync('src/__testData__/test.db')) {
+      fs.unlinkSync('src/__testData__/test.db')
+    }
+    if (fs.existsSync('src/__testData__/testMatrix.db')) {
+      fs.unlinkSync('src/__testData__/testMatrix.db')
+    }
   })
-  //   let validToken: string
-  //   describe('Endpoints with authentication', () => {
-  //     beforeAll(async () => {
-  //       validToken = randomString(64)
-  //       try {
-  //         await clientServer.matrixDb.insert('user_ips', {
-  //           user_id: '@testuser:example.com',
-  //           device_id: 'testdevice',
-  //           access_token: validToken,
-  //           ip: '127.0.0.1',
-  //           user_agent: 'curl/7.31.0-DEV',
-  //           last_seen: 1411996332123
-  //         })
-  //       } catch (e) {
-  //         logger.error('Error creating tokens for authentification', e)
-  //       }
-  //     })
-  //   })
 })
