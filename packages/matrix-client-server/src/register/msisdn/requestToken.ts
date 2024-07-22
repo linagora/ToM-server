@@ -173,19 +173,7 @@ const RequestToken = (clientServer: MatrixClientServer): expressAppHandler => {
             errMsg('invalidParam', 'Invalid client_secret'),
             clientServer.logger
           )
-          send(
-            res,
-            400,
-            errMsg('invalidParam', 'Invalid client_secret'),
-            clientServer.logger
-          )
         } else if (!validCountryRegex.test(country)) {
-          send(
-            res,
-            400,
-            errMsg('invalidParam', 'Invalid country'),
-            clientServer.logger
-          )
           send(
             res,
             400,
@@ -200,19 +188,7 @@ const RequestToken = (clientServer: MatrixClientServer): expressAppHandler => {
             errMsg('invalidParam', 'Invalid next_link'),
             clientServer.logger
           )
-          send(
-            res,
-            400,
-            errMsg('invalidParam', 'Invalid next_link'),
-            clientServer.logger
-          )
         } else if (!validPhoneNumberRegex.test(dst)) {
-          send(
-            res,
-            400,
-            errMsg('invalidParam', 'Invalid phone number'),
-            clientServer.logger
-          )
           send(
             res,
             400,
@@ -235,7 +211,6 @@ const RequestToken = (clientServer: MatrixClientServer): expressAppHandler => {
             .then((rows) => {
               if (rows.length > 0) {
                 send(res, 400, errMsg('threepidInUse'), clientServer.logger)
-                send(res, 400, errMsg('threepidInUse'), clientServer.logger)
               } else {
                 clientServer.matrixDb
                   .get(
@@ -249,15 +224,6 @@ const RequestToken = (clientServer: MatrixClientServer): expressAppHandler => {
                   .then((rows) => {
                     if (rows.length > 0) {
                       if (sendAttempt === rows[0].last_send_attempt) {
-                        send(
-                          res,
-                          200,
-                          {
-                            sid: rows[0].session_id,
-                            submit_url: getSubmitUrl(clientServer.conf)
-                          },
-                          clientServer.logger
-                        )
                         send(
                           res,
                           200,
@@ -327,7 +293,6 @@ const RequestToken = (clientServer: MatrixClientServer): expressAppHandler => {
                     clientServer.logger.error('Send_attempt error:', err)
                     /* istanbul ignore next */
                     send(res, 500, errMsg('unknown', err), clientServer.logger)
-                    send(res, 500, errMsg('unknown', err), clientServer.logger)
                   })
               }
             })
@@ -335,7 +300,6 @@ const RequestToken = (clientServer: MatrixClientServer): expressAppHandler => {
               /* istanbul ignore next */
               clientServer.logger.error('Error getting userID :', err)
               /* istanbul ignore next */
-              send(res, 500, errMsg('unknown', err), clientServer.logger)
               send(res, 500, errMsg('unknown', err), clientServer.logger)
             })
         }
