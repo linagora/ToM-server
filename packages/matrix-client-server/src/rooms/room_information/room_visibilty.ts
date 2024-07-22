@@ -66,6 +66,7 @@ export const setRoomVisibility = (
     const roomId = (req as Request).params.roomId
 
     // TO DO : eventually implement additional access control checks here
+    // (not done in the Synapse implementation)
     clientServer.authenticate(req, res, (data, id) => {
       jsonContent(req, res, clientServer.logger, (obj) => {
         validateParameters(res, schema, obj, clientServer.logger, (obj) => {
