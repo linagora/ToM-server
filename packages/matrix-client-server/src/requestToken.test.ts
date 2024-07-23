@@ -4,13 +4,10 @@ import express from 'express'
 import ClientServer from './index'
 import { buildMatrixDb, buildUserDB } from './__testData__/buildUserDB'
 import { type Config } from './types'
-import defaultConfig from './__testData__/requestTokenConf.json'
+import defaultConfig from './__testData__/registerConf.json'
 import { getLogger, type TwakeLogger } from '@twake/logger'
 import { epoch } from '@twake/utils'
 import { getSubmitUrl } from './register/email/requestToken'
-
-process.env.TWAKE_CLIENT_SERVER_CONF =
-  './src/__testData__/requestTokenConf.json'
 
 jest.mock('node-fetch', () => jest.fn())
 const sendMailMock = jest.fn()
@@ -41,11 +38,10 @@ beforeAll((done) => {
   // @ts-expect-error TS doesn't understand that the config is valid
   conf = {
     ...defaultConfig,
-    cron_service: false,
-    database_engine: 'sqlite',
     base_url: 'http://example.com/',
-    userdb_engine: 'sqlite',
-    matrix_database_engine: 'sqlite'
+    matrix_database_host: 'src/__testData__/testMatrixRequestToken.db',
+    userdb_host: 'src/__testData__/testRequestToken.db',
+    database_host: 'src/__testData__/testRequestToken.db'
   }
   if (process.env.TEST_PG === 'yes') {
     conf.database_engine = 'pg'
@@ -83,7 +79,7 @@ beforeEach(() => {
 
 describe('Use configuration file', () => {
   beforeAll((done) => {
-    clientServer = new ClientServer()
+    clientServer = new ClientServer(conf)
     app = express()
     clientServer.ready
       .then(() => {

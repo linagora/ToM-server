@@ -4,10 +4,10 @@ import express from 'express'
 import ClientServer from '../index'
 import { buildMatrixDb, buildUserDB } from '../__testData__/buildUserDB'
 import { type Config } from '../types'
-import defaultConfig from '../__testData__/loginConf.json'
+import defaultConfig from '../__testData__/registerConf.json'
 import { getLogger, type TwakeLogger } from '@twake/logger'
 
-process.env.TWAKE_CLIENT_SERVER_CONF = './src/__testData__/loginConf.json'
+process.env.TWAKE_CLIENT_SERVER_CONF = './src/__testData__/registerConf.json'
 jest.mock('node-fetch', () => jest.fn())
 
 let conf: Config
@@ -24,7 +24,10 @@ beforeAll((done) => {
     database_engine: 'sqlite',
     base_url: 'http://example.com/',
     userdb_engine: 'sqlite',
-    matrix_database_engine: 'sqlite'
+    matrix_database_engine: 'sqlite',
+    matrix_database_host: './src/__testData__/testMatrixLogin.db',
+    userdb_host: './src/__testData__/testLogin.db',
+    database_host: './src/__testData__/testLogin.db'
   }
   if (process.env.TEST_PG === 'yes') {
     conf.database_engine = 'pg'
