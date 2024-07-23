@@ -170,10 +170,8 @@ describe('/_matrix/client/v1/media/config', () => {
     } catch (e) {
       logger.error('Error while building matrix db:', e)
     }
-    console.log(clientServer.conf.media)
 
     const response = await request(app).get('/_matrix/client/v1/media/config')
-    console.log(response.body)
 
     expect(response.statusCode).toBe(500)
 
