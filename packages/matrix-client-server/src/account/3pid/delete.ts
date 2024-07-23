@@ -71,6 +71,7 @@ const delete3pid = (clientServer: MatrixClientServer): expressAppHandler => {
                 }
               )
               if (UnbindResponse.ok) {
+                // TODO : delete the association from the database
                 send(res, 200, {})
               } else {
                 send(res, UnbindResponse.status, UnbindResponse.json())

@@ -8,6 +8,7 @@ import { type Config } from '../../types'
 import defaultConfig from '../../__testData__/3pidConf.json'
 import { getLogger, type TwakeLogger } from '@twake/logger'
 import { setupTokens, validToken } from '../../utils/setupTokens'
+import e from 'express'
 
 process.env.TWAKE_CLIENT_SERVER_CONF = './src/__testData__/3pidConf.json'
 jest.mock('node-fetch', () => jest.fn())
@@ -418,6 +419,156 @@ describe('Use configuration file', () => {
           'error',
           'This validation session has not yet been completed'
         )
+      })
+      it('should return a 500 error if the medium is incorrect', async () => {
+        const mockResolveResponse = Promise.resolve({
+          ok: true,
+          status: 200,
+          json: () => {
+            return {
+              email: 'dwho@example.com',
+              'm.server': 'matrix.example.com:8448'
+            }
+          }
+        })
+
+        const mockBindResponse = Promise.resolve({
+          ok: true,
+          status: 200,
+          // eslint-disable-next-line @typescript-eslint/promise-function-async
+          json: () =>
+            Promise.resolve({
+              medium: 'wrongmedium',
+              address: 'localhost@example.com',
+              mxid: '@testuser:example.com',
+              not_after: 1234567890,
+              not_before: 1234567890,
+              signatures: {},
+              ts: 1234567890
+            })
+        })
+
+        // @ts-expect-error mock is unknown
+        fetch.mockImplementationOnce(async () => await mockResolveResponse)
+
+        // @ts-expect-error mock is unknown
+        fetch.mockImplementationOnce(async () => await mockBindResponse)
+
+        const response = await request(app)
+          .post('/_matrix/client/v3/account/3pid/bind')
+          .set('Authorization', `Bearer ${validToken}`)
+          .set('Accept', 'application/json')
+          .send({
+            client_secret: 'mysecret',
+            id_access_token: 'myaccesstoken',
+            id_server: 'matrix.example.com',
+            sid: 'mysid'
+          })
+
+        expect(response.statusCode).toBe(500)
+        expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
+        expect(response.body).toHaveProperty(
+          'error',
+          'Medium must be one of "email" or "msisdn"'
+        )
+      })
+      it('should return a 500 error if the email is incorrect', async () => {
+        const mockResolveResponse = Promise.resolve({
+          ok: true,
+          status: 200,
+          json: () => {
+            return {
+              email: 'dwho@example.com',
+              'm.server': 'matrix.example.com:8448'
+            }
+          }
+        })
+
+        const mockBindResponse = Promise.resolve({
+          ok: true,
+          status: 200,
+          // eslint-disable-next-line @typescript-eslint/promise-function-async
+          json: () =>
+            Promise.resolve({
+              medium: 'email',
+              address: '05934903',
+              mxid: '@testuser:example.com',
+              not_after: 1234567890,
+              not_before: 1234567890,
+              signatures: {},
+              ts: 1234567890
+            })
+        })
+
+        // @ts-expect-error mock is unknown
+        fetch.mockImplementationOnce(async () => await mockResolveResponse)
+
+        // @ts-expect-error mock is unknown
+        fetch.mockImplementationOnce(async () => await mockBindResponse)
+
+        const response = await request(app)
+          .post('/_matrix/client/v3/account/3pid/bind')
+          .set('Authorization', `Bearer ${validToken}`)
+          .set('Accept', 'application/json')
+          .send({
+            client_secret: 'mysecret',
+            id_access_token: 'myaccesstoken',
+            id_server: 'matrix.example.com',
+            sid: 'mysid'
+          })
+
+        expect(response.statusCode).toBe(500)
+        expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
+        expect(response.body).toHaveProperty('error', 'Invalid email')
+      })
+      it('should return a 500 error if the phone number is incorrect', async () => {
+        const mockResolveResponse = Promise.resolve({
+          ok: true,
+          status: 200,
+          json: () => {
+            return {
+              email: 'dwho@example.com',
+              'm.server': 'matrix.example.com:8448'
+            }
+          }
+        })
+
+        const mockBindResponse = Promise.resolve({
+          ok: true,
+          status: 200,
+          // eslint-disable-next-line @typescript-eslint/promise-function-async
+          json: () =>
+            Promise.resolve({
+              medium: 'msisdn',
+              address: 'localhost@example.com',
+              mxid: '@testuser:example.com',
+              not_after: 1234567890,
+              not_before: 1234567890,
+              signatures: {},
+              ts: 1234567890
+            })
+        })
+
+        // @ts-expect-error mock is unknown
+        fetch.mockImplementationOnce(async () => await mockResolveResponse)
+
+        // @ts-expect-error mock is unknown
+        fetch.mockImplementationOnce(async () => await mockBindResponse)
+
+        const response = await request(app)
+          .post('/_matrix/client/v3/account/3pid/bind')
+          .set('Authorization', `Bearer ${validToken}`)
+          .set('Accept', 'application/json')
+          .send({
+            client_secret: 'mysecret',
+            id_access_token: 'myaccesstoken',
+            id_server: 'matrix.example.com',
+            sid: 'mysid'
+          })
+
+        expect(response.statusCode).toBe(500)
+        expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
+        expect(response.body).toHaveProperty('error', 'Invalid phone number')
       })
     })
   })
