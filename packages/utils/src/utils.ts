@@ -139,9 +139,7 @@ const _validateParameters: validateParametersType = (
     })
     /* istanbul ignore if */
     if (additionalParameters.length > 0) {
-      if (acceptAdditionalParameters == null || acceptAdditionalParameters) {
-        logger.warn('Additional parameters', additionalParameters)
-      } else {
+      if (acceptAdditionalParameters === false) {
         logger.error('Additional parameters', additionalParameters)
         send(
           res,
@@ -151,9 +149,13 @@ const _validateParameters: validateParametersType = (
             `Unknown additional parameters ${additionalParameters.join(', ')}`
           )
         )
+      } else {
+        logger.warn('Additional parameters', additionalParameters)
+        callback(content)
       }
+    } else {
+      callback(content)
     }
-    callback(content)
   }
 }
 

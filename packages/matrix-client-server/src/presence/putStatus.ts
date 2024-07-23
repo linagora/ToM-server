@@ -4,7 +4,8 @@ import {
   validateParameters,
   errMsg,
   type expressAppHandler,
-  send
+  send,
+  matrixIdRegex
 } from '@twake/utils'
 
 interface PutRequestBody {
@@ -16,8 +17,6 @@ const schema = {
   presence: true,
   status_msg: false
 }
-
-const matrixIdRegex = /^@[0-9a-zA-Z._=-]+:[0-9a-zA-Z.-]+$/
 const statusMsgRegex = /^.{0,2048}$/
 
 // If status message is longer than 2048 characters, we refuse it to prevent clients from sending too long messages that could crash the DB. This value is arbitrary and could be changed

@@ -1,13 +1,16 @@
 import type MatrixClientServer from '../..'
-import { errMsg, type expressAppHandler, send } from '@twake/utils'
+import {
+  errMsg,
+  type expressAppHandler,
+  send,
+  matrixIdRegex,
+  eventTypeRegex
+} from '@twake/utils'
 
 interface Parameters {
   userId: string
   type: string
 }
-
-const matrixIdRegex = /^@[0-9a-zA-Z._=-]+:[0-9a-zA-Z.-]+$/
-const eventTypeRegex = /^(?:[a-z]+(?:\.[a-z][a-z0-9]*)*)$/ // Following Java's package naming convention as per : https://spec.matrix.org/v1.11/#events
 
 const getAccountData = (
   clientServer: MatrixClientServer

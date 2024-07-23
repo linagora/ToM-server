@@ -4,7 +4,10 @@ import {
   validateParameters,
   errMsg,
   type expressAppHandler,
-  send
+  send,
+  matrixIdRegex,
+  eventTypeRegex,
+  roomIdRegex
 } from '@twake/utils'
 
 interface Parameters {
@@ -21,9 +24,6 @@ const schema = {
   content: true
 }
 
-const matrixIdRegex = /^@[0-9a-zA-Z._=-]+:[0-9a-zA-Z.-]+$/
-const eventTypeRegex = /^(?:[a-z]+(?:\.[a-z][a-z0-9]*)*)$/ // Following Java's package naming convention as per : https://spec.matrix.org/v1.11/#events
-const roomIdRegex = /^![0-9a-zA-Z._=/+-]+:[0-9a-zA-Z.-]+$/ // From : https://spec.matrix.org/v1.11/#room-structure
 const contentRegex = /^.{0,2048}$/ // Prevent the client from sending too long messages that could crash the DB. This value is arbitrary and could be changed
 
 // TODO : Handle error 405 where the type of account data is controlled by the server and cannot be modified by the client
