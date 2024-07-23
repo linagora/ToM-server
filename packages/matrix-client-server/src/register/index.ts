@@ -9,13 +9,16 @@ import {
   epoch,
   toMatrixId
 } from '@twake/utils'
-import { type AuthenticationData } from '../types'
+import {
+  type AuthenticationFlowContent,
+  type AuthenticationData
+} from '../types'
 import { Hash, randomString } from '@twake/crypto'
 import type MatrixClientServer from '..'
 import { type DbGetResult } from '@twake/matrix-identity-server'
 import type { ServerResponse } from 'http'
 import type e from 'express'
-import { registerAllowedFlows } from '../utils/userInteractiveAuthentication'
+import { getParams } from '../utils/userInteractiveAuthentication'
 
 interface Parameters {
   kind: 'guest' | 'user'
@@ -30,6 +33,42 @@ interface RegisterRequestBody {
   password?: string
   refresh_token?: boolean
   username?: string
+}
+
+// Allowed flow stages for /register endpoint.
+// Doesn't contain password, email and msisdn since the user isn't registered yet (spec is unclear about this, only my interpretation)
+// for now only terms has params, spec is unclear about the other types. Add params here if needed in other endpoints
+// For production,maybe these params should be included in the config. The values here are only illustrative and taken from examples in the spec, they are not relevant and should be adapted before deployment.
+// TODO : Modify this before deployment
+export const registerAllowedFlows: AuthenticationFlowContent = {
+  flows: [
+    {
+      stages: ['m.login.application_service']
+    },
+    {
+      stages: ['m.login.terms', 'm.login.dummy'] // m.login.dummy added for testing purposes. This variable and the one before need to be updated before going into production (maybe add them to the config ?)
+    },
+    {
+      stages: ['m.login.registration_token']
+    },
+    {
+      stages: ['m.login.sso']
+    },
+    {
+      stages: ['m.login.recaptcha']
+    },
+    {
+      stages: ['m.login.dummy']
+    }
+  ],
+  params: {
+    // Aside from terms, the other two params are useless for now, but I leave them here in case they become useful in the future
+    // If we want to add params, we change the getParams function in utils/userInteractiveAuthentication.ts
+    'm.login.application_service': getParams('m.login.application_service'),
+    'm.login.registration_token': getParams('m.login.registration_token'),
+    'm.login.terms': getParams('m.login.terms'),
+    'm.login.sso': getParams('m.login.sso')
+  }
 }
 
 const sendSuccessResponse = (
