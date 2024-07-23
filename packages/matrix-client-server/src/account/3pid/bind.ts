@@ -1,4 +1,5 @@
 import {
+  errMsg,
   type expressAppHandler,
   jsonContent,
   send,
@@ -31,6 +32,9 @@ const schema = {
   id_server: true,
   sid: true
 }
+
+const validPhoneNumberRegex = /^[1-9]\d{1,14}$/
+const validEmailRegex = /^\w[+.-\w]*\w@\w[.-\w]*\w\.\w{2,6}$/
 
 const bind = (clientServer: MatrixClientServer): expressAppHandler => {
   return (req, res) => {
@@ -70,6 +74,39 @@ const bind = (clientServer: MatrixClientServer): expressAppHandler => {
                 )
                 const responseBody = (await response.json()) as ResponseBody
                 if (response.status === 200) {
+                  if (
+                    responseBody.medium !== 'email' &&
+                    responseBody.medium !== 'msisdn'
+                  ) {
+                    send(
+                      res,
+                      500,
+                      errMsg(
+                        'invalidParam',
+                        'Medium must be one of "email" or "msisdn"'
+                      )
+                    )
+                    return
+                  }
+                  if (
+                    responseBody.medium === 'email' &&
+                    !validEmailRegex.test(responseBody.address)
+                  ) {
+                    send(res, 500, errMsg('invalidParam', 'Invalid email'))
+                    return
+                  }
+                  if (
+                    responseBody.medium === 'msisdn' &&
+                    !validPhoneNumberRegex.test(responseBody.address)
+                  ) {
+                    send(
+                      res,
+                      500,
+                      errMsg('invalidParam', 'Invalid phone number')
+                    )
+                    return
+                  }
+                  // We don't test the format of id_server since it is already tested in the matrix-resolve package
                   clientServer.matrixDb
                     .insert('user_threepid_id_server', {
                       user_id: data.sub,
