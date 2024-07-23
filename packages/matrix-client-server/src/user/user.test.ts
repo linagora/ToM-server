@@ -6,7 +6,7 @@ import { buildMatrixDb, buildUserDB } from '../__testData__/buildUserDB'
 import { type Config, type Filter } from '../types'
 import defaultConfig from '../__testData__/registerConf.json'
 import { getLogger, type TwakeLogger } from '@twake/logger'
-import { randomString } from '@twake/crypto'
+import { setupTokens, validToken } from '../utils/setupTokens'
 
 jest.mock('node-fetch', () => jest.fn())
 const sendMailMock = jest.fn()
@@ -94,45 +94,9 @@ describe('Use configuration file', () => {
     clientServer.cleanJobs()
   })
 
-  let validToken: string
-  let validToken2: string
-  let validToken3: string
-
   describe('Endpoints with authentication', () => {
     beforeAll(async () => {
-      validToken = randomString(64)
-      validToken2 = randomString(64)
-      validToken3 = randomString(64)
-      try {
-        await clientServer.matrixDb.insert('user_ips', {
-          user_id: '@testuser:example.com',
-          device_id: 'testdevice',
-          access_token: validToken,
-          ip: '127.0.0.1',
-          user_agent: 'curl/7.31.0-DEV',
-          last_seen: 1411996332123
-        })
-
-        await clientServer.matrixDb.insert('user_ips', {
-          user_id: '@testuser2:example.com',
-          device_id: 'testdevice2',
-          access_token: validToken2,
-          ip: '137.0.0.1',
-          user_agent: 'curl/7.31.0-DEV',
-          last_seen: 1411996332123
-        })
-
-        await clientServer.matrixDb.insert('user_ips', {
-          user_id: '@testuser3:example.com',
-          device_id: 'testdevice3',
-          access_token: validToken3,
-          ip: '147.0.0.1',
-          user_agent: 'curl/7.31.0-DEV',
-          last_seen: 1411996332123
-        })
-      } catch (e) {
-        logger.error('Error creating tokens for authentification', e)
-      }
+      await setupTokens(clientServer, logger)
     })
 
     describe('/_matrix/client/v3/user/:userId', () => {
@@ -557,7 +521,40 @@ describe('Use configuration file', () => {
               .set('Authorization', `Bearer ${validToken}`)
               .set('Accept', 'application/json')
             expect(response.statusCode).toBe(200)
-            expect(response.body).toEqual(filter)
+            // We can't simply write expect(response.body).toEqual(filter) because many default values were added
+            expect(response.body.event_fields).toEqual(filter.event_fields)
+            expect(response.body.event_format).toEqual(filter.event_format)
+            expect(response.body.presence.not_senders).toEqual(
+              filter.presence?.not_senders
+            )
+            expect(response.body.presence.types).toEqual(filter.presence?.types)
+            expect(response.body.room.ephemeral.not_rooms).toEqual(
+              filter.room?.ephemeral?.not_rooms
+            )
+            expect(response.body.room.ephemeral.not_senders).toEqual(
+              filter.room?.ephemeral?.not_senders
+            )
+            expect(response.body.room.ephemeral.types).toEqual(
+              filter.room?.ephemeral?.types
+            )
+            expect(response.body.room.state.not_rooms).toEqual(
+              filter.room?.state?.not_rooms
+            )
+            expect(response.body.room.state.types).toEqual(
+              filter.room?.state?.types
+            )
+            expect(response.body.room.timeline.limit).toEqual(
+              filter.room?.timeline?.limit
+            )
+            expect(response.body.room.timeline.not_rooms).toEqual(
+              filter.room?.timeline?.not_rooms
+            )
+            expect(response.body.room.timeline.not_senders).toEqual(
+              filter.room?.timeline?.not_senders
+            )
+            expect(response.body.room.timeline.types).toEqual(
+              filter.room?.timeline?.types
+            )
           })
         })
       })
