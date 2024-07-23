@@ -12,11 +12,13 @@ All Filter objecs have a check method which allows it to check if an event shoul
 
 To be noted: the limit attributes of the filters are not used in the check method but are intented to be used in the 
 lazy-loading dependent endpoint after events have been filtered.
-This might be sub-optimal so it might be interesting to refactor the code to use the limit attribute in the check method.
 
-(The limit has been set to 10 by default following synapse's implementation of the matrix Protocol)
+To be noted: for fields like room and not_room, fields and not_fields etc. the default values are null and [] respectively. This
+is to allow setting room (or fields, etc.) to [] to filter out all events of that type, while setting it to null will allow all 
+events of that type. not_rooms (or not_fields, etc.) being equal to [] will allow all events of that type.
 */
 
+import { type TwakeLogger } from '@twake/logger'
 import { type ClientEvent } from '../types'
 
 import { validEventTypes } from '@twake/utils'
@@ -30,7 +32,7 @@ export class Filter {
   public presence?: PresenceFilter
   public room?: RoomFilter
 
-  constructor(filter_json: JsonMapping) {
+  constructor(filter_json: JsonMapping, logger?: TwakeLogger) {
     this.account_data = filter_json.account_data
       ? new AccountDataFilter(filter_json.account_data)
       : undefined
@@ -41,17 +43,16 @@ export class Filter {
 
     this.room = filter_json.room ? new RoomFilter(filter_json.room) : undefined
 
-    const eventFormat = filter_json.event_format || 'client'
-    if (!verifyEventFormat(eventFormat)) {
-      throw new Error('Invalid event format')
-    }
-    this.event_format = eventFormat
+    this.event_format = convertToValidEventFormat(
+      filter_json.event_format,
+      logger
+    )
 
-    const eventFields = filter_json.event_fields || []
-    if (!verifyEventFields(eventFormat, eventFields)) {
-      throw new Error('Invalid event_fields')
-    }
-    this.event_fields = eventFields
+    this.event_fields = removeWrongEventFields(
+      this.event_format,
+      filter_json.event_fields,
+      logger
+    )
   }
 
   public check(event: ClientEvent): boolean {
@@ -65,55 +66,66 @@ export class Filter {
         return this.presence ? this.presence.check(event) : true
 
       case 'room':
-        return this.room
-          ? this.room.state
-            ? this.room.state.check(event)
-            : true
-          : true
+        return this.room ? this.room.check(event) : true
 
+      /* istanbul ignore next */ // Unreachable code given the return of getTypeAllEvent
       default:
-        throw new Error('Invalid event type in Filter')
+        throw new Error('Wrong event type in Filter')
     }
   }
 }
 
-const MAX_LIMIT = 50 // The maximum limit of events that can be returned in a single request (avoid resource exhaustion)
-class EventFilter {
+export const MAX_LIMIT = 50 // The maximum limit of events that can be returned in a single request (avoid resource exhaustion)
+export class EventFilter {
   public limit: number
-  readonly types: string[]
+  readonly types: string[] | null
   readonly not_types: string[]
-  readonly senders: string[]
+  readonly senders: string[] | null
   readonly not_senders: string[]
 
-  constructor(filter_json: JsonMapping) {
-    this.limit = Math.min(filter_json.limit || 10, MAX_LIMIT)
-    this.types = filter_json.types ? removeUnvalidTypes(filter_json.types) : []
+  constructor(filter_json: JsonMapping, logger?: TwakeLogger) {
+    this.limit = filter_json.limit || 10
+    if (filter_json.limit < 1) {
+      if (logger) {
+        logger.warn('Limit is below 1')
+      }
+      this.limit = 1
+    }
+    if (filter_json.limit > MAX_LIMIT) {
+      if (logger) {
+        logger.warn('Limit is higher than the maximum limit')
+      }
+      this.limit = MAX_LIMIT
+    }
+    this.types = filter_json.types
+      ? removeWrongTypes(filter_json.types, logger)
+      : null
     this.not_types = filter_json.not_types
-      ? removeUnvalidTypes(filter_json.not_types)
+      ? removeWrongTypes(filter_json.not_types, logger)
       : []
     this.senders = filter_json.senders
-      ? removeUnvalidIds(filter_json.senders)
-      : []
+      ? removeWrongIds(filter_json.senders, logger)
+      : null
     this.not_senders = filter_json.not_senders
-      ? removeUnvalidIds(filter_json.not_senders)
+      ? removeWrongIds(filter_json.not_senders, logger)
       : []
   }
 
   filtersAllTypes(): boolean {
-    return this.types.length === 0 || this.not_types.includes('*')
+    return this.types?.length === 0 || this.not_types.includes('*') // The Matrix spec allows for a wildcard to match all types
   }
 
   filtersAllSenders(): boolean {
-    return this.senders.length === 0 || this.not_senders.includes('*')
+    return this.senders?.length === 0
   }
 
-  protected get(element: string): string[] {
+  protected get(element: string): string[] | null {
     if (element === 'senders') {
       return this.senders
     } else if (element === 'types') {
       return this.types
     } else {
-      throw new Error('Invalid element in get function of Filter')
+      throw new Error('Wrong element in get function of EventFilter')
     }
   }
 
@@ -123,12 +135,12 @@ class EventFilter {
     } else if (element === 'types') {
       return this.not_types
     } else {
-      throw new Error('Invalid element in getNot function of Filter')
+      throw new Error('Wrong element in getNot function of EventFilter')
     }
   }
 
   protected _checkFields(
-    field_matchers: Record<string, (v: string) => boolean>
+    field_matchers: Record<'senders' | 'types', (v: string) => boolean>
   ): boolean {
     for (const [name, match_func] of Object.entries(field_matchers)) {
       const disallowed_values = this.getNot(name)
@@ -157,10 +169,10 @@ class EventFilter {
 }
 
 // This function is used to check if the actual value matches the filter value
-function _matchesWildcard(
+export const _matchesWildcard = (
   actual_value: string | null,
   filter_value: string
-): boolean {
+): boolean => {
   if (filter_value.endsWith('*') && typeof actual_value === 'string') {
     const type_prefix = filter_value.slice(0, -1)
     return actual_value.startsWith(type_prefix)
@@ -221,22 +233,22 @@ class PresenceFilter extends EventFilter {}
         m.custom.event: Allows users to define and use custom events. These are not standardized and can vary between implementations.
 */
 
-class RoomEventFilter extends EventFilter {
+export class RoomEventFilter extends EventFilter {
   public include_redundant_members: boolean
   public lazy_load_members: boolean
   public unread_thread_notifications: boolean
   public not_rooms: string[]
-  public rooms: string[]
+  public rooms: string[] | null
   public contains_url?: boolean
 
-  constructor(filter_json: JsonMapping) {
+  constructor(filter_json: JsonMapping, logger?: TwakeLogger) {
     super(filter_json)
     this.not_rooms = filter_json.not_rooms
-      ? removeInvalidRoomIds(filter_json.not_rooms)
+      ? removeWrongRoomIds(filter_json.not_rooms, logger)
       : []
     this.rooms = filter_json.rooms
-      ? removeInvalidRoomIds(filter_json.rooms)
-      : []
+      ? removeWrongRoomIds(filter_json.rooms, logger)
+      : null
     this.include_redundant_members =
       filter_json.include_redundant_members || false
     this.lazy_load_members = filter_json.lazy_load_members || false
@@ -246,7 +258,7 @@ class RoomEventFilter extends EventFilter {
   }
 
   // Overriding method to include room field
-  protected get(element: string): string[] {
+  protected get(element: string): string[] | null {
     if (element === 'senders') {
       return this.senders
     } else if (element === 'types') {
@@ -254,7 +266,7 @@ class RoomEventFilter extends EventFilter {
     } else if (element === 'rooms') {
       return this.rooms
     } else {
-      throw new Error('Invalid element in get function of Filter')
+      throw new Error('Wrong element in get function of RoomEventFilter')
     }
   }
 
@@ -267,7 +279,7 @@ class RoomEventFilter extends EventFilter {
     } else if (element === 'rooms') {
       return this.not_rooms
     } else {
-      throw new Error('Invalid element in getNot function of Filter')
+      throw new Error('Wrong element in getNot function of RoomEventFilter')
     }
   }
 
@@ -291,6 +303,12 @@ class RoomEventFilter extends EventFilter {
     const ev_type = event.type || null
     const room_id = event.room_id || null
 
+    if (this.include_redundant_members && this.lazy_load_members) {
+      if (ev_type === 'm.room.member') {
+        return true
+      }
+    }
+
     const field_matchers = {
       senders: (v: string) => sender === v,
       types: (v: string) => _matchesWildcard(ev_type, v),
@@ -300,15 +318,9 @@ class RoomEventFilter extends EventFilter {
     const result = this._checkFields(field_matchers)
     if (!result) return false
 
-    if (this.contains_url !== null) {
+    if (this.contains_url !== undefined) {
       const contains_url = typeof content.url === 'string'
       if (this.contains_url !== contains_url) return false
-    }
-
-    if (this.include_redundant_members && this.lazy_load_members) {
-      if (ev_type === 'm.room.member') {
-        return true
-      }
     }
 
     return true
@@ -319,13 +331,13 @@ class RoomEventFilter extends EventFilter {
 export class RoomFilter {
   public include_leave: boolean
   public not_rooms: string[]
-  public rooms: string[]
+  public rooms: string[] | null
   public account_data?: RoomEventFilter
   public ephemeral?: RoomEventFilter
   public state?: RoomEventFilter
   public timeline?: RoomEventFilter
 
-  constructor(filter_json: JsonMapping) {
+  constructor(filter_json: JsonMapping, logger?: TwakeLogger) {
     this.account_data = filter_json.account_data
       ? new RoomEventFilter(filter_json.account_data)
       : undefined
@@ -333,8 +345,12 @@ export class RoomFilter {
       ? new RoomEventFilter(filter_json.ephemeral)
       : undefined
     this.include_leave = filter_json.include_leave || false
-    this.not_rooms = filter_json.not_rooms || []
-    this.rooms = filter_json.rooms || []
+    this.not_rooms = filter_json.not_rooms
+      ? removeWrongRoomIds(filter_json.not_rooms, logger)
+      : []
+    this.rooms = filter_json.rooms
+      ? removeWrongRoomIds(filter_json.rooms, logger)
+      : null
     this.state = filter_json.state
       ? new RoomEventFilter(filter_json.state)
       : undefined
@@ -343,21 +359,19 @@ export class RoomFilter {
       : undefined
   }
 
-  // Overriding method to include room field
   protected get(element: string): string[] | null {
     if (element === 'rooms') {
       return this.rooms
     } else {
-      throw new Error('Invalid element in get function of Filter')
+      throw new Error('Wrong element in get function of RoomFilter')
     }
   }
 
-  // Overriding method to include room field
   protected getNot(element: string): string[] {
     if (element === 'rooms') {
       return this.not_rooms
     } else {
-      throw new Error('Invalid element in getNot function of Filter')
+      throw new Error('Wrong element in getNot function of RoomFilter')
     }
   }
 
@@ -401,14 +415,18 @@ export class RoomFilter {
       case 'timeline':
         return this.timeline ? this.timeline.check(event) : true
 
+      /* istanbul ignore next */ // Unreachable code given the return of getTypeRoomEvent
       default:
-        throw new Error('Invalid event type in RoomFilter')
+        throw new Error('Wrong event type in RoomFilter')
     }
   }
 }
 
+//
+/* Getting an event type functions */
+//
+
 // TODO : verify validity of the 2 functions below
-// This function is used to get the type of event
 function getTypeRoomEvent(event_type: string): string {
   const roomEvents = {
     account_data: ['m.tag'],
@@ -444,7 +462,6 @@ function getTypeRoomEvent(event_type: string): string {
       'm.call.hangup',
       'm.call.reject',
       'm.reaction',
-      'm.tag',
       'm.custom.event'
     ]
   }
@@ -454,7 +471,7 @@ function getTypeRoomEvent(event_type: string): string {
       return type
     }
   }
-  throw new Error('Invalid event type in getType')
+  throw new Error('Wrong event type in getType')
 }
 
 function getTypeAllEvent(event_type: string): string {
@@ -480,14 +497,22 @@ function getTypeAllEvent(event_type: string): string {
   return 'room'
 }
 
+//
 /* Data verification methods */
+//
 
-const verifyEventFormat = (event_format?: string): boolean => {
-  return (
-    event_format === undefined ||
-    event_format === 'client' ||
-    event_format === 'federation'
-  )
+const convertToValidEventFormat = (
+  event_format?: string,
+  logger?: TwakeLogger
+): string => {
+  if (event_format === 'client' || event_format === 'federation') {
+    return event_format
+  } else {
+    if (logger) {
+      logger.warn('Wrong event format in Filter - using default value')
+    }
+    return 'client'
+  }
 }
 
 const validClientEventFields = Object.freeze(
@@ -503,48 +528,73 @@ const validClientEventFields = Object.freeze(
   ])
 )
 
-const verifyEventFields = (
+const removeWrongEventFields = (
   event_format: string,
-  event_fields?: string[]
-): boolean => {
+  event_fields?: string[],
+  logger?: TwakeLogger
+): string[] => {
   if (!event_fields) {
-    return true
+    return []
   }
 
   if (event_format === 'client') {
-    return event_fields.every((field) => {
+    return event_fields.filter((field) => {
       const [fieldName, subField] = field.split('.')
-      return (
+
+      const isValid =
         validClientEventFields.has(fieldName) &&
-        (subField === undefined || subField.length <= 30) &&
-        field.split('.').length <= 2
-      )
+        (subField === undefined || subField.length <= 30) // Arbitrary limit to avoid too long subfields
+
+      if (!isValid && logger) {
+        logger.warn(`Invalid field given in filter constructor : ${field}`)
+      }
+
+      return isValid
     })
   }
 
   if (event_format === 'federation') {
     // TODO: Implement restrictions for federationEventFields
-    return true
+    return event_fields
   }
-
-  return false
+  /* istanbul ignore next */
+  throw new Error('Missing event format in call to removeWrongEventFields')
 }
 
-const removeUnvalidTypes = (types: string[]): string[] => {
-  return types.filter((type) =>
-    validEventTypes.some((eventType) => _matchesWildcard(eventType, type))
-  )
+const removeWrongTypes = (types: string[], logger?: TwakeLogger): string[] => {
+  return types.filter((type) => {
+    // TODO : verify in @twake/utils if validEventTypes is correctly implemented
+    const isValid = validEventTypes.some((eventType) =>
+      _matchesWildcard(eventType, type)
+    )
+    if (!isValid && logger) {
+      logger.warn(`Removed invalid type: ${type}`)
+    }
+    return isValid
+  })
 }
 
-const removeUnvalidIds = (senders: string[]): string[] => {
+const removeWrongIds = (senders: string[], logger?: TwakeLogger): string[] => {
   const matrixIdRegex = /^@[0-9a-zA-Z._=-]+:[0-9a-zA-Z.-]+$/
-  return senders.filter((sender) => matrixIdRegex.test(sender))
+  return senders.filter((sender) => {
+    const isValid = matrixIdRegex.test(sender)
+    if (!isValid && logger) {
+      logger.warn(`Removed invalid sender: ${sender}`)
+    }
+    return isValid
+  })
 }
 
-const removeInvalidRoomIds = (rooms: string[]): string[] => {
-  if (!rooms) {
-    return []
-  }
+const removeWrongRoomIds = (
+  rooms: string[],
+  logger?: TwakeLogger
+): string[] => {
   const roomIdRegex = /^![0-9a-zA-Z._=/+-]+:[0-9a-zA-Z.-]+$/
-  return rooms.filter((room) => roomIdRegex.test(room))
+  return rooms.filter((room) => {
+    const isValid = roomIdRegex.test(room)
+    if (!isValid && logger) {
+      logger.warn(`Removed invalid room ID: ${room}`)
+    }
+    return isValid
+  })
 }

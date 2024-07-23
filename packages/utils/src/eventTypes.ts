@@ -1,5 +1,7 @@
 /* istanbul ignore file */
 
+// TODO : Verify the content of this file while we implement the spec. There is absolutely no guarantee that this is correct.
+
 export const eventTypes = {
   // State Events
   roomCreate: 'm.room.create',
@@ -36,7 +38,11 @@ export const eventTypes = {
   receipt: 'm.receipt',
   direct: 'm.direct',
   pushRules: 'm.push_rules',
-  sticker: 'm.sticker'
+  sticker: 'm.sticker',
+  tag: 'm.tag',
+  roomMessageFeedback: 'm.room.message.feedback',
+  notification: 'm.notification',
+  customEvent: 'm.custom.event'
 }
 
 export const validEventTypes = Array.from(
