@@ -37,7 +37,7 @@ export type Collections =
   | 'user_threepid_id_server'
   | 'access_tokens'
   | 'refresh_tokens'
-  | 'access_tokens'
+  | 'user_filters'
 
 type sqlComparaisonOperator = '=' | '!=' | '>' | '<' | '>=' | '<=' | '<>'
 interface ISQLCondition {
