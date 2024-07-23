@@ -30,7 +30,7 @@ const requestToken = (clientServer: MatrixClientServer): expressAppHandler => {
       }
       if (userId !== data.sub) {
         clientServer.logger.error(
-          'Your access token does not correspond to the userId sent in the request parameters.'
+          'The access token provided does not correspond to the userId sent in the request parameters.'
         )
         send(res, 403, errMsg('forbidden'), clientServer.logger)
         return
