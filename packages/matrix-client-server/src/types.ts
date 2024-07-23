@@ -9,8 +9,8 @@ import {
 export type Config = MIdentityServerConfig & {
   login_flows: LoginFlowContent
   application_services: AppServiceRegistration[]
-  is_registration_enabled: boolean
   sms_folder: string
+  is_registration_enabled: boolean
 }
 
 export type DbGetResult = Array<

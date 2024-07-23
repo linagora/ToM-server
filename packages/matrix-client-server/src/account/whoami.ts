@@ -1,6 +1,6 @@
 import { errMsg, send, type expressAppHandler } from '@twake/utils'
 import type MatrixClientServer from '..'
-import { type tokenContent } from '../utils/authenticate'
+import { type TokenContent } from '../utils/authenticate'
 
 interface responseBody {
   user_id: string
@@ -9,7 +9,7 @@ interface responseBody {
 }
 const whoami = (clientServer: MatrixClientServer): expressAppHandler => {
   return (req, res) => {
-    clientServer.authenticate(req, res, (data: tokenContent) => {
+    clientServer.authenticate(req, res, (data: TokenContent) => {
       clientServer.matrixDb
         .get('users', ['name', 'is_guest'], { name: data.sub })
         .then((rows) => {

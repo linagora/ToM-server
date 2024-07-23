@@ -104,6 +104,23 @@ export async function setupTokens(
       token: validToken3,
       valid_until_ms: epoch() + 64000
     })
+
+    await clientServer.matrixDb.insert('threepid_validation_session', {
+      session_id: 'validatedSession',
+      medium: 'email',
+      address: 'validated@example.com',
+      client_secret: 'validatedSecret',
+      last_send_attempt: 1,
+      validated_at: epoch()
+    }) // Validated session
+
+    await clientServer.matrixDb.insert('user_threepids', {
+      user_id: '@validated:example.com',
+      medium: 'email',
+      address: 'validated@example.com',
+      validated_at: epoch(),
+      added_at: epoch()
+    })
   } catch (e) {
     logger.error('Error creating tokens for authentication', e)
   }
