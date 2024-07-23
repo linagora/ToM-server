@@ -6,7 +6,10 @@ import {
   jsonContent,
   send,
   validateParameters,
-  type expressAppHandler
+  type expressAppHandler,
+  clientSecretRegex,
+  validCountryRegex,
+  validPhoneNumberRegex
 } from '@twake/utils'
 import type MatrixClientServer from '../../../index'
 import SmsSender from '../../../utils/smsSender'
@@ -36,10 +39,6 @@ const schema = {
   id_server: false,
   id_access_token: false
 }
-
-const clientSecretRegex = /^[0-9a-zA-Z.=_-]{6,255}$/
-const validCountryRegex = /^[A-Z]{2}$/ // ISO 3166-1 alpha-2 as per the spec : https://spec.matrix.org/v1.11/client-server-api/#post_matrixclientv3registermsisdnrequesttoken
-const validPhoneNumberRegex = /^[1-9]\d{1,14}$/
 const maxAttemps = 1000000000
 
 const RequestToken = (clientServer: MatrixClientServer): expressAppHandler => {

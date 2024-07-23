@@ -4,13 +4,11 @@ import express from 'express'
 import ClientServer from '../index'
 import { buildMatrixDb, buildUserDB } from '../__testData__/buildUserDB'
 import { type Config } from '../types'
-import defaultConfig from '../__testData__/registerConfRoom.json'
+import defaultConfig from '../__testData__/registerConf.json'
 import { getLogger, type TwakeLogger } from '@twake/logger'
 import { randomString } from '@twake/crypto'
 import { setupTokens, validToken, validToken2 } from '../utils/setupTokens'
 
-process.env.TWAKE_CLIENT_SERVER_CONF =
-  './src/__testData__/registerConfRoom.json'
 jest.mock('node-fetch', () => jest.fn())
 
 let conf: Config
@@ -23,11 +21,10 @@ beforeAll((done) => {
   // @ts-expect-error TS doesn't understand that the config is valid
   conf = {
     ...defaultConfig,
-    cron_service: false,
-    database_engine: 'sqlite',
     base_url: 'http://example.com/',
-    userdb_engine: 'sqlite',
-    matrix_database_engine: 'sqlite'
+    matrix_database_host: './src/__testData__/testMatrixRoom.db',
+    userdb_host: './src/__testData__/testRoom.db',
+    database_host: './src/__testData__/testRoom.db'
   }
   if (process.env.TEST_PG === 'yes') {
     conf.database_engine = 'pg'
@@ -61,7 +58,7 @@ afterAll(() => {
 
 describe('Use configuration file', () => {
   beforeAll((done) => {
-    clientServer = new ClientServer()
+    clientServer = new ClientServer(conf)
     app = express()
     clientServer.ready
       .then(() => {
@@ -499,6 +496,142 @@ describe('Use configuration file', () => {
               .set('Accept', 'application/json')
             expect(response.statusCode).toBe(200)
             expect(response.body).toHaveProperty('event_id', 'event2')
+          })
+        })
+      })
+
+      describe('/_matrix/client/v3/rooms/:roomId/aliases', () => {
+        const testUserId = '@testuser:example.com'
+        const testRoomId = '!testroomid:example.com'
+        const worldReadableRoomId = '!worldreadable:example.com'
+
+        beforeAll(async () => {
+          try {
+            // Insert test data for room aliases
+            await clientServer.matrixDb.insert('room_aliases', {
+              room_id: testRoomId,
+              room_alias: '#somewhere:example.com'
+            })
+            await clientServer.matrixDb.insert('room_aliases', {
+              room_id: testRoomId,
+              room_alias: '#another:example.com'
+            })
+            await clientServer.matrixDb.insert('room_aliases', {
+              room_id: worldReadableRoomId,
+              room_alias: '#worldreadable:example.com'
+            })
+
+            // Insert test data for room visibility
+            await clientServer.matrixDb.insert('room_stats_state', {
+              room_id: worldReadableRoomId,
+              history_visibility: 'world_readable'
+            })
+            await clientServer.matrixDb.insert('room_stats_state', {
+              room_id: testRoomId,
+              history_visibility: 'joined'
+            })
+
+            // Insert test data for room membership
+            await clientServer.matrixDb.insert('room_memberships', {
+              user_id: testUserId,
+              room_id: testRoomId,
+              membership: 'join',
+              forgotten: 0,
+              event_id: randomString(20),
+              sender: '@admin:example.com'
+            })
+          } catch (e) {
+            logger.error('Error setting up test data:', e)
+          }
+        })
+
+        afterAll(async () => {
+          try {
+            // Clean up test data
+            await clientServer.matrixDb.deleteEqual(
+              'room_aliases',
+              'room_id',
+              testRoomId
+            )
+            await clientServer.matrixDb.deleteEqual(
+              'room_aliases',
+              'room_id',
+              worldReadableRoomId
+            )
+            await clientServer.matrixDb.deleteEqual(
+              'room_stats_state',
+              'room_id',
+              worldReadableRoomId
+            )
+            await clientServer.matrixDb.deleteEqual(
+              'room_stats_state',
+              'room_id',
+              testRoomId
+            )
+            await clientServer.matrixDb.deleteEqual(
+              'room_memberships',
+              'room_id',
+              testRoomId
+            )
+          } catch (e) {
+            logger.error('Error tearing down test data:', e)
+          }
+        })
+
+        it('should require authentication', async () => {
+          const response = await request(app)
+            .get(`/_matrix/client/v3/rooms/${testRoomId}/aliases`)
+            .set('Authorization', 'Bearer invalidToken')
+            .set('Accept', 'application/json')
+          expect(response.statusCode).toBe(401)
+        })
+
+        it('should return the list of aliases for a world_readable room for any user', async () => {
+          const response = await request(app)
+            .get(`/_matrix/client/v3/rooms/${worldReadableRoomId}/aliases`)
+            .set('Authorization', `Bearer ${validToken2}`)
+            .set('Accept', 'application/json')
+          expect(response.statusCode).toBe(200)
+          expect(response.body).toEqual({
+            aliases: ['#worldreadable:example.com']
+          })
+        })
+
+        it('should return the list of aliases for an non-world_readable room if the user is a member', async () => {
+          const response = await request(app)
+            .get(`/_matrix/client/v3/rooms/${testRoomId}/aliases`)
+            .set('Authorization', `Bearer ${validToken}`)
+            .set('Accept', 'application/json')
+          expect(response.statusCode).toBe(200)
+          expect(response.body).toEqual({
+            aliases: ['#somewhere:example.com', '#another:example.com']
+          })
+        })
+
+        it('should return 403 if the user is not a member and the room is not world_readable', async () => {
+          const response = await request(app)
+            .get(`/_matrix/client/v3/rooms/${testRoomId}/aliases`)
+            .set('Authorization', `Bearer ${validToken2}`)
+            .set('Accept', 'application/json')
+          expect(response.statusCode).toBe(403)
+          expect(response.body).toEqual({
+            errcode: 'M_FORBIDDEN',
+            error:
+              'The user is not permitted to retrieve the list of local aliases for the room'
+          })
+        })
+
+        it('should return 400 if the room ID is invalid', async () => {
+          const invalidRoomId = '!invalidroomid:example.com'
+
+          const response = await request(app)
+            .get(`/_matrix/client/v3/rooms/${invalidRoomId}/aliases`)
+            .set('Authorization', `Bearer ${validToken}`)
+            .set('Accept', 'application/json')
+          expect(response.statusCode).toBe(400)
+          expect(response.body).toEqual({
+            errcode: 'M_INVALID_PARAM',
+            error: 'Invalid room id'
           })
         })
       })
