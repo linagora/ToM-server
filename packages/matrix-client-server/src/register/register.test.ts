@@ -1,4 +1,5 @@
 import { getLogger, type TwakeLogger } from '@twake/logger'
+import { type Response } from 'supertest'
 import ClientServer from '../index'
 import { type Config } from '../types'
 import express from 'express'
@@ -423,10 +424,23 @@ describe('Use configuration file', () => {
     // })
   })
   describe('/_matrix/client/v3/register/available', () => {
+    it('should reject if more than 100 requests are done in less than 10 seconds', async () => {
+      let response
+      // eslint-disable-next-line @typescript-eslint/no-for-in-array, @typescript-eslint/no-unused-vars
+      for (const i in [...Array(101).keys()]) {
+        response = await request(app)
+          .get('/_matrix/client/v3/register/available')
+          .query({ username: `@username${i}:example.org` })
+          .set('Accept', 'application/json')
+      }
+      expect((response as Response).statusCode).toEqual(429)
+      await new Promise((resolve) => setTimeout(resolve, 11000))
+    })
     it('should refuse an invalid username', async () => {
       const response = await request(app)
         .get('/_matrix/client/v3/register/available')
         .query({ username: 'invalidUsername' })
+        .set('Accept', 'application/json')
       expect(response.statusCode).toBe(400)
       expect(response.body).toHaveProperty('error')
       expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
@@ -435,6 +449,7 @@ describe('Use configuration file', () => {
       const response = await request(app)
         .get('/_matrix/client/v3/register/available')
         .query({ username: '@_irc_bridge_:example.com' })
+        .set('Accept', 'application/json')
       expect(response.statusCode).toBe(400)
       expect(response.body).toHaveProperty('error')
       expect(response.body).toHaveProperty('errcode', 'M_EXCLUSIVE')
@@ -443,6 +458,7 @@ describe('Use configuration file', () => {
       const response = await request(app)
         .get('/_matrix/client/v3/register/available')
         .query({ username: '@newuser:example.com' }) // registered in a previous test
+        .set('Accept', 'application/json')
       expect(response.statusCode).toBe(400)
       expect(response.body).toHaveProperty('error')
       expect(response.body).toHaveProperty('errcode', 'M_USER_IN_USE')
@@ -451,6 +467,7 @@ describe('Use configuration file', () => {
       const response = await request(app)
         .get('/_matrix/client/v3/register/available')
         .query({ username: '@newuser2:example.com' })
+        .set('Accept', 'application/json')
       expect(response.statusCode).toBe(200)
       expect(response.body).toHaveProperty('available', true)
     })
