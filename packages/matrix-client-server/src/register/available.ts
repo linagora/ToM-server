@@ -1,5 +1,6 @@
 import { errMsg, send, type expressAppHandler } from '@twake/utils'
 import type MatrixClientServer from '..'
+import { type Request, type Response } from 'express'
 
 interface Parameters {
   username: string
@@ -61,4 +62,13 @@ const available = (clientServer: MatrixClientServer): expressAppHandler => {
   }
 }
 
-export default available
+const rateLimitedAvailable = (
+  clientServer: MatrixClientServer
+): expressAppHandler => {
+  return (req, res) => {
+    clientServer.rateLimiter(req as Request, res as Response, () => {
+      available(clientServer)(req, res)
+    })
+  }
+}
+export default rateLimitedAvailable
