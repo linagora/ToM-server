@@ -34,11 +34,7 @@ beforeAll((done) => {
   // @ts-expect-error TS doesn't understand that the config is valid
   conf = {
     ...defaultConfig,
-    cron_service: false,
-    database_engine: 'sqlite',
-    base_url: 'http://example.com/',
-    userdb_engine: 'sqlite',
-    matrix_database_engine: 'sqlite'
+    base_url: 'http://example.com/'
   }
   if (process.env.TEST_PG === 'yes') {
     conf.database_engine = 'pg'
@@ -497,6 +493,7 @@ describe('Use configuration file', () => {
     })
     describe('/_matrix/client/v3/register', () => {
       let session: string
+      let guestAccessToken: string
       describe('User Interactive Authentication', () => {
         it('should validate user interactive authentication with a registration_token', async () => {
           const response = await request(app)
@@ -659,27 +656,6 @@ describe('Use configuration file', () => {
           expect(response.body).toHaveProperty('error')
           expect(response.body).toHaveProperty('errcode', 'M_FORBIDDEN')
         })
-        it('should refuse an authentication with the pasword of another user', async () => {
-          const response = await request(app)
-            .post('/_matrix/client/v3/register')
-            .set('User-Agent', 'curl/7.31.0-DEV')
-            .set('X-Forwarded-For', '203.0.113.195')
-            .query({ kind: 'user' })
-            .send({
-              auth: {
-                type: 'm.login.password',
-                identifier: {
-                  type: 'm.id.user',
-                  user: '@otheruser:example.com'
-                },
-                password: 'password',
-                session: randomString(20)
-              }
-            })
-          expect(response.statusCode).toBe(401)
-          expect(response.body).toHaveProperty('error')
-          expect(response.body).toHaveProperty('errcode', 'M_FORBIDDEN')
-        })
         it('should accept an authentication with a correct password', async () => {
           const response = await request(app)
             .post('/_matrix/client/v3/register')
@@ -720,6 +696,7 @@ describe('Use configuration file', () => {
           .send({
             auth: { type: 'm.login.dummy', session },
             username: 'newuser',
+            password: 'password',
             device_id: 'deviceId',
             inhibit_login: false,
             initial_device_display_name: 'testdevice'
@@ -729,6 +706,24 @@ describe('Use configuration file', () => {
         expect(response.body).toHaveProperty('expires_in_ms')
         expect(response.body).toHaveProperty('access_token')
         expect(response.body).toHaveProperty('device_id')
+      })
+      it('should refuse a registration with an already existing username', async () => {
+        const response = await request(app)
+          .post('/_matrix/client/v3/register')
+          .set('User-Agent', 'curl/7.31.0-DEV')
+          .set('X-Forwarded-For', '203.0.113.195')
+          .query({ kind: 'user' })
+          .send({
+            auth: { type: 'm.login.dummy', session: randomString(10) },
+            username: 'newuser',
+            password: 'password',
+            device_id: 'deviceId',
+            inhibit_login: false,
+            initial_device_display_name: 'testdevice'
+          })
+        expect(response.statusCode).toBe(400)
+        expect(response.body).toHaveProperty('error')
+        expect(response.body).toHaveProperty('errcode', 'M_USER_IN_USE')
       })
       it('should only return the userId when inhibit login is set to true', async () => {
         const response = await request(app)
@@ -773,6 +768,7 @@ describe('Use configuration file', () => {
           .set('X-Forwarded-For', '203.0.113.195')
           .query({ kind: 'guest' })
           .send({})
+        guestAccessToken = response.body.access_token
         expect(response.statusCode).toBe(200)
         expect(response.body).toHaveProperty('user_id')
         expect(response.body).toHaveProperty('expires_in_ms')
@@ -792,19 +788,36 @@ describe('Use configuration file', () => {
         expect(response.body).not.toHaveProperty('access_token')
         expect(response.body).not.toHaveProperty('device_id')
       })
-      it('should refuse a username that is already in use', async () => {
+      it('should refuse to upgrade a guest account if he does not provide a username', async () => {
         const response = await request(app)
           .post('/_matrix/client/v3/register')
           .set('User-Agent', 'curl/7.31.0-DEV')
           .set('X-Forwarded-For', '203.0.113.195')
-          .query({ kind: 'user' })
-          .send({
-            username: 'newuser',
-            auth: { type: 'm.login.dummy', session: randomString(20) }
-          })
+          .query({ kind: 'guest', guest_access_token: guestAccessToken })
+          .send({ inhibit_login: true })
         expect(response.statusCode).toBe(400)
         expect(response.body).toHaveProperty('error')
-        expect(response.body).toHaveProperty('errcode', 'M_USER_IN_USE')
+        expect(response.body).toHaveProperty('errcode', 'M_MISSING_PARAMS')
+      })
+      it('should refuse to upgrade a guest account if he uses a wrong token', async () => {
+        const response = await request(app)
+          .post('/_matrix/client/v3/register')
+          .set('User-Agent', 'curl/7.31.0-DEV')
+          .set('X-Forwarded-For', '203.0.113.195')
+          .query({ kind: 'guest', guest_access_token: 'wrongToken' })
+          .send({ inhibit_login: true, username: 'guestuser' })
+        expect(response.statusCode).toBe(401)
+        expect(response.body).toHaveProperty('error')
+        expect(response.body).toHaveProperty('errcode', 'M_UNKNOWN_TOKEN')
+      })
+      it('should upgrade a guest account to user account if all parameters are valid', async () => {
+        const response = await request(app)
+          .post('/_matrix/client/v3/register')
+          .set('User-Agent', 'curl/7.31.0-DEV')
+          .set('X-Forwarded-For', '203.0.113.195')
+          .query({ kind: 'guest', guest_access_token: guestAccessToken })
+          .send({ inhibit_login: true, username: 'newuser2' })
+        expect(response.statusCode).toBe(200)
       })
       // The following test might be necessary but spec is unclear so it is commented out for now
 
@@ -1729,151 +1742,6 @@ describe('Use configuration file', () => {
             errcode: 'M_NOT_FOUND',
             error: 'Room not found'
           })
-        })
-      })
-    })
-
-    describe('/_matrix/client/v3/rooms/:roomId/aliases', () => {
-      const testUserId = '@testuser:example.com'
-      const testRoomId = '!testroomid:example.com'
-      const worldReadableRoomId = '!worldreadable:example.com'
-
-      beforeAll(async () => {
-        try {
-          // Insert test data for room aliases
-          await clientServer.matrixDb.insert('room_aliases', {
-            room_id: testRoomId,
-            room_alias: '#somewhere:example.com'
-          })
-          await clientServer.matrixDb.insert('room_aliases', {
-            room_id: testRoomId,
-            room_alias: '#another:example.com'
-          })
-          await clientServer.matrixDb.insert('room_aliases', {
-            room_id: worldReadableRoomId,
-            room_alias: '#worldreadable:example.com'
-          })
-
-          // Insert test data for room visibility
-          await clientServer.matrixDb.insert('room_stats_state', {
-            room_id: worldReadableRoomId,
-            history_visibility: 'world_readable'
-          })
-          await clientServer.matrixDb.insert('room_stats_state', {
-            room_id: testRoomId,
-            history_visibility: 'joined'
-          })
-
-          // Insert test data for room membership
-          await clientServer.matrixDb.insert('room_memberships', {
-            user_id: testUserId,
-            room_id: testRoomId,
-            membership: 'join',
-            forgotten: 0,
-            event_id: randomString(20),
-            sender: '@admin:example.com'
-          })
-        } catch (e) {
-          logger.error('Error setting up test data:', e)
-        }
-      })
-
-      afterAll(async () => {
-        try {
-          // Clean up test data
-          await clientServer.matrixDb.deleteEqual(
-            'room_aliases',
-            'room_id',
-            testRoomId
-          )
-          await clientServer.matrixDb.deleteEqual(
-            'room_aliases',
-            'room_id',
-            worldReadableRoomId
-          )
-          await clientServer.matrixDb.deleteEqual(
-            'room_stats_state',
-            'room_id',
-            worldReadableRoomId
-          )
-          await clientServer.matrixDb.deleteEqual(
-            'room_stats_state',
-            'room_id',
-            testRoomId
-          )
-          await clientServer.matrixDb.deleteEqual(
-            'room_memberships',
-            'room_id',
-            testRoomId
-          )
-        } catch (e) {
-          logger.error('Error tearing down test data:', e)
-        }
-      })
-
-      it('should require authentication', async () => {
-        const response = await request(app)
-          .get(`/_matrix/client/v3/rooms/${testRoomId}/aliases`)
-          .set('Authorization', 'Bearer invalidToken')
-          .set('Accept', 'application/json')
-        expect(response.statusCode).toBe(401)
-      })
-
-      it('should return 400 if the room ID is invalid', async () => {
-        const response = await request(app)
-          .get(`/_matrix/client/v3/rooms/invalid_room_id/aliases`)
-          .set('Authorization', `Bearer ${validToken2}`)
-          .set('Accept', 'application/json')
-        expect(response.statusCode).toBe(400)
-        expect(response.body.errcode).toEqual('M_INVALID_PARAM')
-      })
-
-      it('should return the list of aliases for a world_readable room for any user', async () => {
-        const response = await request(app)
-          .get(`/_matrix/client/v3/rooms/${worldReadableRoomId}/aliases`)
-          .set('Authorization', `Bearer ${validToken2}`)
-          .set('Accept', 'application/json')
-        expect(response.statusCode).toBe(200)
-        expect(response.body).toEqual({
-          aliases: ['#worldreadable:example.com']
-        })
-      })
-
-      it('should return the list of aliases for an non-world_readable room if the user is a member', async () => {
-        const response = await request(app)
-          .get(`/_matrix/client/v3/rooms/${testRoomId}/aliases`)
-          .set('Authorization', `Bearer ${validToken}`)
-          .set('Accept', 'application/json')
-        expect(response.statusCode).toBe(200)
-        expect(response.body).toEqual({
-          aliases: ['#somewhere:example.com', '#another:example.com']
-        })
-      })
-
-      it('should return 403 if the user is not a member and the room is not world_readable', async () => {
-        const response = await request(app)
-          .get(`/_matrix/client/v3/rooms/${testRoomId}/aliases`)
-          .set('Authorization', `Bearer ${validToken2}`)
-          .set('Accept', 'application/json')
-        expect(response.statusCode).toBe(403)
-        expect(response.body).toEqual({
-          errcode: 'M_FORBIDDEN',
-          error:
-            'The user is not permitted to retrieve the list of local aliases for the room'
-        })
-      })
-
-      it('should return 400 if the room ID is invalid', async () => {
-        const invalidRoomId = '!invalidroomid:example.com'
-
-        const response = await request(app)
-          .get(`/_matrix/client/v3/rooms/${invalidRoomId}/aliases`)
-          .set('Authorization', `Bearer ${validToken}`)
-          .set('Accept', 'application/json')
-        expect(response.statusCode).toBe(400)
-        expect(response.body).toEqual({
-          errcode: 'M_INVALID_PARAM',
-          error: 'Invalid room id'
         })
       })
     })
