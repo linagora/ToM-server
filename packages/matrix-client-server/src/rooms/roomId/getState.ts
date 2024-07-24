@@ -1,3 +1,12 @@
+/**
+ * Implements : https://spec.matrix.org/latest/client-server-api/#get_matrixclientv3roomsroomidstate
+ *
+ * Following the spec and Synapse implementation of the matrix Protocol, we have decided that when the requesting user
+ * left the room, he will have access solely to the event of his departure.
+ *
+ * TODO : eventually add check for eventType to prevent invalid requests in the database
+ */
+
 import type MatrixClientServer from '../..'
 import {
   epoch,
@@ -7,9 +16,6 @@ import {
   roomIdRegex
 } from '@twake/utils'
 import { type Request } from 'express'
-
-// TODO : Manage the case where it is an Application Service, in which case any of the AS’s users must be in the room for it to work.
-// cf https://spec.matrix.org/v1.11/client-server-api/#get_matrixclientv3roomsroomidjoined_members
 
 const RIdReg = new RegExp(roomIdRegex)
 
