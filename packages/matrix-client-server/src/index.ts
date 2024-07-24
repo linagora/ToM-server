@@ -61,6 +61,7 @@ import PostFilter from './user/filter/postFilter'
 import GetFilter from './user/filter/getFilter'
 import bind from './account/3pid/bind'
 import refresh from './refresh'
+import openIdRequestToken from './user/openid/requestToken'
 import available from './register/available'
 
 const tables = {
@@ -164,6 +165,7 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
             '/_matrix/client/v3/account/3pid/bind': badMethod,
             '/_matrix/client/v3/account/3pid/add': badMethod,
             '/_matrix/client/v3/refresh': badMethod,
+            '/_matrix/client/v3/user/:userId/openid/request_token': badMethod,
             '/_matrix/client/v3/register/available': available(this),
             '/_matrix/client/v3/user/:userId/filter': badMethod,
             '/_matrix/client/v3/user/:userId/filter/:filterId': GetFilter(this)
@@ -207,6 +209,8 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
             '/_matrix/client/v3/account/3pid/bind': bind(this),
             '/_matrix/client/v3/account/3pid/add': add(this),
             '/_matrix/client/v3/refresh': refresh(this),
+            '/_matrix/client/v3/user/:userId/openid/request_token':
+              openIdRequestToken(this),
             '/_matrix/client/v3/register/available': badMethod,
             '/_matrix/client/v3/user/:userId/filter': PostFilter(this),
             '/_matrix/client/v3/user/:userId/filter/:filterId': badMethod
@@ -250,6 +254,7 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
             '/_matrix/client/v3/account/3pid/bind': badMethod,
             '/_matrix/client/v3/account/3pid/add': badMethod,
             '/_matrix/client/v3/refresh': badMethod,
+            '/_matrix/client/v3/user/:userId/openid/request_token': badMethod,
             '/_matrix/client/v3/register/available': badMethod,
             '/_matrix/client/v3/user/:userId/filter': badMethod,
             '/_matrix/client/v3/user/:userId/filter/:filterId': badMethod
@@ -283,6 +288,7 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
             '/_matrix/client/v3/account/3pid/bind': badMethod,
             '/_matrix/client/v3/account/3pid/add': badMethod,
             '/_matrix/client/v3/refresh': badMethod,
+            '/_matrix/client/v3/user/:userId/openid/request_token': badMethod,
             '/_matrix/client/v3/register/available': badMethod,
             '/_matrix/client/v3/user/:userId/filter': badMethod,
             '/_matrix/client/v3/user/:userId/filter/:filterId': badMethod

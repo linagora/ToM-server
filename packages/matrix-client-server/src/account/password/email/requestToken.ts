@@ -139,7 +139,7 @@ const RequestToken = (clientServer: MatrixClientServer): expressAppHandler => {
                           })
                           .catch((err) => {
                             // istanbul ignore next
-                            clientServer.logger.error('Deletion error', err)
+                            clientServer.logger.error('Deletion error')
                             // istanbul ignore next
                             send(
                               res,
@@ -166,7 +166,7 @@ const RequestToken = (clientServer: MatrixClientServer): expressAppHandler => {
                   })
                   .catch((err) => {
                     /* istanbul ignore next */
-                    clientServer.logger.error('Send_attempt error', err)
+                    clientServer.logger.error('Send_attempt error')
                     /* istanbul ignore next */
                     send(res, 500, errMsg('unknown', err), clientServer.logger)
                   })
@@ -174,7 +174,7 @@ const RequestToken = (clientServer: MatrixClientServer): expressAppHandler => {
             })
             .catch((err) => {
               /* istanbul ignore next */
-              clientServer.logger.error('Error getting userID :', err)
+              clientServer.logger.error('Error getting userID')
               /* istanbul ignore next */
               send(res, 500, errMsg('unknown', err), clientServer.logger)
             })
