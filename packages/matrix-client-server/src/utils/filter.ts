@@ -86,15 +86,11 @@ export class EventFilter {
   constructor(filter_json: JsonMapping, logger?: TwakeLogger) {
     this.limit = filter_json.limit || 10
     if (filter_json.limit < 1) {
-      if (logger) {
-        logger.warn('Limit is below 1')
-      }
+      logger?.warn('Limit is below 1')
       this.limit = 1
     }
     if (filter_json.limit > MAX_LIMIT) {
-      if (logger) {
-        logger.warn('Limit is higher than the maximum limit')
-      }
+      logger?.warn('Limit is higher than the maximum limit')
       this.limit = MAX_LIMIT
     }
     this.types = filter_json.types
@@ -508,9 +504,7 @@ const convertToValidEventFormat = (
   if (event_format === 'client' || event_format === 'federation') {
     return event_format
   } else {
-    if (logger) {
-      logger.warn('Wrong event format in Filter - using default value')
-    }
+    logger?.warn('Wrong event format in Filter - using default value')
     return 'client'
   }
 }
@@ -545,8 +539,8 @@ const removeWrongEventFields = (
         validClientEventFields.has(fieldName) &&
         (subField === undefined || subField.length <= 30) // Arbitrary limit to avoid too long subfields
 
-      if (!isValid && logger) {
-        logger.warn(`Invalid field given in filter constructor : ${field}`)
+      if (!isValid) {
+        logger?.warn(`Invalid field given in filter constructor : ${field}`)
       }
 
       return isValid
@@ -567,8 +561,8 @@ const removeWrongTypes = (types: string[], logger?: TwakeLogger): string[] => {
     const isValid = validEventTypes.some((eventType) =>
       _matchesWildcard(eventType, type)
     )
-    if (!isValid && logger) {
-      logger.warn(`Removed invalid type: ${type}`)
+    if (!isValid) {
+      logger?.warn(`Removed invalid type: ${type}`)
     }
     return isValid
   })
@@ -577,8 +571,8 @@ const removeWrongTypes = (types: string[], logger?: TwakeLogger): string[] => {
 const removeWrongIds = (senders: string[], logger?: TwakeLogger): string[] => {
   return senders.filter((sender) => {
     const isValid = matrixIdRegex.test(sender)
-    if (!isValid && logger) {
-      logger.warn(`Removed invalid sender: ${sender}`)
+    if (!isValid) {
+      logger?.warn(`Removed invalid sender: ${sender}`)
     }
     return isValid
   })
@@ -590,8 +584,8 @@ const removeWrongRoomIds = (
 ): string[] => {
   return rooms.filter((room) => {
     const isValid = roomIdRegex.test(room)
-    if (!isValid && logger) {
-      logger.warn(`Removed invalid room ID: ${room}`)
+    if (!isValid) {
+      logger?.warn(`Removed invalid room ID: ${room}`)
     }
     return isValid
   })
