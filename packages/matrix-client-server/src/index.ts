@@ -63,6 +63,7 @@ import bind from './account/3pid/bind'
 import refresh from './refresh'
 import openIdRequestToken from './user/openid/requestToken'
 import available from './register/available'
+import getRoomState from './rooms/roomId/getState'
 
 const tables = {
   ui_auth_sessions: 'session_id TEXT NOT NULL, stage_type TEXT NOT NULL'
@@ -168,7 +169,8 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
             '/_matrix/client/v3/user/:userId/openid/request_token': badMethod,
             '/_matrix/client/v3/register/available': available(this),
             '/_matrix/client/v3/user/:userId/filter': badMethod,
-            '/_matrix/client/v3/user/:userId/filter/:filterId': GetFilter(this)
+            '/_matrix/client/v3/user/:userId/filter/:filterId': GetFilter(this),
+            '/_matrix/client/v3/rooms/:roomId/state': getRoomState(this)
           }
           this.api.post = {
             '/_matrix/client/v3/account/whoami': badMethod,
@@ -213,7 +215,8 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
               openIdRequestToken(this),
             '/_matrix/client/v3/register/available': badMethod,
             '/_matrix/client/v3/user/:userId/filter': PostFilter(this),
-            '/_matrix/client/v3/user/:userId/filter/:filterId': badMethod
+            '/_matrix/client/v3/user/:userId/filter/:filterId': badMethod,
+            '/_matrix/client/v3/rooms/:roomId/state': badMethod
           }
           this.api.put = {
             '/_matrix/client/v3/account/whoami': badMethod,
@@ -257,7 +260,8 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
             '/_matrix/client/v3/user/:userId/openid/request_token': badMethod,
             '/_matrix/client/v3/register/available': badMethod,
             '/_matrix/client/v3/user/:userId/filter': badMethod,
-            '/_matrix/client/v3/user/:userId/filter/:filterId': badMethod
+            '/_matrix/client/v3/user/:userId/filter/:filterId': badMethod,
+            '/_matrix/client/v3/rooms/:roomId/state': badMethod
           }
           this.api.delete = {
             '/_matrix/client/v3/account/whoami': badMethod,
@@ -291,7 +295,8 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
             '/_matrix/client/v3/user/:userId/openid/request_token': badMethod,
             '/_matrix/client/v3/register/available': badMethod,
             '/_matrix/client/v3/user/:userId/filter': badMethod,
-            '/_matrix/client/v3/user/:userId/filter/:filterId': badMethod
+            '/_matrix/client/v3/user/:userId/filter/:filterId': badMethod,
+            '/_matrix/client/v3/rooms/:roomId/state': badMethod
           }
           resolve(true)
         })

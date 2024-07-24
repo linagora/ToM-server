@@ -44,7 +44,8 @@ const matrixDbQueries = [
   'CREATE TABLE IF NOT EXISTS user_threepid_id_server ( user_id TEXT NOT NULL, medium TEXT NOT NULL, address TEXT NOT NULL, id_server TEXT NOT NULL )',
   'CREATE TABLE IF NOT EXISTS "access_tokens" (id BIGINT PRIMARY KEY, user_id TEXT NOT NULL, device_id TEXT, token TEXT NOT NULL,valid_until_ms BIGINT,puppets_user_id TEXT,last_validated BIGINT, refresh_token_id BIGINT REFERENCES refresh_tokens (id) ON DELETE CASCADE, used BOOLEAN,UNIQUE(token))',
   'CREATE TABLE IF NOT EXISTS refresh_tokens (id BIGINT PRIMARY KEY,user_id TEXT NOT NULL,device_id TEXT NOT NULL,token TEXT NOT NULL,next_token_id BIGINT REFERENCES refresh_tokens (id) ON DELETE CASCADE, expiry_ts BIGINT DEFAULT NULL, ultimate_session_expiry_ts BIGINT DEFAULT NULL,UNIQUE(token))',
-  'CREATE TABLE IF NOT EXISTS "user_filters" ( user_id TEXT NOT NULL, filter_id BIGINT NOT NULL, filter_json BYTEA NOT NULL )'
+  'CREATE TABLE IF NOT EXISTS "user_filters" ( user_id TEXT NOT NULL, filter_id BIGINT NOT NULL, filter_json BYTEA NOT NULL )',
+  'CREATE TABLE IF NOT EXISTS current_state_events (event_id text NOT NULL,room_id text NOT NULL,type text NOT NULL,state_key text NOT NULL,membership text)'
 ]
 
 // eslint-disable-next-line @typescript-eslint/promise-function-async
