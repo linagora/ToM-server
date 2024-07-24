@@ -401,6 +401,7 @@ describe('Use configuration file', () => {
         expect(response.body).toHaveProperty('expires_in')
         expect(response.body).toHaveProperty('matrix_server_name')
         expect(response.body).toHaveProperty('token_type')
+      })
       describe('/_matrix/client/v3/user/:userId/filter', () => {
         beforeAll(async () => {
           try {
@@ -591,5 +592,4 @@ describe('Use configuration file', () => {
       })
     })
   })
-})
 })
