@@ -62,6 +62,7 @@ import GetFilter from './user/filter/getFilter'
 import bind from './account/3pid/bind'
 import refresh from './refresh'
 import openIdRequestToken from './user/openid/requestToken'
+import available from './register/available'
 
 const tables = {
   ui_auth_sessions: 'session_id TEXT NOT NULL, stage_type TEXT NOT NULL'
@@ -165,6 +166,7 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
             '/_matrix/client/v3/account/3pid/add': badMethod,
             '/_matrix/client/v3/refresh': badMethod,
             '/_matrix/client/v3/user/:userId/openid/request_token': badMethod,
+            '/_matrix/client/v3/register/available': available(this),
             '/_matrix/client/v3/user/:userId/filter': badMethod,
             '/_matrix/client/v3/user/:userId/filter/:filterId': GetFilter(this)
           }
@@ -209,6 +211,7 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
             '/_matrix/client/v3/refresh': refresh(this),
             '/_matrix/client/v3/user/:userId/openid/request_token':
               openIdRequestToken(this),
+            '/_matrix/client/v3/register/available': badMethod,
             '/_matrix/client/v3/user/:userId/filter': PostFilter(this),
             '/_matrix/client/v3/user/:userId/filter/:filterId': badMethod
           }
@@ -252,6 +255,7 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
             '/_matrix/client/v3/account/3pid/add': badMethod,
             '/_matrix/client/v3/refresh': badMethod,
             '/_matrix/client/v3/user/:userId/openid/request_token': badMethod,
+            '/_matrix/client/v3/register/available': badMethod,
             '/_matrix/client/v3/user/:userId/filter': badMethod,
             '/_matrix/client/v3/user/:userId/filter/:filterId': badMethod
           }
@@ -285,6 +289,7 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
             '/_matrix/client/v3/account/3pid/add': badMethod,
             '/_matrix/client/v3/refresh': badMethod,
             '/_matrix/client/v3/user/:userId/openid/request_token': badMethod,
+            '/_matrix/client/v3/register/available': badMethod,
             '/_matrix/client/v3/user/:userId/filter': badMethod,
             '/_matrix/client/v3/user/:userId/filter/:filterId': badMethod
           }
