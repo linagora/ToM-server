@@ -8,6 +8,10 @@ Future implementations may include :
  - the ability to change the displayname and avatar_url of a user while deactivating them
  - the ability to change the displayname and avatar_url of a user and have it apply to the user's membership events
  - the ability to change another user's profile if the requester presents one of the target's valid tokens
+
+After updating the profile in the profile table, the Synapse implementation also updates the user's membership events
+by propagating the change to the user's membership events.
+This includes the Application service which is not yet implemented in this codebase.
 */
 
 import type MatrixClientServer from '../index'
