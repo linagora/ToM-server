@@ -42,7 +42,6 @@ const GetEventId = (clientServer: MatrixClientServer): expressAppHandler => {
           room_id: prms.roomId
         })
         .then((roomsResult) => {
-          console.log(roomsResult)
           if (
             roomsResult.length === 0 ||
             roomsResult[0].membership !== 'join'
