@@ -1,7 +1,11 @@
 import type MatrixClientServer from '..'
-import { errMsg, type expressAppHandler, send, epoch } from '@twake/utils'
-
-const matrixIdRegex = /^@[0-9a-zA-Z._=-]+:[0-9a-zA-Z.-]+$/
+import {
+  errMsg,
+  type expressAppHandler,
+  send,
+  epoch,
+  matrixIdRegex
+} from '@twake/utils'
 
 // TODO : Handle error 403 where the user isn't allowed to see this user's presence status, may have to do with the "users_to_send_full_presence_to" table in the matrixDb
 const getStatus = (clientServer: MatrixClientServer): expressAppHandler => {

@@ -6,7 +6,7 @@ import type MatrixDBmodified from '../matrixDb'
 import { epoch, errMsg, send, toMatrixId } from '@twake/utils'
 import { type AppServiceRegistration, type Config } from '../types'
 
-export interface tokenContent {
+export interface TokenContent {
   sub: string
   device_id?: string
   epoch: number
@@ -15,7 +15,7 @@ export interface tokenContent {
 export type AuthenticationFunction = (
   req: Request | http.IncomingMessage,
   res: Response | http.ServerResponse,
-  callback: (data: tokenContent, id: string | null) => void
+  callback: (data: TokenContent, id: string | null) => void
 ) => void
 
 const Authenticate = (
@@ -32,12 +32,14 @@ const Authenticate = (
         token = re[1]
       }
       // @ts-expect-error req.query exists
+      // istanbul ignore if
     } else if (req.query && Object.keys(req.query).length > 0) {
-      // @ts-expect-error req.query exists,  istanbul ignore next
-      token = req.query.access_token
+      // @ts-expect-error req.query exists
+      // istanbul ignore next
+      token = req.query.access_token // access tokens as query parameters are deprecated
     }
     if (token != null) {
-      let data: tokenContent
+      let data: TokenContent
       matrixDb
         .get(
           'access_tokens',

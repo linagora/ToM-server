@@ -3,7 +3,7 @@ import request from 'supertest'
 import express from 'express'
 import ClientServer from '../index'
 import { buildMatrixDb, buildUserDB } from '../__testData__/buildUserDB'
-import { type Config } from '../types'
+import { type Config, type Filter } from '../types'
 import defaultConfig from '../__testData__/registerConf.json'
 import { getLogger, type TwakeLogger } from '@twake/logger'
 import { setupTokens, validToken, validToken2 } from '../utils/setupTokens'
@@ -401,7 +401,195 @@ describe('Use configuration file', () => {
         expect(response.body).toHaveProperty('expires_in')
         expect(response.body).toHaveProperty('matrix_server_name')
         expect(response.body).toHaveProperty('token_type')
+      describe('/_matrix/client/v3/user/:userId/filter', () => {
+        beforeAll(async () => {
+          try {
+            await clientServer.matrixDb.insert('user_filters', {
+              user_id: '@testuser:example.com',
+              filter_id: '1234',
+              filter_json: JSON.stringify({ filter: true })
+            })
+            await clientServer.matrixDb.insert('user_filters', {
+              user_id: '@testuser2:example.com',
+              filter_id: '1235',
+              filter_json: JSON.stringify({ filter: true })
+            })
+            await clientServer.matrixDb.insert('user_filters', {
+              user_id: '@testuser:example2.com',
+              filter_id: '1234',
+              filter_json: JSON.stringify({ filter: true })
+            })
+            logger.info('Filters inserted')
+          } catch (e) {
+            logger.error('Error inserting filters in db', e)
+          }
+        })
+        afterAll(async () => {
+          try {
+            await clientServer.matrixDb.deleteEqual(
+              'user_filters',
+              'user_id',
+              '@testuser:example.com'
+            )
+            await clientServer.matrixDb.deleteEqual(
+              'user_filters',
+              'user_id',
+              '@testuser2:example.com'
+            )
+            await clientServer.matrixDb.deleteEqual(
+              'user_filters',
+              'user_id',
+              '@testuser:example2.com'
+            )
+            logger.info('Filters deleted')
+          } catch (e) {
+            logger.error('Error deleting filters in db', e)
+          }
+        })
+        const filter: Filter = {
+          event_fields: ['type', 'content', 'sender'],
+          event_format: 'client',
+          presence: {
+            not_senders: ['@alice:example.com'],
+            types: ['m.presence']
+          },
+          room: {
+            ephemeral: {
+              not_rooms: ['!726s6s6q:example.com'],
+              not_senders: ['@spam:example.com'],
+              types: ['m.receipt', 'm.typing']
+            },
+            state: {
+              not_rooms: ['!726s6s6q:example.com'],
+              types: ['m.room.*']
+            },
+            timeline: {
+              limit: 10,
+              not_rooms: ['!726s6s6q:example.com'],
+              not_senders: ['@spam:example.com'],
+              types: ['m.room.message']
+            }
+          }
+        }
+        let filterId: string
+
+        describe('POST', () => {
+          it('should reject invalid parameters', async () => {
+            // Additional parameters not supported
+            const response = await request(app)
+              .post('/_matrix/client/v3/user/@testuser:example.com/filter')
+              .set('Authorization', `Bearer ${validToken}`)
+              .set('Accept', 'application/json')
+              .send({ notAFilterField: 'test' })
+            expect(response.statusCode).toBe(400)
+            expect(response.body).toHaveProperty('errcode', 'UNKNOWN_PARAM')
+          })
+          it('should reject posting a filter for an other userId', async () => {
+            const response = await request(app)
+              .post('/_matrix/client/v3/user/@testuser2:example.com/filter')
+              .set('Authorization', `Bearer ${validToken}`)
+              .set('Accept', 'application/json')
+              .send(filter)
+            expect(response.statusCode).toBe(403)
+            expect(response.body).toHaveProperty('errcode', 'M_FORBIDDEN')
+          })
+          it('should reject posting a filter for an other server name', async () => {
+            const response = await request(app)
+              .post('/_matrix/client/v3/user/@testuser:example2.com/filter')
+              .set('Authorization', `Bearer ${validToken}`)
+              .set('Accept', 'application/json')
+              .send(filter)
+            expect(response.statusCode).toBe(403)
+            expect(response.body).toHaveProperty('errcode', 'M_FORBIDDEN')
+          })
+          it('should post a filter', async () => {
+            const response = await request(app)
+              .post('/_matrix/client/v3/user/@testuser:example.com/filter')
+              .set('Authorization', `Bearer ${validToken}`)
+              .set('Accept', 'application/json')
+              .send(filter)
+            expect(response.statusCode).toBe(200)
+            expect(response.body).toHaveProperty('filter_id')
+            filterId = response.body.filter_id
+          })
+        })
+        describe('GET', () => {
+          it('should reject getting a filter for an other userId', async () => {
+            const response = await request(app)
+              .get(
+                `/_matrix/client/v3/user/@testuser2:example.com/filter/${filterId}`
+              )
+              .set('Authorization', `Bearer ${validToken}`)
+              .set('Accept', 'application/json')
+            expect(response.statusCode).toBe(403)
+            expect(response.body).toHaveProperty('errcode', 'M_FORBIDDEN')
+          })
+          it('should reject getting a filter for an other server name', async () => {
+            const response = await request(app)
+              .get(
+                `/_matrix/client/v3/user/@testuser:example2.com/filter/${filterId}`
+              )
+              .set('Authorization', `Bearer ${validToken}`)
+              .set('Accept', 'application/json')
+            expect(response.statusCode).toBe(403)
+            expect(response.body).toHaveProperty('errcode', 'M_FORBIDDEN')
+          })
+          it('should reject getting a filter that does not exist', async () => {
+            const response = await request(app)
+              .get(
+                `/_matrix/client/v3/user/@testuser:example.com/filter/invalidFilterId`
+              )
+              .set('Authorization', `Bearer ${validToken}`)
+              .set('Accept', 'application/json')
+            expect(response.statusCode).toBe(404)
+            expect(response.body).toHaveProperty('errcode', 'M_NOT_FOUND')
+          })
+          it('should get a filter', async () => {
+            const response = await request(app)
+              .get(
+                `/_matrix/client/v3/user/@testuser:example.com/filter/${filterId}`
+              )
+              .set('Authorization', `Bearer ${validToken}`)
+              .set('Accept', 'application/json')
+            expect(response.statusCode).toBe(200)
+            // We can't simply write expect(response.body).toEqual(filter) because many default values were added
+            expect(response.body.event_fields).toEqual(filter.event_fields)
+            expect(response.body.event_format).toEqual(filter.event_format)
+            expect(response.body.presence.not_senders).toEqual(
+              filter.presence?.not_senders
+            )
+            expect(response.body.presence.types).toEqual(filter.presence?.types)
+            expect(response.body.room.ephemeral.not_rooms).toEqual(
+              filter.room?.ephemeral?.not_rooms
+            )
+            expect(response.body.room.ephemeral.not_senders).toEqual(
+              filter.room?.ephemeral?.not_senders
+            )
+            expect(response.body.room.ephemeral.types).toEqual(
+              filter.room?.ephemeral?.types
+            )
+            expect(response.body.room.state.not_rooms).toEqual(
+              filter.room?.state?.not_rooms
+            )
+            expect(response.body.room.state.types).toEqual(
+              filter.room?.state?.types
+            )
+            expect(response.body.room.timeline.limit).toEqual(
+              filter.room?.timeline?.limit
+            )
+            expect(response.body.room.timeline.not_rooms).toEqual(
+              filter.room?.timeline?.not_rooms
+            )
+            expect(response.body.room.timeline.not_senders).toEqual(
+              filter.room?.timeline?.not_senders
+            )
+            expect(response.body.room.timeline.types).toEqual(
+              filter.room?.timeline?.types
+            )
+          })
+        })
       })
     })
   })
+})
 })
