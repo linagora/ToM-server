@@ -145,16 +145,22 @@ describe('Use configuration file', () => {
             .send({
               sid: 'sid',
               client_secret: 'cs',
-              auth : {
+              auth: {
                 type: 'm.login.password',
                 session,
                 password: 'password',
-                identifier: { type: 'm.id.user', user: '@testuser2:example.com' }
+                identifier: {
+                  type: 'm.id.user',
+                  user: '@testuser2:example.com'
+                }
               }
             })
           expect(response1.statusCode).toBe(401)
           expect(response1.body).toHaveProperty('errcode', 'M_FORBIDDEN')
-          expect(response1.body).toHaveProperty('error', 'The user does not have a password registered')
+          expect(response1.body).toHaveProperty(
+            'error',
+            'The user does not have a password registered'
+          )
         })
       })
       let sid: string
