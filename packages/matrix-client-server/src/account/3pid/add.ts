@@ -1,6 +1,9 @@
 import {
   epoch,
   errMsg,
+  isClientSecretValid,
+  isMatrixIdValid,
+  isSidValid,
   send,
   validateParameters,
   type expressAppHandler
@@ -21,15 +24,11 @@ const schema = {
   sid: true
 }
 
-const clientSecretRegex = /^[0-9a-zA-Z.=_-]{6,255}$/
-const sidRegex = /^[0-9a-zA-Z.=_-]{1,255}$/
-const matrixIdRegex = /^@[0-9a-zA-Z._=-]+:[0-9a-zA-Z.-]+$/
-
 const add = (clientServer: MatrixClientServer): expressAppHandler => {
   return (req, res) => {
     clientServer.uiauthenticate(req, res, allowedFlows, (obj, userId) => {
       validateParameters(res, schema, obj, clientServer.logger, (obj) => {
-        if (!clientSecretRegex.test((obj as RequestBody).client_secret)) {
+        if (!isClientSecretValid((obj as RequestBody).client_secret)) {
           send(
             res,
             400,
@@ -38,7 +37,7 @@ const add = (clientServer: MatrixClientServer): expressAppHandler => {
           )
           return
         }
-        if (!sidRegex.test((obj as RequestBody).sid)) {
+        if (!isSidValid((obj as RequestBody).sid)) {
           send(
             res,
             400,
@@ -76,7 +75,7 @@ const add = (clientServer: MatrixClientServer): expressAppHandler => {
                 if (rows.length > 0) {
                   send(res, 400, errMsg('threepidInUse'), clientServer.logger)
                 } else {
-                  if (!matrixIdRegex.test(userId as string)) {
+                  if (!isMatrixIdValid(userId as string)) {
                     send(res, 400, errMsg('invalidParam', 'Invalid user ID'))
                     return
                   }

@@ -3,7 +3,9 @@ import {
   type expressAppHandler,
   jsonContent,
   send,
-  validateParameters
+  validateParameters,
+  isEmailValid,
+  isPhoneNumberValid
 } from '@twake/utils'
 import type MatrixClientServer from '../..'
 import { type TokenContent } from '../../utils/authenticate'
@@ -32,9 +34,6 @@ const schema = {
   id_server: true,
   sid: true
 }
-
-const validPhoneNumberRegex = /^[1-9]\d{1,14}$/
-const validEmailRegex = /^\w[+.-\w]*\w@\w[.-\w]*\w\.\w{2,6}$/
 
 const bind = (clientServer: MatrixClientServer): expressAppHandler => {
   return (req, res) => {
@@ -90,14 +89,14 @@ const bind = (clientServer: MatrixClientServer): expressAppHandler => {
                   }
                   if (
                     responseBody.medium === 'email' &&
-                    !validEmailRegex.test(responseBody.address)
+                    !isEmailValid(responseBody.address)
                   ) {
                     send(res, 500, errMsg('invalidParam', 'Invalid email'))
                     return
                   }
                   if (
                     responseBody.medium === 'msisdn' &&
-                    !validPhoneNumberRegex.test(responseBody.address)
+                    !isPhoneNumberValid(responseBody.address)
                   ) {
                     send(
                       res,

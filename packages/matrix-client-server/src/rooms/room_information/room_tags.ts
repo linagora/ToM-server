@@ -24,7 +24,9 @@ import {
   send,
   type expressAppHandler,
   jsonContent,
-  validateParameters
+  validateParameters,
+  isMatrixIdValid,
+  isRoomIdValid
 } from '@twake/utils'
 import { type Request } from 'express'
 
@@ -35,15 +37,11 @@ export const getUserRoomTags = (
     const userId = (req as Request).params.userId
     const roomId = (req as Request).params.roomId
 
-    // Check if userId and roomId are valid
-    const userIdRegex = /^@[a-zA-Z0-9._=-]+:[a-zA-Z0-9.-]+$/
-    const roomIdRegex = /^![a-zA-Z0-9]+:[a-zA-Z0-9.-]+$/
-
-    if (!userIdRegex.test(userId)) {
+    if (!isMatrixIdValid(userId)) {
       send(res, 400, errMsg('invalidParam', 'Invalid userId'))
       return
     }
-    if (!roomIdRegex.test(roomId)) {
+    if (!isRoomIdValid(roomId)) {
       send(res, 400, errMsg('invalidParam', 'Invalid roomId'))
       return
     }
@@ -113,15 +111,11 @@ export const addUserRoomTag = (
     const roomId = (req as Request).params.roomId
     const _tag = (req as Request).params.tag
 
-    // Check if userId and roomId are valid
-    const userIdRegex = /^@[a-zA-Z0-9._=-]+:[a-zA-Z0-9.-]+$/
-    const roomIdRegex = /^![a-zA-Z0-9]+:[a-zA-Z0-9.-]+$/
-
-    if (!userIdRegex.test(userId)) {
+    if (!isMatrixIdValid(userId)) {
       send(res, 400, errMsg('invalidParam', 'Invalid userId'))
       return
     }
-    if (!roomIdRegex.test(roomId)) {
+    if (!isRoomIdValid(roomId)) {
       send(res, 400, errMsg('invalidParam', 'Invalid roomId'))
       return
     }
@@ -182,15 +176,11 @@ export const removeUserRoomTag = (
     const roomId = (req as Request).params.roomId
     const _tag = (req as Request).params.tag
 
-    // Check if userId and roomId are valid
-    const userIdRegex = /^@[a-zA-Z0-9._=-]+:[a-zA-Z0-9.-]+$/
-    const roomIdRegex = /^![a-zA-Z0-9]+:[a-zA-Z0-9.-]+$/
-
-    if (!userIdRegex.test(userId)) {
+    if (!isMatrixIdValid(userId)) {
       send(res, 400, errMsg('invalidParam', 'Invalid userId'))
       return
     }
-    if (!roomIdRegex.test(roomId)) {
+    if (!isRoomIdValid(roomId)) {
       send(res, 400, errMsg('invalidParam', 'Invalid roomId'))
       return
     }

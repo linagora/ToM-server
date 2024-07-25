@@ -8,9 +8,9 @@ import {
   send,
   validateParameters,
   type expressAppHandler,
-  clientSecretRegex,
-  validCountryRegex,
-  validPhoneNumberRegex
+  isClientSecretValid,
+  isCountryValid,
+  isPhoneNumberValid
 } from '@twake/utils'
 import type MatrixClientServer from '../../index'
 import SmsSender from '../../utils/smsSender'
@@ -159,14 +159,14 @@ const RequestToken = (clientServer: MatrixClientServer): expressAppHandler => {
         const phoneNumber = (obj as RequestTokenArgs).phone_number
         const dst = formatPhoneNumber(phoneNumber, country)
         const nextLink = (obj as RequestTokenArgs).next_link
-        if (!clientSecretRegex.test(clientSecret)) {
+        if (!isClientSecretValid(clientSecret)) {
           send(
             res,
             400,
             errMsg('invalidParam', 'Invalid client_secret'),
             clientServer.logger
           )
-        } else if (!validCountryRegex.test(country)) {
+        } else if (!isCountryValid(country)) {
           send(
             res,
             400,
@@ -181,7 +181,7 @@ const RequestToken = (clientServer: MatrixClientServer): expressAppHandler => {
             errMsg('invalidParam', 'Invalid next_link'),
             clientServer.logger
           )
-        } else if (!validPhoneNumberRegex.test(dst)) {
+        } else if (!isPhoneNumberValid(dst)) {
           send(
             res,
             400,

@@ -1,21 +1,19 @@
 import type MatrixClientServer from '../..'
 import { epoch, errMsg, send, type expressAppHandler } from '@twake/utils'
 import { type ClientEvent } from '../../types'
-import { roomIdRegex } from '@twake/utils'
+import { isRoomIdValid } from '@twake/utils'
 
 interface parameters {
   eventId: string
   roomId: string
 }
 
-const RIdReg = new RegExp(roomIdRegex)
-
 const GetEventId = (clientServer: MatrixClientServer): expressAppHandler => {
   return (req, res) => {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-expect-error
     const prms: parameters = (req as Request).params as parameters
-    if (!RIdReg.test(prms.roomId)) {
+    if (!isRoomIdValid(prms.roomId)) {
       send(
         res,
         400,

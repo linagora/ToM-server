@@ -12,10 +12,13 @@
  */
 
 import type MatrixClientServer from '../..'
-import { errMsg, send, type expressAppHandler, roomIdRegex } from '@twake/utils'
+import {
+  errMsg,
+  isRoomIdValid,
+  send,
+  type expressAppHandler
+} from '@twake/utils'
 import { type Request } from 'express'
-
-const RIdReg = new RegExp(roomIdRegex)
 
 const getRoomStateEvent = (
   clientServer: MatrixClientServer
@@ -25,7 +28,7 @@ const getRoomStateEvent = (
     const eventType = (req as Request).params.eventType
     const stateKey = (req as Request).params.stateKey
     // TODO : add check for eventType
-    if (!RIdReg.test(roomId)) {
+    if (!isRoomIdValid(roomId)) {
       send(
         res,
         400,
@@ -143,7 +146,7 @@ export const getRoomStateEventNoStatekey = (
     const roomId: string = (req as Request).params.roomId
     const eventType = (req as Request).params.eventType
     const stateKey = ''
-    if (!RIdReg.test(roomId)) {
+    if (!isRoomIdValid(roomId)) {
       send(
         res,
         400,
