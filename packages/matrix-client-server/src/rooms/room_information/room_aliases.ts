@@ -1,15 +1,18 @@
 import type MatrixClientServer from '../../'
 import { type Request } from 'express'
-import { errMsg, send, type expressAppHandler } from '@twake/utils'
-
-const roomIdRegex = /^![0-9a-zA-Z._=/+-]+:[0-9a-zA-Z.-]+$/ // From : https://spec.matrix.org/v1.11/#room-structure
+import {
+  errMsg,
+  isRoomIdValid,
+  send,
+  type expressAppHandler
+} from '@twake/utils'
 
 export const getRoomAliases = (
   clientServer: MatrixClientServer
 ): expressAppHandler => {
   return (req, res) => {
     const roomId: string = (req as Request).params.roomId
-    if (!roomIdRegex.test(roomId)) {
+    if (!isRoomIdValid(roomId)) {
       send(res, 400, errMsg('invalidParam', 'Invalid room id'))
       return
     }

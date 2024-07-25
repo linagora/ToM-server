@@ -1,4 +1,10 @@
-import { epoch, errMsg, send, type expressAppHandler } from '@twake/utils'
+import {
+  epoch,
+  errMsg,
+  isMatrixIdValid,
+  send,
+  type expressAppHandler
+} from '@twake/utils'
 import type MatrixClientServer from '../..'
 import { randomString } from '@twake/crypto'
 
@@ -12,14 +18,13 @@ interface ResponseBody {
   matrix_server_name: string
   token_type: string
 }
-const matrixIdRegex = /^@[0-9a-zA-Z._=-]+:[0-9a-zA-Z.-]+$/
 
 const requestToken = (clientServer: MatrixClientServer): expressAppHandler => {
   return (req, res) => {
     clientServer.authenticate(req, res, (data) => {
       // @ts-expect-error req has params
       const userId = (req.params as Parameters).userId
-      if (!matrixIdRegex.test(userId)) {
+      if (!isMatrixIdValid(userId)) {
         send(
           res,
           400,

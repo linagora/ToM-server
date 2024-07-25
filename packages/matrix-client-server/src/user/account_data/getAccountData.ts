@@ -3,8 +3,8 @@ import {
   errMsg,
   type expressAppHandler,
   send,
-  matrixIdRegex,
-  eventTypeRegex
+  isMatrixIdValid,
+  isEventTypeValid
 } from '@twake/utils'
 
 interface Parameters {
@@ -20,8 +20,8 @@ const getAccountData = (
     // @ts-expect-error
     const parameters: Parameters = req.params as Parameters
     if (
-      !matrixIdRegex.test(parameters.userId) ||
-      !eventTypeRegex.test(parameters.type)
+      !isMatrixIdValid(parameters.userId) ||
+      !isEventTypeValid(parameters.type)
     ) {
       send(res, 400, errMsg('invalidParam'), clientServer.logger)
       return
