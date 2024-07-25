@@ -5,9 +5,6 @@ import type http from 'http'
 import querystring from 'querystring'
 import { errMsg } from './errors'
 
-export const hostnameRe =
-  /^((([a-zA-Z0-9][-a-zA-Z0-9]*)?[a-zA-Z0-9])[.])*([a-zA-Z][-a-zA-Z0-9]*[a-zA-Z0-9]|[a-zA-Z])(:(\d+))?$/
-
 export type expressAppHandler = (
   req: Request | http.IncomingMessage,
   res: Response | http.ServerResponse,
