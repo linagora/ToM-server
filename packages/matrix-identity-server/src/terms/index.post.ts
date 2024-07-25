@@ -31,24 +31,35 @@ export const getUrlsFromPolicies = (policies: Policies): UrlsFromPolicies => {
   return urlsFromPolicies
 }
 
+// eslint-disable-next-line @typescript-eslint/promise-function-async
 export const fillPoliciesDB = (
   userId: string,
   idServer: MatrixIdentityServer,
   accepted: number
-): void => {
-  Object.keys(
-    getUrlsFromPolicies(computePolicy(idServer.conf, idServer.logger))
-  ).forEach((policyName) => {
-    idServer.db
-      .insert('userPolicies', {
+): Promise<string[]> => {
+  return new Promise((resolve, reject) => {
+    const policies = getUrlsFromPolicies(
+      computePolicy(idServer.conf, idServer.logger)
+    )
+    const policyNames = Object.keys(policies)
+
+    // eslint-disable-next-line @typescript-eslint/promise-function-async
+    const insertPromises = policyNames.map((policyName) => {
+      return idServer.db.insert('userPolicies', {
         policy_name: policyName,
         user_id: userId,
         accepted
       })
-      .then(() => {})
+    })
+
+    Promise.all(insertPromises)
+      .then(() => {
+        resolve(policyNames)
+      })
       .catch((e) => {
         /* istanbul ignore next */
         idServer.logger.error('Error inserting user policies', e)
+        reject(e)
       })
   })
 }
@@ -86,7 +97,7 @@ const PostTerms = <T extends string = never>(
               if (done.length > 0) {
                 let token: string = ''
                 // @ts-expect-error req.query exists
-                if (req.query && Object.keys(req.query).length > 0) {
+                if (req.query != null && Object.keys(req.query).length > 0) {
                   // @ts-expect-error req.query.access_token may be null
                   token = req.query.access_token
                 } else if (req.headers.authorization != null) {
