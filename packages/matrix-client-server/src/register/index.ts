@@ -15,7 +15,11 @@ import {
 } from '../types'
 import { Hash, randomString } from '@twake/crypto'
 import type MatrixClientServer from '..'
-import { type DbGetResult } from '@twake/matrix-identity-server'
+import {
+  type DbGetResult,
+  getUrlsFromPolicies,
+  computePolicy
+} from '@twake/matrix-identity-server'
 import type { ServerResponse } from 'http'
 import type e from 'express'
 import { getParams } from '../utils/userInteractiveAuthentication'
@@ -82,6 +86,25 @@ export const registerAllowedFlows: AuthenticationFlowContent = {
     'm.login.email.identity': getParams('m.login.email.identity')
   }
 }
+const fillPoliciesDB = (
+  userId: string,
+  clientServer: MatrixClientServer,
+  accepted: number
+): Promise<DbGetResult[]> => {
+  const promises: Array<Promise<DbGetResult>> = []
+  Object.keys(
+    getUrlsFromPolicies(computePolicy(clientServer.conf, clientServer.logger))
+  ).forEach((policyName) => {
+    promises.push(
+      clientServer.db.insert('userPolicies', {
+        policy_name: policyName,
+        user_id: userId,
+        accepted
+      })
+    )
+  })
+  return Promise.all(promises)
+}
 
 const sendSuccessResponse = (
   body: RegisterRequestBody,
@@ -105,8 +128,35 @@ const sendSuccessResponse = (
     }
   }
 }
-const createUser = (
-  display_name: string,
+
+const verifyParameters = (
+  deviceId: string,
+  device_display_name?: string,
+  password?: string
+): Promise<void> => {
+  return new Promise((resolve, reject) => {
+    if (
+      password !== null &&
+      password !== undefined &&
+      (typeof password !== 'string' || password.length > 512)
+    ) {
+      reject(errMsg('invalidParam', 'Invalid password'))
+    } else if (
+      device_display_name !== null &&
+      device_display_name !== undefined &&
+      (typeof device_display_name !== 'string' ||
+        device_display_name.length > 512)
+    ) {
+      reject(errMsg('invalidParam', 'Invalid initial_device_display_name'))
+    } else if (typeof deviceId !== 'string' || deviceId.length > 512) {
+      reject(errMsg('invalidParam', 'Invalid device_id'))
+    } else {
+      resolve()
+    }
+  })
+}
+const registerAccount = (
+  device_display_name: string,
   clientServer: MatrixClientServer,
   userId: string,
   accessToken: string,
@@ -116,85 +166,157 @@ const createUser = (
   body: RegisterRequestBody,
   res: e.Response | ServerResponse,
   kind: string,
-  password?: string
+  password?: string,
+  upgrade?: boolean
 ): void => {
-  if (typeof display_name !== 'string' || display_name.length > 512) {
-    send(
-      res,
-      400,
-      errMsg('invalidParam', 'Invalid initial_device_display_name')
-    )
-  }
-  if (typeof deviceId !== 'string' || deviceId.length > 512) {
-    send(res, 400, errMsg('invalidParam', 'Invalid device_id'))
-  }
-  const createUserPromise = (): Promise<DbGetResult> => {
-    const commonUserData = {
-      name: userId,
-      creation_ts: epoch(),
-      is_guest: kind === 'guest' ? 1 : 0,
-      user_type: kind,
-      shadow_banned: 0
-    }
-
-    if (password) {
-      if (typeof password !== 'string' || password.length > 512) {
-        send(res, 400, errMsg('invalidParam', 'Invalid password'))
-      }
-      const hash = new Hash()
-      return hash.ready.then(() => {
-        return clientServer.matrixDb.insert('users', {
-          ...commonUserData,
-          password_hash: hash.sha256(password) // TODO: Handle other hashing algorithms
-        })
-      })
-    } else {
-      return clientServer.matrixDb.insert('users', commonUserData)
-    }
-  }
-
-  createUserPromise()
-    .then((userPromise) => {
-      const userIpPromise = clientServer.matrixDb.insert('user_ips', {
-        user_id: userId,
-        access_token: accessToken,
-        device_id: deviceId,
-        ip,
-        user_agent: userAgent,
-        last_seen: epoch()
-      })
-      const newDevicePromise = clientServer.matrixDb.insert('devices', {
-        user_id: userId,
-        device_id: deviceId,
-        display_name,
-        last_seen: epoch(),
-        ip,
-        user_agent: userAgent
-      })
-      const accessTokenPromise = clientServer.matrixDb.insert('access_tokens', {
-        id: randomString(64), // To be fixed later
-        user_id: userId,
-        token: accessToken,
-        device_id: deviceId,
-        valid_until_ms: 0
-      }) // TODO : Add a token_lifetime in the config, replace the id with a correct one, and fill the 'puppets_user_id' row with the right value
-      return Promise.all([
-        newDevicePromise,
-        userPromise,
-        userIpPromise,
-        accessTokenPromise
-      ])
-    })
+  verifyParameters(deviceId, device_display_name, password)
     .then(() => {
-      sendSuccessResponse(body, res, userId, accessToken, deviceId)
+      const createUserPromise = (): Promise<DbGetResult> => {
+        const commonUserData = {
+          name: userId,
+          creation_ts: epoch(),
+          is_guest: kind === 'guest' ? 1 : 0,
+          user_type: kind,
+          shadow_banned: 0
+        }
+
+        if (password) {
+          const hash = new Hash()
+          return hash.ready.then(() => {
+            return clientServer.matrixDb.insert('users', {
+              ...commonUserData,
+              password_hash: hash.sha256(password) // TODO: Handle other hashing algorithms
+            })
+          })
+        } else {
+          return clientServer.matrixDb.insert('users', commonUserData)
+        }
+      }
+
+      createUserPromise()
+        .then((userPromise) => {
+          const userIpPromise = clientServer.matrixDb.insert('user_ips', {
+            user_id: userId,
+            access_token: accessToken,
+            device_id: deviceId,
+            ip,
+            user_agent: userAgent,
+            last_seen: epoch()
+          })
+          const newDevicePromise = clientServer.matrixDb.insert('devices', {
+            user_id: userId,
+            device_id: deviceId,
+            display_name: device_display_name,
+            last_seen: epoch(),
+            ip,
+            user_agent: userAgent
+          })
+          const fillPoliciesPromise = fillPoliciesDB(userId, clientServer, 0) // 0 means the user hasn't accepted the policies yet, used in Identity Server
+          const accessTokenPromise = clientServer.matrixDb.insert(
+            'access_tokens',
+            {
+              id: randomString(64), // To be fixed later
+              user_id: userId,
+              token: accessToken,
+              device_id: deviceId,
+              valid_until_ms: 0
+            }
+          ) // TODO : Add a token_lifetime in the config, replace the id with a correct one, and fill the 'puppets_user_id' row with the right value
+          return Promise.all([
+            newDevicePromise,
+            userPromise,
+            userIpPromise,
+            accessTokenPromise,
+            fillPoliciesPromise
+          ])
+        })
+        .then(() => {
+          sendSuccessResponse(body, res, userId, accessToken, deviceId)
+        })
+        .catch((e) => {
+          // istanbul ignore next
+          clientServer.logger.error('Error while registering a user', e)
+          // istanbul ignore next
+          send(res, 500, {
+            error: 'Error while registering a user'
+          })
+        })
     })
     .catch((e) => {
-      // istanbul ignore next
-      clientServer.logger.error('Error while registering a user', e)
-      // istanbul ignore next
-      send(res, 500, {
-        error: 'Error while registering a user'
-      })
+      send(res, 400, e, clientServer.logger)
+    })
+}
+
+const upgradeGuest = (
+  clientServer: MatrixClientServer,
+  oldUserId: string,
+  newUserId: string,
+  accessToken: string,
+  deviceId: string,
+  body: RegisterRequestBody,
+  res: e.Response | ServerResponse,
+  password?: string
+): void => {
+  verifyParameters(deviceId)
+    .then(() => {
+      const commonUserData = {
+        is_guest: 0,
+        user_type: 'user',
+        name: newUserId
+      }
+      const hash = new Hash()
+      const updateUsersPromise = password
+        ? hash.ready.then(() => {
+            return clientServer.matrixDb.updateWithConditions(
+              'users',
+              {
+                ...commonUserData,
+                password_hash: hash.sha256(password) // TODO: Handle other hashing algorithms
+              },
+              [{ field: 'name', value: oldUserId }]
+            )
+          })
+        : clientServer.matrixDb.updateWithConditions('users', commonUserData, [
+            { field: 'name', value: oldUserId }
+          ])
+
+      const updateUserIpsPromise = clientServer.matrixDb.updateWithConditions(
+        'user_ips',
+        { user_id: newUserId },
+        [
+          {
+            field: 'access_token',
+            value: accessToken
+          }
+        ]
+      )
+
+      const updateDevicePromise = clientServer.matrixDb.updateWithConditions(
+        'devices',
+        { user_id: newUserId, device_id: deviceId },
+        [{ field: 'user_id', value: oldUserId }]
+      )
+
+      Promise.all([
+        updateUsersPromise,
+        updateUserIpsPromise,
+        updateDevicePromise
+      ])
+        .then(() => {
+          sendSuccessResponse(body, res, newUserId, accessToken, deviceId)
+        })
+        .catch((e) => {
+          // istanbul ignore next
+          clientServer.logger.error(
+            "Error while updating guest's informations",
+            e
+          )
+          // istanbul ignore next
+          send(res, 500, e)
+        })
+    })
+    .catch((e) => {
+      send(res, 400, e, clientServer.logger)
     })
 }
 
@@ -242,7 +364,7 @@ const register = (clientServer: MatrixClientServer): expressAppHandler => {
                     } else {
                       initial_device_display_name =
                         body.initial_device_display_name ?? randomString(20) // Length chosen arbitrarily
-                      createUser(
+                      registerAccount(
                         initial_device_display_name,
                         clientServer,
                         userId,
@@ -312,46 +434,16 @@ const register = (clientServer: MatrixClientServer): expressAppHandler => {
                 return
               }
               const deviceId = body.device_id ?? (rows[0].device_id as string)
-              const updateUsersPromise =
-                clientServer.matrixDb.updateWithConditions(
-                  'users',
-                  { is_guest: 0, user_type: 'user', name: userId },
-                  [{ field: 'name', value: rows[0].user_id as string }]
-                )
-              const updateUserIpsPromise =
-                clientServer.matrixDb.updateWithConditions(
-                  'user_ips',
-                  { user_id: userId },
-                  [
-                    {
-                      field: 'access_token',
-                      value: parameters.guest_access_token as string
-                    }
-                  ]
-                )
-              const updateDevicePromise =
-                clientServer.matrixDb.updateWithConditions(
-                  'devices',
-                  { user_id: userId, device_id: deviceId },
-                  [{ field: 'user_id', value: rows[0].user_id as string }]
-                )
-              Promise.all([
-                updateUsersPromise,
-                updateUserIpsPromise,
-                updateDevicePromise
-              ])
-                .then(() => {
-                  sendSuccessResponse(body, res, userId, accessToken, deviceId)
-                })
-                .catch((e) => {
-                  // istanbul ignore next
-                  clientServer.logger.error(
-                    "Error while updating guest's informations",
-                    e
-                  )
-                  // istanbul ignore next
-                  send(res, 500, e)
-                })
+              upgradeGuest(
+                clientServer,
+                rows[0].user_id as string,
+                userId,
+                parameters.guest_access_token as string,
+                deviceId,
+                body,
+                res,
+                body.password
+              )
             })
             .catch((e) => {
               // istanbul ignore next
@@ -368,7 +460,7 @@ const register = (clientServer: MatrixClientServer): expressAppHandler => {
           const initial_device_display_name = body.initial_device_display_name
             ? body.initial_device_display_name
             : randomString(20) // Length chosen arbitrarily
-          createUser(
+          registerAccount(
             initial_device_display_name,
             clientServer,
             toMatrixId(username, clientServer.conf.server_name),

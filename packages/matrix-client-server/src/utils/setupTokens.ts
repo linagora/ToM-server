@@ -9,6 +9,7 @@ export let validToken2: string
 export let validToken3: string
 export let validRefreshToken1: string
 export let validRefreshToken2: string
+export let validRefreshToken3: string
 export async function setupTokens(
   clientServer: MatrixClientServer,
   logger: TwakeLogger
@@ -19,8 +20,10 @@ export async function setupTokens(
   validToken3 = randomString(64)
   const validRefreshTokenId1 = randomString(64)
   const validRefreshTokenId2 = randomString(64)
+  const validRefreshTokenId3 = randomString(64)
   validRefreshToken1 = randomString(64)
   validRefreshToken2 = randomString(64)
+  validRefreshToken3 = randomString(64)
 
   try {
     await clientServer.matrixDb.insert('user_ips', {
@@ -60,6 +63,13 @@ export async function setupTokens(
     })
 
     await clientServer.matrixDb.insert('refresh_tokens', {
+      id: validRefreshTokenId3,
+      user_id: '@seconduser:example.com',
+      device_id: 'seconddevice',
+      token: validRefreshToken3
+    })
+
+    await clientServer.matrixDb.insert('refresh_tokens', {
       id: validRefreshTokenId2,
       user_id: '@seconduser:example.com',
       device_id: 'seconddevice',
@@ -67,7 +77,7 @@ export async function setupTokens(
     })
 
     await clientServer.matrixDb.insert('access_tokens', {
-      id: validRefreshTokenId1,
+      id: randomString(64),
       user_id: '@thirduser:example.com',
       device_id: 'thirddevice',
       token: randomString(64),
@@ -106,13 +116,6 @@ export async function setupTokens(
       valid_until_ms: epoch() + 64000
     })
 
-    await clientServer.matrixDb.insert('access_tokens', {
-      user_id: '@testuser3:example.com',
-      device_id: 'testdevice3',
-      token: validToken3,
-      valid_until_ms: epoch() + 64000
-    })
-
     await clientServer.matrixDb.insert('threepid_validation_session', {
       session_id: 'validatedSession',
       medium: 'email',
@@ -121,6 +124,15 @@ export async function setupTokens(
       last_send_attempt: 1,
       validated_at: epoch()
     }) // Validated session
+
+    await clientServer.matrixDb.insert('access_tokens', {
+      id: randomString(64),
+      user_id: '@thirduser:example.com',
+      device_id: 'thirddevice',
+      token: validToken3,
+      refresh_token_id: validRefreshTokenId3,
+      valid_until_ms: epoch() + 64000
+    })
 
     await clientServer.matrixDb.insert('user_threepids', {
       user_id: '@validated:example.com',
@@ -136,6 +148,7 @@ export async function setupTokens(
       token: 'wrongUserAccessToken'
     })
   } catch (e) {
+    // istanbul ignore next
     logger.error('Error creating tokens for authentication', e)
   }
 }
