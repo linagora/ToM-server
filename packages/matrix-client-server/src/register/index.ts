@@ -136,6 +136,9 @@ const registerAccount = (
       commonUserData.user_type = 'guest' // User type is NULL for normal users
     }
     if (password) {
+      if (typeof password !== 'string' || password.length > 512) {
+        send(res, 400, errMsg('invalidParam', 'Invalid password'))
+      }
       const hash = new Hash()
       return hash.ready.then(() => {
         return clientServer.matrixDb.insert('users', {
