@@ -120,7 +120,8 @@ const registerAccount = (
   body: RegisterRequestBody,
   res: e.Response | ServerResponse,
   kind: string,
-  password?: string
+  password?: string,
+  upgrade?: boolean
 ): void => {
   const accessToken = randomString(64)
   const refreshToken = randomString(64)
