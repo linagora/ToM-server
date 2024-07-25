@@ -4,21 +4,29 @@ import type http from 'http'
 import {
   type MatrixIdentifier,
   type AuthenticationData,
-  type ClientServerDb,
   type Config,
   type AppServiceRegistration,
   type ThreepidCreds,
   type AuthenticationFlowContent,
-  type AuthenticationTypes
+  type AuthenticationTypes,
+  type ApplicationServiceAuth
 } from '../types'
 import { Hash, randomString } from '@twake/crypto'
 import type MatrixDBmodified from '../matrixDb'
-import { errMsg, jsonContent, send, toMatrixId } from '@twake/utils'
+import {
+  epoch,
+  errMsg,
+  jsonContent,
+  send,
+  toMatrixId,
+  matrixIdRegex
+} from '@twake/utils'
 import type MatrixClientServer from '..'
 export type UiAuthFunction = (
   req: Request | http.IncomingMessage,
   res: Response | http.ServerResponse,
   allowedFlows: AuthenticationFlowContent,
+  description: string,
   callback: (data: any, userId: string | null) => void
 ) => void
 
@@ -59,16 +67,17 @@ export const validateUserWithUIAuthentication = (
   req: Request | http.IncomingMessage,
   res: Response | http.ServerResponse,
   userId: string,
+  description: string,
   data: any,
   callback: (data: any, userId: string | null) => void
 ): void => {
-  const verificationCallback = (obj: any, userId: string | null): void => {
-    if (userId === '') {
-      // TODO : Replace this with Regex validation of userId once this is added to utils package
-      send(res, 400, errMsg('invalidParam'), clientServer.logger)
-    } else {
-      callback(obj, userId)
-    }
+  if (userId != null && !matrixIdRegex.test(userId)) {
+    send(
+      res,
+      400,
+      errMsg('invalidParam', 'Invalid user ID'),
+      clientServer.logger
+    )
   }
   // Authentication flows to verify that the user who has an access token is indeed who he claims to be, and has not just stolen another  user's access token
   getAvailableUIAuthFlows(clientServer, userId)
@@ -77,7 +86,8 @@ export const validateUserWithUIAuthentication = (
         req,
         res,
         verificationFlows,
-        verificationCallback
+        description,
+        callback
       )
     })
     .catch((e) => {
@@ -122,6 +132,7 @@ const getAvailableUIAuthFlows = async (
   })
   return availableFlows
 }
+
 // eslint-disable-next-line @typescript-eslint/promise-function-async
 const checkAuthentication = (
   auth: AuthenticationData,
@@ -154,7 +165,12 @@ const checkAuthentication = (
                 }
               })
               .catch((e) => {
-                reject(errMsg('forbidden'))
+                reject(
+                  errMsg(
+                    'forbidden',
+                    'The user does not have a password registered'
+                  )
+                )
               })
           })
           .catch((e) => {
@@ -165,6 +181,7 @@ const checkAuthentication = (
     case 'm.login.sso':
       return new Promise((resolve, reject) => {
         // TODO : Complete this after implementing fallback mechanism : https://spec.matrix.org/v1.11/client-server-api/#fallback
+        resolve('') // Placeholder return statement
       })
     case 'm.login.msisdn':
     case 'm.login.email.identity': // Both cases are handled the same through their threepid_creds
@@ -210,6 +227,7 @@ const checkAuthentication = (
     case 'm.login.recaptcha':
       return new Promise((resolve, reject) => {
         // TODO : Implement this after understanding the structure of the response field in request body
+        resolve('') // Placeholder return statement
       })
     case 'm.login.dummy':
       return new Promise((resolve, reject) => {
@@ -274,52 +292,91 @@ const checkAuthentication = (
       return new Promise((resolve, reject) => {
         resolve('') // The client makes sure the user has accepted all the terms before sending the request indicating the user has accepted the terms
       })
-    case 'm.login.application_service': // TODO : Check the structure of the ApplicationServiceAuth in the spec.
-      return new Promise((resolve, reject) => {
-        const applicationServices = conf.application_services
-        const asTokens: string[] = applicationServices.map(
-          (as: AppServiceRegistration) => as.as_token
-        )
-        if (req.headers.authorization === undefined) {
-          reject(errMsg('missingToken'))
-        }
-        // @ts-expect-error req.headers.authorization is defined
-        const token = req.headers.authorization.split(' ')[1]
-        if (asTokens.includes(token)) {
-          // Check if the request is made by an application-service
-          const appService = applicationServices.find(
-            (as: AppServiceRegistration) => as.as_token === token
-          )
-          // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
-          const userId = auth.username
-            ? toMatrixId(auth.username, conf.server_name)
-            : // @ts-expect-error : appService is defined since asTokens contains token
-              toMatrixId(appService?.sender_localpart, conf.server_name)
-          if (
-            // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
-            appService?.namespaces.users &&
-            !appService?.namespaces.users.some((namespace) =>
-              new RegExp(namespace.regex).test(userId)
-            ) // check if the userId is registered by the appservice
-          ) {
-            reject(errMsg('invalidUsername'))
-          } else {
-            resolve(userId)
-          }
-        } else {
-          reject(errMsg('unknownToken'))
-        }
-      })
   }
+  // istanbul ignore next
+  return new Promise((resolve, reject) => {
+    // istanbul ignore next
+    resolve('') // Placeholder to prevent error since m.login.application_service isn't handled here
+  })
 }
 
+// eslint-disable-next-line @typescript-eslint/promise-function-async
+const handleAppServiceAuthentication = (
+  req: Request | http.IncomingMessage,
+  conf: Config,
+  auth: ApplicationServiceAuth
+): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const applicationServices = conf.application_services
+    const asTokens: string[] = applicationServices.map(
+      (as: AppServiceRegistration) => as.as_token
+    )
+    if (req.headers.authorization === undefined) {
+      reject(errMsg('missingToken'))
+    }
+    // @ts-expect-error req.headers.authorization is defined
+    const token = req.headers.authorization.split(' ')[1]
+    if (asTokens.includes(token)) {
+      // Check if the request is made by an application-service
+      const appService = applicationServices.find(
+        (as: AppServiceRegistration) => as.as_token === token
+      )
+      // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+      const userId = auth.username
+        ? toMatrixId(auth.username, conf.server_name)
+        : // @ts-expect-error : appService is defined since asTokens contains token
+          toMatrixId(appService?.sender_localpart, conf.server_name)
+      if (
+        // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+        appService?.namespaces.users &&
+        !appService?.namespaces.users.some((namespace) =>
+          new RegExp(namespace.regex).test(userId)
+        ) // check if the userId is registered by the appservice
+      ) {
+        reject(errMsg('invalidUsername'))
+      } else {
+        resolve(userId)
+      }
+    } else {
+      reject(errMsg('unknownToken'))
+    }
+  })
+}
+
+const doAppServiceAuthentication = (
+  req: Request | http.IncomingMessage,
+  res: Response | http.ServerResponse,
+  allowedFlows: AuthenticationFlowContent,
+  auth: ApplicationServiceAuth,
+  conf: Config,
+  logger: TwakeLogger,
+  obj: any,
+  callback: (data: any, userId: string | null) => void
+): void => {
+  handleAppServiceAuthentication(req, conf, auth)
+    .then((userId) => {
+      callback(obj, userId)
+    })
+    .catch((e) => {
+      send(
+        res,
+        401,
+        {
+          errcode: e.errcode,
+          error: e.error,
+          ...allowedFlows
+        },
+        logger
+      )
+    })
+}
 const UiAuthenticate = (
-  db: ClientServerDb,
+  // db: ClientServerDb,
   matrixDb: MatrixDBmodified,
   conf: Config,
   logger: TwakeLogger
 ): UiAuthFunction => {
-  return (req, res, allowedFlows, callback) => {
+  return (req, res, allowedFlows, description, callback) => {
     jsonContent(req, res, logger, (obj) => {
       // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
       if (!(obj as requestBody).auth) {
@@ -329,30 +386,64 @@ const UiAuthenticate = (
         })
       } else {
         const auth = (obj as requestBody).auth as AuthenticationData
-        checkAuthentication(auth, matrixDb, conf, req)
-          .then((userId) => {
-            if (auth.type === 'm.login.application_service') {
-              callback(obj, userId) // Arguments of callback are subject to change
-              return
-            }
-            db.insert('ui_auth_sessions', {
-              session_id: auth.session,
-              stage_type: auth.type
-            })
-              .then((rows) => {
-                db.get('ui_auth_sessions', ['stage_type'], {
-                  session_id: auth.session
-                })
-                  .then((rows) => {
-                    const completed: string[] = rows.map(
-                      (row) => row.stage_type as string
-                    )
-                    const authOver = allowedFlows.flows.some((flow) => {
-                      return (
-                        flow.stages.length === completed.length &&
-                        flow.stages.every((stage) => completed.includes(stage))
-                      )
+        if (auth.type === 'm.login.application_service') {
+          doAppServiceAuthentication(
+            req,
+            res,
+            allowedFlows,
+            auth,
+            conf,
+            logger,
+            obj,
+            callback
+          )
+          return
+        }
+        matrixDb
+          .get('ui_auth_sessions', ['*'], { session_id: auth.session })
+          .then((rows) => {
+            if (rows.length === 0) {
+              logger.error(`Unknown session ID : ${auth.session}`)
+              send(res, 400, errMsg('noValidSession'), logger)
+            } else if (
+              rows[0].uri !== req.url ||
+              rows[0].method !== req.method
+            ) {
+              send(
+                res,
+                403,
+                errMsg(
+                  'forbidden',
+                  'Requested operation has changed during the UI authentication session.'
+                ),
+                logger
+              )
+            } else {
+              checkAuthentication(auth, matrixDb, conf, req)
+                .then((userId) => {
+                  matrixDb
+                    .insert('ui_auth_sessions_credentials', {
+                      session_id: auth.session,
+                      stage_type: auth.type,
+                      result: userId
                     })
+                    .then((rows) => {
+                      matrixDb
+                        .get('ui_auth_sessions_credentials', ['stage_type'], {
+                          session_id: auth.session
+                        })
+                        .then((rows) => {
+                          const completed: string[] = rows.map(
+                            (row) => row.stage_type as string
+                          )
+                          const authOver = allowedFlows.flows.some((flow) => {
+                            return (
+                              flow.stages.length === completed.length &&
+                              flow.stages.every((stage) =>
+                                completed.includes(stage)
+                              )
+                            )
+                          })
 
                     // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
                     if (authOver) {

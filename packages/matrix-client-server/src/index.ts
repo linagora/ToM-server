@@ -62,9 +62,7 @@ import GetFilter from './user/filter/getFilter'
 import refresh from './refresh'
 import openIdRequestToken from './user/openid/requestToken'
 
-const tables = {
-  ui_auth_sessions: 'session_id TEXT NOT NULL, stage_type TEXT NOT NULL'
-}
+// const tables = {} // Add tables declaration here to add new tables to this.db
 
 export default class MatrixClientServer extends MatrixIdentityServer<clientDbCollections> {
   api: {
@@ -80,9 +78,9 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
   private _uiauthenticate!: UiAuthFunction
 
   set uiauthenticate(uiauthenticate: UiAuthFunction) {
-    this._uiauthenticate = (req, res, allowedFlows, cb) => {
+    this._uiauthenticate = (req, res, allowedFlows, description, cb) => {
       this.rateLimiter(req as Request, res as Response, () => {
-        uiauthenticate(req, res, allowedFlows, cb)
+        uiauthenticate(req, res, allowedFlows, description, cb)
       })
     }
   }
@@ -108,15 +106,10 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
         ? conf
         : undefined
     ) as Config
-    super(serverConf, confDesc, logger, tables)
+    super(serverConf, confDesc, logger) // Add tables in here if we add additional tables to this.db in the tables variable above
     this.api = { get: {}, post: {}, put: {}, delete: {} }
     this.matrixDb = new MatrixDBmodified(serverConf, this.logger)
-    this.uiauthenticate = UiAuthenticate(
-      this.db,
-      this.matrixDb,
-      serverConf,
-      this.logger
-    )
+    this.uiauthenticate = UiAuthenticate(this.matrixDb, serverConf, this.logger)
     this.authenticate = Authenticate(this.matrixDb, this.logger, this.conf)
     this.ready = new Promise((resolve, reject) => {
       this.ready

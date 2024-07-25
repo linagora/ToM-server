@@ -6,7 +6,7 @@ import { buildMatrixDb, buildUserDB } from './__testData__/buildUserDB'
 import { type Config } from './types'
 import defaultConfig from './__testData__/registerConf.json'
 import { getLogger, type TwakeLogger } from '@twake/logger'
-import { Hash, randomString } from '@twake/crypto'
+import { randomString } from '@twake/crypto'
 import {
   setupTokens,
   validToken,
@@ -392,21 +392,6 @@ describe('Use configuration file', () => {
         expect(response.statusCode).toBe(401)
       })
       it('should accept valid token', async () => {
-        await clientServer.matrixDb.insert('users', {
-          name: '@testuser:example.com',
-          password_hash: 'hashedpassword',
-          creation_ts: Date.now(),
-          admin: 0,
-          upgrade_ts: 'null',
-          is_guest: 0,
-          appservice_id: 'null',
-          consent_version: 'null',
-          consent_server_notice_sent: 'null',
-          user_type: 'null',
-          deactivated: 0,
-          shadow_banned: 0,
-          consent_ts: 'null'
-        })
         const response = await request(app)
           .get('/_matrix/client/v3/account/whoami')
           .set('Authorization', `Bearer ${validToken}`)

@@ -36,9 +36,11 @@ interface RegisterRequestBody {
 }
 
 // Allowed flow stages for /register endpoint.
-// Doesn't contain password, email and msisdn since the user isn't registered yet (spec is unclear about this, only my interpretation)
+// Doesn't contain password since the user is registering a new account, so he doesn't have a password yet.
 // for now only terms has params, spec is unclear about the other types. Add params here if needed in other endpoints
 // For production,maybe these params should be included in the config. The values here are only illustrative and taken from examples in the spec, they are not relevant and should be adapted before deployment.
+// Maybe we should add parameters in the config to tell whether or not the server supports a given login type,
+// and create a function to get the supported flows reading the config instead of hardcoding the supported flows here.
 // TODO : Modify this before deployment
 export const registerAllowedFlows: AuthenticationFlowContent = {
   flows: [
@@ -46,7 +48,7 @@ export const registerAllowedFlows: AuthenticationFlowContent = {
       stages: ['m.login.application_service']
     },
     {
-      stages: ['m.login.terms', 'm.login.dummy'] // m.login.dummy added for testing purposes. This variable and the one before need to be updated before going into production (maybe add them to the config ?)
+      stages: ['m.login.terms']
     },
     {
       stages: ['m.login.registration_token']
@@ -59,6 +61,12 @@ export const registerAllowedFlows: AuthenticationFlowContent = {
     },
     {
       stages: ['m.login.dummy']
+    },
+    {
+      stages: ['m.login.msisdn']
+    },
+    {
+      stages: ['m.login.email.identity']
     }
   ],
   params: {
@@ -67,7 +75,11 @@ export const registerAllowedFlows: AuthenticationFlowContent = {
     'm.login.application_service': getParams('m.login.application_service'),
     'm.login.registration_token': getParams('m.login.registration_token'),
     'm.login.terms': getParams('m.login.terms'),
-    'm.login.sso': getParams('m.login.sso')
+    'm.login.sso': getParams('m.login.sso'),
+    'm.login.recaptcha': getParams('m.login.recaptcha'),
+    'm.login.dummy': getParams('m.login.dummy'),
+    'm.login.msisdn': getParams('m.login.msisdn'),
+    'm.login.email.identity': getParams('m.login.email.identity')
   }
 }
 
@@ -231,6 +243,14 @@ const register = (clientServer: MatrixClientServer): expressAppHandler => {
       })
     } else {
       jsonContent(req, res, clientServer.logger, (obj) => {
+        if (parameters.kind !== 'guest') {
+          send(
+            res,
+            400,
+            errMsg('invalidParam', 'Kind must be either "guest" or "user"')
+          )
+          return
+        }
         const body = obj as unknown as RegisterRequestBody
         if (parameters.guest_access_token) {
           // Case where the guest user wants to upgrade his account : https://spec.matrix.org/v1.11/client-server-api/#guest-access
