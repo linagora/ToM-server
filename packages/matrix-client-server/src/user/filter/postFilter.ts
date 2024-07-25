@@ -4,7 +4,7 @@ import {
   jsonContent,
   send,
   validateParametersStrict,
-  matrixIdRegex
+  isMatrixIdValid
 } from '@twake/utils'
 import type MatrixClientServer from '../..'
 import type { Request } from 'express'
@@ -33,7 +33,7 @@ const PostFilter = (clientServer: MatrixClientServer): expressAppHandler => {
             // TODO : verify if the user is allowed to make requests for this user id
             // we consider for the moment that the user is only allowed to make requests for his own user id
             const userId = (req as Request).params.userId
-            if (!matrixIdRegex.test(userId)) {
+            if (!isMatrixIdValid(userId)) {
               send(res, 400, errMsg('invalidParam', 'Invalid user ID'))
               return
             }

@@ -1,4 +1,9 @@
-import { errMsg, send, type expressAppHandler } from '@twake/utils'
+import {
+  errMsg,
+  isMatrixIdValid,
+  send,
+  type expressAppHandler
+} from '@twake/utils'
 import type MatrixClientServer from '..'
 import { type Request, type Response } from 'express'
 
@@ -6,13 +11,11 @@ interface Parameters {
   username: string
 }
 
-const matrixIdRegex = /^@[0-9a-zA-Z._=-]+:[0-9a-zA-Z.-]+$/
-
 const available = (clientServer: MatrixClientServer): expressAppHandler => {
   return (req, res) => {
     // @ts-expect-error req has query
     const userId = (req.query as Parameters).username
-    if (!matrixIdRegex.test(userId)) {
+    if (!isMatrixIdValid(userId)) {
       clientServer.logger.error('Invalid user ID')
       send(
         res,

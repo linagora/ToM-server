@@ -5,7 +5,7 @@ import {
   errMsg,
   type expressAppHandler,
   send,
-  matrixIdRegex
+  isMatrixIdValid
 } from '@twake/utils'
 
 interface PutRequestBody {
@@ -27,7 +27,7 @@ const putStatus = (clientServer: MatrixClientServer): expressAppHandler => {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-expect-error
     const userId: string = req.params.userId as string
-    if (!matrixIdRegex.test(userId)) {
+    if (!isMatrixIdValid(userId)) {
       send(
         res,
         400,

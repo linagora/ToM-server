@@ -1,6 +1,6 @@
 import { type TwakeLogger } from '@twake/logger'
 import { type ClientEvent } from '../types'
-import { eventTypeRegex, matrixIdRegex, roomIdRegex } from '@twake/utils'
+import { isEventTypeValid, isMatrixIdValid, isRoomIdValid } from '@twake/utils'
 
 export class SafeClientEvent {
   private event: ClientEvent
@@ -23,7 +23,7 @@ export class SafeClientEvent {
     if (
       event.type == null ||
       typeof event.type !== 'string' ||
-      !eventTypeRegex.test(event.type)
+      !isEventTypeValid(event.type)
     ) {
       console.log('Invalid type', event.type)
       logger?.error('Invalid type')
@@ -32,7 +32,7 @@ export class SafeClientEvent {
     if (
       event.room_id == null ||
       typeof event.room_id !== 'string' ||
-      !roomIdRegex.test(event.room_id)
+      !isRoomIdValid(event.room_id)
     ) {
       logger?.error('Invalid room_id')
       throw new Error('Invalid room_id')
@@ -40,7 +40,7 @@ export class SafeClientEvent {
     if (
       event.sender == null ||
       typeof event.sender !== 'string' ||
-      !matrixIdRegex.test(event.sender)
+      !isMatrixIdValid(event.sender)
     ) {
       logger?.error('Invalid sender')
       throw new Error('Invalid sender')

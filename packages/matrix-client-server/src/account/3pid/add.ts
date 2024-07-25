@@ -1,6 +1,9 @@
 import {
   epoch,
   errMsg,
+  isClientSecretValid,
+  isMatrixIdValid,
+  isSidValid,
   send,
   validateParameters,
   type expressAppHandler
@@ -25,9 +28,6 @@ const schema = {
   sid: true
 }
 
-const clientSecretRegex = /^[0-9a-zA-Z.=_-]{6,255}$/
-const sidRegex = /^[0-9a-zA-Z.=_-]{1,255}$/
-
 const add = (clientServer: MatrixClientServer): expressAppHandler => {
   return (req, res) => {
     clientServer.authenticate(req, res, (data, token) => {
@@ -41,7 +41,7 @@ const add = (clientServer: MatrixClientServer): expressAppHandler => {
         data,
         (obj, userId) => {
           validateParameters(res, schema, obj, clientServer.logger, (obj) => {
-            if (!clientSecretRegex.test((obj as RequestBody).client_secret)) {
+            if (!isClientSecretValid((obj as RequestBody).client_secret)) {
               send(
                 res,
                 400,
@@ -50,7 +50,7 @@ const add = (clientServer: MatrixClientServer): expressAppHandler => {
               )
               return
             }
-            if (!sidRegex.test((obj as RequestBody).sid)) {
+            if (!isSidValid((obj as RequestBody).sid)) {
               send(
                 res,
                 400,
