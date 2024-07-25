@@ -9,6 +9,8 @@ const countryRegex: RegExp = /^[A-Z]{2}$/ // ISO 3166-1 alpha-2 as per the spec 
 const phoneNumberRegex: RegExp = /^[1-9]\d{1,14}$/
 const emailRegex: RegExp = /^\w[+.-\w]*\w@\w[.-\w]*\w\.\w{2,6}$/
 const roomAliasRegex: RegExp = /^#[a-zA-Z0-9_\-=.+]+:[a-zA-Z0-9\-.]+$/ // From : https://spec.matrix.org/v1.11/#room-structure
+const hostnameRe =
+  /^((([a-zA-Z0-9][-a-zA-Z0-9]*)?[a-zA-Z0-9])[.])*([a-zA-Z][-a-zA-Z0-9]*[a-zA-Z0-9]|[a-zA-Z])(:(\d+))?$/
 
 export const isClientSecretValid = (clientSecret: string): boolean =>
   clientSecretRegex.test(clientSecret)
@@ -37,3 +39,6 @@ export const isEmailValid = (email: string): boolean => emailRegex.test(email)
 
 export const isRoomAliasValid = (roomAlias: string): boolean =>
   roomAliasRegex.test(roomAlias)
+
+export const isHostnameValid = (hostname: string): boolean =>
+  hostnameRe.test(hostname)
