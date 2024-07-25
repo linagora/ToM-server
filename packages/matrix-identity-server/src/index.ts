@@ -55,6 +55,8 @@ export { default as createTables } from './db/sql/_createTables'
 export { default as Pg } from './db/sql/pg'
 export { default as SQLite } from './db/sql/sqlite'
 export { default as MatrixDB, type MatrixDBBackend } from './matrixDb'
+export { default as computePolicy } from './terms/_computePolicies'
+export { getUrlsFromPolicies } from './terms/index.post'
 export * from './types'
 export {
   default as UserDB,

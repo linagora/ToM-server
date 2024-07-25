@@ -12,7 +12,7 @@ import computePolicy from './_computePolicies'
 
 type UrlsFromPolicies = Record<string, string[]>
 
-const getUrlsFromPolicies = (policies: Policies): UrlsFromPolicies => {
+export const getUrlsFromPolicies = (policies: Policies): UrlsFromPolicies => {
   const urlsFromPolicies: UrlsFromPolicies = {}
   Object.keys(policies).forEach((policyName) => {
     const policy = policies[policyName as 'privacy_policy' | 'terms_of_service']

@@ -12,7 +12,9 @@ import {
   validToken,
   validToken2,
   validRefreshToken1,
-  validRefreshToken2
+  validRefreshToken2,
+  validRefreshToken3,
+  validToken3
 } from './utils/setupTokens'
 
 process.env.TWAKE_CLIENT_SERVER_CONF = './src/__testData__/registerConf.json'
@@ -320,6 +322,19 @@ describe('Use configuration file', () => {
         expect(response.statusCode).toBe(200)
         expect(response.body).toHaveProperty('access_token')
         expect(response.body).toHaveProperty('refresh_token')
+      })
+      it('should refuse a request with a used access token', async () => {
+        const response = await request(app)
+          .post('/_matrix/client/v3/refresh')
+          .send({ refresh_token: validRefreshToken3}) 
+          expect(response.statusCode).toBe(200)
+          expect(response.body).toHaveProperty('access_token')
+          expect(response.body).toHaveProperty('refresh_token')
+          const response1 = await request(app)
+          .get('/_matrix/client/v3/account/whoami')
+          .set('Authorization', `Bearer ${validToken3}`)
+          .set('Accept', 'application/json')
+        expect(response1.statusCode).toBe(401)
       })
     })
     describe('/_matrix/client/v3/refresh', () => {
