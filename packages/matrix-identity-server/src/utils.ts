@@ -54,11 +54,13 @@ export const Authenticate = <T extends string = never>(
                   }
                 })
                 .catch((e) => {
+                  /* istanbul ignore next */
                   logger.error(
-                    `Please accept our updated terms of service before continuing.`,
+                    'Error while trying to get the terms from the database',
                     e
                   )
-                  send(res, 403, errMsg('termsNotSigned'))
+                  /* istanbul ignore next */
+                  send(res, 500, errMsg('unknown'))
                 })
             } else {
               callback(JSON.parse(rows[0].data as string), token)
@@ -66,11 +68,13 @@ export const Authenticate = <T extends string = never>(
           }
         })
         .catch((e) => {
+          /* istanbul ignore next */
           logger.error(
-            `${req.socket.remoteAddress as string} sent an invalid token`,
+            'Error while trying to get the token from the database',
             e
           )
-          send(res, 401, errMsg('unAuthorized'))
+          /* istanbul ignore next */
+          send(res, 500, errMsg('unknown'))
         })
     } else {
       logger.error(
