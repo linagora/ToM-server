@@ -32,7 +32,7 @@ const add = (clientServer: MatrixClientServer): expressAppHandler => {
         req,
         res,
         data.sub,
-        "add a 3pid to a user account",
+        'add a 3pid to a user account',
         data,
         (obj, userId) => {
           validateParameters(res, schema, obj, clientServer.logger, (obj) => {
