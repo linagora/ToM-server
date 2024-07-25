@@ -7,13 +7,13 @@ User Interactive Authentication is based on the Matrix.org Client-Server specifi
 
 To use this method in functions that require user interactive authentication, follow these steps:
 
-1. Use the `uiauthenticate` method similarly to the `authenticate` method for  `/register` and `/login` endpoints
+1. Use the `uiauthenticate` method similarly to the `authenticate` method for  `/register`
 2. For other endpoints that use UI-Authentication and that are authenticated (such as `/add` for example), you first need to call the `clientServer.authenticate` method, followed by `validateUserWithUiAuthentication`. The second method checks that the user associated to the given access token is indeed who he claims to be, it serves as additional security.
 3. Since we insert the request body in the `clientdict` column of the `ui_auth_sessions` table, we need to verify its content. For that we check type validity and that the strings are not too long (don't exceed 512 characters) with the `verifyClientDict` method. For this to work, you need to pass in an object that imposes the reference types as the `reference` argument as it is done in account/3pid/add.ts or register/index.ts .
 
 ## Allowed Flows
 
-For endpoints other than `/register`, the allowed flows are generated automatically inside the `validateUserWithUiAuthentication` method. For the `/register` and`/login`endpoints, they are generated using the config with a function defined in utils/userInteractiveAuthentication.
+For endpoints other than `/register`, the allowed flows are generated automatically inside the `validateUserWithUiAuthentication` method. For the `/register` endpoint, they are generated using the config with a function defined in utils/userInteractiveAuthentication.
 
 ## Callback Usage
 
