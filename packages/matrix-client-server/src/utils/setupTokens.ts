@@ -1,4 +1,4 @@
-import { randomString } from '@twake/crypto'
+import { Hash, randomString } from '@twake/crypto'
 import { epoch } from '@twake/utils'
 import type MatrixClientServer from '..' // Adjust the import path as necessary
 import { type TwakeLogger } from '@twake/logger'
@@ -9,7 +9,6 @@ export let validToken2: string
 export let validToken3: string
 export let validRefreshToken1: string
 export let validRefreshToken2: string
-
 export async function setupTokens(
   clientServer: MatrixClientServer,
   logger: TwakeLogger
@@ -31,6 +30,15 @@ export async function setupTokens(
       ip: '127.0.0.1',
       user_agent: 'curl/7.31.0-DEV',
       last_seen: 1411996332123
+    })
+
+    const hash = new Hash()
+    await hash.ready
+    await clientServer.matrixDb.insert('users', {
+      name: '@testuser:example.com',
+      password_hash: hash.sha256(
+        '$2a$10$zQJv3V3Kjw7Jq7Ww1X7z5e1QXsVd1m3JdV9vG6t8Jv7jQz4Z5J1QK'
+      )
     })
 
     await clientServer.matrixDb.insert('user_ips', {
@@ -120,6 +128,12 @@ export async function setupTokens(
       address: 'validated@example.com',
       validated_at: epoch(),
       added_at: epoch()
+    })
+
+    await clientServer.matrixDb.insert('access_tokens', {
+      id: 0,
+      user_id: 'wrongUserId',
+      token: 'wrongUserAccessToken'
     })
   } catch (e) {
     logger.error('Error creating tokens for authentication', e)
