@@ -36,9 +36,11 @@ interface RegisterRequestBody {
 }
 
 // Allowed flow stages for /register endpoint.
-// Doesn't contain password, email and msisdn since the user isn't registered yet (spec is unclear about this, only my interpretation)
+// Doesn't contain password since the user is registering a new account, so he doesn't have a password yet.
 // for now only terms has params, spec is unclear about the other types. Add params here if needed in other endpoints
 // For production,maybe these params should be included in the config. The values here are only illustrative and taken from examples in the spec, they are not relevant and should be adapted before deployment.
+// Maybe we should add parameters in the config to tell whether or not the server supports a given login type,
+// and create a function to get the supported flows reading the config instead of hardcoding the supported flows here.
 // TODO : Modify this before deployment
 export const registerAllowedFlows: AuthenticationFlowContent = {
   flows: [
@@ -46,7 +48,7 @@ export const registerAllowedFlows: AuthenticationFlowContent = {
       stages: ['m.login.application_service']
     },
     {
-      stages: ['m.login.terms', 'm.login.dummy'] // m.login.dummy added for testing purposes. This variable and the one before need to be updated before going into production (maybe add them to the config ?)
+      stages: ['m.login.terms']
     },
     {
       stages: ['m.login.registration_token']
@@ -59,6 +61,12 @@ export const registerAllowedFlows: AuthenticationFlowContent = {
     },
     {
       stages: ['m.login.dummy']
+    },
+    {
+      stages: ['m.login.msisdn']
+    },
+    {
+      stages: ['m.login.email.identity']
     }
   ],
   params: {
@@ -67,7 +75,11 @@ export const registerAllowedFlows: AuthenticationFlowContent = {
     'm.login.application_service': getParams('m.login.application_service'),
     'm.login.registration_token': getParams('m.login.registration_token'),
     'm.login.terms': getParams('m.login.terms'),
-    'm.login.sso': getParams('m.login.sso')
+    'm.login.sso': getParams('m.login.sso'),
+    'm.login.recaptcha': getParams('m.login.recaptcha'),
+    'm.login.dummy': getParams('m.login.dummy'),
+    'm.login.msisdn': getParams('m.login.msisdn'),
+    'm.login.email.identity': getParams('m.login.email.identity')
   }
 }
 
@@ -106,6 +118,16 @@ const createUser = (
   kind: string,
   password?: string
 ): void => {
+  if (typeof display_name !== 'string' || display_name.length > 512) {
+    send(
+      res,
+      400,
+      errMsg('invalidParam', 'Invalid initial_device_display_name')
+    )
+  }
+  if (typeof deviceId !== 'string' || deviceId.length > 512) {
+    send(res, 400, errMsg('invalidParam', 'Invalid device_id'))
+  }
   const createUserPromise = (): Promise<DbGetResult> => {
     const commonUserData = {
       name: userId,
@@ -116,6 +138,9 @@ const createUser = (
     }
 
     if (password) {
+      if (typeof password !== 'string' || password.length > 512) {
+        send(res, 400, errMsg('invalidParam', 'Invalid password'))
+      }
       const hash = new Hash()
       return hash.ready.then(() => {
         return clientServer.matrixDb.insert('users', {
@@ -188,68 +213,82 @@ const register = (clientServer: MatrixClientServer): expressAppHandler => {
     const accessToken = randomString(64)
     const userAgent = req.headers['user-agent'] ?? 'undefined'
     if (parameters.kind === 'user') {
-      clientServer.uiauthenticate(req, res, registerAllowedFlows, (obj) => {
-        const body = obj as unknown as RegisterRequestBody
-        const deviceId = body.device_id ?? randomString(20) // Length chosen arbitrarily
-        const username = body.username ?? randomString(9) // Length chosen to match the localpart restrictions for a Matrix userId
-        const userId = toMatrixId(username, clientServer.conf.server_name)
-        clientServer.matrixDb
-          .get('users', ['name'], {
-            name: userId
-          })
-          .then((rows) => {
-            if (rows.length > 0) {
-              send(res, 400, errMsg('userInUse'))
-            } else {
-              clientServer.matrixDb
-                .get('devices', ['display_name', 'user_id'], {
-                  device_id: deviceId
-                })
-                .then((deviceRows) => {
-                  let initial_device_display_name
-                  if (deviceRows.length > 0) {
-                    // TODO : Refresh access tokens using refresh tokens and invalidate the previous access_token associated with the device after implementing the /refresh endpoint
-                  } else {
-                    initial_device_display_name =
-                      body.initial_device_display_name ?? randomString(20) // Length chosen arbitrarily
-                    createUser(
-                      initial_device_display_name,
-                      clientServer,
-                      userId,
-                      accessToken,
-                      deviceId,
-                      ip,
-                      userAgent,
-                      body,
-                      res,
-                      'user',
-                      body.password
+      clientServer.uiauthenticate(
+        req,
+        res,
+        registerAllowedFlows,
+        'register a new account',
+        (obj) => {
+          const body = obj as unknown as RegisterRequestBody
+          const deviceId = body.device_id ?? randomString(20) // Length chosen arbitrarily
+          const username = body.username ?? randomString(9) // Length chosen to match the localpart restrictions for a Matrix userId
+          const userId = toMatrixId(username, clientServer.conf.server_name) // Checks for username validity are done in this function
+          clientServer.matrixDb
+            .get('users', ['name'], {
+              name: userId
+            })
+            .then((rows) => {
+              if (rows.length > 0) {
+                send(res, 400, errMsg('userInUse'))
+              } else {
+                clientServer.matrixDb
+                  .get('devices', ['display_name', 'user_id'], {
+                    device_id: deviceId
+                  })
+                  .then((deviceRows) => {
+                    let initial_device_display_name
+                    if (deviceRows.length > 0) {
+                      // TODO : Refresh access tokens using refresh tokens and invalidate the previous access_token associated with the device after implementing the /refresh endpoint
+                    } else {
+                      initial_device_display_name =
+                        body.initial_device_display_name ?? randomString(20) // Length chosen arbitrarily
+                      createUser(
+                        initial_device_display_name,
+                        clientServer,
+                        userId,
+                        accessToken,
+                        deviceId,
+                        ip,
+                        userAgent,
+                        body,
+                        res,
+                        'user',
+                        body.password
+                      )
+                    }
+                  })
+                  .catch((e) => {
+                    // istanbul ignore next
+                    clientServer.logger.error(
+                      'Error while checking if a device_id is already in use',
+                      e
                     )
-                  }
-                })
-                .catch((e) => {
-                  // istanbul ignore next
-                  clientServer.logger.error(
-                    'Error while checking if a device_id is already in use',
-                    e
-                  )
-                  // istanbul ignore next
-                  send(res, 500, e)
-                })
-            }
-          })
-          .catch((e) => {
-            // istanbul ignore next
-            clientServer.logger.error(
-              'Error while checking if a username is already in use',
-              e
-            )
-            // istanbul ignore next
-            send(res, 500, e)
-          })
-      })
+                    // istanbul ignore next
+                    send(res, 500, e)
+                  })
+              }
+            })
+            .catch((e) => {
+              // istanbul ignore next
+              clientServer.logger.error(
+                'Error while checking if a username is already in use',
+                e
+              )
+              // istanbul ignore next
+              send(res, 500, e)
+            })
+        }
+      )
     } else {
       jsonContent(req, res, clientServer.logger, (obj) => {
+        if (parameters.kind !== 'guest') {
+          send(
+            res,
+            400,
+            errMsg('invalidParam', 'Kind must be either "guest" or "user"')
+          )
+          return
+        }
         const body = obj as unknown as RegisterRequestBody
         if (parameters.guest_access_token) {
           // Case where the guest user wants to upgrade his account : https://spec.matrix.org/v1.11/client-server-api/#guest-access

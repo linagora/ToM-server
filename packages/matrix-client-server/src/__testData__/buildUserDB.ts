@@ -44,7 +44,10 @@ const matrixDbQueries = [
   'CREATE TABLE IF NOT EXISTS user_threepid_id_server ( user_id TEXT NOT NULL, medium TEXT NOT NULL, address TEXT NOT NULL, id_server TEXT NOT NULL )',
   'CREATE TABLE IF NOT EXISTS "access_tokens" (id BIGINT PRIMARY KEY, user_id TEXT NOT NULL, device_id TEXT, token TEXT NOT NULL,valid_until_ms BIGINT,puppets_user_id TEXT,last_validated BIGINT, refresh_token_id BIGINT REFERENCES refresh_tokens (id) ON DELETE CASCADE, used BOOLEAN,UNIQUE(token))',
   'CREATE TABLE IF NOT EXISTS refresh_tokens (id BIGINT PRIMARY KEY,user_id TEXT NOT NULL,device_id TEXT NOT NULL,token TEXT NOT NULL,next_token_id BIGINT REFERENCES refresh_tokens (id) ON DELETE CASCADE, expiry_ts BIGINT DEFAULT NULL, ultimate_session_expiry_ts BIGINT DEFAULT NULL,UNIQUE(token))',
-  'CREATE TABLE IF NOT EXISTS "user_filters" ( user_id TEXT NOT NULL, filter_id BIGINT NOT NULL, filter_json BYTEA NOT NULL )'
+  'CREATE TABLE IF NOT EXISTS "user_filters" ( user_id TEXT NOT NULL, filter_id BIGINT NOT NULL, filter_json BYTEA NOT NULL )',
+  'CREATE TABLE ui_auth_sessions(session_id TEXT NOT NULL,creation_time BIGINT NOT NULL, serverdict TEXT NOT NULL,  clientdict TEXT NOT NULL,uri TEXT NOT NULL, method TEXT NOT NULL, description TEXT NOT NULL, UNIQUE (session_id))',
+  'CREATE TABLE ui_auth_sessions_credentials(session_id TEXT NOT NULL, stage_type TEXT NOT NULL,  result TEXT NOT NULL, UNIQUE (session_id, stage_type),FOREIGN KEY (session_id) REFERENCES ui_auth_sessions (session_id))',
+  'CREATE TABLE ui_auth_sessions_ips(session_id TEXT NOT NULL,ip TEXT NOT NULL,user_agent TEXT NOT NULL,UNIQUE (session_id, ip, user_agent), FOREIGN KEY (session_id)REFERENCES ui_auth_sessions (session_id))'
 ]
 
 // eslint-disable-next-line @typescript-eslint/promise-function-async

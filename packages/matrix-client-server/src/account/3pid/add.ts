@@ -23,17 +23,17 @@ const schema = {
 
 const clientSecretRegex = /^[0-9a-zA-Z.=_-]{6,255}$/
 const sidRegex = /^[0-9a-zA-Z.=_-]{1,255}$/
-const matrixIdRegex = /^@[0-9a-zA-Z._=-]+:[0-9a-zA-Z.-]+$/
 
 const add = (clientServer: MatrixClientServer): expressAppHandler => {
   return (req, res) => {
-    clientServer.authenticate(req, res, (obj, userId) => {
+    clientServer.authenticate(req, res, (data, token) => {
       validateUserWithUIAuthentication(
         clientServer,
         req,
         res,
-        userId as string,
-        obj,
+        data.sub,
+        "add a 3pid to a user account",
+        data,
         (obj, userId) => {
           validateParameters(res, schema, obj, clientServer.logger, (obj) => {
             if (!clientSecretRegex.test((obj as RequestBody).client_secret)) {
