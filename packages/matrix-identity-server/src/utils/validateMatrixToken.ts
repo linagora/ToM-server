@@ -1,11 +1,8 @@
 /* eslint-disable prefer-promise-reject-errors */
 import { type TwakeLogger } from '@twake/logger'
+import { isHostnameValid } from '@twake/utils'
 import { MatrixResolve } from 'matrix-resolve'
 import fetch from 'node-fetch'
-
-const hostnameRe =
-  /^((([a-zA-Z0-9][-a-zA-Z0-9]*)?[a-zA-Z0-9])[.])*([a-zA-Z][-a-zA-Z0-9]*[a-zA-Z0-9]|[a-zA-Z])(:(\d+))?$/
-
 interface userInfoResponse {
   sub: string
 }
@@ -18,7 +15,7 @@ const validateMatrixToken = (logger: TwakeLogger) => {
   // eslint-disable-next-line @typescript-eslint/promise-function-async
   return (matrixServer: string, accessToken: string): Promise<string> => {
     /* istanbul ignore if */
-    if (!hostnameRe.test(matrixServer))
+    if (!isHostnameValid(matrixServer))
       return Promise.reject('Bad matrix_server_name')
     return new Promise((resolve, reject) => {
       matrixResolve

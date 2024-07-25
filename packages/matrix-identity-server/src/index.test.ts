@@ -130,6 +130,10 @@ describe('Use configuration file', () => {
     idServer?.cleanJobs()
   })
 
+  test('Should have filtered the invalid federated_identity_services', () => {
+    expect(idServer.conf.federated_identity_services).toEqual([])
+  })
+
   test('Reject unimplemented endpoint with 404', async () => {
     const response = await request(app).get('/_matrix/unknown')
     expect(response.statusCode).toBe(404)

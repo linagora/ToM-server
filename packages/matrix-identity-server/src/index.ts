@@ -6,7 +6,7 @@ import defaultConfDesc from './config.json'
 import CronTasks from './cron'
 import {
   errMsg as _errMsg,
-  hostnameRe,
+  isHostnameValid,
   send,
   type expressAppHandler
 } from '@twake/utils'
@@ -128,14 +128,17 @@ export default class MatrixIdentityServer<T extends string = never> {
         ? '/etc/twake/identity-server.conf'
         : undefined
     ) as Config
-    this.conf.federated_identity_services =
-      typeof this.conf.federated_identity_services === 'object'
-        ? this.conf.federated_identity_services
-        : typeof this.conf.federated_identity_services === 'string'
-        ? (this.conf.federated_identity_services as string)
-            .split(/[,\s]+/)
-            .filter((addr) => addr.match(hostnameRe))
-        : []
+    this.conf.federated_identity_services = Array.isArray(
+      this.conf.federated_identity_services
+    )
+      ? this.conf.federated_identity_services.filter((addr) =>
+          isHostnameValid(addr)
+        )
+      : typeof this.conf.federated_identity_services === 'string'
+      ? (this.conf.federated_identity_services as string)
+          .split(/[,\s]+/)
+          .filter((addr) => isHostnameValid(addr))
+      : []
     this._convertStringtoNumberInConfig()
     this.rateLimiter = rateLimit({
       windowMs: this.conf.rate_limiting_window,
