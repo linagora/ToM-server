@@ -39,6 +39,9 @@ export type Collections =
   | 'refresh_tokens'
   | 'open_id_tokens'
   | 'user_filters'
+  | 'ui_auth_sessions'
+  | 'ui_auth_sessions_ips'
+  | 'ui_auth_sessions_credentials'
 
 type sqlComparaisonOperator = '=' | '!=' | '>' | '<' | '>=' | '<=' | '<>'
 interface ISQLCondition {

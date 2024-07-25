@@ -327,7 +327,7 @@ interface TermsAuth {
   session: string
 }
 
-interface ApplicationServiceAuth {
+export interface ApplicationServiceAuth {
   type: 'm.login.application_service'
   username: string
 }
