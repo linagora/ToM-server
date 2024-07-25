@@ -178,7 +178,7 @@ const RequestToken = (clientServer: MatrixClientServer): expressAppHandler => {
             errMsg('invalidParam', 'Invalid client_secret'),
             clientServer.logger
           )
-        } else if (!validCountryRegex.test(country)) {
+        } else if (!isCountryValid(country)) {
           send(
             res,
             400,
