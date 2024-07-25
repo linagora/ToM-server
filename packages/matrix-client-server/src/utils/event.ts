@@ -25,7 +25,6 @@ export class SafeClientEvent {
       typeof event.type !== 'string' ||
       !isEventTypeValid(event.type)
     ) {
-      console.log('Invalid type', event.type)
       logger?.error('Invalid type')
       throw new Error('Invalid type')
     }
