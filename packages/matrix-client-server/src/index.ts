@@ -63,6 +63,10 @@ import bind from './account/3pid/bind'
 import refresh from './refresh'
 import openIdRequestToken from './user/openid/requestToken'
 import available from './register/available'
+import getRoomState from './rooms/roomId/getState'
+import getRoomStateEvent, {
+  getRoomStateEventNoStatekey
+} from './rooms/roomId/getStateEvent'
 
 // const tables = {} // Add tables declaration here to add new tables to this.db
 
@@ -161,7 +165,12 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
             '/_matrix/client/v3/user/:userId/openid/request_token': badMethod,
             '/_matrix/client/v3/register/available': available(this),
             '/_matrix/client/v3/user/:userId/filter': badMethod,
-            '/_matrix/client/v3/user/:userId/filter/:filterId': GetFilter(this)
+            '/_matrix/client/v3/user/:userId/filter/:filterId': GetFilter(this),
+            '/_matrix/client/v3/rooms/:roomId/state': getRoomState(this),
+            '/_matrix/client/v3/rooms/:roomId/state/:eventType/:stateKey':
+              getRoomStateEvent(this),
+            '/_matrix/client/v3/rooms/:roomId/state/:eventType':
+              getRoomStateEventNoStatekey(this)
           }
           this.api.post = {
             '/_matrix/client/v3/account/whoami': badMethod,
@@ -206,7 +215,11 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
               openIdRequestToken(this),
             '/_matrix/client/v3/register/available': badMethod,
             '/_matrix/client/v3/user/:userId/filter': PostFilter(this),
-            '/_matrix/client/v3/user/:userId/filter/:filterId': badMethod
+            '/_matrix/client/v3/user/:userId/filter/:filterId': badMethod,
+            '/_matrix/client/v3/rooms/:roomId/state': badMethod,
+            '/_matrix/client/v3/rooms/:roomId/state/:eventType/:stateKey':
+              badMethod,
+            '/_matrix/client/v3/rooms/:roomId/state/:eventType': badMethod
           }
           this.api.put = {
             '/_matrix/client/v3/account/whoami': badMethod,
@@ -250,7 +263,11 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
             '/_matrix/client/v3/user/:userId/openid/request_token': badMethod,
             '/_matrix/client/v3/register/available': badMethod,
             '/_matrix/client/v3/user/:userId/filter': badMethod,
-            '/_matrix/client/v3/user/:userId/filter/:filterId': badMethod
+            '/_matrix/client/v3/user/:userId/filter/:filterId': badMethod,
+            '/_matrix/client/v3/rooms/:roomId/state': badMethod,
+            '/_matrix/client/v3/rooms/:roomId/state/:eventType/:stateKey':
+              badMethod,
+            '/_matrix/client/v3/rooms/:roomId/state/:eventType': badMethod
           }
           this.api.delete = {
             '/_matrix/client/v3/account/whoami': badMethod,
@@ -284,7 +301,11 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
             '/_matrix/client/v3/user/:userId/openid/request_token': badMethod,
             '/_matrix/client/v3/register/available': badMethod,
             '/_matrix/client/v3/user/:userId/filter': badMethod,
-            '/_matrix/client/v3/user/:userId/filter/:filterId': badMethod
+            '/_matrix/client/v3/user/:userId/filter/:filterId': badMethod,
+            '/_matrix/client/v3/rooms/:roomId/state': badMethod,
+            '/_matrix/client/v3/rooms/:roomId/state/:eventType/:stateKey':
+              badMethod,
+            '/_matrix/client/v3/rooms/:roomId/state/:eventType': badMethod
           }
           resolve(true)
         })

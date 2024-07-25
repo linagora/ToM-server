@@ -47,7 +47,8 @@ const matrixDbQueries = [
   'CREATE TABLE IF NOT EXISTS "user_filters" ( user_id TEXT NOT NULL, filter_id BIGINT NOT NULL, filter_json BYTEA NOT NULL )',
   'CREATE TABLE ui_auth_sessions(session_id TEXT NOT NULL,creation_time BIGINT NOT NULL, serverdict TEXT NOT NULL,  clientdict TEXT NOT NULL,uri TEXT NOT NULL, method TEXT NOT NULL, description TEXT NOT NULL, UNIQUE (session_id))',
   'CREATE TABLE ui_auth_sessions_credentials(session_id TEXT NOT NULL, stage_type TEXT NOT NULL,  result TEXT NOT NULL, UNIQUE (session_id, stage_type),FOREIGN KEY (session_id) REFERENCES ui_auth_sessions (session_id))',
-  'CREATE TABLE ui_auth_sessions_ips(session_id TEXT NOT NULL,ip TEXT NOT NULL,user_agent TEXT NOT NULL,UNIQUE (session_id, ip, user_agent), FOREIGN KEY (session_id)REFERENCES ui_auth_sessions (session_id))'
+  'CREATE TABLE ui_auth_sessions_ips(session_id TEXT NOT NULL,ip TEXT NOT NULL,user_agent TEXT NOT NULL,UNIQUE (session_id, ip, user_agent), FOREIGN KEY (session_id)REFERENCES ui_auth_sessions (session_id))',
+  'CREATE TABLE IF NOT EXISTS current_state_events (event_id text NOT NULL,room_id text NOT NULL,type text NOT NULL,state_key text NOT NULL,membership text)'
 ]
 
 // eslint-disable-next-line @typescript-eslint/promise-function-async

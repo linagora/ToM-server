@@ -16,9 +16,9 @@ const GetJoinedMembers = (
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-expect-error
     const roomId: string = ((req as Request).params as parameters).roomId
-    ClientServer.authenticate(req, res, (data, id) => {
+    ClientServer.authenticate(req, res, (token) => {
       // Check if the user has permission to retrieve this event
-      const userId: string = data.sub
+      const userId: string = token.sub
       ClientServer.matrixDb
         .get('local_current_membership', ['membership'], {
           user_id: userId,
@@ -28,7 +28,7 @@ const GetJoinedMembers = (
           if (rows.length === 0 || rows[0].membership !== 'join') {
             send(
               res,
-              404,
+              403,
               errMsg(
                 'notFound',
                 'User not in the room - cannot retrieve members'
