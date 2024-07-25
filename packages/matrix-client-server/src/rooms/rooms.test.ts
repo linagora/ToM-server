@@ -7,7 +7,12 @@ import { type Config } from '../types'
 import defaultConfig from '../__testData__/registerConf.json'
 import { getLogger, type TwakeLogger } from '@twake/logger'
 import { randomString } from '@twake/crypto'
-import { setupTokens, validToken, validToken2 } from '../utils/setupTokens'
+import {
+  setupTokens,
+  validToken,
+  validToken2,
+  validToken3
+} from '../utils/setupTokens'
 
 jest.mock('node-fetch', () => jest.fn())
 
@@ -91,6 +96,489 @@ describe('Use configuration file', () => {
     })
     describe('/_matrix/client/v3/rooms', () => {
       describe('/_matrix/client/v3/rooms/:roomId', () => {
+        describe('/_matrix/client/v3/rooms/:roomId/state', () => {
+          beforeAll(async () => {
+            try {
+              await clientServer.matrixDb.insert('local_current_membership', {
+                room_id: '!testroom:example.com',
+                user_id: '@testuser:example.com',
+                membership: 'join',
+                event_id: 'joining_user'
+              })
+              await clientServer.matrixDb.insert('local_current_membership', {
+                room_id: '!testroom:example.com',
+                user_id: '@testuser2:example.com',
+                membership: 'leave',
+                event_id: 'leaving_user'
+              })
+              await clientServer.matrixDb.insert('events', {
+                event_id: 'joining_user',
+                room_id: '!testroom:example.com',
+                sender: '@admin:example.com',
+                state_key: '1',
+                type: 'm.room.member',
+                origin_server_ts: 0,
+                content: JSON.stringify({ body: 'test message' }),
+                topological_ordering: 0,
+                processed: 2,
+                outlier: 0
+              })
+              await clientServer.matrixDb.insert('events', {
+                event_id: 'leaving_user',
+                room_id: '!testroom:example.com',
+                sender: '@admin:example.com',
+                state_key: '2',
+                type: 'm.room.member',
+                origin_server_ts: 50,
+                content: JSON.stringify({ body: 'test message' }),
+                topological_ordering: 0,
+                processed: 2,
+                outlier: 0
+              })
+              await clientServer.matrixDb.insert('current_state_events', {
+                event_id: 'joining_user',
+                room_id: '!testroom:example.com',
+                type: 'm.room.member',
+                state_key: '1',
+                membership: 'join'
+              })
+              await clientServer.matrixDb.insert('current_state_events', {
+                event_id: 'some_event',
+                room_id: '!testroom:example.com',
+                type: 'm.room.message',
+                state_key: '3',
+                membership: 'join'
+              })
+              await clientServer.matrixDb.insert('current_state_events', {
+                event_id: 'leaving_user',
+                room_id: '!testroom:example.com',
+                type: 'm.room.member',
+                state_key: '2',
+                membership: 'leave'
+              })
+              await clientServer.matrixDb.insert('events', {
+                event_id: 'some_event',
+                room_id: '!testroom:example.com',
+                sender: '@admin:example.com',
+                state_key: '3',
+                type: 'm.room.message',
+                origin_server_ts: 0,
+                content: JSON.stringify({ body: 'test message' }),
+                topological_ordering: 0,
+                processed: 2,
+                outlier: 0
+              })
+            } catch (e) {
+              logger.error('Error setting up test data:', e)
+            }
+          })
+          afterAll(async () => {
+            try {
+              await clientServer.matrixDb.deleteEqual(
+                'local_current_membership',
+                'room_id',
+                '!testroom:example.com'
+              )
+              await clientServer.matrixDb.deleteEqual(
+                'events',
+                'room_id',
+                '!testroom:example.com'
+              )
+              await clientServer.matrixDb.deleteEqual(
+                'current_state_events',
+                'room_id',
+                '!testroom:example.com'
+              )
+            } catch (e) {
+              logger.error('Error tearing down test data:', e)
+            }
+          })
+
+          it('should require authentication', async () => {
+            const response = await request(app)
+              .get('/_matrix/client/v3/rooms/!testroom:example.com/state')
+              .set('Authorization', 'Bearer invalidToken')
+              .set('Accept', 'application/json')
+            expect(response.statusCode).toBe(401)
+          })
+          it('should return 400 if the query parameters are incorrect', async () => {
+            const response = await request(app)
+              .get('/_matrix/client/v3/rooms/invalid_room_id/state')
+              .set('Authorization', `Bearer ${validToken}`)
+              .set('Accept', 'application/json')
+            expect(response.statusCode).toBe(400)
+            expect(response.body.errcode).toBe('M_INVALID_PARAM')
+          })
+          it('should return 403 if the user has never been in the room', async () => {
+            const response = await request(app)
+              .get('/_matrix/client/v3/rooms/!testroom:example.com/state')
+              .set('Authorization', `Bearer ${validToken3}`)
+              .set('Accept', 'application/json')
+            expect(response.statusCode).toBe(403)
+          })
+          it('should return 200 and an array of 3 events if the user is in the room', async () => {
+            const response = await request(app)
+              .get('/_matrix/client/v3/rooms/!testroom:example.com/state')
+              .set('Authorization', `Bearer ${validToken}`)
+              .set('Accept', 'application/json')
+            expect(response.statusCode).toBe(200)
+            // CHeck if the response.body is an array
+            expect(response.body).toBeInstanceOf(Array)
+            expect(response.body).toHaveLength(3)
+          })
+          it('should return 3 instances of a ClientEvent', async () => {
+            const response = await request(app)
+              .get('/_matrix/client/v3/rooms/!testroom:example.com/state')
+              .set('Authorization', `Bearer ${validToken}`)
+              .set('Accept', 'application/json')
+            expect(response.statusCode).toBe(200)
+            expect(response.body).toHaveLength(3)
+            expect(response.body[0]).toHaveProperty('event_id')
+            expect(response.body[0]).toHaveProperty('room_id')
+            expect(response.body[0]).toHaveProperty('sender')
+            expect(response.body[0]).toHaveProperty('type')
+            expect(response.body[0]).toHaveProperty('origin_server_ts')
+            expect(response.body[0]).toHaveProperty('content')
+            expect(response.body[0]).toHaveProperty('state_key')
+            expect(response.body[0]).toHaveProperty('unsigned')
+          })
+          it('should return 200 and an array of 1 event if the user left the room', async () => {
+            const response = await request(app)
+              .get('/_matrix/client/v3/rooms/!testroom:example.com/state')
+              .set('Authorization', `Bearer ${validToken2}`)
+              .set('Accept', 'application/json')
+            expect(response.statusCode).toBe(200)
+            expect(response.body).toBeInstanceOf(Array)
+            expect(response.body).toHaveLength(1)
+            expect(response.body[0]).toHaveProperty('event_id', 'leaving_user')
+          })
+        })
+
+        describe('/_matrix/client/v3/rooms/:roomId/state/:eventType/:stateKey', () => {
+          beforeAll(async () => {
+            try {
+              await clientServer.matrixDb.insert('local_current_membership', {
+                room_id: '!testroom:example.com',
+                user_id: '@testuser:example.com',
+                membership: 'join',
+                event_id: 'joining_user'
+              })
+              await clientServer.matrixDb.insert('local_current_membership', {
+                room_id: '!testroom:example.com',
+                user_id: '@testuser2:example.com',
+                membership: 'leave',
+                event_id: 'leaving_user'
+              })
+              await clientServer.matrixDb.insert('events', {
+                event_id: 'joining_user',
+                room_id: '!testroom:example.com',
+                sender: '@admin:example.com',
+                state_key: '1',
+                type: 'm.room.member',
+                origin_server_ts: 0,
+                content: JSON.stringify({ body: 'test message' }),
+                topological_ordering: 0,
+                processed: 2,
+                outlier: 0
+              })
+              await clientServer.matrixDb.insert('events', {
+                event_id: 'leaving_user',
+                room_id: '!testroom:example.com',
+                sender: '@admin:example.com',
+                state_key: '2',
+                type: 'm.room.member',
+                origin_server_ts: 50,
+                content: JSON.stringify({ body: 'You left' }),
+                topological_ordering: 0,
+                processed: 2,
+                outlier: 0
+              })
+              await clientServer.matrixDb.insert('current_state_events', {
+                event_id: 'joining_user',
+                room_id: '!testroom:example.com',
+                type: 'm.room.member',
+                state_key: '1',
+                membership: 'join'
+              })
+              await clientServer.matrixDb.insert('current_state_events', {
+                event_id: 'some_event',
+                room_id: '!testroom:example.com',
+                type: 'm.room.message',
+                state_key: '',
+                membership: 'join'
+              })
+              await clientServer.matrixDb.insert('current_state_events', {
+                event_id: 'leaving_user',
+                room_id: '!testroom:example.com',
+                type: 'm.room.member',
+                state_key: '2',
+                membership: 'leave'
+              })
+              await clientServer.matrixDb.insert('events', {
+                event_id: 'some_event',
+                room_id: '!testroom:example.com',
+                sender: '@admin:example.com',
+                state_key: '',
+                type: 'm.room.message',
+                origin_server_ts: 0,
+                content: JSON.stringify({ body: 'test message' }),
+                topological_ordering: 0,
+                processed: 2,
+                outlier: 0
+              })
+            } catch (e) {
+              logger.error('Error setting up test data:', e)
+            }
+          })
+          afterAll(async () => {
+            try {
+              await clientServer.matrixDb.deleteEqual(
+                'local_current_membership',
+                'room_id',
+                '!testroom:example.com'
+              )
+              await clientServer.matrixDb.deleteEqual(
+                'events',
+                'room_id',
+                '!testroom:example.com'
+              )
+              await clientServer.matrixDb.deleteEqual(
+                'current_state_events',
+                'room_id',
+                '!testroom:example.com'
+              )
+            } catch (e) {
+              logger.error('Error tearing down test data:', e)
+            }
+          })
+
+          it('should require authentication', async () => {
+            const response = await request(app)
+              .get(
+                '/_matrix/client/v3/rooms/!testroom:example.com/state/m.room.member/2'
+              )
+              .set('Authorization', 'Bearer invalidToken')
+              .set('Accept', 'application/json')
+            expect(response.statusCode).toBe(401)
+          })
+          it('should return 400 if the path parameters are incorrect', async () => {
+            const response = await request(app)
+              .get(
+                '/_matrix/client/v3/rooms/invalid_room_id/state/m.room.member/2'
+              )
+              .set('Authorization', `Bearer ${validToken}`)
+              .set('Accept', 'application/json')
+            expect(response.statusCode).toBe(400)
+            expect(response.body.errcode).toBe('M_INVALID_PARAM')
+          })
+          it('should return 403 if the user has never been in the room', async () => {
+            const response = await request(app)
+              .get(
+                '/_matrix/client/v3/rooms/!testroom:example.com/state/m.room.member/2'
+              )
+              .set('Authorization', `Bearer ${validToken3}`)
+              .set('Accept', 'application/json')
+            expect(response.statusCode).toBe(403)
+          })
+          it('should return 404 NOT_FOUND if there is no event with such type and key', async () => {
+            const response = await request(app)
+              .get(
+                '/_matrix/client/v3/rooms/!testroom:example.com/state/m.room.account_data/2'
+              )
+              .set('Authorization', `Bearer ${validToken}`)
+              .set('Accept', 'application/json')
+            expect(response.statusCode).toBe(404)
+            expect(response.body.errcode).toBe('M_NOT_FOUND')
+          })
+          it('should return 200 if the user is in the room and stateKey is no empty string (3 ms)', async () => {
+            const response = await request(app)
+              .get(
+                '/_matrix/client/v3/rooms/!testroom:example.com/state/m.room.member/2'
+              )
+              .set('Authorization', `Bearer ${validToken}`)
+              .set('Accept', 'application/json')
+            expect(response.statusCode).toBe(200)
+            expect(response.body).toEqual({ body: 'You left' })
+          })
+          it('should return 200 and the content of a departure event if the user left the room', async () => {
+            const response = await request(app)
+              .get(
+                '/_matrix/client/v3/rooms/!testroom:example.com/state/m.room.message/3'
+              )
+              .set('Authorization', `Bearer ${validToken2}`)
+              .set('Accept', 'application/json')
+            expect(response.statusCode).toBe(200)
+            expect(response.body).toEqual({ body: 'You left' })
+          })
+        })
+
+        describe('/_matrix/client/v3/rooms/:roomId/state/:eventType/', () => {
+          beforeAll(async () => {
+            try {
+              await clientServer.matrixDb.insert('local_current_membership', {
+                room_id: '!testroom:example.com',
+                user_id: '@testuser:example.com',
+                membership: 'join',
+                event_id: 'joining_user'
+              })
+              await clientServer.matrixDb.insert('local_current_membership', {
+                room_id: '!testroom:example.com',
+                user_id: '@testuser2:example.com',
+                membership: 'leave',
+                event_id: 'leaving_user'
+              })
+              await clientServer.matrixDb.insert('events', {
+                event_id: 'joining_user',
+                room_id: '!testroom:example.com',
+                sender: '@admin:example.com',
+                state_key: '1',
+                type: 'm.room.member',
+                origin_server_ts: 0,
+                content: JSON.stringify({ body: 'test message' }),
+                topological_ordering: 0,
+                processed: 2,
+                outlier: 0
+              })
+              await clientServer.matrixDb.insert('events', {
+                event_id: 'leaving_user',
+                room_id: '!testroom:example.com',
+                sender: '@admin:example.com',
+                state_key: '2',
+                type: 'm.room.member',
+                origin_server_ts: 50,
+                content: JSON.stringify({ body: 'You left' }),
+                topological_ordering: 0,
+                processed: 2,
+                outlier: 0
+              })
+              await clientServer.matrixDb.insert('current_state_events', {
+                event_id: 'joining_user',
+                room_id: '!testroom:example.com',
+                type: 'm.room.member',
+                state_key: '1',
+                membership: 'join'
+              })
+              await clientServer.matrixDb.insert('current_state_events', {
+                event_id: 'some_event',
+                room_id: '!testroom:example.com',
+                type: 'm.room.message',
+                state_key: '',
+                membership: 'join'
+              })
+              await clientServer.matrixDb.insert('current_state_events', {
+                event_id: 'leaving_user',
+                room_id: '!testroom:example.com',
+                type: 'm.room.member',
+                state_key: '2',
+                membership: 'leave'
+              })
+              await clientServer.matrixDb.insert('events', {
+                event_id: 'some_event',
+                room_id: '!testroom:example.com',
+                sender: '@admin:example.com',
+                state_key: '',
+                type: 'm.room.message',
+                origin_server_ts: 0,
+                content: JSON.stringify({ body: 'test message' }),
+                topological_ordering: 0,
+                processed: 2,
+                outlier: 0
+              })
+            } catch (e) {
+              logger.error('Error setting up test data:', e)
+            }
+          })
+          afterAll(async () => {
+            try {
+              await clientServer.matrixDb.deleteEqual(
+                'local_current_membership',
+                'room_id',
+                '!testroom:example.com'
+              )
+              await clientServer.matrixDb.deleteEqual(
+                'events',
+                'room_id',
+                '!testroom:example.com'
+              )
+              await clientServer.matrixDb.deleteEqual(
+                'current_state_events',
+                'room_id',
+                '!testroom:example.com'
+              )
+            } catch (e) {
+              logger.error('Error tearing down test data:', e)
+            }
+          })
+
+          it('should require authentication', async () => {
+            const response = await request(app)
+              .get(
+                '/_matrix/client/v3/rooms/!testroom:example.com/state/m.room.member/'
+              )
+              .set('Authorization', 'Bearer invalidToken')
+              .set('Accept', 'application/json')
+            expect(response.statusCode).toBe(401)
+          })
+          it('should return 400 if the path parameters are incorrect', async () => {
+            const response = await request(app)
+              .get(
+                '/_matrix/client/v3/rooms/invalid_room_id/state/m.room.member'
+              )
+              .set('Authorization', `Bearer ${validToken}`)
+              .set('Accept', 'application/json')
+            expect(response.statusCode).toBe(400)
+            expect(response.body.errcode).toBe('M_INVALID_PARAM')
+          })
+          it('should return 403 if the user has never been in the room', async () => {
+            const response = await request(app)
+              .get(
+                '/_matrix/client/v3/rooms/!testroom:example.com/state/m.room.member/'
+              )
+              .set('Authorization', `Bearer ${validToken3}`)
+              .set('Accept', 'application/json')
+            expect(response.statusCode).toBe(403)
+          })
+          it('should return 404 NOT_FOUND if there is no event with such type and key', async () => {
+            const response = await request(app)
+              .get(
+                '/_matrix/client/v3/rooms/!testroom:example.com/state/m.room.account_data/'
+              )
+              .set('Authorization', `Bearer ${validToken}`)
+              .set('Accept', 'application/json')
+            expect(response.statusCode).toBe(404)
+            expect(response.body.errcode).toBe('M_NOT_FOUND')
+          })
+          it('should return 200 if the user is in the room and stateKey is an empty string', async () => {
+            const response = await request(app)
+              .get(
+                '/_matrix/client/v3/rooms/!testroom:example.com/state/m.room.member/'
+              )
+              .set('Authorization', `Bearer ${validToken}`)
+              .set('Accept', 'application/json')
+            expect(response.statusCode).toBe(200)
+            expect(response.body).toEqual({ body: 'test message' })
+          })
+          it('should return 200 if the user is in the room and there is no stateKey path', async () => {
+            const response = await request(app)
+              .get(
+                '/_matrix/client/v3/rooms/!testroom:example.com/state/m.room.member'
+              )
+              .set('Authorization', `Bearer ${validToken}`)
+              .set('Accept', 'application/json')
+            expect(response.statusCode).toBe(200)
+            expect(response.body).toEqual({ body: 'test message' })
+          })
+          it('should return 200 and the content of a departure event if the user left the room', async () => {
+            const response = await request(app)
+              .get(
+                '/_matrix/client/v3/rooms/!testroom:example.com/state/m.room.message/'
+              )
+              .set('Authorization', `Bearer ${validToken2}`)
+              .set('Accept', 'application/json')
+            expect(response.statusCode).toBe(200)
+            expect(response.body).toEqual({ body: 'You left' })
+          })
+        })
         describe('/_matrix/client/v3/rooms/:roomId/event/:eventId', () => {
           beforeAll(async () => {
             try {
@@ -107,12 +595,11 @@ describe('Use configuration file', () => {
                 outlier: 0
               })
 
-              await clientServer.matrixDb.insert('room_memberships', {
+              await clientServer.matrixDb.insert('local_current_membership', {
                 room_id: '!testroom:example.com',
                 user_id: '@testuser:example.com',
                 membership: 'join',
-                event_id: 'adding_user',
-                sender: '@admin:example.com'
+                event_id: 'adding_user'
               })
 
               await clientServer.matrixDb.insert('events', {
@@ -146,7 +633,7 @@ describe('Use configuration file', () => {
                 'adding_user'
               )
               await clientServer.matrixDb.deleteEqual(
-                'room_memberships',
+                'local_current_membership',
                 'event_id',
                 'adding_user'
               )
@@ -154,6 +641,16 @@ describe('Use configuration file', () => {
             } catch (e) {
               logger.error('Error tearing down test data', e)
             }
+          })
+          it('should return 400 if the query parameters are incorrect', async () => {
+            const response = await request(app)
+              .get(
+                '/_matrix/client/v3/rooms/invalid_room_id/event/invalid_event_id'
+              )
+              .set('Authorization', `Bearer ${validToken}`)
+              .set('Accept', 'application/json')
+            expect(response.statusCode).toBe(400)
+            expect(response.body.errcode).toBe('M_INVALID_PARAM')
           })
           it('should return 404 if the event does not exist', async () => {
             const response = await request(app)
@@ -200,14 +697,13 @@ describe('Use configuration file', () => {
               '{ body: test message }'
             )
           })
-          it('should return 404 if the user was not in the room at the time of the event', async () => {
+          it('should return 404 if the user is not part of the room currently', async () => {
             try {
-              await clientServer.matrixDb.insert('room_memberships', {
+              await clientServer.matrixDb.insert('local_current_membership', {
                 room_id: '!testroom:example.com',
-                user_id: '@testuser:example.com',
+                user_id: '@testuser2:example.com',
                 membership: 'leave',
-                event_id: 'deleting_user',
-                sender: '@admin:example.com'
+                event_id: 'deleting_user'
               })
 
               await clientServer.matrixDb.insert('events', {
@@ -229,13 +725,13 @@ describe('Use configuration file', () => {
               .get(
                 '/_matrix/client/v3/rooms/!testroom:example.com/event/event_to_retrieve'
               )
-              .set('Authorization', `Bearer ${validToken}`)
+              .set('Authorization', `Bearer ${validToken2}`)
               .set('Accept', 'application/json')
             expect(response.statusCode).toBe(404)
 
             try {
               await clientServer.matrixDb.deleteEqual(
-                'room_memberships',
+                'local_current_membership',
                 'event_id',
                 'deleting_user'
               )
@@ -336,14 +832,14 @@ describe('Use configuration file', () => {
               logger.error('Error tearing down test data', e)
             }
           })
-          it('should return 404 if the user is not in the room', async () => {
+          it('should return 403 if the user is not in the room', async () => {
             const response = await request(app)
               .get(
                 '/_matrix/client/v3/rooms/!testroom:example.com/joined_members'
               )
               .set('Authorization', `Bearer ${validToken2}`)
               .set('Accept', 'application/json')
-            expect(response.statusCode).toBe(404)
+            expect(response.statusCode).toBe(403)
           })
           it('should return 200 if the user is in the room', async () => {
             const response = await request(app)
@@ -585,7 +1081,14 @@ describe('Use configuration file', () => {
             .set('Accept', 'application/json')
           expect(response.statusCode).toBe(401)
         })
-
+        it('should return 400 if invalid room_id is provided', async () => {
+          const response = await request(app)
+            .get(`/_matrix/client/v3/rooms/invalid_room_id/aliases`)
+            .set('Authorization', `Bearer ${validToken}`)
+            .set('Accept', 'application/json')
+          expect(response.statusCode).toBe(400)
+          expect(response.body.errcode).toBe('M_INVALID_PARAM')
+        })
         it('should return the list of aliases for a world_readable room for any user', async () => {
           const response = await request(app)
             .get(`/_matrix/client/v3/rooms/${worldReadableRoomId}/aliases`)
