@@ -380,6 +380,7 @@ describe('Use configuration file', () => {
           .set('User-Agent', 'curl/7.31.0-DEV')
           .set('X-Forwarded-For', '203.0.113.195')
           .query({ kind: 'user' })
+          .set('Accept', 'application/json')
           .send({
             auth: {
               type: 'm.login.msisdn',
@@ -387,6 +388,7 @@ describe('Use configuration file', () => {
               threepid_creds: { sid, client_secret: 'secret' }
             }
           })
+        console.log(response.body)
         expect(response.statusCode).toBe(401)
         expect(response.body).toHaveProperty(
           'errcode',
@@ -405,6 +407,7 @@ describe('Use configuration file', () => {
         expect(submitTokenResponse.statusCode).toBe(200)
         const response = await request(app)
           .post('/_matrix/client/v3/register')
+          .set('Accept', 'application/json')
           .set('User-Agent', 'curl/7.31.0-DEV')
           .set('X-Forwarded-For', '203.0.113.195')
           .query({ kind: 'user' })
