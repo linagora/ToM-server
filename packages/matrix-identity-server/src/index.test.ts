@@ -1386,15 +1386,9 @@ describe('Use configuration file', () => {
     })
 
     describe('/_matrix/identity/v2/sign-ed25519 ', () => {
-      let keyPair: {
-        publicKey: string
-        privateKey: string
-        keyId: string
-      }
       let token: string
       let longKeyPair: { publicKey: string; privateKey: string; keyId: string }
       beforeAll(async () => {
-        keyPair = generateKeyPair('ed25519')
         longKeyPair = generateKeyPair('ed25519')
         await idServer.db.insert('longTermKeypairs', {
           name: 'currentKey',
@@ -1443,7 +1437,7 @@ describe('Use configuration file', () => {
           .set('Accept', 'application/json')
           .send({
             mxid: 'invalid_mxid',
-            private_key: keyPair.privateKey,
+            private_key: longKeyPair.privateKey,
             token
           })
         expect(response.statusCode).toBe(400)
@@ -1455,7 +1449,7 @@ describe('Use configuration file', () => {
           .set('Accept', 'application/json')
           .send({
             mxid: '@test:matrix.org',
-            private_key: keyPair.privateKey,
+            private_key: longKeyPair.privateKey,
             token: ''
           })
         expect(response.statusCode).toBe(400)
@@ -1467,7 +1461,7 @@ describe('Use configuration file', () => {
           .set('Accept', 'application/json')
           .send({
             mxid: '@test:matrix.org',
-            private_key: keyPair.privateKey,
+            private_key: longKeyPair.privateKey,
             token: 'invalidtoken'
           })
         expect(response.statusCode).toBe(404)
@@ -1479,7 +1473,7 @@ describe('Use configuration file', () => {
           .set('Accept', 'application/json')
           .send({
             mxid: '@test:matrix.org',
-            private_key: keyPair.privateKey,
+            private_key: longKeyPair.privateKey,
             token
           })
         expect(response.statusCode).toBe(200)
@@ -1702,7 +1696,7 @@ describe('_matrix/identity/v2/terms', () => {
 
     idServer2.logger.info('Adding the policies for the user in the db')
     try {
-      await fillPoliciesDB(userId, idServer2, 0)
+      fillPoliciesDB(userId, idServer2, 0)
       idServer2.logger.info('Successfully added policies for the user')
     } catch (e) {
       idServer2.logger.error('Error while setting up policies for the user', e)
@@ -1737,7 +1731,7 @@ describe('_matrix/identity/v2/terms', () => {
     beforeAll(async () => {
       idServer2.logger.info('Accepting the policies for the user in the db')
       try {
-        await fillPoliciesDB(userId, idServer2, 1)
+        fillPoliciesDB(userId, idServer2, 1)
         idServer2.logger.info('Successfully accepted policies for the user')
       } catch (e) {
         idServer2.logger.error('Error while accepting policies for the user', e)
