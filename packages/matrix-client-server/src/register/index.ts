@@ -10,7 +10,6 @@ import {
   toMatrixId
 } from '@twake/utils'
 import {
-  type AuthenticationFlowContent,
   type AuthenticationData
 } from '../types'
 import { Hash, randomString } from '@twake/crypto'
