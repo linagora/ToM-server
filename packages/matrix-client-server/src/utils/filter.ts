@@ -21,7 +21,7 @@ events of that type. not_rooms (or not_fields, etc.) being equal to [] will allo
 import { type TwakeLogger } from '@twake/logger'
 import { type ClientEvent } from '../types'
 
-import { validEventTypes, matrixIdRegex, roomIdRegex } from '@twake/utils'
+import { validEventTypes, isMatrixIdValid, isRoomIdValid } from '@twake/utils'
 
 type JsonMapping = Record<string, any>
 
@@ -570,9 +570,9 @@ const removeWrongTypes = (types: string[], logger?: TwakeLogger): string[] => {
 
 const removeWrongIds = (senders: string[], logger?: TwakeLogger): string[] => {
   return senders.filter((sender) => {
-    const isValid = matrixIdRegex.test(sender)
-    if (!isValid) {
-      logger?.warn(`Removed invalid sender: ${sender}`)
+    const isValid = isMatrixIdValid(sender)
+    if (!isValid && logger) {
+      logger.warn(`Removed invalid sender: ${sender}`)
     }
     return isValid
   })
@@ -583,7 +583,7 @@ const removeWrongRoomIds = (
   logger?: TwakeLogger
 ): string[] => {
   return rooms.filter((room) => {
-    const isValid = roomIdRegex.test(room)
+    const isValid = isRoomIdValid(room)
     if (!isValid) {
       logger?.warn(`Removed invalid room ID: ${room}`)
     }

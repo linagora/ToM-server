@@ -11,18 +11,16 @@ import type MatrixClientServer from '../..'
 import {
   epoch,
   errMsg,
+  isRoomIdValid,
   send,
-  type expressAppHandler,
-  roomIdRegex
+  type expressAppHandler
 } from '@twake/utils'
 import { type Request } from 'express'
-
-const RIdReg = new RegExp(roomIdRegex)
 
 const getRoomState = (clientServer: MatrixClientServer): expressAppHandler => {
   return (req, res) => {
     const roomId: string = (req as Request).params.roomId
-    if (!RIdReg.test(roomId)) {
+    if (!isRoomIdValid(roomId)) {
       send(
         res,
         400,

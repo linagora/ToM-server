@@ -4,7 +4,7 @@ import {
   type expressAppHandler,
   send,
   epoch,
-  matrixIdRegex
+  isMatrixIdValid
 } from '@twake/utils'
 
 // TODO : Handle error 403 where the user isn't allowed to see this user's presence status, may have to do with the "users_to_send_full_presence_to" table in the matrixDb
@@ -13,7 +13,7 @@ const getStatus = (clientServer: MatrixClientServer): expressAppHandler => {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-expect-error
     const userId: string = req.params.userId as string
-    if (!matrixIdRegex.test(userId)) {
+    if (!isMatrixIdValid(userId)) {
       send(
         res,
         400,
