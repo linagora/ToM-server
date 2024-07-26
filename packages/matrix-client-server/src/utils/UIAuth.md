@@ -13,7 +13,7 @@ To use this method in functions that require user interactive authentication, fo
 
 ## Allowed Flows
 
-For endpoints other than `/register` and `/login` (POST), the allowed flows are generated automatically inside the `validateUserWithUiAuthentication` method. For the `/register` and`/login`endpoints, they are stored in a constant defined before the expressAppHandler. These flows must be updated before production to avoid security risks, such as inadvertently allowing the client to authenticate with "m.login.dummy", and could also be calculated using a function that reads the config to check for supported flows.
+For endpoints other than `/register` and `/login` (POST), the allowed flows are generated automatically inside the `validateUserWithUiAuthentication` method. For the `/register` and`/login`endpoints, they are generated using the config with a function defined in utils/userInteractiveAuthentication.
 
 ## Callback Usage
 
