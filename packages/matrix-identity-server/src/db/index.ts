@@ -55,7 +55,8 @@ const tables: Record<Collections, string> = {
   shortTermKeypairs:
     'keyID varchar(64) PRIMARY KEY, public text, private text, active integer',
   userHistory: 'address text PRIMARY KEY, active integer, timestamp integer',
-  userPolicies: 'user_id text, policy_name text, accepted integer',
+  userPolicies:
+    'user_id text, policy_name text, accepted integer, PRIMARY KEY (user_id, policy_name)',
   userQuotas: 'user_id varchar(64) PRIMARY KEY, size int'
 }
 
