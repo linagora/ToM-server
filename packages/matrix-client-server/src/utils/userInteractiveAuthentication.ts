@@ -468,7 +468,8 @@ const UiAuthenticate = (
           user_agent: userAgent
         })
         // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
-        if (obj.password) { // Since we store the clientdict in the database, we don't want to store the unhashed password in it
+        if (obj.password) {
+          // Since we store the clientdict in the database, we don't want to store the unhashed password in it
           delete obj.password
         }
         const createAuthSession = matrixDb.insert('ui_auth_sessions', {

@@ -78,7 +78,8 @@ const sendSuccessResponse = (
       send(res, 400, errMsg('invalidParam', 'Refresh token must be a boolean'))
       return
     }
-    if (!body.refresh_token) { // No point sending a refresh token to the client if it does not support it
+    if (!body.refresh_token) {
+      // No point sending a refresh token to the client if it does not support it
       send(res, 200, {
         access_token: accessToken,
         device_id: deviceId,
@@ -149,8 +150,7 @@ const registerAccount = (
           name: userId,
           creation_ts: epoch(),
           is_guest: kind === 'guest' ? 1 : 0,
-          shadow_banned: 0,
-
+          shadow_banned: 0
         }
         if (kind === 'guest') {
           commonUserData.user_type = 'guest' // User type is NULL for normal users
