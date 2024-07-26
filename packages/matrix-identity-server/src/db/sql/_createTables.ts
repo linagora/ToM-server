@@ -60,8 +60,8 @@ function createTables<T extends string>(
                 .then(() => {
                   _resolve()
                 })
-                // istanbul ignore next
                 .catch((e) => {
+                  /* istanbul ignore next */
                   _reject(e)
                 })
             } else {
@@ -77,9 +77,10 @@ function createTables<T extends string>(
     .then(() => {
       resolve()
     })
-    // istanbul ignore next
     .catch((e) => {
+      /* istanbul ignore next */
       logger.error('Unable to create tables', e)
+      /* istanbul ignore next */
       reject(e)
     })
 }
