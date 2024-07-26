@@ -10,7 +10,6 @@ import {
   toMatrixId
 } from '@twake/utils'
 import {
-  type AuthenticationFlowContent,
   type AuthenticationData
 } from '../types'
 import { Hash, randomString } from '@twake/crypto'
@@ -22,7 +21,7 @@ import {
 } from '@twake/matrix-identity-server'
 import type { ServerResponse } from 'http'
 import type e from 'express'
-import { getParams } from '../utils/userInteractiveAuthentication'
+import { getRegisterAllowedFlows } from '../utils/userInteractiveAuthentication'
 
 interface Parameters {
   kind: 'guest' | 'user'
@@ -39,54 +38,7 @@ interface RegisterRequestBody {
   username?: string
 }
 
-// Allowed flow stages for /register endpoint.
-// Doesn't contain password since the user is registering a new account, so he doesn't have a password yet.
-// for now only terms has params, spec is unclear about the other types. Add params here if needed in other endpoints
-// For production,maybe these params should be included in the config. The values here are only illustrative and taken from examples in the spec, they are not relevant and should be adapted before deployment.
-// Maybe we should add parameters in the config to tell whether or not the server supports a given login type,
-// and create a function to get the supported flows reading the config instead of hardcoding the supported flows here.
-// TODO : Modify this before deployment
-export const registerAllowedFlows: AuthenticationFlowContent = {
-  flows: [
-    {
-      stages: ['m.login.application_service']
-    },
-    {
-      stages: ['m.login.terms']
-    },
-    {
-      stages: ['m.login.registration_token']
-    },
-    {
-      stages: ['m.login.sso']
-    },
-    {
-      stages: ['m.login.recaptcha']
-    },
-    {
-      stages: ['m.login.dummy']
-    },
-    {
-      stages: ['m.login.msisdn']
-    },
-    {
-      stages: ['m.login.email.identity']
-    }
-  ],
-  params: {
-    // Aside from terms, the other two params are useless for now, but I leave them here in case they become useful in the future
-    // If we want to add params, we change the getParams function in utils/userInteractiveAuthentication.ts
-    'm.login.application_service': getParams('m.login.application_service'),
-    'm.login.registration_token': getParams('m.login.registration_token'),
-    'm.login.terms': getParams('m.login.terms'),
-    'm.login.sso': getParams('m.login.sso'),
-    'm.login.recaptcha': getParams('m.login.recaptcha'),
-    'm.login.dummy': getParams('m.login.dummy'),
-    'm.login.msisdn': getParams('m.login.msisdn'),
-    'm.login.email.identity': getParams('m.login.email.identity')
-  }
-}
-const fillPoliciesDB = (
+const setupPolicies = (
   userId: string,
   clientServer: MatrixClientServer,
   accepted: number
@@ -211,7 +163,7 @@ const registerAccount = (
             ip,
             user_agent: userAgent
           })
-          const fillPoliciesPromise = fillPoliciesDB(userId, clientServer, 0) // 0 means the user hasn't accepted the policies yet, used in Identity Server
+          const fillPoliciesPromise = setupPolicies(userId, clientServer, 0) // 0 means the user hasn't accepted the policies yet, used in Identity Server
           const accessTokenPromise = clientServer.matrixDb.insert(
             'access_tokens',
             {
@@ -338,7 +290,7 @@ const register = (clientServer: MatrixClientServer): expressAppHandler => {
       clientServer.uiauthenticate(
         req,
         res,
-        registerAllowedFlows,
+        getRegisterAllowedFlows(clientServer.conf),
         'register a new account',
         (obj) => {
           const body = obj as unknown as RegisterRequestBody
