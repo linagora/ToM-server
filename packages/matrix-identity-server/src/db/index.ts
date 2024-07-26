@@ -565,6 +565,8 @@ class IdentityServerDb<T extends string = never>
         .catch((err) => {
           /* istanbul ignore next */
           this.logger.error('Failed to insert token', err)
+          /* istanbul ignore next */
+          reject(err)
         })
     })
   }
@@ -596,6 +598,7 @@ class IdentityServerDb<T extends string = never>
         .catch((err) => {
           /* istanbul ignore next */
           this.logger.error('Failed to insert token', err)
+          /* istanbul ignore next */
           reject(err)
         })
     })
@@ -621,6 +624,7 @@ class IdentityServerDb<T extends string = never>
         .catch((e) => {
           /* istanbul ignore next */
           this.logger.error('Failed to get token', e)
+          /* istanbul ignore next */
           reject(e)
         })
     })
@@ -642,12 +646,13 @@ class IdentityServerDb<T extends string = never>
           } else {
             reject(
               new Error(
-                'Token expired' + (rows[0].expires as number).toString()
+                'Token expired' + (rows[0]?.expires as number)?.toString()
               )
             )
           }
         })
         .catch((e) => {
+          /* istanbul ignore next */
           reject(e)
         })
     })
@@ -720,6 +725,7 @@ class IdentityServerDb<T extends string = never>
           })
         })
         .catch((e) => {
+          /* istanbul ignore next */
           reject(e)
         })
     })
@@ -752,6 +758,8 @@ class IdentityServerDb<T extends string = never>
         .catch((err) => {
           /* istanbul ignore next */
           this.logger.error('Failed to insert ephemeral Key Pair', err)
+          /* istanbul ignore next */
+          reject(err)
         })
     })
   }
