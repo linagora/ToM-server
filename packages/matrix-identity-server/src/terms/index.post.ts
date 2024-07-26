@@ -79,7 +79,7 @@ export const fillPoliciesDB = (
             }
           })
           .catch((e) => {
-            /* istanbul ignore next */
+            /* istanbul ignore next - Tested separatly by deliberately violating unique constraints in the insert above */
             idServer.logger.error('Error filling policies', e)
             /* istanbul ignore next */
             throw e // Re-throw the error to be caught by Promise.all
