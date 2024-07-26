@@ -80,7 +80,7 @@ export const validateUserWithUIAuthentication = (
     )
   }
   // Authentication flows to verify that the user who has an access token is indeed who he claims to be, and has not just stolen another  user's access token
-  getAvailableUIAuthFlows(clientServer, userId)
+  getAvailableValidateUIAuthFlows(clientServer, userId)
     .then((verificationFlows) => {
       clientServer.uiauthenticate(
         req,
@@ -102,10 +102,7 @@ export const validateUserWithUIAuthentication = (
 }
 
 // Function to get the available authentication flows for a user
-// Maybe application services are also allowed to access these endpoints with the type m.login.application_service
-// but the spec is unclear about this.
-// It says appservices cannot access "Account Management" endpoints but never defines what these endpoints are
-const getAvailableUIAuthFlows = async (
+const getAvailableValidateUIAuthFlows = async (
   clientServer: MatrixClientServer,
   userId: string
 ): Promise<AuthenticationFlowContent> => {
@@ -120,16 +117,96 @@ const getAvailableUIAuthFlows = async (
       name: userId
     }
   )
-  if (passwordRows.length > 0 && passwordRows[0].password_hash !== null) {
+  if (
+    clientServer.conf.is_password_login_enabled &&
+    passwordRows.length > 0 &&
+    passwordRows[0].password_hash !== null
+  ) {
     // If the user has a password registered, he can authenticate using it
     availableFlows.flows.push({
       stages: ['m.login.password']
     })
+    availableFlows.params['m.login.password'] = getParams('m.login.password')
   }
-  availableFlows.flows.push({
-    // For now we assume SSO Authentication available for every user, but we could add a check to see if it supported in server config for example
-    stages: ['m.login.sso']
-  })
+  if (clientServer.conf.is_sso_login_enabled) {
+    availableFlows.flows.push({
+      stages: ['m.login.sso']
+    })
+    availableFlows.params['m.login.sso'] = getParams('m.login.sso')
+  }
+  return availableFlows
+}
+
+// We do a separate function for the /register endpoint since the authentication flows are different
+// For now we use the same config variables to allow the flows for login and register, but this can be changed in the future
+// We don't include m.login.sso as done in the ElementHQ implementation but we could add it if needed
+export const getRegisterAllowedFlows = (
+  conf: Config
+): AuthenticationFlowContent => {
+  const availableFlows: AuthenticationFlowContent = {
+    flows: [],
+    params: {}
+  }
+  const requireEmail: boolean = 'email' in conf.registration_required_3pid
+  const requireMsisdn: boolean = 'msisdn' in conf.registration_required_3pid
+  if (requireEmail && !conf.is_email_login_enabled) {
+    throw new Error('Email registration is required but not enabled')
+  }
+  if (requireMsisdn && !conf.is_msisdn_login_enabled) {
+    throw new Error('Msisdn registration is required but not enabled')
+  }
+  if (conf.is_recaptcha_login_enabled) {
+    availableFlows.flows.push({
+      stages: ['m.login.recaptcha']
+    })
+    availableFlows.params['m.login.recaptcha'] = getParams('m.login.recaptcha')
+  }
+  if (conf.is_registration_token_login_enabled) {
+    availableFlows.flows.push({
+      stages: ['m.login.registration_token']
+    })
+    availableFlows.params['m.login.registration_token'] = getParams(
+      'm.login.registration_token'
+    )
+  }
+  if (conf.is_terms_login_enabled) {
+    availableFlows.flows.push({
+      stages: ['m.login.terms']
+    })
+    availableFlows.params['m.login.terms'] = getParams('m.login.terms')
+  }
+  if (requireEmail && requireMsisdn) {
+    availableFlows.flows.push({
+      stages: ['m.login.email.identity', 'm.login.msisdn']
+    })
+    availableFlows.params['m.login.email.identity'] = getParams(
+      'm.login.email.identity'
+    )
+    availableFlows.params['m.login.msisdn'] = getParams('m.login.msisdn')
+  } else {
+    if (conf.is_msisdn_login_enabled) {
+      availableFlows.flows.push({
+        stages: ['m.login.msisdn']
+      })
+      availableFlows.params['m.login.msisdn'] = getParams('m.login.msisdn')
+    }
+    if (conf.is_email_login_enabled) {
+      availableFlows.flows.push({
+        stages: ['m.login.email.identity']
+      })
+      availableFlows.params['m.login.email.identity'] = getParams(
+        'm.login.email.identity'
+      )
+    }
+    if (!requireEmail && !requireMsisdn) {
+      // If no 3pid authentication is required, we add the dummy auth flow as done in elementHQ's implementation.
+      // This allows anybody to register so it could be removed if it is considered a security risk
+      availableFlows.flows.push({
+        stages: ['m.login.dummy']
+      })
+      // No parameters for dummy auth since it always succeeds
+    }
+  }
   return availableFlows
 }
 
