@@ -36,6 +36,13 @@ interface RegisterRequestBody {
   username?: string
 }
 
+interface InsertedData {
+  name: string
+  creation_ts: number
+  is_guest: number
+  shadow_banned: number
+  user_type?: string
+}
 const setupPolicies = (
   userId: string,
   clientServer: MatrixClientServer,
@@ -61,20 +68,31 @@ const sendSuccessResponse = (
   res: e.Response | ServerResponse,
   userId: string,
   accessToken: string,
+  refreshToken: string,
   deviceId: string
 ): void => {
   if (body.inhibit_login) {
     send(res, 200, { user_id: userId })
   } else {
-    if (!body.refresh_token) {
+    if (body.refresh_token && typeof body.refresh_token !== 'boolean') {
+      send(res, 400, errMsg('invalidParam', 'Refresh token must be a boolean'))
+      return
+    }
+    if (!body.refresh_token) { // No point sending a refresh token to the client if it does not support it
       send(res, 200, {
         access_token: accessToken,
         device_id: deviceId,
         user_id: userId,
-        expires_in_ms: 60000 // Arbitrary value, should probably be defined in the server config
+        expires_in_ms: 60000 // Arbitrary value, should probably be defined in the server config // TODO : Add this in the config
       })
     } else {
-      // TODO : Implement this after implementing the /refresh endpoint
+      send(res, 200, {
+        access_token: accessToken,
+        device_id: deviceId,
+        user_id: userId,
+        expires_in_ms: 60000, // Arbitrary value, should probably be defined in the server config // TODO : Add this in the config
+        refresh_token: refreshToken
+      })
     }
   }
 }
@@ -105,11 +123,13 @@ const verifyParameters = (
     }
   })
 }
+
+// NB : It might be necessary to fill the "profiles" table with the displayname set as the username given in the request body
+// We did not use it yet so we are not sure whether to fill it here or not
 const registerAccount = (
   device_display_name: string,
   clientServer: MatrixClientServer,
   userId: string,
-  accessToken: string,
   deviceId: string,
   ip: string,
   userAgent: string,
@@ -179,7 +199,6 @@ const register = (clientServer: MatrixClientServer): expressAppHandler => {
     // @ts-expect-error req.headers exists
     let ip = req.headers['x-forwarded-for'] ?? req.ip
     ip = ip ?? 'undefined' // Same as user-agent, required in the DB schemas but not in the spec, so we set it to the string 'undefined' if it's not present
-    const accessToken = randomString(64)
     const userAgent = req.headers['user-agent'] ?? 'undefined'
     if (parameters.kind === 'user') {
       clientServer.uiauthenticate(req, res, registerAllowedFlows, (obj) => {
@@ -265,9 +284,13 @@ const register = (clientServer: MatrixClientServer): expressAppHandler => {
           const username = body.username
           const userId = toMatrixId(username, clientServer.conf.server_name)
           clientServer.matrixDb
-            .get('access_tokens', ['user_id', 'device_id'], {
-              token: parameters.guest_access_token
-            })
+            .get(
+              'access_tokens',
+              ['user_id', 'device_id', 'refresh_token_id'],
+              {
+                token: parameters.guest_access_token
+              }
+            )
             .then((rows) => {
               if (rows.length === 0) {
                 clientServer.logger.error('Unknown guest access token')
@@ -280,6 +303,7 @@ const register = (clientServer: MatrixClientServer): expressAppHandler => {
                 rows[0].user_id as string,
                 userId,
                 parameters.guest_access_token as string,
+                rows[0].refresh_token_id as string,
                 deviceId,
                 body,
                 res,
@@ -305,11 +329,10 @@ const register = (clientServer: MatrixClientServer): expressAppHandler => {
             initial_device_display_name,
             clientServer,
             toMatrixId(username, clientServer.conf.server_name),
-            accessToken,
             deviceId,
             ip,
             userAgent,
-            body,
+            { initial_device_display_name }, // All parameters must be ignored for guest registration except for initial_device_display_name as per the spec
             res,
             'guest'
           )

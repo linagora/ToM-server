@@ -108,6 +108,7 @@ describe('Use configuration file', () => {
   beforeAll((done) => {
     clientServer = new ClientServer(conf)
     app = express()
+    app.set('trust proxy', 1)
     clientServer.ready
       .then(() => {
         Object.keys(clientServer.api.get).forEach((k) => {
@@ -221,7 +222,6 @@ describe('Use configuration file', () => {
             initial_device_display_name: 'testdevice'
           })
         expect(response1.statusCode).toBe(401)
-        console.log(response1.body.flows)
         session = response1.body.session
         const response = await request(app)
           .post('/_matrix/client/v3/register')
@@ -509,6 +509,30 @@ describe('Use configuration file', () => {
       )
       expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
     })
+    it('should refuse an invalid refresh_token', async () => {
+      const response1 = await request(app)
+        .post('/_matrix/client/v3/register')
+        .set('User-Agent', 'curl/7.31.0-DEV')
+        .set('X-Forwarded-For', '203.0.1113.195')
+        .query({ kind: 'user' })
+        .send({})
+      session = response1.body.session
+      const response = await request(app)
+        .post('/_matrix/client/v3/register')
+        .set('User-Agent', 'curl/7.31.0-DEV')
+        .set('X-Forwarded-For', '203.0.1113.195')
+        .query({ kind: 'user' })
+        .send({
+          refresh_token: 'notaboolean',
+          auth: { type: 'm.login.dummy', session }
+        })
+      expect(response.statusCode).toBe(400)
+      expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
+      expect(response.body).toHaveProperty(
+        'error',
+        'Refresh token must be a boolean'
+      )
+    })
     it('should refuse an invalid password', async () => {
       const response1 = await request(app)
         .post('/_matrix/client/v3/register')
@@ -684,22 +708,13 @@ describe('Use configuration file', () => {
         .set('User-Agent', 'curl/7.31.0-DEV')
         .set('X-Forwarded-For', '203.0.113.195')
         .query({ kind: 'guest', guest_access_token: guestToken })
-        .send({ username: 'guest', password: 'newpassword' })
+        .send({
+          username: 'guest',
+          password: 'newpassword',
+          refresh_token: true
+        })
       expect(response.statusCode).toBe(200)
       expect(response.body).toHaveProperty('user_id')
-    })
-    it('should accept guest registration with inhibit_login set to true', async () => {
-      const response = await request(app)
-        .post('/_matrix/client/v3/register')
-        .set('User-Agent', 'curl/7.31.0-DEV')
-        .set('X-Forwarded-For', '203.0.113.195')
-        .query({ kind: 'guest' })
-        .send({ inhibit_login: true })
-      expect(response.statusCode).toBe(200)
-      expect(response.body).toHaveProperty('user_id')
-      expect(response.body).not.toHaveProperty('expires_in_ms')
-      expect(response.body).not.toHaveProperty('access_token')
-      expect(response.body).not.toHaveProperty('device_id')
     })
     it('should refuse to upgrade a guest account with a wrong deviceId', async () => {
       let deviceId = ''
