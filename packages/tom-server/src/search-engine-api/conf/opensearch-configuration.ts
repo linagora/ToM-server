@@ -33,7 +33,7 @@ export class OpenSearchConfiguration {
     if (typeof host !== 'string') {
       throw new Error('opensearch_host must be a string')
     }
-    if (isHostnameValid(host)) {
+    if (!isHostnameValid(host)) {
       throw new Error('opensearch_host is invalid')
     }
     this._host = host
