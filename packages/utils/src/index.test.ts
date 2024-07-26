@@ -237,13 +237,19 @@ describe('Utility Functions', () => {
   })
 
   describe('toMatrixId', () => {
-    it('should return a Matrix ID', () => {
+    it('should return a Matrix ID for a valid localpart and server', () => {
       expect(toMatrixId('localpart', 'server')).toBe('@localpart:server')
     })
+
     it('should throw an error for an invalid localpart', () => {
       expect(() =>
-        toMatrixId('invalid localpart', 'example.com')
+        toMatrixId('@testuser:example.com', 'example.com')
       ).toThrowError()
+    })
+
+    it('should throw an error for a localpart longer than 512 characters', () => {
+      const longLocalpart = 'a'.repeat(513)
+      expect(() => toMatrixId(longLocalpart, 'example.com')).toThrowError()
     })
   })
   describe('isValidUrl', () => {
