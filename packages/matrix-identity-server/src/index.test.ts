@@ -1768,7 +1768,7 @@ describe('_matrix/identity/v2/terms', () => {
   let conf2: Config
   let app2: express.Application
   let validToken2: string
-  let userId: string
+  const userId = '@dwho:example.com'
   const policies = {
     privacy_policy: {
       en: {
@@ -1818,11 +1818,8 @@ describe('_matrix/identity/v2/terms', () => {
         done(e)
       })
   })
-
-  afterAll(() => {
-    idServer2.cleanJobs()
-  })
-  it('copy of register test', async () => {
+  beforeAll(async () => {
+    idServer2.logger.info('Calling register to obtain a valid token')
     const mockResponse = Promise.resolve({
       ok: true,
       status: 200,
@@ -1846,37 +1843,57 @@ describe('_matrix/identity/v2/terms', () => {
       })
       .set('Accept', 'application/json')
     expect(response.statusCode).toBe(200)
-    expect(response.body.token).toMatch(/^[a-zA-Z0-9]{64}$/)
     validToken2 = response.body.token
+
+    idServer2.logger.info('Adding the policies for the user in the db')
+    try {
+      await fillPoliciesDB(userId, idServer2, 0)
+      idServer2.logger.info('Successfully added policies for the user')
+    } catch (e) {
+      idServer2.logger.error('Error while setting up policies for the user', e)
+    }
   })
+
+  afterAll(async () => {
+    idServer2.cleanJobs()
+  })
+
   it('should update policies', async () => {
-    const rows = await idServer2.db.get('accessTokens', ['data'], {
-      id: validToken2
-    })
-    userId = JSON.parse(rows[0].data as string).sub
-    await idServer2.db.insert('userPolicies', {
-      policy_name: 'terms_of_service 2.0',
-      user_id: userId,
-      accepted: 0
-    })
-    const response2 = await request(app2)
+    const response = await request(app2)
       .post('/_matrix/identity/v2/terms')
       .set('Accept', 'application/json')
       .set('Authorization', `Bearer ${validToken2}`)
-      .send({ user_accepts: policies.terms_of_service.en.url })
-    expect(response2.statusCode).toBe(200)
-    const response3 = await idServer2.db.get('userPolicies', ['accepted'], {
+      .send({ user_accepts: policies.privacy_policy.en.url })
+    expect(response.statusCode).toBe(200)
+    const response2 = await idServer2.db.get('userPolicies', ['accepted'], {
       user_id: userId,
-      policy_name: 'terms_of_service 2.0'
+      policy_name: 'privacy_policy 1.2'
     })
-    expect(response3[0].accepted).toBe(1)
+    expect(response2[0].accepted).toBe(1)
   })
-  it('should refuse authentifying a user that did not accept the terms', async () => {
-    fillPoliciesDB(userId, idServer2, 0)
+  it('should refuse authentifying a user who did not accept the terms', async () => {
     const response = await request(app2)
       .get('/_matrix/identity/v2/account')
       .set('Authorization', `Bearer ${validToken2}`)
       .set('Accept', 'application/json')
     expect(response.statusCode).toBe(403)
+  })
+  describe('After accepting the terms', () => {
+    beforeAll(async () => {
+      idServer2.logger.info('Accepting the policies for the user in the db')
+      try {
+        await fillPoliciesDB(userId, idServer2, 1)
+        idServer2.logger.info('Successfully accepted policies for the user')
+      } catch (e) {
+        idServer2.logger.error('Error while accepting policies for the user', e)
+      }
+    })
+    it('should accept authentifying a user who accepted the terms', async () => {
+      const response = await request(app2)
+        .get('/_matrix/identity/v2/account')
+        .set('Authorization', `Bearer ${validToken2}`)
+        .set('Accept', 'application/json')
+      expect(response.statusCode).toBe(200)
+    })
   })
 })
