@@ -3,7 +3,7 @@ import type IdentityServerDB from '../db'
 import { errMsg, send, type expressAppHandler } from '@twake/utils'
 
 const isPubkeyValid = <T extends string = never>(
-  idServer: IdentityServerDB<T>
+  idServerDB: IdentityServerDB<T>
 ): expressAppHandler => {
   return (req, res) => {
     const publicKey = (req as Request).query.public_key
@@ -12,7 +12,7 @@ const isPubkeyValid = <T extends string = never>(
       typeof publicKey === 'string' &&
       publicKey.length > 0
     ) {
-      idServer.db
+      idServerDB
         .get('longTermKeypairs', ['public'], {
           public: publicKey
         })
