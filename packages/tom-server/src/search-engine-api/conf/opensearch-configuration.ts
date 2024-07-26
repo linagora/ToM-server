@@ -1,5 +1,5 @@
 import { type ClientOptions } from '@opensearch-project/opensearch'
-import { hostnameRe } from '@twake/utils'
+import { isHostnameValid } from '@twake/utils'
 import fs from 'fs'
 import { type Config } from '../../types'
 
@@ -33,7 +33,7 @@ export class OpenSearchConfiguration {
     if (typeof host !== 'string') {
       throw new Error('opensearch_host must be a string')
     }
-    if (host.match(hostnameRe) == null) {
+    if (!isHostnameValid(host)) {
       throw new Error('opensearch_host is invalid')
     }
     this._host = host
