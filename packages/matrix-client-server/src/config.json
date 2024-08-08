@@ -1,7 +1,25 @@
 {
   "additional_features": false,
+  "application_services": [
+    {
+      "id": "test",
+      "hs_token": "hsTokenTestwdakZQunWWNe3DZitAerw9aNqJ2a6HVp0sJtg7qTJWXcHnBjgN0NL",
+      "as_token": "as_token_test",
+      "url": "http://localhost:3000",
+      "sender_localpart": "sender_localpart_test",
+      "namespaces": {
+        "users": [
+          {
+            "exclusive": false,
+            "regex": "@_irc_bridge_.*"
+          }
+        ]
+      }
+    }
+  ],
   "base_url": "",
   "cache_engine": "",
+  "capabilities": {},
   "cron_service": true,
   "database_engine": "sqlite",
   "database_host": "./tokens.db",
@@ -14,6 +32,7 @@
   "hashes_rate_limit": 100,
   "invitation_server_name": "matrix.to",
   "is_federated_identity_service": false,
+  "is_registration_enabled": true,
   "key_delay": 3600,
   "keys_depth": 5,
   "ldap_base": "",
@@ -22,37 +41,6 @@
   "ldap_uri": "",
   "ldap_user": "",
   "ldapjs_opts": {},
-  "mail_link_delay": 7200,
-  "matrix_server": "localhost",
-  "matrix_database_engine": "sqlite",
-  "matrix_database_host": "./matrix.db",
-  "matrix_database_name": null,
-  "matrix_database_password": null,
-  "matrix_database_ssl": false,
-  "matrix_database_user": null,
-  "pepperCron": "0 0 * * *",
-  "policies": null,
-  "rate_limiting_window": 600000,
-  "rate_limiting_nb_requests": 100,
-  "redis_uri": "",
-  "server_name": "localhost",
-  "smtp_password": "",
-  "smtp_tls": true,
-  "smtp_user": "",
-  "smtp_verify_certificate": true,
-  "smtp_sender": "",
-  "smtp_server": "localhost",
-  "smtp_port": 25,
-  "trust_x_forwarded_for": false,
-  "update_federated_identity_hashes_cron": "3 3 3 * * *",
-  "update_users_cron": "*/10 * * * *",
-  "userdb_engine": "sqlite",
-  "userdb_host": "./tokens.db",
-  "userdb_name": "",
-  "userdb_password": "",
-  "userdb_ssl": false,
-  "userdb_user": "",
-  "template_dir": "./templates",
   "login_flows": {
     "flows": [
       {
@@ -73,23 +61,36 @@
       }
     ]
   },
-  "application_services": [
-    {
-      "id": "test",
-      "hs_token": "hsTokenTestwdakZQunWWNe3DZitAerw9aNqJ2a6HVp0sJtg7qTJWXcHnBjgN0NL",
-      "as_token": "as_token_test",
-      "url": "http://localhost:3000",
-      "sender_localpart": "sender_localpart_test",
-      "namespaces": {
-        "users": [
-          {
-            "exclusive": false,
-            "regex": "@_irc_bridge_.*"
-          }
-        ]
-      }
-    }
-  ],
+  "mail_link_delay": 7200,
+  "matrix_server": "localhost",
+  "matrix_database_engine": "sqlite",
+  "matrix_database_host": "./matrix.db",
+  "matrix_database_name": null,
+  "matrix_database_password": null,
+  "matrix_database_ssl": false,
+  "matrix_database_user": null,
+  "pepperCron": "0 0 * * *",
+  "policies": null,
+  "rate_limiting_window": 600000,
+  "rate_limiting_nb_requests": 100,
+  "redis_uri": "",
+  "server_name": "localhost",
   "sms_folder": "./src/__testData__/sms",
-  "is_registration_enabled": true
+  "smtp_password": "",
+  "smtp_tls": true,
+  "smtp_user": "",
+  "smtp_verify_certificate": true,
+  "smtp_sender": "",
+  "smtp_server": "localhost",
+  "smtp_port": 25,
+  "template_dir": "./templates",
+  "trust_x_forwarded_for": false,
+  "update_federated_identity_hashes_cron": "3 3 3 * * *",
+  "update_users_cron": "*/10 * * * *",
+  "userdb_engine": "sqlite",
+  "userdb_host": "./tokens.db",
+  "userdb_name": "",
+  "userdb_password": "",
+  "userdb_ssl": false,
+  "userdb_user": ""
 }
