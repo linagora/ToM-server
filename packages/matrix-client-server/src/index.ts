@@ -67,6 +67,7 @@ import getRoomState from './rooms/roomId/getState'
 import getRoomStateEvent, {
   getRoomStateEventNoStatekey
 } from './rooms/roomId/getStateEvent'
+import getCapabilities from './capabilities/getCapabilities'
 
 // const tables = {} // Add tables declaration here to add new tables to this.db
 
@@ -177,7 +178,8 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
             '/_matrix/client/v3/rooms/:roomId/state/:eventType/:stateKey':
               getRoomStateEvent(this),
             '/_matrix/client/v3/rooms/:roomId/state/:eventType':
-              getRoomStateEventNoStatekey(this)
+              getRoomStateEventNoStatekey(this),
+            '/_matrix/client/v3/capabilities': getCapabilities(this)
           }
           this.api.post = {
             '/_matrix/client/v3/account/whoami': badMethod,
@@ -226,7 +228,8 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
             '/_matrix/client/v3/rooms/:roomId/state': badMethod,
             '/_matrix/client/v3/rooms/:roomId/state/:eventType/:stateKey':
               badMethod,
-            '/_matrix/client/v3/rooms/:roomId/state/:eventType': badMethod
+            '/_matrix/client/v3/rooms/:roomId/state/:eventType': badMethod,
+            '/_matrix/client/v3/capabilities': badMethod
           }
           this.api.put = {
             '/_matrix/client/v3/account/whoami': badMethod,
@@ -274,7 +277,8 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
             '/_matrix/client/v3/rooms/:roomId/state': badMethod,
             '/_matrix/client/v3/rooms/:roomId/state/:eventType/:stateKey':
               badMethod,
-            '/_matrix/client/v3/rooms/:roomId/state/:eventType': badMethod
+            '/_matrix/client/v3/rooms/:roomId/state/:eventType': badMethod,
+            '/_matrix/client/v3/capabilities': badMethod
           }
           this.api.delete = {
             '/_matrix/client/v3/account/whoami': badMethod,
@@ -312,7 +316,8 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
             '/_matrix/client/v3/rooms/:roomId/state': badMethod,
             '/_matrix/client/v3/rooms/:roomId/state/:eventType/:stateKey':
               badMethod,
-            '/_matrix/client/v3/rooms/:roomId/state/:eventType': badMethod
+            '/_matrix/client/v3/rooms/:roomId/state/:eventType': badMethod,
+            '/_matrix/client/v3/capabilities': badMethod
           }
           resolve(true)
         })
