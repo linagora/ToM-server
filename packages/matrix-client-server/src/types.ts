@@ -10,6 +10,7 @@ export type Config = MIdentityServerConfig & {
   application_services: AppServiceRegistration[]
   sms_folder: string
   is_registration_enabled: boolean
+  capabilities: Capabilities
   is_sso_login_enabled: boolean
   is_password_login_enabled: boolean
   is_email_login_enabled: boolean
@@ -391,4 +392,13 @@ interface Namespaces {
 interface Namespace {
   exclusive: boolean
   regex: string
+}
+
+/* https://spec.matrix.org/latest/client-server-api/#capabilities-negotiation */
+
+interface Capabilities {
+  enable_set_displayname?: boolean
+  enable_set_avatar_url?: boolean
+  enable_3pid_changes?: boolean
+  enable_change_password?: boolean
 }
