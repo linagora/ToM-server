@@ -2779,7 +2779,22 @@ describe('Use configuration file', () => {
             expect(response.statusCode).toBe(403)
           })
 
+          it('should return 403 if the requester is not admin and the config does not allow changing avatar_url', async () => {
+            clientServer.conf.capabilities.enable_set_avatar_url = false
+
+            const response = await request(app)
+              .put(`/_matrix/client/v3/profile/${testUserId}/avatar_url`)
+              .set('Authorization', `Bearer ${validToken}`)
+              .set('Accept', 'application/json')
+              .send({ avatar_url: 'http://example.com/new_avatar.jpg' })
+            expect(response.statusCode).toBe(403)
+            expect(response.body).toHaveProperty('errcode', 'M_FORBIDDEN')
+
+            clientServer.conf.capabilities.enable_set_avatar_url = true
+          })
+
           it('should return 400 if provided avatar_url is too long', async () => {
+            clientServer.conf.capabilities.enable_set_avatar_url = true
             const response = await request(app)
               .put(`/_matrix/client/v3/profile/${testUserId}/avatar_url`)
               .set('Authorization', `Bearer ${validToken}`)
@@ -2790,6 +2805,7 @@ describe('Use configuration file', () => {
           })
 
           it('should send correct response when requester is admin and target user is on local server', async () => {
+            clientServer.conf.capabilities.enable_set_avatar_url = true
             const response = await request(app)
               .put(`/_matrix/client/v3/profile/${testUserId}/avatar_url`)
               .set('Authorization', `Bearer ${validToken2}`)
@@ -2800,6 +2816,7 @@ describe('Use configuration file', () => {
           })
 
           it('should send correct response when requester is target user (on local server)', async () => {
+            clientServer.conf.capabilities.enable_set_avatar_url = true
             const response = await request(app)
               .put(`/_matrix/client/v3/profile/${testUserId}/avatar_url`)
               .set('Authorization', `Bearer ${validToken}`)
@@ -2810,6 +2827,7 @@ describe('Use configuration file', () => {
           })
 
           it('should correctly update the avatar_url of an existing user', async () => {
+            clientServer.conf.capabilities.enable_set_avatar_url = undefined
             const response = await request(app)
               .put(`/_matrix/client/v3/profile/${testUserId}/avatar_url`)
               .set('Authorization', `Bearer ${validToken}`)
@@ -2858,6 +2876,20 @@ describe('Use configuration file', () => {
             expect(response.statusCode).toBe(403)
           })
 
+          it('should return 403 if the requester is not admin and the config does not allow changing display_name', async () => {
+            clientServer.conf.capabilities.enable_set_displayname = false
+
+            const response = await request(app)
+              .put(`/_matrix/client/v3/profile/${testUserId}/displayname`)
+              .set('Authorization', `Bearer ${validToken}`)
+              .set('Accept', 'application/json')
+              .send({ displayname: 'New name' })
+            expect(response.statusCode).toBe(403)
+            expect(response.body).toHaveProperty('errcode', 'M_FORBIDDEN')
+
+            clientServer.conf.capabilities.enable_set_displayname = true
+          })
+
           it('should return 400 if provided display_name is too long', async () => {
             const response = await request(app)
               .put(`/_matrix/client/v3/profile/${testUserId}/displayname`)
@@ -2879,6 +2911,7 @@ describe('Use configuration file', () => {
           })
 
           it('should correctly update the display_name of an existing user', async () => {
+            clientServer.conf.capabilities.enable_set_displayname = undefined
             const response = await request(app)
               .put(`/_matrix/client/v3/profile/${testUserId}/displayname`)
               .set('Authorization', `Bearer ${validToken}`)
@@ -4605,6 +4638,99 @@ describe('Use configuration file', () => {
             error: 'Room not found'
           })
         })
+      })
+    })
+
+    describe('/_matrix/client/v3/capabilities', () => {
+      it('should require authentication', async () => {
+        const response = await request(app)
+          .get('/_matrix/client/v3/capabilities')
+          .set('Authorization', 'Bearer invalid_token')
+          .set('Accept', 'application/json')
+        expect(response.statusCode).toBe(401)
+      })
+
+      it('should return the capabilities of the server', async () => {
+        const response = await request(app)
+          .get('/_matrix/client/v3/capabilities')
+          .set('Authorization', `Bearer ${validToken}`)
+          .set('Accept', 'application/json')
+
+        expect(response.status).toBe(200)
+        expect(response.body).toHaveProperty('capabilities')
+        // expect(response.body.capabilities).toHaveProperty('m.room_versions')
+        expect(response.body.capabilities).toHaveProperty(['m.change_password'])
+        expect(response.body.capabilities).toHaveProperty(['m.set_displayname'])
+        expect(response.body.capabilities).toHaveProperty(['m.set_avatar_url'])
+        expect(response.body.capabilities).toHaveProperty(['m.3pid_changes'])
+      })
+
+      it('should return rigth format for m.change_password capability', async () => {
+        const response = await request(app)
+          .get('/_matrix/client/v3/capabilities')
+          .set('Authorization', `Bearer ${validToken}`)
+          .set('Accept', 'application/json')
+
+        expect(response.status).toBe(200)
+        expect(response.body.capabilities).toHaveProperty(['m.change_password'])
+        expect(response.body.capabilities['m.change_password']).toHaveProperty(
+          'enabled'
+        )
+        const numKeyValuePairs = Object.keys(
+          response.body.capabilities['m.change_password']
+        ).length
+        expect(numKeyValuePairs).toBe(1)
+      })
+
+      it('should return rigth format for m.set_displayname capability', async () => {
+        const response = await request(app)
+          .get('/_matrix/client/v3/capabilities')
+          .set('Authorization', `Bearer ${validToken}`)
+          .set('Accept', 'application/json')
+
+        expect(response.status).toBe(200)
+        expect(response.body.capabilities).toHaveProperty(['m.set_displayname'])
+        expect(response.body.capabilities['m.set_displayname']).toHaveProperty(
+          'enabled'
+        )
+        const numKeyValuePairs = Object.keys(
+          response.body.capabilities['m.set_displayname']
+        ).length
+        expect(numKeyValuePairs).toBe(1)
+      })
+
+      it('should return rigth format for m.set_avatar_url capability', async () => {
+        const response = await request(app)
+          .get('/_matrix/client/v3/capabilities')
+          .set('Authorization', `Bearer ${validToken}`)
+          .set('Accept', 'application/json')
+
+        expect(response.status).toBe(200)
+        expect(response.body.capabilities).toHaveProperty(['m.set_avatar_url'])
+        expect(response.body.capabilities['m.set_avatar_url']).toHaveProperty(
+          'enabled'
+        )
+        const numKeyValuePairs = Object.keys(
+          response.body.capabilities['m.set_avatar_url']
+        ).length
+        expect(numKeyValuePairs).toBe(1)
+      })
+
+      it('should return rigth format for m.3pid_changes capability', async () => {
+        const response = await request(app)
+          .get('/_matrix/client/v3/capabilities')
+          .set('Authorization', `Bearer ${validToken}`)
+          .set('Accept', 'application/json')
+
+        expect(response.status).toBe(200)
+        expect(response.body.capabilities).toHaveProperty(['m.3pid_changes'])
+        expect(response.body.capabilities['m.3pid_changes']).toHaveProperty(
+          'enabled'
+        )
+        const numKeyValuePairs = Object.keys(
+          response.body.capabilities['m.3pid_changes']
+        ).length
+        expect(numKeyValuePairs).toBe(1)
       })
     })
   })
