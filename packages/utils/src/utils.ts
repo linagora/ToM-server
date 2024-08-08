@@ -25,7 +25,7 @@ export const send = (
   if (logger != null) {
     const logMessage = `Sending status ${status} with content ${content}`
     if (status >= 200 && status < 300) {
-      logger.info(logMessage)
+      logger.debug(logMessage)
     } else {
       logger.error(logMessage)
     }
