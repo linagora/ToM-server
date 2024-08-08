@@ -7,22 +7,22 @@
  * To be effectively taken into account, the concerned API's should check the capabilities to ensure it can be used.
  *
  * For reference, look at how the capabilities are checked in the `changeDisplayname` function. ( ../profiles/changeProfiles.ts )
+ *
+ * TODO : Implement the `m.room_versions` capabilities
+ * TODO : Implement capability checks in the concerned API's for changing password and 3pid changes
  */
 
 import type MatrixClientServer from '../index'
 import { errMsg, send, type expressAppHandler } from '@twake/utils'
 
-export const getCapabilities = (
+const getCapabilities = (
   clientServer: MatrixClientServer
 ): expressAppHandler => {
   return (req, res) => {
-    clientServer.authenticate(req, res, (token) => {
-      const requesterUserId = token.sub
-      // TODO : Check if the requester has the rights to get the capabilities
-
-      let capabilities: Record<string, any>
+    clientServer.authenticate(req, res, (data) => {
+      let _capabilities: Record<string, any>
       try {
-        capabilities = {
+        _capabilities = {
           //       "m.room_versions": {
           //           "default": self.config.server.default_room_version.identifier,
           //           "available": {
@@ -47,15 +47,19 @@ export const getCapabilities = (
           }
         }
       } catch (e) {
+        /* istanbul ignore next */
         send(
           res,
           500,
           errMsg('unknown', 'Error getting capabilities'),
           clientServer.logger
         )
+        /* istanbul ignore next */
         return
       }
-      send(res, 200, JSON.stringify(capabilities), clientServer.logger)
+      send(res, 200, { capabilities: _capabilities }, clientServer.logger)
     })
   }
 }
+
+export default getCapabilities

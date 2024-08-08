@@ -118,7 +118,20 @@ export const changeAvatarUrl = (
             return
           }
 
-          // TODO: check if changing displayname is allowed according to config settings
+          const allowed =
+            clientServer.conf.capabilities.enable_set_avatar_url ?? true
+          if (byAdmin === 0 && !allowed) {
+            send(
+              res,
+              403,
+              errMsg(
+                'forbidden',
+                'Cannot change avatar_url as not allowed by server'
+              ),
+              clientServer.logger
+            )
+            return
+          }
 
           if (newAvatarUrl.length > MAX_AVATAR_URL_LEN) {
             send(
@@ -232,7 +245,20 @@ export const changeDisplayname = (
               return
             }
 
-            // TODO: check if changing displayname is allowed according to config settings
+            const allowed =
+              clientServer.conf.capabilities.enable_set_displayname ?? true
+            if (byAdmin === 0 && !allowed) {
+              send(
+                res,
+                403,
+                errMsg(
+                  'forbidden',
+                  'Cannot change displayname as not allowed by server'
+                ),
+                clientServer.logger
+              )
+              return
+            }
 
             if (newDisplayname.length > MAX_DISPLAYNAME_LEN) {
               send(
