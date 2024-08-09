@@ -56,7 +56,9 @@ const requestToken = (clientServer: MatrixClientServer): expressAppHandler => {
           send(res, 200, responseBody, clientServer.logger)
         })
         .catch((e) => {
+          // istanbul ignore next
           clientServer.logger.error('Error while inserting open_id_token', e)
+          // istanbul ignore next
           send(res, 500, e, clientServer.logger)
         })
     })

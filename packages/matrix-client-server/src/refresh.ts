@@ -108,8 +108,8 @@ const refresh = (clientServer: MatrixClientServer): expressAppHandler => {
                   id: refreshTokenData.next_token_id
                 })
                 .then((nextTokenRows) => {
+                  // istanbul ignore if
                   if (nextTokenRows.length === 0) {
-                    // istanbul ignore next
                     send(
                       res,
                       500,
@@ -175,6 +175,7 @@ const refresh = (clientServer: MatrixClientServer): expressAppHandler => {
           .catch((error) => {
             // istanbul ignore next
             clientServer.logger.error('Error fetching refresh token', error)
+            // istanbul ignore next
             send(
               res,
               500,

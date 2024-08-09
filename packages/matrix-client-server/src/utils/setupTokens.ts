@@ -122,6 +122,7 @@ export async function setupTokens(
       added_at: epoch()
     })
   } catch (e) {
+    // istanbul ignore next
     logger.error('Error creating tokens for authentication', e)
   }
 }
