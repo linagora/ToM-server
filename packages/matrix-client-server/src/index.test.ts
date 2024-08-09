@@ -126,6 +126,13 @@ describe('Use configuration file', () => {
     expect(response.statusCode).toBe(405)
   })
 
+  describe('/_matrix/client/versions', () => {
+    it('sould correctly provide supported versions', async () => {
+      const response = await request(app).get('/_matrix/client/versions')
+      expect(response.statusCode).toBe(200)
+    })
+  })
+
   it('should return true if provided user is hosted on local server', async () => {
     expect(clientServer.isMine('@testuser:example.com')).toBe(true)
   })
@@ -1869,6 +1876,26 @@ describe('Use configuration file', () => {
           response.body.capabilities['m.3pid_changes']
         ).length
         expect(numKeyValuePairs).toBe(1)
+      })
+
+      it('should return rigth format for m.room_versions capability', async () => {
+        const response = await request(app)
+          .get('/_matrix/client/v3/capabilities')
+          .set('Authorization', `Bearer ${validToken}`)
+          .set('Accept', 'application/json')
+
+        expect(response.status).toBe(200)
+        expect(response.body.capabilities).toHaveProperty(['m.room_versions'])
+        expect(response.body.capabilities['m.room_versions']).toHaveProperty(
+          'default'
+        )
+        expect(response.body.capabilities['m.room_versions']).toHaveProperty(
+          'available'
+        )
+        const numKeyValuePairs = Object.keys(
+          response.body.capabilities['m.room_versions']
+        ).length
+        expect(numKeyValuePairs).toBe(2)
       })
     })
   })
