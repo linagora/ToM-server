@@ -1877,6 +1877,26 @@ describe('Use configuration file', () => {
         ).length
         expect(numKeyValuePairs).toBe(1)
       })
+
+      it('should return rigth format for m.room_versions capability', async () => {
+        const response = await request(app)
+          .get('/_matrix/client/v3/capabilities')
+          .set('Authorization', `Bearer ${validToken}`)
+          .set('Accept', 'application/json')
+
+        expect(response.status).toBe(200)
+        expect(response.body.capabilities).toHaveProperty(['m.room_versions'])
+        expect(response.body.capabilities['m.room_versions']).toHaveProperty(
+          'default'
+        )
+        expect(response.body.capabilities['m.room_versions']).toHaveProperty(
+          'available'
+        )
+        const numKeyValuePairs = Object.keys(
+          response.body.capabilities['m.room_versions']
+        ).length
+        expect(numKeyValuePairs).toBe(2)
+      })
     })
   })
 })

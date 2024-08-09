@@ -1,5 +1,7 @@
 import { send, type expressAppHandler } from '@twake/utils'
 
+/* This part deals with supported versions of the matrix Protocol itself */
+
 // TODO: fix supported versions
 export const versions = [
   // 'r0.1.0',
@@ -19,3 +21,23 @@ const getVersions: expressAppHandler = (req, res) => {
 }
 
 export default getVersions
+
+/* This part deals with supported room versions */
+
+// TODO : update the room versions to the latest supported versions
+
+export const DEFAULT_ROOM_VERSION = 10
+
+export const ROOM_VERSIONS = {
+  1: 'stable',
+  2: 'stable',
+  3: 'stable',
+  4: 'stable',
+  5: 'stable',
+  6: 'stable',
+  7: 'stable',
+  8: 'stable',
+  9: 'stable',
+  10: 'stable',
+  11: 'stable'
+}

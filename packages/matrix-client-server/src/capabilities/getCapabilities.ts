@@ -8,12 +8,12 @@
  *
  * For reference, look at how the capabilities are checked in the `changeDisplayname` function. ( ../profiles/changeProfiles.ts )
  *
- * TODO : Implement the `m.room_versions` capabilities
  * TODO : Implement capability checks in the concerned API's for changing password and 3pid changes
  */
 
 import type MatrixClientServer from '../index'
 import { errMsg, send, type expressAppHandler } from '@twake/utils'
+import { DEFAULT_ROOM_VERSION, ROOM_VERSIONS } from '../versions'
 
 const getCapabilities = (
   clientServer: MatrixClientServer
@@ -23,13 +23,12 @@ const getCapabilities = (
       let _capabilities: Record<string, any>
       try {
         _capabilities = {
-          //       "m.room_versions": {
-          //           "default": self.config.server.default_room_version.identifier,
-          //           "available": {
-          //               v.identifier: v.disposition
-          //               for v in KNOWN_ROOM_VERSIONS.values()
-          //           },
-          //   },
+          'm.room_versions': {
+            default: DEFAULT_ROOM_VERSION,
+            available: {
+              ...ROOM_VERSIONS
+            }
+          },
           'm.change_password': {
             enabled:
               clientServer.conf.capabilities.enable_change_password ?? true
