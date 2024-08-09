@@ -126,6 +126,13 @@ describe('Use configuration file', () => {
     expect(response.statusCode).toBe(405)
   })
 
+  describe('/_matrix/client/versions', () => {
+    it('sould correctly provide supported versions', async () => {
+      const response = await request(app).get('/_matrix/client/versions')
+      expect(response.statusCode).toBe(200)
+    })
+  })
+
   it('should return true if provided user is hosted on local server', async () => {
     expect(clientServer.isMine('@testuser:example.com')).toBe(true)
   })

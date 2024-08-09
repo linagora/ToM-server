@@ -68,6 +68,7 @@ import getRoomStateEvent, {
   getRoomStateEventNoStatekey
 } from './rooms/roomId/getStateEvent'
 import getCapabilities from './capabilities/getCapabilities'
+import getVersions from './versions'
 
 const tables = {
   ui_auth_sessions: 'session_id TEXT NOT NULL, stage_type TEXT NOT NULL'
@@ -179,7 +180,8 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
               getRoomStateEvent(this),
             '/_matrix/client/v3/rooms/:roomId/state/:eventType':
               getRoomStateEventNoStatekey(this),
-            '/_matrix/client/v3/capabilities': getCapabilities(this)
+            '/_matrix/client/v3/capabilities': getCapabilities(this),
+            '/_matrix/client/versions': getVersions
           }
           this.api.post = {
             '/_matrix/client/v3/account/whoami': badMethod,
@@ -229,7 +231,8 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
             '/_matrix/client/v3/rooms/:roomId/state/:eventType/:stateKey':
               badMethod,
             '/_matrix/client/v3/rooms/:roomId/state/:eventType': badMethod,
-            '/_matrix/client/v3/capabilities': badMethod
+            '/_matrix/client/v3/capabilities': badMethod,
+            '/_matrix/client/versions': badMethod
           }
           this.api.put = {
             '/_matrix/client/v3/account/whoami': badMethod,
@@ -278,7 +281,8 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
             '/_matrix/client/v3/rooms/:roomId/state/:eventType/:stateKey':
               badMethod,
             '/_matrix/client/v3/rooms/:roomId/state/:eventType': badMethod,
-            '/_matrix/client/v3/capabilities': badMethod
+            '/_matrix/client/v3/capabilities': badMethod,
+            '/_matrix/client/versions': badMethod
           }
           this.api.delete = {
             '/_matrix/client/v3/account/whoami': badMethod,
@@ -317,7 +321,8 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
             '/_matrix/client/v3/rooms/:roomId/state/:eventType/:stateKey':
               badMethod,
             '/_matrix/client/v3/rooms/:roomId/state/:eventType': badMethod,
-            '/_matrix/client/v3/capabilities': badMethod
+            '/_matrix/client/v3/capabilities': badMethod,
+            '/_matrix/client/versions': badMethod
           }
           resolve(true)
         })
