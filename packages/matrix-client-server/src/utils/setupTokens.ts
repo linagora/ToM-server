@@ -76,14 +76,6 @@ export async function setupTokens(
       token: validRefreshToken2
     })
 
-    await clientServer.matrixDb.insert('access_tokens', {
-      id: randomString(64),
-      user_id: '@thirduser:example.com',
-      device_id: 'thirddevice',
-      token: randomString(64),
-      refresh_token_id: validRefreshTokenId2
-    })
-
     await clientServer.matrixDb.insert('refresh_tokens', {
       id: validRefreshTokenId1,
       user_id: '@firstuser:example.com',
