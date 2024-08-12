@@ -5,12 +5,14 @@ import ClientServer from '../../index'
 import fetch from 'node-fetch'
 import { buildMatrixDb, buildUserDB } from '../../__testData__/buildUserDB'
 import { type Config } from '../../types'
-import defaultConfig from '../../__testData__/3pidConf.json'
+import defaultConfig from '../../__testData__/registerConf.json'
 import { getLogger, type TwakeLogger } from '@twake/logger'
-import { setupTokens, validToken } from '../../utils/setupTokens'
-import e from 'express'
+import {
+  setupTokens,
+  validToken,
+  validToken2
+} from '../../__testData__/setupTokens'
 
-process.env.TWAKE_CLIENT_SERVER_CONF = './src/__testData__/3pidConf.json'
 jest.mock('node-fetch', () => jest.fn())
 const sendMailMock = jest.fn()
 jest.mock('nodemailer', () => ({
@@ -41,7 +43,10 @@ beforeAll((done) => {
     database_engine: 'sqlite',
     base_url: 'http://example.com/',
     userdb_engine: 'sqlite',
-    matrix_database_engine: 'sqlite'
+    matrix_database_engine: 'sqlite',
+    matrix_database_host: './src/__testData__/testMatrixThreepid.db',
+    database_host: './src/__testData__/testThreepid.db',
+    userdb_host: './src/__testData__/testThreepid.db'
   }
   if (process.env.TEST_PG === 'yes') {
     conf.database_engine = 'pg'
@@ -75,7 +80,7 @@ afterAll(() => {
 
 describe('Use configuration file', () => {
   beforeAll((done) => {
-    clientServer = new ClientServer()
+    clientServer = new ClientServer(conf)
     app = express()
     clientServer.ready
       .then(() => {
@@ -112,42 +117,144 @@ describe('Use configuration file', () => {
       await setupTokens(clientServer, logger)
     })
     describe('/_matrix/client/v3/account/3pid/add', () => {
+      let session: string
+      describe('User Interactive Authentication', () => {
+        it('should refuse to validate a userId that does not match the regex', async () => {
+          const response = await request(app)
+            .post('/_matrix/client/v3/account/3pid/add')
+            .set('Accept', 'application/json')
+            .set('Authorization', `Bearer wrongUserAccessToken`)
+            .send({
+              sid: 'sid',
+              client_secret: 'cs'
+            })
+          expect(response.statusCode).toBe(400)
+          expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
+          expect(response.body).toHaveProperty('error', 'Invalid user ID')
+        })
+        it('should refuse to authenticate a user with a password if he does not have one registered', async () => {
+          const response = await request(app)
+            .post('/_matrix/client/v3/account/3pid/add')
+            .set('Accept', 'application/json')
+            .set('Authorization', `Bearer ${validToken2}`)
+            .send({
+              sid: 'sid',
+              client_secret: 'cs'
+            })
+          expect(response.statusCode).toBe(401)
+          session = response.body.session
+          const response1 = await request(app)
+            .post('/_matrix/client/v3/account/3pid/add')
+            .set('Accept', 'application/json')
+            .set('Authorization', `Bearer ${validToken2}`)
+            .send({
+              sid: 'sid',
+              client_secret: 'cs',
+              auth: {
+                type: 'm.login.password',
+                session,
+                password: 'password',
+                identifier: {
+                  type: 'm.id.user',
+                  user: '@testuser2:example.com'
+                }
+              }
+            })
+          expect(response1.statusCode).toBe(401)
+          expect(response1.body).toHaveProperty('errcode', 'M_FORBIDDEN')
+          expect(response1.body).toHaveProperty(
+            'error',
+            'The user does not have a password registered'
+          )
+        })
+      })
       let sid: string
       let token: string
       it('should refuse an invalid secret', async () => {
+        const response1 = await request(app)
+          .post('/_matrix/client/v3/account/3pid/add')
+          .set('Accept', 'application/json')
+          .set('Authorization', `Bearer ${validToken}`)
+          .send({
+            sid: 'sid',
+            client_secret: 'my'
+          })
+        expect(response1.statusCode).toBe(401)
+        session = response1.body.session
         const response = await request(app)
           .post('/_matrix/client/v3/account/3pid/add')
           .set('Accept', 'application/json')
+          .set('Authorization', `Bearer ${validToken}`)
           .send({
             sid: 'sid',
             client_secret: 'my',
-            auth: { type: 'm.login.dummy', session: 'authSession' }
+            auth: {
+              type: 'm.login.password',
+              session,
+              password:
+                '$2a$10$zQJv3V3Kjw7Jq7Ww1X7z5e1QXsVd1m3JdV9vG6t8Jv7jQz4Z5J1QK',
+              identifier: { type: 'm.id.user', user: '@testuser:example.com' }
+            }
           })
         expect(response.statusCode).toBe(400)
         expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
         expect(response.body).toHaveProperty('error', 'Invalid client_secret')
       })
       it('should refuse an invalid session ID', async () => {
+        const response1 = await request(app)
+          .post('/_matrix/client/v3/account/3pid/add')
+          .set('Accept', 'application/json')
+          .set('Authorization', `Bearer ${validToken}`)
+          .send({
+            sid: 'sid',
+            client_secret: 'my'
+          })
+        expect(response1.statusCode).toBe(401)
+        session = response1.body.session
         const response = await request(app)
           .post('/_matrix/client/v3/account/3pid/add')
           .set('Accept', 'application/json')
+          .set('Authorization', `Bearer ${validToken}`)
           .send({
-            sid: '$!:',
+            sid: '$;!',
             client_secret: 'mysecret',
-            auth: { type: 'm.login.dummy', session: 'authSession2' }
+            auth: {
+              type: 'm.login.password',
+              session,
+              password:
+                '$2a$10$zQJv3V3Kjw7Jq7Ww1X7z5e1QXsVd1m3JdV9vG6t8Jv7jQz4Z5J1QK',
+              identifier: { type: 'm.id.user', user: '@testuser:example.com' }
+            }
           })
         expect(response.statusCode).toBe(400)
         expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
         expect(response.body).toHaveProperty('error', 'Invalid session ID')
       })
       it('should return 400 for a wrong combination of client secret and session ID', async () => {
+        const response1 = await request(app)
+          .post('/_matrix/client/v3/account/3pid/add')
+          .set('Accept', 'application/json')
+          .set('Authorization', `Bearer ${validToken}`)
+          .send({
+            sid: 'sid',
+            client_secret: 'my'
+          })
+        expect(response1.statusCode).toBe(401)
+        session = response1.body.session
         const response = await request(app)
           .post('/_matrix/client/v3/account/3pid/add')
           .set('Accept', 'application/json')
+          .set('Authorization', `Bearer ${validToken}`)
           .send({
             sid: 'wrongSid',
             client_secret: 'mysecret',
-            auth: { type: 'm.login.dummy', session: 'authSession3' }
+            auth: {
+              type: 'm.login.password',
+              session,
+              password:
+                '$2a$10$zQJv3V3Kjw7Jq7Ww1X7z5e1QXsVd1m3JdV9vG6t8Jv7jQz4Z5J1QK',
+              identifier: { type: 'm.id.user', user: '@testuser:example.com' }
+            }
           })
         expect(response.statusCode).toBe(400)
         expect(response.body).toHaveProperty('errcode', 'M_NO_VALID_SESSION')
@@ -169,13 +276,30 @@ describe('Use configuration file', () => {
         )
         token = RegExp.$1
         sid = RegExp.$2
+        const response1 = await request(app)
+          .post('/_matrix/client/v3/account/3pid/add')
+          .set('Accept', 'application/json')
+          .set('Authorization', `Bearer ${validToken}`)
+          .send({
+            sid: 'sid',
+            client_secret: 'my'
+          })
+        expect(response1.statusCode).toBe(401)
+        session = response1.body.session
         const response = await request(app)
           .post('/_matrix/client/v3/account/3pid/add')
           .set('Accept', 'application/json')
+          .set('Authorization', `Bearer ${validToken}`)
           .send({
             sid,
             client_secret: 'mysecret',
-            auth: { type: 'm.login.dummy', session: 'authSession4' }
+            auth: {
+              type: 'm.login.password',
+              session,
+              password:
+                '$2a$10$zQJv3V3Kjw7Jq7Ww1X7z5e1QXsVd1m3JdV9vG6t8Jv7jQz4Z5J1QK',
+              identifier: { type: 'm.id.user', user: '@testuser:example.com' }
+            }
           })
         expect(response.statusCode).toBe(400)
         expect(response.body).toHaveProperty(
@@ -193,133 +317,83 @@ describe('Use configuration file', () => {
           })
           .set('Accept', 'application/json')
         expect(submitTokenResponse.statusCode).toBe(200)
+        const response1 = await request(app)
+          .post('/_matrix/client/v3/account/3pid/add')
+          .set('Accept', 'application/json')
+          .set('Authorization', `Bearer ${validToken}`)
+          .send({
+            sid: 'sid',
+            client_secret: 'my'
+          })
+        expect(response1.statusCode).toBe(401)
+        session = response1.body.session
         const response = await request(app)
           .post('/_matrix/client/v3/account/3pid/add')
           .set('Accept', 'application/json')
+          .set('Authorization', `Bearer ${validToken}`)
           .send({
             sid,
             client_secret: 'mysecret',
             auth: {
-              type: 'm.login.email.identity',
-              session: 'validatedSession',
-              threepid_creds: {
-                sid: 'validatedSession',
-                client_secret: 'validatedSecret'
-              }
+              type: 'm.login.password',
+              session,
+              password:
+                '$2a$10$zQJv3V3Kjw7Jq7Ww1X7z5e1QXsVd1m3JdV9vG6t8Jv7jQz4Z5J1QK',
+              identifier: { type: 'm.id.user', user: '@testuser:example.com' }
             }
           })
         expect(response.statusCode).toBe(200)
       })
       it('should refuse adding a 3pid already associated to another user', async () => {
+        const response1 = await request(app)
+          .post('/_matrix/client/v3/account/3pid/add')
+          .set('Accept', 'application/json')
+          .set('Authorization', `Bearer ${validToken}`)
+          .send({
+            sid: 'sid',
+            client_secret: 'my'
+          })
+        expect(response1.statusCode).toBe(401)
+        session = response1.body.session
         const response = await request(app)
           .post('/_matrix/client/v3/account/3pid/add')
           .set('Accept', 'application/json')
+          .set('Authorization', `Bearer ${validToken}`)
           .send({
             sid,
             client_secret: 'mysecret',
             auth: {
-              type: 'm.login.email.identity',
-              session: 'newsession',
-              threepid_creds: {
-                sid: 'validatedSession',
-                client_secret: 'validatedSecret'
-              }
+              type: 'm.login.password',
+              session,
+              password:
+                '$2a$10$zQJv3V3Kjw7Jq7Ww1X7z5e1QXsVd1m3JdV9vG6t8Jv7jQz4Z5J1QK',
+              identifier: { type: 'm.id.user', user: '@testuser:example.com' }
             }
           })
         expect(response.statusCode).toBe(400)
         expect(response.body).toHaveProperty('errcode', 'M_THREEPID_IN_USE')
       })
-      it('should refuse authenticating a user with an unknown 3pid for UI Auth', async () => {
-        const response = await request(app)
-          .post('/_matrix/client/v3/account/3pid/add')
-          .set('Accept', 'application/json')
-          .send({
-            sid: 'sid',
-            client_secret: 'mysecret',
-            auth: {
-              type: 'm.login.msisdn',
-              session: 'authSession7',
-              threepid_creds: { sid: 'sid', client_secret: 'mysecret' } // Unknown 3pid
-            }
-          })
-        expect(response.statusCode).toBe(401)
-        expect(response.body).toHaveProperty('errcode', 'M_NO_VALID_SESSION')
-      })
-      it('should refuse authenticating a user whose session has not been validated', async () => {
-        const requestTokenResponse = await request(app)
-          .post('/_matrix/client/v3/register/msisdn/requestToken')
-          .set('Accept', 'application/json')
-          .send({
-            client_secret: 'secret',
-            country: 'FR',
-            phone_number: '000000000',
-            next_link: 'http://localhost:8090',
-            send_attempt: 1
-          })
-        expect(requestTokenResponse.statusCode).toBe(200)
-        expect(sendSMSMock.mock.calls[0][0].raw).toMatch(
-          /token=([a-zA-Z0-9]{64})&client_secret=secret&sid=([a-zA-Z0-9]{64})/
-        )
-        token = RegExp.$1
-        sid = RegExp.$2
-        const response = await request(app)
-          .post('/_matrix/client/v3/account/3pid/add')
-          .set('Accept', 'application/json')
-          .send({
-            sid: 'sid',
-            client_secret: 'mysecret',
-            auth: {
-              type: 'm.login.msisdn',
-              session: 'authSession8',
-              threepid_creds: { sid, client_secret: 'secret' }
-            }
-          })
-        expect(response.statusCode).toBe(401)
-        expect(response.body).toHaveProperty(
-          'errcode',
-          'M_SESSION_NOT_VALIDATED'
-        )
-      })
-      it('should refuse authenticating a user with an email that has not been added to a matrix userId', async () => {
-        const submitTokenResponse = await request(app)
-          .post('/_matrix/client/v3/register/email/submitToken')
-          .send({
-            token,
-            client_secret: 'secret',
-            sid
-          })
-          .set('Accept', 'application/json')
-        expect(submitTokenResponse.statusCode).toBe(200)
-        const response = await request(app)
-          .post('/_matrix/client/v3/account/3pid/add')
-          .set('Accept', 'application/json')
-          .send({
-            sid: 'sid',
-            client_secret: 'mysecret',
-            auth: {
-              type: 'm.login.msisdn',
-              session: 'authSession8',
-              threepid_creds: { sid, client_secret: 'secret' } // Unknown 3pid
-            }
-          })
-        expect(response.statusCode).toBe(401)
-        expect(response.body).toHaveProperty('errcode', 'M_THREEPID_NOT_FOUND')
-      })
-      it('should refuse adding a userId that is not of the right format', async () => {
-        const response = await request(app)
-          .post('/_matrix/client/v3/account/3pid/add')
-          .set('Accept', 'application/json')
-          .send({
-            sid,
-            client_secret: 'secret',
-            auth: {
-              type: 'm.login.dummy', // what happens when the Ui Auth is validated with a Dummy auth as the last stage, the userId is set to '' which is wrong
-              session: 'authSession5'
-            }
-          })
-        expect(response.statusCode).toBe(400)
-        expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
-      })
+
+      // Used to work but not anymore since we only check UI Auth with m.login.password or m.login.sso
+      // it('should refuse adding a userId that is not of the right format', async () => {
+      //   const response = await request(app)
+      //     .post('/_matrix/client/v3/account/3pid/add')
+      //     .set('Accept', 'application/json')
+      //     .set('Authorization', `Bearer ${validToken}`)
+      //     .send({
+      //       sid,
+      //       client_secret: 'mysecret',
+      //       auth: {
+      //         type: 'm.login.password',
+      //         session: 'authSession7',
+      //         password:
+      //           '$2a$10$zQJv3V3Kjw7Jq7Ww1X7z5e1QXsVd1m3JdV9vG6t8Jv7jQz4Z5J1QK',
+      //         identifier: { type: 'm.id.user', user: '@testuser:example.com' }
+      //       }
+      //     })
+      //   expect(response.statusCode).toBe(400)
+      //   expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
+      // })
     })
     describe('3PID Bind Endpoint', () => {
       it('should return 200 on a successful bind', async () => {

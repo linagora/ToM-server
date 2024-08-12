@@ -6,7 +6,11 @@ import { buildMatrixDb, buildUserDB } from '../__testData__/buildUserDB'
 import { type Config, type Filter } from '../types'
 import defaultConfig from '../__testData__/registerConf.json'
 import { getLogger, type TwakeLogger } from '@twake/logger'
-import { setupTokens, validToken, validToken2 } from '../utils/setupTokens'
+import {
+  setupTokens,
+  validToken,
+  validToken2
+} from '../__testData__/setupTokens'
 jest.mock('node-fetch', () => jest.fn())
 const sendMailMock = jest.fn()
 jest.mock('nodemailer', () => ({
@@ -28,7 +32,8 @@ beforeAll((done) => {
     base_url: 'http://example.com/',
     matrix_database_host: 'src/__testData__/userTestMatrix.db',
     userdb_host: 'src/__testData__/userTest.db',
-    database_host: 'src/__testData__/userTest.db'
+    database_host: 'src/__testData__/userTest.db',
+    registration_required_3pid: ['email', 'msisdn']
   }
   if (process.env.TEST_PG === 'yes') {
     conf.database_engine = 'pg'
@@ -590,6 +595,67 @@ describe('Use configuration file', () => {
           })
         })
       })
+    })
+  })
+  describe('/_matrix/client/v3/register', () => {
+    let session: string
+    it('should validate UIAuth with msisdn and email verification', async () => {
+      const response1 = await request(app)
+        .post('/_matrix/client/v3/register')
+        .set('User-Agent', 'curl/7.31.0-DEV')
+        .set('X-Forwarded-For', '203.0.113.195')
+        .query({ kind: 'user' })
+        .send({
+          username: 'new_user',
+          device_id: 'device_Id',
+          inhibit_login: true,
+          initial_device_display_name: 'testdevice'
+        })
+      expect(response1.statusCode).toBe(401)
+      expect(response1.body).toHaveProperty('session')
+      session = response1.body.session
+      const response2 = await request(app)
+        .post('/_matrix/client/v3/register')
+        .set('User-Agent', 'curl/7.31.0-DEV')
+        .set('X-Forwarded-For', '203.0.113.195')
+        .query({ kind: 'user' })
+        .send({
+          username: 'new_user',
+          device_id: 'device_Id',
+          inhibit_login: true,
+          initial_device_display_name: 'testdevice',
+          auth: {
+            type: 'm.login.msisdn',
+            session,
+            threepid_creds: {
+              sid: 'validatedSession',
+              client_secret: 'validatedSecret'
+            }
+          }
+        })
+      expect(response2.statusCode).toBe(401)
+      expect(response2.body).toHaveProperty('completed')
+      expect(response2.body.completed).toEqual(['m.login.msisdn'])
+      const response3 = await request(app)
+        .post('/_matrix/client/v3/register')
+        .set('User-Agent', 'curl/7.31.0-DEV')
+        .set('X-Forwarded-For', '203.0.113.195')
+        .query({ kind: 'user' })
+        .send({
+          username: 'new_user',
+          device_id: 'device_Id',
+          inhibit_login: true,
+          initial_device_display_name: 'testdevice',
+          auth: {
+            type: 'm.login.email.identity',
+            session,
+            threepid_creds: {
+              sid: 'validatedSession2',
+              client_secret: 'validatedSecret2'
+            }
+          }
+        })
+      expect(response3.statusCode).toBe(200)
     })
   })
 })

@@ -12,7 +12,7 @@ import {
   validToken,
   validToken2,
   validToken3
-} from '../utils/setupTokens'
+} from '../__testData__/setupTokens'
 
 jest.mock('node-fetch', () => jest.fn())
 

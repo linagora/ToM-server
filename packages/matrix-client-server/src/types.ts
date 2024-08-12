@@ -5,13 +5,20 @@ import {
   type Config as MIdentityServerConfig
 } from '@twake/matrix-identity-server'
 
-// TODO : Put Policies in types.ts of matrix-identity-server to export it in the @twake/matrix-identity-server module and not in the dist/terms
 export type Config = MIdentityServerConfig & {
   login_flows: LoginFlowContent
   application_services: AppServiceRegistration[]
   sms_folder: string
   is_registration_enabled: boolean
   capabilities: Capabilities
+  is_sso_login_enabled: boolean
+  is_password_login_enabled: boolean
+  is_email_login_enabled: boolean
+  is_msisdn_login_enabled: boolean
+  is_recaptcha_login_enabled: boolean
+  is_terms_login_enabled: boolean
+  is_registration_token_login_enabled: boolean
+  registration_required_3pid: string[]
 }
 
 export type DbGetResult = Array<
@@ -328,7 +335,7 @@ interface TermsAuth {
   session: string
 }
 
-interface ApplicationServiceAuth {
+export interface ApplicationServiceAuth {
   type: 'm.login.application_service'
   username: string
 }

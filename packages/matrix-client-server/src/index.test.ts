@@ -6,14 +6,16 @@ import { buildMatrixDb, buildUserDB } from './__testData__/buildUserDB'
 import { type Config } from './types'
 import defaultConfig from './__testData__/registerConf.json'
 import { getLogger, type TwakeLogger } from '@twake/logger'
-import { Hash, randomString } from '@twake/crypto'
+import { randomString } from '@twake/crypto'
 import {
   setupTokens,
   validToken,
   validToken2,
   validRefreshToken1,
-  validRefreshToken2
-} from './utils/setupTokens'
+  validRefreshToken2,
+  validRefreshToken3,
+  validToken3
+} from './__testData__/setupTokens'
 
 process.env.TWAKE_CLIENT_SERVER_CONF = './src/__testData__/registerConf.json'
 jest.mock('node-fetch', () => jest.fn())
@@ -328,6 +330,19 @@ describe('Use configuration file', () => {
         expect(response.body).toHaveProperty('access_token')
         expect(response.body).toHaveProperty('refresh_token')
       })
+      it('should refuse a request with a used access token', async () => {
+        const response = await request(app)
+          .post('/_matrix/client/v3/refresh')
+          .send({ refresh_token: validRefreshToken3 })
+        expect(response.statusCode).toBe(200)
+        expect(response.body).toHaveProperty('access_token')
+        expect(response.body).toHaveProperty('refresh_token')
+        const response1 = await request(app)
+          .get('/_matrix/client/v3/account/whoami')
+          .set('Authorization', `Bearer ${validToken3}`)
+          .set('Accept', 'application/json')
+        expect(response1.statusCode).toBe(401)
+      })
     })
     describe('/_matrix/client/v3/account/whoami', () => {
       let asToken: string
@@ -352,21 +367,6 @@ describe('Use configuration file', () => {
         expect(response.statusCode).toBe(401)
       })
       it('should accept valid token', async () => {
-        await clientServer.matrixDb.insert('users', {
-          name: '@testuser:example.com',
-          password_hash: 'hashedpassword',
-          creation_ts: Date.now(),
-          admin: 0,
-          upgrade_ts: 'null',
-          is_guest: 0,
-          appservice_id: 'null',
-          consent_version: 'null',
-          consent_server_notice_sent: 'null',
-          user_type: 'null',
-          deactivated: 0,
-          shadow_banned: 0,
-          consent_ts: 'null'
-        })
         const response = await request(app)
           .get('/_matrix/client/v3/account/whoami')
           .set('Authorization', `Bearer ${validToken}`)
@@ -497,350 +497,6 @@ describe('Use configuration file', () => {
           }
         ])
       })
-    })
-    describe('/_matrix/client/v3/register', () => {
-      let session: string
-      let guestAccessToken: string
-      describe('User Interactive Authentication', () => {
-        it('should validate user interactive authentication with a registration_token', async () => {
-          const response = await request(app)
-            .post('/_matrix/client/v3/register')
-            .set('User-Agent', 'curl/7.31.0-DEV')
-            .set('X-Forwarded-For', '203.0.113.195')
-            .query({ kind: 'user' })
-            .send({}) // empty request to get authentication types
-          session = response.body.session
-          await clientServer.matrixDb.insert('registration_tokens', {
-            token: validToken,
-            uses_allowed: 100,
-            pending: 0,
-            completed: 0
-          })
-          const response2 = await request(app)
-            .post('/_matrix/client/v3/register')
-            .set('User-Agent', 'curl/7.31.0-DEV')
-            .set('X-Forwarded-For', '203.0.113.195')
-            .query({ kind: 'user' })
-            .send({
-              auth: {
-                type: 'm.login.registration_token',
-                token: validToken,
-                session
-              }
-            })
-          expect(response2.statusCode).toBe(200)
-          expect(response2.body).toHaveProperty('user_id')
-          expect(response2.body).toHaveProperty('access_token')
-          expect(response2.body).toHaveProperty('device_id')
-        })
-        it('should invalidate a registration_token after it has been used too many times for user-interactive-authentication', async () => {
-          await clientServer.matrixDb.insert('registration_tokens', {
-            token: 'exampleToken',
-            uses_allowed: 10,
-            pending: 8,
-            completed: 4
-          })
-          const response = await request(app)
-            .post('/_matrix/client/v3/register')
-            .set('User-Agent', 'curl/7.31.0-DEV')
-            .set('X-Forwarded-For', '203.0.113.195')
-            .query({ kind: 'user' })
-            .send({
-              auth: {
-                type: 'm.login.registration_token',
-                token: 'exampleToken',
-                session: randomString(20)
-              }
-            })
-          expect(response.statusCode).toBe(401)
-          expect(response.body).toHaveProperty('error')
-          expect(response.body).toHaveProperty('errcode')
-        })
-        it('should refuse autenticating an appservice without a token', async () => {
-          const response = await request(app)
-            .post('/_matrix/client/v3/register')
-            .set('User-Agent', 'curl/7.31.0-DEV')
-            .query({ kind: 'user' })
-            .send({
-              auth: {
-                type: 'm.login.application_service',
-                username: '_irc_bridge_'
-              }
-            })
-          expect(response.statusCode).toBe(401)
-          expect(response.body).toHaveProperty('error')
-          expect(response.body).toHaveProperty('errcode', 'M_MISSING_TOKEN')
-        })
-        it('should refuse authenticating an appservice with the wrong token', async () => {
-          const response = await request(app)
-            .post('/_matrix/client/v3/register')
-            .set('User-Agent', 'curl/7.31.0-DEV')
-            .set('Authorization', `Bearer wrongToken`)
-            .query({ kind: 'user' })
-            .send({
-              auth: {
-                type: 'm.login.application_service',
-                username: '_irc_bridge_'
-              }
-            })
-          expect(response.statusCode).toBe(401)
-          expect(response.body).toHaveProperty('error')
-          expect(response.body).toHaveProperty('errcode', 'M_UNKNOWN_TOKEN')
-        })
-        it('should refuse authenticating an appservice with a username that is too long', async () => {
-          const asToken = conf.application_services[0].as_token
-          const response = await request(app)
-            .post('/_matrix/client/v3/register')
-            .set('User-Agent', 'curl/7.31.0-DEV')
-            .set('Authorization', `Bearer ${asToken}`)
-            .query({ kind: 'user' })
-            .send({
-              auth: {
-                type: 'm.login.application_service',
-                username: 'invalidUser'
-              }
-            })
-          expect(response.statusCode).toBe(401)
-          expect(response.body).toHaveProperty('error')
-          expect(response.body).toHaveProperty('errcode', 'M_INVALID_USERNAME')
-        })
-        it('should refuse authenticating an appservice with a username it has not registered', async () => {
-          const asToken = conf.application_services[0].as_token
-          const response = await request(app)
-            .post('/_matrix/client/v3/register')
-            .set('User-Agent', 'curl/7.31.0-DEV')
-            .set('Authorization', `Bearer ${asToken}`)
-            .query({ kind: 'user' })
-            .send({
-              auth: {
-                type: 'm.login.application_service',
-                username: 'user'
-              }
-            })
-          expect(response.statusCode).toBe(401)
-          expect(response.body).toHaveProperty('error')
-          expect(response.body).toHaveProperty('errcode', 'M_INVALID_USERNAME')
-        })
-        it('should validate an authentication after the user has accepted the terms', async () => {
-          const response = await request(app)
-            .post('/_matrix/client/v3/register')
-            .set('User-Agent', 'curl/7.31.0-DEV')
-            .set('X-Forwarded-For', '203.0.113.195')
-            .query({ kind: 'user' })
-            .send({
-              auth: {
-                type: 'm.login.terms',
-                session: randomString(20)
-              }
-            })
-          expect(response.statusCode).toBe(401)
-          expect(response.body).toHaveProperty('flows')
-          expect(response.body).toHaveProperty('session')
-          expect(response.body).toHaveProperty('completed')
-          expect(response.body.completed).toEqual(['m.login.terms'])
-        })
-        it('should refuse an authentication with an incorrect password', async () => {
-          const hash = new Hash()
-          await hash.ready
-          await clientServer.matrixDb.insert('users', {
-            name: '@abba:example.com',
-            password_hash: hash.sha256('password')
-          })
-          const response = await request(app)
-            .post('/_matrix/client/v3/register')
-            .set('User-Agent', 'curl/7.31.0-DEV')
-            .set('X-Forwarded-For', '203.0.113.195')
-            .query({ kind: 'user' })
-            .send({
-              auth: {
-                type: 'm.login.password',
-                identifier: { type: 'm.id.user', user: '@abba:example.com' },
-                password: 'wrongpassword',
-                session: randomString(20)
-              }
-            })
-          expect(response.statusCode).toBe(401)
-          expect(response.body).toHaveProperty('error')
-          expect(response.body).toHaveProperty('errcode', 'M_FORBIDDEN')
-        })
-        it('should accept an authentication with a correct password', async () => {
-          const response = await request(app)
-            .post('/_matrix/client/v3/register')
-            .set('User-Agent', 'curl/7.31.0-DEV')
-            .set('X-Forwarded-For', '203.0.113.195')
-            .query({ kind: 'user' })
-            .send({
-              auth: {
-                type: 'm.login.password',
-                identifier: { type: 'm.id.user', user: '@abba:example.com' },
-                password: 'password',
-                session: randomString(20)
-              }
-            })
-          expect(response.statusCode).toBe(401)
-          expect(response.body).toHaveProperty('completed')
-          expect(response.body.completed).toEqual(['m.login.password'])
-        })
-      })
-      it('should send the flows for userInteractiveAuthentication', async () => {
-        const response = await request(app)
-          .post('/_matrix/client/v3/register')
-          .set('User-Agent', 'curl/7.31.0-DEV')
-          .set('X-Forwarded-For', '203.0.113.195')
-          .query({ kind: 'user' })
-          .send({}) // Request without auth parameter so that the server sends the authentication flows
-        expect(response.statusCode).toBe(401)
-        expect(response.body).toHaveProperty('flows')
-        expect(response.body).toHaveProperty('session')
-        session = response.body.session
-      })
-      it('should run the register endpoint after authentication was completed', async () => {
-        const response = await request(app)
-          .post('/_matrix/client/v3/register')
-          .set('User-Agent', 'curl/7.31.0-DEV')
-          .set('X-Forwarded-For', '203.0.113.195')
-          .query({ kind: 'user' })
-          .send({
-            auth: { type: 'm.login.dummy', session },
-            username: 'newuser',
-            password: 'password',
-            device_id: 'deviceId',
-            inhibit_login: false,
-            initial_device_display_name: 'testdevice'
-          })
-        expect(response.statusCode).toBe(200)
-        expect(response.body).toHaveProperty('user_id')
-        expect(response.body).toHaveProperty('expires_in_ms')
-        expect(response.body).toHaveProperty('access_token')
-        expect(response.body).toHaveProperty('device_id')
-      })
-      it('should refuse a registration with an already existing username', async () => {
-        const response = await request(app)
-          .post('/_matrix/client/v3/register')
-          .set('User-Agent', 'curl/7.31.0-DEV')
-          .set('X-Forwarded-For', '203.0.113.195')
-          .query({ kind: 'user' })
-          .send({
-            auth: { type: 'm.login.dummy', session: randomString(10) },
-            username: 'newuser',
-            password: 'password',
-            device_id: 'deviceId',
-            inhibit_login: false,
-            initial_device_display_name: 'testdevice'
-          })
-        expect(response.statusCode).toBe(400)
-        expect(response.body).toHaveProperty('error')
-        expect(response.body).toHaveProperty('errcode', 'M_USER_IN_USE')
-      })
-      it('should only return the userId when inhibit login is set to true', async () => {
-        const response = await request(app)
-          .post('/_matrix/client/v3/register')
-          .set('User-Agent', 'curl/7.31.0-DEV')
-          .set('X-Forwarded-For', '203.0.113.195')
-          .query({ kind: 'user' })
-          .send({
-            auth: { type: 'm.login.dummy', session: randomString(20) },
-            username: 'new_user',
-            device_id: 'device_Id',
-            inhibit_login: true,
-            initial_device_display_name: 'testdevice'
-          })
-        expect(response.statusCode).toBe(200)
-        expect(response.body).toHaveProperty('user_id')
-        expect(response.body).not.toHaveProperty('expires_in_ms')
-        expect(response.body).not.toHaveProperty('access_token')
-        expect(response.body).not.toHaveProperty('device_id')
-      })
-      it('should refuse an incorrect username', async () => {
-        const response = await request(app)
-          .post('/_matrix/client/v3/register')
-          .set('User-Agent', 'curl/7.31.0-DEV')
-          .set('X-Forwarded-For', '203.0.113.195')
-          .query({ kind: 'user' })
-          .send({
-            auth: {
-              type: 'm.login.dummy',
-              session: randomString(20)
-            },
-            username: '@localhost:example.com'
-          })
-        expect(response.statusCode).toBe(400)
-        expect(response.body).toHaveProperty('error')
-        expect(response.body).toHaveProperty('errcode', 'M_INVALID_USERNAME')
-      })
-      it('should accept guest registration', async () => {
-        const response = await request(app)
-          .post('/_matrix/client/v3/register')
-          .set('User-Agent', 'curl/7.31.0-DEV')
-          .set('X-Forwarded-For', '203.0.113.195')
-          .query({ kind: 'guest' })
-          .send({})
-        guestAccessToken = response.body.access_token
-        expect(response.statusCode).toBe(200)
-        expect(response.body).toHaveProperty('user_id')
-        expect(response.body).toHaveProperty('expires_in_ms')
-        expect(response.body).toHaveProperty('access_token')
-        expect(response.body).toHaveProperty('device_id')
-      })
-      it('should accept guest registration with inhibit_login set to true', async () => {
-        const response = await request(app)
-          .post('/_matrix/client/v3/register')
-          .set('User-Agent', 'curl/7.31.0-DEV')
-          .set('X-Forwarded-For', '203.0.113.195')
-          .query({ kind: 'guest' })
-          .send({ inhibit_login: true })
-        expect(response.statusCode).toBe(200)
-        expect(response.body).toHaveProperty('user_id')
-        expect(response.body).not.toHaveProperty('expires_in_ms')
-        expect(response.body).not.toHaveProperty('access_token')
-        expect(response.body).not.toHaveProperty('device_id')
-      })
-      it('should refuse to upgrade a guest account if he does not provide a username', async () => {
-        const response = await request(app)
-          .post('/_matrix/client/v3/register')
-          .set('User-Agent', 'curl/7.31.0-DEV')
-          .set('X-Forwarded-For', '203.0.113.195')
-          .query({ kind: 'guest', guest_access_token: guestAccessToken })
-          .send({ inhibit_login: true })
-        expect(response.statusCode).toBe(400)
-        expect(response.body).toHaveProperty('error')
-        expect(response.body).toHaveProperty('errcode', 'M_MISSING_PARAMS')
-      })
-      it('should refuse to upgrade a guest account if he uses a wrong token', async () => {
-        const response = await request(app)
-          .post('/_matrix/client/v3/register')
-          .set('User-Agent', 'curl/7.31.0-DEV')
-          .set('X-Forwarded-For', '203.0.113.195')
-          .query({ kind: 'guest', guest_access_token: 'wrongToken' })
-          .send({ inhibit_login: true, username: 'guestuser' })
-        expect(response.statusCode).toBe(401)
-        expect(response.body).toHaveProperty('error')
-        expect(response.body).toHaveProperty('errcode', 'M_UNKNOWN_TOKEN')
-      })
-      it('should upgrade a guest account to user account if all parameters are valid', async () => {
-        const response = await request(app)
-          .post('/_matrix/client/v3/register')
-          .set('User-Agent', 'curl/7.31.0-DEV')
-          .set('X-Forwarded-For', '203.0.113.195')
-          .query({ kind: 'guest', guest_access_token: guestAccessToken })
-          .send({ inhibit_login: true, username: 'newuser2' })
-        expect(response.statusCode).toBe(200)
-      })
-      // The following test might be necessary but spec is unclear so it is commented out for now
-
-      // it('should refuse a request without User Agent', async () => {
-      //   const response = await request(app)
-      //     .post('/_matrix/client/v3/register')
-      //     .set('X-Forwarded-For', '203.0.113.195')
-      //     .query({ kind: 'user' })
-      //     .send({
-      //       username: 'newuser',
-      //       auth: { type: 'm.login.dummy', session: randomString(20) }
-      //     })
-      //   expect(response.statusCode).toBe(400)
-      //   expect(response.body).toHaveProperty('error')
-      //   expect(response.body).toHaveProperty('errcode', 'M_MISSING_PARAMS')
-      // })
     })
 
     describe('/_matrix/client/v3/user/:userId', () => {

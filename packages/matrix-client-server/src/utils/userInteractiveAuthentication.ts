@@ -1,23 +1,34 @@
 import { type TwakeLogger } from '@twake/logger'
 import { type Request, type Response } from 'express'
 import type http from 'http'
+import type e from 'express'
 import {
   type MatrixIdentifier,
   type AuthenticationData,
-  type ClientServerDb,
   type Config,
   type AppServiceRegistration,
   type ThreepidCreds,
   type AuthenticationFlowContent,
-  type AuthenticationTypes
+  type AuthenticationTypes,
+  type ApplicationServiceAuth
 } from '../types'
 import { Hash, randomString } from '@twake/crypto'
 import type MatrixDBmodified from '../matrixDb'
-import { errMsg, jsonContent, send, toMatrixId } from '@twake/utils'
+import {
+  epoch,
+  errMsg,
+  jsonContent,
+  send,
+  toMatrixId,
+  isMatrixIdValid
+} from '@twake/utils'
+import type MatrixClientServer from '..'
 export type UiAuthFunction = (
   req: Request | http.IncomingMessage,
   res: Response | http.ServerResponse,
+  reference: Record<string, string>,
   allowedFlows: AuthenticationFlowContent,
+  description: string,
   callback: (data: any, userId: string | null) => void
 ) => void
 
@@ -26,7 +37,7 @@ interface requestBody {
   [key: string]: any // others parameters given in request body
 }
 
-const getParams = (type: AuthenticationTypes): any => {
+export const getParams = (type: AuthenticationTypes): any => {
   // for now only terms has params, spec is unclear about the other types. Add params here if needed in other endpoints
   // For production,maybe these params should be included in the config. The values here are only illustrative and taken from examples in the spec, they are not relevant and should be adapted before deployment.
   // TODO : Modify this before deployment
@@ -52,82 +63,159 @@ const getParams = (type: AuthenticationTypes): any => {
   }
 }
 
-// allowedFlows for endpoints other than register. Subject to change after implementing other endpoints that require UIAuth
-// TODO : Maybe add this in the config and most importantly remove the flow that only contains m.login.dummmy
-// WARNING : m.login.dummy cannot be left as a valid flow on its own in production, it is only for testing purposes.
-// Else, all endpoints that require authentication that use this flow will authenticate the user as having userId = ''
-// Flows cannot end with m.login.dummy either or the same thing will happen. If we want to differentiate a flow that is a subset of another flow
-// We put m.login.dummy at the start and not at the end as done in the spec : https://spec.matrix.org/v1.11/client-server-api/#dummy-auth
-// The differentiation is the same but we will send the right userId to the endpoint.
-export const allowedFlows: AuthenticationFlowContent = {
-  flows: [
-    {
-      stages: ['m.login.application_service']
-    },
-    {
-      stages: ['m.login.email.identity']
-    },
-    {
-      stages: ['m.login.msisdn']
-    },
-    {
-      stages: ['m.login.password']
-    },
-    {
-      stages: ['m.login.recaptcha']
-    },
-    {
-      stages: ['m.login.dummy']
-    },
-    {
-      stages: ['m.login.sso']
-    }
-  ],
-  params: {
-    // Aside from terms, the other two params are useless for now, but I leave them here in case they become useful in the future
-    // If we want to add params, we change the getParams function in utils/userInteractiveAuthentication.ts
-    'm.login.application_service': getParams('m.login.application_service'),
-    'm.login.msisdn': getParams('m.login.msisdn'),
-    'm.login.email.identity': getParams('m.login.email.identity'),
-    'm.login.password': getParams('m.login.password'),
-    'm.login.recaptcha': getParams('m.login.recaptcha'),
-    'm.login.dummy': getParams('m.login.dummy'),
-    'm.login.sso': getParams('m.login.sso')
+// This method is used after the user has been authenticated with clientServer.authenticate to verify that the user is indeed who he claims to be
+export const validateUserWithUIAuthentication = (
+  clientServer: MatrixClientServer,
+  req: Request | http.IncomingMessage,
+  res: Response | http.ServerResponse,
+  reference: Record<string, string>,
+  userId: string,
+  description: string,
+  data: any,
+  callback: (data: any, userId: string | null) => void
+): void => {
+  if (userId != null && !isMatrixIdValid(userId)) {
+    send(
+      res,
+      400,
+      errMsg('invalidParam', 'Invalid user ID'),
+      clientServer.logger
+    )
   }
+  // Authentication flows to verify that the user who has an access token is indeed who he claims to be, and has not just stolen another  user's access token
+  getAvailableValidateUIAuthFlows(clientServer, userId)
+    .then((verificationFlows) => {
+      clientServer.uiauthenticate(
+        req,
+        res,
+        reference,
+        verificationFlows,
+        description,
+        callback
+      )
+    })
+    .catch((e) => {
+      // istanbul ignore next
+      clientServer.logger.error(
+        'Error getting available authentication flows for user',
+        e
+      )
+      // istanbul ignore next
+      send(res, 500, e, clientServer.logger)
+    })
 }
 
-// TODO : Maybe add this in the config and most importantly remove the flow that only contains m.login.dummmy.
-// Allowed flow stages for /register endpoint.
-// Doesn't contain password, email and msisdn since the user isn't registered yet (spec is unclear about this, only my interpretation)
-export const registerAllowedFlows: AuthenticationFlowContent = {
-  flows: [
-    {
-      stages: ['m.login.application_service']
-    },
-    {
-      stages: ['m.login.terms', 'm.login.dummy'] // m.login.dummy added for testing purposes. This variable and the one before need to be updated before going into production (maybe add them to the config ?)
-    },
-    {
-      stages: ['m.login.registration_token']
-    },
-    {
-      stages: ['m.login.sso']
-    },
-    {
-      stages: ['m.login.recaptcha']
-    },
-    {
-      stages: ['m.login.dummy']
-    }
-  ],
-  params: {
-    // Aside from terms, the other two params are useless for now, but I leave them here in case they become useful in the future
-    // If we want to add params, we change the getParams function in utils/userInteractiveAuthentication.ts
-    'm.login.application_service': getParams('m.login.application_service'),
-    'm.login.registration_token': getParams('m.login.registration_token'),
-    'm.login.terms': getParams('m.login.terms'),
-    'm.login.sso': getParams('m.login.sso')
+// Function to get the available authentication flows for a user
+const getAvailableValidateUIAuthFlows = async (
+  clientServer: MatrixClientServer,
+  userId: string
+): Promise<AuthenticationFlowContent> => {
+  const availableFlows: AuthenticationFlowContent = {
+    flows: [],
+    params: {}
   }
+  const passwordRows = await clientServer.matrixDb.get(
+    'users',
+    ['password_hash'],
+    {
+      name: userId
+    }
+  )
+  if (
+    clientServer.conf.is_password_login_enabled &&
+    passwordRows.length > 0 &&
+    passwordRows[0].password_hash !== null
+  ) {
+    // If the user has a password registered, he can authenticate using it
+    availableFlows.flows.push({
+      stages: ['m.login.password']
+    })
+    availableFlows.params['m.login.password'] = getParams('m.login.password')
+  }
+  if (clientServer.conf.is_sso_login_enabled) {
+    availableFlows.flows.push({
+      stages: ['m.login.sso']
+    })
+    availableFlows.params['m.login.sso'] = getParams('m.login.sso')
+  }
+  return availableFlows
+}
+
+// We do a separate function for the /register endpoint since the authentication flows are different
+// For now we use the same config variables to allow the flows for login and register, but this can be changed in the future
+// We don't include m.login.sso as done in the ElementHQ implementation but we could add it if needed
+export const getRegisterAllowedFlows = (
+  conf: Config
+): AuthenticationFlowContent => {
+  const availableFlows: AuthenticationFlowContent = {
+    flows: [],
+    params: {}
+  }
+  const requireEmail: boolean =
+    conf.registration_required_3pid.includes('email')
+  const requireMsisdn: boolean =
+    conf.registration_required_3pid.includes('msisdn')
+  if (requireEmail && !conf.is_email_login_enabled) {
+    // istanbul ignore next
+    throw new Error('Email registration is required but not enabled')
+  }
+  if (requireMsisdn && !conf.is_msisdn_login_enabled) {
+    // istanbul ignore next
+    throw new Error('Msisdn registration is required but not enabled')
+  }
+  if (conf.is_recaptcha_login_enabled) {
+    availableFlows.flows.push({
+      stages: ['m.login.recaptcha']
+    })
+    availableFlows.params['m.login.recaptcha'] = getParams('m.login.recaptcha')
+  }
+  if (conf.is_registration_token_login_enabled) {
+    availableFlows.flows.push({
+      stages: ['m.login.registration_token']
+    })
+    availableFlows.params['m.login.registration_token'] = getParams(
+      'm.login.registration_token'
+    )
+  }
+  if (conf.is_terms_login_enabled) {
+    availableFlows.flows.push({
+      stages: ['m.login.terms']
+    })
+    availableFlows.params['m.login.terms'] = getParams('m.login.terms')
+  }
+  if (requireEmail && requireMsisdn) {
+    availableFlows.flows.push({
+      stages: ['m.login.email.identity', 'm.login.msisdn']
+    })
+    availableFlows.params['m.login.email.identity'] = getParams(
+      'm.login.email.identity'
+    )
+    availableFlows.params['m.login.msisdn'] = getParams('m.login.msisdn')
+  } else {
+    if (conf.is_msisdn_login_enabled) {
+      availableFlows.flows.push({
+        stages: ['m.login.msisdn']
+      })
+      availableFlows.params['m.login.msisdn'] = getParams('m.login.msisdn')
+    }
+    if (conf.is_email_login_enabled) {
+      availableFlows.flows.push({
+        stages: ['m.login.email.identity']
+      })
+      availableFlows.params['m.login.email.identity'] = getParams(
+        'm.login.email.identity'
+      )
+    }
+    if (!requireEmail && !requireMsisdn) {
+      // If no 3pid authentication is required, we add the dummy auth flow as done in elementHQ's implementation.
+      // This allows anybody to register so it could be removed if it is considered a security risk
+      availableFlows.flows.push({
+        stages: ['m.login.dummy']
+      })
+      // No parameters for dummy auth since it always succeeds
+    }
+  }
+  return availableFlows
 }
 
 // eslint-disable-next-line @typescript-eslint/promise-function-async
@@ -162,7 +250,12 @@ const checkAuthentication = (
                 }
               })
               .catch((e) => {
-                reject(errMsg('forbidden'))
+                reject(
+                  errMsg(
+                    'forbidden',
+                    'The user does not have a password registered'
+                  )
+                )
               })
           })
           .catch((e) => {
@@ -173,6 +266,7 @@ const checkAuthentication = (
     case 'm.login.sso':
       return new Promise((resolve, reject) => {
         // TODO : Complete this after implementing fallback mechanism : https://spec.matrix.org/v1.11/client-server-api/#fallback
+        resolve('') // Placeholder return statement
       })
     case 'm.login.msisdn':
     case 'm.login.email.identity': // Both cases are handled the same through their threepid_creds
@@ -218,6 +312,7 @@ const checkAuthentication = (
     case 'm.login.recaptcha':
       return new Promise((resolve, reject) => {
         // TODO : Implement this after understanding the structure of the response field in request body
+        resolve('') // Placeholder return statement
       })
     case 'm.login.dummy':
       return new Promise((resolve, reject) => {
@@ -282,171 +377,336 @@ const checkAuthentication = (
       return new Promise((resolve, reject) => {
         resolve('') // The client makes sure the user has accepted all the terms before sending the request indicating the user has accepted the terms
       })
-    case 'm.login.application_service': // TODO : Check the structure of the ApplicationServiceAuth in the spec.
-      return new Promise((resolve, reject) => {
-        const applicationServices = conf.application_services
-        const asTokens: string[] = applicationServices.map(
-          (as: AppServiceRegistration) => as.as_token
-        )
-        if (req.headers.authorization === undefined) {
-          reject(errMsg('missingToken'))
-        }
-        // @ts-expect-error req.headers.authorization is defined
-        const token = req.headers.authorization.split(' ')[1]
-        if (asTokens.includes(token)) {
-          // Check if the request is made by an application-service
-          const appService = applicationServices.find(
-            (as: AppServiceRegistration) => as.as_token === token
-          )
-          // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
-          const userId = auth.username
-            ? toMatrixId(auth.username, conf.server_name)
-            : // @ts-expect-error : appService is defined since asTokens contains token
-              toMatrixId(appService?.sender_localpart, conf.server_name)
-          if (
-            // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
-            appService?.namespaces.users &&
-            !appService?.namespaces.users.some((namespace) =>
-              new RegExp(namespace.regex).test(userId)
-            ) // check if the userId is registered by the appservice
-          ) {
-            reject(errMsg('invalidUsername'))
-          } else {
-            resolve(userId)
-          }
-        } else {
-          reject(errMsg('unknownToken'))
-        }
-      })
   }
+  // istanbul ignore next
+  return new Promise((resolve, reject) => {
+    // istanbul ignore next
+    resolve('') // Placeholder to prevent error since m.login.application_service isn't handled here
+  })
+}
+
+// eslint-disable-next-line @typescript-eslint/promise-function-async
+const handleAppServiceAuthentication = (
+  req: Request | http.IncomingMessage,
+  conf: Config,
+  auth: ApplicationServiceAuth
+): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const applicationServices = conf.application_services
+    const asTokens: string[] = applicationServices.map(
+      (as: AppServiceRegistration) => as.as_token
+    )
+    if (req.headers.authorization === undefined) {
+      reject(errMsg('missingToken'))
+    }
+    // @ts-expect-error req.headers.authorization is defined
+    const token = req.headers.authorization.split(' ')[1]
+    if (asTokens.includes(token)) {
+      // Check if the request is made by an application-service
+      const appService = applicationServices.find(
+        (as: AppServiceRegistration) => as.as_token === token
+      )
+      // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+      const userId = auth.username
+        ? toMatrixId(auth.username, conf.server_name)
+        : // @ts-expect-error : appService is defined since asTokens contains token
+          toMatrixId(appService?.sender_localpart, conf.server_name)
+      if (
+        // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+        appService?.namespaces.users &&
+        !appService?.namespaces.users.some((namespace) =>
+          new RegExp(namespace.regex).test(userId)
+        ) // check if the userId is registered by the appservice
+      ) {
+        reject(errMsg('invalidUsername'))
+      } else {
+        resolve(userId)
+      }
+    } else {
+      reject(errMsg('unknownToken'))
+    }
+  })
+}
+
+const doAppServiceAuthentication = (
+  req: Request | http.IncomingMessage,
+  res: Response | http.ServerResponse,
+  allowedFlows: AuthenticationFlowContent,
+  auth: ApplicationServiceAuth,
+  conf: Config,
+  logger: TwakeLogger,
+  obj: any,
+  callback: (data: any, userId: string | null) => void
+): void => {
+  handleAppServiceAuthentication(req, conf, auth)
+    .then((userId) => {
+      callback(obj, userId)
+    })
+    .catch((e) => {
+      send(
+        res,
+        401,
+        {
+          errcode: e.errcode,
+          error: e.error,
+          ...allowedFlows
+        },
+        logger
+      )
+    })
+}
+
+const verifyClientDict = <T>(
+  res: e.Response | http.ServerResponse,
+  content: T,
+  reference: Record<string, string>,
+  logger: TwakeLogger,
+  callback: (obj: T) => void
+): void => {
+  for (const key in reference) {
+    const expectedType = reference[key]
+    const value = (content as any)[key]
+
+    if (value !== null && value !== undefined) {
+      // eslint-disable-next-line valid-typeof
+      if (typeof value !== expectedType) {
+        send(
+          res,
+          400,
+          errMsg(
+            'invalidParam',
+            `Invalid ${key}: expected ${expectedType}, got ${typeof value}`
+          ),
+          logger
+        )
+        return
+      }
+
+      if (expectedType === 'string' && (value as string).length > 512) {
+        send(
+          res,
+          400,
+          errMsg('invalidParam', `${key} exceeds 512 characters`),
+          logger
+        )
+        return
+      }
+    }
+  }
+  callback(content)
 }
 
 const UiAuthenticate = (
-  db: ClientServerDb,
+  // db: ClientServerDb,
   matrixDb: MatrixDBmodified,
   conf: Config,
   logger: TwakeLogger
 ): UiAuthFunction => {
-  return (req, res, allowedFlows, callback) => {
+  return (req, res, reference, allowedFlows, description, callback) => {
     jsonContent(req, res, logger, (obj) => {
       // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
       if (!(obj as requestBody).auth) {
-        send(
-          res,
-          401,
-          {
-            ...allowedFlows,
-            session: randomString(12) // Chose 12 arbitrarily according to a spec example
-          },
-          logger
-        )
+        verifyClientDict(res, obj, reference, logger, (obj) => {
+          // If there is no auth key in the request body, we create a new authentication session
+          const sessionId = randomString(24) // Chose 24 according to synapse implementation but seems arbitrary
+          const ip = (req as e.Request).ip
+          // istanbul ignore if
+          if (ip === undefined) {
+            // istanbul ignore next
+            send(res, 500, errMsg('unknown', 'IP address is missing'))
+            return
+          }
+          const userAgent = req.headers['user-agent'] ?? 'undefined'
+          const addUserIps = matrixDb.insert('ui_auth_sessions_ips', {
+            session_id: sessionId,
+            ip,
+            user_agent: userAgent
+          })
+          // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+          if (obj.password) {
+            // Since we store the clientdict in the database, we don't want to store the unhashed password in it
+            delete obj.password
+          }
+          const createAuthSession = matrixDb.insert('ui_auth_sessions', {
+            session_id: sessionId,
+            creation_time: epoch(),
+            clientdict: JSON.stringify(obj),
+            serverdict: JSON.stringify({}),
+            uri: req.url as string, // TODO : Ensure this is the right way to get the URI
+            method: req.method as string,
+            description
+          })
+          Promise.all([addUserIps, createAuthSession])
+            .then(() => {
+              send(
+                // We send back the session_id to the client so that he can use it in future requests
+                res,
+                401,
+                {
+                  ...allowedFlows,
+                  session: sessionId
+                },
+                logger
+              )
+            })
+            .catch((e) => {
+              /* istanbul ignore next */
+              logger.error(
+                'Error while creating a new session during User-Interactive Authentication',
+                e
+              )
+              /* istanbul ignore next */
+              send(res, 500, e, logger)
+            })
+        })
       } else {
         const auth = (obj as requestBody).auth as AuthenticationData
-        checkAuthentication(auth, matrixDb, conf, req)
-          .then((userId) => {
-            if (auth.type === 'm.login.application_service') {
-              callback(obj, userId) // Arguments of callback are subject to change
-              return
-            }
-            db.insert('ui_auth_sessions', {
-              session_id: auth.session,
-              stage_type: auth.type
-            })
-              .then((rows) => {
-                db.get('ui_auth_sessions', ['stage_type'], {
-                  session_id: auth.session
-                })
-                  .then((rows) => {
-                    const completed: string[] = rows.map(
-                      (row) => row.stage_type as string
-                    )
-                    const authOver = allowedFlows.flows.some((flow) => {
-                      return (
-                        flow.stages.length === completed.length &&
-                        flow.stages.every((stage) => completed.includes(stage))
-                      )
+        if (auth.type === 'm.login.application_service') {
+          doAppServiceAuthentication(
+            req,
+            res,
+            allowedFlows,
+            auth,
+            conf,
+            logger,
+            obj,
+            callback
+          )
+          return
+        }
+        matrixDb
+          .get('ui_auth_sessions', ['*'], { session_id: auth.session })
+          .then((rows) => {
+            if (rows.length === 0) {
+              logger.error(`Unknown session ID : ${auth.session}`)
+              send(res, 400, errMsg('noValidSession'), logger)
+            } else if (
+              rows[0].uri !== req.url ||
+              rows[0].method !== req.method
+            ) {
+              send(
+                res,
+                403,
+                errMsg(
+                  'forbidden',
+                  'Requested operation has changed during the UI authentication session.'
+                ),
+                logger
+              )
+            } else {
+              checkAuthentication(auth, matrixDb, conf, req)
+                .then((userId) => {
+                  matrixDb
+                    .insert('ui_auth_sessions_credentials', {
+                      session_id: auth.session,
+                      stage_type: auth.type,
+                      result: userId
                     })
+                    .then((rows) => {
+                      const getCompletedStages = matrixDb.get(
+                        'ui_auth_sessions_credentials',
+                        ['stage_type'],
+                        {
+                          session_id: auth.session
+                        }
+                      )
+                      const updateClientDict = matrixDb.updateWithConditions(
+                        'ui_auth_sessions',
+                        { clientdict: JSON.stringify(obj) },
+                        [{ field: 'session_id', value: auth.session }]
+                      )
+                      Promise.all([getCompletedStages, updateClientDict])
+                        .then((rows) => {
+                          const completed: string[] = rows[0].map(
+                            (row) => row.stage_type as string
+                          )
+                          const authOver = allowedFlows.flows.some((flow) => {
+                            return (
+                              flow.stages.length === completed.length &&
+                              flow.stages.every((stage) =>
+                                completed.includes(stage)
+                              )
+                            )
+                          })
 
-                    // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
-                    if (authOver) {
-                      callback(obj, userId) // Arguments of callback are subject to change
-                    } else {
+                          // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+                          if (authOver) {
+                            callback(obj, userId) // Arguments of callback are subject to change
+                          } else {
+                            send(
+                              res,
+                              401,
+                              {
+                                ...allowedFlows,
+                                session: auth.session,
+                                completed
+                              },
+                              logger
+                            )
+                          }
+                        })
+                        .catch((e) => {
+                          /* istanbul ignore next */
+                          logger.error(
+                            'Error while retrieving session credentials from the database during User-Interactive Authentication',
+                            e
+                          )
+                          /* istanbul ignore next */
+                          send(res, 400, e, logger)
+                        })
+                    })
+                    .catch((e) => {
+                      /* istanbul ignore next */
+                      logger.error(
+                        'Error while inserting session credentials into the database during User-Interactive Authentication',
+                        e
+                      )
+                      /* istanbul ignore next */
+                      send(res, 400, e, logger)
+                    })
+                })
+                .catch((e) => {
+                  matrixDb
+                    .get('ui_auth_sessions_credentials', ['stage_type'], {
+                      session_id: auth.session
+                    })
+                    .then((rows) => {
+                      const completed: string[] = rows.map(
+                        // istanbul ignore next
+                        (row) => row.stage_type as string
+                      )
                       send(
                         res,
                         401,
                         {
+                          errcode: e.errcode,
+                          error: e.error,
+                          completed,
                           ...allowedFlows,
-                          session: auth.session,
-                          completed
+                          session: auth.session
                         },
                         logger
                       )
-                    }
-                  })
-                  .catch((e) => {
-                    /* istanbul ignore next */
-                    logger.error(
-                      'Error while retrieving session credentials from the database during User-Interactive Authentication',
-                      e
-                    )
-                    /* istanbul ignore next */
-                    send(res, 400, e, logger)
-                  })
-              })
-              .catch((e) => {
-                /* istanbul ignore next */
-                logger.error(
-                  'Error while inserting session credentials into the database during User-Interactive Authentication',
-                  e
-                )
-                /* istanbul ignore next */
-                send(res, 400, e, logger)
-              })
+                    })
+                    .catch((e) => {
+                      /* istanbul ignore next */
+                      logger.error(
+                        'Error while retrieving session credentials from the database during User-Interactive Authentication',
+                        e
+                      )
+                      /* istanbul ignore next */
+                      send(res, 400, e, logger)
+                    })
+                })
+            }
           })
           .catch((e) => {
-            if (auth.type === 'm.login.application_service') {
-              send(
-                res,
-                401,
-                {
-                  errcode: e.errcode,
-                  error: e.error,
-                  ...allowedFlows
-                },
-                logger
-              )
-              return
-            }
-            db.get('ui_auth_sessions', ['stage_type'], {
-              session_id: auth.session
-            })
-              .then((rows) => {
-                const completed: string[] = rows.map(
-                  // istanbul ignore next
-                  (row) => row.stage_type as string
-                )
-                send(
-                  res,
-                  401,
-                  {
-                    errcode: e.errcode,
-                    error: e.error,
-                    completed,
-                    ...allowedFlows,
-                    session: auth.session
-                  },
-                  logger
-                )
-              })
-              .catch((e) => {
-                /* istanbul ignore next */
-                logger.error(
-                  'Error while retrieving session credentials from the database during User-Interactive Authentication',
-                  e
-                )
-                /* istanbul ignore next */
-                send(res, 400, e, logger)
-              })
+            // istanbul ignore next
+            logger.error(
+              'Error retrieving UI Authentication session from the database'
+            )
+            // istanbul ignore next
+            send(res, 500, e, logger)
           })
       }
     })
