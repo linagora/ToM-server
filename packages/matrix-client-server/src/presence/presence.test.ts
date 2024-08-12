@@ -6,7 +6,7 @@ import { buildMatrixDb, buildUserDB } from '../__testData__/buildUserDB'
 import { type Config } from '../types'
 import defaultConfig from '../__testData__/registerConf.json'
 import { getLogger, type TwakeLogger } from '@twake/logger'
-import { setupTokens, validToken } from '../utils/setupTokens'
+import { setupTokens, validToken } from '../__testData__/setupTokens'
 
 jest.mock('node-fetch', () => jest.fn())
 
