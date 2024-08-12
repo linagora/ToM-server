@@ -125,15 +125,6 @@ export async function setupTokens(
       validated_at: epoch()
     })
 
-    await clientServer.matrixDb.insert('access_tokens', {
-      id: randomString(64),
-      user_id: '@thirduser:example.com',
-      device_id: 'thirddevice',
-      token: validToken3,
-      refresh_token_id: validRefreshTokenId3,
-      valid_until_ms: epoch() + 64000
-    })
-
     await clientServer.matrixDb.insert('user_threepids', {
       user_id: '@validated:example.com',
       medium: 'email',
