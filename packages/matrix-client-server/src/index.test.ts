@@ -15,7 +15,7 @@ import {
   validRefreshToken2,
   validRefreshToken3,
   validToken3
-} from './utils/setupTokens'
+} from './__testData__/setupTokens'
 
 process.env.TWAKE_CLIENT_SERVER_CONF = './src/__testData__/registerConf.json'
 jest.mock('node-fetch', () => jest.fn())

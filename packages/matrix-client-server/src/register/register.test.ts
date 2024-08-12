@@ -7,7 +7,7 @@ import defaultConfig from '../__testData__/registerConf.json'
 import { buildMatrixDb, buildUserDB } from '../__testData__/buildUserDB'
 import fs from 'fs'
 import request from 'supertest'
-import { setupTokens, validToken } from '../utils/setupTokens'
+import { setupTokens, validToken } from '../__testData__/setupTokens'
 
 jest.mock('node-fetch', () => jest.fn())
 const sendMailMock = jest.fn()

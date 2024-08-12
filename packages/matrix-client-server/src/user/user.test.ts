@@ -6,7 +6,11 @@ import { buildMatrixDb, buildUserDB } from '../__testData__/buildUserDB'
 import { type Config, type Filter } from '../types'
 import defaultConfig from '../__testData__/registerConf.json'
 import { getLogger, type TwakeLogger } from '@twake/logger'
-import { setupTokens, validToken, validToken2 } from '../utils/setupTokens'
+import {
+  setupTokens,
+  validToken,
+  validToken2
+} from '../__testData__/setupTokens'
 jest.mock('node-fetch', () => jest.fn())
 const sendMailMock = jest.fn()
 jest.mock('nodemailer', () => ({
