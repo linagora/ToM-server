@@ -1,6 +1,7 @@
 import { type TwakeLogger } from '@twake/logger'
 import { type Request, type Response } from 'express'
 import type http from 'http'
+import type e from 'express'
 import {
   type MatrixIdentifier,
   type AuthenticationData,
@@ -25,6 +26,7 @@ import type MatrixClientServer from '..'
 export type UiAuthFunction = (
   req: Request | http.IncomingMessage,
   res: Response | http.ServerResponse,
+  reference: Record<string, string>,
   allowedFlows: AuthenticationFlowContent,
   description: string,
   callback: (data: any, userId: string | null) => void
@@ -66,6 +68,7 @@ export const validateUserWithUIAuthentication = (
   clientServer: MatrixClientServer,
   req: Request | http.IncomingMessage,
   res: Response | http.ServerResponse,
+  reference: Record<string, string>,
   userId: string,
   description: string,
   data: any,
@@ -85,6 +88,7 @@ export const validateUserWithUIAuthentication = (
       clientServer.uiauthenticate(
         req,
         res,
+        reference,
         verificationFlows,
         description,
         callback
@@ -147,12 +151,16 @@ export const getRegisterAllowedFlows = (
     flows: [],
     params: {}
   }
-  const requireEmail: boolean = 'email' in conf.registration_required_3pid
-  const requireMsisdn: boolean = 'msisdn' in conf.registration_required_3pid
+  const requireEmail: boolean =
+    conf.registration_required_3pid.includes('email')
+  const requireMsisdn: boolean =
+    conf.registration_required_3pid.includes('msisdn')
   if (requireEmail && !conf.is_email_login_enabled) {
+    // istanbul ignore next
     throw new Error('Email registration is required but not enabled')
   }
   if (requireMsisdn && !conf.is_msisdn_login_enabled) {
+    // istanbul ignore next
     throw new Error('Msisdn registration is required but not enabled')
   }
   if (conf.is_recaptcha_login_enabled) {
@@ -447,13 +455,54 @@ const doAppServiceAuthentication = (
       )
     })
 }
+
+const verifyClientDict = <T>(
+  res: e.Response | http.ServerResponse,
+  content: T,
+  reference: Record<string, string>,
+  logger: TwakeLogger,
+  callback: (obj: T) => void
+): void => {
+  for (const key in reference) {
+    const expectedType = reference[key]
+    const value = (content as any)[key]
+
+    if (value !== null && value !== undefined) {
+      // eslint-disable-next-line valid-typeof
+      if (typeof value !== expectedType) {
+        send(
+          res,
+          400,
+          errMsg(
+            'invalidParam',
+            `Invalid ${key}: expected ${expectedType}, got ${typeof value}`
+          ),
+          logger
+        )
+        return
+      }
+
+      if (expectedType === 'string' && (value as string).length > 512) {
+        send(
+          res,
+          400,
+          errMsg('invalidParam', `${key} exceeds 512 characters`),
+          logger
+        )
+        return
+      }
+    }
+  }
+  callback(content)
+}
+
 const UiAuthenticate = (
   // db: ClientServerDb,
   matrixDb: MatrixDBmodified,
   conf: Config,
   logger: TwakeLogger
 ): UiAuthFunction => {
-  return (req, res, allowedFlows, description, callback) => {
+  return (req, res, reference, allowedFlows, description, callback) => {
     jsonContent(req, res, logger, (obj) => {
       // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
       if (!(obj as requestBody).auth) {
@@ -505,12 +554,21 @@ const UiAuthenticate = (
                       result: userId
                     })
                     .then((rows) => {
-                      matrixDb
-                        .get('ui_auth_sessions_credentials', ['stage_type'], {
+                      const getCompletedStages = matrixDb.get(
+                        'ui_auth_sessions_credentials',
+                        ['stage_type'],
+                        {
                           session_id: auth.session
-                        })
+                        }
+                      )
+                      const updateClientDict = matrixDb.updateWithConditions(
+                        'ui_auth_sessions',
+                        { clientdict: JSON.stringify(obj) },
+                        [{ field: 'session_id', value: auth.session }]
+                      )
+                      Promise.all([getCompletedStages, updateClientDict])
                         .then((rows) => {
-                          const completed: string[] = rows.map(
+                          const completed: string[] = rows[0].map(
                             (row) => row.stage_type as string
                           )
                           const authOver = allowedFlows.flows.some((flow) => {

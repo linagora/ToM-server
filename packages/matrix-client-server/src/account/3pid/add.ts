@@ -15,6 +15,10 @@ interface RequestBody {
   sid: string
 }
 
+const requestBodyReference = {
+  client_secret: 'string',
+  sid: 'string'
+}
 const schema = {
   auth: false,
   client_secret: true,
@@ -31,6 +35,7 @@ const add = (clientServer: MatrixClientServer): expressAppHandler => {
         clientServer,
         req,
         res,
+        requestBodyReference,
         data.sub,
         'add a 3pid to a user account',
         data,

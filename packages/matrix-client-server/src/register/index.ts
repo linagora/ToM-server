@@ -36,6 +36,16 @@ interface RegisterRequestBody {
   username?: string
 }
 
+// Reference types for clientDict verification in UiAuthentication
+const registerRequestBodyReference = {
+  device_id: 'string',
+  inhibit_login: 'boolean',
+  initial_device_display_name: 'string',
+  password: 'string',
+  refresh_token: 'boolean',
+  username: 'string'
+}
+
 interface InsertedData {
   name: string
   creation_ts: number
@@ -43,6 +53,7 @@ interface InsertedData {
   shadow_banned: number
   user_type?: string
 }
+
 const setupPolicies = (
   userId: string,
   clientServer: MatrixClientServer,
@@ -74,10 +85,6 @@ const sendSuccessResponse = (
   if (body.inhibit_login) {
     send(res, 200, { user_id: userId })
   } else {
-    if (body.refresh_token && typeof body.refresh_token !== 'boolean') {
-      send(res, 400, errMsg('invalidParam', 'Refresh token must be a boolean'))
-      return
-    }
     if (!body.refresh_token) {
       // No point sending a refresh token to the client if it does not support it
       send(res, 200, {
@@ -98,33 +105,6 @@ const sendSuccessResponse = (
   }
 }
 
-const verifyParameters = (
-  deviceId: string,
-  device_display_name?: string,
-  password?: string
-): Promise<void> => {
-  return new Promise((resolve, reject) => {
-    if (
-      password !== null &&
-      password !== undefined &&
-      (typeof password !== 'string' || password.length > 512)
-    ) {
-      reject(errMsg('invalidParam', 'Invalid password'))
-    } else if (
-      device_display_name !== null &&
-      device_display_name !== undefined &&
-      (typeof device_display_name !== 'string' ||
-        device_display_name.length > 512)
-    ) {
-      reject(errMsg('invalidParam', 'Invalid initial_device_display_name'))
-    } else if (typeof deviceId !== 'string' || deviceId.length > 512) {
-      reject(errMsg('invalidParam', 'Invalid device_id'))
-    } else {
-      resolve()
-    }
-  })
-}
-
 // NB : It might be necessary to fill the "profiles" table with the displayname set as the username given in the request body
 // We did not use it yet so we are not sure whether to fill it here or not
 const registerAccount = (
@@ -137,8 +117,7 @@ const registerAccount = (
   body: RegisterRequestBody,
   res: e.Response | ServerResponse,
   kind: string,
-  password?: string,
-  upgrade?: boolean
+  password?: string
 ): void => {
   const userPromise = clientServer.matrixDb.insert('users', {
     name: userId,
@@ -197,9 +176,13 @@ const register = (clientServer: MatrixClientServer): expressAppHandler => {
   return (req, res) => {
     // @ts-expect-error req.query exists
     const parameters = req.query as Parameters
-    // @ts-expect-error req.headers exists
-    let ip = req.headers['x-forwarded-for'] ?? req.ip
-    ip = ip ?? 'undefined' // Same as user-agent, required in the DB schemas but not in the spec, so we set it to the string 'undefined' if it's not present
+    const ip = (req as e.Request).ip
+    // istanbul ignore if
+    if (ip === undefined) {
+      // istanbul ignore next
+      send(res, 500, errMsg('unknown', 'IP address is missing'))
+      return
+    }
     const userAgent = req.headers['user-agent'] ?? 'undefined'
     if (parameters.kind === 'user') {
       clientServer.uiauthenticate(req, res, registerAllowedFlows, (obj) => {
