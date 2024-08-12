@@ -5,11 +5,10 @@ import ClientServer from '../../index'
 import fetch from 'node-fetch'
 import { buildMatrixDb, buildUserDB } from '../../__testData__/buildUserDB'
 import { type Config } from '../../types'
-import defaultConfig from '../../__testData__/3pidConf.json'
+import defaultConfig from '../../__testData__/registerConf.json'
 import { getLogger, type TwakeLogger } from '@twake/logger'
 import { setupTokens, validToken, validToken2 } from '../../utils/setupTokens'
 
-process.env.TWAKE_CLIENT_SERVER_CONF = './src/__testData__/3pidConf.json'
 jest.mock('node-fetch', () => jest.fn())
 const sendMailMock = jest.fn()
 jest.mock('nodemailer', () => ({
@@ -40,7 +39,10 @@ beforeAll((done) => {
     database_engine: 'sqlite',
     base_url: 'http://example.com/',
     userdb_engine: 'sqlite',
-    matrix_database_engine: 'sqlite'
+    matrix_database_engine: 'sqlite',
+    matrix_database_host: './src/__testData__/testMatrixThreepid.db',
+    database_host: './src/__testData__/testThreepid.db',
+    userdb_host: './src/__testData__/testThreepid.db'
   }
   if (process.env.TEST_PG === 'yes') {
     conf.database_engine = 'pg'
@@ -74,7 +76,7 @@ afterAll(() => {
 
 describe('Use configuration file', () => {
   beforeAll((done) => {
-    clientServer = new ClientServer()
+    clientServer = new ClientServer(conf)
     app = express()
     clientServer.ready
       .then(() => {
@@ -122,7 +124,6 @@ describe('Use configuration file', () => {
               sid: 'sid',
               client_secret: 'cs'
             })
-          console.log(response.body)
           expect(response.statusCode).toBe(400)
           expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
           expect(response.body).toHaveProperty('error', 'Invalid user ID')

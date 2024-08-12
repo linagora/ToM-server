@@ -84,9 +84,16 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
   private _uiauthenticate!: UiAuthFunction
 
   set uiauthenticate(uiauthenticate: UiAuthFunction) {
-    this._uiauthenticate = (req, res, allowedFlows, description, cb) => {
+    this._uiauthenticate = (
+      req,
+      res,
+      reference,
+      allowedFlows,
+      description,
+      cb
+    ) => {
       this.rateLimiter(req as Request, res as Response, () => {
-        uiauthenticate(req, res, allowedFlows, description, cb)
+        uiauthenticate(req, res, reference, allowedFlows, description, cb)
       })
     }
   }

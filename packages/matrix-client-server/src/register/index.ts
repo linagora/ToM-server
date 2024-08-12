@@ -36,6 +36,16 @@ interface RegisterRequestBody {
   username?: string
 }
 
+// Reference types for clientDict verification in UiAuthentication
+const registerRequestBodyReference = {
+  device_id: 'string',
+  inhibit_login: 'boolean',
+  initial_device_display_name: 'string',
+  password: 'string',
+  refresh_token: 'boolean',
+  username: 'string'
+}
+
 interface InsertedData {
   name: string
   creation_ts: number
@@ -43,6 +53,7 @@ interface InsertedData {
   shadow_banned: number
   user_type?: string
 }
+
 const setupPolicies = (
   userId: string,
   clientServer: MatrixClientServer,
@@ -74,10 +85,6 @@ const sendSuccessResponse = (
   if (body.inhibit_login) {
     send(res, 200, { user_id: userId })
   } else {
-    if (body.refresh_token && typeof body.refresh_token !== 'boolean') {
-      send(res, 400, errMsg('invalidParam', 'Refresh token must be a boolean'))
-      return
-    }
     if (!body.refresh_token) {
       // No point sending a refresh token to the client if it does not support it
       send(res, 200, {
@@ -98,33 +105,6 @@ const sendSuccessResponse = (
   }
 }
 
-const verifyParameters = (
-  deviceId: string,
-  device_display_name?: string,
-  password?: string
-): Promise<void> => {
-  return new Promise((resolve, reject) => {
-    if (
-      password !== null &&
-      password !== undefined &&
-      (typeof password !== 'string' || password.length > 512)
-    ) {
-      reject(errMsg('invalidParam', 'Invalid password'))
-    } else if (
-      device_display_name !== null &&
-      device_display_name !== undefined &&
-      (typeof device_display_name !== 'string' ||
-        device_display_name.length > 512)
-    ) {
-      reject(errMsg('invalidParam', 'Invalid initial_device_display_name'))
-    } else if (typeof deviceId !== 'string' || deviceId.length > 512) {
-      reject(errMsg('invalidParam', 'Invalid device_id'))
-    } else {
-      resolve()
-    }
-  })
-}
-
 // NB : It might be necessary to fill the "profiles" table with the displayname set as the username given in the request body
 // We did not use it yet so we are not sure whether to fill it here or not
 const registerAccount = (
@@ -137,109 +117,93 @@ const registerAccount = (
   body: RegisterRequestBody,
   res: e.Response | ServerResponse,
   kind: string,
-  password?: string,
-  upgrade?: boolean
+  password?: string
 ): void => {
   const accessToken = randomString(64)
   const refreshToken = randomString(64)
   const refreshTokenId = randomString(64)
-  verifyParameters(deviceId, device_display_name, password)
+  const createUserPromise = (): Promise<DbGetResult> => {
+    const commonUserData: InsertedData = {
+      name: userId,
+      creation_ts: epoch(),
+      is_guest: kind === 'guest' ? 1 : 0,
+      shadow_banned: 0
+    }
+    if (kind === 'guest') {
+      commonUserData.user_type = 'guest' // User type is NULL for normal users
+    }
+    if (password) {
+      const hash = new Hash()
+      return hash.ready.then(() => {
+        return clientServer.matrixDb.insert('users', {
+          ...commonUserData,
+          password_hash: hash.sha256(password) // TODO: Handle other hashing algorithms
+        })
+      })
+    } else {
+      return clientServer.matrixDb.insert('users', { ...commonUserData })
+    }
+  }
+  const userPromise = createUserPromise()
+  const userIpPromise = clientServer.matrixDb.insert('user_ips', {
+    user_id: userId,
+    access_token: accessToken,
+    device_id: deviceId,
+    ip,
+    user_agent: userAgent,
+    last_seen: epoch()
+  })
+  const newDevicePromise = clientServer.matrixDb.insert('devices', {
+    user_id: userId,
+    device_id: deviceId,
+    display_name: device_display_name,
+    last_seen: epoch(),
+    ip,
+    user_agent: userAgent
+  })
+  const fillPoliciesPromise = setupPolicies(userId, clientServer, 0) // 0 means the user hasn't accepted the policies yet, used in Identity Server
+  const refreshTokenPromise = clientServer.matrixDb.insert('refresh_tokens', {
+    id: refreshTokenId,
+    user_id: userId,
+    device_id: deviceId,
+    token: refreshToken // TODO : maybe add expiry_ts here
+  })
+  const accessTokenPromise = clientServer.matrixDb.insert('access_tokens', {
+    id: randomString(64), // To be fixed later
+    user_id: userId,
+    token: accessToken,
+    device_id: deviceId,
+    valid_until_ms: 0,
+    refresh_token_id: refreshTokenId
+  }) // TODO : Add a token_lifetime in the config, replace the id with a correct one, and fill the 'puppets_user_id' row with the right value
+  const promisesToExecute = body.inhibit_login
+    ? [userIpPromise, userPromise, fillPoliciesPromise]
+    : [
+        userIpPromise,
+        userPromise,
+        fillPoliciesPromise,
+        refreshTokenPromise,
+        accessTokenPromise,
+        newDevicePromise
+      ]
+  Promise.all(promisesToExecute)
     .then(() => {
-      const createUserPromise = (): Promise<DbGetResult> => {
-        const commonUserData: InsertedData = {
-          name: userId,
-          creation_ts: epoch(),
-          is_guest: kind === 'guest' ? 1 : 0,
-          shadow_banned: 0
-        }
-        if (kind === 'guest') {
-          commonUserData.user_type = 'guest' // User type is NULL for normal users
-        }
-        if (password) {
-          const hash = new Hash()
-          return hash.ready.then(() => {
-            return clientServer.matrixDb.insert('users', {
-              ...commonUserData,
-              password_hash: hash.sha256(password) // TODO: Handle other hashing algorithms
-            })
-          })
-        } else {
-          return clientServer.matrixDb.insert('users', { ...commonUserData })
-        }
-      }
-
-      createUserPromise()
-        .then((userPromise) => {
-          const userIpPromise = clientServer.matrixDb.insert('user_ips', {
-            user_id: userId,
-            access_token: accessToken,
-            device_id: deviceId,
-            ip,
-            user_agent: userAgent,
-            last_seen: epoch()
-          })
-          const newDevicePromise = clientServer.matrixDb.insert('devices', {
-            user_id: userId,
-            device_id: deviceId,
-            display_name: device_display_name,
-            last_seen: epoch(),
-            ip,
-            user_agent: userAgent
-          })
-          const fillPoliciesPromise = setupPolicies(userId, clientServer, 0) // 0 means the user hasn't accepted the policies yet, used in Identity Server
-          const refreshTokenPromise = clientServer.matrixDb.insert(
-            'refresh_tokens',
-            {
-              id: refreshTokenId,
-              user_id: userId,
-              device_id: deviceId,
-              token: refreshToken // TODO : maybe add expiry_ts here
-            }
-          )
-          const accessTokenPromise = clientServer.matrixDb.insert(
-            'access_tokens',
-            {
-              id: randomString(64), // To be fixed later
-              user_id: userId,
-              token: accessToken,
-              device_id: deviceId,
-              valid_until_ms: 0,
-              refresh_token_id: refreshTokenId
-            }
-          ) // TODO : Add a token_lifetime in the config, replace the id with a correct one, and fill the 'puppets_user_id' row with the right value
-          const promisesToExecute = body.inhibit_login
-            ? [userIpPromise, userPromise, fillPoliciesPromise]
-            : [
-                userIpPromise,
-                userPromise,
-                fillPoliciesPromise,
-                refreshTokenPromise,
-                accessTokenPromise,
-                newDevicePromise
-              ]
-          return Promise.all(promisesToExecute)
-        })
-        .then(() => {
-          sendSuccessResponse(
-            body,
-            res,
-            userId,
-            accessToken,
-            refreshToken,
-            deviceId
-          )
-        })
-        .catch((e) => {
-          // istanbul ignore next
-          clientServer.logger.error('Error while registering a user', e)
-          // istanbul ignore next
-          send(res, 500, {
-            error: 'Error while registering a user'
-          })
-        })
+      sendSuccessResponse(
+        body,
+        res,
+        userId,
+        accessToken,
+        refreshToken,
+        deviceId
+      )
     })
     .catch((e) => {
-      send(res, 400, e, clientServer.logger)
+      // istanbul ignore next
+      clientServer.logger.error('Error while registering a user', e)
+      // istanbul ignore next
+      send(res, 500, {
+        error: 'Error while registering a user'
+      })
     })
 }
 
@@ -254,79 +218,85 @@ const upgradeGuest = (
   res: e.Response | ServerResponse,
   password?: string
 ): void => {
-  verifyParameters(deviceId)
-    .then(() => {
-      const commonUserData = {
-        is_guest: 0,
-        user_type: 'user',
-        name: newUserId
-      }
-      const hash = new Hash()
-      const updateUsersPromise = password
-        ? hash.ready.then(() => {
-            return clientServer.matrixDb.updateWithConditions(
-              'users',
-              {
-                ...commonUserData,
-                password_hash: hash.sha256(password) // TODO: Handle other hashing algorithms
-              },
-              [{ field: 'name', value: oldUserId }]
-            )
-          })
-        : clientServer.matrixDb.updateWithConditions('users', commonUserData, [
-            { field: 'name', value: oldUserId }
-          ])
-
-      const updateUserIpsPromise = clientServer.matrixDb.updateWithConditions(
-        'user_ips',
-        { user_id: newUserId },
-        [
+  if (typeof deviceId !== 'string' || deviceId.length > 512) {
+    send(
+      res,
+      400,
+      errMsg('invalidParam', 'Invalid device_id'),
+      clientServer.logger
+    )
+    return
+  }
+  const commonUserData = {
+    is_guest: 0,
+    user_type: 'user',
+    name: newUserId
+  }
+  const hash = new Hash()
+  const updateUsersPromise = password
+    ? hash.ready.then(() => {
+        return clientServer.matrixDb.updateWithConditions(
+          'users',
           {
-            field: 'access_token',
-            value: accessToken
-          }
-        ]
-      )
-
-      const updateDevicePromise = clientServer.matrixDb.updateWithConditions(
-        'devices',
-        { user_id: newUserId, device_id: deviceId },
-        [{ field: 'user_id', value: oldUserId }]
-      )
-
-      const getRefreshTokenPromise = clientServer.matrixDb.get(
-        'refresh_tokens',
-        ['token'],
-        { id: refreshTokenId }
-      )
-      Promise.all([
-        getRefreshTokenPromise,
-        updateUsersPromise,
-        updateUserIpsPromise,
-        updateDevicePromise
+            ...commonUserData,
+            password_hash: hash.sha256(password) // TODO: Handle other hashing algorithms
+          },
+          [{ field: 'name', value: oldUserId }]
+        )
+      })
+    : clientServer.matrixDb.updateWithConditions('users', commonUserData, [
+        { field: 'name', value: oldUserId }
       ])
-        .then((rows) => {
-          sendSuccessResponse(
-            body,
-            res,
-            newUserId,
-            accessToken,
-            rows[0][0].token as string,
-            deviceId
-          )
-        })
-        .catch((e) => {
-          // istanbul ignore next
-          clientServer.logger.error(
-            "Error while updating guest's informations",
-            e
-          )
-          // istanbul ignore next
-          send(res, 500, e)
-        })
+
+  const updateUserIpsPromise = clientServer.matrixDb.updateWithConditions(
+    'user_ips',
+    { user_id: newUserId },
+    [
+      {
+        field: 'access_token',
+        value: accessToken
+      }
+    ]
+  )
+
+  const updateDevicePromise = clientServer.matrixDb.updateWithConditions(
+    'devices',
+    { user_id: newUserId, device_id: deviceId },
+    [{ field: 'user_id', value: oldUserId }]
+  )
+
+  const updateRefreshTokenPromise = clientServer.matrixDb.updateWithConditions(
+    'refresh_tokens',
+    { user_id: newUserId, device_id: deviceId },
+    [{ field: 'id', value: refreshTokenId }]
+  )
+  const updateAccessTokenPromise = clientServer.matrixDb.updateWithConditions(
+    'access_tokens',
+    { user_id: newUserId, device_id: deviceId },
+    [{ field: 'token', value: accessToken }]
+  )
+  Promise.all([
+    updateRefreshTokenPromise,
+    updateAccessTokenPromise,
+    updateUsersPromise,
+    updateUserIpsPromise,
+    updateDevicePromise
+  ])
+    .then((rows) => {
+      sendSuccessResponse(
+        body,
+        res,
+        newUserId,
+        accessToken,
+        rows[0][0].token as string,
+        deviceId
+      )
     })
     .catch((e) => {
-      send(res, 400, e, clientServer.logger)
+      // istanbul ignore next
+      clientServer.logger.error("Error while updating guest's informations", e)
+      // istanbul ignore next
+      send(res, 500, e)
     })
 }
 
@@ -339,14 +309,19 @@ const register = (clientServer: MatrixClientServer): expressAppHandler => {
   return (req, res) => {
     // @ts-expect-error req.query exists
     const parameters = req.query as Parameters
-    // @ts-expect-error req.headers exists
-    let ip = req.headers['x-forwarded-for'] ?? req.ip
-    ip = ip ?? 'undefined' // Same as user-agent, required in the DB schemas but not in the spec, so we set it to the string 'undefined' if it's not present
+    const ip = (req as e.Request).ip
+    // istanbul ignore if
+    if (ip === undefined) {
+      // istanbul ignore next
+      send(res, 500, errMsg('unknown', 'IP address is missing'))
+      return
+    }
     const userAgent = req.headers['user-agent'] ?? 'undefined'
     if (parameters.kind === 'user') {
       clientServer.uiauthenticate(
         req,
         res,
+        registerRequestBodyReference,
         getRegisterAllowedFlows(clientServer.conf),
         'register a new account',
         (obj) => {
