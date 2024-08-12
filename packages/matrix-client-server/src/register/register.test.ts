@@ -222,7 +222,6 @@ describe('Use configuration file', () => {
             initial_device_display_name: 'testdevice'
           })
         expect(response1.statusCode).toBe(401)
-        console.log(response1.body.flows)
         session = response1.body.session
         const response = await request(app)
           .post('/_matrix/client/v3/register')
@@ -389,7 +388,6 @@ describe('Use configuration file', () => {
               threepid_creds: { sid, client_secret: 'secret' }
             }
           })
-        console.log(response.body)
         expect(response.statusCode).toBe(401)
         expect(response.body).toHaveProperty(
           'errcode',
