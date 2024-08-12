@@ -20,7 +20,7 @@ import {
   jsonContent,
   send,
   toMatrixId,
-  matrixIdRegex
+  isMatrixIdValid
 } from '@twake/utils'
 import type MatrixClientServer from '..'
 export type UiAuthFunction = (
@@ -74,7 +74,7 @@ export const validateUserWithUIAuthentication = (
   data: any,
   callback: (data: any, userId: string | null) => void
 ): void => {
-  if (userId != null && !matrixIdRegex.test(userId)) {
+  if (userId != null && !isMatrixIdValid(userId)) {
     send(
       res,
       400,

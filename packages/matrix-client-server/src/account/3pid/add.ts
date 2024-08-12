@@ -2,7 +2,6 @@ import {
   epoch,
   errMsg,
   isClientSecretValid,
-  isMatrixIdValid,
   isSidValid,
   send,
   validateParameters,
