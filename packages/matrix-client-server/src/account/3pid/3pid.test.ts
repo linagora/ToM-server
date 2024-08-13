@@ -443,45 +443,45 @@ describe('Use configuration file', () => {
         const mockOpenIDResponse = Promise.resolve({
           ok: true,
           status: 200,
-          json: () => {
-            return {
+          // eslint-disable-next-line @typescript-eslint/promise-function-async
+          json: () =>
+            Promise.resolve({
               access_token: 'openIdToken',
               expires_in: 3600,
               matrix_server_name: 'example.com',
               token_type: 'Bearer'
-            }
-          }
+            })
         })
 
         const mockResolveResponse = Promise.resolve({
           ok: true,
           status: 200,
-          json: () => {
-            return {
+          // eslint-disable-next-line @typescript-eslint/promise-function-async
+          json: () =>
+            Promise.resolve({
               email: 'dwho@example.com',
               'm.server': 'matrix.example.com:8448'
-            }
-          }
+            })
         })
 
         const mockRegisterResponse = Promise.resolve({
           ok: true,
           status: 200,
-          json: () => {
-            return {
+          // eslint-disable-next-line @typescript-eslint/promise-function-async
+          json: () =>
+            Promise.resolve({
               token: 'validToken'
-            }
-          }
+            })
         })
         const mockUnbindResponse = Promise.resolve({
           ok: true,
           status: 200,
-          json: () => {
-            return {
+          // eslint-disable-next-line @typescript-eslint/promise-function-async
+          json: () =>
+            Promise.resolve({
               address: 'testuser@example.com',
               medium: 'email'
-            }
-          }
+            })
         })
         // @ts-expect-error mock is unknown
         fetch.mockImplementationOnce(async () => await mockOpenIDResponse)
@@ -533,45 +533,45 @@ describe('Use configuration file', () => {
         const mockOpenIDResponse = Promise.resolve({
           ok: true,
           status: 200,
-          json: () => {
-            return {
+          // eslint-disable-next-line @typescript-eslint/promise-function-async
+          json: () =>
+            Promise.resolve({
               access_token: 'openIdToken',
               expires_in: 3600,
               matrix_server_name: 'example.com',
               token_type: 'Bearer'
-            }
-          }
+            })
         })
 
         const mockResolveResponse = Promise.resolve({
           ok: true,
           status: 200,
-          json: () => {
-            return {
+          // eslint-disable-next-line @typescript-eslint/promise-function-async
+          json: () =>
+            Promise.resolve({
               email: 'dwho@example.com',
               'm.server': 'matrix.example.com:8448'
-            }
-          }
+            })
         })
 
         const mockRegisterResponse = Promise.resolve({
           ok: true,
           status: 200,
-          json: () => {
-            return {
+          // eslint-disable-next-line @typescript-eslint/promise-function-async
+          json: () =>
+            Promise.resolve({
               token: 'validToken'
-            }
-          }
+            })
         })
         const mockUnbindResponse = Promise.resolve({
           ok: true,
           status: 200,
-          json: () => {
-            return {
+          // eslint-disable-next-line @typescript-eslint/promise-function-async
+          json: () =>
+            Promise.resolve({
               address: 'testuser@example.com',
               medium: 'email'
-            }
-          }
+            })
         })
         // @ts-expect-error mock is unknown
         fetch.mockImplementationOnce(async () => await mockOpenIDResponse)
@@ -624,45 +624,45 @@ describe('Use configuration file', () => {
         const mockOpenIDResponse = Promise.resolve({
           ok: true,
           status: 200,
-          json: () => {
-            return {
+          // eslint-disable-next-line @typescript-eslint/promise-function-async
+          json: () =>
+            Promise.resolve({
               access_token: 'openIdToken',
               expires_in: 3600,
               matrix_server_name: 'example.com',
               token_type: 'Bearer'
-            }
-          }
+            })
         })
 
         const mockResolveResponse = Promise.resolve({
           ok: true,
           status: 200,
-          json: () => {
-            return {
+          // eslint-disable-next-line @typescript-eslint/promise-function-async
+          json: () =>
+            Promise.resolve({
               email: 'dwho@example.com',
               'm.server': 'matrix.example.com:8448'
-            }
-          }
+            })
         })
 
         const mockRegisterResponse = Promise.resolve({
           ok: true,
           status: 200,
-          json: () => {
-            return {
+          // eslint-disable-next-line @typescript-eslint/promise-function-async
+          json: () =>
+            Promise.resolve({
               token: 'validToken'
-            }
-          }
+            })
         })
         const mockUnbindResponse = Promise.resolve({
           ok: false,
           status: 403,
-          json: () => {
-            return {
+          // eslint-disable-next-line @typescript-eslint/promise-function-async
+          json: () =>
+            Promise.resolve({
               error: 'invalid session ID or client_secret',
               errcode: 'M_INVALID_PARAM'
-            }
-          }
+            })
         })
         // @ts-expect-error mock is unknown
         fetch.mockImplementationOnce(async () => await mockOpenIDResponse)
@@ -695,20 +695,20 @@ describe('Use configuration file', () => {
         const mockResolveResponse = Promise.resolve({
           ok: true,
           status: 200,
-          json: () => {
-            return {
+          // eslint-disable-next-line @typescript-eslint/promise-function-async
+          json: () =>
+            Promise.resolve({
               email: 'dwho@example.com',
               'm.server': 'matrix.example.com:8448'
-            }
-          }
+            })
         })
 
         const mockBindResponse = Promise.resolve({
           ok: true,
           status: 200,
           // eslint-disable-next-line @typescript-eslint/promise-function-async
-          json: () => {
-            return {
+          json: () =>
+            Promise.resolve({
               medium: 'email',
               address: 'localhost@example.com',
               mxid: '@testuser:example.com',
@@ -716,8 +716,7 @@ describe('Use configuration file', () => {
               not_before: 1234567890,
               signatures: {},
               ts: 1234567890
-            }
-          }
+            })
         })
 
         // @ts-expect-error mock is unknown
@@ -744,24 +743,23 @@ describe('Use configuration file', () => {
         const mockResolveResponse = Promise.resolve({
           ok: true,
           status: 200,
-          json: () => {
-            return {
+          // eslint-disable-next-line @typescript-eslint/promise-function-async
+          json: () =>
+            Promise.resolve({
               email: 'dwho@example.com',
               'm.server': 'matrix.example.com:8448'
-            }
-          }
+            })
         })
 
         const mockBindResponse = Promise.resolve({
           ok: false,
           status: 400,
           // eslint-disable-next-line @typescript-eslint/promise-function-async
-          json: () => {
-            return {
+          json: () =>
+            Promise.resolve({
               errcode: 'M_SESSION_NOT_VALIDATED',
               error: 'This validation session has not yet been completed'
-            }
-          }
+            })
         })
 
         // @ts-expect-error mock is unknown
@@ -795,20 +793,20 @@ describe('Use configuration file', () => {
         const mockResolveResponse = Promise.resolve({
           ok: true,
           status: 200,
-          json: () => {
-            return {
+          // eslint-disable-next-line @typescript-eslint/promise-function-async
+          json: () =>
+            Promise.resolve({
               email: 'dwho@example.com',
               'm.server': 'matrix.example.com:8448'
-            }
-          }
+            })
         })
 
         const mockBindResponse = Promise.resolve({
           ok: true,
           status: 200,
           // eslint-disable-next-line @typescript-eslint/promise-function-async
-          json: () => {
-            return {
+          json: () =>
+            Promise.resolve({
               medium: 'wrongmedium',
               address: 'localhost@example.com',
               mxid: '@testuser:example.com',
@@ -816,8 +814,7 @@ describe('Use configuration file', () => {
               not_before: 1234567890,
               signatures: {},
               ts: 1234567890
-            }
-          }
+            })
         })
 
         // @ts-expect-error mock is unknown
@@ -848,20 +845,20 @@ describe('Use configuration file', () => {
         const mockResolveResponse = Promise.resolve({
           ok: true,
           status: 200,
-          json: () => {
-            return {
+          // eslint-disable-next-line @typescript-eslint/promise-function-async
+          json: () =>
+            Promise.resolve({
               email: 'dwho@example.com',
               'm.server': 'matrix.example.com:8448'
-            }
-          }
+            })
         })
 
         const mockBindResponse = Promise.resolve({
           ok: true,
           status: 200,
           // eslint-disable-next-line @typescript-eslint/promise-function-async
-          json: () => {
-            return {
+          json: () =>
+            Promise.resolve({
               medium: 'email',
               address: '05934903',
               mxid: '@testuser:example.com',
@@ -869,8 +866,7 @@ describe('Use configuration file', () => {
               not_before: 1234567890,
               signatures: {},
               ts: 1234567890
-            }
-          }
+            })
         })
 
         // @ts-expect-error mock is unknown
@@ -898,20 +894,20 @@ describe('Use configuration file', () => {
         const mockResolveResponse = Promise.resolve({
           ok: true,
           status: 200,
-          json: () => {
-            return {
+          // eslint-disable-next-line @typescript-eslint/promise-function-async
+          json: () =>
+            Promise.resolve({
               email: 'dwho@example.com',
               'm.server': 'matrix.example.com:8448'
-            }
-          }
+            })
         })
 
         const mockBindResponse = Promise.resolve({
           ok: true,
           status: 200,
           // eslint-disable-next-line @typescript-eslint/promise-function-async
-          json: () => {
-            return {
+          json: () =>
+            Promise.resolve({
               medium: 'msisdn',
               address: 'localhost@example.com',
               mxid: '@testuser:example.com',
@@ -919,8 +915,7 @@ describe('Use configuration file', () => {
               not_before: 1234567890,
               signatures: {},
               ts: 1234567890
-            }
-          }
+            })
         })
 
         // @ts-expect-error mock is unknown

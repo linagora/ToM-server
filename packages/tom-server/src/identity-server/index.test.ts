@@ -131,11 +131,11 @@ describe('Using Matrix Token', () => {
     const mockResponse = Promise.resolve({
       ok: true,
       status: 200,
-      json: () => {
-        return {
+      // eslint-disable-next-line @typescript-eslint/promise-function-async
+      json: () =>
+        Promise.resolve({
           user_id: 'dwho'
-        }
-      }
+        })
     })
     // @ts-expect-error mock is unknown
     fetch.mockImplementation(async () => await mockResponse)
@@ -418,11 +418,10 @@ describe('/_matrix/identity/v2/account/register', () => {
     const mockResponse = Promise.resolve({
       ok: true,
       status: 200,
-      json: () => {
-        return {
+      // eslint-disable-next-line @typescript-eslint/promise-function-async
+      json: () => Promise.resolve({
           sub: '@dwho:example.com'
-        }
-      }
+})
     })
     // @ts-expect-error mock is unknown
     fetch.mockImplementation(async () => await mockResponse)
