@@ -178,12 +178,12 @@ describe('Use configuration file', () => {
       const mockResponse = Promise.resolve({
         ok: true,
         status: 200,
-        json: () => {
-          return {
+        // eslint-disable-next-line @typescript-eslint/promise-function-async
+        json: () =>
+          Promise.resolve({
             sub: '@dwho:example.com',
             'm.server': 'matrix.example.com:8448'
-          }
-        }
+          })
       })
       // @ts-expect-error mock is unknown
       fetch.mockImplementation(async () => await mockResponse)
@@ -225,12 +225,12 @@ describe('Use configuration file', () => {
       const mockResponse = Promise.resolve({
         ok: true,
         status: 200,
-        json: () => {
-          return {
+        // eslint-disable-next-line @typescript-eslint/promise-function-async
+        json: () =>
+          Promise.resolve({
             email: 'dwho@example.com',
             'm.server': 'matrix.example.com:8448'
-          }
-        }
+          })
       })
       // @ts-expect-error mock is unknown
       fetch.mockImplementation(async () => await mockResponse)
@@ -250,12 +250,12 @@ describe('Use configuration file', () => {
       const mockResponse = Promise.resolve({
         ok: true,
         status: 200,
-        json: () => {
-          return {
+        // eslint-disable-next-line @typescript-eslint/promise-function-async
+        json: () =>
+          Promise.resolve({
             sub: 'dwho@example.com',
             'm.server': 'matrix.example.com:8448'
-          }
-        }
+          })
       })
       // @ts-expect-error mock is unknown
       fetch.mockImplementation(async () => await mockResponse)
@@ -1334,9 +1334,8 @@ describe('Use configuration file', () => {
         const mockResponse = Promise.resolve({
           ok: false,
           status: 401, // should return 200 or 400
-          json: () => {
-            return {}
-          }
+          // eslint-disable-next-line @typescript-eslint/promise-function-async
+          json: () => Promise.resolve({})
         })
         // @ts-expect-error mock is unknown
         fetch.mockImplementation(async () => await mockResponse)
@@ -1361,14 +1360,14 @@ describe('Use configuration file', () => {
         const mockResponse = Promise.resolve({
           ok: true,
           status: 200,
-          json: () => {
-            return {
+          // eslint-disable-next-line @typescript-eslint/promise-function-async
+          json: () =>
+            Promise.resolve({
               mappings: {
                 '4kenr7N9drpCJ4AfalmlGQVsOn3o2RHjkADUpXJWZUc':
                   '@alice:example.org'
               }
-            }
-          }
+            })
         })
         // @ts-expect-error mock is unknown
         fetch.mockImplementation(async () => await mockResponse)
@@ -1685,12 +1684,12 @@ describe('Use environment variables', () => {
           const mockResponse = Promise.resolve({
             ok: true,
             status: 200,
-            json: () => {
-              return {
+            // eslint-disable-next-line @typescript-eslint/promise-function-async
+            json: () =>
+              Promise.resolve({
                 sub: '@dwho:example.com',
                 'm.server': 'matrix.example.com:8448'
-              }
-            }
+              })
           })
           // @ts-expect-error mock is unknown
           fetch.mockImplementation(async () => await mockResponse)
@@ -1824,12 +1823,12 @@ describe('_matrix/identity/v2/terms', () => {
     const mockResponse = Promise.resolve({
       ok: true,
       status: 200,
-      json: () => {
-        return {
+      // eslint-disable-next-line @typescript-eslint/promise-function-async
+      json: () =>
+        Promise.resolve({
           sub: '@dwho:example.com',
           'm.server': 'matrix.example.com:8448'
-        }
-      }
+        })
     })
     // @ts-expect-error mock is unknown
     fetch.mockImplementation(async () => await mockResponse)
