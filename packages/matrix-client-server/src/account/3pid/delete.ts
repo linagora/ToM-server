@@ -89,9 +89,8 @@ const deleteAndSend = async (
       body: JSON.stringify(openIDResponseBody)
     }
   )
-  const validToken = (
-    registerResponse.json() as unknown as RegisterResponseBody
-  ).token
+  const validToken = ((await registerResponse.json()) as RegisterResponseBody)
+    .token
   const UnbindResponse = await fetch(
     `https://${baseUrl as string}/_matrix/identity/v2/3pid/unbind`,
     {
@@ -209,7 +208,7 @@ const delete3pid = (clientServer: MatrixClientServer): expressAppHandler => {
                 .then((rows) => {
                   if (rows.length === 0) {
                     clientServer.logger.error(
-                      'No id_server found corresponding to the user'
+                      `No id_server found corresponding to user ${data.sub}`
                     )
                     send(res, 400, {
                       id_server_unbind_result: 'no-support'
