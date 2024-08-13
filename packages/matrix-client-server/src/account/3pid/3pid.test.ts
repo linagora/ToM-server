@@ -741,8 +741,8 @@ describe('Use configuration file', () => {
           ok: true,
           status: 200,
           // eslint-disable-next-line @typescript-eslint/promise-function-async
-          json: () =>
-            Promise.resolve({
+          json: () => {
+            return {
               medium: 'email',
               address: 'localhost@example.com',
               mxid: '@testuser:example.com',
@@ -750,7 +750,8 @@ describe('Use configuration file', () => {
               not_before: 1234567890,
               signatures: {},
               ts: 1234567890
-            })
+            }
+          }
         })
 
         // @ts-expect-error mock is unknown
@@ -789,11 +790,12 @@ describe('Use configuration file', () => {
           ok: false,
           status: 400,
           // eslint-disable-next-line @typescript-eslint/promise-function-async
-          json: () =>
-            Promise.resolve({
+          json: () => {
+            return {
               errcode: 'M_SESSION_NOT_VALIDATED',
               error: 'This validation session has not yet been completed'
-            })
+            }
+          }
         })
 
         // @ts-expect-error mock is unknown
@@ -839,8 +841,8 @@ describe('Use configuration file', () => {
           ok: true,
           status: 200,
           // eslint-disable-next-line @typescript-eslint/promise-function-async
-          json: () =>
-            Promise.resolve({
+          json: () => {
+            return {
               medium: 'wrongmedium',
               address: 'localhost@example.com',
               mxid: '@testuser:example.com',
@@ -848,7 +850,8 @@ describe('Use configuration file', () => {
               not_before: 1234567890,
               signatures: {},
               ts: 1234567890
-            })
+            }
+          }
         })
 
         // @ts-expect-error mock is unknown
@@ -891,8 +894,8 @@ describe('Use configuration file', () => {
           ok: true,
           status: 200,
           // eslint-disable-next-line @typescript-eslint/promise-function-async
-          json: () =>
-            Promise.resolve({
+          json: () => {
+            return {
               medium: 'email',
               address: '05934903',
               mxid: '@testuser:example.com',
@@ -900,7 +903,8 @@ describe('Use configuration file', () => {
               not_before: 1234567890,
               signatures: {},
               ts: 1234567890
-            })
+            }
+          }
         })
 
         // @ts-expect-error mock is unknown
@@ -940,8 +944,8 @@ describe('Use configuration file', () => {
           ok: true,
           status: 200,
           // eslint-disable-next-line @typescript-eslint/promise-function-async
-          json: () =>
-            Promise.resolve({
+          json: () => {
+            return {
               medium: 'msisdn',
               address: 'localhost@example.com',
               mxid: '@testuser:example.com',
@@ -949,7 +953,8 @@ describe('Use configuration file', () => {
               not_before: 1234567890,
               signatures: {},
               ts: 1234567890
-            })
+            }
+          }
         })
 
         // @ts-expect-error mock is unknown
