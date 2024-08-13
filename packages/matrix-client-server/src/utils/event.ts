@@ -1,15 +1,19 @@
 import { type TwakeLogger } from '@twake/logger'
 import { type ClientEvent } from '../types'
 import { isEventTypeValid, isMatrixIdValid, isRoomIdValid } from '@twake/utils'
+import type MatrixClientServer from '..'
 
-export class SafeClientEvent {
+export class Event {
   private event: ClientEvent
+
   private isRedacted: boolean
+  private isEncrypted: boolean
 
   constructor(event: Record<string, any>, logger?: TwakeLogger) {
     // Validate and assign properties to ensure data integrity
     this.event = this.validateAndCreateEvent(event, logger)
     this.isRedacted = false
+    this.isEncrypted = false
   }
 
   protected validateAndCreateEvent(
@@ -72,6 +76,25 @@ export class SafeClientEvent {
       state_key: event.state_key,
       unsigned: event.unsigned
     }
+  }
+
+  // public send(room:Room): void {
+
+  // }
+
+  public encrypt(logger?: TwakeLogger): void {
+    if (this.isEncrypted) {
+      logger?.info('Event is already encrypted')
+      return
+    }
+    this.isEncrypted = true
+    // TODO : Encrypt the event
+    // cf https://spec.matrix.org/v1.11/client-server-api/#end-to-end-encryption
+  }
+
+  public sign(ClientServer: MatrixClientServer): void {
+    // TODO : Sign the event
+    // https://spec.matrix.org/v1.11/server-server-api/#signing-events
   }
 
   public redact(logger?: TwakeLogger): void {

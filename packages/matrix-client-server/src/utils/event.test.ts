@@ -1,4 +1,4 @@
-import { SafeClientEvent } from './event'
+import { Event } from './event'
 import { type TwakeLogger } from '@twake/logger'
 
 describe('Test suites for event.ts', () => {
@@ -25,7 +25,7 @@ describe('Test suites for event.ts', () => {
         state_key: '',
         type: 'm.room.canonical_alias'
       }
-      const redactedEvent = new SafeClientEvent(clientEvent)
+      const redactedEvent = new Event(clientEvent)
       expect(redactedEvent).toBeDefined()
     })
     it('should throw an error if the eventID is incorrect', () => {
@@ -41,7 +41,7 @@ describe('Test suites for event.ts', () => {
         state_key: '',
         type: 'm.room.canonical_alias'
       }
-      expect(() => new SafeClientEvent(clientEvent)).toThrow('Invalid event_id')
+      expect(() => new Event(clientEvent)).toThrow('Invalid event_id')
     })
     it('should throw an error if the type is incorrect', () => {
       const clientEvent: Record<string, any> = {
@@ -56,7 +56,7 @@ describe('Test suites for event.ts', () => {
         state_key: '',
         type: 'invalid_type'
       }
-      expect(() => new SafeClientEvent(clientEvent)).toThrow('Invalid type')
+      expect(() => new Event(clientEvent)).toThrow('Invalid type')
     })
     it('should throw an error if the roomID is incorrect', () => {
       const clientEvent: Record<string, any> = {
@@ -71,7 +71,7 @@ describe('Test suites for event.ts', () => {
         state_key: '',
         type: 'm.room.canonical_alias'
       }
-      expect(() => new SafeClientEvent(clientEvent)).toThrow('Invalid room_id')
+      expect(() => new Event(clientEvent)).toThrow('Invalid room_id')
     })
     it('should throw an error if the sender is incorrect', () => {
       const clientEvent: Record<string, any> = {
@@ -86,7 +86,7 @@ describe('Test suites for event.ts', () => {
         state_key: '',
         type: 'm.room.canonical_alias'
       }
-      expect(() => new SafeClientEvent(clientEvent)).toThrow('Invalid sender')
+      expect(() => new Event(clientEvent)).toThrow('Invalid sender')
     })
     it('should throw an error if the content is incorrect', () => {
       const clientEvent: Record<string, any> = {
@@ -98,7 +98,7 @@ describe('Test suites for event.ts', () => {
         state_key: '',
         type: 'm.room.canonical_alias'
       }
-      expect(() => new SafeClientEvent(clientEvent)).toThrow('Invalid content')
+      expect(() => new Event(clientEvent)).toThrow('Invalid content')
     })
     it('should throw an error if the originServerTs is incorrect', () => {
       const clientEvent: Record<string, any> = {
@@ -113,9 +113,7 @@ describe('Test suites for event.ts', () => {
         state_key: '',
         type: 'm.room.canonical_alias'
       }
-      expect(() => new SafeClientEvent(clientEvent)).toThrow(
-        'Invalid origin_server_ts'
-      )
+      expect(() => new Event(clientEvent)).toThrow('Invalid origin_server_ts')
     })
   })
   describe('redact', () => {
@@ -134,19 +132,19 @@ describe('Test suites for event.ts', () => {
       another_invalid_key: 'another_invalid_key'
     }
     it('should log an info message if the event has already been redacted', () => {
-      const redactedEvent = new SafeClientEvent(clientEvent)
+      const redactedEvent = new Event(clientEvent)
       redactedEvent.redact()
       redactedEvent.redact(mockLogger)
       expect(mockLogger.info).toHaveBeenCalledWith('Event is already redacted')
     })
     it('should return a redacted event', () => {
-      const redactedEvent = new SafeClientEvent(clientEvent)
+      const redactedEvent = new Event(clientEvent)
       redactedEvent.redact()
       expect(redactedEvent).toBeDefined()
       expect(redactedEvent.hasBeenRedacted()).toEqual(true)
     })
     it('should remove all the keys that are not allowed', () => {
-      const redactedEvent = new SafeClientEvent(clientEvent)
+      const redactedEvent = new Event(clientEvent)
       redactedEvent.redact()
       const redactedEventKeys = Object.keys(redactedEvent.getEvent())
       const expectedKeys = [
@@ -164,7 +162,7 @@ describe('Test suites for event.ts', () => {
       expect(redactedEventKeys.length).toBe(expectedKeys.length)
     })
     it('should remove all the content keys that are not allowed', () => {
-      const redactedEvent = new SafeClientEvent(clientEvent)
+      const redactedEvent = new Event(clientEvent)
       redactedEvent.redact()
       const redactedEventContentKeys = Object.keys(
         redactedEvent.getEvent().content
@@ -188,7 +186,7 @@ describe('Test suites for event.ts', () => {
         invalid_key: 'invalid_key',
         another_invalid_key: 'another_invalid_key'
       }
-      const redactedEvent = new SafeClientEvent(clientEvent)
+      const redactedEvent = new Event(clientEvent)
       redactedEvent.redact()
       const redactedEventContentKeys = Object.keys(
         redactedEvent.getEvent().content
@@ -214,7 +212,7 @@ describe('Test suites for event.ts', () => {
         invalid_key: 'invalid_key',
         another_invalid_key: 'another_invalid_key'
       }
-      const redactedEvent = new SafeClientEvent(clientEvent)
+      const redactedEvent = new Event(clientEvent)
       redactedEvent.redact()
       const redactedEventContentKeys = Object.keys(
         redactedEvent.getEvent().content
