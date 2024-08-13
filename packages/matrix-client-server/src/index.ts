@@ -76,6 +76,7 @@ import passwordReset from './account/password'
 import delete3pid from './account/3pid/delete'
 import userSearch from './user_data/user_directory/search'
 import passwordReset from './account/password'
+import delete3pid from './account/3pid/delete'
 
 // const tables = {} // Add tables declaration here to add new tables to this.db
 
