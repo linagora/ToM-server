@@ -1,4 +1,5 @@
 import {
+  errMsg,
   jsonContent,
   send,
   validateParameters,
@@ -6,6 +7,7 @@ import {
 } from '@twake/utils'
 import type MatrixClientServer from '../..'
 import fetch from 'node-fetch'
+import { isAdmin } from '../../utils/utils'
 
 interface RequestBody {
   address: string
@@ -34,6 +36,21 @@ const delete3pid = (clientServer: MatrixClientServer): expressAppHandler => {
           // eslint-disable-next-line @typescript-eslint/no-misused-promises
           async (obj) => {
             const body = obj as RequestBody
+            const byAdmin = await isAdmin(clientServer, data.sub)
+            const allowed =
+              clientServer.conf.capabilities.enable_3pid_changes ?? true
+            if (!byAdmin && !allowed) {
+              send(
+                res,
+                403,
+                errMsg(
+                  'forbidden',
+                  'Cannot add 3pid as it is not allowed by server'
+                ),
+                clientServer.logger
+              )
+              return
+            }
             // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
             if (body.id_server) {
               // TODO : call the endpoint https://spec.matrix.org/v1.11/client-server-api/#post_matrixclientv3useruseridopenidrequest_token to request an openID token
