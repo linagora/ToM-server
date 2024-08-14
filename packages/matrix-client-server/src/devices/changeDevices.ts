@@ -28,8 +28,8 @@ export const changeDeviceName = (
 ): expressAppHandler => {
   return (req, res) => {
     const deviceId: string = (req as Request).params.deviceId
-    clientServer.authenticate(req, res, (token) => {
-      const userId = token.sub
+    clientServer.authenticate(req, res, (data) => {
+      const userId = data.sub
       jsonContent(req, res, clientServer.logger, (obj) => {
         validateParameters(res, schema, obj, clientServer.logger, (obj) => {
           // eslint-disable-next-line @typescript-eslint/naming-convention

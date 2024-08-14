@@ -30,8 +30,8 @@ const getRoomState = (clientServer: MatrixClientServer): expressAppHandler => {
       return
     }
 
-    clientServer.authenticate(req, res, (token) => {
-      const requesterUid = token.sub
+    clientServer.authenticate(req, res, (data) => {
+      const requesterUid = data.sub
 
       // Check if requester is currently in the room or was in it before
       clientServer.matrixDb

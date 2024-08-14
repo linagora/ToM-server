@@ -16,9 +16,9 @@ const GetJoinedMembers = (
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-expect-error
     const roomId: string = ((req as Request).params as parameters).roomId
-    ClientServer.authenticate(req, res, (token) => {
+    ClientServer.authenticate(req, res, (data) => {
       // Check if the user has permission to retrieve this event
-      const userId: string = token.sub
+      const userId: string = data.sub
       ClientServer.matrixDb
         .get('local_current_membership', ['membership'], {
           user_id: userId,

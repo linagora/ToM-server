@@ -18,8 +18,8 @@ export const getRoomAliases = (
     }
 
     // eslint-disable-next-line @typescript-eslint/no-misused-promises
-    clientServer.authenticate(req, res, async (token) => {
-      const userId = token.sub
+    clientServer.authenticate(req, res, async (data) => {
+      const userId = data.sub
 
       try {
         // Check the history visibility of the room
