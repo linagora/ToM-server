@@ -93,6 +93,7 @@ class MatrixDBPg extends Pg<Collections> implements MatrixDBmodifiedBackend {
         query,
         vals,
         (err: Error, result: { rows: DbGetResult }) => {
+          // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
           if (err) {
             reject(err)
           } else {
@@ -102,6 +103,122 @@ class MatrixDBPg extends Pg<Collections> implements MatrixDBmodifiedBackend {
       )
     })
   }
+
+  // eslint-disable-next-line @typescript-eslint/promise-function-async
+  searchUserDirectory(
+    userId: string,
+    searchTerm: string,
+    limit: number,
+    searchAllUsers: boolean
+  ): Promise<DbGetResult> {
+    return new Promise((resolve, reject) => {
+      if (this.db == null) {
+        reject(new Error('Wait for database to be ready'))
+        return
+      }
+
+      let whereClause: string
+      if (searchAllUsers) {
+        whereClause = 'user_id != $1'
+      } else {
+        whereClause = `
+        (
+          EXISTS (SELECT 1 FROM users_in_public_rooms WHERE user_id = t.user_id)
+          OR EXISTS (
+            SELECT 1 FROM users_who_share_private_rooms
+            WHERE user_id = $1 AND other_user_id = t.user_id
+          )
+        )
+      `
+      }
+
+      const [fullQuery, exactQuery, prefixQuery] =
+        parseQueryPostgres(searchTerm)
+      const args = [userId, fullQuery, exactQuery, prefixQuery, limit + 1]
+
+      const sql = `
+      WITH matching_users AS (
+        SELECT user_id, vector 
+        FROM user_directory_search 
+        WHERE vector @@ to_tsquery('simple', $2)
+        LIMIT 10000
+      )
+      SELECT d.user_id AS user_id, display_name, avatar_url
+      FROM matching_users as t
+      INNER JOIN user_directory AS d USING (user_id)
+      LEFT JOIN users AS u ON t.user_id = u.name
+      WHERE ${whereClause}
+      ORDER BY
+        (CASE WHEN d.user_id IS NOT NULL THEN 4.0 ELSE 1.0 END)
+        * (CASE WHEN display_name IS NOT NULL THEN 1.2 ELSE 1.0 END)
+        * (CASE WHEN avatar_url IS NOT NULL THEN 1.2 ELSE 1.0 END)
+        * (
+          3 * ts_rank_cd(
+            '{0.1, 0.1, 0.9, 1.0}',
+            vector,
+            to_tsquery('simple', $3),
+            8
+          )
+          + ts_rank_cd(
+            '{0.1, 0.1, 0.9, 1.0}',
+            vector,
+            to_tsquery('simple', $4),
+            8
+          )
+        )
+        DESC,
+        display_name IS NULL,
+        avatar_url IS NULL
+      LIMIT $5
+    `
+
+      this.db.query(sql, args, (err: Error, result: { rows: DbGetResult }) => {
+        // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+        if (err) {
+          reject(err)
+        } else {
+          resolve(result.rows)
+        }
+      })
+    })
+  }
+}
+
+function parseQueryPostgres(searchTerm: string): [string, string, string] {
+  /**
+   * Takes a plain string from the user and converts it into a form
+   * that can be passed to the database.
+   * This function allows us to add prefix matching, which isn't supported by default.
+   */
+
+  searchTerm = searchTerm.toLowerCase()
+  searchTerm = searchTerm.normalize('NKFD')
+
+  const escapedWords: string[] = []
+  for (const word of parseWordsWithRegex(searchTerm)) {
+    const quotedWord = word.replace(/'/g, "''").replace(/\\/g, '\\\\')
+    escapedWords.push(`'${quotedWord}'`)
+  }
+
+  const both = escapedWords.map((word) => `(${word}:* | ${word})`).join(' & ')
+  const exact = escapedWords.join(' & ')
+  const prefix = escapedWords.map((word) => `${word}:*`).join(' & ')
+
+  return [both, exact, prefix]
+}
+
+function parseWordsWithRegex(searchTerm: string): string[] {
+  /**
+   * Break down the search term into words using a regular expression,
+   * when we don't have ICU available.
+   */
+  const regex = /[\w-]+/g
+  const matches = searchTerm.match(regex)
+
+  if (matches === null) {
+    return []
+  }
+  return matches
 }
 
 export default MatrixDBPg
