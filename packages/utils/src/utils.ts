@@ -191,3 +191,22 @@ export const isValidUrl = (link: string): boolean => {
     return false
   }
 }
+
+export const getAccessToken = (
+  req: Request | http.IncomingMessage
+): string | null => {
+  const tokenRe = /^Bearer (\S+)$/
+  let token: string | null = null
+  if (req.headers.authorization != null) {
+    const re = req.headers.authorization.match(tokenRe)
+    if (re != null) {
+      token = re[1]
+    }
+    // @ts-expect-error req.query exists
+    // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+  } else if (req.query && Object.keys(req.query).length > 0) {
+    // @ts-expect-error req.query.access_token may be null
+    token = req.query.access_token
+  }
+  return token
+}

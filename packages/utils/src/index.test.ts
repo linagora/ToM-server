@@ -8,7 +8,8 @@ import {
   epoch,
   toMatrixId,
   isValidUrl,
-  validateParametersStrict
+  validateParametersStrict,
+  getAccessToken
 } from './index'
 import { type TwakeLogger } from '@twake/logger'
 
@@ -282,6 +283,51 @@ describe('Utility Functions', () => {
 
     it('should return false for an invalid URL missing domain', () => {
       expect(isValidUrl('http://')).toBe(false)
+    })
+  })
+  describe('getAccessToken', () => {
+    it('should return the access token from the Authorization header', () => {
+      const req = {
+        headers: {
+          authorization: 'Bearer some-token'
+        },
+        query: {}
+      } as unknown as Request
+
+      const token = getAccessToken(req)
+      expect(token).toBe('some-token')
+    })
+
+    it('should return null if there is no authorization header', () => {
+      const req = {
+        headers: {},
+        query: {}
+      } as unknown as Request
+
+      const token = getAccessToken(req)
+      expect(token).toBeNull()
+    })
+
+    it('should return the access token from the query parameters', () => {
+      const req = {
+        headers: {},
+        query: {
+          access_token: 'some-token'
+        }
+      } as unknown as Request
+
+      const token = getAccessToken(req)
+      expect(token).toBe('some-token')
+    })
+
+    it('should return null if there is no token in headers or query', () => {
+      const req = {
+        headers: {},
+        query: {}
+      } as unknown as Request
+
+      const token = getAccessToken(req)
+      expect(token).toBeNull()
     })
   })
 })
