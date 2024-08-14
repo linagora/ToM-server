@@ -15,7 +15,7 @@
 
 // TODO : determiner quand la table user_directory est remplie user_who_share_private_rooms et users_in_public_rooms
 
-import type MatrixClientServer from '../index'
+import type MatrixClientServer from '../../index'
 import {
   send,
   type expressAppHandler,
