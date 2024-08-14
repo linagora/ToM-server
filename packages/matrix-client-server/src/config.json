@@ -93,7 +93,6 @@
   "userdb_password": "",
   "userdb_ssl": false,
   "userdb_user": "",
-  "is_registration_enabled": true,
   "is_email_login_enabled": true,
   "is_registration_token_login_enabled": true,
   "is_terms_login_enabled": true,

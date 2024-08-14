@@ -54,5 +54,6 @@
   "is_password_login_enabled": true,
   "is_sso_login_enabled": true,
   "is_msisdn_login_enabled": true,
-  "registration_required_3pid": []
+  "registration_required_3pid": [],
+  "capabilities": {}
 }
