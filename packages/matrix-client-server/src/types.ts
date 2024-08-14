@@ -19,6 +19,7 @@ export type Config = MIdentityServerConfig & {
   is_terms_login_enabled: boolean
   is_registration_token_login_enabled: boolean
   registration_required_3pid: string[]
+  user_directory: UserDirectoryConfig
 }
 
 export type DbGetResult = Array<
@@ -401,4 +402,8 @@ interface Capabilities {
   enable_set_avatar_url?: boolean
   enable_3pid_changes?: boolean
   enable_change_password?: boolean
+}
+
+interface UserDirectoryConfig {
+  enable_all_users_search?: boolean
 }
