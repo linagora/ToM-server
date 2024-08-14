@@ -64,8 +64,8 @@ export const changeAvatarUrl = (
     const userId: string = (req as Request).params.userId
 
     // eslint-disable-next-line @typescript-eslint/no-misused-promises
-    clientServer.authenticate(req, res, async (token) => {
-      const requesterUserId = token.sub
+    clientServer.authenticate(req, res, async (data) => {
+      const requesterUserId = data.sub
       let byAdmin = 0
       try {
         // Check wether requester is admin or not
@@ -184,8 +184,8 @@ export const changeDisplayname = (
     const userId: string = (req as Request).params.userId
 
     // eslint-disable-next-line @typescript-eslint/no-misused-promises
-    clientServer.authenticate(req, res, async (token) => {
-      const requesterUserId = token.sub
+    clientServer.authenticate(req, res, async (data) => {
+      const requesterUserId = data.sub
       // Check wether requester is admin or not
       let byAdmin = 0
       try {

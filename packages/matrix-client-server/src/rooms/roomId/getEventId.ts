@@ -23,8 +23,8 @@ const GetEventId = (clientServer: MatrixClientServer): expressAppHandler => {
       return
     }
 
-    clientServer.authenticate(req, res, (token) => {
-      const requesterUid = token.sub
+    clientServer.authenticate(req, res, (data) => {
+      const requesterUid = data.sub
 
       // TODO : eventually add redirection with federation here
       /* istanbul ignore if */

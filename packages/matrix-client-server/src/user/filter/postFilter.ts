@@ -21,7 +21,7 @@ const schema = {
 
 const PostFilter = (clientServer: MatrixClientServer): expressAppHandler => {
   return (req, res) => {
-    clientServer.authenticate(req, res, (token) => {
+    clientServer.authenticate(req, res, (data) => {
       jsonContent(req, res, clientServer.logger, (obj) => {
         validateParametersStrict(
           res,
@@ -37,7 +37,7 @@ const PostFilter = (clientServer: MatrixClientServer): expressAppHandler => {
               send(res, 400, errMsg('invalidParam', 'Invalid user ID'))
               return
             }
-            if (userId !== token.sub || !clientServer.isMine(userId)) {
+            if (userId !== data.sub || !clientServer.isMine(userId)) {
               clientServer.logger.error(
                 'Forbidden user id for posting a filter:',
                 userId
