@@ -99,6 +99,7 @@ const realMethod = async (
   const byAdmin = await isAdmin(clientServer, userId)
   const allowed = clientServer.conf.capabilities.enable_change_password ?? true
   if (!byAdmin && !allowed) {
+    // To comply with spec : https://spec.matrix.org/v1.11/client-server-api/#mchange_password-capability
     send(
       res,
       403,
