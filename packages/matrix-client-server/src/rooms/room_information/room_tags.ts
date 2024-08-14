@@ -46,8 +46,8 @@ export const getUserRoomTags = (
       return
     }
 
-    clientServer.authenticate(req, res, (token) => {
-      const requesterUserId = token.sub
+    clientServer.authenticate(req, res, (data) => {
+      const requesterUserId = data.sub
 
       if (requesterUserId !== userId) {
         send(
@@ -128,8 +128,8 @@ export const addUserRoomTag = (
       return
     }
 
-    clientServer.authenticate(req, res, (token) => {
-      const requesterUserId = token.sub
+    clientServer.authenticate(req, res, (data) => {
+      const requesterUserId = data.sub
       if (requesterUserId !== userId) {
         send(res, 403, errMsg('forbidden', 'You are not allowed to add tags'))
         return
@@ -185,8 +185,8 @@ export const removeUserRoomTag = (
       return
     }
 
-    clientServer.authenticate(req, res, (token) => {
-      const requesterUserId = token.sub
+    clientServer.authenticate(req, res, (data) => {
+      const requesterUserId = data.sub
       if (requesterUserId !== userId) {
         send(
           res,
