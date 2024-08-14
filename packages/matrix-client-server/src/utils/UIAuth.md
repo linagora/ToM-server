@@ -12,11 +12,16 @@ To use this method in functions that require user interactive authentication, fo
 
 ## Allowed Flows
 
-For endpoints other than `/register`, the allowed flows are generated automatically inside the `validateUserWithUiAuthentication` method. For the `/register` endpoint, they are generated using the config with a function defined in utils/userInteractiveAuthentication.
+For endpoints other than `/register`, the allowed flows are generated automatically inside the `validateUserWithUiAuthentication` method. If you call `uiauthenticate` (cf account/password/index.ts) then you need to specifiy the allowed flows as argument to the function.
+ For the `/register` endpoint, they are generated using the config with a function defined in utils/userInteractiveAuthentication.
 
 ## Callback Usage
 
-For non-`/register` endpoints, the `uiauthenticate` method calls the callback method with the `userId` as the second argument. This allows access to the `userId` in endpoints requiring UIAuth.
+For non-`/register` endpoints, the `uiauthenticate` method calls the callback method with the `userId` as the second argument. This allows access to the `userId` in endpoints requiring UIAuth. 
+
+## Auth key 
+
+As things are now, an endpoint that uses UI Authentication requires the client to send the data in the call that will validate authentication. For example, in account/password/index.ts, it is expected that the client sends a password on the call to the endpoint that corresponds to the last stage of the flow it has chosen. Meaning if the client sends a password in a previous request, it should resend it in further requests to ensure the server receives the data, and shouldn't assume sending it only once suffices. This behaviour might be undesirable and could be changed by storing relevant data and then deleting them when we're done with them (since we already store `clientdict` in the `ui_auth_sessions` table we could exploit this for example).
 
 ## Testing
 

@@ -69,6 +69,7 @@ import getRoomStateEvent, {
 } from './rooms/roomId/getStateEvent'
 import getCapabilities from './capabilities/getCapabilities'
 import getVersions from './versions'
+import passwordReset from './account/password'
 
 // const tables = {} // Add tables declaration here to add new tables to this.db
 
@@ -181,7 +182,8 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
             '/_matrix/client/v3/rooms/:roomId/state/:eventType':
               getRoomStateEventNoStatekey(this),
             '/_matrix/client/v3/capabilities': getCapabilities(this),
-            '/_matrix/client/versions': getVersions
+            '/_matrix/client/versions': getVersions,
+            '/_matrix/client/v3/account/password': badMethod
           }
           this.api.post = {
             '/_matrix/client/v3/account/whoami': badMethod,
@@ -232,7 +234,8 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
               badMethod,
             '/_matrix/client/v3/rooms/:roomId/state/:eventType': badMethod,
             '/_matrix/client/v3/capabilities': badMethod,
-            '/_matrix/client/versions': badMethod
+            '/_matrix/client/versions': badMethod,
+            '/_matrix/client/v3/account/password': passwordReset(this)
           }
           this.api.put = {
             '/_matrix/client/v3/account/whoami': badMethod,
@@ -282,7 +285,8 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
               badMethod,
             '/_matrix/client/v3/rooms/:roomId/state/:eventType': badMethod,
             '/_matrix/client/v3/capabilities': badMethod,
-            '/_matrix/client/versions': badMethod
+            '/_matrix/client/versions': badMethod,
+            '/_matrix/client/v3/account/password': badMethod
           }
           this.api.delete = {
             '/_matrix/client/v3/account/whoami': badMethod,
@@ -322,7 +326,8 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
               badMethod,
             '/_matrix/client/v3/rooms/:roomId/state/:eventType': badMethod,
             '/_matrix/client/v3/capabilities': badMethod,
-            '/_matrix/client/versions': badMethod
+            '/_matrix/client/versions': badMethod,
+            '/_matrix/client/v3/account/password': badMethod
           }
           resolve(true)
         })
