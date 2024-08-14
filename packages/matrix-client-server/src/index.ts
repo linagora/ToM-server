@@ -23,8 +23,11 @@ import {
   getProfile,
   getAvatarUrl,
   getDisplayname
-} from './profiles/getProfiles'
-import { changeAvatarUrl, changeDisplayname } from './profiles/changeProfiles'
+} from './user_data/profiles/getProfiles'
+import {
+  changeAvatarUrl,
+  changeDisplayname
+} from './user_data/profiles/changeProfiles'
 import whoami from './account/whoami'
 import whois from './admin/whois'
 import getAccountData from './user/account_data/getAccountData'

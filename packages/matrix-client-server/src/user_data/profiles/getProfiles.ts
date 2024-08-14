@@ -6,7 +6,7 @@ TODO : implement the ability to access the profile information of another user o
 TODO : implement the ability to close access to the profile information of another user on the local server.
 */
 
-import type MatrixClientServer from '../'
+import type MatrixClientServer from '../../index'
 import { type Request } from 'express'
 import { errMsg, send, type expressAppHandler } from '@twake/utils'
 
