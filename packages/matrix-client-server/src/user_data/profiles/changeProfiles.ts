@@ -14,7 +14,7 @@ by propagating the change to the user's membership events.
 This includes the Application service which is not yet implemented in this codebase.
 */
 
-import type MatrixClientServer from '../index'
+import type MatrixClientServer from '../../index'
 import { type Request } from 'express'
 
 import {
