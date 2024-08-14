@@ -11,6 +11,7 @@ import type MatrixClientServer from '../..'
 import { type TokenContent } from '../../utils/authenticate'
 import fetch from 'node-fetch'
 import { MatrixResolve } from 'matrix-resolve'
+import { isAdmin } from '../../utils/utils'
 
 interface RequestBody {
   client_secret: string
@@ -46,6 +47,21 @@ const bind = (clientServer: MatrixClientServer): expressAppHandler => {
           clientServer.logger,
           // eslint-disable-next-line @typescript-eslint/no-misused-promises
           async (obj) => {
+            const byAdmin = await isAdmin(clientServer, data.sub)
+            const allowed =
+              clientServer.conf.capabilities.enable_3pid_changes ?? true
+            if (!byAdmin && !allowed) {
+              send(
+                res,
+                403,
+                errMsg(
+                  'forbidden',
+                  'Cannot bind 3pid to user account as it is not allowed by server'
+                ),
+                clientServer.logger
+              )
+              return
+            }
             const requestBody = obj as RequestBody
             const matrixResolve = new MatrixResolve({
               cache: 'toad-cache'
@@ -73,13 +89,10 @@ const bind = (clientServer: MatrixClientServer): expressAppHandler => {
                 )
                 const responseBody = (await response.json()) as ResponseBody
                 if (response.status === 200) {
-                  if (
-                    responseBody.medium !== 'email' &&
-                    responseBody.medium !== 'msisdn'
-                  ) {
+                  if (!['email', 'msisdn'].includes(responseBody.medium)) {
                     send(
                       res,
-                      500,
+                      400,
                       errMsg(
                         'invalidParam',
                         'Medium must be one of "email" or "msisdn"'
@@ -91,7 +104,7 @@ const bind = (clientServer: MatrixClientServer): expressAppHandler => {
                     responseBody.medium === 'email' &&
                     !isEmailValid(responseBody.address)
                   ) {
-                    send(res, 500, errMsg('invalidParam', 'Invalid email'))
+                    send(res, 400, errMsg('invalidParam', 'Invalid email'))
                     return
                   }
                   if (
@@ -100,7 +113,7 @@ const bind = (clientServer: MatrixClientServer): expressAppHandler => {
                   ) {
                     send(
                       res,
-                      500,
+                      400,
                       errMsg('invalidParam', 'Invalid phone number')
                     )
                     return
