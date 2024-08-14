@@ -68,7 +68,19 @@ const add = (clientServer: MatrixClientServer): expressAppHandler => {
               const body = obj as RequestBody
               const byAdmin = await isAdmin(clientServer, userId as string)
               const allowed =
-                clientServer.conf.capabilities.enable_set_avatar_url ?? true
+                clientServer.conf.capabilities.enable_3pid_changes ?? true
+              if (!byAdmin && !allowed) {
+                send(
+                  res,
+                  403,
+                  errMsg(
+                    'forbidden',
+                    'Cannot add 3pid as it is not allowed by server'
+                  ),
+                  clientServer.logger
+                )
+                return
+              }
               clientServer.matrixDb
                 .get(
                   'threepid_validation_session',
@@ -111,16 +123,6 @@ const add = (clientServer: MatrixClientServer): expressAppHandler => {
                           res,
                           400,
                           errMsg('threepidInUse'),
-                          clientServer.logger
-                        )
-                      } else if (!byAdmin && !allowed) {
-                        send(
-                          res,
-                          403,
-                          errMsg(
-                            'forbidden',
-                            'Cannot add 3pid as not allowed by server'
-                          ),
                           clientServer.logger
                         )
                       } else {
