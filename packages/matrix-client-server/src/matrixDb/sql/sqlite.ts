@@ -1,6 +1,6 @@
 import { type Collections, type MatrixDBmodifiedBackend } from '../'
-import { type Config } from '../../types'
-import { SQLite, type DbGetResult } from '@twake/matrix-identity-server'
+import { type DbGetResult, type Config } from '../../types'
+import { SQLite } from '@twake/matrix-identity-server'
 
 class MatrixDBSQLite
   extends SQLite<Collections>
@@ -91,6 +91,107 @@ class MatrixDBSQLite
       })
     })
   }
+
+  // eslint-disable-next-line @typescript-eslint/promise-function-async
+  searchUserDirectory(
+    userId: string,
+    searchTerm: string,
+    limit: number,
+    searchAllUsers: boolean
+  ): Promise<DbGetResult> {
+    return new Promise((resolve, reject) => {
+      /* istanbul ignore if */
+      if (this.db == null) {
+        throw new Error('Wait for database to be ready')
+      }
+
+      let whereClause: string
+      if (searchAllUsers) {
+        whereClause = 'user_id != ?'
+      } else {
+        whereClause = `
+        (
+          EXISTS (SELECT 1 FROM users_in_public_rooms WHERE user_id = t.user_id)
+          OR EXISTS (
+            SELECT 1 FROM users_who_share_private_rooms
+            WHERE user_id = ? AND other_user_id = t.user_id
+          )
+        )
+      `
+      }
+
+      const searchQuery = parseQuerySqlite(searchTerm)
+      const args = [userId, searchQuery, limit + 1]
+
+      const stmt = this.db.prepare(`
+      SELECT d.user_id AS user_id, display_name, avatar_url
+      FROM user_directory_search as t
+      INNER JOIN user_directory AS d USING (user_id)
+      LEFT JOIN users AS u ON t.user_id = u.name
+      WHERE ${whereClause}
+      AND value MATCH ?
+      ORDER BY
+        rank(matchinfo(user_directory_search)) DESC,
+        display_name IS NULL,
+        avatar_url IS NULL
+      LIMIT ?
+    `)
+
+      stmt.all(
+        args,
+        (err: Error | null, rows: Array<Record<string, string | number>>) => {
+          /* istanbul ignore if */
+          if (err != null) {
+            reject(err)
+          } else {
+            resolve(rows)
+          }
+        }
+      )
+
+      stmt.finalize((err: Error | null) => {
+        /* istanbul ignore if */
+        // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+        if (err) {
+          reject(err)
+        }
+      })
+    })
+  }
+}
+
+function parseQuerySqlite(searchTerm: string): string {
+  /**
+   * Takes a plain string from the user and converts it into a form
+   * that can be passed to the database.
+   * This function allows us to add prefix matching, which isn't supported by default.
+   *
+   * We specifically add both a prefix and non-prefix matching term so that
+   * exact matches get ranked higher.
+   */
+
+  searchTerm = searchTerm.toLowerCase()
+  searchTerm = searchTerm.normalize('NKFD')
+
+  // Pull out the individual words, discarding any non-word characters.
+  const results = parseWordsWithRegex(searchTerm)
+
+  // Construct the SQLite query string for full-text search with prefix matching
+  return results.map((result) => `(${result}* OR ${result})`).join(' & ')
+}
+
+function parseWordsWithRegex(searchTerm: string): string[] {
+  /**
+   * Break down the search term into words using a regular expression,
+   * when we don't have ICU available.
+   */
+  const regex = /[\w-]+/g
+  const matches = searchTerm.match(regex)
+
+  if (matches === null) {
+    return []
+  }
+  return matches
 }
 
 export default MatrixDBSQLite

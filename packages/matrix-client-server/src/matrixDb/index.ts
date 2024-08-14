@@ -115,6 +115,12 @@ type DeleteWhere = (
   table: Collections,
   conditions: ISQLCondition | ISQLCondition[]
 ) => Promise<void>
+type SearchUserDirectory = (
+  userId: string,
+  searchTerm: string,
+  limit: number,
+  searchAllUsers: boolean
+) => Promise<DbGetResult>
 
 export interface MatrixDBmodifiedBackend {
   ready: Promise<void>
@@ -131,6 +137,8 @@ export interface MatrixDBmodifiedBackend {
   deleteEqual: DeleteEqual
   deleteWhere: DeleteWhere
   updateWithConditions: updateWithConditions
+  // The following functions are specific to the user_directory module
+  searchUserDirectory: SearchUserDirectory
   close: () => void
 }
 
@@ -448,6 +456,21 @@ class MatrixDBmodified implements MatrixDBmodifiedBackend {
 
   close(): void {
     this.db.close()
+  }
+
+  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
+  searchUserDirectory(
+    userId: string,
+    searchTerm: string,
+    limit: number,
+    searchAllUsers: boolean
+  ) {
+    return this.db.searchUserDirectory(
+      userId,
+      searchTerm,
+      limit,
+      searchAllUsers
+    )
   }
 }
 
