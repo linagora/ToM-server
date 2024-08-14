@@ -3,7 +3,7 @@ import { type TwakeLogger } from '@twake/logger'
 import { type Request, type Response } from 'express'
 import type http from 'http'
 import type MatrixDBmodified from '../matrixDb'
-import { epoch, errMsg, send, toMatrixId } from '@twake/utils'
+import { epoch, errMsg, getAccessToken, send, toMatrixId } from '@twake/utils'
 import { type AppServiceRegistration, type Config } from '../types'
 
 export interface TokenContent {
@@ -23,21 +23,8 @@ const Authenticate = (
   logger: TwakeLogger,
   conf: Config
 ): AuthenticationFunction => {
-  const tokenRe = /^Bearer (\S+)$/
   return (req, res, callback) => {
-    let token: string | null = null
-    if (req.headers.authorization != null) {
-      const re = req.headers.authorization.match(tokenRe)
-      if (re != null) {
-        token = re[1]
-      }
-      // @ts-expect-error req.query exists
-      // istanbul ignore if
-    } else if (req.query && Object.keys(req.query).length > 0) {
-      // @ts-expect-error req.query exists
-      // istanbul ignore next
-      token = req.query.access_token // access tokens as query parameters are deprecated
-    }
+    const token = getAccessToken(req)
     if (token != null) {
       let data: TokenContent
       matrixDb
@@ -54,7 +41,7 @@ const Authenticate = (
             const asTokens: string[] = applicationServices.map(
               (as: AppServiceRegistration) => as.as_token
             )
-            if (asTokens.includes(token as string)) {
+            if (asTokens.includes(token)) {
               // Check if the request is made by an application-service
               const appService = applicationServices.find(
                 (as: AppServiceRegistration) => as.as_token === token
