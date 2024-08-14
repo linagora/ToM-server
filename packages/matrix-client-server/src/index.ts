@@ -71,6 +71,7 @@ import getCapabilities from './capabilities/getCapabilities'
 import getVersions from './versions'
 import passwordReset from './account/password'
 import delete3pid from './account/3pid/delete'
+import passwordReset from './account/password'
 
 // const tables = {} // Add tables declaration here to add new tables to this.db
 
