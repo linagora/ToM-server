@@ -7,6 +7,7 @@
  * We have decided to  consider the users the requesting user shares a room with and those who reside in public rooms (known to the homeserver)
  *
  * The search MUST consider local users to the homeserver, and SHOULD query remote users as part of the search.
+ * (This problem is currently hidden by the use of specific tables in the MatrixDB database)
  *
  * WARNING : Following Synapse implementation, we have used many tables (user_directory, user_who_share_private_rooms, users_in_public_rooms) to implement this feature.
  * These tables are used almost solely for the user_directory feature and are not used elsewhere.
