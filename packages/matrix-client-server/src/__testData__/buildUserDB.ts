@@ -47,7 +47,15 @@ const matrixDbQueries = [
   'CREATE TABLE IF NOT EXISTS "user_filters" ( user_id TEXT NOT NULL, filter_id BIGINT NOT NULL, filter_json BYTEA NOT NULL )',
   'CREATE TABLE ui_auth_sessions(session_id TEXT NOT NULL,creation_time BIGINT NOT NULL, serverdict TEXT NOT NULL,  clientdict TEXT NOT NULL,uri TEXT NOT NULL, method TEXT NOT NULL, description TEXT NOT NULL, UNIQUE (session_id))',
   'CREATE TABLE ui_auth_sessions_credentials(session_id TEXT NOT NULL, stage_type TEXT NOT NULL,  result TEXT NOT NULL, UNIQUE (session_id, stage_type),FOREIGN KEY (session_id) REFERENCES ui_auth_sessions (session_id))',
-  'CREATE TABLE ui_auth_sessions_ips(session_id TEXT NOT NULL,ip TEXT NOT NULL,user_agent TEXT NOT NULL,UNIQUE (session_id, ip, user_agent), FOREIGN KEY (session_id)REFERENCES ui_auth_sessions (session_id))'
+  'CREATE TABLE ui_auth_sessions_ips(session_id TEXT NOT NULL,ip TEXT NOT NULL,user_agent TEXT NOT NULL,UNIQUE (session_id, ip, user_agent), FOREIGN KEY (session_id)REFERENCES ui_auth_sessions (session_id))',
+  'CREATE TABLE IF NOT EXISTS current_state_events (event_id text NOT NULL,room_id text NOT NULL,type text NOT NULL,state_key text NOT NULL,membership text)',
+  'CREATE TABLE IF NOT EXISTS users_in_public_rooms ( user_id TEXT NOT NULL, room_id TEXT NOT NULL )',
+  'CREATE TABLE IF NOT EXISTS users_who_share_private_rooms ( user_id TEXT NOT NULL, other_user_id TEXT NOT NULL, room_id TEXT NOT NULL )',
+  'CREATE UNIQUE INDEX users_who_share_private_rooms_u_idx ON users_who_share_private_rooms(user_id, other_user_id, room_id)',
+  'CREATE TABLE IF NOT EXISTS "user_directory" ( user_id TEXT NOT NULL, room_id TEXT, display_name TEXT, avatar_url TEXT )',
+  'CREATE INDEX user_directory_room_idx ON user_directory(room_id)',
+  'CREATE UNIQUE INDEX user_directory_user_idx ON user_directory(user_id)',
+  'CREATE VIRTUAL TABLE user_directory_search USING fts4 ( user_id, value )'
 ]
 
 // eslint-disable-next-line @typescript-eslint/promise-function-async

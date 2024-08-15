@@ -34,9 +34,7 @@ interface UserSearchArgs {
   search_term: string
 }
 
-export const userSearch = (
-  clientServer: MatrixClientServer
-): expressAppHandler => {
+const userSearch = (clientServer: MatrixClientServer): expressAppHandler => {
   return (req, res) => {
     clientServer.authenticate(req, res, (data) => {
       const userId = data.sub
@@ -59,7 +57,8 @@ export const userSearch = (
             if (
               searchTerm === undefined ||
               searchTerm === '' ||
-              searchTerm === null
+              searchTerm === null ||
+              typeof limit !== 'number'
             ) {
               send(
                 res,
@@ -77,6 +76,9 @@ export const userSearch = (
               .searchUserDirectory(userId, searchTerm, limit, searchAllUsers)
               .then((rows) => {
                 const _limited = rows.length > limit
+                if (_limited) {
+                  rows = rows.slice(0, limit)
+                }
 
                 const _results = rows.map((row) => {
                   return {
@@ -94,6 +96,9 @@ export const userSearch = (
                 )
               })
               .catch((err) => {
+                /* istanbul ignore next */
+                clientServer.logger.error('Error when searching for users')
+                /* istanbul ignore next */
                 send(res, 500, errMsg('unknown', err), clientServer.logger)
               })
           }
@@ -102,3 +107,5 @@ export const userSearch = (
     })
   }
 }
+
+export default userSearch
