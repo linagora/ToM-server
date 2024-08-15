@@ -5,6 +5,7 @@ import DefaultConfig from '../__testData__/registerConf.json'
 import fs from 'fs'
 import { randomString } from '@twake/crypto'
 import { buildMatrixDb } from '../__testData__/buildUserDB'
+import { parseQuerySqlite, parseWordsWithRegex } from '../matrixDb/sql/sqlite'
 
 jest.mock('node-fetch', () => jest.fn())
 
@@ -20,6 +21,52 @@ const baseConf: Config = {
   matrix_database_host: './src/__testData__/matrixTestdb.db',
   sms_folder: './src/__testData__/sms'
 }
+
+describe('Testing auxiliary functions', () => {
+  describe('parseQuerySqlite', () => {
+    it('should create a query string with prefix matching', () => {
+      const result = parseQuerySqlite('test search')
+      expect(result).toBe('(test* OR test) & (search* OR search)')
+    })
+
+    it('should handle mixed case and accented characters', () => {
+      const result = parseQuerySqlite('TeSt Search')
+      expect(result).toBe('(test* OR test) & (search* OR search)')
+    })
+
+    it('should return an empty string for an empty input', () => {
+      const result = parseQuerySqlite('')
+      expect(result).toBe('')
+    })
+
+    it('should ignore special characters and only use word-like characters', () => {
+      const result = parseQuerySqlite('test@# search!')
+      expect(result).toBe('(test* OR test) & (search* OR search)')
+    })
+  })
+
+  describe('parseWordsWithRegex', () => {
+    it('should return an array of words', () => {
+      const result = parseWordsWithRegex('this is a test')
+      expect(result).toEqual(['this', 'is', 'a', 'test'])
+    })
+
+    it('should return an empty array for a string with no word characters', () => {
+      const result = parseWordsWithRegex('!!!')
+      expect(result).toEqual([])
+    })
+
+    it('should handle mixed alphanumeric and special characters', () => {
+      const result = parseWordsWithRegex('test-search123, more#words')
+      expect(result).toEqual(['test-search123', 'more', 'words'])
+    })
+
+    it('should handle an empty string', () => {
+      const result = parseWordsWithRegex('')
+      expect(result).toEqual([])
+    })
+  })
+})
 
 describe('Matrix DB', () => {
   let matrixDb: MatrixDBmodified

@@ -73,6 +73,7 @@ import getRoomStateEvent, {
 import getCapabilities from './capabilities/getCapabilities'
 import getVersions from './versions'
 import delete3pid from './account/3pid/delete'
+import userSearch from './user_data/user_directory/search'
 
 // const tables = {} // Add tables declaration here to add new tables to this.db
 
@@ -186,7 +187,8 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
               getRoomStateEventNoStatekey(this),
             '/_matrix/client/v3/capabilities': getCapabilities(this),
             '/_matrix/client/versions': getVersions,
-            '/_matrix/client/v3/account/3pid/delete': badMethod
+            '/_matrix/client/v3/account/3pid/delete': badMethod,
+            '/_matrix/client/v3/user_directory/search': badMethod
           }
           this.api.post = {
             '/_matrix/client/v3/account/whoami': badMethod,
@@ -238,7 +240,8 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
             '/_matrix/client/v3/rooms/:roomId/state/:eventType': badMethod,
             '/_matrix/client/v3/capabilities': badMethod,
             '/_matrix/client/versions': badMethod,
-            '/_matrix/client/v3/account/3pid/delete': delete3pid(this)
+            '/_matrix/client/v3/account/3pid/delete': delete3pid(this),
+            '/_matrix/client/v3/user_directory/search': userSearch(this)
           }
           this.api.put = {
             '/_matrix/client/v3/account/whoami': badMethod,
@@ -289,7 +292,8 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
             '/_matrix/client/v3/rooms/:roomId/state/:eventType': badMethod,
             '/_matrix/client/v3/capabilities': badMethod,
             '/_matrix/client/versions': badMethod,
-            '/_matrix/client/v3/account/3pid/delete': badMethod
+            '/_matrix/client/v3/account/3pid/delete': badMethod,
+            '/_matrix/client/v3/user_directory/search': badMethod
           }
           this.api.delete = {
             '/_matrix/client/v3/account/whoami': badMethod,
@@ -330,7 +334,8 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
             '/_matrix/client/v3/rooms/:roomId/state/:eventType': badMethod,
             '/_matrix/client/v3/capabilities': badMethod,
             '/_matrix/client/versions': badMethod,
-            '/_matrix/client/v3/account/3pid/delete': badMethod
+            '/_matrix/client/v3/account/3pid/delete': badMethod,
+            '/_matrix/client/v3/user_directory/search': badMethod
           }
           resolve(true)
         })

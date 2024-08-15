@@ -110,32 +110,32 @@ class MatrixDBSQLite
         whereClause = 'user_id != ?'
       } else {
         whereClause = `
-        (
-          EXISTS (SELECT 1 FROM users_in_public_rooms WHERE user_id = t.user_id)
-          OR EXISTS (
-            SELECT 1 FROM users_who_share_private_rooms
-            WHERE user_id = ? AND other_user_id = t.user_id
+          (
+            EXISTS (SELECT 1 FROM users_in_public_rooms WHERE user_id = t.user_id)
+            OR EXISTS (
+              SELECT 1 FROM users_who_share_private_rooms
+              WHERE user_id = ? AND other_user_id = t.user_id
+            )
           )
-        )
-      `
+        `
       }
-
       const searchQuery = parseQuerySqlite(searchTerm)
       const args = [userId, searchQuery, limit + 1]
 
       const stmt = this.db.prepare(`
-      SELECT d.user_id AS user_id, display_name, avatar_url
-      FROM user_directory_search as t
-      INNER JOIN user_directory AS d USING (user_id)
-      LEFT JOIN users AS u ON t.user_id = u.name
-      WHERE ${whereClause}
-      AND value MATCH ?
-      ORDER BY
-        rank(matchinfo(user_directory_search)) DESC,
-        display_name IS NULL,
-        avatar_url IS NULL
-      LIMIT ?
-    `)
+        SELECT d.user_id AS user_id, display_name, avatar_url,
+               matchinfo(user_directory_search) AS match_info
+        FROM user_directory_search as t
+        INNER JOIN user_directory AS d USING (user_id)
+        LEFT JOIN users AS u ON t.user_id = u.name
+        WHERE ${whereClause}
+        AND value MATCH ?
+        ORDER BY
+          match_info DESC,
+          display_name IS NULL,
+          avatar_url IS NULL
+        LIMIT ?
+      `)
 
       stmt.all(
         args,
@@ -160,7 +160,7 @@ class MatrixDBSQLite
   }
 }
 
-function parseQuerySqlite(searchTerm: string): string {
+export function parseQuerySqlite(searchTerm: string): string {
   /**
    * Takes a plain string from the user and converts it into a form
    * that can be passed to the database.
@@ -171,7 +171,7 @@ function parseQuerySqlite(searchTerm: string): string {
    */
 
   searchTerm = searchTerm.toLowerCase()
-  searchTerm = searchTerm.normalize('NKFD')
+  searchTerm = searchTerm.normalize('NFKD')
 
   // Pull out the individual words, discarding any non-word characters.
   const results = parseWordsWithRegex(searchTerm)
@@ -180,7 +180,7 @@ function parseQuerySqlite(searchTerm: string): string {
   return results.map((result) => `(${result}* OR ${result})`).join(' & ')
 }
 
-function parseWordsWithRegex(searchTerm: string): string[] {
+export function parseWordsWithRegex(searchTerm: string): string[] {
   /**
    * Break down the search term into words using a regular expression,
    * when we don't have ICU available.
