@@ -8,12 +8,12 @@
  *
  * The search MUST consider local users to the homeserver, and SHOULD query remote users as part of the search.
  *
- * TODO : The search is performed case-insensitively on user IDs and display names preferably using a collation determined
- * based upon the Accept-Language header provided in the request, if present.
+ * WARNING : Following Synapse implementation, we have used many tables (user_directory, user_who_share_private_rooms, users_in_public_rooms) to implement this feature.
+ * These tables are used almost solely for the user_directory feature and are not used elsewhere.
+ * Thus for now these tables are not filled and the feature is not yet usable.
  *
+ * TODO : implement the auto-update and track of these tables
  */
-
-// TODO : determiner quand la table user_directory est remplie user_who_share_private_rooms et users_in_public_rooms
 
 import type MatrixClientServer from '../../index'
 import {
