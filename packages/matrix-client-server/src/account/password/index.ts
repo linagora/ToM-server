@@ -82,7 +82,7 @@ const revokeTokenAndDevicesAndSend = (
     })
     .catch((e) => {
       // istanbul ignore next
-      console.error('Error while deleting devices and token')
+      clientServer.logger.error('Error while deleting devices and token')
       // istanbul ignore next
       send(res, 500, errMsg('unknown', e), clientServer.logger)
     })
@@ -135,14 +135,14 @@ const realMethod = async (
         })
         .catch((e) => {
           // istanbul ignore next
-          console.error('Error while updating password')
+          clientServer.logger.error('Error while updating password')
           // istanbul ignore next
           send(res, 500, errMsg('unknown', e), clientServer.logger)
         })
     })
     .catch((e) => {
       // istanbul ignore next
-      console.error('Error while hashing password')
+      clientServer.logger.error('Error while hashing password')
       // istanbul ignore next
       send(res, 500, errMsg('unknown', e), clientServer.logger)
     })
@@ -171,7 +171,7 @@ const passwordReset = (clientServer: MatrixClientServer): expressAppHandler => {
                 token
               ).catch((e) => {
                 // istanbul ignore next
-                console.error('Error while changing password')
+                clientServer.logger.error('Error while changing password')
                 // istanbul ignore next
                 send(res, 500, errMsg('unknown', e), clientServer.logger)
               })
@@ -195,7 +195,7 @@ const passwordReset = (clientServer: MatrixClientServer): expressAppHandler => {
               userId as string
             ).catch((e) => {
               // istanbul ignore next
-              console.error('Error while changing password')
+              clientServer.logger.error('Error while changing password')
               // istanbul ignore next
               send(res, 500, errMsg('unknown', e), clientServer.logger)
             })
