@@ -110,9 +110,7 @@ class SQLite<T extends string> extends SQL<T> implements IdDbBackend<T> {
           }
         }
       )
-      stmt.finalize((err) => {
-        reject(err)
-      })
+      stmt.finalize(reject)
     })
   }
 
@@ -150,9 +148,7 @@ class SQLite<T extends string> extends SQL<T> implements IdDbBackend<T> {
           }
         }
       )
-      stmt.finalize((err) => {
-        reject(err)
-      })
+      stmt.finalize(reject)
     })
   }
 
@@ -190,9 +186,7 @@ class SQLite<T extends string> extends SQL<T> implements IdDbBackend<T> {
         }
       )
 
-      stmt.finalize((err) => {
-        reject(err)
-      })
+      stmt.finalize(reject)
     })
   }
 
@@ -793,9 +787,7 @@ class SQLite<T extends string> extends SQL<T> implements IdDbBackend<T> {
           resolve()
         }
       })
-      stmt.finalize((err) => {
-        reject(err)
-      })
+      stmt.finalize(reject)
     })
   }
 
