@@ -90,12 +90,12 @@ describe('/_matrix/identity/v2/account/register', () => {
     const mockResponse = Promise.resolve({
       ok: true,
       status: 200,
-      json: () => {
-        return {
+      // eslint-disable-next-line @typescript-eslint/promise-function-async
+      json: () =>
+        Promise.resolve({
           sub: '@dwho:example.com',
           'm.server': 'matrix.example.com:8448'
-        }
-      }
+        })
     })
     // @ts-expect-error mock is unknown
     fetch.mockImplementation(async () => await mockResponse)

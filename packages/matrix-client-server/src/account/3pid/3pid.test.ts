@@ -12,6 +12,7 @@ import {
   validToken,
   validToken2
 } from '../../__testData__/setupTokens'
+import { epoch } from '@twake/utils'
 
 jest.mock('node-fetch', () => jest.fn())
 const sendMailMock = jest.fn()
@@ -395,17 +396,311 @@ describe('Use configuration file', () => {
       //   expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
       // })
     })
-    describe('3PID Bind Endpoint', () => {
+    describe('/_matrix/client/v3/account/3pid/delete', () => {
+      it('should refuse an invalid medium', async () => {
+        const response = await request(app)
+          .post('/_matrix/client/v3/account/3pid/delete')
+          .set('Accept', 'application/json')
+          .set('Authorization', `Bearer ${validToken}`)
+          .send({
+            medium: 'wrongmedium',
+            address: 'testuser@example.com'
+          })
+        expect(response.statusCode).toBe(400)
+        expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
+        expect(response.body).toHaveProperty(
+          'error',
+          'Invalid medium, medium must be either email or msisdn'
+        )
+      })
+      it('should refuse an invalid email', async () => {
+        const response = await request(app)
+          .post('/_matrix/client/v3/account/3pid/delete')
+          .set('Accept', 'application/json')
+          .set('Authorization', `Bearer ${validToken}`)
+          .send({
+            medium: 'email',
+            address: 'testuser'
+          })
+        expect(response.statusCode).toBe(400)
+        expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
+        expect(response.body).toHaveProperty('error', 'Invalid email address')
+      })
+      it('should refuse an invalid phone number', async () => {
+        const response = await request(app)
+          .post('/_matrix/client/v3/account/3pid/delete')
+          .set('Accept', 'application/json')
+          .set('Authorization', `Bearer ${validToken}`)
+          .send({
+            medium: 'msisdn',
+            address: 'testuser'
+          })
+        expect(response.statusCode).toBe(400)
+        expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
+        expect(response.body).toHaveProperty('error', 'Invalid phone number')
+      })
+      it('should unbind from the id server provided in the request body', async () => {
+        const mockOpenIDResponse = Promise.resolve({
+          ok: true,
+          status: 200,
+          // eslint-disable-next-line @typescript-eslint/promise-function-async
+          json: () =>
+            Promise.resolve({
+              access_token: 'openIdToken',
+              expires_in: 3600,
+              matrix_server_name: 'example.com',
+              token_type: 'Bearer'
+            })
+        })
+
+        const mockResolveResponse = Promise.resolve({
+          ok: true,
+          status: 200,
+          // eslint-disable-next-line @typescript-eslint/promise-function-async
+          json: () =>
+            Promise.resolve({
+              email: 'dwho@example.com',
+              'm.server': 'matrix.example.com:8448'
+            })
+        })
+
+        const mockRegisterResponse = Promise.resolve({
+          ok: true,
+          status: 200,
+          // eslint-disable-next-line @typescript-eslint/promise-function-async
+          json: () =>
+            Promise.resolve({
+              token: 'validToken'
+            })
+        })
+        const mockUnbindResponse = Promise.resolve({
+          ok: true,
+          status: 200,
+          // eslint-disable-next-line @typescript-eslint/promise-function-async
+          json: () =>
+            Promise.resolve({
+              address: 'testuser@example.com',
+              medium: 'email'
+            })
+        })
+        // @ts-expect-error mock is unknown
+        fetch.mockImplementationOnce(async () => await mockOpenIDResponse)
+        // @ts-expect-error mock is unknown
+        fetch.mockImplementationOnce(async () => await mockResolveResponse)
+        // @ts-expect-error mock is unknown
+        fetch.mockImplementationOnce(async () => await mockRegisterResponse)
+        // @ts-expect-error mock is unknown
+        fetch.mockImplementationOnce(async () => await mockUnbindResponse)
+
+        await clientServer.matrixDb.insert('user_threepid_id_server', {
+          address: 'testuser@example.com',
+          medium: 'email',
+          user_id: '@testuser:example.com',
+          id_server: 'matrix.example.com'
+        })
+
+        const response = await request(app)
+          .post('/_matrix/client/v3/account/3pid/delete')
+          .set('Accept', 'application/json')
+          .set('Authorization', `Bearer ${validToken}`)
+          .send({
+            medium: 'email',
+            address: 'testuser@example.com',
+            id_server: 'matrix.example.com'
+          })
+        expect(response.statusCode).toBe(200)
+        expect(response.body).toHaveProperty(
+          'id_server_unbind_result',
+          'success'
+        )
+      })
+      it('should unbind from the identity server that was used to bind the threepid if no id_server is provided', async () => {
+        await clientServer.matrixDb.insert('user_threepid_id_server', {
+          address: 'testuser@example.com',
+          medium: 'email',
+          user_id: '@testuser:example.com',
+          id_server: 'matrix.example.com'
+        })
+
+        await clientServer.matrixDb.insert('user_threepids', {
+          address: 'testuser@example.com',
+          medium: 'email',
+          user_id: '@testuser:example.com',
+          validated_at: epoch(),
+          added_at: epoch()
+        })
+
+        const mockOpenIDResponse = Promise.resolve({
+          ok: true,
+          status: 200,
+          // eslint-disable-next-line @typescript-eslint/promise-function-async
+          json: () =>
+            Promise.resolve({
+              access_token: 'openIdToken',
+              expires_in: 3600,
+              matrix_server_name: 'example.com',
+              token_type: 'Bearer'
+            })
+        })
+
+        const mockResolveResponse = Promise.resolve({
+          ok: true,
+          status: 200,
+          // eslint-disable-next-line @typescript-eslint/promise-function-async
+          json: () =>
+            Promise.resolve({
+              email: 'dwho@example.com',
+              'm.server': 'matrix.example.com:8448'
+            })
+        })
+
+        const mockRegisterResponse = Promise.resolve({
+          ok: true,
+          status: 200,
+          // eslint-disable-next-line @typescript-eslint/promise-function-async
+          json: () =>
+            Promise.resolve({
+              token: 'validToken'
+            })
+        })
+        const mockUnbindResponse = Promise.resolve({
+          ok: true,
+          status: 200,
+          // eslint-disable-next-line @typescript-eslint/promise-function-async
+          json: () =>
+            Promise.resolve({
+              address: 'testuser@example.com',
+              medium: 'email'
+            })
+        })
+        // @ts-expect-error mock is unknown
+        fetch.mockImplementationOnce(async () => await mockOpenIDResponse)
+        // @ts-expect-error mock is unknown
+        fetch.mockImplementationOnce(async () => await mockResolveResponse)
+        // @ts-expect-error mock is unknown
+        fetch.mockImplementationOnce(async () => await mockRegisterResponse)
+        // @ts-expect-error mock is unknown
+        fetch.mockImplementationOnce(async () => await mockUnbindResponse)
+
+        const response = await request(app)
+          .post('/_matrix/client/v3/account/3pid/delete')
+          .set('Accept', 'application/json')
+          .set('Authorization', `Bearer ${validToken}`)
+          .send({
+            medium: 'email',
+            address: 'testuser@example.com'
+          })
+        expect(response.statusCode).toBe(200)
+        expect(response.body).toHaveProperty(
+          'id_server_unbind_result',
+          'success'
+        )
+
+        // added this user so as not to mess up future tests if validToken is used again
+        await clientServer.matrixDb.insert('user_threepids', {
+          address: 'testuser@example.com',
+          medium: 'email',
+          user_id: '@testuser:example.com',
+          validated_at: epoch(),
+          added_at: epoch()
+        })
+      })
+      it('should return an error if the user was not previously bound to any id server', async () => {
+        const response = await request(app)
+          .post('/_matrix/client/v3/account/3pid/delete')
+          .set('Accept', 'application/json')
+          .set('Authorization', `Bearer ${validToken}`)
+          .send({
+            medium: 'email',
+            address: 'testuser@example.com'
+          })
+        expect(response.statusCode).toBe(400)
+        expect(response.body).toHaveProperty(
+          'id_server_unbind_result',
+          'no-support'
+        )
+      })
+      it('should return an error if the unbind was unsuccessful on the id-server', async () => {
+        const mockOpenIDResponse = Promise.resolve({
+          ok: true,
+          status: 200,
+          // eslint-disable-next-line @typescript-eslint/promise-function-async
+          json: () =>
+            Promise.resolve({
+              access_token: 'openIdToken',
+              expires_in: 3600,
+              matrix_server_name: 'example.com',
+              token_type: 'Bearer'
+            })
+        })
+
+        const mockResolveResponse = Promise.resolve({
+          ok: true,
+          status: 200,
+          // eslint-disable-next-line @typescript-eslint/promise-function-async
+          json: () =>
+            Promise.resolve({
+              email: 'dwho@example.com',
+              'm.server': 'matrix.example.com:8448'
+            })
+        })
+
+        const mockRegisterResponse = Promise.resolve({
+          ok: true,
+          status: 200,
+          // eslint-disable-next-line @typescript-eslint/promise-function-async
+          json: () =>
+            Promise.resolve({
+              token: 'validToken'
+            })
+        })
+        const mockUnbindResponse = Promise.resolve({
+          ok: false,
+          status: 403,
+          // eslint-disable-next-line @typescript-eslint/promise-function-async
+          json: () =>
+            Promise.resolve({
+              error: 'invalid session ID or client_secret',
+              errcode: 'M_INVALID_PARAM'
+            })
+        })
+        // @ts-expect-error mock is unknown
+        fetch.mockImplementationOnce(async () => await mockOpenIDResponse)
+        // @ts-expect-error mock is unknown
+        fetch.mockImplementationOnce(async () => await mockResolveResponse)
+        // @ts-expect-error mock is unknown
+        fetch.mockImplementationOnce(async () => await mockRegisterResponse)
+        // @ts-expect-error mock is unknown
+        fetch.mockImplementationOnce(async () => await mockUnbindResponse)
+
+        const response = await request(app)
+          .post('/_matrix/client/v3/account/3pid/delete')
+          .set('Accept', 'application/json')
+          .set('Authorization', `Bearer ${validToken}`)
+          .send({
+            medium: 'email',
+            address: 'testuser@example.com',
+            id_server: 'matrix.example.com'
+          })
+        expect(response.statusCode).toBe(403)
+        expect(response.body).toHaveProperty(
+          'id_server_unbind_result',
+          'no-support'
+        )
+      })
+    })
+
+    describe('/_matrix/client/v3/account/3pid/bind', () => {
       it('should return 200 on a successful bind', async () => {
         const mockResolveResponse = Promise.resolve({
           ok: true,
           status: 200,
-          json: () => {
-            return {
+          // eslint-disable-next-line @typescript-eslint/promise-function-async
+          json: () =>
+            Promise.resolve({
               email: 'dwho@example.com',
               'm.server': 'matrix.example.com:8448'
-            }
-          }
+            })
         })
 
         const mockBindResponse = Promise.resolve({
@@ -448,12 +743,12 @@ describe('Use configuration file', () => {
         const mockResolveResponse = Promise.resolve({
           ok: true,
           status: 200,
-          json: () => {
-            return {
+          // eslint-disable-next-line @typescript-eslint/promise-function-async
+          json: () =>
+            Promise.resolve({
               email: 'dwho@example.com',
               'm.server': 'matrix.example.com:8448'
-            }
-          }
+            })
         })
 
         const mockBindResponse = Promise.resolve({
@@ -498,12 +793,12 @@ describe('Use configuration file', () => {
         const mockResolveResponse = Promise.resolve({
           ok: true,
           status: 200,
-          json: () => {
-            return {
+          // eslint-disable-next-line @typescript-eslint/promise-function-async
+          json: () =>
+            Promise.resolve({
               email: 'dwho@example.com',
               'm.server': 'matrix.example.com:8448'
-            }
-          }
+            })
         })
 
         const mockBindResponse = Promise.resolve({
@@ -550,12 +845,12 @@ describe('Use configuration file', () => {
         const mockResolveResponse = Promise.resolve({
           ok: true,
           status: 200,
-          json: () => {
-            return {
+          // eslint-disable-next-line @typescript-eslint/promise-function-async
+          json: () =>
+            Promise.resolve({
               email: 'dwho@example.com',
               'm.server': 'matrix.example.com:8448'
-            }
-          }
+            })
         })
 
         const mockBindResponse = Promise.resolve({
@@ -599,12 +894,12 @@ describe('Use configuration file', () => {
         const mockResolveResponse = Promise.resolve({
           ok: true,
           status: 200,
-          json: () => {
-            return {
+          // eslint-disable-next-line @typescript-eslint/promise-function-async
+          json: () =>
+            Promise.resolve({
               email: 'dwho@example.com',
               'm.server': 'matrix.example.com:8448'
-            }
-          }
+            })
         })
 
         const mockBindResponse = Promise.resolve({
