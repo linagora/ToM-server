@@ -63,13 +63,11 @@ const realMethod = async (
   clientServer.matrixDb
     .get('user_threepids', ['medium', 'address'], { user_id: userId })
     .then((rows) => {
-        const promises = 
-      rows.forEach((row) => {
+      const promises = rows.forEach((row) => {
         fetch(
-            `https://${clientServer.conf.server_name}/_matrix/client/v3/account/3pid/delete`,
-            {}
-          )
-
+          `https://${clientServer.conf.server_name}/_matrix/client/v3/account/3pid/delete`,
+          {}
+        )
       })
     })
     .catch((e) => {
