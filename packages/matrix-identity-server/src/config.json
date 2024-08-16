@@ -10,7 +10,7 @@
   "database_ssl": false,
   "database_user": "",
   "database_vacuum_delay": 3600,
-  "federated_identity_services": ["-invalid.host.com"],
+  "federated_identity_services": null,
   "hashes_rate_limit": 100,
   "invitation_server_name": "matrix.to",
   "is_federated_identity_service": false,
