@@ -2,8 +2,6 @@ import {
   errMsg,
   isEmailValid,
   isPhoneNumberValid,
-  isEmailValid,
-  isPhoneNumberValid,
   jsonContent,
   send,
   validateParameters,
@@ -11,10 +9,6 @@ import {
 } from '@twake/utils'
 import type MatrixClientServer from '../..'
 import fetch from 'node-fetch'
-import { type TokenContent } from '../../utils/authenticate'
-import type { ServerResponse } from 'http'
-import type e from 'express'
-import { MatrixResolve } from 'matrix-resolve'
 import { type TokenContent } from '../../utils/authenticate'
 import type { ServerResponse } from 'http'
 import type e from 'express'
@@ -30,14 +24,6 @@ interface RequestBody {
 interface RegisterResponseBody {
   token: string
 }
-
-interface OpenIDResponseBody {
-  access_token: string
-  expires_in: number
-  matrix_server_name: string
-  token_type: string
-}
-
 
 interface OpenIDResponseBody {
   access_token: string
@@ -104,9 +90,8 @@ const deleteAndSend = async (
       body: JSON.stringify(openIDResponseBody)
     }
   )
-  const validToken = (
-    registerResponse.json() as unknown as RegisterResponseBody
-  ).token
+  const validToken = ((await registerResponse.json()) as RegisterResponseBody)
+    .token
   const UnbindResponse = await fetch(
     `https://${baseUrl as string}/_matrix/identity/v2/3pid/unbind`,
     {
@@ -158,7 +143,6 @@ const deleteAndSend = async (
 const delete3pid = (clientServer: MatrixClientServer): expressAppHandler => {
   return (req, res) => {
     clientServer.authenticate(req, res, (data, token) => {
-    clientServer.authenticate(req, res, (data, token) => {
       jsonContent(req, res, clientServer.logger, (obj) => {
         validateParameters(
           res,
@@ -183,37 +167,6 @@ const delete3pid = (clientServer: MatrixClientServer): expressAppHandler => {
               )
               return
             }
-            if (!['email', 'msisdn'].includes(body.medium)) {
-              send(
-                res,
-                400,
-                errMsg(
-                  'invalidParam',
-                  'Invalid medium, medium must be either email or msisdn'
-                ),
-                clientServer.logger
-              )
-              return
-            }
-            if (body.medium === 'email' && !isEmailValid(body.address)) {
-              send(
-                res,
-                400,
-                errMsg('invalidParam', 'Invalid email address'),
-                clientServer.logger
-              )
-              return
-            }
-            if (body.medium === 'msisdn' && !isPhoneNumberValid(body.address)) {
-              send(
-                res,
-                400,
-                errMsg('invalidParam', 'Invalid phone number'),
-                clientServer.logger
-              )
-              return
-            }
-            let idServer: string
             if (!['email', 'msisdn'].includes(body.medium)) {
               send(
                 res,
@@ -271,7 +224,7 @@ const delete3pid = (clientServer: MatrixClientServer): expressAppHandler => {
                 .then((rows) => {
                   if (rows.length === 0) {
                     clientServer.logger.error(
-                      'No id_server found corresponding to the user'
+                      `No id_server found corresponding to user ${data.sub}`
                     )
                     send(res, 400, {
                       id_server_unbind_result: 'no-support'
@@ -291,16 +244,6 @@ const delete3pid = (clientServer: MatrixClientServer): expressAppHandler => {
                     // istanbul ignore next
                     send(res, 500, errMsg('unknown', e), clientServer.logger)
                   })
-                })
-                .catch((e) => {
-                  // istanbul ignore next
-                  clientServer.logger.error(
-                    'Error while getting id_server from the database',
-                    e
-                  )
-                  // istanbul ignore next
-                  send(res, 500, errMsg('unknown', e), clientServer.logger)
-                })
                 })
                 .catch((e) => {
                   // istanbul ignore next
