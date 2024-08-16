@@ -374,7 +374,41 @@ describe('Use configuration file', () => {
         expect(response.statusCode).toBe(400)
         expect(response.body).toHaveProperty('errcode', 'M_THREEPID_IN_USE')
       })
-
+      it('should refuse to add a 3pid if the user is not an admin and the server does not allow it', async () => {
+        clientServer.conf.capabilities.enable_3pid_changes = false
+        const response1 = await request(app)
+          .post('/_matrix/client/v3/account/3pid/add')
+          .set('Accept', 'application/json')
+          .set('Authorization', `Bearer ${validToken}`)
+          .send({
+            sid: 'sid',
+            client_secret: 'my'
+          })
+        expect(response1.statusCode).toBe(401)
+        session = response1.body.session
+        const response = await request(app)
+          .post('/_matrix/client/v3/account/3pid/add')
+          .set('Accept', 'application/json')
+          .set('Authorization', `Bearer ${validToken}`)
+          .send({
+            sid,
+            client_secret: 'mysecret',
+            auth: {
+              type: 'm.login.password',
+              session,
+              password:
+                '$2a$10$zQJv3V3Kjw7Jq7Ww1X7z5e1QXsVd1m3JdV9vG6t8Jv7jQz4Z5J1QK',
+              identifier: { type: 'm.id.user', user: '@testuser:example.com' }
+            }
+          })
+        expect(response.statusCode).toBe(403)
+        expect(response.body).toHaveProperty('errcode', 'M_FORBIDDEN')
+        expect(response.body).toHaveProperty(
+          'error',
+          'Cannot add 3pid as it is not allowed by server'
+        )
+        delete clientServer.conf.capabilities.enable_3pid_changes
+      })
       // Used to work but not anymore since we only check UI Auth with m.login.password or m.login.sso
       // it('should refuse adding a userId that is not of the right format', async () => {
       //   const response = await request(app)
@@ -707,8 +741,8 @@ describe('Use configuration file', () => {
           ok: true,
           status: 200,
           // eslint-disable-next-line @typescript-eslint/promise-function-async
-          json: () =>
-            Promise.resolve({
+          json: () => {
+            return {
               medium: 'email',
               address: 'localhost@example.com',
               mxid: '@testuser:example.com',
@@ -716,7 +750,8 @@ describe('Use configuration file', () => {
               not_before: 1234567890,
               signatures: {},
               ts: 1234567890
-            })
+            }
+          }
         })
 
         // @ts-expect-error mock is unknown
@@ -755,11 +790,12 @@ describe('Use configuration file', () => {
           ok: false,
           status: 400,
           // eslint-disable-next-line @typescript-eslint/promise-function-async
-          json: () =>
-            Promise.resolve({
+          json: () => {
+            return {
               errcode: 'M_SESSION_NOT_VALIDATED',
               error: 'This validation session has not yet been completed'
-            })
+            }
+          }
         })
 
         // @ts-expect-error mock is unknown
@@ -789,7 +825,7 @@ describe('Use configuration file', () => {
           'This validation session has not yet been completed'
         )
       })
-      it('should return a 500 error if the medium is incorrect', async () => {
+      it('should return a 400 error if the medium is incorrect', async () => {
         const mockResolveResponse = Promise.resolve({
           ok: true,
           status: 200,
@@ -805,8 +841,8 @@ describe('Use configuration file', () => {
           ok: true,
           status: 200,
           // eslint-disable-next-line @typescript-eslint/promise-function-async
-          json: () =>
-            Promise.resolve({
+          json: () => {
+            return {
               medium: 'wrongmedium',
               address: 'localhost@example.com',
               mxid: '@testuser:example.com',
@@ -814,7 +850,8 @@ describe('Use configuration file', () => {
               not_before: 1234567890,
               signatures: {},
               ts: 1234567890
-            })
+            }
+          }
         })
 
         // @ts-expect-error mock is unknown
@@ -834,14 +871,14 @@ describe('Use configuration file', () => {
             sid: 'mysid'
           })
 
-        expect(response.statusCode).toBe(500)
+        expect(response.statusCode).toBe(400)
         expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
         expect(response.body).toHaveProperty(
           'error',
           'Medium must be one of "email" or "msisdn"'
         )
       })
-      it('should return a 500 error if the email is incorrect', async () => {
+      it('should return a 400 error if the email is incorrect', async () => {
         const mockResolveResponse = Promise.resolve({
           ok: true,
           status: 200,
@@ -857,8 +894,8 @@ describe('Use configuration file', () => {
           ok: true,
           status: 200,
           // eslint-disable-next-line @typescript-eslint/promise-function-async
-          json: () =>
-            Promise.resolve({
+          json: () => {
+            return {
               medium: 'email',
               address: '05934903',
               mxid: '@testuser:example.com',
@@ -866,7 +903,8 @@ describe('Use configuration file', () => {
               not_before: 1234567890,
               signatures: {},
               ts: 1234567890
-            })
+            }
+          }
         })
 
         // @ts-expect-error mock is unknown
@@ -886,11 +924,11 @@ describe('Use configuration file', () => {
             sid: 'mysid'
           })
 
-        expect(response.statusCode).toBe(500)
+        expect(response.statusCode).toBe(400)
         expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
         expect(response.body).toHaveProperty('error', 'Invalid email')
       })
-      it('should return a 500 error if the phone number is incorrect', async () => {
+      it('should return a 400 error if the phone number is incorrect', async () => {
         const mockResolveResponse = Promise.resolve({
           ok: true,
           status: 200,
@@ -906,8 +944,8 @@ describe('Use configuration file', () => {
           ok: true,
           status: 200,
           // eslint-disable-next-line @typescript-eslint/promise-function-async
-          json: () =>
-            Promise.resolve({
+          json: () => {
+            return {
               medium: 'msisdn',
               address: 'localhost@example.com',
               mxid: '@testuser:example.com',
@@ -915,7 +953,8 @@ describe('Use configuration file', () => {
               not_before: 1234567890,
               signatures: {},
               ts: 1234567890
-            })
+            }
+          }
         })
 
         // @ts-expect-error mock is unknown
@@ -935,9 +974,30 @@ describe('Use configuration file', () => {
             sid: 'mysid'
           })
 
-        expect(response.statusCode).toBe(500)
+        expect(response.statusCode).toBe(400)
         expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
         expect(response.body).toHaveProperty('error', 'Invalid phone number')
+      })
+      it('should return 403 if the user is not an admin and the server does not allow it', async () => {
+        clientServer.conf.capabilities.enable_3pid_changes = false
+        const response = await request(app)
+          .post('/_matrix/client/v3/account/3pid/bind')
+          .set('Authorization', `Bearer ${validToken}`)
+          .set('Accept', 'application/json')
+          .send({
+            client_secret: 'mysecret',
+            id_access_token: 'myaccesstoken',
+            id_server: 'matrix.example.com',
+            sid: 'mysid'
+          })
+
+        expect(response.statusCode).toBe(403)
+        expect(response.body).toHaveProperty('errcode', 'M_FORBIDDEN')
+        expect(response.body).toHaveProperty(
+          'error',
+          'Cannot bind 3pid to user account as it is not allowed by server'
+        )
+        delete clientServer.conf.capabilities.enable_3pid_changes
       })
     })
   })

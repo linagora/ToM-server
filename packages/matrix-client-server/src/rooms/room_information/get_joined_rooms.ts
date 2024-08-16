@@ -5,8 +5,8 @@ export const getJoinedRooms = (
   clientServer: MatrixClientServer
 ): expressAppHandler => {
   return (req, res) => {
-    clientServer.authenticate(req, res, (token) => {
-      const userId = token.sub
+    clientServer.authenticate(req, res, (data) => {
+      const userId = data.sub
       clientServer.matrixDb
         .get('room_memberships', ['room_id'], {
           user_id: userId,

@@ -13,6 +13,7 @@ import { type TokenContent } from '../../utils/authenticate'
 import type { ServerResponse } from 'http'
 import type e from 'express'
 import { MatrixResolve } from 'matrix-resolve'
+import { isAdmin } from '../../utils/utils'
 
 interface RequestBody {
   address: string
@@ -151,6 +152,21 @@ const delete3pid = (clientServer: MatrixClientServer): expressAppHandler => {
           // eslint-disable-next-line @typescript-eslint/no-misused-promises
           async (obj) => {
             const body = obj as RequestBody
+            const byAdmin = await isAdmin(clientServer, data.sub)
+            const allowed =
+              clientServer.conf.capabilities.enable_3pid_changes ?? true
+            if (!byAdmin && !allowed) {
+              send(
+                res,
+                403,
+                errMsg(
+                  'forbidden',
+                  'Cannot add 3pid as it is not allowed by server'
+                ),
+                clientServer.logger
+              )
+              return
+            }
             if (!['email', 'msisdn'].includes(body.medium)) {
               send(
                 res,

@@ -23,6 +23,7 @@ import {
   jsonContent,
   validateParameters
 } from '@twake/utils'
+import { isAdmin } from '../../utils/utils'
 
 const MAX_DISPLAYNAME_LEN = 256
 const MAX_AVATAR_URL_LEN = 1000
@@ -64,24 +65,9 @@ export const changeAvatarUrl = (
     const userId: string = (req as Request).params.userId
 
     // eslint-disable-next-line @typescript-eslint/no-misused-promises
-    clientServer.authenticate(req, res, async (token) => {
-      const requesterUserId = token.sub
-      let byAdmin = 0
-      try {
-        // Check wether requester is admin or not
-        const response = await clientServer.matrixDb.get('users', ['admin'], {
-          name: requesterUserId
-        })
-        byAdmin = response[0].admin as number
-      } catch (e) {
-        /* istanbul ignore next */
-        send(
-          res,
-          500,
-          errMsg('unknown', 'Error checking admin'),
-          clientServer.logger
-        )
-      }
+    clientServer.authenticate(req, res, async (data) => {
+      const requesterUserId = data.sub
+      const byAdmin = await isAdmin(clientServer, requesterUserId)
 
       jsonContent(req, res, clientServer.logger, (obj) => {
         validateParameters(res, schema, obj, clientServer.logger, (obj) => {
@@ -99,7 +85,7 @@ export const changeAvatarUrl = (
             return
           }
 
-          if (byAdmin === 0 && requesterUserId !== targetUserId) {
+          if (!byAdmin && requesterUserId !== targetUserId) {
             send(
               res,
               403,
@@ -114,7 +100,7 @@ export const changeAvatarUrl = (
 
           const allowed =
             clientServer.conf.capabilities.enable_set_avatar_url ?? true
-          if (byAdmin === 0 && !allowed) {
+          if (!byAdmin && !allowed) {
             send(
               res,
               403,
@@ -184,26 +170,10 @@ export const changeDisplayname = (
     const userId: string = (req as Request).params.userId
 
     // eslint-disable-next-line @typescript-eslint/no-misused-promises
-    clientServer.authenticate(req, res, async (token) => {
-      const requesterUserId = token.sub
+    clientServer.authenticate(req, res, async (data) => {
+      const requesterUserId = data.sub
       // Check wether requester is admin or not
-      let byAdmin = 0
-      try {
-        const response = await clientServer.matrixDb.get('users', ['admin'], {
-          name: requesterUserId
-        })
-        byAdmin = response[0].admin as number
-      } catch (e) {
-        /* istanbul ignore next */
-        clientServer.logger.error('Error checking admin:', e)
-        /* istanbul ignore next */
-        send(
-          res,
-          500,
-          errMsg('unknown', 'Error checking admin'),
-          clientServer.logger
-        )
-      }
+      const byAdmin = await isAdmin(clientServer, requesterUserId)
 
       jsonContent(req, res, clientServer.logger, (obj) => {
         validateParameters(
@@ -226,7 +196,7 @@ export const changeDisplayname = (
               return
             }
 
-            if (byAdmin === 0 && requesterUserId !== targetUserId) {
+            if (!byAdmin && requesterUserId !== targetUserId) {
               send(
                 res,
                 403,
@@ -241,7 +211,7 @@ export const changeDisplayname = (
 
             const allowed =
               clientServer.conf.capabilities.enable_set_displayname ?? true
-            if (byAdmin === 0 && !allowed) {
+            if (!byAdmin && !allowed) {
               send(
                 res,
                 403,
