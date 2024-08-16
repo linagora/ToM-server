@@ -9,6 +9,7 @@
  * For reference, look at how the capabilities are checked in the `changeDisplayname` function. ( ../profiles/changeProfiles.ts )
  *
  * TODO : Implement capability checks in the concerned API's for changing password and 3pid changes
+ * (TODO : Implement capability checks in the concerned API's for user_directory search (not specified in spec))
  */
 
 import type MatrixClientServer from '../index'
