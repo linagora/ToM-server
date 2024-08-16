@@ -23,7 +23,7 @@ import {
   jsonContent,
   validateParameters
 } from '@twake/utils'
-import { isAdmin } from '../utils/utils'
+import { isAdmin } from '../../utils/utils'
 
 const MAX_DISPLAYNAME_LEN = 256
 const MAX_AVATAR_URL_LEN = 1000
