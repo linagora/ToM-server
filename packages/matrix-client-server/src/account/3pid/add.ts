@@ -38,7 +38,6 @@ const add = (clientServer: MatrixClientServer): expressAppHandler => {
         requestBodyReference,
         data.sub,
         'add a 3pid to a user account',
-        data,
         (obj, userId) => {
           validateParameters(
             res,
