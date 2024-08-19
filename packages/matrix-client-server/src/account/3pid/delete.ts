@@ -14,6 +14,8 @@ import type { ServerResponse } from 'http'
 import type e from 'express'
 import { MatrixResolve } from 'matrix-resolve'
 import { isAdmin } from '../../utils/utils'
+import { insertOpenIdToken } from '../../user/openid/requestToken'
+import { randomString } from '@twake/crypto'
 
 interface RequestBody {
   address: string
@@ -23,13 +25,6 @@ interface RequestBody {
 
 interface RegisterResponseBody {
   token: string
-}
-
-interface OpenIDResponseBody {
-  access_token: string
-  expires_in: number
-  matrix_server_name: string
-  token_type: string
 }
 
 const schema = {
@@ -43,101 +38,86 @@ const deleteAndSend = async (
   body: RequestBody,
   clientServer: MatrixClientServer,
   idServer: string,
-  data: TokenContent,
-  token: string | null
+  data: TokenContent
 ): Promise<void> => {
-  const openIDResponse = await fetch(
-    `https://${clientServer.conf.server_name}/_matrix/client/v3/user/${data.sub}/openid/request_token`,
-    {
-      method: 'POST',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token as string}`
-      },
-      body: JSON.stringify({
-        user_id: data.sub
+  insertOpenIdToken(clientServer, data.sub, randomString(64))
+    .then(async (openIDRows) => {
+      const matrixResolve = new MatrixResolve({
+        cache: 'toad-cache'
       })
-    }
-  )
-  // istanbul ignore if
-  if (!openIDResponse.ok) {
-    // istanbul ignore next
-    send(
-      res,
-      500,
-      errMsg('unknown', 'Error while requesting OpenID token'),
-      clientServer.logger
-    )
-    // istanbul ignore next
-    return
-  }
-  const openIDResponseBody: OpenIDResponseBody =
-    (await openIDResponse.json()) as OpenIDResponseBody
-
-  const matrixResolve = new MatrixResolve({
-    cache: 'toad-cache'
-  })
-  const baseUrl: string | string[] = await matrixResolve.resolve(idServer)
-  const registerResponse = await fetch(
-    `https://${baseUrl as string}/_matrix/identity/v2/account/register`,
-    {
-      method: 'POST',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(openIDResponseBody)
-    }
-  )
-  const validToken = ((await registerResponse.json()) as RegisterResponseBody)
-    .token
-  const UnbindResponse = await fetch(
-    `https://${baseUrl as string}/_matrix/identity/v2/3pid/unbind`,
-    {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${validToken}`,
-        Accept: 'application/json',
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        address: body.address,
-        medium: body.medium
-      })
-    }
-  )
-  if (UnbindResponse.ok) {
-    const deleteAdd = clientServer.matrixDb.deleteWhere('user_threepids', [
-      { field: 'address', value: body.address, operator: '=' },
-      { field: 'medium', value: body.medium, operator: '=' },
-      { field: 'user_id', value: data.sub, operator: '=' }
-    ])
-    const deleteBind = clientServer.matrixDb.deleteWhere(
-      'user_threepid_id_server',
-      [
-        { field: 'address', value: body.address, operator: '=' },
-        { field: 'medium', value: body.medium, operator: '=' },
-        { field: 'user_id', value: data.sub, operator: '=' },
-        { field: 'id_server', value: idServer, operator: '=' }
-      ]
-    )
-    Promise.all([deleteAdd, deleteBind])
-      .then(() => {
-        send(res, 200, { id_server_unbind_result: 'success' })
-      })
-      .catch((e) => {
+      const baseUrl: string | string[] = await matrixResolve.resolve(idServer)
+      const registerResponse = await fetch(
+        `https://${baseUrl as string}/_matrix/identity/v2/account/register`,
+        {
+          method: 'POST',
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            access_token: openIDRows[0].token,
+            expires_in: clientServer.conf.open_id_token_lifetime,
+            matrix_server_name: clientServer.conf.server_name,
+            token_type: 'Bearer'
+          })
+        }
+      )
+      const validToken = (
+        (await registerResponse.json()) as RegisterResponseBody
+      ).token
+      const UnbindResponse = await fetch(
+        `https://${baseUrl as string}/_matrix/identity/v2/3pid/unbind`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${validToken}`,
+            Accept: 'application/json',
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            address: body.address,
+            medium: body.medium
+          })
+        }
+      )
+      if (UnbindResponse.ok) {
+        const deleteAdd = clientServer.matrixDb.deleteWhere('user_threepids', [
+          { field: 'address', value: body.address, operator: '=' },
+          { field: 'medium', value: body.medium, operator: '=' },
+          { field: 'user_id', value: data.sub, operator: '=' }
+        ])
+        const deleteBind = clientServer.matrixDb.deleteWhere(
+          'user_threepid_id_server',
+          [
+            { field: 'address', value: body.address, operator: '=' },
+            { field: 'medium', value: body.medium, operator: '=' },
+            { field: 'user_id', value: data.sub, operator: '=' },
+            { field: 'id_server', value: idServer, operator: '=' }
+          ]
+        )
+        Promise.all([deleteAdd, deleteBind])
+          .then(() => {
+            send(res, 200, { id_server_unbind_result: 'success' })
+          })
+          .catch((e) => {
+            // istanbul ignore next
+            clientServer.logger.error('Error while deleting user_threepids', e)
+            // istanbul ignore next
+            send(res, 500, errMsg('unknown', e), clientServer.logger)
+          })
+      } else {
         // istanbul ignore next
-        clientServer.logger.error('Error while deleting user_threepids', e)
-        // istanbul ignore next
-        send(res, 500, errMsg('unknown', e), clientServer.logger)
-      })
-  } else {
-    // istanbul ignore next
-    send(res, UnbindResponse.status, {
-      id_server_unbind_result: 'no-support'
+        send(res, UnbindResponse.status, {
+          id_server_unbind_result: 'no-support'
+        })
+      }
     })
-  }
+    .catch((e) => {
+      // istanbul ignore next
+      clientServer.logger.error('Error while inserting openID token', e)
+      // istanbul ignore next
+      send(res, 500, errMsg('unknown', e), clientServer.logger)
+    })
 }
 
 const delete3pid = (clientServer: MatrixClientServer): expressAppHandler => {
@@ -201,19 +181,14 @@ const delete3pid = (clientServer: MatrixClientServer): expressAppHandler => {
             // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
             if (typeof body.id_server === 'string' && body.id_server) {
               idServer = body.id_server
-              deleteAndSend(
-                res,
-                body,
-                clientServer,
-                idServer,
-                data,
-                token
-              ).catch((e) => {
-                // istanbul ignore next
-                clientServer.logger.error('Error while deleting 3pid', e)
-                // istanbul ignore next
-                send(res, 500, errMsg('unknown', e), clientServer.logger)
-              })
+              deleteAndSend(res, body, clientServer, idServer, data).catch(
+                (e) => {
+                  // istanbul ignore next
+                  clientServer.logger.error('Error while deleting 3pid', e)
+                  // istanbul ignore next
+                  send(res, 500, errMsg('unknown', e), clientServer.logger)
+                }
+              )
             } else {
               clientServer.matrixDb
                 .get('user_threepid_id_server', ['id_server'], {
@@ -236,8 +211,7 @@ const delete3pid = (clientServer: MatrixClientServer): expressAppHandler => {
                     body,
                     clientServer,
                     rows[0].id_server as string,
-                    data,
-                    token
+                    data
                   ).catch((e) => {
                     // istanbul ignore next
                     clientServer.logger.error('Error while deleting 3pid', e)
