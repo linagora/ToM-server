@@ -173,7 +173,7 @@ const deleteAllRooms = async (
       //   return updateMembership(room, userId, Membership.LEAVE)
       // TODO : Replace this after implementing method to update room membership from the spec
       // https://spec.matrix.org/v1.11/client-server-api/#mroommember
-      //
+      // or after implementing the endpoint '/_matrix/client/v3/rooms/{roomId}/leave'
     })
     await Promise.all(deleteRoomsPromises)
   } catch (e) {
