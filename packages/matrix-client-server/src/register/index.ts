@@ -90,15 +90,13 @@ const sendSuccessResponse = (
       send(res, 200, {
         access_token: accessToken,
         device_id: deviceId,
-        user_id: userId,
-        expires_in_ms: 60000 // Arbitrary value, should probably be defined in the server config // TODO : Add this in the config
+        user_id: userId
       })
     } else {
       send(res, 200, {
         access_token: accessToken,
         device_id: deviceId,
         user_id: userId,
-        expires_in_ms: 60000, // Arbitrary value, should probably be defined in the server config // TODO : Add this in the config
         refresh_token: refreshToken
       })
     }
@@ -123,7 +121,8 @@ const registerAccount = (
   const accessToken = randomString(64)
   const refreshToken = randomString(64)
   const refreshTokenId = randomString(64)
-  const createUserPromise = (): Promise<DbGetResult> => {
+  // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
+  const createUserPromise = (): Promise<DbGetResult> | void => {
     const commonUserData: InsertedData = {
       name: userId,
       creation_ts: epoch(),
@@ -136,14 +135,15 @@ const registerAccount = (
     if (password) {
       if (typeof password !== 'string' || password.length > 512) {
         send(res, 400, errMsg('invalidParam', 'Invalid password'))
-      }
-      const hash = new Hash()
-      return hash.ready.then(() => {
-        return clientServer.matrixDb.insert('users', {
-          ...commonUserData,
-          password_hash: hash.sha256(password) // TODO: Handle other hashing algorithms
+      } else {
+        const hash = new Hash()
+        return hash.ready.then(() => {
+          return clientServer.matrixDb.insert('users', {
+            ...commonUserData,
+            password_hash: hash.sha256(password) // TODO: Handle other hashing algorithms
+          })
         })
-      })
+      }
     } else {
       return clientServer.matrixDb.insert('users', { ...commonUserData })
     }
@@ -170,16 +170,15 @@ const registerAccount = (
     id: refreshTokenId,
     user_id: userId,
     device_id: deviceId,
-    token: refreshToken // TODO : maybe add expiry_ts here
+    token: refreshToken
   })
   const accessTokenPromise = clientServer.matrixDb.insert('access_tokens', {
     id: randomString(64), // To be fixed later
     user_id: userId,
     token: accessToken,
     device_id: deviceId,
-    valid_until_ms: 0,
     refresh_token_id: refreshTokenId
-  }) // TODO : Add a token_lifetime in the config, replace the id with a correct one, and fill the 'puppets_user_id' row with the right value
+  }) // TODO : replace the id with a correct one, and fill the 'puppets_user_id' row with the right value
   const promisesToExecute = body.inhibit_login
     ? [userIpPromise, userPromise, fillPoliciesPromise]
     : [

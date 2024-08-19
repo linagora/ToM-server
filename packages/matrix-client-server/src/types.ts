@@ -20,6 +20,7 @@ export type Config = MIdentityServerConfig & {
   is_registration_token_login_enabled: boolean
   registration_required_3pid: string[]
   user_directory: UserDirectoryConfig
+  open_id_token_lifetime: number
 }
 
 export type DbGetResult = Array<
