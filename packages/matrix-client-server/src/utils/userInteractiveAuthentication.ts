@@ -71,7 +71,6 @@ export const validateUserWithUIAuthentication = (
   reference: Record<string, string>,
   userId: string,
   description: string,
-  data: any,
   callback: (data: any, userId: string | null) => void
 ): void => {
   if (userId != null && !isMatrixIdValid(userId)) {

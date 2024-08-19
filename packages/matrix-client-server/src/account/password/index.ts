@@ -159,7 +159,6 @@ const passwordReset = (clientServer: MatrixClientServer): expressAppHandler => {
           requestBodyReference,
           data.sub,
           'modify your account password',
-          data,
           (obj, userId) => {
             validateParameters(res, schema, obj, clientServer.logger, (obj) => {
               realMethod(

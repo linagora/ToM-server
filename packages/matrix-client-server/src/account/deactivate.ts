@@ -19,6 +19,7 @@ import type { ServerResponse } from 'http'
 import type e from 'express'
 import { isAdmin } from '../utils/utils'
 import { SafeClientEvent } from '../utils/event'
+import delete3pid from './3pid/delete'
 
 interface ThreepidUnbindResponse {
   id_server_unbind_result: 'success' | 'no-support'
@@ -112,7 +113,7 @@ const deleteAllPushers = async (
       async (pusher) =>
         await clientServer.matrixDb.insert('deleted_pushers', {
           stream_id: 0, // TODO: Update as needed
-          instance_name: clientServer.config.worker_name, // TODO: Confirm this with Xavier
+          instance_name: 'main', // TODO: This value may be changed
           app_id: pusher.app_id as string,
           pushkey: pusher.pushkey as string,
           user_id: userId
@@ -260,21 +261,7 @@ const realMethod = async (
       rows.forEach((row) => {
         threepidDeletePromises.push(
           // What if the user has 10000 3pids ? Will this get rate limited or create a bottleneck ? Should we do this sequentially or by batches ?
-          fetch(
-            `https://${clientServer.conf.server_name}/_matrix/client/v3/account/3pid/delete`,
-            {
-              method: 'POST',
-              headers: {
-                Accept: 'application/json',
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify({
-                id_server: body.id_server,
-                medium: row.medium,
-                address: row.address
-              })
-            }
-          )
+          delete3pid(clientServer)()
         )
       })
       const deleteDevicesPromise = clientServer.matrixDb.deleteWhere(
@@ -356,7 +343,7 @@ const realMethod = async (
           clientServer.matrixDb.insert('erased_users', { user_id: userId })
         )
       }
-      if (clientServer.conf.account_validity.enabled) {
+      if (clientServer.conf.capabilities.enable_account_validity ?? true) {
         // TODO : Add this in config after understanding what it does from Synapse's code
         promisesToExecute.push(
           clientServer.matrixDb.deleteEqual(
@@ -409,8 +396,7 @@ const deactivate = (clientServer: MatrixClientServer): expressAppHandler => {
           res,
           requestBodyReference,
           data.sub,
-          'modify your account password',
-          data,
+          'deactivate your account',
           (obj, userId) => {
             realMethod(
               res,
@@ -432,7 +418,7 @@ const deactivate = (clientServer: MatrixClientServer): expressAppHandler => {
         res,
         requestBodyReference,
         allowedFlows,
-        'modify your account password',
+        'deactivate your account',
         (obj, userId) => {
           realMethod(
             res,

@@ -402,6 +402,7 @@ interface Capabilities {
   enable_set_avatar_url?: boolean
   enable_3pid_changes?: boolean
   enable_change_password?: boolean
+  enable_account_validity?: boolean
 }
 
 interface UserDirectoryConfig {
