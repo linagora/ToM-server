@@ -90,15 +90,13 @@ const sendSuccessResponse = (
       send(res, 200, {
         access_token: accessToken,
         device_id: deviceId,
-        user_id: userId,
-        expires_in_ms: 60000 // Arbitrary value, should probably be defined in the server config // TODO : Add this in the config
+        user_id: userId
       })
     } else {
       send(res, 200, {
         access_token: accessToken,
         device_id: deviceId,
         user_id: userId,
-        expires_in_ms: 60000, // Arbitrary value, should probably be defined in the server config // TODO : Add this in the config
         refresh_token: refreshToken
       })
     }

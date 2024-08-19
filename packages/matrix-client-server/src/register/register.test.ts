@@ -493,7 +493,6 @@ describe('Use configuration file', () => {
         })
       expect(response.statusCode).toBe(200)
       expect(response.body).toHaveProperty('user_id')
-      expect(response.body).toHaveProperty('expires_in_ms')
       expect(response.body).toHaveProperty('access_token')
       expect(response.body).toHaveProperty('device_id')
     })
@@ -652,7 +651,6 @@ describe('Use configuration file', () => {
         .send({})
       expect(response.statusCode).toBe(200)
       expect(response.body).toHaveProperty('user_id')
-      expect(response.body).toHaveProperty('expires_in_ms')
       expect(response.body).toHaveProperty('access_token')
       expect(response.body).toHaveProperty('device_id')
       guestToken = response.body.access_token
