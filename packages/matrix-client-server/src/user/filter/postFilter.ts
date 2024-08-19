@@ -54,7 +54,7 @@ const PostFilter = (clientServer: MatrixClientServer): expressAppHandler => {
                 filter_json: JSON.stringify(filter) // TODO : clarify the type of the filter_json (bytea, string ???)
               })
               .then(() => {
-                clientServer.logger.info('Inserted filter:', filterId)
+                clientServer.logger.info(`Inserted filter: ${filterId}`)
                 send(res, 200, { filter_id: filterId })
               })
               .catch((e) => {
