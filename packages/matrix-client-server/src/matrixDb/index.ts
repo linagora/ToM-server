@@ -94,7 +94,7 @@ type Insert = (
 ) => Promise<DbGetResult>
 type updateWithConditions = (
   table: Collections,
-  values: Record<string, string | number>,
+  values: Record<string, string | number | null>,
   conditions: Array<{ field: string; value: string | number }>
 ) => Promise<DbGetResult>
 type DeleteEqual = (
@@ -323,7 +323,7 @@ class MatrixDBmodified implements MatrixDBmodifiedBackend {
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
   updateWithConditions(
     table: Collections,
-    values: Record<string, string | number>,
+    values: Record<string, string | number | null>,
     conditions: Array<{ field: string; value: string | number }>
   ) {
     return this.db.updateWithConditions(table, values, conditions)
