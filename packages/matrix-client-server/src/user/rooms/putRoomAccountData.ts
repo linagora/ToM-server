@@ -43,6 +43,19 @@ const putRoomAccountData = (
       send(res, 400, errMsg('invalidParam'), clientServer.logger)
       return
     }
+    if (
+      parameters.type === 'm.push_rules' ||
+      parameters.type === 'm.fully_read'
+    ) {
+      // Servers MUST reject setting account data for event types that the server manages.
+      send(
+        res,
+        405,
+        errMsg('badJson', `Cannot set ${parameters.type} through this API.`),
+        clientServer.logger
+      )
+      return
+    }
     clientServer.authenticate(req, res, (data, token) => {
       jsonContent(req, res, clientServer.logger, (obj) => {
         validateParameters(res, schema, obj, clientServer.logger, (obj) => {
