@@ -474,19 +474,6 @@ describe('Use configuration file', () => {
         expect(response.body).toHaveProperty('error', 'Invalid phone number')
       })
       it('should unbind from the id server provided in the request body', async () => {
-        const mockOpenIDResponse = Promise.resolve({
-          ok: true,
-          status: 200,
-          // eslint-disable-next-line @typescript-eslint/promise-function-async
-          json: () =>
-            Promise.resolve({
-              access_token: 'openIdToken',
-              expires_in: 3600,
-              matrix_server_name: 'example.com',
-              token_type: 'Bearer'
-            })
-        })
-
         const mockResolveResponse = Promise.resolve({
           ok: true,
           status: 200,
@@ -517,8 +504,6 @@ describe('Use configuration file', () => {
               medium: 'email'
             })
         })
-        // @ts-expect-error mock is unknown
-        fetch.mockImplementationOnce(async () => await mockOpenIDResponse)
         // @ts-expect-error mock is unknown
         fetch.mockImplementationOnce(async () => await mockResolveResponse)
         // @ts-expect-error mock is unknown
@@ -564,19 +549,6 @@ describe('Use configuration file', () => {
           added_at: epoch()
         })
 
-        const mockOpenIDResponse = Promise.resolve({
-          ok: true,
-          status: 200,
-          // eslint-disable-next-line @typescript-eslint/promise-function-async
-          json: () =>
-            Promise.resolve({
-              access_token: 'openIdToken',
-              expires_in: 3600,
-              matrix_server_name: 'example.com',
-              token_type: 'Bearer'
-            })
-        })
-
         const mockResolveResponse = Promise.resolve({
           ok: true,
           status: 200,
@@ -607,8 +579,6 @@ describe('Use configuration file', () => {
               medium: 'email'
             })
         })
-        // @ts-expect-error mock is unknown
-        fetch.mockImplementationOnce(async () => await mockOpenIDResponse)
         // @ts-expect-error mock is unknown
         fetch.mockImplementationOnce(async () => await mockResolveResponse)
         // @ts-expect-error mock is unknown
@@ -655,19 +625,6 @@ describe('Use configuration file', () => {
         )
       })
       it('should return an error if the unbind was unsuccessful on the id-server', async () => {
-        const mockOpenIDResponse = Promise.resolve({
-          ok: true,
-          status: 200,
-          // eslint-disable-next-line @typescript-eslint/promise-function-async
-          json: () =>
-            Promise.resolve({
-              access_token: 'openIdToken',
-              expires_in: 3600,
-              matrix_server_name: 'example.com',
-              token_type: 'Bearer'
-            })
-        })
-
         const mockResolveResponse = Promise.resolve({
           ok: true,
           status: 200,
@@ -698,8 +655,7 @@ describe('Use configuration file', () => {
               errcode: 'M_INVALID_PARAM'
             })
         })
-        // @ts-expect-error mock is unknown
-        fetch.mockImplementationOnce(async () => await mockOpenIDResponse)
+
         // @ts-expect-error mock is unknown
         fetch.mockImplementationOnce(async () => await mockResolveResponse)
         // @ts-expect-error mock is unknown
