@@ -233,6 +233,165 @@ describe('Matrix DB', () => {
       })
       .catch(done)
   })
+  it('should insert a new record using upsert', (done) => {
+    matrixDb = new MatrixDBmodified(baseConf, logger)
+    matrixDb.ready
+      .then(() => {
+        const userId = randomString(64)
+        const accountDataType = 'newDataType'
+        const content = '{"key":"value"}'
+        const streamId = Date.now()
+
+        matrixDb
+          .upsert(
+            'account_data',
+            {
+              user_id: userId,
+              account_data_type: accountDataType,
+              stream_id: streamId,
+              content,
+              instance_name: 'instance1'
+            },
+            ['user_id', 'account_data_type']
+          )
+          .then((rows) => {
+            expect(rows.length).toBe(1)
+            expect(rows[0].user_id).toEqual(userId)
+            expect(rows[0].account_data_type).toEqual(accountDataType)
+            expect(rows[0].content).toEqual(content)
+            expect(rows[0].stream_id).toEqual(streamId)
+            expect(rows[0].instance_name).toEqual('instance1')
+            matrixDb.close()
+            done()
+          })
+          .catch(done)
+      })
+      .catch(done)
+  })
+
+  it('should update an existing record using upsert', (done) => {
+    matrixDb = new MatrixDBmodified(baseConf, logger)
+    matrixDb.ready
+      .then(() => {
+        const userId = randomString(64)
+        const accountDataType = 'existingDataType'
+        const initialContent = '{"key":"initialValue"}'
+        const updatedContent = '{"key":"updatedValue"}'
+        const streamId = Date.now()
+
+        matrixDb
+          .insert('account_data', {
+            user_id: userId,
+            account_data_type: accountDataType,
+            stream_id: streamId,
+            content: initialContent,
+            instance_name: 'instance1'
+          })
+          .then(() => {
+            matrixDb
+              .upsert(
+                'account_data',
+                {
+                  user_id: userId,
+                  account_data_type: accountDataType,
+                  stream_id: streamId + 1,
+                  content: updatedContent,
+                  instance_name: 'instance2'
+                },
+                ['user_id', 'account_data_type']
+              )
+              .then((rows) => {
+                expect(rows.length).toBe(1)
+                expect(rows[0].user_id).toEqual(userId)
+                expect(rows[0].account_data_type).toEqual(accountDataType)
+                expect(rows[0].stream_id).toEqual(streamId + 1)
+                expect(rows[0].content).toEqual(updatedContent)
+                expect(rows[0].instance_name).toEqual('instance2')
+                matrixDb.close()
+                done()
+              })
+              .catch(done)
+          })
+          .catch(done)
+      })
+      .catch(done)
+  })
+
+  it('should update an existing record using upsert 2', (done) => {
+    matrixDb = new MatrixDBmodified(baseConf, logger)
+    matrixDb.ready
+      .then(() => {
+        const userId = randomString(64)
+        const displayName = 'test'
+        const avatarUrl = 'avatarUrl'
+        const newDisplayName = 'testUpdated'
+
+        matrixDb
+          .insert('profiles', {
+            user_id: userId,
+            displayname: displayName,
+            avatar_url: avatarUrl
+          })
+          .then(() => {
+            matrixDb
+              .upsert(
+                'profiles',
+                {
+                  user_id: userId,
+                  displayname: newDisplayName
+                },
+                ['user_id']
+              )
+              .then((rows) => {
+                expect(rows.length).toBe(1)
+                expect(rows[0].user_id).toEqual(userId)
+                expect(rows[0].displayname).toEqual(newDisplayName)
+                expect(rows[0].avatar_url).toEqual(avatarUrl)
+                matrixDb.close()
+                done()
+              })
+              .catch(done)
+          })
+          .catch(done)
+      })
+      .catch(done)
+  })
+
+  it('should insert a new record when no conflict exists', (done) => {
+    matrixDb = new MatrixDBmodified(baseConf, logger)
+    matrixDb.ready
+      .then(() => {
+        const userId = randomString(64)
+        const accountDataType = 'nonConflictType'
+        const content = '{"key":"value"}'
+        const streamId = Date.now()
+
+        matrixDb
+          .upsert(
+            'account_data',
+            {
+              user_id: userId,
+              account_data_type: accountDataType,
+              stream_id: streamId,
+              content,
+              instance_name: 'instance1'
+            },
+            ['user_id', 'account_data_type']
+          )
+          .then((rows) => {
+            expect(rows.length).toBe(1)
+            expect(rows[0].user_id).toEqual(userId)
+            expect(rows[0].account_data_type).toEqual(accountDataType)
+            expect(rows[0].content).toEqual(content)
+            expect(rows[0].stream_id).toEqual(streamId)
+            expect(rows[0].instance_name).toEqual('instance1')
+            matrixDb.close()
+            done()
+          })
+          .catch(done)
+      })
+      .catch(done)
+  })
   describe('getMaxStreamId', () => {
     it('should return the maximum stream ID within the given range', (done) => {
       matrixDb = new MatrixDBmodified(baseConf, logger)

@@ -82,13 +82,52 @@ class MatrixDBSQLite
         }
       )
 
-      stmt.finalize((err) => {
-        /* istanbul ignore if */
-        // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
-        if (err) {
-          reject(err)
+      stmt.finalize(reject)
+    })
+  }
+
+  // eslint-disable-next-line @typescript-eslint/promise-function-async
+  upsert(
+    table: Collections,
+    values: Record<string, string | number>,
+    conflictFields: string[]
+  ): Promise<DbGetResult> {
+    return new Promise((resolve, reject) => {
+      /* istanbul ignore if */
+      if (this.db == null) {
+        throw new Error('Wait for database to be ready')
+      }
+
+      const names = Object.keys(values)
+      const vals = Object.values(values)
+
+      const columns = names.join(', ')
+      const placeholders = names.map(() => '?').join(', ')
+
+      const updateClause = names
+        .map((name) => `${name} = excluded.${name}`)
+        .join(', ')
+
+      const conflictClause = conflictFields.join(', ')
+
+      const stmt = this.db.prepare(
+        `INSERT INTO ${table} (${columns}) VALUES (${placeholders})
+         ON CONFLICT(${conflictClause}) DO UPDATE SET ${updateClause} RETURNING *;`
+      )
+
+      stmt.all(
+        vals,
+        (err: string, rows: Array<Record<string, string | number>>) => {
+          /* istanbul ignore if */
+          if (err != null) {
+            reject(err)
+          } else {
+            resolve(rows)
+          }
         }
-      })
+      )
+
+      stmt.finalize(reject)
     })
   }
 
