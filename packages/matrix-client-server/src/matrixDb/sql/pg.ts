@@ -62,7 +62,7 @@ class MatrixDBPg extends Pg<Collections> implements MatrixDBmodifiedBackend {
   // eslint-disable-next-line @typescript-eslint/promise-function-async
   updateWithConditions(
     table: Collections,
-    values: Record<string, string | number>,
+    values: Record<string, string | number | null>,
     conditions: Array<{ field: string; value: string | number }>
   ): Promise<DbGetResult> {
     return new Promise((resolve, reject) => {
