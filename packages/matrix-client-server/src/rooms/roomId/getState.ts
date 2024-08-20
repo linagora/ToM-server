@@ -100,7 +100,12 @@ const getRoomState = (clientServer: MatrixClientServer): expressAppHandler => {
                 })
                 .catch((err) => {
                   /* istanbul ignore next */
-                  send(res, 500, errMsg('unknown', err), clientServer.logger)
+                  send(
+                    res,
+                    500,
+                    errMsg('unknown', err.toString()),
+                    clientServer.logger
+                  )
                 })
             } else {
               // The requester is currently in the room
@@ -150,14 +155,19 @@ const getRoomState = (clientServer: MatrixClientServer): expressAppHandler => {
                 })
                 .catch((err) => {
                   /* istanbul ignore next */
-                  send(res, 500, errMsg('unknown', err), clientServer.logger)
+                  send(
+                    res,
+                    500,
+                    errMsg('unknown', err.toString()),
+                    clientServer.logger
+                  )
                 })
             }
           }
         })
         .catch((err) => {
           /* istanbul ignore next */
-          send(res, 500, errMsg('unknown', err), clientServer.logger)
+          send(res, 500, errMsg('unknown', err.toString()), clientServer.logger)
         })
     })
   }

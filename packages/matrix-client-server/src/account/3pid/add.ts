@@ -38,7 +38,6 @@ const add = (clientServer: MatrixClientServer): expressAppHandler => {
         requestBodyReference,
         data.sub,
         'add a 3pid to a user account',
-        data,
         (obj, userId) => {
           validateParameters(
             res,
@@ -146,7 +145,7 @@ const add = (clientServer: MatrixClientServer): expressAppHandler => {
                             send(
                               res,
                               400,
-                              errMsg('unknown', e),
+                              errMsg('unknown', e.toString()),
                               clientServer.logger
                             )
                           })
@@ -158,7 +157,12 @@ const add = (clientServer: MatrixClientServer): expressAppHandler => {
                         'Error while getting user_threepids'
                       )
                       // istanbul ignore next
-                      send(res, 500, errMsg('unknown', e), clientServer.logger)
+                      send(
+                        res,
+                        500,
+                        errMsg('unknown', e.toString()),
+                        clientServer.logger
+                      )
                     })
                 })
                 .catch((e) => {
@@ -167,7 +171,12 @@ const add = (clientServer: MatrixClientServer): expressAppHandler => {
                     'Error while getting threepid_validation_session'
                   )
                   // istanbul ignore next
-                  send(res, 500, errMsg('unknown', e), clientServer.logger)
+                  send(
+                    res,
+                    500,
+                    errMsg('unknown', e.toString()),
+                    clientServer.logger
+                  )
                 })
             }
           )

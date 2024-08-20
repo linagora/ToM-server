@@ -1,3 +1,4 @@
+import { type ClientEvent } from '../types'
 import { SafeClientEvent } from './event'
 import { type TwakeLogger } from '@twake/logger'
 
@@ -13,7 +14,7 @@ describe('Test suites for event.ts', () => {
   })
   describe('constructor', () => {
     it('should create a redactedEvent if the event is correct', () => {
-      const clientEvent: Record<string, any> = {
+      const clientEvent: ClientEvent = {
         content: {
           alias: 'alias',
           alt_aliases: ['alt_aliases']
@@ -29,11 +30,12 @@ describe('Test suites for event.ts', () => {
       expect(redactedEvent).toBeDefined()
     })
     it('should throw an error if the eventID is incorrect', () => {
-      const clientEvent: Record<string, any> = {
+      const clientEvent: ClientEvent = {
         content: {
           alias: 'alias',
           alt_aliases: ['alt_aliases']
         },
+        // @ts-expect-error : invalid event_id for test
         event_id: 123456,
         origin_server_ts: 123456,
         room_id: '!726s6s6q:example.com',
@@ -44,7 +46,7 @@ describe('Test suites for event.ts', () => {
       expect(() => new SafeClientEvent(clientEvent)).toThrow('Invalid event_id')
     })
     it('should throw an error if the type is incorrect', () => {
-      const clientEvent: Record<string, any> = {
+      const clientEvent: ClientEvent = {
         content: {
           alias: 'alias',
           alt_aliases: ['alt_aliases']
@@ -59,7 +61,7 @@ describe('Test suites for event.ts', () => {
       expect(() => new SafeClientEvent(clientEvent)).toThrow('Invalid type')
     })
     it('should throw an error if the roomID is incorrect', () => {
-      const clientEvent: Record<string, any> = {
+      const clientEvent: ClientEvent = {
         content: {
           alias: 'alias',
           alt_aliases: ['alt_aliases']
@@ -74,7 +76,7 @@ describe('Test suites for event.ts', () => {
       expect(() => new SafeClientEvent(clientEvent)).toThrow('Invalid room_id')
     })
     it('should throw an error if the sender is incorrect', () => {
-      const clientEvent: Record<string, any> = {
+      const clientEvent: ClientEvent = {
         content: {
           alias: 'alias',
           alt_aliases: ['alt_aliases']
@@ -82,6 +84,7 @@ describe('Test suites for event.ts', () => {
         event_id: 'event_id',
         origin_server_ts: 123456,
         room_id: '!726s6s6q:example.com',
+        // @ts-expect-error : invalid sender for test
         sender: 123456,
         state_key: '',
         type: 'm.room.canonical_alias'
@@ -89,7 +92,7 @@ describe('Test suites for event.ts', () => {
       expect(() => new SafeClientEvent(clientEvent)).toThrow('Invalid sender')
     })
     it('should throw an error if the content is incorrect', () => {
-      const clientEvent: Record<string, any> = {
+      const clientEvent: ClientEvent = {
         content: ['content'],
         event_id: 'event_id',
         origin_server_ts: 123456,
@@ -101,12 +104,13 @@ describe('Test suites for event.ts', () => {
       expect(() => new SafeClientEvent(clientEvent)).toThrow('Invalid content')
     })
     it('should throw an error if the originServerTs is incorrect', () => {
-      const clientEvent: Record<string, any> = {
+      const clientEvent: ClientEvent = {
         content: {
           alias: 'alias',
           alt_aliases: ['alt_aliases']
         },
         event_id: 'event_id',
+        // @ts-expect-error : invalid origin_server_ts for test
         origin_server_ts: '123456',
         room_id: '!726s6s6q:example.com',
         sender: '@alice:example.com',
@@ -119,7 +123,7 @@ describe('Test suites for event.ts', () => {
     })
   })
   describe('redact', () => {
-    const clientEvent: Record<string, any> = {
+    const clientEvent: ClientEvent = {
       content: {
         alias: 'alias',
         alt_aliases: ['alt_aliases']
@@ -130,6 +134,7 @@ describe('Test suites for event.ts', () => {
       sender: '@alice:example.com',
       state_key: '',
       type: 'm.room.canonical_alias',
+      // @ts-expect-error : invalid keys for test
       invalid_key: 'invalid_key',
       another_invalid_key: 'another_invalid_key'
     }
@@ -172,7 +177,7 @@ describe('Test suites for event.ts', () => {
       expect(redactedEventContentKeys).toHaveLength(0)
     })
     it('should not remove the allowed content keys', () => {
-      const clientEvent: Record<string, any> = {
+      const clientEvent: ClientEvent = {
         content: {
           ban: 50,
           events: 50,
@@ -185,6 +190,7 @@ describe('Test suites for event.ts', () => {
         sender: '@alice:example.com',
         state_key: '',
         type: 'm.room.power_levels',
+        // @ts-expect-error : invalid keys for test
         invalid_key: 'invalid_key',
         another_invalid_key: 'another_invalid_key'
       }
@@ -200,7 +206,7 @@ describe('Test suites for event.ts', () => {
       expect(redactedEventContentKeys.length).toBe(expectedKeys.length)
     })
     it('should not remove any content key for a m.room.create event', () => {
-      const clientEvent: Record<string, any> = {
+      const clientEvent: ClientEvent = {
         content: {
           creator: '@alice:example.com',
           random_key: 'random'
@@ -211,6 +217,7 @@ describe('Test suites for event.ts', () => {
         sender: '@alice:example.com',
         state_key: '',
         type: 'm.room.create',
+        // @ts-expect-error : invalid keys for test
         invalid_key: 'invalid_key',
         another_invalid_key: 'another_invalid_key'
       }

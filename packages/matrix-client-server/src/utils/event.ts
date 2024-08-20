@@ -6,14 +6,14 @@ export class SafeClientEvent {
   private event: ClientEvent
   private isRedacted: boolean
 
-  constructor(event: Record<string, any>, logger?: TwakeLogger) {
+  constructor(event: ClientEvent, logger?: TwakeLogger) {
     // Validate and assign properties to ensure data integrity
     this.event = this.validateAndCreateEvent(event, logger)
     this.isRedacted = false
   }
 
   protected validateAndCreateEvent(
-    event: Record<string, any>,
+    event: ClientEvent,
     logger?: TwakeLogger
   ): ClientEvent {
     if (event.event_id == null || typeof event.event_id !== 'string') {

@@ -26,7 +26,7 @@ const isEphemeralPubkeyValid = <T extends string = never>(
         })
         .catch((e) => {
           /* istanbul ignore next */
-          send(res, 500, errMsg('unknown', e))
+          send(res, 500, errMsg('unknown', e.toString()))
         })
     } else {
       send(res, 400, errMsg('missingParams'))

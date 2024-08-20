@@ -161,7 +161,7 @@ const RequestToken = (clientServer: MatrixClientServer): expressAppHandler => {
                             send(
                               res,
                               500,
-                              errMsg('unknown', err),
+                              errMsg('unknown', err.toString()),
                               clientServer.logger
                             )
                           })
@@ -185,7 +185,12 @@ const RequestToken = (clientServer: MatrixClientServer): expressAppHandler => {
                     /* istanbul ignore next */
                     clientServer.logger.error('Send_attempt error:', err)
                     /* istanbul ignore next */
-                    send(res, 500, errMsg('unknown', err), clientServer.logger)
+                    send(
+                      res,
+                      500,
+                      errMsg('unknown', err.toString()),
+                      clientServer.logger
+                    )
                   })
               }
             })
@@ -193,7 +198,12 @@ const RequestToken = (clientServer: MatrixClientServer): expressAppHandler => {
               /* istanbul ignore next */
               clientServer.logger.error('Error getting userID :', err)
               /* istanbul ignore next */
-              send(res, 500, errMsg('unknown', err), clientServer.logger)
+              send(
+                res,
+                500,
+                errMsg('unknown', err.toString()),
+                clientServer.logger
+              )
             })
         }
       })
