@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/promise-function-async */
 import {
   errMsg,
   type expressAppHandler,
@@ -13,17 +14,21 @@ import {
 import {
   type AuthenticationFlowContent,
   type AuthenticationData,
-  Membership
+  Membership,
+  RoomEventTypes,
+  type ClientEvent
 } from '../types'
 import type { ServerResponse } from 'http'
 import type e from 'express'
 import { isAdmin } from '../utils/utils'
 import { SafeClientEvent } from '../utils/event'
-import delete3pid from './3pid/delete'
+import { delete3pid, type DeleteResponse } from './3pid/delete'
+import { randomString } from '@twake/crypto'
+import pLimit from 'p-limit'
 
-interface ThreepidUnbindResponse {
-  id_server_unbind_result: 'success' | 'no-support'
-}
+const maxPromisesToExecuteConcurrently = 10
+const limit = pLimit(maxPromisesToExecuteConcurrently)
+
 interface RequestBody {
   auth: AuthenticationData
   erase: boolean
@@ -56,6 +61,8 @@ const allowedFlows: AuthenticationFlowContent = {
   }
 }
 
+// We return an array of promises wrapped in a limiter so that at most maxPromisesToExecuteConcurrently promises are executed
+// at the same time in the promise.all in realMethod
 const deleteUserDirectory = (
   clientServer: MatrixClientServer,
   userId: string
@@ -86,101 +93,136 @@ const deleteUserDirectory = (
     userId
   )
   return [
-    deleteFromDirectory,
-    deleteDirectorySearch,
-    deletePublicRooms,
-    deletePrivateRooms,
-    deletePrivateRooms2
+    limit(() => deleteFromDirectory),
+    limit(() => deleteDirectorySearch),
+    limit(() => deletePublicRooms),
+    limit(() => deletePrivateRooms),
+    limit(() => deletePrivateRooms2)
   ]
 }
 
+// We return an array of promises wrapped in a limiter so that at most maxPromisesToExecuteConcurrently promises are executed
+// at the same time in the promise.all in realMethod
 const deleteAllPushers = async (
   clientServer: MatrixClientServer,
   userId: string
-): Promise<void> => {
-  try {
-    const pushers = await clientServer.matrixDb.get(
-      'pushers',
-      ['app_id', 'pushkey'],
-      {
+): Promise<Array<Promise<void>>> => {
+  const pushers = await clientServer.matrixDb.get(
+    'pushers',
+    ['app_id', 'pushkey'],
+    {
+      user_name: userId
+    }
+  )
+
+  await clientServer.matrixDb.deleteEqual('pushers', 'user_name', userId)
+
+  const insertDeletedPushersPromises = pushers.map(async (pusher) => {
+    await limit(() =>
+      clientServer.matrixDb.insert('deleted_pushers', {
+        stream_id: randomString(64), // TODO: Update when stream ordering is implemented since the stream_id has to keep track of the order of operations
+        app_id: pusher.app_id as string,
+        pushkey: pusher.pushkey as string,
         user_id: userId
-      }
+      })
     )
+  })
 
-    await clientServer.matrixDb.deleteEqual('pushers', 'user_id', userId)
-
-    const insertDeletedPushersPromises = pushers.map(
-      async (pusher) =>
-        await clientServer.matrixDb.insert('deleted_pushers', {
-          stream_id: 0, // TODO: Update as needed
-          instance_name: 'main', // TODO: This value may be changed
-          app_id: pusher.app_id as string,
-          pushkey: pusher.pushkey as string,
-          user_id: userId
-        })
-    )
-
-    await Promise.all(insertDeletedPushersPromises)
-  } catch (e) {
-    clientServer.logger.error('Error while handling pushers:', e)
-    throw e
-  }
+  return insertDeletedPushersPromises
 }
 
+// We return an array of promises wrapped in a limiter so that at most maxPromisesToExecuteConcurrently promises are executed
+// at the same time in the promise.all in realMethod
 const deleteAllRooms = async (
   clientServer: MatrixClientServer,
   userId: string,
   shouldErase: boolean = false
-): Promise<void> => {
-  try {
-    const rooms = await clientServer.matrixDb.get(
-      'current_state_events',
-      ['room_id'],
-      {
-        state_key: userId,
-        type: 'm.room.member', // TODO : Create EventTypes enum from the spec to prevent hardcoding strings
-        membership: Membership.JOIN
-      }
-    )
-    const deleteRoomsPromises = rooms.map(async (room) => {
-      if (shouldErase) {
-        // Delete the expiry timestamp associated with this event from the database.
-        const membershipEventIds = await clientServer.matrixDb.get(
-          'room_memberships',
-          ['event_id'],
-          { room_id: room.room_id, user_id: userId }
-        )
-        return membershipEventIds.map(async (membershipEventId) => {
-          const event = await clientServer.matrixDb.get('events', ['*'], {
-            event_id: membershipEventId.event_id
+): Promise<Array<Promise<void>>> => {
+  const rooms = await clientServer.matrixDb.get(
+    'current_state_events',
+    ['room_id'],
+    {
+      state_key: userId,
+      type: RoomEventTypes.Member,
+      membership: Membership.JOIN
+    }
+  )
+  const deleteRoomsPromises: Array<Promise<void>> = []
+  for (const room of rooms) {
+    if (shouldErase) {
+      // Delete the expiry timestamp associated with this event from the database.
+      const membershipEventIds = await clientServer.matrixDb.get(
+        'room_memberships',
+        ['event_id'],
+        { room_id: room.room_id, user_id: userId }
+      )
+
+      membershipEventIds.forEach((membershipEventId) => {
+        deleteRoomsPromises.push(
+          limit(async () => {
+            const eventRows = await clientServer.matrixDb.get('events', ['*'], {
+              event_id: membershipEventId.event_id
+            })
+            if (eventRows.length === 0) {
+              // istanbul ignore next
+              throw new Error('Event not found')
+            }
+            await clientServer.matrixDb.deleteEqual(
+              'event_expiry',
+              'event_id',
+              membershipEventId.event_id as string
+            )
+            // Redact the Event
+            // I added default values for the fields that don't have the NOT NULL constraint in the db but are required in the event object
+            const event: ClientEvent = {
+              content:
+                eventRows[0].content !== null &&
+                eventRows[0].content !== undefined
+                  ? JSON.parse(eventRows[0].content as string)
+                  : {},
+              event_id: eventRows[0].event_id as string,
+              origin_server_ts:
+                eventRows[0].origin_server_ts !== null &&
+                eventRows[0].origin_server_ts !== undefined
+                  ? (eventRows[0].origin_server_ts as number)
+                  : 0, // TODO : Discuss default value
+              room_id: eventRows[0].room_id as string,
+              sender:
+                eventRows[0] !== null && eventRows[0] !== undefined
+                  ? (eventRows[0].sender as string)
+                  : '', // TODO : Discuss default value
+              state_key: eventRows[0].state_key as string,
+              type: eventRows[0].type as string,
+              unsigned:
+                eventRows[0].unsigned !== null &&
+                eventRows[0].unsigned !== undefined
+                  ? JSON.parse(eventRows[0].unsigned as string)
+                  : undefined
+            }
+            const safeEvent = new SafeClientEvent(event)
+            safeEvent.redact()
+            const redactedEvent = safeEvent.getEvent()
+            // Update the event_json table with the redacted event
+            await clientServer.matrixDb.updateWithConditions(
+              'event_json',
+              { json: JSON.stringify(redactedEvent.content) },
+              [
+                {
+                  field: 'event_id',
+                  value: membershipEventId.event_id as string
+                }
+              ]
+            )
           })
-          await clientServer.matrixDb.deleteEqual(
-            'event_expiry',
-            'event_id',
-            membershipEventId.event_id as string
-          )
-          // Redact the event
-          const safeEvent = new SafeClientEvent(event[0])
-          safeEvent.redact()
-          const redactedEvent = safeEvent.getEvent()
-          // Update the event_json table with the redacted event
-          await clientServer.matrixDb.updateWithConditions(
-            'event_json',
-            { json: JSON.stringify(redactedEvent.content) },
-            [{ field: 'event_id', value: membershipEventId.event_id as string }]
-          )
-        })
-      }
-      //   return updateMembership(room, userId, Membership.LEAVE)
-      // TODO : Replace this after implementing method to update room membership from the spec
-      // https://spec.matrix.org/v1.11/client-server-api/#mroommember
-      // or after implementing the endpoint '/_matrix/client/v3/rooms/{roomId}/leave'
-    })
-    await Promise.all(deleteRoomsPromises)
-  } catch (e) {
-    clientServer.logger.error('Error while deleting rooms:', e)
-    throw e
+        )
+      })
+    }
+    //   await updateMembership(room, userId, Membership.LEAVE)
+    // TODO : Replace this after implementing method to update room membership from the spec
+    // https://spec.matrix.org/v1.11/client-server-api/#mroommember
+    // or after implementing the endpoint '/_matrix/client/v3/rooms/{roomId}/leave'
   }
+  return deleteRoomsPromises
 }
 
 const rejectPendingInvitesAndKnocks = async (
@@ -190,6 +232,8 @@ const rejectPendingInvitesAndKnocks = async (
   // TODO : Implement this after implementing endpoint '/_matrix/client/v3/rooms/{roomId}/leave' from the spec at : https://spec.matrix.org/v1.11/client-server-api/#post_matrixclientv3roomsroomidleave
 }
 
+// We return an array of promises wrapped in a limiter so that at most maxPromisesToExecuteConcurrently promises are executed
+// at the same time in the promise.all in realMethod
 const purgeAccountData = (
   clientServer: MatrixClientServer,
   userId: string
@@ -208,17 +252,17 @@ const purgeAccountData = (
   // As they are present in Synapse's implementation
   const deleteIgnoredUsers = clientServer.matrixDb.deleteEqual(
     'ignored_users',
-    'user_id',
+    'ignorer_user_id',
     userId
-  )
+  ) // We only delete the users that were ignored by the deactivated user, so that when the user is reactivated he is still ignored by the users who wanted to ignore him.
   const deletePushRules = clientServer.matrixDb.deleteEqual(
     'push_rules',
-    'user_id',
+    'user_name',
     userId
   )
   const deletePushRulesEnable = clientServer.matrixDb.deleteEqual(
     'push_rules_enable',
-    'user_id',
+    'user_name',
     userId
   )
   const deletePushRulesStream = clientServer.matrixDb.deleteEqual(
@@ -227,15 +271,29 @@ const purgeAccountData = (
     userId
   )
   return [
-    deleteAccountData,
-    deleteRoomAccountData,
-    deleteIgnoredUsers,
-    deletePushRules,
-    deletePushRulesEnable,
-    deletePushRulesStream
+    limit(async () => {
+      await deleteAccountData
+    }),
+    limit(async () => {
+      await deleteRoomAccountData
+    }),
+    limit(async () => {
+      await deleteIgnoredUsers
+    }),
+    limit(async () => {
+      await deletePushRules
+    }),
+    limit(async () => {
+      await deletePushRulesEnable
+    }),
+    limit(async () => {
+      await deletePushRulesStream
+    })
   ]
 }
 
+// Main method to deactivate the account. Uses several submethods to delete the user's data from multiple places in the database.
+// Some of those submethods are yet to be implemented as they would require implementing other endpoints from the spec
 const realMethod = async (
   res: e.Response | ServerResponse,
   clientServer: MatrixClientServer,
@@ -253,138 +311,150 @@ const realMethod = async (
     )
     return
   }
-  // 1) Get all users 3pids and call the endpoint /delete to delete the bindings from the ID server and the 3pid associations from the homeserver
-  clientServer.matrixDb
-    .get('user_threepids', ['medium', 'address'], { user_id: userId })
-    .then((rows) => {
-      const threepidDeletePromises: Array<Promise<Response>> = []
-      rows.forEach((row) => {
-        threepidDeletePromises.push(
-          // What if the user has 10000 3pids ? Will this get rate limited or create a bottleneck ? Should we do this sequentially or by batches ?
-          delete3pid(clientServer)()
+  allowed = clientServer.conf.capabilities.enable_set_avatar_url ?? true
+  if (body.erase && !byAdmin && !allowed) {
+    send(
+      res,
+      403,
+      errMsg(
+        'forbidden',
+        'Cannot erase account as it is not allowed by server'
+      ),
+      clientServer.logger
+    )
+    return
+  }
+  const threepidRows = await clientServer.matrixDb.get(
+    'user_threepids',
+    ['medium', 'address'],
+    { user_id: userId }
+  )
+
+  const threepidDeletePromises: Array<Promise<DeleteResponse>> = []
+  threepidRows.forEach((row) => {
+    threepidDeletePromises.push(
+      limit(() =>
+        delete3pid(
+          row.address as string,
+          row.medium as string,
+          clientServer,
+          body.id_server,
+          userId
         )
-      })
-      const deleteDevicesPromise = clientServer.matrixDb.deleteWhere(
-        'devices',
-        [{ field: 'user_id', value: userId, operator: '=' }]
       )
-      const deleteTokenPromise = clientServer.matrixDb.deleteWhere(
-        'access_tokens',
-        [{ field: 'user_id', value: userId, operator: '=' }]
+    )
+  })
+  const deleteDevicesPromise = limit(() =>
+    clientServer.matrixDb.deleteWhere('devices', [
+      { field: 'user_id', value: userId, operator: '=' }
+    ])
+  )
+  const deleteTokenPromise = limit(() =>
+    clientServer.matrixDb.deleteWhere('access_tokens', [
+      { field: 'user_id', value: userId, operator: '=' }
+    ])
+  )
+  const removePasswordPromise = limit(() =>
+    clientServer.matrixDb.updateWithConditions(
+      'users',
+      { password_hash: null },
+      [{ field: 'name', value: userId }]
+    )
+  )
+  const deleteUserDirectoryPromises = deleteUserDirectory(clientServer, userId)
+  const deleteAllPushersPromises = await deleteAllPushers(clientServer, userId)
+  // Synapse's implementation first populates the "user_pending_deactivation" table, parts the user from joined rooms then deletes the user from that table
+  // Maybe this is because they have many workers and they want to prevent concurrent workers accessing the db at the same time
+  // If that's the case then we can just directly deleteAllRooms at the same time as all other operations in Promise.all
+  // And don't need to worry about the "user_pending_deactivation" and the order of operations
+  const deleteAllRoomsPromise = await deleteAllRooms(
+    clientServer,
+    userId,
+    body.erase
+  )
+  const rejectPendingInvitesAndKnocksPromise = rejectPendingInvitesAndKnocks(
+    clientServer,
+    userId
+  )
+  const purgeAccountDataPromises = purgeAccountData(clientServer, userId)
+  const deleteRoomKeysPromise = limit(() =>
+    clientServer.matrixDb.deleteEqual('e2e_room_keys', 'user_id', userId)
+  )
+  const deleteRoomKeysVersionsPromise = limit(() =>
+    clientServer.matrixDb.deleteEqual(
+      'e2e_room_keys_versions',
+      'user_id',
+      userId
+    )
+  )
+
+  const promisesToExecute = [
+    ...threepidDeletePromises, // We put the threepid delete promises first so that we can check if all threepids were successfully unbound from the associated id-servers
+    deleteDevicesPromise,
+    deleteTokenPromise,
+    removePasswordPromise,
+    rejectPendingInvitesAndKnocksPromise,
+    deleteRoomKeysPromise,
+    deleteRoomKeysVersionsPromise,
+    ...deleteAllRoomsPromise,
+    ...deleteAllPushersPromises,
+    ...deleteUserDirectoryPromises,
+    ...purgeAccountDataPromises
+  ]
+  if (body.erase) {
+    promisesToExecute.push(
+      limit(() =>
+        clientServer.matrixDb.updateWithConditions(
+          'profiles',
+          { avatar_url: '', displayname: '' },
+          [{ field: 'user_id', value: userId }]
+        )
       )
-      const removePasswordPromise = clientServer.matrixDb.updateWithConditions(
-        'users',
-        { password_hash: null, deactivated: 1 },
-        [{ field: 'id', value: userId }]
+    )
+    promisesToExecute.push(
+      limit(() =>
+        clientServer.matrixDb.insert('erased_users', { user_id: userId })
       )
-      const deleteUserDirectoryPromises = deleteUserDirectory(
-        clientServer,
-        userId
+    )
+  }
+  // This is not present in the spec but is present in Synapse's implementation so I included it for more flexibility
+  if (clientServer.conf.capabilities.enable_account_validity ?? true) {
+    promisesToExecute.push(
+      limit(() =>
+        clientServer.matrixDb.deleteEqual('account_validity', 'user_id', userId)
       )
-      const deleteAllPushersPromise = deleteAllPushers(clientServer, userId)
-      // Synapse's implementation first populates the "user_pending_deactivation" table, parts the user from joined rooms then deletes the user from that table
-      // Maybe this is because they have many workers and they want to prevent concurrent workers accessing the db at the same time
-      // If that's the case then we can just directly deleteAllRooms at the same time as all other operations in Promise.all
-      // And don't need to worry about the "user_pending_deactivation" and the order of operations
-      // TODO : Check with Xavier
-      const deleteAllRoomsPromise = deleteAllRooms(
-        clientServer,
-        userId,
-        body.erase
-      )
-      const rejectPendingInvitesAndKnocksPromise =
-        rejectPendingInvitesAndKnocks(clientServer, userId)
-      const purgeAccountDataPromises = purgeAccountData(clientServer, userId)
-      const deleteRoomKeysPromise = clientServer.matrixDb.deleteEqual(
-        'e2e_room_keys',
-        'user_id',
-        userId
-      )
-      const deleteRoomKeysVersionsPromise = clientServer.matrixDb.deleteEqual(
-        'e2e_room_keys_versions',
-        'user_id',
-        userId
-      )
-      const promisesToExecute = [
-        ...threepidDeletePromises,
-        deleteDevicesPromise,
-        deleteTokenPromise,
-        removePasswordPromise,
-        deleteAllPushersPromise,
-        deleteAllRoomsPromise,
-        rejectPendingInvitesAndKnocksPromise,
-        deleteRoomKeysPromise,
-        deleteRoomKeysVersionsPromise,
-        ...deleteUserDirectoryPromises,
-        ...purgeAccountDataPromises
-      ]
-      if (body.erase) {
-        allowed = clientServer.conf.capabilities.enable_set_avatar_url ?? true
-        if (!byAdmin && !allowed) {
-          send(
-            res,
-            403,
-            errMsg(
-              'forbidden',
-              'Cannot erase account as it is not allowed by server'
-            ),
-            clientServer.logger
-          )
-          return
+    )
+  }
+  Promise.all(promisesToExecute)
+    .then(async (rows) => {
+      // Synapse's implementation calls a callback function not specified in the spec before sending the response. I didn't include it here since it is not in the spec
+      // eslint-disable-next-line @typescript-eslint/naming-convention
+      let id_server_unbind_result = 'success'
+      for (let i = 0; i < threepidDeletePromises.length; i++) {
+        // Check if all threepids were successfully unbound from the associated id-servers
+        const success = (rows[i] as DeleteResponse).success
+        if (!success) {
+          id_server_unbind_result = 'no-support'
+          break
         }
-        promisesToExecute.push(
-          clientServer.matrixDb.updateWithConditions(
-            'profiles',
-            { avatar_url: '', display_name: '' },
-            [{ field: 'user_id', value: userId }]
-          )
-        )
-        promisesToExecute.push(
-          clientServer.matrixDb.insert('erased_users', { user_id: userId })
-        )
       }
-      if (clientServer.conf.capabilities.enable_account_validity ?? true) {
-        // TODO : Add this in config after understanding what it does from Synapse's code
-        promisesToExecute.push(
-          clientServer.matrixDb.deleteEqual(
-            'account_validity',
-            'user_id',
-            userId
-          )
-        )
-      }
-      Promise.all(promisesToExecute)
-        .then(async (rows) => {
-          // Synapse's implementation calls a callback function not specified in the spec before sending the response
-          // eslint-disable-next-line @typescript-eslint/naming-convention
-          let id_server_unbind_result = 'success'
-          for (let i = 0; i < threepidDeletePromises.length; i++) {
-            // Check if all threepids were successfully unbound from the associated id-servers
-            const response = (await (
-              rows[i] as Response
-            ).json()) as ThreepidUnbindResponse
-            if (response.id_server_unbind_result !== 'success') {
-              id_server_unbind_result = 'no-support'
-              break
-            }
-          }
-          send(res, 200, { id_server_unbind_result })
-        })
-        .catch((e) => {
-          // istanbul ignore next
-          clientServer.logger.error('Error while deleting user 3pids')
-          // istanbul ignore next
-          send(res, 500, errMsg('unknown', e), clientServer.logger)
-        })
+      // Mark the user deactivated after all operations are successful
+      await clientServer.matrixDb.updateWithConditions(
+        'users',
+        { deactivated: 1 },
+        [{ field: 'name', value: userId }]
+      )
+      send(res, 200, { id_server_unbind_result })
     })
     .catch((e) => {
       // istanbul ignore next
-      clientServer.logger.error('Error while getting user 3pids')
+      clientServer.logger.error('Error while deleting user 3pids')
       // istanbul ignore next
-      send(res, 500, errMsg('unknown', e), clientServer.logger)
+      send(res, 500, errMsg('unknown', e.toString()), clientServer.logger)
     })
 }
 
+// There should be a method to reactivate the account to match this one but it isn't implemented yet
 const deactivate = (clientServer: MatrixClientServer): expressAppHandler => {
   return (req, res) => {
     const token = getAccessToken(req)
@@ -407,7 +477,12 @@ const deactivate = (clientServer: MatrixClientServer): expressAppHandler => {
               // istanbul ignore next
               clientServer.logger.error('Error while deactivating account')
               // istanbul ignore next
-              send(res, 500, errMsg('unknown', e), clientServer.logger)
+              send(
+                res,
+                500,
+                errMsg('unknown', e.toString()),
+                clientServer.logger
+              )
             })
           }
         )
@@ -429,7 +504,7 @@ const deactivate = (clientServer: MatrixClientServer): expressAppHandler => {
             // istanbul ignore next
             clientServer.logger.error('Error while changing password')
             // istanbul ignore next
-            send(res, 500, errMsg('unknown', e), clientServer.logger)
+            send(res, 500, errMsg('unknown', e.toString()), clientServer.logger)
           })
         }
       )

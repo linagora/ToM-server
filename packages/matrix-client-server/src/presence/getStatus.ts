@@ -56,7 +56,7 @@ const getStatus = (clientServer: MatrixClientServer): expressAppHandler => {
             // istanbul ignore next
             clientServer.logger.error("Error retrieving user's presence state")
             // istanbul ignore next
-            send(res, 500, errMsg('unknown', e), clientServer.logger)
+            send(res, 500, errMsg('unknown', e.toString()), clientServer.logger)
           })
       })
     }

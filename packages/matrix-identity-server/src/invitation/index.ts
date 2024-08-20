@@ -288,7 +288,7 @@ const StoreInvit = <T extends string = never>(
                     err
                   )
                   /* istanbul ignore next */
-                  send(res, 500, errMsg('unknown', err))
+                  send(res, 500, errMsg('unknown', err.toString()))
                 })
             } else {
               /* istanbul ignore next */

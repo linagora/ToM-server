@@ -33,7 +33,7 @@ const getPubkey = <T extends string = never>(
       .catch((e) => {
         console.error('Error querying keypairs:', e) // Debugging statement
         /* istanbul ignore next */
-        send(res, 500, errMsg('unknown', e))
+        send(res, 500, errMsg('unknown', e.toString()))
       })
   }
 }

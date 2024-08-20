@@ -79,6 +79,7 @@ const putStatus = (clientServer: MatrixClientServer): expressAppHandler => {
             }
             clientServer.matrixDb
               .updateWithConditions(
+                // TODO : Replace with upsert
                 'presence',
                 {
                   state: (obj as PutRequestBody).presence,
@@ -95,7 +96,12 @@ const putStatus = (clientServer: MatrixClientServer): expressAppHandler => {
                   "Error updating user's presence state"
                 )
                 // istanbul ignore next
-                send(res, 500, errMsg('unknown', e), clientServer.logger)
+                send(
+                  res,
+                  500,
+                  errMsg('unknown', e.toString()),
+                  clientServer.logger
+                )
               })
           })
         })

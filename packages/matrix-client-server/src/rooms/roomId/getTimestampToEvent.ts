@@ -56,7 +56,12 @@ const GetTimestampToEvent = (
           })
           .catch((err) => {
             /* istanbul ignore next */
-            send(res, 500, errMsg('unknown', err), ClientServer.logger)
+            send(
+              res,
+              500,
+              errMsg('unknown', err.toString()),
+              ClientServer.logger
+            )
           })
       }
       if (params.dir === 'f') {
@@ -87,7 +92,12 @@ const GetTimestampToEvent = (
           })
           .catch((err) => {
             /* istanbul ignore next */
-            send(res, 500, errMsg('unknown', err), ClientServer.logger)
+            send(
+              res,
+              500,
+              errMsg('unknown', err.toString()),
+              ClientServer.logger
+            )
           })
       }
     })

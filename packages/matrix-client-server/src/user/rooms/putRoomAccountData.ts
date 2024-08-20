@@ -82,7 +82,12 @@ const putRoomAccountData = (
             })
             .catch((e) => {
               /* istanbul ignore next */
-              send(res, 500, errMsg('unknown', e), clientServer.logger)
+              send(
+                res,
+                500,
+                errMsg('unknown', e.toString()),
+                clientServer.logger
+              )
             })
         })
       })

@@ -61,7 +61,7 @@ const PostFilter = (clientServer: MatrixClientServer): expressAppHandler => {
                 /* istanbul ignore next */
                 clientServer.logger.error('Error while inserting filter:', e)
                 /* istanbul ignore next */
-                send(res, 500, errMsg('unknown', e))
+                send(res, 500, errMsg('unknown', e.toString()))
               })
           }
         )

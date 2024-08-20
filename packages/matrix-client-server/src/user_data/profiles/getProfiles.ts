@@ -48,7 +48,7 @@ export const getProfile = (
           })
           .catch((e) => {
             /* istanbul ignore next */
-            send(res, 500, errMsg('unknown', e), clientServer.logger)
+            send(res, 500, errMsg('unknown', e.toString()), clientServer.logger)
           })
       } else {
         // TODO : Have a look on remote server via federation
@@ -116,7 +116,7 @@ export const getAvatarUrl = (
           })
           .catch((e) => {
             /* istanbul ignore next */
-            send(res, 500, errMsg('unknown', e), clientServer.logger)
+            send(res, 500, errMsg('unknown', e.toString()), clientServer.logger)
           })
       } else {
         // TODO : Have a look on remote server via federation
@@ -184,7 +184,7 @@ export const getDisplayname = (
           })
           .catch((e) => {
             /* istanbul ignore next */
-            send(res, 500, errMsg('unknown', e), clientServer.logger)
+            send(res, 500, errMsg('unknown', e.toString()), clientServer.logger)
           })
       } else {
         // TODO : Have a look on remote server via federation

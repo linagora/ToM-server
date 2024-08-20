@@ -40,7 +40,7 @@ export const getDevices = (
           /* istanbul ignore next */
           clientServer.logger.error('Error querying devices')
           /* istanbul ignore next */
-          send(res, 500, errMsg('unknown', e), clientServer.logger)
+          send(res, 500, errMsg('unknown', e.toString()), clientServer.logger)
         })
     })
   }
@@ -88,7 +88,7 @@ export const getDeviceInfo = (
           /* istanbul ignore next */
           clientServer.logger.error('Error querying devices:')
           /* istanbul ignore next */
-          send(res, 500, errMsg('unknown', e), clientServer.logger)
+          send(res, 500, errMsg('unknown', e.toString()), clientServer.logger)
         })
     })
   }

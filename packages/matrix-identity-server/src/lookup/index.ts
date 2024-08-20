@@ -61,7 +61,7 @@ const lookup = <T extends string = never>(
               })
               .catch((e) => {
                 /* istanbul ignore next */
-                send(res, 500, errMsg('unknown', e))
+                send(res, 500, errMsg('unknown', e.toString()))
               })
           }
         })
