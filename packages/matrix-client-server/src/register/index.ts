@@ -165,6 +165,16 @@ const registerAccount = (
     ip,
     user_agent: userAgent
   })
+  const newDeviceAuthProviderPromise = clientServer.matrixDb.insert(
+    // TODO : Fill the auth_provider_id and auth_provider_session_id rows with the right values after implementing SSO login
+    'device_auth_providers',
+    {
+      user_id: userId,
+      device_id: deviceId,
+      auth_provider_id: '',
+      auth_provider_session_id: ''
+    }
+  )
   const fillPoliciesPromise = setupPolicies(userId, clientServer, 0) // 0 means the user hasn't accepted the policies yet, used in Identity Server
   const refreshTokenPromise = clientServer.matrixDb.insert('refresh_tokens', {
     id: refreshTokenId,
@@ -187,7 +197,8 @@ const registerAccount = (
         fillPoliciesPromise,
         refreshTokenPromise,
         accessTokenPromise,
-        newDevicePromise
+        newDevicePromise,
+        newDeviceAuthProviderPromise
       ]
   Promise.all(promisesToExecute)
     .then(() => {
@@ -268,6 +279,15 @@ const upgradeGuest = (
     [{ field: 'user_id', value: oldUserId }]
   )
 
+  const updateDeviceAuthProviderPromise =
+    clientServer.matrixDb.updateWithConditions(
+      'device_auth_providers',
+      {
+        user_id: newUserId,
+        device_id: deviceId
+      },
+      [{ field: 'user_id', value: oldUserId }]
+    )
   const updateRefreshTokenPromise = clientServer.matrixDb.updateWithConditions(
     'refresh_tokens',
     { user_id: newUserId, device_id: deviceId },
@@ -283,7 +303,8 @@ const upgradeGuest = (
     updateAccessTokenPromise,
     updateUsersPromise,
     updateUserIpsPromise,
-    updateDevicePromise
+    updateDevicePromise,
+    updateDeviceAuthProviderPromise
   ])
     .then((rows) => {
       sendSuccessResponse(
