@@ -56,7 +56,12 @@ export type Collections =
   | 'push_rules_stream'
   | 'e2e_room_keys'
   | 'e2e_room_keys_versions'
+  | 'e2e_device_keys_json'
+  | 'e2e_one_time_keys_json'
+  | 'e2e_fallback_keys_json'
   | 'event_json'
+  | 'device_auth_providers'
+  | 'dehydrated_devices'
 
 type sqlComparaisonOperator = '=' | '!=' | '>' | '<' | '>=' | '<=' | '<>'
 interface ISQLCondition {

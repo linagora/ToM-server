@@ -70,7 +70,12 @@ const matrixDbQueries = [
   'CREATE TABLE IF NOT EXISTS ignored_users( ignorer_user_id TEXT NOT NULL, ignored_user_id TEXT NOT NULL )',
   'CREATE TABLE IF NOT EXISTS "e2e_room_keys" ( user_id TEXT NOT NULL, room_id TEXT NOT NULL, session_id TEXT NOT NULL, version BIGINT NOT NULL, first_message_index INT, forwarded_count INT, is_verified INTEGEREAN, session_data TEXT NOT NULL )',
   'CREATE TABLE IF NOT EXISTS "e2e_room_keys_versions" ( user_id TEXT NOT NULL, version BIGINT NOT NULL, algorithm TEXT NOT NULL, auth_data TEXT NOT NULL, deleted SMALLINT DEFAULT 0 NOT NULL , etag BIGINT)',
-  'CREATE TABLE event_json( event_id TEXT NOT NULL, room_id TEXT NOT NULL, internal_metadata TEXT NOT NULL, json TEXT NOT NULL, format_version INTEGER, UNIQUE (event_id))'
+  'CREATE TABLE IF NOT EXISTS event_json( event_id TEXT NOT NULL, room_id TEXT NOT NULL, internal_metadata TEXT NOT NULL, json TEXT NOT NULL, format_version INTEGER, UNIQUE (event_id))',
+  'CREATE TABLE IF NOT EXISTS device_auth_providers (user_id TEXT NOT NULL,device_id TEXT NOT NULL,auth_provider_id TEXT NOT NULL,auth_provider_session_id TEXT NOT NULL)',
+  'CREATE TABLE IF NOT EXISTS e2e_device_keys_json ( user_id TEXT NOT NULL, device_id TEXT NOT NULL, ts_added_ms BIGINT NOT NULL, key_json TEXT NOT NULL, CONSTRAINT e2e_device_keys_json_uniqueness UNIQUE (user_id, device_id) )',
+  'CREATE TABLE IF NOT EXISTS e2e_one_time_keys_json ( user_id TEXT NOT NULL, device_id TEXT NOT NULL, algorithm TEXT NOT NULL, key_id TEXT NOT NULL, ts_added_ms BIGINT NOT NULL, key_json TEXT NOT NULL, CONSTRAINT e2e_one_time_keys_json_uniqueness UNIQUE (user_id, device_id, algorithm, key_id) )',
+  'CREATE TABLE IF NOT EXISTS e2e_fallback_keys_json (user_id TEXT NOT NULL, -- The user this fallback key is for.device_id TEXT NOT NULL, -- The device this fallback key is for.algorithm TEXT NOT NULL, -- Which algorithm this fallback key is for. key_id TEXT NOT NULL, -- An id for suppressing duplicate uploads. key_json TEXT NOT NULL, -- The key as a JSON blob. used BOOLEAN NOT NULL DEFAULT FALSE, -- Whether the key has been used or not.CONSTRAINT e2e_fallback_keys_json_uniqueness UNIQUE (user_id, device_id, algorithm))',
+  'CREATE TABLE dehydrated_devices(user_id TEXT NOT NULL PRIMARY KEY,device_id TEXT NOT NULL,device_data TEXT NOT NULL -- JSON-encoded client-defined data)'
 ]
 
 // eslint-disable-next-line @typescript-eslint/promise-function-async

@@ -271,29 +271,62 @@ const purgeAccountData = (
     userId
   )
   return [
-    limit(async () => {
-      await deleteAccountData
-    }),
-    limit(async () => {
-      await deleteRoomAccountData
-    }),
-    limit(async () => {
-      await deleteIgnoredUsers
-    }),
-    limit(async () => {
-      await deletePushRules
-    }),
-    limit(async () => {
-      await deletePushRulesEnable
-    }),
-    limit(async () => {
-      await deletePushRulesStream
-    })
+    limit(() => deleteAccountData),
+    limit(() => deleteRoomAccountData),
+    limit(() => deleteIgnoredUsers),
+    limit(() => deletePushRules),
+    limit(() => deletePushRulesEnable),
+    limit(() => deletePushRulesStream)
   ]
 }
 
+const deleteDevices = (
+  clientServer: MatrixClientServer,
+  userId: string
+): Array<Promise<void>> => {
+  const deleteDevicesPromise = limit(() =>
+    clientServer.matrixDb.deleteWhere('devices', [
+      { field: 'user_id', value: userId, operator: '=' }
+    ])
+  )
+  const deleteDevicesAuthProvidersPromise = limit(() =>
+    clientServer.matrixDb.deleteWhere('device_auth_providers', [
+      { field: 'user_id', value: userId, operator: '=' }
+    ])
+  )
+  const deleteEndToEndDeviceKeys = limit(() =>
+    clientServer.matrixDb.deleteWhere('e2e_device_keys_json', [
+      { field: 'user_id', value: userId, operator: '=' }
+    ])
+  )
+  const deleteEndToEndOneTimeKeys = limit(() =>
+    clientServer.matrixDb.deleteWhere('e2e_one_time_keys_json', [
+      { field: 'user_id', value: userId, operator: '=' }
+    ])
+  )
+  const deleteDehydratedDevices = limit(() =>
+    clientServer.matrixDb.deleteWhere('dehydrated_devices', [
+      { field: 'user_id', value: userId, operator: '=' }
+    ])
+  )
+  const deleteEndToEndFallbackKeys = limit(() =>
+    clientServer.matrixDb.deleteWhere('e2e_fallback_keys_json', [
+      { field: 'user_id', value: userId, operator: '=' }
+    ])
+  )
+  return [
+    deleteDevicesPromise,
+    deleteDevicesAuthProvidersPromise,
+    deleteEndToEndDeviceKeys,
+    deleteEndToEndOneTimeKeys,
+    deleteDehydratedDevices,
+    deleteEndToEndFallbackKeys
+  ]
+}
 // Main method to deactivate the account. Uses several submethods to delete the user's data from multiple places in the database.
 // Some of those submethods are yet to be implemented as they would require implementing other endpoints from the spec
+// We don't remove the user from the user_ips table here since Synapse don't do it. Maybe this is intentional but it isn't removed elsewhere
+// Even though we fill this table in the /register endpoint
 const realMethod = async (
   res: e.Response | ServerResponse,
   clientServer: MatrixClientServer,
@@ -344,11 +377,7 @@ const realMethod = async (
       )
     )
   })
-  const deleteDevicesPromise = limit(() =>
-    clientServer.matrixDb.deleteWhere('devices', [
-      { field: 'user_id', value: userId, operator: '=' }
-    ])
-  )
+  const deleteDevicesPromises = deleteDevices(clientServer, userId)
   const deleteTokenPromise = limit(() =>
     clientServer.matrixDb.deleteWhere('access_tokens', [
       { field: 'user_id', value: userId, operator: '=' }
@@ -390,7 +419,7 @@ const realMethod = async (
 
   const promisesToExecute = [
     ...threepidDeletePromises, // We put the threepid delete promises first so that we can check if all threepids were successfully unbound from the associated id-servers
-    deleteDevicesPromise,
+    ...deleteDevicesPromises,
     deleteTokenPromise,
     removePasswordPromise,
     rejectPendingInvitesAndKnocksPromise,
