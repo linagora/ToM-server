@@ -261,8 +261,23 @@ describe('Matrix DB', () => {
             expect(rows[0].content).toEqual(content)
             expect(rows[0].stream_id).toEqual(streamId)
             expect(rows[0].instance_name).toEqual('instance1')
-            matrixDb.close()
-            done()
+            matrixDb
+              .get('account_data', [], {
+                user_id: userId,
+                account_data_type: accountDataType
+              })
+              .then((rows2) => {
+                console.log('rows2', rows2)
+                expect(rows2.length).toBe(1)
+                expect(rows2[0].user_id).toEqual(userId)
+                expect(rows2[0].account_data_type).toEqual(accountDataType)
+                expect(rows2[0].content).toEqual(content)
+                expect(rows2[0].stream_id).toEqual(streamId)
+                expect(rows2[0].instance_name).toEqual('instance1')
+                matrixDb.close()
+                done()
+              })
+              .catch(done)
           })
           .catch(done)
       })
@@ -307,8 +322,22 @@ describe('Matrix DB', () => {
                 expect(rows[0].stream_id).toEqual(streamId + 1)
                 expect(rows[0].content).toEqual(updatedContent)
                 expect(rows[0].instance_name).toEqual('instance2')
-                matrixDb.close()
-                done()
+                matrixDb
+                  .get('account_data', [], {
+                    user_id: userId,
+                    account_data_type: accountDataType
+                  })
+                  .then((rows2) => {
+                    expect(rows2.length).toBe(1)
+                    expect(rows2[0].user_id).toEqual(userId)
+                    expect(rows2[0].account_data_type).toEqual(accountDataType)
+                    expect(rows2[0].stream_id).toEqual(streamId + 1)
+                    expect(rows2[0].content).toEqual(updatedContent)
+                    expect(rows2[0].instance_name).toEqual('instance2')
+                    matrixDb.close()
+                    done()
+                  })
+                  .catch(done)
               })
               .catch(done)
           })
@@ -362,31 +391,43 @@ describe('Matrix DB', () => {
     matrixDb.ready
       .then(() => {
         const userId = randomString(64)
-        const accountDataType = 'nonConflictType'
+        const accountDataType = 'accountDataType'
+        const differentDataType = 'nonConflictType'
         const content = '{"key":"value"}'
         const streamId = Date.now()
 
         matrixDb
-          .upsert(
-            'account_data',
-            {
-              user_id: userId,
-              account_data_type: accountDataType,
-              stream_id: streamId,
-              content,
-              instance_name: 'instance1'
-            },
-            ['user_id', 'account_data_type']
-          )
-          .then((rows) => {
-            expect(rows.length).toBe(1)
-            expect(rows[0].user_id).toEqual(userId)
-            expect(rows[0].account_data_type).toEqual(accountDataType)
-            expect(rows[0].content).toEqual(content)
-            expect(rows[0].stream_id).toEqual(streamId)
-            expect(rows[0].instance_name).toEqual('instance1')
-            matrixDb.close()
-            done()
+          .insert('account_data', {
+            user_id: userId,
+            account_data_type: accountDataType,
+            stream_id: streamId,
+            content,
+            instance_name: 'instance1'
+          })
+          .then(() => {
+            matrixDb
+              .upsert(
+                'account_data',
+                {
+                  user_id: userId,
+                  account_data_type: differentDataType,
+                  stream_id: streamId,
+                  content,
+                  instance_name: 'instance1'
+                },
+                ['user_id', 'account_data_type']
+              )
+              .then((rows) => {
+                expect(rows.length).toBe(1)
+                expect(rows[0].user_id).toEqual(userId)
+                expect(rows[0].account_data_type).toEqual(differentDataType)
+                expect(rows[0].content).toEqual(content)
+                expect(rows[0].stream_id).toEqual(streamId)
+                expect(rows[0].instance_name).toEqual('instance1')
+                matrixDb.close()
+                done()
+              })
+              .catch(done)
           })
           .catch(done)
       })
