@@ -275,305 +275,464 @@ describe('Use configuration file', () => {
       })
     })
 
-    describe('/_matrix/client/v3/user/:userId', () => {
-      describe('/_matrix/client/v3/user/:userId/account_data/:type', () => {
-        it('should reject invalid userId', async () => {
-          const response = await request(app)
-            .get(
-              '/_matrix/client/v3/user/invalidUserId/account_data/m.room.message'
-            )
-            .set('Authorization', `Bearer ${validToken}`)
-            .set('Accept', 'application/json')
-          expect(response.statusCode).toBe(400)
-          expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
-        })
-        it('should reject invalid roomId', async () => {
-          const response = await request(app)
-            .get(
-              '/_matrix/client/v3/user/@testuser:example.com/rooms/invalidRoomId/account_data/m.room.message'
-            )
-            .set('Authorization', `Bearer ${validToken}`)
-            .set('Accept', 'application/json')
-          expect(response.statusCode).toBe(400)
-          expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
-        })
-        it('should reject an invalid event type', async () => {
-          const response = await request(app)
-            .get(
-              '/_matrix/client/v3/user/@testuser:example.com/account_data/invalidEventType'
-            )
-            .set('Authorization', `Bearer ${validToken}`)
-            .set('Accept', 'application/json')
-          expect(response.statusCode).toBe(400)
-          expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
-        })
-        it('should reject missing account data', async () => {
-          const response = await request(app)
-            .get(
-              '/_matrix/client/v3/user/@testuser:example.com/account_data/m.room.message'
-            )
-            .set('Authorization', `Bearer ${validToken}`)
-            .set('Accept', 'application/json')
-          expect(response.statusCode).toBe(404)
-          expect(response.body).toHaveProperty('errcode', 'M_NOT_FOUND')
-        })
-        it('should refuse to return account data for another user', async () => {
-          const response = await request(app)
-            .get(
-              '/_matrix/client/v3/user/@anotheruser:example.com/account_data/m.room.message'
-            )
-            .set('Authorization', `Bearer ${validToken}`)
-            .set('Accept', 'application/json')
-          expect(response.statusCode).toBe(403)
-          expect(response.body).toHaveProperty('errcode', 'M_FORBIDDEN')
-        })
-        it('should return account data', async () => {
-          await clientServer.matrixDb.insert('account_data', {
-            user_id: '@testuser:example.com',
-            account_data_type: 'm.room.message',
-            stream_id: 1,
-            content: 'test content'
-          })
-          const response = await request(app)
-            .get(
-              '/_matrix/client/v3/user/@testuser:example.com/account_data/m.room.message'
-            )
-            .set('Authorization', `Bearer ${validToken}`)
-            .set('Accept', 'application/json')
-          expect(response.statusCode).toBe(200)
-          expect(response.body['m.room.message']).toBe('test content')
-        })
-        it('should reject invalid userId', async () => {
-          const response = await request(app)
-            .put(
-              '/_matrix/client/v3/user/invalidUserId/account_data/m.room.message'
-            )
-            .set('Authorization', `Bearer ${validToken}`)
-            .set('Accept', 'application/json')
-          expect(response.statusCode).toBe(400)
-          expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
-        })
-        it('should reject an invalid event type', async () => {
-          const response = await request(app)
-            .put(
-              '/_matrix/client/v3/user/@testuser:example.com/account_data/invalidEventType'
-            )
-            .set('Authorization', `Bearer ${validToken}`)
-            .set('Accept', 'application/json')
-          expect(response.statusCode).toBe(400)
-          expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
-        })
-        it('should reject missing account data', async () => {
-          const response = await request(app)
-            .put(
-              '/_matrix/client/v3/user/@testuser:example.com/account_data/m.room.message'
-            )
-            .set('Authorization', `Bearer ${validToken}`)
-            .set('Accept', 'application/json')
-          expect(response.statusCode).toBe(400)
-          expect(response.body).toHaveProperty('errcode', 'M_UNKNOWN') // Error code from jsonContent function of @twake/utils
-        })
-        it('should refuse to update account data for another user', async () => {
-          const response = await request(app)
-            .put(
-              '/_matrix/client/v3/user/@anotheruser:example.com/account_data/m.room.message'
-            )
-            .set('Authorization', `Bearer ${validToken}`)
-            .set('Accept', 'application/json')
-            .send({ content: 'new content' })
-          expect(response.statusCode).toBe(403)
-          expect(response.body).toHaveProperty('errcode', 'M_FORBIDDEN')
-        })
-        it('should refuse content that is too long', async () => {
-          let content = ''
-          for (let i = 0; i < 10000; i++) {
-            content += 'a'
+    describe('/_matrix/client/v3/profile/:userId', () => {
+      describe('PUT', () => {
+        const testUserId = '@testuser:example.com'
+        beforeAll(async () => {
+          try {
+            await clientServer.matrixDb.insert('users', {
+              name: '@testuser2:example.com',
+              admin: 1
+            })
+            await clientServer.matrixDb.insert('users', {
+              name: '@testuser3:example.com',
+              admin: 0
+            })
+            await clientServer.matrixDb.insert('profiles', {
+              user_id: testUserId,
+              displayname: 'Test User',
+              avatar_url: 'http://example.com/avatar.jpg'
+            })
+            logger.info('Test user profile created')
+          } catch (e) {
+            logger.error('Error creating test user profile:', e)
           }
-          const response = await request(app)
-            .put(
-              '/_matrix/client/v3/user/@testuser:example.com/account_data/m.room.message'
-            )
-            .set('Authorization', `Bearer ${validToken}`)
-            .set('Accept', 'application/json')
-            .send({ content })
-          expect(response.statusCode).toBe(400)
-          expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
         })
-        it('should update account data', async () => {
+
+        afterAll(async () => {
+          try {
+            await clientServer.matrixDb.deleteEqual(
+              'users',
+              'name',
+              '@testuser2:example.com'
+            )
+            await clientServer.matrixDb.deleteEqual(
+              'users',
+              'name',
+              '@testuser3:example.com'
+            )
+            await clientServer.matrixDb.deleteEqual(
+              'profiles',
+              'user_id',
+              testUserId
+            )
+            logger.info('Test user profile deleted')
+          } catch (e) {
+            logger.error('Error deleting test user profile:', e)
+          }
+        })
+
+        describe('/_matrix/client/v3/profile/:userId/avatar_url', () => {
+          it('should require authentication', async () => {
+            const response = await request(app)
+              .put(`/_matrix/client/v3/profile/${testUserId}/avatar_url`)
+              .set('Authorization', 'Bearer invalidToken')
+              .set('Accept', 'application/json')
+            expect(response.statusCode).toBe(401)
+          })
+
+          it('should return 400 if the target user is on a remote server', async () => {
+            const response = await request(app)
+              .put(
+                `/_matrix/client/v3/profile/@testuser:anotherexample.com/avatar_url`
+              )
+              .set('Authorization', `Bearer ${validToken}`)
+              .set('Accept', 'application/json')
+              .send({ avatar_url: 'http://example.com/new_avatar.jpg' })
+            expect(response.statusCode).toBe(400)
+          })
+
+          it('should return 403 if the requester is not admin and is not the target user', async () => {
+            const response = await request(app)
+              .put(
+                `/_matrix/client/v3/profile/@testuser2:example.com/avatar_url`
+              )
+              .set('Authorization', `Bearer ${validToken}`)
+              .set('Accept', 'application/json')
+              .send({ avatar_url: 'http://example.com/new_avatar.jpg' })
+            expect(response.statusCode).toBe(403)
+          })
+
+          it('should return 403 if the requester is not admin and the config does not allow changing avatar_url', async () => {
+            clientServer.conf.capabilities.enable_set_avatar_url = false
+
+            const response = await request(app)
+              .put(`/_matrix/client/v3/profile/${testUserId}/avatar_url`)
+              .set('Authorization', `Bearer ${validToken}`)
+              .set('Accept', 'application/json')
+              .send({ avatar_url: 'http://example.com/new_avatar.jpg' })
+            expect(response.statusCode).toBe(403)
+            expect(response.body).toHaveProperty('errcode', 'M_FORBIDDEN')
+
+            clientServer.conf.capabilities.enable_set_avatar_url = true
+          })
+
+          it('should return 400 if provided avatar_url is too long', async () => {
+            clientServer.conf.capabilities.enable_set_avatar_url = true
+            const response = await request(app)
+              .put(`/_matrix/client/v3/profile/${testUserId}/avatar_url`)
+              .set('Authorization', `Bearer ${validToken}`)
+              .set('Accept', 'application/json')
+              .send({ avatar_url: randomString(2049) })
+            expect(response.statusCode).toBe(400)
+            expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
+          })
+
+          it('should send correct response when requester is admin and target user is on local server', async () => {
+            clientServer.conf.capabilities.enable_set_avatar_url = true
+            const response = await request(app)
+              .put(`/_matrix/client/v3/profile/${testUserId}/avatar_url`)
+              .set('Authorization', `Bearer ${validToken2}`)
+              .send({ avatar_url: 'http://example.com/new_avatar.jpg' })
+
+            expect(response.statusCode).toBe(200)
+            expect(response.body).toEqual({})
+          })
+
+          it('should send correct response when requester is target user (on local server)', async () => {
+            clientServer.conf.capabilities.enable_set_avatar_url = true
+            const response = await request(app)
+              .put(`/_matrix/client/v3/profile/${testUserId}/avatar_url`)
+              .set('Authorization', `Bearer ${validToken}`)
+              .send({ avatar_url: 'http://example.com/new_avatar.jpg' })
+
+            expect(response.statusCode).toBe(200)
+            expect(response.body).toEqual({})
+          })
+
+          it('should correctly update the avatar_url of an existing user', async () => {
+            clientServer.conf.capabilities.enable_set_avatar_url = undefined
+            const response = await request(app)
+              .put(`/_matrix/client/v3/profile/${testUserId}/avatar_url`)
+              .set('Authorization', `Bearer ${validToken}`)
+              .send({ avatar_url: 'http://example.com/new_avatar.jpg' })
+            expect(response.statusCode).toBe(200)
+            const rows = await clientServer.matrixDb.get(
+              'profiles',
+              ['avatar_url'],
+              { user_id: testUserId }
+            )
+
+            expect(rows.length).toBe(1)
+            expect(rows[0].avatar_url).toBe('http://example.com/new_avatar.jpg')
+          })
+        })
+
+        describe('/_matrix/client/v3/profile/{userId}/displayname', () => {
+          it('should require authentication', async () => {
+            await clientServer.cronTasks?.ready
+            const response = await request(app)
+              .put(`/_matrix/client/v3/profile/${testUserId}/displayname`)
+              .set('Authorization', 'Bearer invalidToken')
+              .set('Accept', 'application/json')
+            expect(response.statusCode).toBe(401)
+          })
+
+          it('should return 400 if the target user is on a remote server', async () => {
+            const response = await request(app)
+              .put(
+                `/_matrix/client/v3/profile/@testuser:anotherexample.com/displayname`
+              )
+              .set('Authorization', `Bearer ${validToken}`)
+              .set('Accept', 'application/json')
+              .send({ displayname: 'New name' })
+            expect(response.statusCode).toBe(400)
+          })
+
+          it('should return 403 if the requester is not admin and is not the target user', async () => {
+            const response = await request(app)
+              .put(
+                `/_matrix/client/v3/profile/@testuser2:example.com/displayname`
+              )
+              .set('Authorization', `Bearer ${validToken}`)
+              .set('Accept', 'application/json')
+              .send({ displayname: 'New name' })
+            expect(response.statusCode).toBe(403)
+          })
+
+          it('should return 403 if the requester is not admin and the config does not allow changing display_name', async () => {
+            clientServer.conf.capabilities.enable_set_displayname = false
+
+            const response = await request(app)
+              .put(`/_matrix/client/v3/profile/${testUserId}/displayname`)
+              .set('Authorization', `Bearer ${validToken}`)
+              .set('Accept', 'application/json')
+              .send({ displayname: 'New name' })
+            expect(response.statusCode).toBe(403)
+            expect(response.body).toHaveProperty('errcode', 'M_FORBIDDEN')
+
+            clientServer.conf.capabilities.enable_set_displayname = true
+          })
+
+          it('should return 400 if provided display_name is too long', async () => {
+            const response = await request(app)
+              .put(`/_matrix/client/v3/profile/${testUserId}/displayname`)
+              .set('Authorization', `Bearer ${validToken}`)
+              .set('Accept', 'application/json')
+              .send({ displayname: randomString(257) })
+            expect(response.statusCode).toBe(400)
+            expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
+          })
+
+          it('should send correct response when requester is admin and target user is on local server', async () => {
+            const response = await request(app)
+              .put(`/_matrix/client/v3/profile/${testUserId}/displayname`)
+              .set('Authorization', `Bearer ${validToken2}`)
+              .send({ displayname: 'New name' })
+
+            expect(response.statusCode).toBe(200)
+            expect(response.body).toEqual({})
+          })
+
+          it('should correctly update the display_name of an existing user', async () => {
+            clientServer.conf.capabilities.enable_set_displayname = undefined
+            const response = await request(app)
+              .put(`/_matrix/client/v3/profile/${testUserId}/displayname`)
+              .set('Authorization', `Bearer ${validToken}`)
+              .set('Accept', 'application/json')
+              .send({ displayname: 'New name' })
+            expect(response.statusCode).toBe(200)
+            const rows = await clientServer.matrixDb.get(
+              'profiles',
+              ['displayname'],
+              { user_id: testUserId }
+            )
+
+            expect(rows.length).toBe(1)
+            expect(rows[0].displayname).toBe('New name')
+          })
+        })
+      })
+    })
+
+    describe('/_matrix/client/v3/devices', () => {
+      const testUserId = '@testuser:example.com'
+
+      beforeAll(async () => {
+        try {
+          await clientServer.matrixDb.insert('devices', {
+            user_id: testUserId,
+            device_id: 'testdevice1',
+            display_name: 'Test Device 1',
+            last_seen: 1411996332123,
+            ip: '127.0.0.1',
+            user_agent: 'curl/7.31.0-DEV'
+          })
+          logger.info('Test device 1 created')
+
+          await clientServer.matrixDb.insert('devices', {
+            user_id: testUserId,
+            device_id: 'testdevice2',
+            display_name: 'Test Device 2',
+            last_seen: 14119963321254,
+            ip: '127.0.0.2',
+            user_agent: 'curl/7.31.0-DEV'
+          })
+          logger.info('Test device 2 created')
+        } catch (e) {
+          logger.error('Error creating devices:', e)
+        }
+      })
+
+      afterAll(async () => {
+        try {
+          await clientServer.matrixDb.deleteEqual(
+            'devices',
+            'device_id',
+            'testdevice1'
+          )
+          logger.info('Test device 1 deleted')
+
+          await clientServer.matrixDb.deleteEqual(
+            'devices',
+            'device_id',
+            'testdevice2'
+          )
+          logger.info('Test device 2 deleted')
+        } catch (e) {
+          logger.error('Error deleting devices:', e)
+        }
+      })
+
+      it('should return 401 if the user is not authenticated', async () => {
+        const response = await request(app)
+          .get('/_matrix/client/v3/devices')
+          .set('Authorization', 'Bearer invalidToken')
+          .set('Accept', 'application/json')
+        expect(response.statusCode).toBe(401)
+      })
+
+      it('should return all devices for the current user', async () => {
+        const response = await request(app)
+          .get('/_matrix/client/v3/devices')
+          .set('Authorization', `Bearer ${validToken}`)
+
+        expect(response.statusCode).toBe(200)
+
+        expect(response.body).toHaveProperty('devices')
+        expect(response.body.devices).toHaveLength(2)
+        expect(response.body.devices[0]).toHaveProperty('device_id')
+        expect(response.body.devices[0]).toHaveProperty('display_name')
+        expect(response.body.devices[0]).toHaveProperty('last_seen_ts')
+        expect(response.body.devices[0]).toHaveProperty('last_seen_ip')
+      })
+    })
+
+    describe('/_matrix/client/v3/devices/:deviceId', () => {
+      // eslint-disable-next-line @typescript-eslint/naming-convention
+      let _device_id: string
+      beforeAll(async () => {
+        try {
+          _device_id = 'testdevice2_id'
+          await clientServer.matrixDb.insert('devices', {
+            user_id: '@testuser:example.com',
+            device_id: _device_id,
+            display_name: 'testdevice2_name',
+            last_seen: 12345678,
+            ip: '127.0.0.1',
+            user_agent: 'curl/7.31.0-DEV',
+            hidden: 0
+          })
+
+          await clientServer.matrixDb.insert('devices', {
+            user_id: '@testuser2:example.com',
+            device_id: 'another_device_id',
+            display_name: 'another_name',
+            last_seen: 12345678,
+            ip: '127.0.0.1',
+            user_agent: 'curl/7.31.0-DEV',
+            hidden: 0
+          })
+          logger.info('Devices inserted in db')
+        } catch (e) {
+          logger.error('Error when inserting devices', e)
+        }
+      })
+
+      afterAll(async () => {
+        try {
+          await clientServer.matrixDb.deleteEqual(
+            'devices',
+            'device_id',
+            _device_id
+          )
+          await clientServer.matrixDb.deleteEqual(
+            'devices',
+            'device_id',
+            'another_device_id'
+          )
+          logger.info('Devices deleted from db')
+        } catch (e) {
+          logger.error('Error when deleting devices', e)
+        }
+      })
+
+      describe('GET', () => {
+        it('should return the device information for the given device ID', async () => {
           const response = await request(app)
-            .put(
-              '/_matrix/client/v3/user/@testuser:example.com/account_data/m.room.message'
-            )
+            .get(`/_matrix/client/v3/devices/${_device_id}`)
             .set('Authorization', `Bearer ${validToken}`)
-            .set('Accept', 'application/json')
-            .send({ content: 'updated content' })
+
           expect(response.statusCode).toBe(200)
-          const response2 = await request(app)
-            .get(
-              '/_matrix/client/v3/user/@testuser:example.com/account_data/m.room.message'
-            )
+
+          expect(response.body).toHaveProperty('device_id')
+          expect(response.body.device_id).toEqual(_device_id)
+          expect(response.body).toHaveProperty('display_name')
+          expect(response.body.display_name).toEqual('testdevice2_name')
+          expect(response.body).toHaveProperty('last_seen_ip')
+          expect(response.body.last_seen_ip).toEqual('127.0.0.1')
+          expect(response.body).toHaveProperty('last_seen_ts')
+          expect(response.body.last_seen_ts).toEqual(12345678)
+        })
+
+        it('should return 404 if the device ID does not exist', async () => {
+          const deviceId = 'NON_EXISTENT_DEVICE_ID'
+          const response = await request(app)
+            .get(`/_matrix/client/v3/devices/${deviceId}`)
             .set('Authorization', `Bearer ${validToken}`)
-            .set('Accept', 'application/json')
-          expect(response2.statusCode).toBe(200)
-          expect(response2.body['m.room.message']).toBe('updated content')
+
+          expect(response.statusCode).toBe(404)
+        })
+
+        it('should return 404 if the user has no device with the given device Id', async () => {
+          const response = await request(app)
+            .get(`/_matrix/client/v3/devices/another_device_id`)
+            .set('Authorization', `Bearer ${validToken}`)
+
+          expect(response.statusCode).toBe(404)
+        })
+
+        it('should return 401 if the user is not authenticated', async () => {
+          const response = await request(app).get(
+            `/_matrix/client/v3/devices/${_device_id}`
+          )
+
+          expect(response.statusCode).toBe(401)
         })
       })
 
-      describe('/_matrix/client/v3/user/:userId/rooms/:roomId/account_data/:type', () => {
-        describe('GET', () => {
-          it('should reject invalid userId', async () => {
-            const response = await request(app)
-              .get(
-                '/_matrix/client/v3/user/invalidUserId/rooms/!roomId:example.com/account_data/m.room.message'
-              )
-              .set('Authorization', `Bearer ${validToken}`)
-              .set('Accept', 'application/json')
-            expect(response.statusCode).toBe(400)
-            expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
-          })
-          it('should reject invalid roomId', async () => {
-            const response = await request(app)
-              .get(
-                '/_matrix/client/v3/user/@testuser:example.com/rooms/invalidRoomId/account_data/m.room.message'
-              )
-              .set('Authorization', `Bearer ${validToken}`)
-              .set('Accept', 'application/json')
-            expect(response.statusCode).toBe(400)
-            expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
-          })
-          it('should reject an invalid event type', async () => {
-            const response = await request(app)
-              .get(
-                '/_matrix/client/v3/user/@testuser:example.com/rooms/!roomId:example.com/account_data/invalidEventType'
-              )
-              .set('Authorization', `Bearer ${validToken}`)
-              .set('Accept', 'application/json')
-            expect(response.statusCode).toBe(400)
-            expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
-          })
-          it('should reject missing account data', async () => {
-            const response = await request(app)
-              .get(
-                '/_matrix/client/v3/user/@testuser:example.com/rooms/!roomId:example.com/account_data/m.room.message'
-              )
-              .set('Authorization', `Bearer ${validToken}`)
-              .set('Accept', 'application/json')
-            expect(response.statusCode).toBe(404)
-            expect(response.body).toHaveProperty('errcode', 'M_NOT_FOUND')
-          })
-          it('should refuse to return account data for another user', async () => {
-            const response = await request(app)
-              .get(
-                '/_matrix/client/v3/user/@anotheruser:example.com/rooms/!roomId:example.com/account_data/m.room.message'
-              )
-              .set('Authorization', `Bearer ${validToken}`)
-              .set('Accept', 'application/json')
-            expect(response.statusCode).toBe(403)
-            expect(response.body).toHaveProperty('errcode', 'M_FORBIDDEN')
-          })
-          it('should return account data', async () => {
-            await clientServer.matrixDb.insert('room_account_data', {
-              user_id: '@testuser:example.com',
-              account_data_type: 'm.room.message',
-              stream_id: 1,
-              content: 'test content',
-              room_id: '!roomId:example.com'
-            })
-            const response = await request(app)
-              .get(
-                '/_matrix/client/v3/user/@testuser:example.com/rooms/!roomId:example.com/account_data/m.room.message'
-              )
-              .set('Authorization', `Bearer ${validToken}`)
-              .set('Accept', 'application/json')
-            expect(response.statusCode).toBe(200)
-            expect(response.body['m.room.message']).toBe('test content')
-          })
+      describe('PUT', () => {
+        const updateData = {
+          display_name: 'updated_device_name'
+        }
+
+        it('should update the device information for the given device ID', async () => {
+          // Update the device
+          const response = await request(app)
+            .put(`/_matrix/client/v3/devices/${_device_id}`)
+            .set('Authorization', `Bearer ${validToken}`)
+            .send(updateData)
+          expect(response.statusCode).toBe(200)
+
+          // Verify the update in the database
+          const updatedDevice = await clientServer.matrixDb.get(
+            'devices',
+            ['device_id', 'display_name'],
+            { device_id: _device_id }
+          )
+
+          expect(updatedDevice[0]).toHaveProperty('device_id', _device_id)
+          expect(updatedDevice[0]).toHaveProperty(
+            'display_name',
+            updateData.display_name
+          )
         })
-        describe('PUT', () => {
-          it('should reject invalid userId', async () => {
-            const response = await request(app)
-              .put(
-                '/_matrix/client/v3/user/invalidUserId/rooms/!roomId:example.com/account_data/m.room.message'
-              )
-              .set('Authorization', `Bearer ${validToken}`)
-              .set('Accept', 'application/json')
-            expect(response.statusCode).toBe(400)
-            expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
-          })
-          it('should reject invalid roomId', async () => {
-            const response = await request(app)
-              .put(
-                '/_matrix/client/v3/user/@testuser:example.com/rooms/invalidRoomId/account_data/m.room.message'
-              )
-              .set('Authorization', `Bearer ${validToken}`)
-              .set('Accept', 'application/json')
-            expect(response.statusCode).toBe(400)
-            expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
-          })
-          it('should reject an invalid event type', async () => {
-            const response = await request(app)
-              .put(
-                '/_matrix/client/v3/user/@testuser:example.com/rooms/!roomId:example.com/account_data/invalidEventType'
-              )
-              .set('Authorization', `Bearer ${validToken}`)
-              .set('Accept', 'application/json')
-            expect(response.statusCode).toBe(400)
-            expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
-          })
-          it('should reject missing account data', async () => {
-            const response = await request(app)
-              .put(
-                '/_matrix/client/v3/user/@testuser:example.com/rooms/!roomId:example.com/account_data/m.room.message'
-              )
-              .set('Authorization', `Bearer ${validToken}`)
-              .set('Accept', 'application/json')
-            expect(response.statusCode).toBe(400)
-            expect(response.body).toHaveProperty('errcode', 'M_UNKNOWN') // Error code from jsonContent function of @twake/utils
-          })
-          it('should refuse to update account data for another user', async () => {
-            const response = await request(app)
-              .put(
-                '/_matrix/client/v3/user/@anotheruser:example.com/rooms/!roomId:example.com/account_data/m.room.message'
-              )
-              .set('Authorization', `Bearer ${validToken}`)
-              .set('Accept', 'application/json')
-              .send({ content: 'new content' })
-            expect(response.statusCode).toBe(403)
-            expect(response.body).toHaveProperty('errcode', 'M_FORBIDDEN')
-          })
-          it('should refuse content that is too long', async () => {
-            let content = ''
-            for (let i = 0; i < 10000; i++) {
-              content += 'a'
-            }
-            const response = await request(app)
-              .put(
-                '/_matrix/client/v3/user/@testuser:example.com/rooms/!roomId:example.com/account_data/m.room.message'
-              )
-              .set('Authorization', `Bearer ${validToken}`)
-              .set('Accept', 'application/json')
-              .send({ content })
-            expect(response.statusCode).toBe(400)
-            expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
-          })
-          it('should update account data', async () => {
-            const response = await request(app)
-              .put(
-                '/_matrix/client/v3/user/@testuser:example.com/rooms/!roomId:example.com/account_data/m.room.message'
-              )
-              .set('Authorization', `Bearer ${validToken}`)
-              .set('Accept', 'application/json')
-              .send({ content: 'updated content' })
-            expect(response.statusCode).toBe(200)
-            const response2 = await request(app)
-              .get(
-                '/_matrix/client/v3/user/@testuser:example.com/rooms/!roomId:example.com/account_data/m.room.message'
-              )
-              .set('Authorization', `Bearer ${validToken}`)
-              .set('Accept', 'application/json')
-            expect(response2.statusCode).toBe(200)
-            expect(response2.body['m.room.message']).toBe('updated content')
-          })
+
+        it('should return 400 if the display_name is too long', async () => {
+          const response = await request(app)
+            .put(`/_matrix/client/v3/devices/${_device_id}`)
+            .set('Authorization', `Bearer ${validToken}`)
+            .send({ display_name: randomString(257) })
+
+          expect(response.statusCode).toBe(400)
+          expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
+        })
+
+        it('should return 404 if the device ID does not exist', async () => {
+          const response = await request(app)
+            .put('/_matrix/client/v3/devices/NON_EXISTENT_DEVICE_ID')
+            .set('Authorization', `Bearer ${validToken}`)
+            .send(updateData)
+
+          expect(response.statusCode).toBe(404)
+        })
+
+        it('should return 404 if the user has no device with the given device ID', async () => {
+          const deviceId = 'another_device_id'
+          const response = await request(app)
+            .put(`/_matrix/client/v3/devices/${deviceId}`)
+            .set('Authorization', `Bearer ${validToken}`)
+            .send(updateData)
+
+          expect(response.statusCode).toBe(404)
+        })
+
+        it('should return 401 if the user is not authenticated', async () => {
+          const response = await request(app)
+            .put(`/_matrix/client/v3/devices/${_device_id}`)
+            .send(updateData)
+
+          expect(response.statusCode).toBe(401)
         })
       })
     })
