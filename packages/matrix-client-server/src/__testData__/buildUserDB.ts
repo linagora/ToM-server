@@ -72,8 +72,8 @@ const matrixDbQueries = [
   'CREATE TABLE IF NOT EXISTS device_auth_providers (user_id TEXT NOT NULL,device_id TEXT NOT NULL,auth_provider_id TEXT NOT NULL,auth_provider_session_id TEXT NOT NULL)',
   'CREATE TABLE IF NOT EXISTS e2e_device_keys_json ( user_id TEXT NOT NULL, device_id TEXT NOT NULL, ts_added_ms BIGINT NOT NULL, key_json TEXT NOT NULL, CONSTRAINT e2e_device_keys_json_uniqueness UNIQUE (user_id, device_id) )',
   'CREATE TABLE IF NOT EXISTS e2e_one_time_keys_json ( user_id TEXT NOT NULL, device_id TEXT NOT NULL, algorithm TEXT NOT NULL, key_id TEXT NOT NULL, ts_added_ms BIGINT NOT NULL, key_json TEXT NOT NULL, CONSTRAINT e2e_one_time_keys_json_uniqueness UNIQUE (user_id, device_id, algorithm, key_id) )',
-  'CREATE TABLE IF NOT EXISTS e2e_fallback_keys_json (user_id TEXT NOT NULL, -- The user this fallback key is for.device_id TEXT NOT NULL, -- The device this fallback key is for.algorithm TEXT NOT NULL, -- Which algorithm this fallback key is for. key_id TEXT NOT NULL, -- An id for suppressing duplicate uploads. key_json TEXT NOT NULL, -- The key as a JSON blob. used BOOLEAN NOT NULL DEFAULT FALSE, -- Whether the key has been used or not.CONSTRAINT e2e_fallback_keys_json_uniqueness UNIQUE (user_id, device_id, algorithm))',
-  'CREATE TABLE dehydrated_devices(user_id TEXT NOT NULL PRIMARY KEY,device_id TEXT NOT NULL,device_data TEXT NOT NULL -- JSON-encoded client-defined data)'
+  'CREATE TABLE IF NOT EXISTS e2e_fallback_keys_json (user_id TEXT NOT NULL, device_id TEXT NOT NULL, algorithm TEXT NOT NULL,  key_id TEXT NOT NULL, key_json TEXT NOT NULL, used BOOLEAN NOT NULL DEFAULT FALSE, CONSTRAINT e2e_fallback_keys_json_uniqueness UNIQUE (user_id, device_id, algorithm))',
+  'CREATE TABLE dehydrated_devices(user_id TEXT NOT NULL PRIMARY KEY,device_id TEXT NOT NULL,device_data TEXT NOT NULL)'
 ]
 
 // eslint-disable-next-line @typescript-eslint/promise-function-async
