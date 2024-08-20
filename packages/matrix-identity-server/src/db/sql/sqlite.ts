@@ -110,9 +110,7 @@ class SQLite<T extends string> extends SQL<T> implements IdDbBackend<T> {
           }
         }
       )
-      stmt.finalize((err) => {
-        reject(err)
-      })
+      stmt.finalize(reject)
     })
   }
 
@@ -150,13 +148,12 @@ class SQLite<T extends string> extends SQL<T> implements IdDbBackend<T> {
           }
         }
       )
-      stmt.finalize((err) => {
-        reject(err)
-      })
+      stmt.finalize(reject)
     })
   }
 
   // TODO : Merge update and updateAnd into one function that takes an array of conditions as argument
+  // Done in Client server - go see updateWithConditions
   updateAnd(
     table: T,
     values: Record<string, string | number>,
@@ -180,6 +177,7 @@ class SQLite<T extends string> extends SQL<T> implements IdDbBackend<T> {
       stmt.all(
         vals,
         (err: string, rows: Array<Record<string, string | number>>) => {
+          /* istanbul ignore if */
           if (err != null) {
             reject(err)
           } else {
@@ -188,12 +186,7 @@ class SQLite<T extends string> extends SQL<T> implements IdDbBackend<T> {
         }
       )
 
-      stmt.finalize((err) => {
-        // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
-        if (err) {
-          reject(err)
-        }
-      })
+      stmt.finalize(reject)
     })
   }
 
@@ -794,9 +787,7 @@ class SQLite<T extends string> extends SQL<T> implements IdDbBackend<T> {
           resolve()
         }
       })
-      stmt.finalize((err) => {
-        reject(err)
-      })
+      stmt.finalize(reject)
     })
   }
 
