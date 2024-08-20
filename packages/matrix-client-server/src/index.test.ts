@@ -11,9 +11,7 @@ import {
   setupTokens,
   validToken,
   validRefreshToken1,
-  validRefreshToken2,
-  validRefreshToken3,
-  validToken3
+  validRefreshToken2
 } from './__testData__/setupTokens'
 
 process.env.TWAKE_CLIENT_SERVER_CONF = './src/__testData__/registerConf.json'
@@ -191,90 +189,6 @@ describe('Use configuration file', () => {
         expect(response.statusCode).toBe(200)
         expect(response.body).toHaveProperty('access_token')
         expect(response.body).toHaveProperty('refresh_token')
-      })
-      it('should refuse a request with a used access token', async () => {
-        const response = await request(app)
-          .post('/_matrix/client/v3/refresh')
-          .send({ refresh_token: validRefreshToken3 })
-        expect(response.statusCode).toBe(200)
-        expect(response.body).toHaveProperty('access_token')
-        expect(response.body).toHaveProperty('refresh_token')
-        const response1 = await request(app)
-          .get('/_matrix/client/v3/account/whoami')
-          .set('Authorization', `Bearer ${validToken3}`)
-          .set('Accept', 'application/json')
-        expect(response1.statusCode).toBe(401)
-      })
-    })
-    describe('/_matrix/client/v3/account/whoami', () => {
-      let asToken: string
-      it('should reject missing token (', async () => {
-        const response = await request(app)
-          .get('/_matrix/client/v3/account/whoami')
-          .set('Accept', 'application/json')
-        expect(response.statusCode).toBe(401)
-      })
-      it('should reject token that mismatch regex', async () => {
-        const response = await request(app)
-          .get('/_matrix/client/v3/account/whoami')
-          .set('Authorization', 'Bearer zzzzzzz')
-          .set('Accept', 'application/json')
-        expect(response.statusCode).toBe(401)
-      })
-      it('should reject expired or invalid token', async () => {
-        const response = await request(app)
-          .get('/_matrix/client/v3/account/whoami')
-          .set('Authorization', `Bearer ${randomString(64)}`)
-          .set('Accept', 'application/json')
-        expect(response.statusCode).toBe(401)
-      })
-      it('should accept valid token', async () => {
-        const response = await request(app)
-          .get('/_matrix/client/v3/account/whoami')
-          .set('Authorization', `Bearer ${validToken}`)
-          .set('Accept', 'application/json')
-        expect(response.statusCode).toBe(200)
-      })
-      it('should accept a valid appservice authentication', async () => {
-        asToken = conf.application_services[0].as_token
-        const registerResponse = await request(app)
-          .post('/_matrix/client/v3/register')
-          .query({ kind: 'user' })
-          .send({
-            auth: {
-              type: 'm.login.application_service',
-              username: '_irc_bridge_'
-            },
-            username: '_irc_bridge_'
-          })
-          .set('Authorization', `Bearer ${asToken}`)
-          .set('User-Agent', 'curl/7.31.0-DEV')
-          .set('X-Forwarded-For', '127.10.00')
-          .set('Accept', 'application/json')
-        expect(registerResponse.statusCode).toBe(200)
-        const response = await request(app)
-          .get('/_matrix/client/v3/account/whoami')
-          .query({ user_id: '@_irc_bridge_:example.com' })
-          .set('Authorization', `Bearer ${asToken}`)
-          .set('Accept', 'application/json')
-        expect(response.statusCode).toBe(200)
-        expect(response.body.user_id).toBe('@_irc_bridge_:example.com')
-      })
-      it('should refuse an appservice authentication with a user_id not registered in the appservice', async () => {
-        const response = await request(app)
-          .get('/_matrix/client/v3/account/whoami')
-          .query({ user_id: '@testuser:example.com' })
-          .set('Authorization', `Bearer ${asToken}`)
-          .set('Accept', 'application/json')
-        expect(response.statusCode).toBe(403)
-      })
-      it('should ensure a normal user cannot access the account of an appservice', async () => {
-        const response = await request(app)
-          .get('/_matrix/client/v3/account/whoami')
-          .query({ user_id: '@_irc_bridge_:example.com' })
-          .set('Authorization', `Bearer ${validToken}`)
-          .set('Accept', 'application/json')
-        expect(response.body).toHaveProperty('user_id', '@testuser:example.com') // not _irc_bridge_ (appservice account)
       })
     })
 

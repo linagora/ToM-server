@@ -238,13 +238,15 @@ const checkAuthentication = (
               })
               .then((rows) => {
                 if (rows.length === 0) {
-                  throw new Error()
+                  throw new Error('User not found')
                 } else {
-                  // Maybe should also check that the user account isn't shadowbanned nor deactivated (check that rows[0].shadow_banned/deactivated ===0), spec is unclear
+                  // Maybe should also check that the user account isn't shadowbanned nor deactivated (check that rows[0].shadow_banned/deactivated ===0)
+                  // Normally upon deactivation the password_hash should be set to null so we shouldn't need to check for that but maybe it's better to be safe
                   // We only consider the case where the identifier is a MatrixIdentifier
                   // since the only table that has a password field is the users table
                   // which only contains a "name" field with the userId and no address field
                   // meaning we can't access it without the userId associated to that password
+
                   resolve(rows[0].name as string)
                 }
               })

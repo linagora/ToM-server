@@ -55,7 +55,7 @@ export const jsonContent = (
   })
   /* istanbul ignore next */
   req.on('error', (err) => {
-    send(res, 400, errMsg('unknown', err.message))
+    send(res, 400, errMsg('unknown', err.toString()))
     accept = false
   })
   req.on('end', () => {
