@@ -100,7 +100,12 @@ const userSearch = (clientServer: MatrixClientServer): expressAppHandler => {
                 /* istanbul ignore next */
                 clientServer.logger.error('Error when searching for users')
                 /* istanbul ignore next */
-                send(res, 500, errMsg('unknown', err), clientServer.logger)
+                send(
+                  res,
+                  500,
+                  errMsg('unknown', err.toString()),
+                  clientServer.logger
+                )
               })
           }
         )

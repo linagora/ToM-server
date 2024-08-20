@@ -63,12 +63,17 @@ const GetJoinedMembers = (
             })
             .catch((err) => {
               /* istanbul ignore next */
-              send(res, 500, errMsg('unknown', err), ClientServer.logger)
+              send(
+                res,
+                500,
+                errMsg('unknown', err.toString()),
+                ClientServer.logger
+              )
             })
         })
         .catch((err) => {
           /* istanbul ignore next */
-          send(res, 500, errMsg('unknown', err), ClientServer.logger)
+          send(res, 500, errMsg('unknown', err.toString()), ClientServer.logger)
         })
     })
   }

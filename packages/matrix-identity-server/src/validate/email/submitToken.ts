@@ -72,14 +72,14 @@ const SubmitToken = <T extends string = never>(
                       // istanbul ignore next
                       idServer.logger.error('Error while updating token', e)
                       // istanbul ignore next
-                      send(res, 500, errMsg('unknown', e))
+                      send(res, 500, errMsg('unknown', e.toString()))
                     })
                 })
                 .catch((e) => {
                   // istanbul ignore next
                   idServer.logger.error('Error while deleting token', e)
                   // istanbul ignore next
-                  send(res, 500, errMsg('unknown', e))
+                  send(res, 500, errMsg('unknown', e.toString()))
                 })
             } else {
               /* istanbul ignore next */

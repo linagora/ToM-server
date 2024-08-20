@@ -76,6 +76,7 @@ export type StateFilter = RoomEventFilter
 /*
 
 /* https://spec.matrix.org/latest/client-server-api/#room-event-format */
+
 export interface ClientEvent {
   content: Record<string, any>
   event_id: string
@@ -121,7 +122,28 @@ export interface PreviousRoom {
 
 /*
 /* ROOM EVENTS */
-/*
+
+export enum RoomEventTypes {
+  Member = 'm.room.member',
+  Create = 'm.room.create',
+  JoinRules = 'm.room.join_rules',
+  PowerLevels = 'm.room.power_levels',
+  CanonicalAlias = 'm.room.canonical_alias',
+  Aliases = 'm.room.aliases', // https://spec.matrix.org/v1.11/client-server-api/#historical-events
+  Tombstone = 'm.room.tombstone', // https://spec.matrix.org/v1.11/client-server-api/#mroomtombstone
+  Redaction = 'm.room.redaction', // https://spec.matrix.org/v1.11/client-server-api/#mroomredaction
+  ThirdPartyInvite = 'm.room.third_party_invite', // https://spec.matrix.org/v1.11/client-server-api/#mroomredaction
+  RoomHistoryVisibility = 'm.room.history_visibility', // https://spec.matrix.org/v1.11/client-server-api/#mroomhistory_visibility
+  Encrypted = 'm.room.encrypted', // https://spec.matrix.org/v1.11/client-server-api/#mroomencrypted
+  RoomAvatar = 'm.room.avatar', // https://spec.matrix.org/v1.11/client-server-api/#mroomavatar
+  RoomEncryption = 'm.room.encryption', // https://spec.matrix.org/v1.11/client-server-api/#mroomencryption
+  GuestAccess = 'm.room.guest_access', // https://spec.matrix.org/v1.11/client-server-api/#mroomguest_access
+  Message = 'm.room.message', // https://spec.matrix.org/v1.11/client-server-api/#mroommessage
+  Topic = 'm.room.topic', // https://spec.matrix.org/v1.11/client-server-api/#mroomtopic
+  Name = 'm.room.name', // https://spec.matrix.org/v1.11/client-server-api/#mroomname
+  ServerACL = 'm.room.server_acl', // https://spec.matrix.org/v1.11/client-server-api/#mroomserver_acl
+  Pinned = 'm.room.pinned_events' // https://spec.matrix.org/v1.11/client-server-api/#mroompinned_events
+}
 
 /* m.room.canonical_alias */
 /* https://spec.matrix.org/v1.11/client-server-api/#mroomcanonical_alias */

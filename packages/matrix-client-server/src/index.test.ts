@@ -11,9 +11,7 @@ import {
   setupTokens,
   validToken,
   validRefreshToken1,
-  validRefreshToken2,
-  validRefreshToken3,
-  validToken3
+  validRefreshToken2
 } from './__testData__/setupTokens'
 
 process.env.TWAKE_CLIENT_SERVER_CONF = './src/__testData__/registerConf.json'

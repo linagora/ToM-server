@@ -32,7 +32,7 @@ const matrixDbQueries = [
   'CREATE TABLE IF NOT EXISTS local_current_membership (room_id TEXT NOT NULL, user_id TEXT NOT NULL, event_id TEXT NOT NULL, membership TEXT NOT NULL)',
   'CREATE TABLE IF NOT EXISTS room_stats_state (room_id TEXT NOT NULL,name TEXT,canonical_alias TEXT,join_rules TEXT,history_visibility TEXT,encryption TEXT,avatar TEXT,guest_access TEXT,is_federatable INT,topic TEXT, room_type TEXT)',
   'CREATE TABLE IF NOT EXISTS room_aliases( room_alias TEXT NOT NULL, room_id TEXT NOT NULL, creator TEXT, UNIQUE (room_alias) )',
-  'CREATE TABLE IF NOT EXISTS rooms( room_id TEXT PRIMARY KEY NOT NULL, is_public BOOL, creator TEXT , room_version TEXT, has_auth_chain_index INT)',
+  'CREATE TABLE IF NOT EXISTS rooms( room_id TEXT PRIMARY KEY NOT NULL, is_public INTEGER, creator TEXT , room_version TEXT, has_auth_chain_index INT)',
   'CREATE TABLE IF NOT EXISTS room_tags( user_id TEXT NOT NULL, room_id TEXT NOT NULL, tag TEXT NOT NULL, content TEXT NOT NULL, CONSTRAINT room_tag_uniqueness UNIQUE (user_id, room_id, tag) )',
   'CREATE TABLE IF NOT EXISTS "user_threepids" ( user_id TEXT NOT NULL, medium TEXT NOT NULL, address TEXT NOT NULL, validated_at BIGINT NOT NULL, added_at BIGINT NOT NULL, CONSTRAINT medium_address UNIQUE (medium, address) )',
   'CREATE TABLE threepid_validation_session (session_id TEXT PRIMARY KEY,medium TEXT NOT NULL,address TEXT NOT NULL,client_secret TEXT NOT NULL,last_send_attempt BIGINT NOT NULL,validated_at BIGINT)',

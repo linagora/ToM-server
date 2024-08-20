@@ -104,7 +104,7 @@ const Authenticate = (
                 // istanbul ignore next
                 logger.error('Error deleting the old refresh token', e)
                 // istanbul ignore next
-                send(res, 500, errMsg('unknown', e))
+                send(res, 500, errMsg('unknown', e.toString()))
               })
           }
         })
