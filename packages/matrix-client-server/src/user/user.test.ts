@@ -104,75 +104,14 @@ describe('Use configuration file', () => {
     })
 
     describe('/_matrix/client/v3/user/:userId', () => {
+      const content = { content_key: 'content value' }
+      const content2 = { content_key: 'content value 2' }
+      let longContentValue = ''
+      for (let i = 0; i < 10000; i++) {
+        longContentValue += 'a'
+      }
+      const longContent = { content_key: longContentValue }
       describe('/_matrix/client/v3/user/:userId/account_data/:type', () => {
-        describe('GET', () => {
-          it('should reject invalid userId', async () => {
-            const response = await request(app)
-              .get(
-                '/_matrix/client/v3/user/invalidUserId/account_data/m.room.message'
-              )
-              .set('Authorization', `Bearer ${validToken}`)
-              .set('Accept', 'application/json')
-            expect(response.statusCode).toBe(400)
-            expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
-          })
-          it('should reject invalid roomId', async () => {
-            const response = await request(app)
-              .get(
-                '/_matrix/client/v3/user/@testuser:example.com/rooms/invalidRoomId/account_data/m.room.message'
-              )
-              .set('Authorization', `Bearer ${validToken}`)
-              .set('Accept', 'application/json')
-            expect(response.statusCode).toBe(400)
-            expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
-          })
-          it('should reject an invalid event type', async () => {
-            const response = await request(app)
-              .get(
-                '/_matrix/client/v3/user/@testuser:example.com/account_data/invalidEventType'
-              )
-              .set('Authorization', `Bearer ${validToken}`)
-              .set('Accept', 'application/json')
-            expect(response.statusCode).toBe(400)
-            expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
-          })
-          it('should reject missing account data', async () => {
-            const response = await request(app)
-              .get(
-                '/_matrix/client/v3/user/@testuser:example.com/account_data/m.room.message'
-              )
-              .set('Authorization', `Bearer ${validToken}`)
-              .set('Accept', 'application/json')
-            expect(response.statusCode).toBe(404)
-            expect(response.body).toHaveProperty('errcode', 'M_NOT_FOUND')
-          })
-          it('should refuse to return account data for another user', async () => {
-            const response = await request(app)
-              .get(
-                '/_matrix/client/v3/user/@anotheruser:example.com/account_data/m.room.message'
-              )
-              .set('Authorization', `Bearer ${validToken}`)
-              .set('Accept', 'application/json')
-            expect(response.statusCode).toBe(403)
-            expect(response.body).toHaveProperty('errcode', 'M_FORBIDDEN')
-          })
-          it('should return account data', async () => {
-            await clientServer.matrixDb.insert('account_data', {
-              user_id: '@testuser:example.com',
-              account_data_type: 'm.room.message',
-              stream_id: 1,
-              content: 'test content'
-            })
-            const response = await request(app)
-              .get(
-                '/_matrix/client/v3/user/@testuser:example.com/account_data/m.room.message'
-              )
-              .set('Authorization', `Bearer ${validToken}`)
-              .set('Accept', 'application/json')
-            expect(response.statusCode).toBe(200)
-            expect(response.body['m.room.message']).toBe('test content')
-          })
-        })
         describe('PUT', () => {
           it('should reject invalid userId', async () => {
             const response = await request(app)
@@ -194,14 +133,46 @@ describe('Use configuration file', () => {
             expect(response.statusCode).toBe(400)
             expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
           })
-          it('should reject event types managed by the server', async () => {
+          it('should reject missing account data', async () => {
+            const response = await request(app)
+              .put(
+                '/_matrix/client/v3/user/@testuser:example.com/account_data/m.room.message'
+              )
+              .set('Authorization', `Bearer ${validToken}`)
+              .set('Accept', 'application/json')
+            expect(response.statusCode).toBe(400)
+            expect(response.body).toHaveProperty('errcode', 'M_NOT_JSON') // Error code from jsonContent function of @twake/utils
+          })
+          it('should refuse to update account data for another user', async () => {
+            const response = await request(app)
+              .put(
+                '/_matrix/client/v3/user/@anotheruser:example.com/account_data/m.room.message'
+              )
+              .set('Authorization', `Bearer ${validToken}`)
+              .set('Accept', 'application/json')
+              .send(content)
+            expect(response.statusCode).toBe(403)
+            expect(response.body).toHaveProperty('errcode', 'M_FORBIDDEN')
+          })
+          it('should refuse content that is too long', async () => {
+            const response = await request(app)
+              .put(
+                '/_matrix/client/v3/user/@testuser:example.com/account_data/m.room.message'
+              )
+              .set('Authorization', `Bearer ${validToken}`)
+              .set('Accept', 'application/json')
+              .send(longContent)
+            expect(response.statusCode).toBe(400)
+            expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
+          })
+          it('should refuse to update account data for an event type managed by the server', async () => {
             const response = await request(app)
               .put(
                 '/_matrix/client/v3/user/@testuser:example.com/account_data/m.push_rules'
               )
               .set('Authorization', `Bearer ${validToken}`)
               .set('Accept', 'application/json')
-              .send({ content: 'new content' })
+              .send(content)
             expect(response.statusCode).toBe(405)
             expect(response.body).toHaveProperty('errcode', 'M_BAD_JSON')
             const response2 = await request(app)
@@ -210,30 +181,19 @@ describe('Use configuration file', () => {
               )
               .set('Authorization', `Bearer ${validToken}`)
               .set('Accept', 'application/json')
-              .send({ content: 'new content' })
+              .send(content)
             expect(response2.statusCode).toBe(405)
             expect(response2.body).toHaveProperty('errcode', 'M_BAD_JSON')
           })
-          it('should reject missing account data', async () => {
+          it('should insert account data', async () => {
             const response = await request(app)
               .put(
                 '/_matrix/client/v3/user/@testuser:example.com/account_data/m.room.message'
               )
               .set('Authorization', `Bearer ${validToken}`)
               .set('Accept', 'application/json')
-            expect(response.statusCode).toBe(400)
-            expect(response.body).toHaveProperty('errcode', 'M_UNKNOWN') // Error code from jsonContent function of @twake/utils
-          })
-          it('should refuse to update account data for another user', async () => {
-            const response = await request(app)
-              .put(
-                '/_matrix/client/v3/user/@anotheruser:example.com/account_data/m.room.message'
-              )
-              .set('Authorization', `Bearer ${validToken}`)
-              .set('Accept', 'application/json')
-              .send({ content: 'new content' })
-            expect(response.statusCode).toBe(403)
-            expect(response.body).toHaveProperty('errcode', 'M_FORBIDDEN')
+              .send(content)
+            expect(response.statusCode).toBe(200)
           })
           it('should update account data', async () => {
             const response = await request(app)
@@ -242,21 +202,179 @@ describe('Use configuration file', () => {
               )
               .set('Authorization', `Bearer ${validToken}`)
               .set('Accept', 'application/json')
-              .send({ content: 'updated content' })
+              .send(content2)
             expect(response.statusCode).toBe(200)
-            const response2 = await request(app)
+          })
+        })
+        describe('GET', () => {
+          it('should reject invalid userId', async () => {
+            const response = await request(app)
+              .get(
+                '/_matrix/client/v3/user/invalidUserId/account_data/m.room.message'
+              )
+              .set('Authorization', `Bearer ${validToken}`)
+              .set('Accept', 'application/json')
+            expect(response.statusCode).toBe(400)
+            expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
+          })
+          it('should reject invalid roomId', async () => {
+            const response = await request(app)
+              .get(
+                '/_matrix/client/v3/user/@testuser:example.com/rooms/invalidRoomId/account_data/m.room.message'
+              )
+              .set('Authorization', `Bearer ${validToken}`)
+              .set('Accept', 'application/json')
+            expect(response.statusCode).toBe(400)
+            expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
+          })
+          it('should reject an invalid event type', async () => {
+            const response = await request(app)
+              .get(
+                '/_matrix/client/v3/user/@testuser:example.com/account_data/invalidEventType'
+              )
+              .set('Authorization', `Bearer ${validToken}`)
+              .set('Accept', 'application/json')
+            expect(response.statusCode).toBe(400)
+            expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
+          })
+          it('should reject missing account data', async () => {
+            const response = await request(app)
+              .get(
+                '/_matrix/client/v3/user/@testuser:example.com/account_data/m.other.type'
+              )
+              .set('Authorization', `Bearer ${validToken}`)
+              .set('Accept', 'application/json')
+            expect(response.statusCode).toBe(404)
+            expect(response.body).toHaveProperty('errcode', 'M_NOT_FOUND')
+          })
+          it('should refuse to return account data for another user', async () => {
+            const response = await request(app)
+              .get(
+                '/_matrix/client/v3/user/@anotheruser:example.com/account_data/m.room.message'
+              )
+              .set('Authorization', `Bearer ${validToken}`)
+              .set('Accept', 'application/json')
+            expect(response.statusCode).toBe(403)
+            expect(response.body).toHaveProperty('errcode', 'M_FORBIDDEN')
+          })
+          it('should return account data', async () => {
+            const response = await request(app)
               .get(
                 '/_matrix/client/v3/user/@testuser:example.com/account_data/m.room.message'
               )
               .set('Authorization', `Bearer ${validToken}`)
               .set('Accept', 'application/json')
-            expect(response2.statusCode).toBe(200)
-            expect(response2.body['m.room.message']).toBe('updated content')
+            expect(response.statusCode).toBe(200)
+            expect(response.body).toEqual(content2)
           })
         })
       })
 
       describe('/_matrix/client/v3/user/:userId/rooms/:roomId/account_data/:type', () => {
+        describe('PUT', () => {
+          it('should reject invalid userId', async () => {
+            const response = await request(app)
+              .put(
+                '/_matrix/client/v3/user/invalidUserId/rooms/!roomId:example.com/account_data/m.room.message'
+              )
+              .set('Authorization', `Bearer ${validToken}`)
+              .set('Accept', 'application/json')
+            expect(response.statusCode).toBe(400)
+            expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
+          })
+          it('should reject invalid roomId', async () => {
+            const response = await request(app)
+              .put(
+                '/_matrix/client/v3/user/@testuser:example.com/rooms/invalidRoomId/account_data/m.room.message'
+              )
+              .set('Authorization', `Bearer ${validToken}`)
+              .set('Accept', 'application/json')
+            expect(response.statusCode).toBe(400)
+            expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
+          })
+          it('should reject an invalid event type', async () => {
+            const response = await request(app)
+              .put(
+                '/_matrix/client/v3/user/@testuser:example.com/rooms/!roomId:example.com/account_data/invalidEventType'
+              )
+              .set('Authorization', `Bearer ${validToken}`)
+              .set('Accept', 'application/json')
+            expect(response.statusCode).toBe(400)
+            expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
+          })
+          it('should reject missing account data', async () => {
+            const response = await request(app)
+              .put(
+                '/_matrix/client/v3/user/@testuser:example.com/rooms/!roomId:example.com/account_data/m.room.message'
+              )
+              .set('Authorization', `Bearer ${validToken}`)
+              .set('Accept', 'application/json')
+            expect(response.statusCode).toBe(400)
+            expect(response.body).toHaveProperty('errcode', 'M_NOT_JSON') // Error code from jsonContent function of @twake/utils
+          })
+          it('should refuse to update account data for another user', async () => {
+            const response = await request(app)
+              .put(
+                '/_matrix/client/v3/user/@anotheruser:example.com/rooms/!roomId:example.com/account_data/m.room.message'
+              )
+              .set('Authorization', `Bearer ${validToken}`)
+              .set('Accept', 'application/json')
+              .send(content)
+            expect(response.statusCode).toBe(403)
+            expect(response.body).toHaveProperty('errcode', 'M_FORBIDDEN')
+          })
+          it('should refuse content that is too long', async () => {
+            const response = await request(app)
+              .put(
+                '/_matrix/client/v3/user/@testuser:example.com/rooms/!roomId:example.com/account_data/m.room.message'
+              )
+              .set('Authorization', `Bearer ${validToken}`)
+              .set('Accept', 'application/json')
+              .send(longContent)
+            expect(response.statusCode).toBe(400)
+            expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
+          })
+          it('should refuse to update account data for an event type managed by the server', async () => {
+            const response = await request(app)
+              .put(
+                '/_matrix/client/v3/user/@testuser:example.com/rooms/!roomId:example.com/account_data/m.push_rules'
+              )
+              .set('Authorization', `Bearer ${validToken}`)
+              .set('Accept', 'application/json')
+              .send(content)
+            expect(response.statusCode).toBe(405)
+            expect(response.body).toHaveProperty('errcode', 'M_BAD_JSON')
+            const response2 = await request(app)
+              .put(
+                '/_matrix/client/v3/user/@testuser:example.com/rooms/!roomId:example.com/account_data/m.fully_read'
+              )
+              .set('Authorization', `Bearer ${validToken}`)
+              .set('Accept', 'application/json')
+              .send(content)
+            expect(response2.statusCode).toBe(405)
+            expect(response2.body).toHaveProperty('errcode', 'M_BAD_JSON')
+          })
+          it('should insert account data', async () => {
+            const response = await request(app)
+              .put(
+                '/_matrix/client/v3/user/@testuser:example.com/rooms/!roomId:example.com/account_data/m.room.message'
+              )
+              .set('Authorization', `Bearer ${validToken}`)
+              .set('Accept', 'application/json')
+              .send(content)
+            expect(response.statusCode).toBe(200)
+          })
+          it('should update account data', async () => {
+            const response = await request(app)
+              .put(
+                '/_matrix/client/v3/user/@testuser:example.com/rooms/!roomId:example.com/account_data/m.room.message'
+              )
+              .set('Authorization', `Bearer ${validToken}`)
+              .set('Accept', 'application/json')
+              .send(content2)
+            expect(response.statusCode).toBe(200)
+          })
+        })
         describe('GET', () => {
           it('should reject invalid userId', async () => {
             const response = await request(app)
@@ -291,7 +409,7 @@ describe('Use configuration file', () => {
           it('should reject missing account data', async () => {
             const response = await request(app)
               .get(
-                '/_matrix/client/v3/user/@testuser:example.com/rooms/!roomId:example.com/account_data/m.room.message'
+                '/_matrix/client/v3/user/@testuser:example.com/rooms/!roomId:example.com/account_data/m.other.type'
               )
               .set('Authorization', `Bearer ${validToken}`)
               .set('Accept', 'application/json')
@@ -309,13 +427,6 @@ describe('Use configuration file', () => {
             expect(response.body).toHaveProperty('errcode', 'M_FORBIDDEN')
           })
           it('should return account data', async () => {
-            await clientServer.matrixDb.insert('room_account_data', {
-              user_id: '@testuser:example.com',
-              account_data_type: 'm.room.message',
-              stream_id: 1,
-              content: 'test content',
-              room_id: '!roomId:example.com'
-            })
             const response = await request(app)
               .get(
                 '/_matrix/client/v3/user/@testuser:example.com/rooms/!roomId:example.com/account_data/m.room.message'
@@ -323,98 +434,7 @@ describe('Use configuration file', () => {
               .set('Authorization', `Bearer ${validToken}`)
               .set('Accept', 'application/json')
             expect(response.statusCode).toBe(200)
-            expect(response.body['m.room.message']).toBe('test content')
-          })
-        })
-        describe('PUT', () => {
-          it('should reject invalid userId', async () => {
-            const response = await request(app)
-              .put(
-                '/_matrix/client/v3/user/invalidUserId/rooms/!roomId:example.com/account_data/m.room.message'
-              )
-              .set('Authorization', `Bearer ${validToken}`)
-              .set('Accept', 'application/json')
-            expect(response.statusCode).toBe(400)
-            expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
-          })
-          it('should reject invalid roomId', async () => {
-            const response = await request(app)
-              .put(
-                '/_matrix/client/v3/user/@testuser:example.com/rooms/invalidRoomId/account_data/m.room.message'
-              )
-              .set('Authorization', `Bearer ${validToken}`)
-              .set('Accept', 'application/json')
-            expect(response.statusCode).toBe(400)
-            expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
-          })
-          it('should reject an invalid event type', async () => {
-            const response = await request(app)
-              .put(
-                '/_matrix/client/v3/user/@testuser:example.com/rooms/!roomId:example.com/account_data/invalidEventType'
-              )
-              .set('Authorization', `Bearer ${validToken}`)
-              .set('Accept', 'application/json')
-            expect(response.statusCode).toBe(400)
-            expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
-          })
-          it('should reject event types managed by the server', async () => {
-            const response = await request(app)
-              .put(
-                '/_matrix/client/v3/user/@testuser:example.com/rooms/!roomId:example.com/account_data/m.push_rules'
-              )
-              .set('Authorization', `Bearer ${validToken}`)
-              .set('Accept', 'application/json')
-              .send({ content: 'new content' })
-            expect(response.statusCode).toBe(405)
-            expect(response.body).toHaveProperty('errcode', 'M_BAD_JSON')
-            const response2 = await request(app)
-              .put(
-                '/_matrix/client/v3/user/@testuser:example.com/rooms/!roomId:example.com/account_data/m.fully_read'
-              )
-              .set('Authorization', `Bearer ${validToken}`)
-              .set('Accept', 'application/json')
-              .send({ content: 'new content' })
-            expect(response2.statusCode).toBe(405)
-            expect(response2.body).toHaveProperty('errcode', 'M_BAD_JSON')
-          })
-          it('should reject missing account data', async () => {
-            const response = await request(app)
-              .put(
-                '/_matrix/client/v3/user/@testuser:example.com/rooms/!roomId:example.com/account_data/m.room.message'
-              )
-              .set('Authorization', `Bearer ${validToken}`)
-              .set('Accept', 'application/json')
-            expect(response.statusCode).toBe(400)
-            expect(response.body).toHaveProperty('errcode', 'M_UNKNOWN') // Error code from jsonContent function of @twake/utils
-          })
-          it('should refuse to update account data for another user', async () => {
-            const response = await request(app)
-              .put(
-                '/_matrix/client/v3/user/@anotheruser:example.com/rooms/!roomId:example.com/account_data/m.room.message'
-              )
-              .set('Authorization', `Bearer ${validToken}`)
-              .set('Accept', 'application/json')
-              .send({ content: 'new content' })
-            expect(response.statusCode).toBe(403)
-            expect(response.body).toHaveProperty('errcode', 'M_FORBIDDEN')
-          })
-          it('should update account data', async () => {
-            const response = await request(app)
-              .put(
-                '/_matrix/client/v3/user/@testuser:example.com/rooms/!roomId:example.com/account_data/m.room.message'
-              )
-              .set('Authorization', `Bearer ${validToken}`)
-              .set('Accept', 'application/json')
-              .send({ content: 'updated content' })
-            expect(response.statusCode).toBe(200)
-            const response2 = await request(app)
-              .get(
-                '/_matrix/client/v3/user/@testuser:example.com/rooms/!roomId:example.com/account_data/m.room.message'
-              )
-              .set('Authorization', `Bearer ${validToken}`)
-              .set('Accept', 'application/json')
-            expect(response2.statusCode).toBe(200)
-            expect(response2.body['m.room.message']).toBe('updated content')
+            expect(response.body).toEqual(content2)
           })
         })
       })

@@ -1,7 +1,6 @@
 import type MatrixClientServer from '../..'
 import {
   jsonContent,
-  validateParameters,
   errMsg,
   type expressAppHandler,
   send,
@@ -14,14 +13,6 @@ interface Parameters {
   userId: string
   type: string
   roomId: string
-}
-
-interface PutRequestBody {
-  content: string
-}
-
-const schema = {
-  content: true
 }
 
 const contentRegex = /^.{0,2048}$/ // Prevent the client from sending too long messages that could crash the DB. This value is arbitrary and could be changed

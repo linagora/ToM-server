@@ -62,8 +62,9 @@ const getRoomAccountData = (
               clientServer.logger
             )
           } else {
-            const body: Record<string, string> = {}
-            body[parameters.type] = rows[0].content as string
+            const body: Record<string, string> = JSON.parse(
+              rows[0].content as string
+            )
             send(res, 200, body, clientServer.logger)
           }
         })
