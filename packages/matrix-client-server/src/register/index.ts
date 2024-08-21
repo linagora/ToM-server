@@ -20,6 +20,11 @@ import {
 import type { ServerResponse } from 'http'
 import type e from 'express'
 import { getRegisterAllowedFlows } from '../utils/userInteractiveAuthentication'
+import {
+  verifyAuthenticationData,
+  verifyBoolean,
+  verifyString
+} from '../typecheckers'
 
 interface Parameters {
   kind: 'guest' | 'user'
@@ -34,16 +39,6 @@ interface RegisterRequestBody {
   password?: string
   refresh_token?: boolean
   username?: string
-}
-
-// Reference types for clientDict verification in UiAuthentication
-const registerRequestBodyReference = {
-  device_id: 'string',
-  inhibit_login: 'boolean',
-  initial_device_display_name: 'string',
-  password: 'string',
-  refresh_token: 'boolean',
-  username: 'string'
 }
 
 interface InsertedData {

@@ -14,21 +14,14 @@ import {
 } from '../types'
 import { Hash, randomString } from '@twake/crypto'
 import type MatrixDBmodified from '../matrixDb'
-import {
-  epoch,
-  errMsg,
-  jsonContent,
-  send,
-  toMatrixId,
-  isMatrixIdValid
-} from '@twake/utils'
+import { epoch, errMsg, send, toMatrixId, isMatrixIdValid } from '@twake/utils'
 import type MatrixClientServer from '..'
 export type UiAuthFunction = (
   req: Request | http.IncomingMessage,
   res: Response | http.ServerResponse,
-  reference: Record<string, string>,
   allowedFlows: AuthenticationFlowContent,
   description: string,
+  obj: any,
   callback: (data: any, userId: string | null) => void
 ) => void
 
@@ -68,9 +61,9 @@ export const validateUserWithUIAuthentication = (
   clientServer: MatrixClientServer,
   req: Request | http.IncomingMessage,
   res: Response | http.ServerResponse,
-  reference: Record<string, string>,
   userId: string,
   description: string,
+  obj: any,
   callback: (data: any, userId: string | null) => void
 ): void => {
   if (userId != null && !isMatrixIdValid(userId)) {
@@ -87,9 +80,9 @@ export const validateUserWithUIAuthentication = (
       clientServer.uiauthenticate(
         req,
         res,
-        reference,
         verificationFlows,
         description,
+        obj,
         callback
       )
     })
@@ -220,9 +213,7 @@ export const getRegisterAllowedFlows = (
 // eslint-disable-next-line @typescript-eslint/promise-function-async
 const checkAuthentication = (
   auth: AuthenticationData,
-  matrixDb: MatrixDBmodified,
-  conf: Config,
-  req: Request | http.IncomingMessage
+  matrixDb: MatrixDBmodified
 ): Promise<string> => {
   // It returns a Promise<string> so that it can return the userId of the authenticated user for endpoints other than /register. For register and dummy auth we return ''.
   switch (auth.type) {
@@ -457,46 +448,6 @@ const doAppServiceAuthentication = (
     })
 }
 
-const verifyClientDict = <T>(
-  res: e.Response | http.ServerResponse,
-  content: T,
-  reference: Record<string, string>,
-  logger: TwakeLogger,
-  callback: (obj: T) => void
-): void => {
-  for (const key in reference) {
-    const expectedType = reference[key]
-    const value = (content as any)[key]
-
-    if (value !== null && value !== undefined) {
-      // eslint-disable-next-line valid-typeof
-      if (typeof value !== expectedType) {
-        send(
-          res,
-          400,
-          errMsg(
-            'invalidParam',
-            `Invalid ${key}: expected ${expectedType}, got ${typeof value}`
-          ),
-          logger
-        )
-        return
-      }
-
-      if (expectedType === 'string' && (value as string).length > 512) {
-        send(
-          res,
-          400,
-          errMsg('invalidParam', `${key} exceeds 512 characters`),
-          logger
-        )
-        return
-      }
-    }
-  }
-  callback(content)
-}
-
 const UiAuthenticate = (
   // db: ClientServerDb,
   matrixDb: MatrixDBmodified,
@@ -648,7 +599,195 @@ const UiAuthenticate = (
               })
           })
       }
-    })
+      const userAgent = req.headers['user-agent'] ?? 'undefined'
+      const addUserIps = matrixDb.insert('ui_auth_sessions_ips', {
+        session_id: sessionId,
+        ip,
+        user_agent: userAgent
+      })
+      // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+      if (obj.password) {
+        // Since we store the clientdict in the database, we don't want to store the unhashed password in it
+        delete obj.password
+      }
+      const createAuthSession = matrixDb.insert('ui_auth_sessions', {
+        session_id: sessionId,
+        creation_time: epoch(),
+        clientdict: JSON.stringify(obj),
+        serverdict: JSON.stringify({}),
+        uri: req.url as string, // TODO : Ensure this is the right way to get the URI
+        method: req.method as string,
+        description
+      })
+      Promise.all([addUserIps, createAuthSession])
+        .then(() => {
+          send(
+            // We send back the session_id to the client so that he can use it in future requests
+            res,
+            401,
+            {
+              ...allowedFlows,
+              session: sessionId
+            },
+            logger
+          )
+        })
+        .catch((e) => {
+          /* istanbul ignore next */
+          logger.error(
+            'Error while creating a new session during User-Interactive Authentication',
+            e
+          )
+          /* istanbul ignore next */
+          send(res, 500, e, logger)
+        })
+    } else {
+      const auth = (obj as requestBody).auth as AuthenticationData
+      if (auth.type === 'm.login.application_service') {
+        doAppServiceAuthentication(
+          req,
+          res,
+          allowedFlows,
+          auth,
+          conf,
+          logger,
+          obj,
+          callback
+        )
+        return
+      }
+      matrixDb
+        .get('ui_auth_sessions', ['*'], { session_id: auth.session })
+        .then((rows) => {
+          if (rows.length === 0) {
+            logger.error(`Unknown session ID : ${auth.session}`)
+            send(res, 400, errMsg('noValidSession'), logger)
+          } else if (rows[0].uri !== req.url || rows[0].method !== req.method) {
+            send(
+              res,
+              403,
+              errMsg(
+                'forbidden',
+                'Requested operation has changed during the UI authentication session.'
+              ),
+              logger
+            )
+          } else {
+            checkAuthentication(auth, matrixDb)
+              .then((userId) => {
+                matrixDb
+                  .insert('ui_auth_sessions_credentials', {
+                    session_id: auth.session,
+                    stage_type: auth.type,
+                    result: userId
+                  })
+                  .then((rows) => {
+                    const getCompletedStages = matrixDb.get(
+                      'ui_auth_sessions_credentials',
+                      ['stage_type'],
+                      {
+                        session_id: auth.session
+                      }
+                    )
+                    const updateClientDict = matrixDb.updateWithConditions(
+                      'ui_auth_sessions',
+                      { clientdict: JSON.stringify(obj) },
+                      [{ field: 'session_id', value: auth.session }]
+                    )
+                    Promise.all([getCompletedStages, updateClientDict])
+                      .then((rows) => {
+                        const completed: string[] = rows[0].map(
+                          (row) => row.stage_type as string
+                        )
+                        const authOver = allowedFlows.flows.some((flow) => {
+                          return (
+                            flow.stages.length === completed.length &&
+                            flow.stages.every((stage) =>
+                              completed.includes(stage)
+                            )
+                          )
+                        })
+
+                        // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+                        if (authOver) {
+                          callback(obj, userId) // Arguments of callback are subject to change
+                        } else {
+                          send(
+                            res,
+                            401,
+                            {
+                              ...allowedFlows,
+                              session: auth.session,
+                              completed
+                            },
+                            logger
+                          )
+                        }
+                      })
+                      .catch((e) => {
+                        /* istanbul ignore next */
+                        logger.error(
+                          'Error while retrieving session credentials from the database during User-Interactive Authentication',
+                          e
+                        )
+                        /* istanbul ignore next */
+                        send(res, 400, e, logger)
+                      })
+                  })
+                  .catch((e) => {
+                    /* istanbul ignore next */
+                    logger.error(
+                      'Error while inserting session credentials into the database during User-Interactive Authentication',
+                      e
+                    )
+                    /* istanbul ignore next */
+                    send(res, 400, e, logger)
+                  })
+              })
+              .catch((e) => {
+                matrixDb
+                  .get('ui_auth_sessions_credentials', ['stage_type'], {
+                    session_id: auth.session
+                  })
+                  .then((rows) => {
+                    const completed: string[] = rows.map(
+                      // istanbul ignore next
+                      (row) => row.stage_type as string
+                    )
+                    send(
+                      res,
+                      401,
+                      {
+                        errcode: e.errcode,
+                        error: e.error,
+                        completed,
+                        ...allowedFlows,
+                        session: auth.session
+                      },
+                      logger
+                    )
+                  })
+                  .catch((e) => {
+                    /* istanbul ignore next */
+                    logger.error(
+                      'Error while retrieving session credentials from the database during User-Interactive Authentication',
+                      e
+                    )
+                    /* istanbul ignore next */
+                    send(res, 400, e, logger)
+                  })
+              })
+          }
+        })
+        .catch((e) => {
+          // istanbul ignore next
+          logger.error(
+            'Error retrieving UI Authentication session from the database'
+          )
+          // istanbul ignore next
+          send(res, 500, e, logger)
+        })
+    }
   }
 }
 
