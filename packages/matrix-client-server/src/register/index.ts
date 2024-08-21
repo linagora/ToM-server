@@ -20,6 +20,11 @@ import {
 import type { ServerResponse } from 'http'
 import type e from 'express'
 import { getRegisterAllowedFlows } from '../utils/userInteractiveAuthentication'
+import {
+  verifyAuthenticationData,
+  verifyBoolean,
+  verifyString
+} from '../typecheckers'
 
 interface Parameters {
   kind: 'guest' | 'user'
@@ -34,16 +39,6 @@ interface RegisterRequestBody {
   password?: string
   refresh_token?: boolean
   username?: string
-}
-
-// Reference types for clientDict verification in UiAuthentication
-const registerRequestBodyReference = {
-  device_id: 'string',
-  inhibit_login: 'boolean',
-  initial_device_display_name: 'string',
-  password: 'string',
-  refresh_token: 'boolean',
-  username: 'string'
 }
 
 interface InsertedData {
@@ -342,72 +337,112 @@ const register = (clientServer: MatrixClientServer): expressAppHandler => {
     }
     const userAgent = req.headers['user-agent'] ?? 'undefined'
     if (parameters.kind === 'user') {
-      clientServer.uiauthenticate(
-        req,
-        res,
-        registerRequestBodyReference,
-        getRegisterAllowedFlows(clientServer.conf),
-        'register a new account',
-        (obj) => {
-          const body = obj as unknown as RegisterRequestBody
-          const deviceId = body.device_id ?? randomString(20) // Length chosen arbitrarily
-          const username = body.username ?? randomString(9) // Length chosen to match the localpart restrictions for a Matrix userId
-          const userId = toMatrixId(username, clientServer.conf.server_name) // Checks for username validity are done in this function
-          clientServer.matrixDb
-            .get('users', ['name'], {
-              name: userId
-            })
-            .then((rows) => {
-              if (rows.length > 0) {
-                send(res, 400, errMsg('userInUse'))
-              } else {
-                clientServer.matrixDb
-                  .get('devices', ['display_name', 'user_id'], {
-                    device_id: deviceId
-                  })
-                  .then((deviceRows) => {
-                    let initial_device_display_name
-                    if (deviceRows.length > 0) {
-                      // TODO : Refresh access tokens using refresh tokens and invalidate the previous access_token associated with the device after implementing the /refresh endpoint
-                    } else {
-                      initial_device_display_name =
-                        body.initial_device_display_name ?? randomString(20) // Length chosen arbitrarily
-                      registerAccount(
-                        initial_device_display_name,
-                        clientServer,
-                        userId,
-                        deviceId,
-                        ip,
-                        userAgent,
-                        body,
-                        res,
-                        'user',
-                        body.password
-                      )
-                    }
-                  })
-                  .catch((e) => {
-                    // istanbul ignore next
-                    clientServer.logger.error(
-                      'Error while checking if a device_id is already in use',
-                      e
-                    )
-                    // istanbul ignore next
-                    send(res, 500, e)
-                  })
-              }
-            })
-            .catch((e) => {
-              // istanbul ignore next
-              clientServer.logger.error(
-                'Error while checking if a username is already in use',
-                e
-              )
-              // istanbul ignore next
-              send(res, 500, e)
-            })
+      jsonContent(req, res, clientServer.logger, (obj) => {
+        const body = obj as unknown as RegisterRequestBody
+        if (body.username && !verifyString(body.username)) {
+          send(res, 400, errMsg('invalidParam', 'Invalid username'))
+          return
+        } else if (body.device_id && !verifyString(body.device_id)) {
+          send(res, 400, errMsg('invalidParam', 'Invalid device_id'))
+          return
+        } else if (
+          body.initial_device_display_name &&
+          !verifyString(body.initial_device_display_name)
+        ) {
+          send(
+            res,
+            400,
+            errMsg('invalidParam', 'Invalid initial_device_display_name')
+          )
+          return
+        } else if (body.password && !verifyString(body.password)) {
+          send(res, 400, errMsg('invalidParam', 'Invalid password'))
+          return
+        } else if (body.refresh_token && !verifyBoolean(body.refresh_token)) {
+          send(res, 400, errMsg('invalidParam', 'Invalid refresh_token'))
+          return
+        } else if (
+          body.inhibit_login !== null &&
+          body.inhibit_login !== undefined &&
+          !verifyBoolean(body.inhibit_login)
+        ) {
+          send(res, 400, errMsg('invalidParam', 'Invalid inhibit_login'))
+          return
+        } else if (
+          body.auth !== null &&
+          body.auth !== undefined &&
+          !verifyAuthenticationData(body.auth)
+        ) {
+          send(res, 400, errMsg('invalidParam', 'Invalid auth'))
+          return
         }
-      )
+        clientServer.uiauthenticate(
+          req,
+          res,
+          getRegisterAllowedFlows(clientServer.conf),
+          'register a new account',
+          obj,
+          (obj) => {
+            const body = obj as unknown as RegisterRequestBody
+            const deviceId = body.device_id ?? randomString(20) // Length chosen arbitrarily
+            const username = body.username ?? randomString(9) // Length chosen to match the localpart restrictions for a Matrix userId
+            const userId = toMatrixId(username, clientServer.conf.server_name) // Checks for username validity are done in this function
+            clientServer.matrixDb
+              .get('users', ['name'], {
+                name: userId
+              })
+              .then((rows) => {
+                if (rows.length > 0) {
+                  send(res, 400, errMsg('userInUse'))
+                } else {
+                  clientServer.matrixDb
+                    .get('devices', ['display_name', 'user_id'], {
+                      device_id: deviceId
+                    })
+                    .then((deviceRows) => {
+                      let initial_device_display_name
+                      if (deviceRows.length > 0) {
+                        // TODO : Refresh access tokens using refresh tokens and invalidate the previous access_token associated with the device after implementing the /refresh endpoint
+                      } else {
+                        initial_device_display_name =
+                          body.initial_device_display_name ?? randomString(20) // Length chosen arbitrarily
+                        registerAccount(
+                          initial_device_display_name,
+                          clientServer,
+                          userId,
+                          deviceId,
+                          ip,
+                          userAgent,
+                          body,
+                          res,
+                          'user',
+                          body.password
+                        )
+                      }
+                    })
+                    .catch((e) => {
+                      // istanbul ignore next
+                      clientServer.logger.error(
+                        'Error while checking if a device_id is already in use',
+                        e
+                      )
+                      // istanbul ignore next
+                      send(res, 500, e)
+                    })
+                }
+              })
+              .catch((e) => {
+                // istanbul ignore next
+                clientServer.logger.error(
+                  'Error while checking if a username is already in use',
+                  e
+                )
+                // istanbul ignore next
+                send(res, 500, e)
+              })
+          }
+        )
+      })
     } else {
       // We don't handle the threepid_guest_access_tokens table and give the guest an access token like any user.
       // This might be problematic to restrict the endpoints guests have access to as specified in the spec
