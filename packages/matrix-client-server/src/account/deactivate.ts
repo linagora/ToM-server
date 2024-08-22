@@ -500,24 +500,36 @@ const deactivate = (clientServer: MatrixClientServer): expressAppHandler => {
         body.auth !== undefined &&
         !verifyAuthenticationData(body.auth)
       ) {
-        clientServer.logger.error('Invalid auth')
-        send(res, 400, errMsg('invalidParam'), clientServer.logger)
+        send(
+          res,
+          400,
+          errMsg('invalidParam', 'Invalid auth'),
+          clientServer.logger
+        )
         return
       } else if (
-        body.id_server !== null ||
-        body.id_server !== undefined ||
+        body.id_server !== null &&
+        body.id_server !== undefined &&
         !verifyString(body.id_server)
       ) {
-        clientServer.logger.error('Invalid id_server')
-        send(res, 400, errMsg('invalidParam'), clientServer.logger)
+        send(
+          res,
+          400,
+          errMsg('invalidParam', 'Invalid id_server'),
+          clientServer.logger
+        )
         return
       } else if (
         body.erase !== null &&
         body.erase !== undefined &&
         !verifyBoolean(body.erase)
       ) {
-        clientServer.logger.error('Invalid erase')
-        send(res, 400, errMsg('invalidParam'), clientServer.logger)
+        send(
+          res,
+          400,
+          errMsg('invalidParam', 'Invalid erase'),
+          clientServer.logger
+        )
         return
       }
       const token = getAccessToken(req)

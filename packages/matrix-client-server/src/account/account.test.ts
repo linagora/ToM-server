@@ -254,6 +254,47 @@ describe('Use configuration file', () => {
         )
         clientServer.conf.capabilities.enable_set_avatar_url = true
       })
+      it('should refuse an invalid auth', async () => {
+        const response = await request(app)
+          .post('/_matrix/client/v3/account/deactivate')
+          .set('Authorization', `Bearer ${validToken}`)
+          .set('Accept', 'application/json')
+          .send({
+            auth: {
+              type: 'm.login.password',
+              session: 'session',
+              password: 'wrongpassword',
+              identifier: { type: 'wrongtype', user: '@testuser:example.com' }
+            }
+          })
+        expect(response.statusCode).toBe(400)
+        expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
+        expect(response.body).toHaveProperty('error', 'Invalid auth')
+      })
+      it('should refuse an invalid id_server', async () => {
+        const response = await request(app)
+          .post('/_matrix/client/v3/account/deactivate')
+          .set('Authorization', `Bearer ${validToken}`)
+          .set('Accept', 'application/json')
+          .send({
+            id_server: 42
+          })
+        expect(response.statusCode).toBe(400)
+        expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
+        expect(response.body).toHaveProperty('error', 'Invalid id_server')
+      })
+      it('should refuse an invalid erase', async () => {
+        const response = await request(app)
+          .post('/_matrix/client/v3/account/deactivate')
+          .set('Authorization', `Bearer ${validToken}`)
+          .set('Accept', 'application/json')
+          .send({
+            erase: 'true'
+          })
+        expect(response.statusCode).toBe(400)
+        expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
+        expect(response.body).toHaveProperty('error', 'Invalid erase')
+      })
       it('should deactivate a user account who authenticated with a token', async () => {
         const response1 = await request(app)
           .post('/_matrix/client/v3/account/deactivate')
@@ -504,7 +545,7 @@ describe('Use configuration file', () => {
         expect(response.body).toHaveProperty('errcode', 'M_FORBIDDEN')
         expect(response.body).toHaveProperty(
           'error',
-          'The user does not have a password registered'
+          'The user does not have a password registered or the provided password is wrong.'
         ) // Error from UI Authentication since the password was deleted upon deactivation of the account
       })
       it('should send a no-support response if the identity server did not unbind the 3pid association', async () => {

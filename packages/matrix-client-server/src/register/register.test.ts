@@ -454,10 +454,10 @@ describe('Use configuration file', () => {
           .set('Authorization', `Bearer ${validToken}`)
           .send({
             sid: 'sid',
-            client_secret: 'cs',
+            client_secret: 'clientsecret',
             auth: {
               type: 'm.login.email.identity',
-              threepid_creds: { sid: 'sid', client_secret: 'cs' },
+              threepid_creds: { sid: 'sid', client_secret: 'clientsecret' },
               session
             }
           })
@@ -476,6 +476,103 @@ describe('Use configuration file', () => {
       expect(response.body).toHaveProperty('flows')
       expect(response.body).toHaveProperty('session')
       session = response.body.session
+    })
+    it('should refuse an invalid password', async () => {
+      const response = await request(app)
+        .post('/_matrix/client/v3/register')
+        .set('User-Agent', 'curl/7.31.0-DEV')
+        .set('X-Forwarded-For', '203.0.113.195')
+        .query({ kind: 'user' })
+        .send({ password: 400 })
+      expect(response.statusCode).toBe(400)
+      expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
+      expect(response.body).toHaveProperty('error', 'Invalid password')
+    })
+    it('should refuse an invalid initial_device_display_name', async () => {
+      let initialDeviceDisplayName = ''
+      for (let i = 0; i < 1000; i++) {
+        initialDeviceDisplayName += 'a'
+      }
+      const response = await request(app)
+        .post('/_matrix/client/v3/register')
+        .set('User-Agent', 'curl/7.31.0-DEV')
+        .query({ kind: 'user' })
+        .send({ initial_device_display_name: initialDeviceDisplayName })
+      expect(response.statusCode).toBe(400)
+      expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
+      expect(response.body).toHaveProperty(
+        'error',
+        'Invalid initial_device_display_name'
+      )
+    })
+    it('should refuse an invalid username', async () => {
+      const response = await request(app)
+        .post('/_matrix/client/v3/register')
+        .set('User-Agent', 'curl/7.31.0-DEV')
+        .set('X-Forwarded-For', '203.0.113.195')
+        .query({ kind: 'user' })
+        .send({
+          auth: {
+            type: 'm.login.dummy',
+            session: 'session'
+          },
+          username: '@localhost:example.com'
+        })
+      expect(response.statusCode).toBe(400)
+      expect(response.body).toHaveProperty('error')
+      expect(response.body).toHaveProperty('errcode', 'M_INVALID_USERNAME')
+    })
+    it('should refuse an invalid deviceId', async () => {
+      let deviceId = ''
+      for (let i = 0; i < 1000; i++) {
+        deviceId += 'a'
+      }
+      const response = await request(app)
+        .post('/_matrix/client/v3/register')
+        .set('User-Agent', 'curl/7.31.0-DEV')
+        .set('X-Forwarded-For', '203.0.113.195')
+        .query({ kind: 'user' })
+        .send({ device_id: deviceId })
+      expect(response.statusCode).toBe(400)
+      expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
+      expect(response.body).toHaveProperty('error', 'Invalid device_id')
+    })
+    it('should refuse an invalid inhibit_login', async () => {
+      const response = await request(app)
+        .post('/_matrix/client/v3/register')
+        .set('User-Agent', 'curl/7.31.0-DEV')
+        .set('X-Forwarded-For', '203.0.113.195')
+        .query({ kind: 'user' })
+        .send({ inhibit_login: 'true' })
+      expect(response.statusCode).toBe(400)
+      expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
+      expect(response.body).toHaveProperty('error', 'Invalid inhibit_login')
+    })
+    it('should refuse an invalid auth', async () => {
+      const response = await request(app)
+        .post('/_matrix/client/v3/register')
+        .set('User-Agent', 'curl/7.31.0-DEV')
+        .set('X-Forwarded-For', '203.0.113.195')
+        .query({ kind: 'user' })
+        .send({
+          auth: { type: 'wrongtype' }
+        })
+      expect(response.statusCode).toBe(400)
+      expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
+      expect(response.body).toHaveProperty('error', 'Invalid auth')
+    })
+    it('should refuse an invalid refresh_token', async () => {
+      const response = await request(app)
+        .post('/_matrix/client/v3/register')
+        .set('User-Agent', 'curl/7.31.0-DEV')
+        .set('X-Forwarded-For', '203.0.113.195')
+        .query({ kind: 'user' })
+        .send({
+          refresh_token: 'notaboolean'
+        })
+      expect(response.statusCode).toBe(400)
+      expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
+      expect(response.body).toHaveProperty('error', 'Invalid refresh_token')
     })
     it('should run the register endpoint after authentication was completed', async () => {
       const response = await request(app)
@@ -521,10 +618,7 @@ describe('Use configuration file', () => {
         })
       expect(response.statusCode).toBe(400)
       expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
-      expect(response.body).toHaveProperty(
-        'error',
-        'Invalid refresh_token: expected boolean, got string'
-      )
+      expect(response.body).toHaveProperty('error', 'Invalid refresh_token')
     })
     it('should refuse an invalid password', async () => {
       const response = await request(app)
@@ -535,10 +629,7 @@ describe('Use configuration file', () => {
         .send({ password: 400 })
       expect(response.statusCode).toBe(400)
       expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
-      expect(response.body).toHaveProperty(
-        'error',
-        'Invalid password: expected string, got number'
-      )
+      expect(response.body).toHaveProperty('error', 'Invalid password')
     })
     it('should refuse an invalid initial_device_display_name', async () => {
       let initialDeviceDisplayName = ''
@@ -557,7 +648,7 @@ describe('Use configuration file', () => {
       expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
       expect(response.body).toHaveProperty(
         'error',
-        'initial_device_display_name exceeds 512 characters'
+        'Invalid initial_device_display_name'
       )
     })
     it('should refuse an invalid deviceId', async () => {
@@ -575,10 +666,7 @@ describe('Use configuration file', () => {
         })
       expect(response.statusCode).toBe(400)
       expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
-      expect(response.body).toHaveProperty(
-        'error',
-        'device_id exceeds 512 characters'
-      )
+      expect(response.body).toHaveProperty('error', 'Invalid device_id')
     })
     it('should only return the userId when inhibit login is set to true', async () => {
       const response1 = await request(app)
@@ -611,36 +699,6 @@ describe('Use configuration file', () => {
       expect(response.body).not.toHaveProperty('expires_in_ms')
       expect(response.body).not.toHaveProperty('access_token')
       expect(response.body).not.toHaveProperty('device_id')
-    })
-    it('should refuse an incorrect username', async () => {
-      const response1 = await request(app)
-        .post('/_matrix/client/v3/register')
-        .set('User-Agent', 'curl/7.31.0-DEV')
-        .set('X-Forwarded-For', '203.0.113.195')
-        .query({ kind: 'user' })
-        .send({
-          username: 'new_user',
-          device_id: 'device_Id',
-          inhibit_login: true,
-          initial_device_display_name: 'testdevice'
-        })
-      expect(response1.statusCode).toBe(401)
-      session = response1.body.session
-      const response = await request(app)
-        .post('/_matrix/client/v3/register')
-        .set('User-Agent', 'curl/7.31.0-DEV')
-        .set('X-Forwarded-For', '203.0.113.195')
-        .query({ kind: 'user' })
-        .send({
-          auth: {
-            type: 'm.login.dummy',
-            session
-          },
-          username: '@localhost:example.com'
-        })
-      expect(response.statusCode).toBe(400)
-      expect(response.body).toHaveProperty('error')
-      expect(response.body).toHaveProperty('errcode', 'M_INVALID_USERNAME')
     })
     it('should accept guest registration', async () => {
       const response = await request(app)

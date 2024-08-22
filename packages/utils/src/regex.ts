@@ -3,6 +3,7 @@
 const clientSecretRegex: RegExp = /^[0-9a-zA-Z.=_-]{6,255}$/
 const eventTypeRegex: RegExp = /^(?:[a-z]+(?:\.[a-z][a-z0-9_]*)*)$/ // Following Java's package naming convention as per : https://spec.matrix.org/v1.11/#events
 const matrixIdRegex: RegExp = /^@[0-9a-zA-Z._=-]+:[0-9a-zA-Z.-]+$/
+const senderLocalpartRegex: RegExp = /^[a-z0-9_\-./=+]+$/
 const roomIdRegex: RegExp = /^![0-9a-zA-Z._=/+-]+:[0-9a-zA-Z.-]+$/ // From : https://spec.matrix.org/v1.11/#room-structure
 const sidRegex: RegExp = /^[0-9a-zA-Z.=_-]{1,255}$/
 const countryRegex: RegExp = /^[A-Z]{2}$/ // ISO 3166-1 alpha-2 as per the spec : https://spec.matrix.org/v1.11/client-server-api/#post_matrixclientv3registermsisdnrequesttoken
@@ -20,6 +21,10 @@ export const isEventTypeValid = (eventType: string): boolean =>
 
 export const isMatrixIdValid = (matrixId: string): boolean =>
   matrixIdRegex.test(matrixId) && Buffer.byteLength(matrixId) < 256
+
+export const isSenderLocalpartValid = (senderLocalpart: string): boolean =>
+  senderLocalpartRegex.test(senderLocalpart) &&
+  Buffer.byteLength(senderLocalpart) < 256
 
 export const isRoomIdValid = (roomId: string): boolean =>
   roomIdRegex.test(roomId) && Buffer.byteLength(roomId) < 256

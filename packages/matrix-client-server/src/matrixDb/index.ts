@@ -62,6 +62,7 @@ export type Collections =
   | 'event_json'
   | 'device_auth_providers'
   | 'dehydrated_devices'
+  | 'device_inbox'
 
 type sqlComparaisonOperator = '=' | '!=' | '>' | '<' | '>=' | '<=' | '<>'
 interface ISQLCondition {
@@ -141,6 +142,13 @@ type SearchUserDirectory = (
   limit: number,
   searchAllUsers: boolean
 ) => Promise<DbGetResult>
+type GetMaxStreamId = (
+  userId: string,
+  deviceId: string,
+  lowerBoundStreamId: number,
+  upperBoundStreamId: number,
+  limit: number
+) => Promise<number | null>
 
 export interface MatrixDBmodifiedBackend {
   ready: Promise<void>
@@ -157,6 +165,7 @@ export interface MatrixDBmodifiedBackend {
   deleteEqual: DeleteEqual
   deleteWhere: DeleteWhere
   updateWithConditions: updateWithConditions
+  getMaxStreamId: GetMaxStreamId // This function is only used in the delete_devices function
   // The following functions are specific to the user_directory module
   searchUserDirectory: SearchUserDirectory
   close: () => void
@@ -635,6 +644,23 @@ class MatrixDBmodified implements MatrixDBmodifiedBackend {
 
   close(): void {
     this.db.close()
+  }
+
+  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
+  getMaxStreamId(
+    userId: string,
+    deviceId: string,
+    lowerBoundStreamId: number,
+    upperBoundStreamId: number,
+    limit: number
+  ) {
+    return this.db.getMaxStreamId(
+      userId,
+      deviceId,
+      lowerBoundStreamId,
+      upperBoundStreamId,
+      limit
+    )
   }
 
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async

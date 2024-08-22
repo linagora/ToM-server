@@ -75,7 +75,8 @@ const matrixDbQueries = [
   'CREATE TABLE IF NOT EXISTS e2e_device_keys_json ( user_id TEXT NOT NULL, device_id TEXT NOT NULL, ts_added_ms BIGINT NOT NULL, key_json TEXT NOT NULL, CONSTRAINT e2e_device_keys_json_uniqueness UNIQUE (user_id, device_id) )',
   'CREATE TABLE IF NOT EXISTS e2e_one_time_keys_json ( user_id TEXT NOT NULL, device_id TEXT NOT NULL, algorithm TEXT NOT NULL, key_id TEXT NOT NULL, ts_added_ms BIGINT NOT NULL, key_json TEXT NOT NULL, CONSTRAINT e2e_one_time_keys_json_uniqueness UNIQUE (user_id, device_id, algorithm, key_id) )',
   'CREATE TABLE IF NOT EXISTS e2e_fallback_keys_json (user_id TEXT NOT NULL, device_id TEXT NOT NULL, algorithm TEXT NOT NULL,  key_id TEXT NOT NULL, key_json TEXT NOT NULL, used BOOLEAN NOT NULL DEFAULT FALSE, CONSTRAINT e2e_fallback_keys_json_uniqueness UNIQUE (user_id, device_id, algorithm))',
-  'CREATE TABLE dehydrated_devices(user_id TEXT NOT NULL PRIMARY KEY,device_id TEXT NOT NULL,device_data TEXT NOT NULL)'
+  'CREATE TABLE dehydrated_devices(user_id TEXT NOT NULL PRIMARY KEY,device_id TEXT NOT NULL,device_data TEXT NOT NULL)',
+  'CREATE TABLE device_inbox ( user_id TEXT NOT NULL, device_id TEXT NOT NULL, stream_id BIGINT NOT NULL, message_json TEXT NOT NULL , instance_name TEXT)'
 ]
 
 // eslint-disable-next-line @typescript-eslint/promise-function-async
