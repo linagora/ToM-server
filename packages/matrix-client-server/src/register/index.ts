@@ -7,7 +7,8 @@ import {
   type expressAppHandler,
   send,
   epoch,
-  toMatrixId
+  toMatrixId,
+  isSenderLocalpartValid
 } from '@twake/utils'
 import { type AuthenticationData } from '../types'
 import { Hash, randomString } from '@twake/crypto'
@@ -128,17 +129,13 @@ const registerAccount = (
       commonUserData.user_type = 'guest' // User type is NULL for normal users
     }
     if (password) {
-      if (typeof password !== 'string' || password.length > 512) {
-        send(res, 400, errMsg('invalidParam', 'Invalid password'))
-      } else {
-        const hash = new Hash()
-        return hash.ready.then(() => {
-          return clientServer.matrixDb.insert('users', {
-            ...commonUserData,
-            password_hash: hash.sha256(password) // TODO: Handle other hashing algorithms
-          })
+      const hash = new Hash()
+      return hash.ready.then(() => {
+        return clientServer.matrixDb.insert('users', {
+          ...commonUserData,
+          password_hash: hash.sha256(password) // TODO: Handle other hashing algorithms
         })
-      }
+      })
     } else {
       return clientServer.matrixDb.insert('users', { ...commonUserData })
     }
@@ -336,11 +333,12 @@ const register = (clientServer: MatrixClientServer): expressAppHandler => {
       return
     }
     const userAgent = req.headers['user-agent'] ?? 'undefined'
-    if (parameters.kind === 'user') {
+    if (!parameters.kind || parameters.kind === 'user') {
+      // kind defaults to user
       jsonContent(req, res, clientServer.logger, (obj) => {
         const body = obj as unknown as RegisterRequestBody
-        if (body.username && !verifyString(body.username)) {
-          send(res, 400, errMsg('invalidParam', 'Invalid username'))
+        if (body.username && !isSenderLocalpartValid(body.username)) {
+          send(res, 400, errMsg('invalidUsername', 'Invalid username'))
           return
         } else if (body.device_id && !verifyString(body.device_id)) {
           send(res, 400, errMsg('invalidParam', 'Invalid device_id'))

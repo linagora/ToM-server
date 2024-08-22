@@ -7,6 +7,8 @@ import { randomString } from '@twake/crypto'
 import pLimit from 'p-limit'
 import { verifyArray, verifyAuthenticationData } from './typecheckers'
 
+const MESSAGES_TO_DELETE_BATCH_SIZE = 10
+
 interface RequestBody {
   auth?: AuthenticationData
   devices: string[]
@@ -78,14 +80,17 @@ const deletePushers = async (
       ['display_name'],
       { device_id: deviceId }
     )
+    // istanbul ignore if
     if (deviceDisplayNameRow.length === 0) {
+      // Since device_display_name has the NOT NULL constraint, we assume that if the device has no display name it has no associated pushers
+      // Ideally there should be a device_id field in the pushers table to delete by device_id
       continue
     }
     const pushers = await clientServer.matrixDb.get(
       'pushers',
       ['app_id', 'pushkey'],
       {
-        user_id: userId,
+        user_name: userId,
         device_display_name: deviceDisplayNameRow[0].display_name
       }
     )
@@ -98,7 +103,7 @@ const deletePushers = async (
           value: deviceDisplayNameRow[0].display_name as string,
           operator: '='
         },
-        { field: 'user_id', value: userId, operator: '=' }
+        { field: 'user_name', value: userId, operator: '=' }
       ]
     )
     insertDeletedPushersPromises = pushers.map(async (pusher) => {
@@ -142,28 +147,79 @@ const deleteTokens = (
   return deleteTokensPromises
 }
 
+export const deleteMessagesBetweenStreamIds = async (
+  clientServer: MatrixClientServer,
+  userId: string,
+  deviceId: string,
+  fromStreamId: number,
+  upToStreamId: number,
+  limit: number
+): Promise<number> => {
+  const maxStreamId = await clientServer.matrixDb.getMaxStreamId(
+    userId,
+    deviceId,
+    fromStreamId,
+    upToStreamId,
+    limit
+  )
+  if (maxStreamId === null) {
+    return 0
+  }
+  await clientServer.matrixDb.deleteWhere('device_inbox', [
+    { field: 'user_id', value: userId, operator: '=' },
+    { field: 'device_id', value: deviceId, operator: '=' },
+    { field: 'stream_id', value: maxStreamId, operator: '<=' },
+    { field: 'stream_id', value: fromStreamId, operator: '>' }
+  ])
+  return maxStreamId
+}
+const deleteDeviceInbox = async (
+  clientServer: MatrixClientServer,
+  userId: string,
+  deviceId: string,
+  upToStreamId: number
+): Promise<void> => {
+  let fromStreamId = 0
+  while (true) {
+    // Maybe add a counter to prevent infinite loops if the deletion process is broken
+    const maxStreamId = await deleteMessagesBetweenStreamIds(
+      clientServer,
+      userId,
+      deviceId,
+      fromStreamId,
+      upToStreamId,
+      MESSAGES_TO_DELETE_BATCH_SIZE
+    )
+    if (maxStreamId === 0) {
+      break
+    }
+    fromStreamId = maxStreamId
+  }
+}
+
 export const deleteDevicesData = async (
   clientServer: MatrixClientServer,
   devices: string[],
   userId: string
   // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
 ): Promise<void[]> => {
-  // Delete access tokens
+  // In Synapse's implementation, they also delete account data relative to local notification settings according to this MR : https://github.com/matrix-org/matrix-spec-proposals/pull/3890
+  // I did not include it since it is not in the spec
   const deleteTokensPromises = deleteTokens(clientServer, devices, userId)
-  // Delete devices
   const deleteDevicesPromises = deleteDevices(clientServer, devices)
-  // Refer to MSC3890
-  // Delete device messages by batches // Why by batches ? Should code a new SQL method to delete by batch if we need to do so
-  // Remove pushers
   const deletePushersPromises = await deletePushers(
     clientServer,
     devices,
     userId
   )
+  const deleteDeviceInboxPromises = devices.map((deviceId) => {
+    return limit(() => deleteDeviceInbox(clientServer, userId, deviceId, 1000)) // TODO : Fix the upToStreamId when stream ordering is implemented. It should be set to avoid deleting non delivered messages
+  })
   return await Promise.all([
     ...deleteTokensPromises,
     ...deleteDevicesPromises,
-    ...deletePushersPromises
+    ...deletePushersPromises,
+    ...deleteDeviceInboxPromises
   ])
 }
 
@@ -175,16 +231,14 @@ const deleteDevicesHandler = (
       jsonContent(req, res, clientServer.logger, (obj) => {
         const body = obj as unknown as RequestBody
         if (
-          !verifyArray(body.devices, 'string') ||
-          (body.auth != null &&
-            body.auth !== undefined &&
-            !verifyAuthenticationData(body.auth))
+          body.auth != null &&
+          body.auth !== undefined &&
+          !verifyAuthenticationData(body.auth)
         ) {
-          send(
-            res,
-            400,
-            errMsg('invalidParam', 'devices must be an array of strings')
-          )
+          send(res, 400, errMsg('invalidParam', 'Invalid auth'))
+          return
+        } else if (!verifyArray(body.devices, 'string')) {
+          send(res, 400, errMsg('invalidParam', 'Invalid devices'))
           return
         }
         validateUserWithUIAuthentication(
@@ -205,7 +259,9 @@ const deleteDevicesHandler = (
                 send(res, 200, {})
               })
               .catch((e) => {
+                // istanbul ignore next
                 clientServer.logger.error(`Unable to delete devices`, e)
+                // istanbul ignore next
                 send(
                   res,
                   500,

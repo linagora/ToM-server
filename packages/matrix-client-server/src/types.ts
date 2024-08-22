@@ -266,7 +266,7 @@ export interface UserQuota {
   size: number
 }
 
-export type clientDbCollections = 'ui_auth_sessions'
+export type clientDbCollections = ''
 
 export type ClientServerDb = IdentityServerDb<clientDbCollections>
 

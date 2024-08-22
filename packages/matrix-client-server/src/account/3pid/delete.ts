@@ -59,7 +59,7 @@ export const delete3pid = async (
       }
     )
     if (rows.length === 0) {
-      throw Error(`No id_server found corresponding to user ${userId}`)
+      return { success: false, status: 400 }
     } else {
       idServer = rows[0].id_server as string
     }
