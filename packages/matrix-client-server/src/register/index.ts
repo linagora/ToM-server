@@ -7,7 +7,8 @@ import {
   type expressAppHandler,
   send,
   epoch,
-  toMatrixId
+  toMatrixId,
+  isSenderLocalpartValid
 } from '@twake/utils'
 import { type AuthenticationData } from '../types'
 import { Hash, randomString } from '@twake/crypto'

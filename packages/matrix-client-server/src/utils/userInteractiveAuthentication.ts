@@ -73,6 +73,7 @@ export const validateUserWithUIAuthentication = (
       errMsg('invalidParam', 'Invalid user ID'),
       clientServer.logger
     )
+    return
   }
   // Authentication flows to verify that the user who has an access token is indeed who he claims to be, and has not just stolen another  user's access token
   getAvailableValidateUIAuthFlows(clientServer, userId)
@@ -245,7 +246,7 @@ const checkAuthentication = (
                 reject(
                   errMsg(
                     'forbidden',
-                    'The user does not have a password registered'
+                    'The user does not have a password registered or the provided password is wrong.'
                   )
                 )
               })
@@ -731,7 +732,7 @@ const UiAuthenticate = (
                           e
                         )
                         /* istanbul ignore next */
-                        send(res, 400, e, logger)
+                        send(res, 500, e, logger)
                       })
                   })
                   .catch((e) => {
@@ -741,7 +742,7 @@ const UiAuthenticate = (
                       e
                     )
                     /* istanbul ignore next */
-                    send(res, 400, e, logger)
+                    send(res, 500, e, logger)
                   })
               })
               .catch((e) => {
@@ -774,7 +775,7 @@ const UiAuthenticate = (
                       e
                     )
                     /* istanbul ignore next */
-                    send(res, 400, e, logger)
+                    send(res, 500, e, logger)
                   })
               })
           }

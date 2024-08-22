@@ -13,6 +13,7 @@ import {
   validRefreshToken1,
   validRefreshToken2
 } from './__testData__/setupTokens'
+// import * as deleteDevicesModule from './delete_devices'
 
 process.env.TWAKE_CLIENT_SERVER_CONF = './src/__testData__/registerConf.json'
 jest.mock('node-fetch', () => jest.fn())
@@ -22,6 +23,10 @@ jest.mock('nodemailer', () => ({
     sendMail: sendMailMock
   }))
 }))
+// const deleteMessagesBetweenStreamIdsMock = jest.fn()
+// jest
+//   .spyOn(deleteDevicesModule, 'deleteMessagesBetweenStreamIds')
+//   .mockImplementation(deleteMessagesBetweenStreamIdsMock)
 
 let conf: Config
 let clientServer: ClientServer
@@ -1919,6 +1924,206 @@ describe('Use configuration file', () => {
           response.body.capabilities['m.room_versions']
         ).length
         expect(numKeyValuePairs).toBe(2)
+      })
+    })
+    describe('/_matrix/client/v3/delete_devices', () => {
+      let session: string
+      const userId = '@testuser:example.com'
+      it('should return 400 if devices is not an array of strings', async () => {
+        const response = await request(app)
+          .post('/_matrix/client/v3/delete_devices')
+          .set('Authorization', `Bearer ${validToken}`)
+          .send({ devices: 'not an array' })
+        expect(response.status).toBe(400)
+        expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
+      })
+
+      it('should return 400 if auth is provided but invalid', async () => {
+        const response = await request(app)
+          .post('/_matrix/client/v3/delete_devices')
+          .set('Authorization', `Bearer ${validToken}`)
+          .send({
+            devices: ['device1', 'device2'],
+            auth: { invalid: 'auth' }
+          })
+        expect(response.status).toBe(400)
+        expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
+      })
+
+      it('should successfully delete devices', async () => {
+        await clientServer.matrixDb.insert('devices', {
+          device_id: 'device_id',
+          user_id: userId,
+          display_name: 'Device to delete'
+        })
+        const response1 = await request(app)
+          .post('/_matrix/client/v3/delete_devices')
+          .set('Authorization', `Bearer ${validToken}`)
+          .send({ devices: ['device_id'] })
+        expect(response1.status).toBe(401)
+        expect(response1.body).toHaveProperty('session')
+        session = response1.body.session
+        const response = await request(app)
+          .post('/_matrix/client/v3/delete_devices')
+          .set('Authorization', `Bearer ${validToken}`)
+          .send({
+            devices: ['device_id'],
+            auth: {
+              type: 'm.login.password',
+              identifier: { type: 'm.id.user', user: userId },
+              password:
+                '$2a$10$zQJv3V3Kjw7Jq7Ww1X7z5e1QXsVd1m3JdV9vG6t8Jv7jQz4Z5J1QK',
+              session
+            }
+          })
+        expect(response.status).toBe(200)
+        const devices = await clientServer.matrixDb.get(
+          'devices',
+          ['device_id'],
+          { user_id: userId }
+        )
+        expect(devices).toHaveLength(0)
+      })
+      it('should delete associated pushers', async () => {
+        await clientServer.matrixDb.insert('devices', {
+          device_id: 'device1',
+          user_id: userId,
+          display_name: 'Test Device'
+        })
+        await clientServer.matrixDb.insert('pushers', {
+          user_name: userId,
+          device_display_name: 'Test Device',
+          app_id: 'test_app',
+          pushkey: 'test_pushkey',
+          profile_tag: 'test_profile_tag',
+          kind: 'test_kind',
+          app_display_name: 'test_app_display_name',
+          ts: 0
+        })
+        const response1 = await request(app)
+          .post('/_matrix/client/v3/delete_devices')
+          .set('Authorization', `Bearer ${validToken}`)
+          .send({ devices: ['device1'] })
+        expect(response1.status).toBe(401)
+        expect(response1.body).toHaveProperty('session')
+        session = response1.body.session
+        const response = await request(app)
+          .post('/_matrix/client/v3/delete_devices')
+          .set('Authorization', `Bearer ${validToken}`)
+          .send({
+            devices: ['device1'],
+            auth: {
+              type: 'm.login.password',
+              session,
+              identifier: { type: 'm.id.user', user: userId },
+              password:
+                '$2a$10$zQJv3V3Kjw7Jq7Ww1X7z5e1QXsVd1m3JdV9vG6t8Jv7jQz4Z5J1QK'
+            }
+          })
+        expect(response.status).toBe(200)
+
+        const pushers = await clientServer.matrixDb.get('pushers', ['app_id'], {
+          user_name: userId
+        })
+        expect(pushers).toHaveLength(0)
+
+        const deletedPushers = await clientServer.matrixDb.get(
+          'deleted_pushers',
+          ['app_id'],
+          { user_id: userId }
+        )
+        expect(deletedPushers).toHaveLength(1)
+        expect(deletedPushers[0].app_id).toBe('test_app')
+      })
+      it('should delete messages in batches', async () => {
+        const deviceId = 'device1'
+
+        // Set up mock data in the database
+        await clientServer.matrixDb.insert('devices', {
+          device_id: deviceId,
+          user_id: userId
+        })
+        // Insert some device inbox messages
+        for (let i = 1; i <= 25; i++) {
+          await clientServer.matrixDb.insert('device_inbox', {
+            user_id: userId,
+            device_id: deviceId,
+            stream_id: i,
+            message_json: JSON.stringify({ content: `Message ${i}` })
+          })
+        }
+
+        // deleteMessagesBetweenStreamIdsMock
+        //   .mockResolvedValueOnce(2)
+        const response1 = await request(app)
+          .post('/_matrix/client/v3/delete_devices')
+          .set('Authorization', `Bearer ${validToken}`)
+          .send({ devices: ['device1'] })
+        expect(response1.status).toBe(401)
+        expect(response1.body).toHaveProperty('session')
+        session = response1.body.session
+        const response = await request(app)
+          .post('/_matrix/client/v3/delete_devices')
+          .set('Authorization', `Bearer ${validToken}`)
+          .send({
+            devices: [deviceId],
+            auth: {
+              type: 'm.login.password',
+              identifier: { type: 'm.id.user', user: userId },
+              password:
+                '$2a$10$zQJv3V3Kjw7Jq7Ww1X7z5e1QXsVd1m3JdV9vG6t8Jv7jQz4Z5J1QK',
+              session
+            }
+          })
+        console.log('body : ', response.body)
+        expect(response.status).toBe(200)
+
+        // Verify that deleteMessagesBetweenStreamIds was called multiple times
+        // expect(deleteMessagesBetweenStreamIdsMock).toHaveBeenCalledTimes(4)
+        // expect(deleteMessagesBetweenStreamIdsMock).toHaveBeenNthCalledWith(
+        //   1,
+        //   clientServer,
+        //   userId,
+        //   deviceId,
+        //   0,
+        //   expect.any(Number),
+        //   10
+        // )
+        // expect(deleteMessagesBetweenStreamIdsMock).toHaveBeenNthCalledWith(
+        //   2,
+        //   clientServer,
+        //   userId,
+        //   deviceId,
+        //   10,
+        //   expect.any(Number),
+        //   10
+        // )
+        // expect(deleteMessagesBetweenStreamIdsMock).toHaveBeenNthCalledWith(
+        //   3,
+        //   clientServer,
+        //   userId,
+        //   deviceId,
+        //   20,
+        //   expect.any(Number),
+        //   10
+        // )
+        // expect(deleteMessagesBetweenStreamIdsMock).toHaveBeenNthCalledWith(
+        //   4,
+        //   clientServer,
+        //   userId,
+        //   deviceId,
+        //   25,
+        //   expect.any(Number),
+        //   10
+        // )
+
+        // Verify that all messages were deleted
+        const remainingMessages = await clientServer.matrixDb.get(
+          'device_inbox',
+          ['stream_id'],
+          { user_id: userId, device_id: deviceId }
+        )
+        expect(remainingMessages).toHaveLength(0)
       })
     })
   })

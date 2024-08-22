@@ -101,6 +101,42 @@ describe('Use configuration file', () => {
     })
     describe('/_matrix/client/v3/account/password', () => {
       let session: string
+      it('should refuse an invalid logout_devices', async () => {
+        const response = await request(app)
+          .post('/_matrix/client/v3/account/password')
+          .set('Accept', 'application/json')
+          .set('Authorization', `Bearer ${validToken}`)
+          .send({
+            logout_devices: 'true'
+          })
+        expect(response.statusCode).toBe(400)
+        expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
+        expect(response.body).toHaveProperty('error', 'Invalid logout_devices')
+      })
+      it('should refuse an invalid new_password', async () => {
+        const response = await request(app)
+          .post('/_matrix/client/v3/account/password')
+          .set('Accept', 'application/json')
+          .set('Authorization', `Bearer ${validToken}`)
+          .send({
+            new_password: 55
+          })
+        expect(response.statusCode).toBe(400)
+        expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
+        expect(response.body).toHaveProperty('error', 'Invalid new_password')
+      })
+      it('should refuse an invalid auth', async () => {
+        const response = await request(app)
+          .post('/_matrix/client/v3/account/password')
+          .set('Accept', 'application/json')
+          .set('Authorization', `Bearer ${validToken}`)
+          .send({
+            auth: { type: 'wrongtype' }
+          })
+        expect(response.statusCode).toBe(400)
+        expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
+        expect(response.body).toHaveProperty('error', 'Invalid auth')
+      })
       it('should return 403 if the user is not an admin and the server does not allow it', async () => {
         clientServer.conf.capabilities.enable_change_password = false
         const response1 = await request(app)

@@ -160,7 +160,7 @@ const passwordReset = (clientServer: MatrixClientServer): expressAppHandler => {
         send(
           res,
           400,
-          errMsg('invalidParam', 'Invalid authentication data'),
+          errMsg('invalidParam', 'Invalid auth'),
           clientServer.logger
         )
         return

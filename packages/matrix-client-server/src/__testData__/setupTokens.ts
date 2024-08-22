@@ -7,6 +7,7 @@ export let validToken: string
 export let validToken1: string
 export let validToken2: string
 export let validToken3: string
+export let validToken4 : string
 export let validRefreshToken1: string
 export let validRefreshToken2: string
 export let validRefreshToken3: string
@@ -18,6 +19,7 @@ export async function setupTokens(
   validToken1 = randomString(64)
   validToken2 = randomString(64)
   validToken3 = randomString(64)
+  validToken4 = randomString(64)
   const validRefreshTokenId1 = randomString(64)
   const validRefreshTokenId2 = randomString(64)
   const validRefreshTokenId3 = randomString(64)
@@ -141,7 +143,12 @@ export async function setupTokens(
       validated_at: epoch(),
       added_at: epoch()
     })
-
+    await clientServer.matrixDb.insert('access_tokens', {
+      id: randomString(64),
+      user_id: '@validated:example.com',
+      device_id: 'thirddevice',
+      token: validToken4
+    })
     await clientServer.matrixDb.insert('access_tokens', {
       id: randomString(64),
       user_id: '@thirduser:example.com',
