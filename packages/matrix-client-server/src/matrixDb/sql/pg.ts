@@ -105,6 +105,50 @@ class MatrixDBPg extends Pg<Collections> implements MatrixDBmodifiedBackend {
   }
 
   // eslint-disable-next-line @typescript-eslint/promise-function-async
+  getMaxStreamId(
+    userId: string,
+    deviceId: string,
+    fromStreamId: number,
+    toStreamId: number,
+    limit: number
+  ): Promise<number | null> {
+    return new Promise((resolve, reject) => {
+      if (this.db == null) {
+        reject(new Error('Wait for database to be ready'))
+        return
+      }
+
+      const args = [userId, deviceId, fromStreamId, toStreamId, limit]
+
+      const sql = `
+        SELECT MAX(stream_id) AS max_stream_id FROM (
+          SELECT stream_id FROM device_inbox
+          WHERE user_id = $1 AND device_id = $2
+            AND $3 < stream_id AND stream_id <= $4
+          ORDER BY stream_id
+          LIMIT $5
+        ) AS d
+      `
+
+      this.db.query(
+        sql,
+        args,
+        (
+          err: Error,
+          result: { rows: Array<{ max_stream_id: number | null }> }
+        ) => {
+          // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+          if (err) {
+            reject(err)
+          } else {
+            resolve(result.rows[0].max_stream_id)
+          }
+        }
+      )
+    })
+  }
+
+  // eslint-disable-next-line @typescript-eslint/promise-function-async
   searchUserDirectory(
     userId: string,
     searchTerm: string,

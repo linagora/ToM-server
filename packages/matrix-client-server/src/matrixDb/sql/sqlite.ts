@@ -93,6 +93,51 @@ class MatrixDBSQLite
   }
 
   // eslint-disable-next-line @typescript-eslint/promise-function-async
+  getMaxStreamId(
+    userId: string,
+    deviceId: string,
+    fromStreamId: number,
+    toStreamId: number,
+    limit: number
+  ): Promise<number | null> {
+    return new Promise((resolve, reject) => {
+      /* istanbul ignore if */
+      if (this.db == null) {
+        throw new Error('Wait for database to be ready')
+      }
+
+      const stmt = this.db.prepare(`
+        SELECT MAX(stream_id) AS max_stream_id FROM (
+          SELECT stream_id FROM device_inbox
+          WHERE user_id = ? AND device_id = ?
+            AND ? < stream_id AND stream_id <= ?
+          ORDER BY stream_id
+          LIMIT ?
+        ) AS d
+      `)
+
+      stmt.get(
+        [userId, deviceId, fromStreamId, toStreamId, limit],
+        (err: Error | null, row: { max_stream_id: number | null }) => {
+          /* istanbul ignore if */
+          if (err != null) {
+            reject(err)
+          } else {
+            resolve(row.max_stream_id)
+          }
+        }
+      )
+
+      stmt.finalize((err: Error | null) => {
+        /* istanbul ignore if */
+        if (err != null) {
+          reject(err)
+        }
+      })
+    })
+  }
+
+  // eslint-disable-next-line @typescript-eslint/promise-function-async
   searchUserDirectory(
     userId: string,
     searchTerm: string,

@@ -76,6 +76,8 @@ import passwordReset from './account/password'
 import delete3pidHandler from './account/3pid/delete'
 import userSearch from './user_data/user_directory/search'
 import deactivate from './account/deactivate'
+import deleteDevicesHandler from './delete_devices'
+import deleteDevice from './devices/deleteDevice'
 
 // const tables = {} // Add tables declaration here to add new tables to this.db
 
@@ -93,16 +95,9 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
   private _uiauthenticate!: UiAuthFunction
 
   set uiauthenticate(uiauthenticate: UiAuthFunction) {
-    this._uiauthenticate = (
-      req,
-      res,
-      reference,
-      allowedFlows,
-      description,
-      cb
-    ) => {
+    this._uiauthenticate = (req, res, allowedFlows, description, obj, cb) => {
       this.rateLimiter(req as Request, res as Response, () => {
-        uiauthenticate(req, res, reference, allowedFlows, description, cb)
+        uiauthenticate(req, res, allowedFlows, description, obj, cb)
       })
     }
   }
@@ -192,7 +187,8 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
             '/_matrix/client/v3/account/password': badMethod,
             '/_matrix/client/v3/account/3pid/delete': badMethod,
             '/_matrix/client/v3/user_directory/search': badMethod,
-            '/_matrix/client/v3/account/deactivate': badMethod
+            '/_matrix/client/v3/account/deactivate': badMethod,
+            '/_matrix/client/v3/delete_devices': badMethod
           }
           this.api.post = {
             '/_matrix/client/v3/account/whoami': badMethod,
@@ -247,7 +243,8 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
             '/_matrix/client/v3/account/password': passwordReset(this),
             '/_matrix/client/v3/account/3pid/delete': delete3pidHandler(this),
             '/_matrix/client/v3/user_directory/search': userSearch(this),
-            '/_matrix/client/v3/account/deactivate': deactivate(this)
+            '/_matrix/client/v3/account/deactivate': deactivate(this),
+            '/_matrix/client/v3/delete_devices': deleteDevicesHandler(this)
           }
           this.api.put = {
             '/_matrix/client/v3/account/whoami': badMethod,
@@ -301,7 +298,8 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
             '/_matrix/client/v3/account/password': badMethod,
             '/_matrix/client/v3/account/3pid/delete': badMethod,
             '/_matrix/client/v3/user_directory/search': badMethod,
-            '/_matrix/client/v3/account/deactivate': badMethod
+            '/_matrix/client/v3/account/deactivate': badMethod,
+            '/_matrix/client/v3/delete_devices': badMethod
           }
           this.api.delete = {
             '/_matrix/client/v3/account/whoami': badMethod,
@@ -311,7 +309,7 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
             '/_matrix/client/v3/profile/:userId/avatar_url': badMethod,
             '/_matrix/client/v3/profile/:userId/displayname': badMethod,
             '/_matrix/client/v3/devices': badMethod,
-            '/_matrix/client/v3/devices/:deviceId': badMethod,
+            '/_matrix/client/v3/devices/:deviceId': deleteDevice(this),
             '/_matrix/client/v3/user/:userId/rooms/:roomId/tags': badMethod,
             '/_matrix/client/v3/user/:userId/rooms/:roomId/tags/:tag':
               removeUserRoomTag(this),
@@ -345,7 +343,8 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
             '/_matrix/client/v3/account/password': badMethod,
             '/_matrix/client/v3/account/3pid/delete': badMethod,
             '/_matrix/client/v3/user_directory/search': badMethod,
-            '/_matrix/client/v3/account/deactivate': badMethod
+            '/_matrix/client/v3/account/deactivate': badMethod,
+            '/_matrix/client/v3/delete_devices': badMethod
           }
           resolve(true)
         })

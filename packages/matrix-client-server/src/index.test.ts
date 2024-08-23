@@ -578,238 +578,6 @@ describe('Use configuration file', () => {
       })
     })
 
-    describe('/_matrix/client/v3/devices', () => {
-      const testUserId = '@testuser:example.com'
-
-      beforeAll(async () => {
-        try {
-          await clientServer.matrixDb.insert('devices', {
-            user_id: testUserId,
-            device_id: 'testdevice1',
-            display_name: 'Test Device 1',
-            last_seen: 1411996332123,
-            ip: '127.0.0.1',
-            user_agent: 'curl/7.31.0-DEV'
-          })
-          logger.info('Test device 1 created')
-
-          await clientServer.matrixDb.insert('devices', {
-            user_id: testUserId,
-            device_id: 'testdevice2',
-            display_name: 'Test Device 2',
-            last_seen: 14119963321254,
-            ip: '127.0.0.2',
-            user_agent: 'curl/7.31.0-DEV'
-          })
-          logger.info('Test device 2 created')
-        } catch (e) {
-          logger.error('Error creating devices:', e)
-        }
-      })
-
-      afterAll(async () => {
-        try {
-          await clientServer.matrixDb.deleteEqual(
-            'devices',
-            'device_id',
-            'testdevice1'
-          )
-          logger.info('Test device 1 deleted')
-
-          await clientServer.matrixDb.deleteEqual(
-            'devices',
-            'device_id',
-            'testdevice2'
-          )
-          logger.info('Test device 2 deleted')
-        } catch (e) {
-          logger.error('Error deleting devices:', e)
-        }
-      })
-
-      it('should return 401 if the user is not authenticated', async () => {
-        const response = await request(app)
-          .get('/_matrix/client/v3/devices')
-          .set('Authorization', 'Bearer invalidToken')
-          .set('Accept', 'application/json')
-        expect(response.statusCode).toBe(401)
-      })
-
-      it('should return all devices for the current user', async () => {
-        const response = await request(app)
-          .get('/_matrix/client/v3/devices')
-          .set('Authorization', `Bearer ${validToken}`)
-
-        expect(response.statusCode).toBe(200)
-
-        expect(response.body).toHaveProperty('devices')
-        expect(response.body.devices).toHaveLength(2)
-        expect(response.body.devices[0]).toHaveProperty('device_id')
-        expect(response.body.devices[0]).toHaveProperty('display_name')
-        expect(response.body.devices[0]).toHaveProperty('last_seen_ts')
-        expect(response.body.devices[0]).toHaveProperty('last_seen_ip')
-      })
-    })
-
-    describe('/_matrix/client/v3/devices/:deviceId', () => {
-      // eslint-disable-next-line @typescript-eslint/naming-convention
-      let _device_id: string
-      beforeAll(async () => {
-        try {
-          _device_id = 'testdevice2_id'
-          await clientServer.matrixDb.insert('devices', {
-            user_id: '@testuser:example.com',
-            device_id: _device_id,
-            display_name: 'testdevice2_name',
-            last_seen: 12345678,
-            ip: '127.0.0.1',
-            user_agent: 'curl/7.31.0-DEV',
-            hidden: 0
-          })
-
-          await clientServer.matrixDb.insert('devices', {
-            user_id: '@testuser2:example.com',
-            device_id: 'another_device_id',
-            display_name: 'another_name',
-            last_seen: 12345678,
-            ip: '127.0.0.1',
-            user_agent: 'curl/7.31.0-DEV',
-            hidden: 0
-          })
-          logger.info('Devices inserted in db')
-        } catch (e) {
-          logger.error('Error when inserting devices', e)
-        }
-      })
-
-      afterAll(async () => {
-        try {
-          await clientServer.matrixDb.deleteEqual(
-            'devices',
-            'device_id',
-            _device_id
-          )
-          await clientServer.matrixDb.deleteEqual(
-            'devices',
-            'device_id',
-            'another_device_id'
-          )
-          logger.info('Devices deleted from db')
-        } catch (e) {
-          logger.error('Error when deleting devices', e)
-        }
-      })
-
-      describe('GET', () => {
-        it('should return the device information for the given device ID', async () => {
-          const response = await request(app)
-            .get(`/_matrix/client/v3/devices/${_device_id}`)
-            .set('Authorization', `Bearer ${validToken}`)
-
-          expect(response.statusCode).toBe(200)
-
-          expect(response.body).toHaveProperty('device_id')
-          expect(response.body.device_id).toEqual(_device_id)
-          expect(response.body).toHaveProperty('display_name')
-          expect(response.body.display_name).toEqual('testdevice2_name')
-          expect(response.body).toHaveProperty('last_seen_ip')
-          expect(response.body.last_seen_ip).toEqual('127.0.0.1')
-          expect(response.body).toHaveProperty('last_seen_ts')
-          expect(response.body.last_seen_ts).toEqual(12345678)
-        })
-
-        it('should return 404 if the device ID does not exist', async () => {
-          const deviceId = 'NON_EXISTENT_DEVICE_ID'
-          const response = await request(app)
-            .get(`/_matrix/client/v3/devices/${deviceId}`)
-            .set('Authorization', `Bearer ${validToken}`)
-
-          expect(response.statusCode).toBe(404)
-        })
-
-        it('should return 404 if the user has no device with the given device Id', async () => {
-          const response = await request(app)
-            .get(`/_matrix/client/v3/devices/another_device_id`)
-            .set('Authorization', `Bearer ${validToken}`)
-
-          expect(response.statusCode).toBe(404)
-        })
-
-        it('should return 401 if the user is not authenticated', async () => {
-          const response = await request(app).get(
-            `/_matrix/client/v3/devices/${_device_id}`
-          )
-
-          expect(response.statusCode).toBe(401)
-        })
-      })
-
-      describe('PUT', () => {
-        const updateData = {
-          display_name: 'updated_device_name'
-        }
-
-        it('should update the device information for the given device ID', async () => {
-          // Update the device
-          const response = await request(app)
-            .put(`/_matrix/client/v3/devices/${_device_id}`)
-            .set('Authorization', `Bearer ${validToken}`)
-            .send(updateData)
-          expect(response.statusCode).toBe(200)
-
-          // Verify the update in the database
-          const updatedDevice = await clientServer.matrixDb.get(
-            'devices',
-            ['device_id', 'display_name'],
-            { device_id: _device_id }
-          )
-
-          expect(updatedDevice[0]).toHaveProperty('device_id', _device_id)
-          expect(updatedDevice[0]).toHaveProperty(
-            'display_name',
-            updateData.display_name
-          )
-        })
-
-        it('should return 400 if the display_name is too long', async () => {
-          const response = await request(app)
-            .put(`/_matrix/client/v3/devices/${_device_id}`)
-            .set('Authorization', `Bearer ${validToken}`)
-            .send({ display_name: randomString(257) })
-
-          expect(response.statusCode).toBe(400)
-          expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
-        })
-
-        it('should return 404 if the device ID does not exist', async () => {
-          const response = await request(app)
-            .put('/_matrix/client/v3/devices/NON_EXISTENT_DEVICE_ID')
-            .set('Authorization', `Bearer ${validToken}`)
-            .send(updateData)
-
-          expect(response.statusCode).toBe(404)
-        })
-
-        it('should return 404 if the user has no device with the given device ID', async () => {
-          const deviceId = 'another_device_id'
-          const response = await request(app)
-            .put(`/_matrix/client/v3/devices/${deviceId}`)
-            .set('Authorization', `Bearer ${validToken}`)
-            .send(updateData)
-
-          expect(response.statusCode).toBe(404)
-        })
-
-        it('should return 401 if the user is not authenticated', async () => {
-          const response = await request(app)
-            .put(`/_matrix/client/v3/devices/${_device_id}`)
-            .send(updateData)
-
-          expect(response.statusCode).toBe(401)
-        })
-      })
-    })
-
     describe('/_matrix/client/v3/directory/list/room/:roomId', () => {
       describe('GET', () => {
         const publicRoomId = '!testroomid:example.com'
@@ -1098,6 +866,160 @@ describe('Use configuration file', () => {
           response.body.capabilities['m.room_versions']
         ).length
         expect(numKeyValuePairs).toBe(2)
+      })
+    })
+    describe('/_matrix/client/v3/delete_devices', () => {
+      let session: string
+      const userId = '@testuser:example.com'
+      it('should return 400 if devices is not an array of strings', async () => {
+        const response = await request(app)
+          .post('/_matrix/client/v3/delete_devices')
+          .set('Authorization', `Bearer ${validToken}`)
+          .send({ devices: 'not an array' })
+        expect(response.status).toBe(400)
+        expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
+      })
+
+      it('should return 400 if auth is provided but invalid', async () => {
+        const response = await request(app)
+          .post('/_matrix/client/v3/delete_devices')
+          .set('Authorization', `Bearer ${validToken}`)
+          .send({
+            devices: ['device1', 'device2'],
+            auth: { invalid: 'auth' }
+          })
+        expect(response.status).toBe(400)
+        expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
+      })
+
+      it('should successfully delete devices', async () => {
+        await clientServer.matrixDb.insert('devices', {
+          device_id: 'device_id',
+          user_id: userId,
+          display_name: 'Device to delete'
+        })
+        const response1 = await request(app)
+          .post('/_matrix/client/v3/delete_devices')
+          .set('Authorization', `Bearer ${validToken}`)
+          .send({ devices: ['device_id'] })
+        expect(response1.status).toBe(401)
+        expect(response1.body).toHaveProperty('session')
+        session = response1.body.session
+        const response = await request(app)
+          .post('/_matrix/client/v3/delete_devices')
+          .set('Authorization', `Bearer ${validToken}`)
+          .send({
+            devices: ['device_id'],
+            auth: {
+              type: 'm.login.password',
+              identifier: { type: 'm.id.user', user: userId },
+              password:
+                '$2a$10$zQJv3V3Kjw7Jq7Ww1X7z5e1QXsVd1m3JdV9vG6t8Jv7jQz4Z5J1QK',
+              session
+            }
+          })
+        expect(response.status).toBe(200)
+        const devices = await clientServer.matrixDb.get(
+          'devices',
+          ['device_id'],
+          { user_id: userId }
+        )
+        expect(devices).toHaveLength(0)
+      })
+      it('should delete associated pushers', async () => {
+        await clientServer.matrixDb.insert('devices', {
+          device_id: 'device1',
+          user_id: userId,
+          display_name: 'Test Device'
+        })
+        await clientServer.matrixDb.insert('pushers', {
+          user_name: userId,
+          device_display_name: 'Test Device',
+          app_id: 'test_app',
+          pushkey: 'test_pushkey',
+          profile_tag: 'test_profile_tag',
+          kind: 'test_kind',
+          app_display_name: 'test_app_display_name',
+          ts: 0
+        })
+        const response1 = await request(app)
+          .post('/_matrix/client/v3/delete_devices')
+          .set('Authorization', `Bearer ${validToken}`)
+          .send({ devices: ['device1'] })
+        expect(response1.status).toBe(401)
+        expect(response1.body).toHaveProperty('session')
+        session = response1.body.session
+        const response = await request(app)
+          .post('/_matrix/client/v3/delete_devices')
+          .set('Authorization', `Bearer ${validToken}`)
+          .send({
+            devices: ['device1'],
+            auth: {
+              type: 'm.login.password',
+              session,
+              identifier: { type: 'm.id.user', user: userId },
+              password:
+                '$2a$10$zQJv3V3Kjw7Jq7Ww1X7z5e1QXsVd1m3JdV9vG6t8Jv7jQz4Z5J1QK'
+            }
+          })
+        expect(response.status).toBe(200)
+
+        const pushers = await clientServer.matrixDb.get('pushers', ['app_id'], {
+          user_name: userId
+        })
+        expect(pushers).toHaveLength(0)
+
+        const deletedPushers = await clientServer.matrixDb.get(
+          'deleted_pushers',
+          ['app_id'],
+          { user_id: userId }
+        )
+        expect(deletedPushers).toHaveLength(1)
+        expect(deletedPushers[0].app_id).toBe('test_app')
+      })
+      it('should delete messages in batches', async () => {
+        const deviceId = 'device1'
+
+        await clientServer.matrixDb.insert('devices', {
+          device_id: deviceId,
+          user_id: userId
+        })
+        for (let i = 1; i <= 25; i++) {
+          await clientServer.matrixDb.insert('device_inbox', {
+            user_id: userId,
+            device_id: deviceId,
+            stream_id: i,
+            message_json: JSON.stringify({ content: `Message ${i}` })
+          })
+        }
+
+        const response1 = await request(app)
+          .post('/_matrix/client/v3/delete_devices')
+          .set('Authorization', `Bearer ${validToken}`)
+          .send({ devices: ['device1'] })
+        expect(response1.status).toBe(401)
+        expect(response1.body).toHaveProperty('session')
+        session = response1.body.session
+        const response = await request(app)
+          .post('/_matrix/client/v3/delete_devices')
+          .set('Authorization', `Bearer ${validToken}`)
+          .send({
+            devices: [deviceId],
+            auth: {
+              type: 'm.login.password',
+              identifier: { type: 'm.id.user', user: userId },
+              password:
+                '$2a$10$zQJv3V3Kjw7Jq7Ww1X7z5e1QXsVd1m3JdV9vG6t8Jv7jQz4Z5J1QK',
+              session
+            }
+          })
+        expect(response.status).toBe(200)
+        const remainingMessages = await clientServer.matrixDb.get(
+          'device_inbox',
+          ['stream_id'],
+          { user_id: userId, device_id: deviceId }
+        )
+        expect(remainingMessages).toHaveLength(0)
       })
     })
   })

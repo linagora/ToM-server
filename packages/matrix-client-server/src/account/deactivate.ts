@@ -3,6 +3,7 @@ import {
   errMsg,
   type expressAppHandler,
   getAccessToken,
+  jsonContent,
   send
 } from '@twake/utils'
 import type MatrixClientServer from '..'
@@ -25,19 +26,19 @@ import { SafeClientEvent } from '../utils/event'
 import { delete3pid, type DeleteResponse } from './3pid/delete'
 import { randomString } from '@twake/crypto'
 import pLimit from 'p-limit'
+import {
+  verifyAuthenticationData,
+  verifyBoolean,
+  verifyString
+} from '../typecheckers'
 
 const maxPromisesToExecuteConcurrently = 10
 const limit = pLimit(maxPromisesToExecuteConcurrently)
 
 interface RequestBody {
-  auth: AuthenticationData
-  erase: boolean
-  id_server: string
-}
-
-const requestBodyReference = {
-  erase: 'boolean',
-  id_server: 'string'
+  auth?: AuthenticationData
+  erase?: boolean
+  id_server?: string
 }
 
 const allowedFlows: AuthenticationFlowContent = {
@@ -345,7 +346,7 @@ const realMethod = async (
     return
   }
   allowed = clientServer.conf.capabilities.enable_set_avatar_url ?? true
-  if (body.erase && !byAdmin && !allowed) {
+  if ((body.erase ?? false) && !byAdmin && !allowed) {
     send(
       res,
       403,
@@ -371,15 +372,20 @@ const realMethod = async (
           row.address as string,
           row.medium as string,
           clientServer,
-          body.id_server,
-          userId
+          userId,
+          body.id_server
         )
       )
     )
   })
   const deleteDevicesPromises = deleteDevices(clientServer, userId)
-  const deleteTokenPromise = limit(() =>
+  const deleteAccessTokensPromise = limit(() =>
     clientServer.matrixDb.deleteWhere('access_tokens', [
+      { field: 'user_id', value: userId, operator: '=' }
+    ])
+  )
+  const deleteRefreshTokensPromise = limit(() =>
+    clientServer.matrixDb.deleteWhere('refresh_tokens', [
       { field: 'user_id', value: userId, operator: '=' }
     ])
   )
@@ -420,7 +426,8 @@ const realMethod = async (
   const promisesToExecute = [
     ...threepidDeletePromises, // We put the threepid delete promises first so that we can check if all threepids were successfully unbound from the associated id-servers
     ...deleteDevicesPromises,
-    deleteTokenPromise,
+    deleteAccessTokensPromise,
+    deleteRefreshTokensPromise,
     removePasswordPromise,
     rejectPendingInvitesAndKnocksPromise,
     deleteRoomKeysPromise,
@@ -430,7 +437,7 @@ const realMethod = async (
     ...deleteUserDirectoryPromises,
     ...purgeAccountDataPromises
   ]
-  if (body.erase) {
+  if (body.erase ?? false) {
     promisesToExecute.push(
       limit(() =>
         clientServer.matrixDb.updateWithConditions(
@@ -486,16 +493,82 @@ const realMethod = async (
 // There should be a method to reactivate the account to match this one but it isn't implemented yet
 const deactivate = (clientServer: MatrixClientServer): expressAppHandler => {
   return (req, res) => {
-    const token = getAccessToken(req)
-    if (token != null) {
-      clientServer.authenticate(req, res, (data: TokenContent) => {
-        validateUserWithUIAuthentication(
-          clientServer,
+    jsonContent(req, res, clientServer.logger, (obj) => {
+      const body = obj as unknown as RequestBody
+      if (
+        body.auth !== null &&
+        body.auth !== undefined &&
+        !verifyAuthenticationData(body.auth)
+      ) {
+        send(
+          res,
+          400,
+          errMsg('invalidParam', 'Invalid auth'),
+          clientServer.logger
+        )
+        return
+      } else if (
+        body.id_server !== null &&
+        body.id_server !== undefined &&
+        !verifyString(body.id_server)
+      ) {
+        send(
+          res,
+          400,
+          errMsg('invalidParam', 'Invalid id_server'),
+          clientServer.logger
+        )
+        return
+      } else if (
+        body.erase !== null &&
+        body.erase !== undefined &&
+        !verifyBoolean(body.erase)
+      ) {
+        send(
+          res,
+          400,
+          errMsg('invalidParam', 'Invalid erase'),
+          clientServer.logger
+        )
+        return
+      }
+      const token = getAccessToken(req)
+      if (token != null) {
+        clientServer.authenticate(req, res, (data: TokenContent) => {
+          validateUserWithUIAuthentication(
+            clientServer,
+            req,
+            res,
+            data.sub,
+            'deactivate your account',
+            obj,
+            (obj, userId) => {
+              realMethod(
+                res,
+                clientServer,
+                obj as RequestBody,
+                userId as string
+              ).catch((e) => {
+                // istanbul ignore next
+                clientServer.logger.error('Error while deactivating account')
+                // istanbul ignore next
+                send(
+                  res,
+                  500,
+                  errMsg('unknown', e.toString()),
+                  clientServer.logger
+                )
+              })
+            }
+          )
+        })
+      } else {
+        clientServer.uiauthenticate(
           req,
           res,
-          requestBodyReference,
-          data.sub,
+          allowedFlows,
           'deactivate your account',
+          obj,
           (obj, userId) => {
             realMethod(
               res,
@@ -504,7 +577,7 @@ const deactivate = (clientServer: MatrixClientServer): expressAppHandler => {
               userId as string
             ).catch((e) => {
               // istanbul ignore next
-              clientServer.logger.error('Error while deactivating account')
+              clientServer.logger.error('Error while changing password')
               // istanbul ignore next
               send(
                 res,
@@ -515,29 +588,8 @@ const deactivate = (clientServer: MatrixClientServer): expressAppHandler => {
             })
           }
         )
-      })
-    } else {
-      clientServer.uiauthenticate(
-        req,
-        res,
-        requestBodyReference,
-        allowedFlows,
-        'deactivate your account',
-        (obj, userId) => {
-          realMethod(
-            res,
-            clientServer,
-            obj as RequestBody,
-            userId as string
-          ).catch((e) => {
-            // istanbul ignore next
-            clientServer.logger.error('Error while changing password')
-            // istanbul ignore next
-            send(res, 500, errMsg('unknown', e.toString()), clientServer.logger)
-          })
-        }
-      )
-    }
+      }
+    })
   }
 }
 export default deactivate

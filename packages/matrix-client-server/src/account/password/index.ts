@@ -2,6 +2,7 @@ import {
   errMsg,
   type expressAppHandler,
   getAccessToken,
+  jsonContent,
   send,
   validateParameters
 } from '@twake/utils'
@@ -19,16 +20,16 @@ import type e from 'express'
 import { Hash } from '@twake/crypto'
 import { type TokenContent } from '../../utils/authenticate'
 import { isAdmin } from '../../utils/utils'
+import {
+  verifyAuthenticationData,
+  verifyBoolean,
+  verifyString
+} from '../../typecheckers'
 
 interface RequestBody {
-  auth: AuthenticationData
-  logout_devices: boolean
+  auth?: AuthenticationData
+  logout_devices?: boolean
   new_password: string
-}
-
-const requestBodyReference = {
-  logout_devices: 'boolean',
-  new_password: 'string'
 }
 
 const schema = {
@@ -149,25 +150,96 @@ const realMethod = async (
 }
 const passwordReset = (clientServer: MatrixClientServer): expressAppHandler => {
   return (req, res) => {
-    const token = getAccessToken(req)
-    if (token != null) {
-      clientServer.authenticate(req, res, (data: TokenContent) => {
-        validateUserWithUIAuthentication(
-          clientServer,
+    jsonContent(req, res, clientServer.logger, (obj) => {
+      const body = obj as unknown as RequestBody
+      if (
+        body.auth != null &&
+        body.auth !== undefined &&
+        !verifyAuthenticationData(body.auth)
+      ) {
+        send(
+          res,
+          400,
+          errMsg('invalidParam', 'Invalid auth'),
+          clientServer.logger
+        )
+        return
+      } else if (
+        body.logout_devices != null &&
+        body.logout_devices !== undefined &&
+        !verifyBoolean(body.logout_devices)
+      ) {
+        send(
+          res,
+          400,
+          errMsg('invalidParam', 'Invalid logout_devices'),
+          clientServer.logger
+        )
+        return
+        // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+      } else if (body.new_password && !verifyString(body.new_password)) {
+        send(
+          res,
+          400,
+          errMsg('invalidParam', 'Invalid new_password'),
+          clientServer.logger
+        )
+        return
+      }
+      const token = getAccessToken(req)
+      if (token != null) {
+        clientServer.authenticate(req, res, (data: TokenContent) => {
+          validateUserWithUIAuthentication(
+            clientServer,
+            req,
+            res,
+            data.sub,
+            'modify your account password',
+            obj,
+            (obj, userId) => {
+              validateParameters(
+                res,
+                schema,
+                obj,
+                clientServer.logger,
+                (obj) => {
+                  realMethod(
+                    res,
+                    clientServer,
+                    obj as RequestBody,
+                    userId as string,
+                    data.device_id,
+                    token
+                  ).catch((e) => {
+                    // istanbul ignore next
+                    clientServer.logger.error('Error while changing password')
+                    // istanbul ignore next
+                    send(
+                      res,
+                      500,
+                      errMsg('unknown', e.toString()),
+                      clientServer.logger
+                    )
+                  })
+                }
+              )
+            }
+          )
+        })
+      } else {
+        clientServer.uiauthenticate(
           req,
           res,
-          requestBodyReference,
-          data.sub,
+          allowedFlows,
           'modify your account password',
+          obj,
           (obj, userId) => {
             validateParameters(res, schema, obj, clientServer.logger, (obj) => {
               realMethod(
                 res,
                 clientServer,
                 obj as RequestBody,
-                userId as string,
-                data.device_id,
-                token
+                userId as string
               ).catch((e) => {
                 // istanbul ignore next
                 clientServer.logger.error('Error while changing password')
@@ -182,36 +254,8 @@ const passwordReset = (clientServer: MatrixClientServer): expressAppHandler => {
             })
           }
         )
-      })
-    } else {
-      clientServer.uiauthenticate(
-        req,
-        res,
-        requestBodyReference,
-        allowedFlows,
-        'modify your account password',
-        (obj, userId) => {
-          validateParameters(res, schema, obj, clientServer.logger, (obj) => {
-            realMethod(
-              res,
-              clientServer,
-              obj as RequestBody,
-              userId as string
-            ).catch((e) => {
-              // istanbul ignore next
-              clientServer.logger.error('Error while changing password')
-              // istanbul ignore next
-              send(
-                res,
-                500,
-                errMsg('unknown', e.toString()),
-                clientServer.logger
-              )
-            })
-          })
-        }
-      )
-    }
+      }
+    })
   }
 }
 

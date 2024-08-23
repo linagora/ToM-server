@@ -127,7 +127,7 @@ describe('Use configuration file', () => {
             .set('Authorization', `Bearer wrongUserAccessToken`)
             .send({
               sid: 'sid',
-              client_secret: 'cs'
+              client_secret: 'clientsecret'
             })
           expect(response.statusCode).toBe(400)
           expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
@@ -140,7 +140,7 @@ describe('Use configuration file', () => {
             .set('Authorization', `Bearer ${validToken2}`)
             .send({
               sid: 'sid',
-              client_secret: 'cs'
+              client_secret: 'clientsecret'
             })
           expect(response.statusCode).toBe(401)
           session = response.body.session
@@ -150,7 +150,7 @@ describe('Use configuration file', () => {
             .set('Authorization', `Bearer ${validToken2}`)
             .send({
               sid: 'sid',
-              client_secret: 'cs',
+              client_secret: 'clientsecret',
               auth: {
                 type: 'm.login.password',
                 session,
@@ -165,23 +165,13 @@ describe('Use configuration file', () => {
           expect(response1.body).toHaveProperty('errcode', 'M_FORBIDDEN')
           expect(response1.body).toHaveProperty(
             'error',
-            'The user does not have a password registered'
+            'The user does not have a password registered or the provided password is wrong.'
           )
         })
       })
       let sid: string
       let token: string
       it('should refuse an invalid secret', async () => {
-        const response1 = await request(app)
-          .post('/_matrix/client/v3/account/3pid/add')
-          .set('Accept', 'application/json')
-          .set('Authorization', `Bearer ${validToken}`)
-          .send({
-            sid: 'sid',
-            client_secret: 'my'
-          })
-        expect(response1.statusCode).toBe(401)
-        session = response1.body.session
         const response = await request(app)
           .post('/_matrix/client/v3/account/3pid/add')
           .set('Accept', 'application/json')
@@ -191,7 +181,7 @@ describe('Use configuration file', () => {
             client_secret: 'my',
             auth: {
               type: 'm.login.password',
-              session,
+              session: 'session',
               password:
                 '$2a$10$zQJv3V3Kjw7Jq7Ww1X7z5e1QXsVd1m3JdV9vG6t8Jv7jQz4Z5J1QK',
               identifier: { type: 'm.id.user', user: '@testuser:example.com' }
@@ -202,16 +192,6 @@ describe('Use configuration file', () => {
         expect(response.body).toHaveProperty('error', 'Invalid client_secret')
       })
       it('should refuse an invalid session ID', async () => {
-        const response1 = await request(app)
-          .post('/_matrix/client/v3/account/3pid/add')
-          .set('Accept', 'application/json')
-          .set('Authorization', `Bearer ${validToken}`)
-          .send({
-            sid: 'sid',
-            client_secret: 'my'
-          })
-        expect(response1.statusCode).toBe(401)
-        session = response1.body.session
         const response = await request(app)
           .post('/_matrix/client/v3/account/3pid/add')
           .set('Accept', 'application/json')
@@ -221,7 +201,7 @@ describe('Use configuration file', () => {
             client_secret: 'mysecret',
             auth: {
               type: 'm.login.password',
-              session,
+              session: 'session',
               password:
                 '$2a$10$zQJv3V3Kjw7Jq7Ww1X7z5e1QXsVd1m3JdV9vG6t8Jv7jQz4Z5J1QK',
               identifier: { type: 'm.id.user', user: '@testuser:example.com' }
@@ -231,16 +211,33 @@ describe('Use configuration file', () => {
         expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
         expect(response.body).toHaveProperty('error', 'Invalid session ID')
       })
-      it('should return 400 for a wrong combination of client secret and session ID', async () => {
-        const response1 = await request(app)
+      it('should refuse an invalid auth', async () => {
+        const response = await request(app)
           .post('/_matrix/client/v3/account/3pid/add')
           .set('Accept', 'application/json')
           .set('Authorization', `Bearer ${validToken}`)
           .send({
             sid: 'sid',
-            client_secret: 'my'
+            client_secret: 'mysecret',
+            auth: {
+              type: 'invalidtype'
+            }
           })
+        expect(response.statusCode).toBe(400)
+        expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
+        expect(response.body).toHaveProperty(
+          'error',
+          'Invalid authentication data'
+        )
+      })
+      it('should return 400 for a wrong combination of client secret and session ID', async () => {
+        const response1 = await request(app)
+          .post('/_matrix/client/v3/account/3pid/add')
+          .set('Accept', 'application/json')
+          .set('Authorization', `Bearer ${validToken}`)
+          .send({})
         expect(response1.statusCode).toBe(401)
+        expect(response1.body).toHaveProperty('session')
         session = response1.body.session
         const response = await request(app)
           .post('/_matrix/client/v3/account/3pid/add')
@@ -283,7 +280,7 @@ describe('Use configuration file', () => {
           .set('Authorization', `Bearer ${validToken}`)
           .send({
             sid: 'sid',
-            client_secret: 'my'
+            client_secret: 'mysecret'
           })
         expect(response1.statusCode).toBe(401)
         session = response1.body.session
@@ -324,7 +321,7 @@ describe('Use configuration file', () => {
           .set('Authorization', `Bearer ${validToken}`)
           .send({
             sid: 'sid',
-            client_secret: 'my'
+            client_secret: 'mysecret'
           })
         expect(response1.statusCode).toBe(401)
         session = response1.body.session
@@ -352,7 +349,7 @@ describe('Use configuration file', () => {
           .set('Authorization', `Bearer ${validToken}`)
           .send({
             sid: 'sid',
-            client_secret: 'my'
+            client_secret: 'mysecret'
           })
         expect(response1.statusCode).toBe(401)
         session = response1.body.session
@@ -382,7 +379,7 @@ describe('Use configuration file', () => {
           .set('Authorization', `Bearer ${validToken}`)
           .send({
             sid: 'sid',
-            client_secret: 'my'
+            client_secret: 'mysecret'
           })
         expect(response1.statusCode).toBe(401)
         session = response1.body.session
@@ -431,6 +428,25 @@ describe('Use configuration file', () => {
       // })
     })
     describe('/_matrix/client/v3/account/3pid/delete', () => {
+      it('should return 403 if the user is not an admin and the server does not allow it', async () => {
+        clientServer.conf.capabilities.enable_3pid_changes = false
+        const response = await request(app)
+          .post('/_matrix/client/v3/account/3pid/delete')
+          .set('Authorization', `Bearer ${validToken}`)
+          .set('Accept', 'application/json')
+          .send({
+            medium: 'email',
+            address: 'testuser@example.com'
+          })
+
+        expect(response.statusCode).toBe(403)
+        expect(response.body).toHaveProperty('errcode', 'M_FORBIDDEN')
+        expect(response.body).toHaveProperty(
+          'error',
+          'Cannot add 3pid as it is not allowed by server'
+        )
+        delete clientServer.conf.capabilities.enable_3pid_changes
+      })
       it('should refuse an invalid medium', async () => {
         const response = await request(app)
           .post('/_matrix/client/v3/account/3pid/delete')
