@@ -235,7 +235,7 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
             '/_matrix/client/v3/profile/:userId/avatar_url': badMethod,
             '/_matrix/client/v3/profile/:userId/displayname': badMethod,
             '/_matrix/client/v3/devices': badMethod,
-            '/_matrix/client/v3/devices/:deviceId': badMethod,
+            '/_matrix/client/v3/devices/:deviceId': deleteDevice(this),
             '/_matrix/client/v3/user/:userId/rooms/:roomId/tags': badMethod,
             '/_matrix/client/v3/user/:userId/rooms/:roomId/tags/:tag':
               removeUserRoomTag(this),
