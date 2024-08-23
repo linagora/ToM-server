@@ -282,7 +282,6 @@ describe('Use configuration file', () => {
             sid: 'sid',
             client_secret: 'mysecret'
           })
-        console.log('response : ', response1.body)
         expect(response1.statusCode).toBe(401)
         session = response1.body.session
         const response = await request(app)

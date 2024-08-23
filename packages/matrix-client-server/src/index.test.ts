@@ -1013,7 +1013,6 @@ describe('Use configuration file', () => {
               session
             }
           })
-        console.log('body : ', response.body)
         expect(response.status).toBe(200)
         const remainingMessages = await clientServer.matrixDb.get(
           'device_inbox',
