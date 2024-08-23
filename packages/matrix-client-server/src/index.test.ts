@@ -16,10 +16,6 @@ jest.mock('nodemailer', () => ({
     sendMail: sendMailMock
   }))
 }))
-// const deleteMessagesBetweenStreamIdsMock = jest.fn()
-// jest
-//   .spyOn(deleteDevicesModule, 'deleteMessagesBetweenStreamIds')
-//   .mockImplementation(deleteMessagesBetweenStreamIdsMock)
 
 let conf: Config
 let clientServer: ClientServer
@@ -4646,12 +4642,10 @@ describe('Use configuration file', () => {
       it('should delete messages in batches', async () => {
         const deviceId = 'device1'
 
-        // Set up mock data in the database
         await clientServer.matrixDb.insert('devices', {
           device_id: deviceId,
           user_id: userId
         })
-        // Insert some device inbox messages
         for (let i = 1; i <= 25; i++) {
           await clientServer.matrixDb.insert('device_inbox', {
             user_id: userId,
@@ -4661,8 +4655,6 @@ describe('Use configuration file', () => {
           })
         }
 
-        // deleteMessagesBetweenStreamIdsMock
-        //   .mockResolvedValueOnce(2)
         const response1 = await request(app)
           .post('/_matrix/client/v3/delete_devices')
           .set('Authorization', `Bearer ${validToken}`)
@@ -4685,47 +4677,6 @@ describe('Use configuration file', () => {
           })
         console.log('body : ', response.body)
         expect(response.status).toBe(200)
-
-        // Verify that deleteMessagesBetweenStreamIds was called multiple times
-        // expect(deleteMessagesBetweenStreamIdsMock).toHaveBeenCalledTimes(4)
-        // expect(deleteMessagesBetweenStreamIdsMock).toHaveBeenNthCalledWith(
-        //   1,
-        //   clientServer,
-        //   userId,
-        //   deviceId,
-        //   0,
-        //   expect.any(Number),
-        //   10
-        // )
-        // expect(deleteMessagesBetweenStreamIdsMock).toHaveBeenNthCalledWith(
-        //   2,
-        //   clientServer,
-        //   userId,
-        //   deviceId,
-        //   10,
-        //   expect.any(Number),
-        //   10
-        // )
-        // expect(deleteMessagesBetweenStreamIdsMock).toHaveBeenNthCalledWith(
-        //   3,
-        //   clientServer,
-        //   userId,
-        //   deviceId,
-        //   20,
-        //   expect.any(Number),
-        //   10
-        // )
-        // expect(deleteMessagesBetweenStreamIdsMock).toHaveBeenNthCalledWith(
-        //   4,
-        //   clientServer,
-        //   userId,
-        //   deviceId,
-        //   25,
-        //   expect.any(Number),
-        //   10
-        // )
-
-        // Verify that all messages were deleted
         const remainingMessages = await clientServer.matrixDb.get(
           'device_inbox',
           ['stream_id'],
