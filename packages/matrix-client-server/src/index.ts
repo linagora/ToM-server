@@ -77,6 +77,7 @@ import delete3pidHandler from './account/3pid/delete'
 import userSearch from './user_data/user_directory/search'
 import deactivate from './account/deactivate'
 import deleteDevicesHandler from './delete_devices'
+import deleteDevice from './devices/deleteDevice'
 
 // const tables = {} // Add tables declaration here to add new tables to this.db
 
@@ -308,7 +309,7 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
             '/_matrix/client/v3/profile/:userId/avatar_url': badMethod,
             '/_matrix/client/v3/profile/:userId/displayname': badMethod,
             '/_matrix/client/v3/devices': badMethod,
-            '/_matrix/client/v3/devices/:deviceId': badMethod,
+            '/_matrix/client/v3/devices/:deviceId': deleteDevice(this),
             '/_matrix/client/v3/user/:userId/rooms/:roomId/tags': badMethod,
             '/_matrix/client/v3/user/:userId/rooms/:roomId/tags/:tag':
               removeUserRoomTag(this),

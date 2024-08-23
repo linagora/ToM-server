@@ -13,7 +13,6 @@ import {
   validRefreshToken1,
   validRefreshToken2
 } from './__testData__/setupTokens'
-// import * as deleteDevicesModule from './delete_devices'
 
 process.env.TWAKE_CLIENT_SERVER_CONF = './src/__testData__/registerConf.json'
 jest.mock('node-fetch', () => jest.fn())
@@ -23,10 +22,6 @@ jest.mock('nodemailer', () => ({
     sendMail: sendMailMock
   }))
 }))
-// const deleteMessagesBetweenStreamIdsMock = jest.fn()
-// jest
-//   .spyOn(deleteDevicesModule, 'deleteMessagesBetweenStreamIds')
-//   .mockImplementation(deleteMessagesBetweenStreamIdsMock)
 
 let conf: Config
 let clientServer: ClientServer
@@ -583,238 +578,6 @@ describe('Use configuration file', () => {
       })
     })
 
-    describe('/_matrix/client/v3/devices', () => {
-      const testUserId = '@testuser:example.com'
-
-      beforeAll(async () => {
-        try {
-          await clientServer.matrixDb.insert('devices', {
-            user_id: testUserId,
-            device_id: 'testdevice1',
-            display_name: 'Test Device 1',
-            last_seen: 1411996332123,
-            ip: '127.0.0.1',
-            user_agent: 'curl/7.31.0-DEV'
-          })
-          logger.info('Test device 1 created')
-
-          await clientServer.matrixDb.insert('devices', {
-            user_id: testUserId,
-            device_id: 'testdevice2',
-            display_name: 'Test Device 2',
-            last_seen: 14119963321254,
-            ip: '127.0.0.2',
-            user_agent: 'curl/7.31.0-DEV'
-          })
-          logger.info('Test device 2 created')
-        } catch (e) {
-          logger.error('Error creating devices:', e)
-        }
-      })
-
-      afterAll(async () => {
-        try {
-          await clientServer.matrixDb.deleteEqual(
-            'devices',
-            'device_id',
-            'testdevice1'
-          )
-          logger.info('Test device 1 deleted')
-
-          await clientServer.matrixDb.deleteEqual(
-            'devices',
-            'device_id',
-            'testdevice2'
-          )
-          logger.info('Test device 2 deleted')
-        } catch (e) {
-          logger.error('Error deleting devices:', e)
-        }
-      })
-
-      it('should return 401 if the user is not authenticated', async () => {
-        const response = await request(app)
-          .get('/_matrix/client/v3/devices')
-          .set('Authorization', 'Bearer invalidToken')
-          .set('Accept', 'application/json')
-        expect(response.statusCode).toBe(401)
-      })
-
-      it('should return all devices for the current user', async () => {
-        const response = await request(app)
-          .get('/_matrix/client/v3/devices')
-          .set('Authorization', `Bearer ${validToken}`)
-
-        expect(response.statusCode).toBe(200)
-
-        expect(response.body).toHaveProperty('devices')
-        expect(response.body.devices).toHaveLength(2)
-        expect(response.body.devices[0]).toHaveProperty('device_id')
-        expect(response.body.devices[0]).toHaveProperty('display_name')
-        expect(response.body.devices[0]).toHaveProperty('last_seen_ts')
-        expect(response.body.devices[0]).toHaveProperty('last_seen_ip')
-      })
-    })
-
-    describe('/_matrix/client/v3/devices/:deviceId', () => {
-      // eslint-disable-next-line @typescript-eslint/naming-convention
-      let _device_id: string
-      beforeAll(async () => {
-        try {
-          _device_id = 'testdevice2_id'
-          await clientServer.matrixDb.insert('devices', {
-            user_id: '@testuser:example.com',
-            device_id: _device_id,
-            display_name: 'testdevice2_name',
-            last_seen: 12345678,
-            ip: '127.0.0.1',
-            user_agent: 'curl/7.31.0-DEV',
-            hidden: 0
-          })
-
-          await clientServer.matrixDb.insert('devices', {
-            user_id: '@testuser2:example.com',
-            device_id: 'another_device_id',
-            display_name: 'another_name',
-            last_seen: 12345678,
-            ip: '127.0.0.1',
-            user_agent: 'curl/7.31.0-DEV',
-            hidden: 0
-          })
-          logger.info('Devices inserted in db')
-        } catch (e) {
-          logger.error('Error when inserting devices', e)
-        }
-      })
-
-      afterAll(async () => {
-        try {
-          await clientServer.matrixDb.deleteEqual(
-            'devices',
-            'device_id',
-            _device_id
-          )
-          await clientServer.matrixDb.deleteEqual(
-            'devices',
-            'device_id',
-            'another_device_id'
-          )
-          logger.info('Devices deleted from db')
-        } catch (e) {
-          logger.error('Error when deleting devices', e)
-        }
-      })
-
-      describe('GET', () => {
-        it('should return the device information for the given device ID', async () => {
-          const response = await request(app)
-            .get(`/_matrix/client/v3/devices/${_device_id}`)
-            .set('Authorization', `Bearer ${validToken}`)
-
-          expect(response.statusCode).toBe(200)
-
-          expect(response.body).toHaveProperty('device_id')
-          expect(response.body.device_id).toEqual(_device_id)
-          expect(response.body).toHaveProperty('display_name')
-          expect(response.body.display_name).toEqual('testdevice2_name')
-          expect(response.body).toHaveProperty('last_seen_ip')
-          expect(response.body.last_seen_ip).toEqual('127.0.0.1')
-          expect(response.body).toHaveProperty('last_seen_ts')
-          expect(response.body.last_seen_ts).toEqual(12345678)
-        })
-
-        it('should return 404 if the device ID does not exist', async () => {
-          const deviceId = 'NON_EXISTENT_DEVICE_ID'
-          const response = await request(app)
-            .get(`/_matrix/client/v3/devices/${deviceId}`)
-            .set('Authorization', `Bearer ${validToken}`)
-
-          expect(response.statusCode).toBe(404)
-        })
-
-        it('should return 404 if the user has no device with the given device Id', async () => {
-          const response = await request(app)
-            .get(`/_matrix/client/v3/devices/another_device_id`)
-            .set('Authorization', `Bearer ${validToken}`)
-
-          expect(response.statusCode).toBe(404)
-        })
-
-        it('should return 401 if the user is not authenticated', async () => {
-          const response = await request(app).get(
-            `/_matrix/client/v3/devices/${_device_id}`
-          )
-
-          expect(response.statusCode).toBe(401)
-        })
-      })
-
-      describe('PUT', () => {
-        const updateData = {
-          display_name: 'updated_device_name'
-        }
-
-        it('should update the device information for the given device ID', async () => {
-          // Update the device
-          const response = await request(app)
-            .put(`/_matrix/client/v3/devices/${_device_id}`)
-            .set('Authorization', `Bearer ${validToken}`)
-            .send(updateData)
-          expect(response.statusCode).toBe(200)
-
-          // Verify the update in the database
-          const updatedDevice = await clientServer.matrixDb.get(
-            'devices',
-            ['device_id', 'display_name'],
-            { device_id: _device_id }
-          )
-
-          expect(updatedDevice[0]).toHaveProperty('device_id', _device_id)
-          expect(updatedDevice[0]).toHaveProperty(
-            'display_name',
-            updateData.display_name
-          )
-        })
-
-        it('should return 400 if the display_name is too long', async () => {
-          const response = await request(app)
-            .put(`/_matrix/client/v3/devices/${_device_id}`)
-            .set('Authorization', `Bearer ${validToken}`)
-            .send({ display_name: randomString(257) })
-
-          expect(response.statusCode).toBe(400)
-          expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
-        })
-
-        it('should return 404 if the device ID does not exist', async () => {
-          const response = await request(app)
-            .put('/_matrix/client/v3/devices/NON_EXISTENT_DEVICE_ID')
-            .set('Authorization', `Bearer ${validToken}`)
-            .send(updateData)
-
-          expect(response.statusCode).toBe(404)
-        })
-
-        it('should return 404 if the user has no device with the given device ID', async () => {
-          const deviceId = 'another_device_id'
-          const response = await request(app)
-            .put(`/_matrix/client/v3/devices/${deviceId}`)
-            .set('Authorization', `Bearer ${validToken}`)
-            .send(updateData)
-
-          expect(response.statusCode).toBe(404)
-        })
-
-        it('should return 401 if the user is not authenticated', async () => {
-          const response = await request(app)
-            .put(`/_matrix/client/v3/devices/${_device_id}`)
-            .send(updateData)
-
-          expect(response.statusCode).toBe(401)
-        })
-      })
-    })
-
     describe('/_matrix/client/v3/directory/list/room/:roomId', () => {
       describe('GET', () => {
         const publicRoomId = '!testroomid:example.com'
@@ -1217,12 +980,10 @@ describe('Use configuration file', () => {
       it('should delete messages in batches', async () => {
         const deviceId = 'device1'
 
-        // Set up mock data in the database
         await clientServer.matrixDb.insert('devices', {
           device_id: deviceId,
           user_id: userId
         })
-        // Insert some device inbox messages
         for (let i = 1; i <= 25; i++) {
           await clientServer.matrixDb.insert('device_inbox', {
             user_id: userId,
@@ -1232,8 +993,6 @@ describe('Use configuration file', () => {
           })
         }
 
-        // deleteMessagesBetweenStreamIdsMock
-        //   .mockResolvedValueOnce(2)
         const response1 = await request(app)
           .post('/_matrix/client/v3/delete_devices')
           .set('Authorization', `Bearer ${validToken}`)
@@ -1256,47 +1015,6 @@ describe('Use configuration file', () => {
           })
         console.log('body : ', response.body)
         expect(response.status).toBe(200)
-
-        // Verify that deleteMessagesBetweenStreamIds was called multiple times
-        // expect(deleteMessagesBetweenStreamIdsMock).toHaveBeenCalledTimes(4)
-        // expect(deleteMessagesBetweenStreamIdsMock).toHaveBeenNthCalledWith(
-        //   1,
-        //   clientServer,
-        //   userId,
-        //   deviceId,
-        //   0,
-        //   expect.any(Number),
-        //   10
-        // )
-        // expect(deleteMessagesBetweenStreamIdsMock).toHaveBeenNthCalledWith(
-        //   2,
-        //   clientServer,
-        //   userId,
-        //   deviceId,
-        //   10,
-        //   expect.any(Number),
-        //   10
-        // )
-        // expect(deleteMessagesBetweenStreamIdsMock).toHaveBeenNthCalledWith(
-        //   3,
-        //   clientServer,
-        //   userId,
-        //   deviceId,
-        //   20,
-        //   expect.any(Number),
-        //   10
-        // )
-        // expect(deleteMessagesBetweenStreamIdsMock).toHaveBeenNthCalledWith(
-        //   4,
-        //   clientServer,
-        //   userId,
-        //   deviceId,
-        //   25,
-        //   expect.any(Number),
-        //   10
-        // )
-
-        // Verify that all messages were deleted
         const remainingMessages = await clientServer.matrixDb.get(
           'device_inbox',
           ['stream_id'],
