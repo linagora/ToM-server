@@ -267,7 +267,6 @@ describe('Matrix DB', () => {
                 account_data_type: accountDataType
               })
               .then((rows2) => {
-                console.log('rows2', rows2)
                 expect(rows2.length).toBe(1)
                 expect(rows2[0].user_id).toEqual(userId)
                 expect(rows2[0].account_data_type).toEqual(accountDataType)

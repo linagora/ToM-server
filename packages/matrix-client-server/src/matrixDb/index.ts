@@ -42,6 +42,7 @@ export type Collections =
   | 'ui_auth_sessions'
   | 'ui_auth_sessions_ips'
   | 'ui_auth_sessions_credentials'
+  | 'stream_positions'
   | 'users_in_public_rooms'
   | 'users_who_share_private_rooms'
   | 'user_directory'

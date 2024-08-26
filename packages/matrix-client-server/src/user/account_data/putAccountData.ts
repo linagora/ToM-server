@@ -7,6 +7,7 @@ import {
   isMatrixIdValid,
   isEventTypeValid
 } from '@twake/utils'
+import { StreamKeyType } from '../../utils/notifier'
 
 interface Parameters {
   userId: string
@@ -62,21 +63,51 @@ const putAccountData = (
           send(res, 400, errMsg('invalidParam', 'Content is too long'))
           return
         }
-        clientServer.matrixDb
-          .upsert(
-            'account_data',
-            {
-              content: JSON.stringify(obj),
-              user_id: parameters.userId,
-              account_data_type: parameters.type,
-              stream_id: 0
-            },
-            ['user_id', 'account_data_type']
-          )
-          .then(() => {
-            send(res, 200, {}, clientServer.logger)
+        clientServer.accountDataIdManager
+          .getNextId()
+          .then((newStreamId) => {
+            clientServer.matrixDb
+              .upsert(
+                'account_data',
+                {
+                  content: JSON.stringify(obj),
+                  user_id: parameters.userId,
+                  account_data_type: parameters.type,
+                  stream_id: newStreamId
+                },
+                ['user_id', 'account_data_type']
+              )
+              .then(() => {
+                clientServer.notifier.onNewEvent(
+                  StreamKeyType.ACCOUNT_DATA,
+                  newStreamId,
+                  [parameters.userId]
+                )
+                send(res, 200, {}, clientServer.logger)
+              })
+              .catch((e) => {
+                /* istanbul ignore next */
+                clientServer.logger.error(
+                  `Failed to update account data for user ${
+                    parameters.userId
+                  } with type ${parameters.type}: ${String(e)}`
+                )
+                /* istanbul ignore next */
+                send(
+                  res,
+                  500,
+                  errMsg('unknown', e.toString()),
+                  clientServer.logger
+                )
+              })
           })
           .catch((e) => {
+            /* istanbul ignore next */
+            clientServer.logger.error(
+              `Failed to get next stream ID for account data for user ${
+                parameters.userId
+              } with type ${parameters.type}: ${String(e)}`
+            )
             /* istanbul ignore next */
             send(res, 500, errMsg('unknown', e.toString()), clientServer.logger)
           })

@@ -50,6 +50,8 @@ const matrixDbQueries = [
   'CREATE TABLE IF NOT EXISTS ui_auth_sessions_credentials(session_id TEXT NOT NULL, stage_type TEXT NOT NULL,  result TEXT NOT NULL, UNIQUE (session_id, stage_type),FOREIGN KEY (session_id) REFERENCES ui_auth_sessions (session_id))',
   'CREATE TABLE IF NOT EXISTS ui_auth_sessions_ips(session_id TEXT NOT NULL,ip TEXT NOT NULL,user_agent TEXT NOT NULL,UNIQUE (session_id, ip, user_agent), FOREIGN KEY (session_id)REFERENCES ui_auth_sessions (session_id))',
   'CREATE TABLE IF NOT EXISTS current_state_events (event_id text NOT NULL,room_id text NOT NULL,type text NOT NULL,state_key text NOT NULL,membership text)',
+  'CREATE TABLE IF NOT EXISTS stream_positions (stream_name TEXT NOT NULL,instance_name TEXT NOT NULL, stream_id BIGINT NOT NULL)'
+  'CREATE TABLE IF NOT EXISTS current_state_events (event_id text NOT NULL,room_id text NOT NULL,type text NOT NULL,state_key text NOT NULL,membership text)',
   'CREATE TABLE IF NOT EXISTS users_in_public_rooms ( user_id TEXT NOT NULL, room_id TEXT NOT NULL )',
   'CREATE TABLE IF NOT EXISTS users_who_share_private_rooms ( user_id TEXT NOT NULL, other_user_id TEXT NOT NULL, room_id TEXT NOT NULL )',
   'CREATE UNIQUE INDEX users_who_share_private_rooms_u_idx ON users_who_share_private_rooms(user_id, other_user_id, room_id)',

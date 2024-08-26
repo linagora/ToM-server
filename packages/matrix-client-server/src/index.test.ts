@@ -86,23 +86,30 @@ describe('Error on server start', () => {
 
 describe('Use configuration file', () => {
   beforeAll((done) => {
-    clientServer = new ClientServer()
     app = express()
-    clientServer.ready
+    clientServer = new ClientServer()
+    clientServer
+      .init()
       .then(() => {
-        Object.keys(clientServer.api.get).forEach((k) => {
-          app.get(k, clientServer.api.get[k])
-        })
-        Object.keys(clientServer.api.post).forEach((k) => {
-          app.post(k, clientServer.api.post[k])
-        })
-        Object.keys(clientServer.api.put).forEach((k) => {
-          app.put(k, clientServer.api.put[k])
-        })
-        Object.keys(clientServer.api.delete).forEach((k) => {
-          app.delete(k, clientServer.api.delete[k])
-        })
-        done()
+        clientServer.ready
+          .then(() => {
+            Object.keys(clientServer.api.get).forEach((k) => {
+              app.get(k, clientServer.api.get[k])
+            })
+            Object.keys(clientServer.api.post).forEach((k) => {
+              app.post(k, clientServer.api.post[k])
+            })
+            Object.keys(clientServer.api.put).forEach((k) => {
+              app.put(k, clientServer.api.put[k])
+            })
+            Object.keys(clientServer.api.delete).forEach((k) => {
+              app.delete(k, clientServer.api.delete[k])
+            })
+            done()
+          })
+          .catch((e) => {
+            done(e)
+          })
       })
       .catch((e) => {
         done(e)
@@ -123,6 +130,11 @@ describe('Use configuration file', () => {
       '/_matrix/client/v3/account/whoami'
     )
     expect(response.statusCode).toBe(405)
+  })
+
+  test('Should have initialized the idManager', () => {
+    expect(clientServer.accountDataIdManager).toBeDefined()
+    expect(clientServer.accountDataIdManager.getCurrentId()).toBe(0)
   })
 
   describe('/_matrix/client/versions', () => {
