@@ -45,8 +45,10 @@ beforeAll((done) => {
   }
   buildUserDB(conf)
     .then(() => {
+      logger.info('User db built')
       buildMatrixDb(conf)
         .then(() => {
+          logger.info('Matrix db built')
           done()
         })
         .catch((e) => {
@@ -71,25 +73,36 @@ beforeEach(() => {
 
 describe('Use configuration file', () => {
   beforeAll((done) => {
-    clientServer = new ClientServer(conf)
     app = express()
-    clientServer.ready
+    clientServer = new ClientServer(conf)
+    logger.info('Client server created')
+    clientServer
+      .init()
       .then(() => {
-        Object.keys(clientServer.api.get).forEach((k) => {
-          app.get(k, clientServer.api.get[k])
-        })
-        Object.keys(clientServer.api.post).forEach((k) => {
-          app.post(k, clientServer.api.post[k])
-        })
-        Object.keys(clientServer.api.put).forEach((k) => {
-          app.put(k, clientServer.api.put[k])
-        })
-        Object.keys(clientServer.api.delete).forEach((k) => {
-          app.delete(k, clientServer.api.delete[k])
-        })
-        done()
+        logger.info('Client server initialized')
+        clientServer.ready
+          .then(() => {
+            Object.keys(clientServer.api.get).forEach((k) => {
+              app.get(k, clientServer.api.get[k])
+            })
+            Object.keys(clientServer.api.post).forEach((k) => {
+              app.post(k, clientServer.api.post[k])
+            })
+            Object.keys(clientServer.api.put).forEach((k) => {
+              app.put(k, clientServer.api.put[k])
+            })
+            Object.keys(clientServer.api.delete).forEach((k) => {
+              app.delete(k, clientServer.api.delete[k])
+            })
+            done()
+          })
+          .catch((e) => {
+            logger.error('Error while initializing client server:', e)
+            done(e)
+          })
       })
       .catch((e) => {
+        logger.error('Error while creating client server:', e)
         done(e)
       })
   })
@@ -204,6 +217,17 @@ describe('Use configuration file', () => {
               .set('Accept', 'application/json')
               .send(content2)
             expect(response.statusCode).toBe(200)
+          })
+          it('should have a correct stream id at this point', async () => {
+            const response = await clientServer.matrixDb.get(
+              'account_data',
+              ['stream_id'],
+              { account_data_type: 'm.room.message' }
+            )
+            expect(response.length).toBe(1)
+            expect(response[0].stream_id).toBe(2)
+            const streamId = clientServer.accountDataIdManager.getCurrentId()
+            expect(streamId).toBe(2)
           })
         })
         describe('GET', () => {

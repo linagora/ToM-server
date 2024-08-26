@@ -10,6 +10,8 @@ import {
 import { type Request, type Response } from 'express'
 
 // Internal libraries
+import { IdManager, StreamName } from './utils/idManager'
+import { Notifier } from './utils/notifier'
 import MatrixDBmodified from './matrixDb'
 import MatrixIdentityServer from '@twake/matrix-identity-server'
 import UiAuthenticate, {
@@ -65,8 +67,6 @@ import GetFilter from './user/filter/getFilter'
 import refresh from './refresh'
 import openIdRequestToken from './user/openid/requestToken'
 
-// const tables = {} // Add tables declaration here to add new tables to this.db
-
 export default class MatrixClientServer extends MatrixIdentityServer<clientDbCollections> {
   api: {
     get: Record<string, expressAppHandler>
@@ -76,9 +76,11 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
   }
 
   matrixDb: MatrixDBmodified
+  notifier: Notifier
   declare conf: Config
   declare db: ClientServerDb
   private _uiauthenticate!: UiAuthFunction
+  accountDataIdManager!: IdManager
 
   set uiauthenticate(uiauthenticate: UiAuthFunction) {
     this._uiauthenticate = (req, res, allowedFlows, description, obj, cb) => {
@@ -112,6 +114,7 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
     super(serverConf, confDesc, logger) // Add tables in here if we add additional tables to this.db in the tables variable above
     this.api = { get: {}, post: {}, put: {}, delete: {} }
     this.matrixDb = new MatrixDBmodified(serverConf, this.logger)
+    this.notifier = new Notifier(this.logger)
     this.uiauthenticate = UiAuthenticate(this.matrixDb, serverConf, this.logger)
     this.authenticate = Authenticate(this.matrixDb, this.logger, this.conf)
     this.ready = new Promise((resolve, reject) => {
@@ -255,7 +258,17 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
     })
   }
 
-  // Class methods that determiens if a user is hosted in the server or in a remote one
+  public async init(): Promise<void> {
+    // This method is bound to be largely developped in the future
+    // It helps to initialize the server with actions that require async operations
+    this.accountDataIdManager = await IdManager.createIdManager(
+      this.matrixDb,
+      this.logger,
+      StreamName.ACCOUNT_DATA
+    )
+  }
+
+  // Class methods that determines if a user is hosted in the server or in a remote one
   isMine(userId: string): boolean {
     const parts = userId.split(':')
     return parts[1] === this.conf.server_name

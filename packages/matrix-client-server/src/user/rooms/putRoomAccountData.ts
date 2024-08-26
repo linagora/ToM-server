@@ -8,6 +8,7 @@ import {
   isEventTypeValid,
   isRoomIdValid
 } from '@twake/utils'
+import { StreamKeyType } from '../../utils/notifier'
 
 interface Parameters {
   userId: string
