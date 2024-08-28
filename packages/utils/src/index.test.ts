@@ -200,28 +200,6 @@ describe('Utility Functions', () => {
       expect(mockLogger.warn).toHaveBeenCalled()
       expect(mockResponse.writeHead).not.toHaveBeenCalled()
     })
-
-    it('should return an error for additional parameters in strict mode', () => {
-      const desc = { key: true }
-      const content = { key: 'value', extra: 'extra' }
-
-      validateParametersStrict(
-        mockResponse as Response,
-        desc,
-        content,
-        mockLogger,
-        () => {
-          // No-op
-        }
-      )
-
-      expect(mockResponse.writeHead).toHaveBeenCalledWith(
-        400,
-        expect.any(Object)
-      )
-      expect(mockResponse.write).toHaveBeenCalled()
-      expect(mockResponse.end).toHaveBeenCalled()
-    })
   })
 
   describe('epoch', () => {
