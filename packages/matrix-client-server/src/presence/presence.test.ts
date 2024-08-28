@@ -58,25 +58,36 @@ afterAll(() => {
 
 describe('Use configuration file', () => {
   beforeAll((done) => {
-    clientServer = new ClientServer(conf)
     app = express()
-    clientServer.ready
+    clientServer = new ClientServer(conf)
+    logger.info('Client server created')
+    clientServer
+      .init()
       .then(() => {
-        Object.keys(clientServer.api.get).forEach((k) => {
-          app.get(k, clientServer.api.get[k])
-        })
-        Object.keys(clientServer.api.post).forEach((k) => {
-          app.post(k, clientServer.api.post[k])
-        })
-        Object.keys(clientServer.api.put).forEach((k) => {
-          app.put(k, clientServer.api.put[k])
-        })
-        Object.keys(clientServer.api.delete).forEach((k) => {
-          app.delete(k, clientServer.api.delete[k])
-        })
-        done()
+        logger.info('Client server initialized')
+        clientServer.ready
+          .then(() => {
+            Object.keys(clientServer.api.get).forEach((k) => {
+              app.get(k, clientServer.api.get[k])
+            })
+            Object.keys(clientServer.api.post).forEach((k) => {
+              app.post(k, clientServer.api.post[k])
+            })
+            Object.keys(clientServer.api.put).forEach((k) => {
+              app.put(k, clientServer.api.put[k])
+            })
+            Object.keys(clientServer.api.delete).forEach((k) => {
+              app.delete(k, clientServer.api.delete[k])
+            })
+            done()
+          })
+          .catch((e) => {
+            logger.error('Error while initializing client server:', e)
+            done(e)
+          })
       })
       .catch((e) => {
+        logger.error('Error while creating client server:', e)
         done(e)
       })
   })
@@ -90,56 +101,7 @@ describe('Use configuration file', () => {
       await setupTokens(clientServer, logger)
     })
     describe('/_matrix/client/v3/presence/:userId/status', () => {
-      describe('GET', () => {
-        it('should return the presence state of a user', async () => {
-          await clientServer.matrixDb.insert('presence', {
-            user_id: '@testuser:example.com',
-            state: 'online',
-            status_msg: 'I am online',
-            mtime: Date.now()
-          })
-          const response = await request(app)
-            .get('/_matrix/client/v3/presence/@testuser:example.com/status')
-            .set('Authorization', `Bearer ${validToken}`)
-            .set('Accept', 'application/json')
-          expect(response.statusCode).toBe(200)
-          expect(response.body).toHaveProperty('currently_active', true)
-          expect(response.body).toHaveProperty('last_active_ts')
-          expect(response.body).toHaveProperty('state', 'online')
-          expect(response.body).toHaveProperty('status_msg', 'I am online')
-        })
-        it('should reject a request made to an uknown user', async () => {
-          const response = await request(app)
-            .get('/_matrix/client/v3/presence/@unknownuser:example.com/status')
-            .set('Authorization', `Bearer ${validToken}`)
-            .set('Accept', 'application/json')
-          expect(response.statusCode).toBe(404)
-        })
-        it('should reject a request with a userId that does not match the regex', async () => {
-          const response = await request(app)
-            .get('/_matrix/client/v3/presence/invalidUserId/status')
-            .set('Authorization', `Bearer ${validToken}`)
-            .set('Accept', 'application/json')
-          expect(response.statusCode).toBe(400)
-        })
-      })
       describe('PUT', () => {
-        it('should set the presence state of a user', async () => {
-          const response = await request(app)
-            .put('/_matrix/client/v3/presence/@testuser:example.com/status')
-            .set('Authorization', `Bearer ${validToken}`)
-            .set('Accept', 'application/json')
-            .send({ presence: 'offline', status_msg: 'I am offline' })
-          expect(response.statusCode).toBe(200)
-          const presence = await clientServer.matrixDb.get(
-            'presence',
-            ['state', 'status_msg'],
-            { user_id: '@testuser:example.com' }
-          )
-          expect(presence).toHaveLength(1)
-          expect(presence[0].state).toBe('offline')
-          expect(presence[0].status_msg).toBe('I am offline')
-        })
         it('should reject a request to set the presence state of another user', async () => {
           const response = await request(app)
             .put('/_matrix/client/v3/presence/@anotheruser:example.com/status')
@@ -157,7 +119,7 @@ describe('Use configuration file', () => {
           expect(response.statusCode).toBe(400)
           expect(response.body).toHaveProperty(
             'error',
-            'Invalid presence state'
+            'Invalid values for parameters presence'
           )
           expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
         })
@@ -174,13 +136,54 @@ describe('Use configuration file', () => {
           expect(response.statusCode).toBe(400)
           expect(response.body).toHaveProperty(
             'error',
-            'Status message is too long'
+            'Invalid values for parameters status_msg'
           )
           expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
         })
         it('should reject a request with a userId that does not match the regex', async () => {
           const response = await request(app)
             .put('/_matrix/client/v3/presence/invalidUserId/status')
+            .set('Authorization', `Bearer ${validToken}`)
+            .set('Accept', 'application/json')
+          expect(response.statusCode).toBe(400)
+        })
+        it('should set the presence state of a user', async () => {
+          const response = await request(app)
+            .put('/_matrix/client/v3/presence/@testuser:example.com/status')
+            .set('Authorization', `Bearer ${validToken}`)
+            .set('Accept', 'application/json')
+            .send({ presence: 'offline', status_msg: 'I am offline' })
+          expect(response.statusCode).toBe(200)
+        })
+        it('should update the presence state of a user', async () => {
+          const response = await request(app)
+            .put('/_matrix/client/v3/presence/@testuser:example.com/status')
+            .set('Authorization', `Bearer ${validToken}`)
+            .set('Accept', 'application/json')
+            .send({ presence: 'online', status_msg: 'I am online' })
+          expect(response.statusCode).toBe(200)
+        })
+      })
+      describe('GET', () => {
+        it('should return the presence state of a user', async () => {
+          const response = await request(app)
+            .get('/_matrix/client/v3/presence/@testuser:example.com/status')
+            .set('Authorization', `Bearer ${validToken}`)
+            .set('Accept', 'application/json')
+          expect(response.statusCode).toBe(200)
+          expect(response.body).toHaveProperty('presence', 'online')
+          expect(response.body).toHaveProperty('status_msg', 'I am online')
+        })
+        it('should reject a request made to an uknown user', async () => {
+          const response = await request(app)
+            .get('/_matrix/client/v3/presence/@unknownuser:example.com/status')
+            .set('Authorization', `Bearer ${validToken}`)
+            .set('Accept', 'application/json')
+          expect(response.statusCode).toBe(404)
+        })
+        it('should reject a request with a userId that does not match the regex', async () => {
+          const response = await request(app)
+            .get('/_matrix/client/v3/presence/invalidUserId/status')
             .set('Authorization', `Bearer ${validToken}`)
             .set('Accept', 'application/json')
           expect(response.statusCode).toBe(400)

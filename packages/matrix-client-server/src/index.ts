@@ -95,6 +95,7 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
   declare db: ClientServerDb
   private _uiauthenticate!: UiAuthFunction
   accountDataIdManager!: IdManager
+  presenceStreamIdManager!: IdManager
 
   set uiauthenticate(uiauthenticate: UiAuthFunction) {
     this._uiauthenticate = (req, res, allowedFlows, description, obj, cb) => {
@@ -363,6 +364,11 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
       this.matrixDb,
       this.logger,
       StreamName.ACCOUNT_DATA
+    )
+    this.presenceStreamIdManager = await IdManager.createIdManager(
+      this.matrixDb,
+      this.logger,
+      StreamName.PRESENCE
     )
   }
 

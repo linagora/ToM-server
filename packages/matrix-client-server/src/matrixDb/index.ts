@@ -33,7 +33,7 @@ export type Collections =
   | 'threepid_validation_token'
   | 'threepid_validation_session'
   | 'user_threepids'
-  | 'presence'
+  | 'presence_stream'
   | 'user_threepid_id_server'
   | 'access_tokens'
   | 'refresh_tokens'

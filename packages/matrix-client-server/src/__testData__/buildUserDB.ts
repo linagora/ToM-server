@@ -39,7 +39,7 @@ const matrixDbQueries = [
   'CREATE TABLE IF NOT EXISTS "user_threepids" ( user_id TEXT NOT NULL, medium TEXT NOT NULL, address TEXT NOT NULL, validated_at BIGINT NOT NULL, added_at BIGINT NOT NULL, CONSTRAINT medium_address UNIQUE (medium, address) )',
   'CREATE TABLE IF NOT EXISTS threepid_validation_session (session_id TEXT PRIMARY KEY,medium TEXT NOT NULL,address TEXT NOT NULL,client_secret TEXT NOT NULL,last_send_attempt BIGINT NOT NULL,validated_at BIGINT)',
   'CREATE TABLE IF NOT EXISTS threepid_validation_token (token TEXT PRIMARY KEY,session_id TEXT NOT NULL,next_link TEXT,expires BIGINT NOT NULL)',
-  'CREATE TABLE IF NOT EXISTS presence (user_id TEXT NOT NULL, state VARCHAR(20), status_msg TEXT, mtime BIGINT, UNIQUE (user_id))',
+  'CREATE TABLE IF NOT EXISTS presence_stream( stream_id BIGINT, user_id TEXT, state TEXT, last_active_ts BIGINT, last_federation_update_ts BIGINT, last_user_sync_ts BIGINT, status_msg TEXT, currently_active BOOLEAN , instance_name TEXT)',
   'CREATE TABLE IF NOT EXISTS open_id_tokens ( token TEXT NOT NULL PRIMARY KEY, ts_valid_until_ms bigint NOT NULL, user_id TEXT NOT NULL, UNIQUE (token) )',
   'CREATE TABLE IF NOT EXISTS user_threepid_id_server ( user_id TEXT NOT NULL, medium TEXT NOT NULL, address TEXT NOT NULL, id_server TEXT NOT NULL )',
   'CREATE TABLE IF NOT EXISTS "access_tokens" (id BIGINT PRIMARY KEY, user_id TEXT NOT NULL, device_id TEXT, token TEXT NOT NULL,valid_until_ms BIGINT,puppets_user_id TEXT,last_validated BIGINT, refresh_token_id BIGINT REFERENCES refresh_tokens (id) ON DELETE CASCADE, used INTEGEREAN,UNIQUE(token))',
