@@ -1,6 +1,5 @@
-import { randomString } from '@twake/crypto'
+import { Hash, randomString } from '@twake/crypto'
 import fs from 'fs'
-import fetch from 'node-fetch'
 import type MatrixIdentityServer from '../index'
 import { type Config } from '../types'
 import {
@@ -11,6 +10,7 @@ import {
   type expressAppHandler
 } from '@twake/utils'
 import Mailer from '../utils/mailer'
+import { lookup3pid } from '../lookup'
 
 interface storeInvitationArgs {
   address: string
@@ -195,35 +195,36 @@ const StoreInvit = <T extends string = never>(
           }
           // Call to the lookup API to check for any existing third-party identifiers
           try {
-            const authHeader = req.headers.authorization as string
-            const validToken = authHeader.split(' ')[1]
-            const _pepper = idServer.db.get('keys', ['data'], {
+            const pepperRows = await idServer.db.get('keys', ['data'], {
               name: 'pepper'
             })
-            const response = await fetch(
-              `https://${idServer.conf.server_name}/_matrix/identity/v2/lookup`,
-              {
-                method: 'POST',
-                headers: {
-                  Authorization: `Bearer ${validToken}`,
-                  Accept: 'application/json',
-                  'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                  addresses: [mediumAddress],
-                  algorithm: 'sha256',
-                  pepper: _pepper
-                })
-              }
+            if (pepperRows.length === 0) {
+              // This should never happen
+              // istanbul ignore next
+              send(res, 500, errMsg('unknown', 'Pepper not found'))
+              // istanbul ignore next
+              return
+            }
+            const pepper = pepperRows[0].data as string
+            const field = medium === 'email' ? 'mail' : 'msisdn'
+            const hash = new Hash()
+            await hash.ready
+            const hashedAddress = hash.sha256(
+              `${mediumAddress} ${field} ${pepper}`
             )
-            if (response.status === 200) {
+            const mappings = (
+              await lookup3pid(idServer, {
+                addresses: [hashedAddress]
+              })
+            )[0]
+            if (Object.keys(mappings).length > 0) {
               send(res, 400, {
                 errcode: 'M_THREEPID_IN_USE',
                 error:
                   'The third party identifier is already in use by another user.',
                 mxid: (obj as storeInvitationArgs).sender
               })
-            } else if (response.status === 400) {
+            } else {
               // Create invitation token
               const ephemeralKey = await idServer.db.createKeypair(
                 'shortTerm',
@@ -290,19 +291,6 @@ const StoreInvit = <T extends string = never>(
                   /* istanbul ignore next */
                   send(res, 500, errMsg('unknown', err.toString()))
                 })
-            } else {
-              /* istanbul ignore next */
-              idServer.logger.error(
-                'Unexpected response statusCode from the /_matrix/identity/v2/lookup API'
-              )
-              send(
-                res,
-                500,
-                errMsg(
-                  'unknown',
-                  'Unexpected response statusCode from the /_matrix/identity/v2/lookup API'
-                )
-              )
             }
           } catch (err) {
             /* istanbul ignore next */

@@ -13,6 +13,27 @@ const schema = {
   pepper: false
 }
 
+export const lookup3pid = async <T extends string = never>(
+  idServer: MatrixIdentityServer<T>,
+  obj: { addresses: string[] }
+): Promise<Array<Record<string, string>>> => {
+  const rows = await idServer.db.get('hashes', ['value', 'hash', 'active'], {
+    hash: obj.addresses
+  })
+  const mappings: Record<string, string> = {}
+  const inactives: Record<string, string> = {}
+  rows.forEach((row) => {
+    if (row.active === 1) {
+      // @ts-expect-error row.hash is not null
+      mappings[row.hash] = row.value
+    } else {
+      // @ts-expect-error row.hash is not null
+      inactives[row.hash] = row.value
+    }
+  })
+  return [mappings, inactives]
+}
+
 const lookup = <T extends string = never>(
   idServer: MatrixIdentityServer<T>
 ): expressAppHandler => {
@@ -36,27 +57,15 @@ const lookup = <T extends string = never>(
             idServer.logger.debug(
               `lookup request to search ${JSON.stringify(obj)}`
             )
-            idServer.db
-              .get('hashes', ['value', 'hash', 'active'], {
-                hash: (obj as { addresses: string[] }).addresses
-              })
-              .then((rows) => {
-                // send(res, 200, rows)
-                const mappings: Record<string, string> = {}
-                const inactives: Record<string, string> = {}
-                rows.forEach((row) => {
-                  if (row.active === 1) {
-                    // @ts-expect-error row.hash is not null
-                    mappings[row.hash] = row.value
-                  } else {
-                    // @ts-expect-error row.hash is not null
-                    inactives[row.hash] = row.value
-                  }
-                })
+            lookup3pid(idServer, obj as { addresses: string[] })
+              .then((result) => {
                 if (idServer.conf.additional_features ?? false) {
-                  send(res, 200, { mappings, inactive_mappings: inactives })
+                  send(res, 200, {
+                    mappings: result[0],
+                    inactive_mappings: result[1]
+                  })
                 } else {
-                  send(res, 200, { mappings })
+                  send(res, 200, { mappings: result[0] })
                 }
               })
               .catch((e) => {
