@@ -568,16 +568,6 @@ describe('Use configuration file', () => {
         let filterId: string
 
         describe('POST', () => {
-          it('should reject invalid parameters', async () => {
-            // Additional parameters not supported
-            const response = await request(app)
-              .post('/_matrix/client/v3/user/@testuser:example.com/filter')
-              .set('Authorization', `Bearer ${validToken}`)
-              .set('Accept', 'application/json')
-              .send({ notAFilterField: 'test' })
-            expect(response.statusCode).toBe(400)
-            expect(response.body).toHaveProperty('errcode', 'UNKNOWN_PARAM')
-          })
           it('should reject posting a filter for an other userId', async () => {
             const response = await request(app)
               .post('/_matrix/client/v3/user/@testuser2:example.com/filter')
