@@ -4,7 +4,8 @@ import { type TwakeLogger } from '@twake/logger'
 
 export enum StreamName {
   ACCOUNT_DATA = 'account_data',
-  EVENTS = 'events'
+  EVENTS = 'events',
+  PRESENCE = 'presence'
   // Add other stream names as needed
 }
 
