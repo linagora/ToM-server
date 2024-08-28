@@ -1,6 +1,5 @@
-import { randomString } from '@twake/crypto'
+import { Hash, randomString } from '@twake/crypto'
 import fs from 'fs'
-import fetch from 'node-fetch'
 import type MatrixIdentityServer from '../index'
 import { type Config } from '../types'
 import {

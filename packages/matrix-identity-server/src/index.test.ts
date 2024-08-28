@@ -1334,48 +1334,22 @@ describe('Use configuration file', () => {
         expect(response.statusCode).toBe(400)
         expect(response.body.errcode).toEqual('M_INVALID_PARAM')
       })
-      it('should alert if the lookup API did not behave as expected', async () => {
-        const mockResponse = Promise.resolve({
-          ok: false,
-          status: 401, // should return 200 or 400
-          // eslint-disable-next-line @typescript-eslint/promise-function-async
-          json: () => Promise.resolve({})
-        })
-        // @ts-expect-error mock is unknown
-        fetch.mockImplementation(async () => await mockResponse)
-        await mockResponse
-        const response = await request(app)
-          .post('/_matrix/identity/v2/store-invite')
-          .set('Authorization', `Bearer ${validToken}`)
-          .set('Accept', 'application/json')
-          .send({
-            address: 'xg@xnr.fr',
-            medium: 'email',
-            room_id: '!room:matrix.org',
-            sender: '@dwho:matrix.org'
-          })
-        expect(response.statusCode).toBe(500)
-        expect(response.body.errcode).toEqual('M_UNKNOWN')
-        expect(response.body.error).toEqual(
-          'Unexpected response statusCode from the /_matrix/identity/v2/lookup API'
-        )
-      })
       it('should not send a mail if the address is already binded to a matrix id', async () => {
-        const mockResponse = Promise.resolve({
-          ok: true,
-          status: 200,
-          // eslint-disable-next-line @typescript-eslint/promise-function-async
-          json: () =>
-            Promise.resolve({
-              mappings: {
-                '4kenr7N9drpCJ4AfalmlGQVsOn3o2RHjkADUpXJWZUc':
-                  '@alice:example.org'
-              }
-            })
+        const pepper = (
+          await idServer.db.get('keys', ['data'], {
+            name: 'pepper'
+          })
+        )[0].data as string
+        const hash = new Hash()
+        await hash.ready
+        const hashedAddress = hash.sha256(`xg@xnr.fr mail ${pepper}`)
+        await idServer.db.insert('hashes', {
+          hash: hashedAddress,
+          pepper,
+          type: 'mail',
+          value: '@xg:xnr.fr',
+          active: 1
         })
-        // @ts-expect-error mock is unknown
-        fetch.mockImplementation(async () => await mockResponse)
-        await mockResponse
         const response = await request(app)
           .post('/_matrix/identity/v2/store-invite')
           .set('Authorization', `Bearer ${validToken}`)
@@ -1388,6 +1362,7 @@ describe('Use configuration file', () => {
           })
         expect(response.statusCode).toBe(400)
         expect(response.body.errcode).toBe('M_THREEPID_IN_USE')
+        await idServer.db.deleteEqual('hashes', 'value', '@xg:xnr.fr')
       })
       it('should accept a valid email request', async () => {
         const mockResponse = Promise.resolve({
@@ -1433,7 +1408,7 @@ describe('Use configuration file', () => {
           .set('Authorization', `Bearer ${validToken}`)
           .set('Accept', 'application/json')
           .send({
-            phone: '33612345678',
+            phone: '33612345671',
             medium: 'msisdn',
             room_id: '!room:matrix.org',
             sender: '@dwho:matrix.org'
