@@ -202,6 +202,73 @@ describe('Utility Functions', () => {
     })
   })
 
+  describe('validateParametersAndValues', () => {
+    it('should validate required parameters and values', () => {
+      const desc = { key: true }
+      const content = { key: 'value' }
+      const valuechecks = { key: (value: string) => value === 'value' }
+
+      validateParametersAndValues(
+        mockResponse as Response,
+        desc,
+        valuechecks,
+        content,
+        mockLogger,
+        (obj) => {
+          expect(obj).toEqual(content)
+        }
+      )
+
+      expect(mockResponse.writeHead).not.toHaveBeenCalled()
+    })
+    it('should return an error for missing parameters', () => {
+      const desc = { key: true, missing: true }
+      const content = { key: 'value' }
+      const valuechecks = { key: (value: string) => value === 'value' }
+
+      validateParametersAndValues(
+        mockResponse as Response,
+        desc,
+        valuechecks,
+        content,
+        mockLogger,
+        () => {
+          // No-op
+        }
+      )
+
+      expect(mockResponse.writeHead).toHaveBeenCalledWith(
+        400,
+        expect.any(Object)
+      )
+      expect(mockResponse.write).toHaveBeenCalled()
+      expect(mockResponse.end).toHaveBeenCalled()
+    })
+    it('should return an error for invalid values', () => {
+      const desc = { key: true }
+      const content = { key: 'invalid' }
+      const valuechecks = { key: (value: string) => value === 'value' }
+
+      validateParametersAndValues(
+        mockResponse as Response,
+        desc,
+        valuechecks,
+        content,
+        mockLogger,
+        () => {
+          // No-op
+        }
+      )
+
+      expect(mockResponse.writeHead).toHaveBeenCalledWith(
+        400,
+        expect.any(Object)
+      )
+      expect(mockResponse.write).toHaveBeenCalled()
+      expect(mockResponse.end).toHaveBeenCalled()
+    })
+  })
+
   describe('epoch', () => {
     it('should return the current timestamp', () => {
       const now = Date.now()

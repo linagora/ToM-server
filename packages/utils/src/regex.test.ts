@@ -8,7 +8,9 @@ import {
   isCountryValid,
   isPhoneNumberValid,
   isEmailValid,
-  isRoomAliasValid
+  isRoomAliasValid,
+  isHostnameValid,
+  isSenderLocalpartValid
 } from './regex'
 
 describe('isClientSecretValid', () => {
@@ -120,5 +122,29 @@ describe('isRoomAliasValid', () => {
 
   it('should return false if the room alias is invalid', () => {
     expect(isRoomAliasValid('room:matrix.org')).toBe(false)
+  })
+})
+
+describe('isHostnameValid', () => {
+  it('should return true if the hostname is valid', () => {
+    expect(isHostnameValid('invalid.com')).toBe(true)
+  })
+
+  it('should return false if the hostname is invalid', () => {
+    expect(isHostnameValid('invalid_hostname')).toBe(false)
+  })
+
+  it('should return true if the hostname has a port', () => {
+    expect(isHostnameValid('example.com:8080')).toBe(true)
+  })
+})
+
+describe('isSenderLocalpartValid', () => {
+  it('should return true if the sender localpart is valid', () => {
+    expect(isSenderLocalpartValid('user=1')).toBe(true)
+  })
+
+  it('should return false if the sender localpart is invalid', () => {
+    expect(isSenderLocalpartValid('user@1')).toBe(false)
   })
 })

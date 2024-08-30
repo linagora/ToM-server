@@ -194,6 +194,7 @@ export const validateParametersAndValues: validateParametersAndValuesType = (
   _validateParameters(res, desc, content, logger, callback, valuechecks)
 }
 
+/* istanbul ignore next */ // Used in the draft version of the /sync API
 export const extractQueryParameters = (
   req: Request | IncomingMessage
 ): Record<string, string> => {
@@ -218,11 +219,13 @@ export const extractQueryParameters = (
   return queryParams
 }
 
+/* istanbul ignore next */ // Used in the draft version of the /sync API
 export type queryParametersType = Record<
   string,
   'string' | 'number' | 'boolean'
 >
 
+/* istanbul ignore next */ // Used in the draft version of the /sync API
 export const checkTypes = (
   queryParams: Record<string, string>,
   types: queryParametersType
@@ -249,11 +252,13 @@ export const checkTypes = (
   })
 }
 
+/* istanbul ignore next */ // Used in the draft version of the /sync API
 export type queryParametersValueChecks = Record<
   string,
   (value: string) => boolean
 >
 
+/* istanbul ignore next */ // Used in the draft version of the /sync API
 export const checkValues = (
   queryParams: Record<string, string>,
   values: queryParametersValueChecks
@@ -265,6 +270,7 @@ export const checkValues = (
   }
 }
 
+/* istanbul ignore next */ // Used in the draft version of the /sync API
 export const setDefaultValues = (
   queryParams: Record<string, string>,
   queryParamsDefaultValues: Record<string, string | boolean | number>
