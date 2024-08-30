@@ -183,6 +183,90 @@ export const validateParametersAndValues: validateParametersAndValuesType = (
   _validateParameters(res, desc, content, logger, callback, valuechecks)
 }
 
+export const extractQueryParameters = (
+  req: Request | IncomingMessage
+): Record<string, string> => {
+  let queryParams: Record<string, string> = {}
+
+  if (req instanceof Request) {
+    queryParams = Object.fromEntries(
+      Object.entries((req as Request).query).filter(
+        ([_, value]) => typeof value === 'string'
+      )
+    ) as Record<string, string>
+  } else {
+    // We construct a URL object to extract the query parameters with .searchParams
+    const url = new URL(req.url ?? '', 'http://default-host') // No need to provide a correct host since we simply extract the query parameters
+    queryParams = Object.fromEntries(
+      Array.from(url.searchParams.entries()).filter(
+        ([, value]) => typeof value === 'string'
+      )
+    )
+  }
+
+  return queryParams
+}
+
+export type queryParametersType = Record<
+  string,
+  'string' | 'number' | 'boolean'
+>
+
+export const checkTypes = (
+  queryParams: Record<string, string>,
+  types: queryParametersType
+): void => {
+  Object.keys(types).forEach((key) => {
+    const type = types[key]
+    const value = queryParams[key]
+
+    if (value === undefined) {
+      // Ignore missing query parameters
+      return
+    }
+
+    if (type === 'number') {
+      if (isNaN(parseInt(value, 10))) {
+        throw new Error(`Invalid number for query parameter: ${key}`)
+      }
+    } else if (type === 'boolean') {
+      if (value !== 'true' && value !== 'false') {
+        throw new Error(`Invalid boolean for query parameter: ${key}`)
+      }
+    }
+    // 'string' type doesn't need to be checked
+  })
+}
+
+export type queryParametersValueChecks = Record<
+  string,
+  (value: string) => boolean
+>
+
+export const checkValues = (
+  queryParams: Record<string, string>,
+  values: queryParametersValueChecks
+): void => {
+  for (const key of Object.keys(values)) {
+    if (!values[key](queryParams[key])) {
+      throw new Error(`Invalid value for query parameter: ${key}`)
+    }
+  }
+}
+
+export const setDefaultValues = (
+  queryParams: Record<string, string>,
+  queryParamsDefaultValues: Record<string, string | boolean | number>
+): Record<string, string> => {
+  Object.keys(queryParamsDefaultValues).forEach((key) => {
+    if (queryParams[key] === undefined) {
+      queryParams[key] = queryParamsDefaultValues[key].toString()
+    }
+  })
+
+  return queryParams
+}
+
 export const epoch = (): number => {
   return Date.now()
 }
