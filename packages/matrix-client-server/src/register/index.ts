@@ -244,6 +244,7 @@ const register = (clientServer: MatrixClientServer): expressAppHandler => {
       // We don't handle the threepid_guest_access_tokens table and give the guest an access token like any user.
       // This might be problematic to restrict the endpoints guests have access to as specified in the spec
       // TODO : Review this after implementing endpoints not available to guest accounts. Maybe modify the authenticate function.
+      // Right now we just give the guest an access token like any user, maybe this isn't the best way to handle it
       jsonContent(req, res, clientServer.logger, (obj) => {
         if (parameters.kind !== 'guest') {
           send(

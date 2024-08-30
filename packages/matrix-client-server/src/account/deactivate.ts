@@ -398,6 +398,7 @@ const realMethod = async (
   )
   const deleteUserDirectoryPromises = deleteUserDirectory(clientServer, userId)
   const deleteAllPushersPromises = await deleteAllPushers(clientServer, userId)
+  // TODO : Check that this doesn't pose a problem
   // Synapse's implementation first populates the "user_pending_deactivation" table, parts the user from joined rooms then deletes the user from that table
   // Maybe this is because they have many workers and they want to prevent concurrent workers accessing the db at the same time
   // If that's the case then we can just directly deleteAllRooms at the same time as all other operations in Promise.all
