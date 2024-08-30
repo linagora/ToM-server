@@ -39,6 +39,7 @@ const schema = {
 }
 
 const allowedFlows: AuthenticationFlowContent = {
+  // TODO : Make sure those are the flows we want
   // Those can be changed. Synapse's implementation only includes m.login.email.identity but
   // I think it's relevant to also include m.login.msisdn and m.login.password
   flows: [

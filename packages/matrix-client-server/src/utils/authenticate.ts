@@ -18,6 +18,10 @@ export type AuthenticationFunction = (
   callback: (data: TokenContent, id: string | null) => void
 ) => void
 
+// TODO : Check for guest access. As is, there is nothing that prevents a guest from accessing the endpoints he is not supposed to access
+// Since register assigns him an access token. Maybe it should assign him a guest token that is differentiated in authenticate
+// To only allow him access to the endpoints he is supposed to access
+// Check this for more information : https://spec.matrix.org/v1.11/client-server-api/#guest-access
 const Authenticate = (
   matrixDb: MatrixDBmodified,
   logger: TwakeLogger,

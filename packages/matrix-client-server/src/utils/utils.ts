@@ -1,5 +1,5 @@
 import type MatrixClientServer from '..'
-import { ClientEvent, type DbGetResult } from '../types'
+import { type DbGetResult } from '../types'
 
 export const isAdmin = async (
   clientServer: MatrixClientServer,
