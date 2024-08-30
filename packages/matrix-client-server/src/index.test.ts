@@ -10,6 +10,7 @@ import { randomString } from '@twake/crypto'
 import {
   setupTokens,
   validToken,
+  validToken2,
   validRefreshToken1,
   validRefreshToken2
 } from './__testData__/setupTokens'
