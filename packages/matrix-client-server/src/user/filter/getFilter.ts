@@ -9,8 +9,7 @@ const GetFilter = (clientServer: MatrixClientServer): expressAppHandler => {
       const userId = (req as Request).params.userId
       if (userId !== data.sub || !clientServer.isMine(userId)) {
         clientServer.logger.error(
-          'Forbidden user id for getting a filter:',
-          userId
+          `Forbidden user id for getting a filter: ${userId}`
         )
         send(res, 403, errMsg('forbidden'))
         return
@@ -27,7 +26,7 @@ const GetFilter = (clientServer: MatrixClientServer): expressAppHandler => {
             return
           }
           const filter = JSON.parse(rows[0].filter_json as string) // TODO : clarify the type of the filter_json (bytea, string ???)
-          clientServer.logger.info('Fetched filter:', filterId)
+          clientServer.logger.info(`Fetched filter: ${filterId}`)
           send(res, 200, filter)
         })
         .catch((e) => {

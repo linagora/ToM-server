@@ -33,7 +33,7 @@ export type Collections =
   | 'threepid_validation_token'
   | 'threepid_validation_session'
   | 'user_threepids'
-  | 'presence'
+  | 'presence_stream'
   | 'user_threepid_id_server'
   | 'access_tokens'
   | 'refresh_tokens'
@@ -42,6 +42,7 @@ export type Collections =
   | 'ui_auth_sessions'
   | 'ui_auth_sessions_ips'
   | 'ui_auth_sessions_credentials'
+  | 'stream_positions'
   | 'users_in_public_rooms'
   | 'users_who_share_private_rooms'
   | 'user_directory'
@@ -128,6 +129,11 @@ type updateWithConditions = (
   values: Record<string, string | number | null>,
   conditions: Array<{ field: string; value: string | number }>
 ) => Promise<DbGetResult>
+type Upsert = (
+  table: Collections,
+  values: Record<string, string | number>,
+  conflictFields: string[]
+) => Promise<DbGetResult>
 type DeleteEqual = (
   table: Collections,
   field: string,
@@ -163,6 +169,7 @@ export interface MatrixDBmodifiedBackend {
   getMaxWhereEqualAndLowerJoin: GetMinMaxJoin2
   getAll: GetAll
   insert: Insert
+  upsert: Upsert
   deleteEqual: DeleteEqual
   deleteWhere: DeleteWhere
   updateWithConditions: updateWithConditions
@@ -345,6 +352,16 @@ class MatrixDBmodified implements MatrixDBmodifiedBackend {
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
   insert(table: Collections, values: Record<string, string | number>) {
     return this.db.insert(table, values)
+  }
+
+  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
+  upsert(
+    table: Collections,
+    values: Record<string, string | number>,
+    conflictFields: string[]
+  ) {
+    /* Be careful it requires that there is a primary key or unique constraint on the conflictFields */
+    return this.db.upsert(table, values, conflictFields)
   }
 
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async

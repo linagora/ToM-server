@@ -105,6 +105,53 @@ class MatrixDBPg extends Pg<Collections> implements MatrixDBmodifiedBackend {
   }
 
   // eslint-disable-next-line @typescript-eslint/promise-function-async
+  upsert(
+    table: Collections,
+    values: Record<string, string | number>,
+    conflictFields: string[]
+  ): Promise<DbGetResult> {
+    return new Promise((resolve, reject) => {
+      if (this.db == null) {
+        reject(new Error('Wait for database to be ready'))
+        return
+      }
+
+      const names = Object.keys(values)
+      const vals = Object.values(values)
+
+      const columns = names.join(', ')
+      const placeholders = names.map((_, i) => `$${i + 1}`).join(', ')
+
+      const updateClause = names
+        .map((name, i) => `${name} = $${i + 1}`)
+        .join(', ')
+
+      const conflictClause = conflictFields.join(', ')
+
+      const query = `
+      INSERT INTO ${table} (${columns})
+      VALUES (${placeholders})
+      ON CONFLICT(${conflictClause})
+      DO UPDATE SET ${updateClause}
+      RETURNING *
+    `
+
+      this.db.query(
+        query,
+        vals,
+        (err: Error, result: { rows: DbGetResult }) => {
+          // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+          if (err) {
+            reject(err)
+          } else {
+            resolve(result.rows)
+          }
+        }
+      )
+    })
+  }
+
+  // eslint-disable-next-line @typescript-eslint/promise-function-async
   getMaxStreamId(
     userId: string,
     deviceId: string,

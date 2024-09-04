@@ -2,8 +2,9 @@
 import { type TwakeLogger } from '@twake/logger'
 import { type NextFunction, type Request, type Response } from 'express'
 import type http from 'http'
-import querystring from 'querystring'
 import { errMsg } from './errors'
+import { type IncomingMessage } from 'http'
+import querystring from 'querystring'
 
 export type expressAppHandler = (
   req: Request | http.IncomingMessage,
@@ -58,20 +59,24 @@ export const jsonContent = (
   req.on('end', () => {
     let obj
     try {
-      // eslint-disable-next-line @typescript-eslint/prefer-optional-chain
-      if (
-        req.headers['content-type']?.match(
-          /^application\/x-www-form-urlencoded/
-        ) != null
-      ) {
-        obj = querystring.parse(content)
+      if (content === '') {
+        send(res, 400, errMsg('notJson', 'Request body is missing'))
+        accept = false
       } else {
-        obj = JSON.parse(content)
+        if (
+          req.headers['content-type']?.match(
+            /^application\/x-www-form-urlencoded/
+          ) != null
+        ) {
+          obj = querystring.parse(content)
+        } else {
+          obj = JSON.parse(content)
+        }
       }
     } catch (err) {
       logger.error('JSON error', err)
       logger.error(`Content was: ${content}`)
-      send(res, 400, errMsg('unknown', err as string))
+      send(res, 400, errMsg('badJson', err as string))
       accept = false
     }
     if (accept) callback(obj)
@@ -79,6 +84,7 @@ export const jsonContent = (
 }
 
 type validateParametersSchema = Record<string, boolean>
+type validateParametersValueSchema = Record<string, (value: string) => boolean>
 
 type validateParametersType = (
   res: Response | http.ServerResponse,
@@ -86,7 +92,7 @@ type validateParametersType = (
   content: Record<string, string>,
   logger: TwakeLogger,
   callback: (obj: object) => void,
-  acceptAdditionalParameters?: boolean
+  valuechecks?: validateParametersValueSchema
 ) => void
 
 const _validateParameters: validateParametersType = (
@@ -95,14 +101,23 @@ const _validateParameters: validateParametersType = (
   content,
   logger,
   callback,
-  acceptAdditionalParameters
+  valuechecks?
 ) => {
   const missingParameters: string[] = []
   const additionalParameters: string[] = []
+  const wrongValues: string[] = []
   // Check for required parameters
   Object.keys(desc).forEach((key) => {
     if (desc[key] && content[key] == null) {
       missingParameters.push(key)
+    } else {
+      if (
+        valuechecks != null &&
+        content[key] != null &&
+        !valuechecks[key](content[key])
+      ) {
+        wrongValues.push(key)
+      }
     }
   })
   if (missingParameters.length > 0) {
@@ -114,6 +129,15 @@ const _validateParameters: validateParametersType = (
         `Missing parameters ${missingParameters.join(', ')}`
       )
     )
+  } else if (wrongValues.length > 0) {
+    send(
+      res,
+      400,
+      errMsg(
+        'invalidParam',
+        `Invalid values for parameters ${wrongValues.join(', ')}`
+      )
+    )
   } else {
     Object.keys(content).forEach((key) => {
       if (desc[key] == null) {
@@ -121,20 +145,8 @@ const _validateParameters: validateParametersType = (
       }
     })
     if (additionalParameters.length > 0) {
-      if (acceptAdditionalParameters === false) {
-        logger.error('Additional parameters', additionalParameters)
-        send(
-          res,
-          400,
-          errMsg(
-            'unknownParam',
-            `Unknown additional parameters ${additionalParameters.join(', ')}`
-          )
-        )
-      } else {
-        logger.warn('Additional parameters', additionalParameters)
-        callback(content)
-      }
+      logger.warn('Additional parameters', additionalParameters)
+      callback(content)
     } else {
       callback(content)
     }
@@ -148,17 +160,117 @@ export const validateParameters: validateParametersType = (
   logger,
   callback
 ) => {
-  _validateParameters(res, desc, content, logger, callback, true)
+  _validateParameters(res, desc, content, logger, callback)
 }
 
-export const validateParametersStrict: validateParametersType = (
+type validateParametersAndValuesType = (
+  res: Response | http.ServerResponse,
+  desc: validateParametersSchema,
+  valuechecks: validateParametersValueSchema,
+  content: Record<string, string>,
+  logger: TwakeLogger,
+  callback: (obj: object) => void
+) => void
+
+export const validateParametersAndValues: validateParametersAndValuesType = (
   res,
   desc,
+  valuechecks,
   content,
   logger,
   callback
 ) => {
-  _validateParameters(res, desc, content, logger, callback, false)
+  _validateParameters(res, desc, content, logger, callback, valuechecks)
+}
+
+/* istanbul ignore next */ // Used in the draft version of the /sync API
+export const extractQueryParameters = (
+  req: Request | IncomingMessage
+): Record<string, string> => {
+  let queryParams: Record<string, string> = {}
+
+  if (req instanceof Request) {
+    queryParams = Object.fromEntries(
+      Object.entries((req as Request).query).filter(
+        ([_, value]) => typeof value === 'string'
+      )
+    ) as Record<string, string>
+  } else {
+    // We construct a URL object to extract the query parameters with .searchParams
+    const url = new URL(req.url ?? '', 'http://default-host') // No need to provide a correct host since we simply extract the query parameters
+    queryParams = Object.fromEntries(
+      Array.from(url.searchParams.entries()).filter(
+        ([, value]) => typeof value === 'string'
+      )
+    )
+  }
+
+  return queryParams
+}
+
+/* istanbul ignore next */ // Used in the draft version of the /sync API
+export type queryParametersType = Record<
+  string,
+  'string' | 'number' | 'boolean'
+>
+
+/* istanbul ignore next */ // Used in the draft version of the /sync API
+export const checkTypes = (
+  queryParams: Record<string, string>,
+  types: queryParametersType
+): void => {
+  Object.keys(types).forEach((key) => {
+    const type = types[key]
+    const value = queryParams[key]
+
+    if (value === undefined) {
+      // Ignore missing query parameters
+      return
+    }
+
+    if (type === 'number') {
+      if (isNaN(parseInt(value, 10))) {
+        throw new Error(`Invalid number for query parameter: ${key}`)
+      }
+    } else if (type === 'boolean') {
+      if (value !== 'true' && value !== 'false') {
+        throw new Error(`Invalid boolean for query parameter: ${key}`)
+      }
+    }
+    // 'string' type doesn't need to be checked
+  })
+}
+
+/* istanbul ignore next */ // Used in the draft version of the /sync API
+export type queryParametersValueChecks = Record<
+  string,
+  (value: string) => boolean
+>
+
+/* istanbul ignore next */ // Used in the draft version of the /sync API
+export const checkValues = (
+  queryParams: Record<string, string>,
+  values: queryParametersValueChecks
+): void => {
+  for (const key of Object.keys(values)) {
+    if (!values[key](queryParams[key])) {
+      throw new Error(`Invalid value for query parameter: ${key}`)
+    }
+  }
+}
+
+/* istanbul ignore next */ // Used in the draft version of the /sync API
+export const setDefaultValues = (
+  queryParams: Record<string, string>,
+  queryParamsDefaultValues: Record<string, string | boolean | number>
+): Record<string, string> => {
+  Object.keys(queryParamsDefaultValues).forEach((key) => {
+    if (queryParams[key] === undefined) {
+      queryParams[key] = queryParamsDefaultValues[key].toString()
+    }
+  })
+
+  return queryParams
 }
 
 export const epoch = (): number => {

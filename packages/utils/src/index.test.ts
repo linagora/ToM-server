@@ -8,8 +8,8 @@ import {
   epoch,
   toMatrixId,
   isValidUrl,
-  validateParametersStrict,
-  getAccessToken
+  getAccessToken,
+  validateParametersAndValues
 } from './index'
 import { type TwakeLogger } from '@twake/logger'
 
@@ -205,14 +205,59 @@ describe('Utility Functions', () => {
       expect(mockLogger.warn).toHaveBeenCalled()
       expect(mockResponse.writeHead).not.toHaveBeenCalled()
     })
+  })
 
-    it('should return an error for additional parameters in strict mode', () => {
+  describe('validateParametersAndValues', () => {
+    it('should validate required parameters and values', () => {
       const desc = { key: true }
-      const content = { key: 'value', extra: 'extra' }
+      const content = { key: 'value' }
+      const valuechecks = { key: (value: string) => value === 'value' }
 
-      validateParametersStrict(
+      validateParametersAndValues(
         mockResponse as Response,
         desc,
+        valuechecks,
+        content,
+        mockLogger,
+        (obj) => {
+          expect(obj).toEqual(content)
+        }
+      )
+
+      expect(mockResponse.writeHead).not.toHaveBeenCalled()
+    })
+    it('should return an error for missing parameters', () => {
+      const desc = { key: true, missing: true }
+      const content = { key: 'value' }
+      const valuechecks = { key: (value: string) => value === 'value' }
+
+      validateParametersAndValues(
+        mockResponse as Response,
+        desc,
+        valuechecks,
+        content,
+        mockLogger,
+        () => {
+          // No-op
+        }
+      )
+
+      expect(mockResponse.writeHead).toHaveBeenCalledWith(
+        400,
+        expect.any(Object)
+      )
+      expect(mockResponse.write).toHaveBeenCalled()
+      expect(mockResponse.end).toHaveBeenCalled()
+    })
+    it('should return an error for invalid values', () => {
+      const desc = { key: true }
+      const content = { key: 'invalid' }
+      const valuechecks = { key: (value: string) => value === 'value' }
+
+      validateParametersAndValues(
+        mockResponse as Response,
+        desc,
+        valuechecks,
         content,
         mockLogger,
         () => {
