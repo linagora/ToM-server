@@ -1,7 +1,7 @@
 **What has been done in Client Server**
 
 
-__Client Authentication__ : blablabla
+__Client Authentication__ : @Amine Chraibi
 
 __Capabilities__ :
 
