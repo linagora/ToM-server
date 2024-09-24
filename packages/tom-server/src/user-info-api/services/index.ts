@@ -14,7 +14,7 @@ class UserInfoService implements IUserInfoService {
     try {
       const userInfo = (await this.userDb.db.get(
         'users',
-        ['uid', 'sn', 'givenName'],
+        ['uid', 'sn', 'givenname', 'givenName'],
         { uid: id }
       )) as unknown as Array<Record<string, string | number>>
 
