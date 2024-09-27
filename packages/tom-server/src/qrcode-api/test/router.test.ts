@@ -19,7 +19,9 @@ const idServer = new IdServer(
   {
     get: jest.fn()
   } as unknown as MatrixDB,
-  {} as unknown as Config,
+  {
+    qr_code_url: 'https://example.com/'
+  } as unknown as Config,
   {
     database_engine: 'sqlite',
     database_host: 'test.db',

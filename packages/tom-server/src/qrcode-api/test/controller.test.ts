@@ -32,7 +32,9 @@ const idServerMock = {
 app.use(
   router(
     idServerMock as unknown as TwakeIdentityServer,
-    {} as unknown as Config,
+    {
+      qr_code_url: 'https://example.com/'
+    } as unknown as Config,
     loggerMock as unknown as TwakeLogger
   )
 )
