@@ -2,13 +2,16 @@ import { type TwakeLogger } from '@twake/logger'
 import { type IQRCodeApiController, type IQRCodeService } from '../types'
 import QRCodeService from '../services'
 import { type Response, type NextFunction } from 'express'
-import { type AuthRequest } from '../../types'
+import type { Config, AuthRequest } from '../../types'
 
 class QRCodeApiController implements IQRCodeApiController {
   private readonly qrCodeService: IQRCodeService
 
-  constructor(private readonly logger: TwakeLogger) {
-    this.qrCodeService = new QRCodeService(logger)
+  constructor(
+    private readonly logger: TwakeLogger,
+    private readonly config: Config
+  ) {
+    this.qrCodeService = new QRCodeService(logger, config)
   }
 
   /**

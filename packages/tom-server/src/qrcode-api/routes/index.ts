@@ -20,7 +20,7 @@ export default (
   const logger = defaultLogger ?? getLogger(config as unknown as LoggerConfig)
   const router = Router()
   const authenticator = authMiddleware(idServer.authenticate, logger)
-  const qrCodeController = new QRCodeApiController(logger)
+  const qrCodeController = new QRCodeApiController(logger, config)
 
   /**
    * @openapi
