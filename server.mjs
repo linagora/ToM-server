@@ -80,7 +80,7 @@ let conf = {
   sms_api_key: process.env.SMS_API_KEY,
   sms_api_login: process.env.SMS_API_LOGIN,
   sms_api_url: process.env.SMS_API_URL,
-  qr_code_url: process.env.QRCODE_URL || 'twake.chat://login'
+  qr_code_url: process.env.QRCODE_URL ?? 'twake.chat://login'
 }
 
 if (process.argv[2] === 'generate') {
