@@ -33,7 +33,7 @@ export default (
    *        200:
    *          description: QR code generated
    *          content:
-   *            application/json:
+   *            image/svg+xml:
    *              schema:
    *                type: string
    *        400:
