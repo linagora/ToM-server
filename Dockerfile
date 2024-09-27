@@ -93,6 +93,7 @@ ENV BASE_URL= \
     RATE_LIMITING_WINDOW= \
     RATE_LIMITING_NB_REQUESTS= \
     TRUSTED_PROXIES=
+    QRCODE_URL=
 
 COPY --from=1 /usr/src/app /usr/src/app/
 

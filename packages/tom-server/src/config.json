@@ -89,5 +89,6 @@
   "sms_api_url": "",
   "sms_api_login": "",
   "sms_api_key": "",
-  "trust_x_forwarded_for": false
+  "trust_x_forwarded_for": false,
+  "qr_code_url": "twake.chat://login"
 }
