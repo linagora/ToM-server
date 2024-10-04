@@ -1,5 +1,5 @@
 import { type TwakeLogger } from '@twake/logger'
-import QRCodeService from '../services'
+import { QRCodeService } from '../services'
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import QRCode from 'qrcode'
 import type { Config } from '../../types'
@@ -23,12 +23,12 @@ describe('the QRCode service', () => {
   } as unknown as Config
 
   const qrCodeService = new QRCodeService(
-    loggerMock as unknown as TwakeLogger,
-    configMock
+    configMock,
+    loggerMock as unknown as TwakeLogger
   )
 
   it('should generate a QRCode', async () => {
-    const result = await qrCodeService.get('test')
+    const result = await qrCodeService.getImage('test')
 
     expect(result).not.toBeNull()
 
@@ -43,18 +43,18 @@ describe('the QRCode service', () => {
       throw new Error('test')
     })
 
-    const result = await qrCodeService.get('test')
+    const result = await qrCodeService.getImage('test')
 
     expect(result).toBeNull()
   })
 
   it('should return null if qrcode_url config is not set', async () => {
     const failingQrCodeService = new QRCodeService(
-      loggerMock as unknown as TwakeLogger,
-      {} as unknown as Config
+      {} as unknown as Config,
+      loggerMock as unknown as TwakeLogger
     )
 
-    const result = await failingQrCodeService.get('test')
+    const result = await failingQrCodeService.getImage('test')
 
     expect(result).toBeNull()
   })
