@@ -1,17 +1,20 @@
 import { type TwakeLogger } from '@twake/logger'
-import { type IQRCodeApiController, type IQRCodeService } from '../types'
-import QRCodeService from '../services'
+import {
+  type IQRCodeTokenService,
+  type IQRCodeApiController,
+  type IQRCodeService
+} from '../types'
 import { type Response, type NextFunction } from 'express'
 import type { Config, AuthRequest } from '../../types'
+import { QRCodeService, QRCodeTokenService } from '../services'
 
 class QRCodeApiController implements IQRCodeApiController {
   private readonly qrCodeService: IQRCodeService
+  private readonly qrCodeTokenService: IQRCodeTokenService
 
-  constructor(
-    private readonly logger: TwakeLogger,
-    private readonly config: Config
-  ) {
-    this.qrCodeService = new QRCodeService(logger, config)
+  constructor(private readonly logger: TwakeLogger, config: Config) {
+    this.qrCodeService = new QRCodeService(config, logger)
+    this.qrCodeTokenService = new QRCodeTokenService(config, logger)
   }
 
   /**
@@ -34,11 +37,19 @@ class QRCodeApiController implements IQRCodeApiController {
         return
       }
 
-      const qrcode = await this.qrCodeService.get(accessToken)
+      const token = await this.qrCodeTokenService.getAccessToken(accessToken)
+
+      if (token === null) {
+        res.status(400).json({ error: 'Invalid access token' })
+        return
+      }
+
+      const qrcode = await this.qrCodeService.getImage(token)
 
       res.setHeader('Content-Type', 'image/svg+xml')
       res.send(qrcode)
     } catch (error) {
+      this.logger.error('Failed to generate QR Code', { error })
       next(error)
     }
   }
