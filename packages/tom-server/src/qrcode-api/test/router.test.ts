@@ -38,7 +38,6 @@ beforeEach(() => {
 })
 
 const controllerGetSpy = jest.fn().mockImplementation((_req, res, _next) => {
-  console.log('controller called')
   res.status(200).send('OK')
 })
 
