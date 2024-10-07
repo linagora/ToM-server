@@ -10,7 +10,17 @@ export interface IQRCodeService {
 }
 
 export interface IQRCodeTokenService {
-  getAccessToken: (loginToken: string) => Promise<string | null>
+  getAccessToken: (cookies: string) => Promise<string | null>
+  requestAccessToken: (loginToken: string) => Promise<string | null>
+  getOidcProvider: () => Promise<string | null>
+  getOidcRedirectLocation: (
+    oidcProvider: string
+  ) => Promise<OIDCRedirectResponse | null>
+  getLoginToken: (
+    location: string,
+    sessionCookies: string,
+    authCookie: string
+  ) => Promise<string | null>
 }
 
 export interface TokenLoginPayload {
@@ -32,4 +42,23 @@ export interface TokenLoginResponse extends GenericResponse {
   refresh_token: string
   user_id: string
   well_known?: object
+}
+
+export interface loginFlowsResponse extends GenericResponse {
+  flows: LoginFlow[]
+}
+
+export interface LoginFlow {
+  type: string
+  identity_providers: IdentityProvider[]
+}
+
+export interface IdentityProvider {
+  name: string
+  id: string
+}
+
+export interface OIDCRedirectResponse {
+  location: string
+  cookies: string
 }
