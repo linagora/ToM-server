@@ -6,7 +6,8 @@ import router, { PATH } from '../routes'
 import { type TwakeLogger } from '@twake/logger'
 
 const app = express()
-const getMock = jest.fn()
+const getAccessTokenMock = jest.fn()
+const getImageMock = jest.fn()
 const loggerMock = {
   info: jest.fn(),
   error: jest.fn(),
@@ -14,8 +15,17 @@ const loggerMock = {
 }
 
 jest.mock('../services/index.ts', () => {
-  return function () {
-    return { get: getMock }
+  return {
+    QRCodeTokenService: jest.fn().mockImplementation(() => {
+      return {
+        getAccessToken: getAccessTokenMock
+      }
+    }),
+    QRCodeService: jest.fn().mockImplementation(() => {
+      return {
+        getImage: getImageMock
+      }
+    })
   }
 })
 
@@ -45,7 +55,7 @@ beforeEach(() => {
 
 describe('the QRCode API controller', () => {
   it('should return a QRCode', async () => {
-    getMock.mockResolvedValue('test')
+    getImageMock.mockResolvedValue('test')
 
     const response = await supertest(app).get(PATH)
 
@@ -53,11 +63,27 @@ describe('the QRCode API controller', () => {
     expect(response.body).toEqual(Buffer.from('test'))
   })
 
-  it('should return 500 if something wrong happens', async () => {
-    getMock.mockRejectedValue(new Error('test'))
+  it('should return 500 if something wrong happens while generating the SVG', async () => {
+    getImageMock.mockRejectedValue(new Error('test'))
 
     const result = await supertest(app).get(PATH)
 
     expect(result.status).toBe(500)
+  })
+
+  it('should return 500 if something wrong happens while fetching the access token', async () => {
+    getAccessTokenMock.mockRejectedValue(new Error('test'))
+
+    const result = await supertest(app).get(PATH)
+
+    expect(result.status).toBe(500)
+  })
+
+  it('should return 400 if the access token is invalid', async () => {
+    getAccessTokenMock.mockResolvedValue(null)
+
+    const result = await supertest(app).get(PATH)
+
+    expect(result.status).toBe(400)
   })
 })
