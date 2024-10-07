@@ -92,7 +92,7 @@ ENV BASE_URL= \
     SMS_API_KEY= \
     RATE_LIMITING_WINDOW= \
     RATE_LIMITING_NB_REQUESTS= \
-    TRUSTED_PROXIES=
+    TRUSTED_PROXIES= \
     QRCODE_URL=
 
 COPY --from=1 /usr/src/app /usr/src/app/
