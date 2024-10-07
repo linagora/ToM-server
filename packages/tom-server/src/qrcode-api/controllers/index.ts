@@ -30,21 +30,21 @@ class QRCodeApiController implements IQRCodeApiController {
     next: NextFunction
   ): Promise<void> => {
     try {
-      const { accessToken } = req
+      const cookies = req.headers.cookie
 
-      if (accessToken === undefined || accessToken.length === 0) {
-        res.status(400).json({ error: 'Access token is missing' })
+      if (cookies === undefined) {
+        res.status(400).json({ error: 'Cookies are missing' })
         return
       }
 
-      const token = await this.qrCodeTokenService.getAccessToken(accessToken)
+      const accessToken = await this.qrCodeTokenService.getAccessToken(cookies)
 
-      if (token === null) {
+      if (accessToken === null) {
         res.status(400).json({ error: 'Invalid access token' })
         return
       }
 
-      const qrcode = await this.qrCodeService.getImage(token)
+      const qrcode = await this.qrCodeService.getImage(accessToken)
 
       res.setHeader('Content-Type', 'image/svg+xml')
       res.send(qrcode)
