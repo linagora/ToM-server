@@ -50,7 +50,7 @@ export interface loginFlowsResponse extends GenericResponse {
 
 export interface LoginFlow {
   type: string
-  identity_providers: IdentityProvider[]
+  identity_providers?: IdentityProvider[]
 }
 
 export interface IdentityProvider {
