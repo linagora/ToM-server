@@ -118,7 +118,10 @@ export class QRCodeTokenService implements IQRCodeTokenService {
           flow.type === 'm.login.sso' && flow.identity_providers !== undefined
       )
 
-      if (oidcProvider === undefined) {
+      if (
+        oidcProvider === undefined ||
+        oidcProvider.identity_providers === undefined
+      ) {
         throw new Error('No OIDC provider found in the response')
       }
 
@@ -150,10 +153,14 @@ export class QRCodeTokenService implements IQRCodeTokenService {
       )
 
       const location = response.headers.get('location')
-      const cookies = response.headers.getSetCookie().join(';')
+      const cookies = response.headers.get('set-cookie')
 
       if (location === null) {
         throw new Error('No location found in the response')
+      }
+
+      if (cookies === null) {
+        throw new Error('No session cookies found in the response')
       }
 
       return { location, cookies }
