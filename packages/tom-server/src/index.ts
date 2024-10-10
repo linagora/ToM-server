@@ -21,6 +21,7 @@ import userInfoAPIRouter from './user-info-api'
 import VaultServer from './vault-api'
 import WellKnown from './wellKnown'
 import ActiveContacts from './active-contacts-api'
+import QRCode from './qrcode-api'
 
 export default class TwakeServer {
   conf: Config
@@ -145,6 +146,7 @@ export default class TwakeServer {
       this.idServer.authenticate,
       this.logger
     )
+    const qrCodeApi = QRCode(this.idServer, this.conf, this.logger)
 
     this.endpoints.use(privateNoteApi)
     this.endpoints.use(mutualRoolsApi)
@@ -153,6 +155,7 @@ export default class TwakeServer {
     this.endpoints.use(userInfoApi)
     this.endpoints.use(smsApi)
     this.endpoints.use(activeContactsApi)
+    this.endpoints.use(qrCodeApi)
 
     if (
       this.conf.opensearch_is_activated != null &&

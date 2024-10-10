@@ -34,7 +34,8 @@ describe('Tom-server', () => {
       userdb_host: userDb,
       sms_api_key: '',
       sms_api_login: '',
-      sms_api_url: ''
+      sms_api_url: '',
+      qr_code_url: 'http://example.com/'
     }
     if (process.env.TEST_PG === 'yes') {
       conf.database_engine = 'pg'

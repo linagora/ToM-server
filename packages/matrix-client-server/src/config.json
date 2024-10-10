@@ -115,5 +115,6 @@
     }
   ],
   "sms_folder": "./src/__testData__/sms",
-  "is_registration_enabled": true
+  "is_registration_enabled": true,
+  "qr_code_url": "twake.chat://login"
 }
