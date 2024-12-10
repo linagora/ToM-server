@@ -30,28 +30,27 @@ export default (
    * components:
    *   schemas:
    *     ActivityMetric:
-   *       type: object
-   *       properties:
-   *        dailyActiveUsers:
-   *          type: number
-   *        weeklyActiveUsers:
-   *          type: number
-   *         monthlyActiveUsers:
-   *           type: number
-   *         weeklyNewUsers:
-   *           type: number
-   *         monthlyNewUsers:
-   *           type: number
+   *      type: object
+   *      properties:
+   *       dailyActiveUsers:
+   *        type: number
+   *       weeklyActiveUsers:
+   *        type: number
+   *       monthlyActiveUsers:
+   *        type: number
+   *       weeklyNewUsers:
+   *        type: number
+   *       monthlyNewUsers:
+   *        type: number
    *     MessageMetric:
-   *       type: object
-   *       array:
-   *         items:
-   *           type: object
-   *           properties:
-   *             user_id:
-   *               type: string
-   *             message_count:
-   *               type: number
+   *       type: array
+   *       items:
+   *        type: object
+   *        properties:
+   *          user_id:
+   *            type: string
+   *          message_count:
+   *            type: number
    */
 
   /**
@@ -68,17 +67,13 @@ export default (
    *            application/json:
    *              schema:
    *                type: object
-   *                  $ref: '#/components/schemas/ActivityMetric'
+   *                $ref: '#/components/schemas/ActivityMetric'
    *        500:
    *          description: Internal error
    *        400:
    *          description: Bad request
-   *        401:
-   *          description: Unauthorized
    *        403:
    *          description: Forbidden
-   *        404:
-   *          description: Activity metrics not found
    */
   router.get(
     `${PATH}/activity`,
@@ -101,17 +96,13 @@ export default (
    *            application/json:
    *              schema:
    *                type: object
-   *                  $ref: '#/components/schemas/MessageMetric'
+   *                $ref: '#/components/schemas/MessageMetric'
    *        500:
    *          description: Internal error
    *        400:
    *          description: Bad request
-   *        401:
-   *          description: Unauthorized
    *        403:
    *          description: Forbidden
-   *        404:
-   *          description: Messages metrics not found
    */
   router.get(
     `${PATH}/messages`,
