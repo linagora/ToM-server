@@ -22,25 +22,25 @@ const ONE_WEEK_IN_MS = 7 * ONE_DAY_IN_MS
 const ONE_MONTH_IN_MS = 30 * ONE_DAY_IN_MS
 
 const TODAY_USER = {
-  creation_ts: 1,
+  creation_ts: new Date().getTime() / 1000,
   last_seen_ts: new Date().getTime(),
   name: 'user1'
 }
 
 const PRE_TODAY_USER = {
-  creation_ts: 1,
+  creation_ts: new Date().getTime() - ONE_DAY_IN_MS - 1,
   last_seen_ts: new Date().getTime() - ONE_DAY_IN_MS - 1,
   name: 'user2'
 }
 
 const PRE_WEEK_USER = {
-  creation_ts: 1,
+  creation_ts: new Date().getTime() / 1000 - ONE_WEEK_IN_MS - 1,
   last_seen_ts: new Date().getTime() - ONE_WEEK_IN_MS - 1,
   name: 'user3'
 }
 
 const PRE_MONTH_USER = {
-  creation_ts: 1,
+  creation_ts: new Date().getTime() / 1000 - ONE_MONTH_IN_MS - 1,
   last_seen_ts: new Date().getTime() - ONE_MONTH_IN_MS - 1,
   name: 'user4'
 }
@@ -268,6 +268,64 @@ describe('the Metrics API Service', () => {
         monthlyActiveUsers: [TODAY_USER, PRE_TODAY_USER, PRE_WEEK_USER],
         weeklyNewUsers: [],
         monthlyNewUsers: []
+      })
+    })
+
+    it('should return the weekly and monthly new users list', async () => {
+      dbMock.getAll.mockResolvedValue([
+        TODAY_USER,
+        PRE_TODAY_USER,
+        PRE_WEEK_USER,
+        PRE_MONTH_USER
+      ])
+
+      dbMock.get.mockImplementation(
+        async (
+          _table: string,
+          _fields: string[],
+          filters: Record<string, string | number>
+        ) => {
+          switch (filters.user_id) {
+            case TODAY_USER.name:
+              return await Promise.resolve([
+                {
+                  user_id: TODAY_USER.name,
+                  last_seen: TODAY_USER.last_seen_ts
+                }
+              ])
+            case PRE_TODAY_USER.name:
+              return await Promise.resolve([
+                {
+                  user_id: PRE_TODAY_USER.name,
+                  last_seen: PRE_TODAY_USER.last_seen_ts
+                }
+              ])
+            case PRE_WEEK_USER.name:
+              return await Promise.resolve([
+                {
+                  user_id: PRE_WEEK_USER.name,
+                  last_seen: PRE_WEEK_USER.last_seen_ts
+                }
+              ])
+            case PRE_MONTH_USER.name:
+              return await Promise.resolve([
+                {
+                  user_id: PRE_MONTH_USER.name,
+                  last_seen: PRE_MONTH_USER.last_seen_ts
+                }
+              ])
+          }
+        }
+      )
+
+      const result = await metricsService.getUserActivityStats()
+
+      expect(result).toEqual({
+        dailyActiveUsers: [TODAY_USER],
+        weeklyActiveUsers: [TODAY_USER, PRE_TODAY_USER],
+        monthlyActiveUsers: [TODAY_USER, PRE_TODAY_USER, PRE_WEEK_USER],
+        weeklyNewUsers: [TODAY_USER, PRE_TODAY_USER],
+        monthlyNewUsers: [TODAY_USER, PRE_TODAY_USER, PRE_WEEK_USER]
       })
     })
   })
