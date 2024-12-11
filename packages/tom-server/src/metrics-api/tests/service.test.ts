@@ -22,33 +22,25 @@ const ONE_WEEK_IN_MS = 7 * ONE_DAY_IN_MS
 const ONE_MONTH_IN_MS = 30 * ONE_DAY_IN_MS
 
 const TODAY_USER = {
-  avatar_url: '',
   creation_ts: 1,
-  displayname: 'user 1',
   last_seen_ts: new Date().getTime(),
   name: 'user1'
 }
 
 const PRE_TODAY_USER = {
-  avatar_url: '',
   creation_ts: 1,
-  displayname: 'user 1',
   last_seen_ts: new Date().getTime() - ONE_DAY_IN_MS - 1,
   name: 'user2'
 }
 
 const PRE_WEEK_USER = {
-  avatar_url: '',
   creation_ts: 1,
-  displayname: 'user 2',
   last_seen_ts: new Date().getTime() - ONE_WEEK_IN_MS - 1,
   name: 'user3'
 }
 
 const PRE_MONTH_USER = {
-  avatar_url: '',
   creation_ts: 1,
-  displayname: 'user 3',
   last_seen_ts: new Date().getTime() - ONE_MONTH_IN_MS - 1,
   name: 'user4'
 }
@@ -93,6 +85,20 @@ describe('the Metrics API Service', () => {
   describe('the getUserActivityStats function', () => {
     it('should attempts to get user activity stats', async () => {
       dbMock.getAll.mockResolvedValue([TODAY_USER])
+      dbMock.get.mockImplementation(
+        async (
+          _table: string,
+          _fields: string[],
+          filters: Record<string, string | number>
+        ) => {
+          return await Promise.resolve([
+            {
+              user_id: TODAY_USER.name,
+              last_seen: TODAY_USER.last_seen_ts
+            }
+          ])
+        }
+      )
 
       const result = await metricsService.getUserActivityStats()
 
@@ -121,6 +127,30 @@ describe('the Metrics API Service', () => {
 
     it('should return only today active users', async () => {
       dbMock.getAll.mockResolvedValue([TODAY_USER, PRE_TODAY_USER])
+      dbMock.get.mockImplementation(
+        async (
+          _table: string,
+          _fields: string[],
+          filters: Record<string, string | number>
+        ) => {
+          switch (filters.user_id) {
+            case TODAY_USER.name:
+              return await Promise.resolve([
+                {
+                  user_id: TODAY_USER.name,
+                  last_seen: TODAY_USER.last_seen_ts
+                }
+              ])
+            case PRE_TODAY_USER.name:
+              return await Promise.resolve([
+                {
+                  user_id: PRE_TODAY_USER.name,
+                  last_seen: PRE_TODAY_USER.last_seen_ts
+                }
+              ])
+          }
+        }
+      )
 
       const result = await metricsService.getUserActivityStats()
 
@@ -139,6 +169,38 @@ describe('the Metrics API Service', () => {
         PRE_TODAY_USER,
         PRE_WEEK_USER
       ])
+
+      dbMock.get.mockImplementation(
+        async (
+          _table: string,
+          _fields: string[],
+          filters: Record<string, string | number>
+        ) => {
+          switch (filters.user_id) {
+            case TODAY_USER.name:
+              return await Promise.resolve([
+                {
+                  user_id: TODAY_USER.name,
+                  last_seen: TODAY_USER.last_seen_ts
+                }
+              ])
+            case PRE_TODAY_USER.name:
+              return await Promise.resolve([
+                {
+                  user_id: PRE_TODAY_USER.name,
+                  last_seen: PRE_TODAY_USER.last_seen_ts
+                }
+              ])
+            case PRE_WEEK_USER.name:
+              return await Promise.resolve([
+                {
+                  user_id: PRE_WEEK_USER.name,
+                  last_seen: PRE_WEEK_USER.last_seen_ts
+                }
+              ])
+          }
+        }
+      )
 
       const result = await metricsService.getUserActivityStats()
 
@@ -159,6 +221,45 @@ describe('the Metrics API Service', () => {
         PRE_MONTH_USER
       ])
 
+      dbMock.get.mockImplementation(
+        async (
+          _table: string,
+          _fields: string[],
+          filters: Record<string, string | number>
+        ) => {
+          switch (filters.user_id) {
+            case TODAY_USER.name:
+              return await Promise.resolve([
+                {
+                  user_id: TODAY_USER.name,
+                  last_seen: TODAY_USER.last_seen_ts
+                }
+              ])
+            case PRE_TODAY_USER.name:
+              return await Promise.resolve([
+                {
+                  user_id: PRE_TODAY_USER.name,
+                  last_seen: PRE_TODAY_USER.last_seen_ts
+                }
+              ])
+            case PRE_WEEK_USER.name:
+              return await Promise.resolve([
+                {
+                  user_id: PRE_WEEK_USER.name,
+                  last_seen: PRE_WEEK_USER.last_seen_ts
+                }
+              ])
+            case PRE_MONTH_USER.name:
+              return await Promise.resolve([
+                {
+                  user_id: PRE_MONTH_USER.name,
+                  last_seen: PRE_MONTH_USER.last_seen_ts
+                }
+              ])
+          }
+        }
+      )
+
       const result = await metricsService.getUserActivityStats()
 
       expect(result).toEqual({
@@ -174,6 +275,18 @@ describe('the Metrics API Service', () => {
   describe('the getUserMessageStats function', () => {
     it('should attempts to get user message stats', async () => {
       dbMock.getAll.mockResolvedValue([TODAY_USER])
+      dbMock.get.mockImplementation(async (table: string) => {
+        if (table === 'events') {
+          return messages
+        }
+        return await Promise.resolve([
+          {
+            user_id: TODAY_USER.name,
+            last_seen: TODAY_USER.last_seen_ts
+          }
+        ])
+      })
+
       dbMock.get.mockResolvedValue(messages)
 
       const result = await metricsService.getUserMessageStats()
@@ -196,7 +309,17 @@ describe('the Metrics API Service', () => {
 
     it('should return zero message count for users with no messages', async () => {
       dbMock.getAll.mockResolvedValue([TODAY_USER])
-      dbMock.get.mockResolvedValue([])
+      dbMock.get.mockImplementation(async (table: string) => {
+        if (table === 'events') {
+          return []
+        }
+        return await Promise.resolve([
+          {
+            user_id: TODAY_USER.name,
+            last_seen: TODAY_USER.last_seen_ts
+          }
+        ])
+      })
 
       const result = await metricsService.getUserMessageStats()
 
@@ -213,6 +336,35 @@ describe('the Metrics API Service', () => {
       dbMock.get
         .mockResolvedValueOnce(messages) // For first user
         .mockResolvedValueOnce([messages[0]]) // For second user
+
+      dbMock.get.mockImplementation(
+        async (
+          table: string,
+          _fields: string[],
+          filters: Record<string, string | number>
+        ) => {
+          if (table === 'events') {
+            return filters.sender === 'user1' ? messages : [messages[0]]
+          }
+
+          switch (filters.user_id) {
+            case TODAY_USER.name:
+              return await Promise.resolve([
+                {
+                  user_id: TODAY_USER.name,
+                  last_seen: TODAY_USER.last_seen_ts
+                }
+              ])
+            case PRE_TODAY_USER.name:
+              return await Promise.resolve([
+                {
+                  user_id: PRE_TODAY_USER.name,
+                  last_seen: PRE_TODAY_USER.last_seen_ts
+                }
+              ])
+          }
+        }
+      )
 
       const result = await metricsService.getUserMessageStats()
 
