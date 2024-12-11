@@ -18,19 +18,19 @@ const TODAY_USER = {
 } satisfies MatrixUserInfo
 
 const PRE_TODAY_USER = {
-  creation_ts: 1,
+  creation_ts: new Date().getTime() / 1000 - ONE_DAY_IN_MS - 1,
   last_seen_ts: new Date().getTime() - ONE_DAY_IN_MS - 1,
   name: 'user2'
 }
 
 const PRE_WEEK_USER = {
-  creation_ts: 1,
+  creation_ts: new Date().getTime() / 1000 - ONE_WEEK_IN_MS - 1,
   last_seen_ts: new Date().getTime() - ONE_WEEK_IN_MS - 1,
   name: 'user3'
 }
 
 const PRE_MONTH_USER = {
-  creation_ts: 1,
+  creation_ts: new Date().getTime() / 1000 - ONE_MONTH_IN_MS - 1,
   last_seen_ts: new Date().getTime() - ONE_MONTH_IN_MS - 1,
   name: 'user4'
 }
