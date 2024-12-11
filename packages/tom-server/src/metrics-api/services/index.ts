@@ -81,8 +81,6 @@ class MetricsService implements IMetricsService {
     try {
       const queryResult = (await this.matrixDb.getAll('users', [
         'name',
-        'displayname',
-        'avatar_url',
         'creation_ts',
         'last_seen_ts'
       ])) as unknown as MatrixUserInfo[]
