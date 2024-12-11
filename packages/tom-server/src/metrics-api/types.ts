@@ -20,8 +20,6 @@ export interface UserActivityStats {
 
 export interface MatrixUserInfo {
   name: string
-  displayname: string
-  avatar_url: string
   last_seen_ts: number
   creation_ts: number
 }

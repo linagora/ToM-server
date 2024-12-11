@@ -12,33 +12,25 @@ const ONE_WEEK_IN_MS = 7 * ONE_DAY_IN_MS
 const ONE_MONTH_IN_MS = 30 * ONE_DAY_IN_MS
 
 const TODAY_USER = {
-  avatar_url: '',
   creation_ts: 1,
-  displayname: 'user 1',
   last_seen_ts: new Date().getTime(),
   name: 'user1'
 } satisfies MatrixUserInfo
 
 const PRE_TODAY_USER = {
-  avatar_url: '',
   creation_ts: 1,
-  displayname: 'user 1',
   last_seen_ts: new Date().getTime() - ONE_DAY_IN_MS - 1,
   name: 'user2'
 }
 
 const PRE_WEEK_USER = {
-  avatar_url: '',
   creation_ts: 1,
-  displayname: 'user 2',
   last_seen_ts: new Date().getTime() - ONE_WEEK_IN_MS - 1,
   name: 'user3'
 }
 
 const PRE_MONTH_USER = {
-  avatar_url: '',
   creation_ts: 1,
-  displayname: 'user 3',
   last_seen_ts: new Date().getTime() - ONE_MONTH_IN_MS - 1,
   name: 'user4'
 }
