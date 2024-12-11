@@ -28,19 +28,19 @@ const TODAY_USER = {
 }
 
 const PRE_TODAY_USER = {
-  creation_ts: new Date().getTime() - ONE_DAY_IN_MS - 1,
+  creation_ts: (new Date().getTime() - ONE_DAY_IN_MS - 1) / 1000,
   last_seen_ts: new Date().getTime() - ONE_DAY_IN_MS - 1,
   name: 'user2'
 }
 
 const PRE_WEEK_USER = {
-  creation_ts: new Date().getTime() / 1000 - ONE_WEEK_IN_MS - 1,
-  last_seen_ts: new Date().getTime() - ONE_WEEK_IN_MS - 1,
+  creation_ts: (new Date().getTime() - ONE_WEEK_IN_MS - 1) / 1000,
+  last_seen_ts: new Date().getTime() - (ONE_WEEK_IN_MS * 1000) - 1,
   name: 'user3'
 }
 
 const PRE_MONTH_USER = {
-  creation_ts: new Date().getTime() / 1000 - ONE_MONTH_IN_MS - 1,
+  creation_ts: (new Date().getTime() - ONE_MONTH_IN_MS - 1) / 1000,
   last_seen_ts: new Date().getTime() - ONE_MONTH_IN_MS - 1,
   name: 'user4'
 }
@@ -103,11 +103,21 @@ describe('the Metrics API Service', () => {
       const result = await metricsService.getUserActivityStats()
 
       expect(result).toEqual({
-        dailyActiveUsers: [TODAY_USER],
-        weeklyActiveUsers: [TODAY_USER],
-        monthlyActiveUsers: [TODAY_USER],
-        weeklyNewUsers: [],
-        monthlyNewUsers: []
+        dailyActiveUsers: [
+          { ...TODAY_USER, creation_ts: TODAY_USER.creation_ts * 1000 }
+        ],
+        weeklyActiveUsers: [
+          { ...TODAY_USER, creation_ts: TODAY_USER.creation_ts * 1000 }
+        ],
+        monthlyActiveUsers: [
+          { ...TODAY_USER, creation_ts: TODAY_USER.creation_ts * 1000 }
+        ],
+        weeklyNewUsers: [
+          { ...TODAY_USER, creation_ts: TODAY_USER.creation_ts * 1000 }
+        ],
+        monthlyNewUsers: [
+          { ...TODAY_USER, creation_ts: TODAY_USER.creation_ts * 1000 }
+        ]
       })
     })
 
@@ -155,11 +165,25 @@ describe('the Metrics API Service', () => {
       const result = await metricsService.getUserActivityStats()
 
       expect(result).toEqual({
-        dailyActiveUsers: [TODAY_USER],
-        weeklyActiveUsers: [TODAY_USER, PRE_TODAY_USER],
-        monthlyActiveUsers: [TODAY_USER, PRE_TODAY_USER],
-        weeklyNewUsers: [],
-        monthlyNewUsers: []
+        dailyActiveUsers: [
+          { ...TODAY_USER, creation_ts: TODAY_USER.creation_ts * 1000 }
+        ],
+        weeklyActiveUsers: [
+          { ...TODAY_USER, creation_ts: TODAY_USER.creation_ts * 1000 },
+          { ...PRE_TODAY_USER, creation_ts: PRE_TODAY_USER.creation_ts * 1000 }
+        ],
+        monthlyActiveUsers: [
+          { ...TODAY_USER, creation_ts: TODAY_USER.creation_ts * 1000 },
+          { ...PRE_TODAY_USER, creation_ts: PRE_TODAY_USER.creation_ts * 1000 }
+        ],
+        weeklyNewUsers: [
+          { ...TODAY_USER, creation_ts: TODAY_USER.creation_ts * 1000 },
+          { ...PRE_TODAY_USER, creation_ts: PRE_TODAY_USER.creation_ts * 1000 }
+        ],
+        monthlyNewUsers: [
+          { ...TODAY_USER, creation_ts: TODAY_USER.creation_ts * 1000 },
+          { ...PRE_TODAY_USER, creation_ts: PRE_TODAY_USER.creation_ts * 1000 }
+        ]
       })
     })
 
@@ -205,11 +229,27 @@ describe('the Metrics API Service', () => {
       const result = await metricsService.getUserActivityStats()
 
       expect(result).toEqual({
-        dailyActiveUsers: [TODAY_USER],
-        weeklyActiveUsers: [TODAY_USER, PRE_TODAY_USER],
-        monthlyActiveUsers: [TODAY_USER, PRE_TODAY_USER, PRE_WEEK_USER],
-        weeklyNewUsers: [],
-        monthlyNewUsers: []
+        dailyActiveUsers: [
+          { ...TODAY_USER, creation_ts: TODAY_USER.creation_ts * 1000 }
+        ],
+        weeklyActiveUsers: [
+          { ...TODAY_USER, creation_ts: TODAY_USER.creation_ts * 1000 },
+          { ...PRE_TODAY_USER, creation_ts: PRE_TODAY_USER.creation_ts * 1000 }
+        ],
+        monthlyActiveUsers: [
+          { ...TODAY_USER, creation_ts: TODAY_USER.creation_ts * 1000 },
+          { ...PRE_TODAY_USER, creation_ts: PRE_TODAY_USER.creation_ts * 1000 },
+          { ...PRE_WEEK_USER, creation_ts: PRE_WEEK_USER.creation_ts * 1000 }
+        ],
+        weeklyNewUsers: [
+          { ...TODAY_USER, creation_ts: TODAY_USER.creation_ts * 1000 },
+          { ...PRE_TODAY_USER, creation_ts: PRE_TODAY_USER.creation_ts * 1000 }
+        ],
+        monthlyNewUsers: [
+          { ...TODAY_USER, creation_ts: TODAY_USER.creation_ts * 1000 },
+          { ...PRE_TODAY_USER, creation_ts: PRE_TODAY_USER.creation_ts * 1000 },
+          { ...PRE_WEEK_USER, creation_ts: PRE_WEEK_USER.creation_ts * 1000 }
+        ]
       })
     })
 
@@ -263,11 +303,27 @@ describe('the Metrics API Service', () => {
       const result = await metricsService.getUserActivityStats()
 
       expect(result).toEqual({
-        dailyActiveUsers: [TODAY_USER],
-        weeklyActiveUsers: [TODAY_USER, PRE_TODAY_USER],
-        monthlyActiveUsers: [TODAY_USER, PRE_TODAY_USER, PRE_WEEK_USER],
-        weeklyNewUsers: [],
-        monthlyNewUsers: []
+        dailyActiveUsers: [
+          { ...TODAY_USER, creation_ts: TODAY_USER.creation_ts * 1000 }
+        ],
+        weeklyActiveUsers: [
+          { ...TODAY_USER, creation_ts: TODAY_USER.creation_ts * 1000 },
+          { ...PRE_TODAY_USER, creation_ts: PRE_TODAY_USER.creation_ts * 1000 }
+        ],
+        monthlyActiveUsers: [
+          { ...TODAY_USER, creation_ts: TODAY_USER.creation_ts * 1000 },
+          { ...PRE_TODAY_USER, creation_ts: PRE_TODAY_USER.creation_ts * 1000 },
+          { ...PRE_WEEK_USER, creation_ts: PRE_WEEK_USER.creation_ts * 1000 }
+        ],
+        weeklyNewUsers: [
+          { ...TODAY_USER, creation_ts: TODAY_USER.creation_ts * 1000 },
+          { ...PRE_TODAY_USER, creation_ts: PRE_TODAY_USER.creation_ts * 1000 }
+        ],
+        monthlyNewUsers: [
+          { ...TODAY_USER, creation_ts: TODAY_USER.creation_ts * 1000 },
+          { ...PRE_TODAY_USER, creation_ts: PRE_TODAY_USER.creation_ts * 1000 },
+          { ...PRE_WEEK_USER, creation_ts: PRE_WEEK_USER.creation_ts * 1000 }
+        ]
       })
     })
 
@@ -321,11 +377,27 @@ describe('the Metrics API Service', () => {
       const result = await metricsService.getUserActivityStats()
 
       expect(result).toEqual({
-        dailyActiveUsers: [TODAY_USER],
-        weeklyActiveUsers: [TODAY_USER, PRE_TODAY_USER],
-        monthlyActiveUsers: [TODAY_USER, PRE_TODAY_USER, PRE_WEEK_USER],
-        weeklyNewUsers: [TODAY_USER, PRE_TODAY_USER],
-        monthlyNewUsers: [TODAY_USER, PRE_TODAY_USER, PRE_WEEK_USER]
+        dailyActiveUsers: [
+          { ...TODAY_USER, creation_ts: TODAY_USER.creation_ts * 1000 }
+        ],
+        weeklyActiveUsers: [
+          { ...TODAY_USER, creation_ts: TODAY_USER.creation_ts * 1000 },
+          { ...PRE_TODAY_USER, creation_ts: PRE_TODAY_USER.creation_ts * 1000 }
+        ],
+        monthlyActiveUsers: [
+          { ...TODAY_USER, creation_ts: TODAY_USER.creation_ts * 1000 },
+          { ...PRE_TODAY_USER, creation_ts: PRE_TODAY_USER.creation_ts * 1000 },
+          { ...PRE_WEEK_USER, creation_ts: PRE_WEEK_USER.creation_ts * 1000 }
+        ],
+        weeklyNewUsers: [
+          { ...TODAY_USER, creation_ts: TODAY_USER.creation_ts * 1000 },
+          { ...PRE_TODAY_USER, creation_ts: PRE_TODAY_USER.creation_ts * 1000 }
+        ],
+        monthlyNewUsers: [
+          { ...TODAY_USER, creation_ts: TODAY_USER.creation_ts * 1000 },
+          { ...PRE_TODAY_USER, creation_ts: PRE_TODAY_USER.creation_ts * 1000 },
+          { ...PRE_WEEK_USER, creation_ts: PRE_WEEK_USER.creation_ts * 1000 }
+        ]
       })
     })
   })
