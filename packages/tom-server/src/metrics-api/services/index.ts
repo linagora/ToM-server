@@ -2,6 +2,7 @@ import type { MatrixDBBackend } from '@twake/matrix-identity-server'
 import type {
   IMetricsService,
   MatrixUserInfo,
+  MatrixUserIpInfo,
   UserActivityStats,
   UserMessageCount,
   UserMessageEvent
@@ -79,13 +80,24 @@ class MetricsService implements IMetricsService {
    */
   private readonly _fetchUsersList = async (): Promise<MatrixUserInfo[]> => {
     try {
-      const queryResult = (await this.matrixDb.getAll('users', [
+      const matrixUsers: MatrixUserInfo[] = []
+      const usersList = (await this.matrixDb.getAll('users', [
         'name',
-        'creation_ts',
-        'last_seen_ts'
+        'creation_ts'
       ])) as unknown as MatrixUserInfo[]
 
-      return queryResult
+      await Promise.all(
+        usersList.map(async (user) => {
+          const lastSeenTs = await this._fetchUserLastSeenTime(user.name)
+
+          matrixUsers.push({
+            ...user,
+            last_seen_ts: lastSeenTs
+          })
+        })
+      )
+
+      return matrixUsers
     } catch (error) {
       this.logger.error(`Failed to fetch users list`, { error })
 
@@ -194,6 +206,38 @@ class MetricsService implements IMetricsService {
       this.logger.error(`Failed to fetch user message count`, { error })
 
       throw Error('Failed to fetch user message count')
+    }
+  }
+
+  /**
+   * Fetches the last time a user was seen.
+   *
+   * @param {string} userId - the user id.
+   * @returns {Promise<number>} - the last time the user was seen.
+   */
+  private readonly _fetchUserLastSeenTime = async (
+    userId: string
+  ): Promise<number> => {
+    try {
+      const queryResult = (await this.matrixDb.get(
+        'user_ips',
+        ['user_id', 'last_seen'],
+        {
+          user_id: userId
+        }
+      )) as unknown as MatrixUserIpInfo[]
+
+      const latestSeenTime = queryResult.reduce((latestTime, userIpInfo) => {
+        const parsedLastSeen = parseInt(userIpInfo.last_seen, 10)
+
+        return parsedLastSeen > latestTime ? parsedLastSeen : latestTime
+      }, 0)
+
+      return latestSeenTime
+    } catch (error) {
+      this.logger.warn(`Failed to fetch user access info`, { error })
+
+      return 0
     }
   }
 }
