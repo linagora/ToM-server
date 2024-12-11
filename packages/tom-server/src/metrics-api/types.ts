@@ -35,3 +35,9 @@ export interface UserMessageEvent {
   room_id: string
   content: string
 }
+
+export interface MatrixUserIpInfo {
+  user_id: string
+  device_id: string
+  last_seen: string
+}
