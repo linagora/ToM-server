@@ -12,6 +12,7 @@ export type Collections =
   | 'room_stats_state'
   | 'event_json'
   | 'events'
+  | 'user_ips'
 
 type Get = (
   table: Collections,
