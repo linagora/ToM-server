@@ -12,7 +12,7 @@ const ONE_WEEK_IN_MS = 7 * ONE_DAY_IN_MS
 const ONE_MONTH_IN_MS = 30 * ONE_DAY_IN_MS
 
 const TODAY_USER = {
-  creation_ts: 1,
+  creation_ts: new Date().getTime() / 1000,
   last_seen_ts: new Date().getTime(),
   name: 'user1'
 } satisfies MatrixUserInfo
@@ -286,9 +286,7 @@ describe('the mectrics API controller', () => {
         monthlyActiveUsers: [
           { ...PRE_WEEK_USER, creation_ts: PRE_WEEK_USER.creation_ts * 1000 }
         ],
-        weeklyNewUsers: [
-          { ...PRE_WEEK_USER, creation_ts: PRE_WEEK_USER.creation_ts * 1000 }
-        ],
+        weeklyNewUsers: [],
         monthlyNewUsers: [
           { ...PRE_WEEK_USER, creation_ts: PRE_WEEK_USER.creation_ts * 1000 }
         ]

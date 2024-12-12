@@ -35,7 +35,7 @@ const PRE_TODAY_USER = {
 
 const PRE_WEEK_USER = {
   creation_ts: (new Date().getTime() - ONE_WEEK_IN_MS - 1) / 1000,
-  last_seen_ts: new Date().getTime() - (ONE_WEEK_IN_MS * 1000) - 1,
+  last_seen_ts: new Date().getTime() - ONE_WEEK_IN_MS - 1,
   name: 'user3'
 }
 
