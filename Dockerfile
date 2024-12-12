@@ -32,10 +32,11 @@ COPY landing /usr/src/app/landing
 
 # Build and clean
 
-RUN npm install && npm run build && \
-    rm -rf node_modules */*/node_modules && \
-    npm install --production --ignore-scripts && \
-    npm cache clean --force
+RUN npm install
+RUN npm run build -- --skip-nx-cache
+RUN rm -rf node_modules */*/node_modules
+RUN npm install --production --ignore-scripts
+RUN npm cache clean --force
 
 FROM node-minimal as tom-server
 
@@ -91,7 +92,8 @@ ENV BASE_URL= \
     SMS_API_KEY= \
     RATE_LIMITING_WINDOW= \
     RATE_LIMITING_NB_REQUESTS= \
-    TRUSTED_PROXIES=
+    TRUSTED_PROXIES= \
+    QRCODE_URL=
 
 COPY --from=1 /usr/src/app /usr/src/app/
 
