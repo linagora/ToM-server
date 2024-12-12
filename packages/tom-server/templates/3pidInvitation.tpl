@@ -2,7 +2,7 @@ Date: __date__
 From: __from__
 To: __to__
 Message-ID: __messageid__
-Subject: Invitation to join a Matrix room
+Subject: Invitation to join a Matrix room 
 MIME-Version: 1.0
 Content-Type: multipart/alternative;
     boundary="__multipart_boundary__"

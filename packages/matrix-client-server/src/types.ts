@@ -252,7 +252,6 @@ export interface LocalMediaRepository {
 export interface MatrixUser {
   name: string
 }
-
 export interface UnsignedData {
   age?: number
   membership?: string
