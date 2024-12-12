@@ -39,5 +39,5 @@ export interface UserMessageEvent {
 export interface MatrixUserIpInfo {
   user_id: string
   device_id: string
-  last_seen: string
+  last_seen: number
 }

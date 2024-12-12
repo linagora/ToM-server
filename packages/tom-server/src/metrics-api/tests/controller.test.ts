@@ -12,25 +12,25 @@ const ONE_WEEK_IN_MS = 7 * ONE_DAY_IN_MS
 const ONE_MONTH_IN_MS = 30 * ONE_DAY_IN_MS
 
 const TODAY_USER = {
-  creation_ts: 1,
+  creation_ts: new Date().getTime() / 1000,
   last_seen_ts: new Date().getTime(),
   name: 'user1'
 } satisfies MatrixUserInfo
 
 const PRE_TODAY_USER = {
-  creation_ts: 1,
+  creation_ts: (new Date().getTime() - ONE_DAY_IN_MS - 1) / 1000,
   last_seen_ts: new Date().getTime() - ONE_DAY_IN_MS - 1,
   name: 'user2'
 }
 
 const PRE_WEEK_USER = {
-  creation_ts: 1,
+  creation_ts: (new Date().getTime() - ONE_WEEK_IN_MS - 1) / 1000,
   last_seen_ts: new Date().getTime() - ONE_WEEK_IN_MS - 1,
   name: 'user3'
 }
 
 const PRE_MONTH_USER = {
-  creation_ts: 1,
+  creation_ts: (new Date().getTime() - ONE_MONTH_IN_MS - 1) / 1000,
   last_seen_ts: new Date().getTime() - ONE_MONTH_IN_MS - 1,
   name: 'user4'
 }
@@ -129,11 +129,21 @@ describe('the mectrics API controller', () => {
 
       expect(response.status).toBe(200)
       expect(response.body).toEqual({
-        dailyActiveUsers: [TODAY_USER],
-        weeklyActiveUsers: [TODAY_USER],
-        monthlyActiveUsers: [TODAY_USER],
-        weeklyNewUsers: [],
-        monthlyNewUsers: []
+        dailyActiveUsers: [
+          { ...TODAY_USER, creation_ts: TODAY_USER.creation_ts * 1000 }
+        ],
+        weeklyActiveUsers: [
+          { ...TODAY_USER, creation_ts: TODAY_USER.creation_ts * 1000 }
+        ],
+        monthlyActiveUsers: [
+          { ...TODAY_USER, creation_ts: TODAY_USER.creation_ts * 1000 }
+        ],
+        weeklyNewUsers: [
+          { ...TODAY_USER, creation_ts: TODAY_USER.creation_ts * 1000 }
+        ],
+        monthlyNewUsers: [
+          { ...TODAY_USER, creation_ts: TODAY_USER.creation_ts * 1000 }
+        ]
       })
     })
 
@@ -167,11 +177,25 @@ describe('the mectrics API controller', () => {
 
       expect(response.status).toBe(200)
       expect(response.body).toEqual({
-        dailyActiveUsers: [TODAY_USER],
-        weeklyActiveUsers: [TODAY_USER, PRE_TODAY_USER],
-        monthlyActiveUsers: [TODAY_USER, PRE_TODAY_USER],
-        weeklyNewUsers: [],
-        monthlyNewUsers: []
+        dailyActiveUsers: [
+          { ...TODAY_USER, creation_ts: TODAY_USER.creation_ts * 1000 }
+        ],
+        weeklyActiveUsers: [
+          { ...TODAY_USER, creation_ts: TODAY_USER.creation_ts * 1000 },
+          { ...PRE_TODAY_USER, creation_ts: PRE_TODAY_USER.creation_ts * 1000 }
+        ],
+        monthlyActiveUsers: [
+          { ...TODAY_USER, creation_ts: TODAY_USER.creation_ts * 1000 },
+          { ...PRE_TODAY_USER, creation_ts: PRE_TODAY_USER.creation_ts * 1000 }
+        ],
+        weeklyNewUsers: [
+          { ...TODAY_USER, creation_ts: TODAY_USER.creation_ts * 1000 },
+          { ...PRE_TODAY_USER, creation_ts: PRE_TODAY_USER.creation_ts * 1000 }
+        ],
+        monthlyNewUsers: [
+          { ...TODAY_USER, creation_ts: TODAY_USER.creation_ts * 1000 },
+          { ...PRE_TODAY_USER, creation_ts: PRE_TODAY_USER.creation_ts * 1000 }
+        ]
       })
     })
 
@@ -206,11 +230,23 @@ describe('the mectrics API controller', () => {
 
       expect(response.status).toBe(200)
       expect(response.body).toEqual({
-        dailyActiveUsers: [TODAY_USER],
-        weeklyActiveUsers: [TODAY_USER],
-        monthlyActiveUsers: [TODAY_USER, PRE_WEEK_USER],
-        weeklyNewUsers: [],
-        monthlyNewUsers: []
+        dailyActiveUsers: [
+          { ...TODAY_USER, creation_ts: TODAY_USER.creation_ts * 1000 }
+        ],
+        weeklyActiveUsers: [
+          { ...TODAY_USER, creation_ts: TODAY_USER.creation_ts * 1000 }
+        ],
+        monthlyActiveUsers: [
+          { ...TODAY_USER, creation_ts: TODAY_USER.creation_ts * 1000 },
+          { ...PRE_WEEK_USER, creation_ts: PRE_WEEK_USER.creation_ts * 1000 }
+        ],
+        weeklyNewUsers: [
+          { ...TODAY_USER, creation_ts: TODAY_USER.creation_ts * 1000 }
+        ],
+        monthlyNewUsers: [
+          { ...TODAY_USER, creation_ts: TODAY_USER.creation_ts * 1000 },
+          { ...PRE_WEEK_USER, creation_ts: PRE_WEEK_USER.creation_ts * 1000 }
+        ]
       })
     })
 
@@ -247,9 +283,13 @@ describe('the mectrics API controller', () => {
       expect(response.body).toEqual({
         dailyActiveUsers: [],
         weeklyActiveUsers: [],
-        monthlyActiveUsers: [PRE_WEEK_USER],
+        monthlyActiveUsers: [
+          { ...PRE_WEEK_USER, creation_ts: PRE_WEEK_USER.creation_ts * 1000 }
+        ],
         weeklyNewUsers: [],
-        monthlyNewUsers: []
+        monthlyNewUsers: [
+          { ...PRE_WEEK_USER, creation_ts: PRE_WEEK_USER.creation_ts * 1000 }
+        ]
       })
     })
 

@@ -92,6 +92,7 @@ class MetricsService implements IMetricsService {
 
           matrixUsers.push({
             ...user,
+            creation_ts: user.creation_ts * 1000,
             last_seen_ts: lastSeenTs
           })
         })
@@ -227,11 +228,11 @@ class MetricsService implements IMetricsService {
         }
       )) as unknown as MatrixUserIpInfo[]
 
-      const latestSeenTime = queryResult.reduce((latestTime, userIpInfo) => {
-        const parsedLastSeen = parseInt(userIpInfo.last_seen, 10)
-
-        return parsedLastSeen > latestTime ? parsedLastSeen : latestTime
-      }, 0)
+      const latestSeenTime = queryResult.reduce(
+        (latestTime, userIpInfo) =>
+          userIpInfo.last_seen > latestTime ? userIpInfo.last_seen : latestTime,
+        0
+      )
 
       return latestSeenTime
     } catch (error) {
