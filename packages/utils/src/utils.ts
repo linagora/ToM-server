@@ -5,9 +5,6 @@ import type http from 'http'
 import querystring from 'querystring'
 import { errMsg } from './errors'
 
-export const hostnameRe =
-  /^((([a-zA-Z0-9][-a-zA-Z0-9]*)?[a-zA-Z0-9])[.])*([a-zA-Z][-a-zA-Z0-9]*[a-zA-Z0-9]|[a-zA-Z])(:(\d+))?$/
-
 export type expressAppHandler = (
   req: Request | http.IncomingMessage,
   res: Response | http.ServerResponse,
@@ -17,10 +14,19 @@ export type expressAppHandler = (
 export const send = (
   res: Response | http.ServerResponse,
   status: number,
-  body: string | object
+  body: string | object,
+  logger?: TwakeLogger
 ): void => {
   /* istanbul ignore next */
   const content = typeof body === 'string' ? body : JSON.stringify(body)
+  if (logger != null) {
+    const logMessage = `Sending status ${status} with content ${content}`
+    if (status >= 200 && status < 300) {
+      logger.debug(logMessage)
+    } else {
+      logger.error(logMessage)
+    }
+  }
   res.writeHead(status, {
     'Content-Type': 'application/json; charset=utf-8',
     'Content-Length': Buffer.byteLength(content, 'utf-8'),
@@ -46,7 +52,7 @@ export const jsonContent = (
   })
   /* istanbul ignore next */
   req.on('error', (err) => {
-    send(res, 400, errMsg('unknown', err.message))
+    send(res, 400, errMsg('unknown', err.toString()))
     accept = false
   })
   req.on('end', () => {
@@ -79,15 +85,17 @@ type validateParametersType = (
   desc: validateParametersSchema,
   content: Record<string, string>,
   logger: TwakeLogger,
-  callback: (obj: object) => void
+  callback: (obj: object) => void,
+  acceptAdditionalParameters?: boolean
 ) => void
 
-export const validateParameters: validateParametersType = (
+const _validateParameters: validateParametersType = (
   res,
   desc,
   content,
   logger,
-  callback
+  callback,
+  acceptAdditionalParameters
 ) => {
   const missingParameters: string[] = []
   const additionalParameters: string[] = []
@@ -113,10 +121,44 @@ export const validateParameters: validateParametersType = (
       }
     })
     if (additionalParameters.length > 0) {
-      logger.warn('Additional parameters', additionalParameters)
+      if (acceptAdditionalParameters === false) {
+        logger.error('Additional parameters', additionalParameters)
+        send(
+          res,
+          400,
+          errMsg(
+            'unknownParam',
+            `Unknown additional parameters ${additionalParameters.join(', ')}`
+          )
+        )
+      } else {
+        logger.warn('Additional parameters', additionalParameters)
+        callback(content)
+      }
+    } else {
+      callback(content)
     }
-    callback(content)
   }
+}
+
+export const validateParameters: validateParametersType = (
+  res,
+  desc,
+  content,
+  logger,
+  callback
+) => {
+  _validateParameters(res, desc, content, logger, callback, true)
+}
+
+export const validateParametersStrict: validateParametersType = (
+  res,
+  desc,
+  content,
+  logger,
+  callback
+) => {
+  _validateParameters(res, desc, content, logger, callback, false)
 }
 
 export const epoch = (): number => {
@@ -125,11 +167,16 @@ export const epoch = (): number => {
 
 export const toMatrixId = (localpart: string, serverName: string): string => {
   // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
-  if (!localpart.match(/^[a-z0-9_\-.=/]+$/)) {
+  if (!localpart.match(/^[a-z0-9_\-./=+]+$/)) {
     // eslint-disable-next-line @typescript-eslint/no-throw-literal
     throw errMsg('invalidUsername')
   }
-  return `@${localpart}:${serverName}`
+  const userId = `@${localpart}:${serverName}`
+  if (userId.length > 255) {
+    // eslint-disable-next-line @typescript-eslint/no-throw-literal
+    throw errMsg('invalidUsername')
+  }
+  return userId
 }
 
 export const isValidUrl = (link: string): boolean => {
@@ -140,4 +187,23 @@ export const isValidUrl = (link: string): boolean => {
   } catch {
     return false
   }
+}
+
+export const getAccessToken = (
+  req: Request | http.IncomingMessage
+): string | null => {
+  const tokenRe = /^Bearer (\S+)$/
+  let token: string | null = null
+  if (req.headers.authorization != null) {
+    const re = req.headers.authorization.match(tokenRe)
+    if (re != null) {
+      token = re[1]
+    }
+    // @ts-expect-error req.query exists
+    // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+  } else if (req.query && Object.keys(req.query).length > 0) {
+    // @ts-expect-error req.query.access_token may be null
+    token = req.query.access_token
+  }
+  return token
 }

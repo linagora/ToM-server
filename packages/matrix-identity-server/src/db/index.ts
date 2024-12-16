@@ -25,6 +25,13 @@ export type Collections =
   | 'userPolicies'
   | 'userQuotas'
   | 'activeContacts'
+  // J'ajoute ici les collections pour les paires de clés
+  | 'mappings'
+  | 'longTermKeypairs'
+  | 'shortTermKeypairs'
+  | 'userHistory'
+  | 'userPolicies'
+  | 'userQuotas'
 
 const cleanByExpires: Collections[] = ['oneTimeTokens', 'attempts']
 
@@ -48,7 +55,8 @@ const tables: Record<Collections, string> = {
   shortTermKeypairs:
     'keyID varchar(64) PRIMARY KEY, public text, private text, active integer',
   userHistory: 'address text PRIMARY KEY, active integer, timestamp integer',
-  userPolicies: 'user_id text, policy_name text, accepted integer',
+  userPolicies:
+    'user_id text, policy_name text, accepted integer, PRIMARY KEY (user_id, policy_name)',
   userQuotas: 'user_id varchar(64) PRIMARY KEY, size int'
 }
 
@@ -557,6 +565,8 @@ class IdentityServerDb<T extends string = never>
         .catch((err) => {
           /* istanbul ignore next */
           this.logger.error('Failed to insert token', err)
+          /* istanbul ignore next */
+          reject(err)
         })
     })
   }
@@ -588,6 +598,7 @@ class IdentityServerDb<T extends string = never>
         .catch((err) => {
           /* istanbul ignore next */
           this.logger.error('Failed to insert token', err)
+          /* istanbul ignore next */
           reject(err)
         })
     })
@@ -613,6 +624,7 @@ class IdentityServerDb<T extends string = never>
         .catch((e) => {
           /* istanbul ignore next */
           this.logger.error('Failed to get token', e)
+          /* istanbul ignore next */
           reject(e)
         })
     })
@@ -634,12 +646,13 @@ class IdentityServerDb<T extends string = never>
           } else {
             reject(
               new Error(
-                'Token expired' + (rows[0].expires as number).toString()
+                'Token expired' + (rows[0]?.expires as number)?.toString()
               )
             )
           }
         })
         .catch((e) => {
+          /* istanbul ignore next */
           reject(e)
         })
     })
@@ -712,6 +725,7 @@ class IdentityServerDb<T extends string = never>
           })
         })
         .catch((e) => {
+          /* istanbul ignore next */
           reject(e)
         })
     })
@@ -744,6 +758,8 @@ class IdentityServerDb<T extends string = never>
         .catch((err) => {
           /* istanbul ignore next */
           this.logger.error('Failed to insert ephemeral Key Pair', err)
+          /* istanbul ignore next */
+          reject(err)
         })
     })
   }

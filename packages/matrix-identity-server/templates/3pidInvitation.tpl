@@ -2,7 +2,7 @@ Date: __date__
 From: __from__
 To: __to__
 Message-ID: __messageid__
-Subject: Invitation to join a Matrix room 
+Subject: Invitation to join a Matrix room
 MIME-Version: 1.0
 Content-Type: multipart/alternative;
     boundary="__multipart_boundary__"
@@ -12,7 +12,7 @@ Content-Type: text/plain; charset=UTF-8
 Content-Disposition: inline
 Hello,
 
-You have been invited to join the __room_name__ Matrix room by __inviter_name__. 
+You have been invited to join the __room_name__ Matrix room by __inviter_name__.
 Please click on the following link to accept the invitation: __link__
 
 About Matrix:

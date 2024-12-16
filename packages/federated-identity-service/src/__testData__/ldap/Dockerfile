@@ -3,7 +3,7 @@ LABEL maintainer Linagora
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Update system and install dependencies 
+# Update system and install dependencies
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         apt-transport-https \
@@ -16,7 +16,7 @@ RUN apt-get update && \
     apt-get update && \
     apt-get install -y openldap-ltb openldap-ltb-contrib-overlays openldap-ltb-mdb-utils ldap-utils && \
     apt-get clean && \
-    rm -rf /var/lib/apt/lists/* 
+    rm -rf /var/lib/apt/lists/*
 
 # Copy configuration files
 COPY ./ldif/config-20230322180123.ldif /var/backups/openldap/

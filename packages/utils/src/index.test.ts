@@ -7,7 +7,9 @@ import {
   validateParameters,
   epoch,
   toMatrixId,
-  isValidUrl
+  isValidUrl,
+  validateParametersStrict,
+  getAccessToken
 } from './index'
 import { type TwakeLogger } from '@twake/logger'
 
@@ -25,7 +27,9 @@ describe('Utility Functions', () => {
     mockLogger = {
       error: jest.fn(),
       warn: jest.fn(),
-      log: jest.fn()
+      log: jest.fn(),
+      info: jest.fn(),
+      debug: jest.fn()
     } as unknown as TwakeLogger
   })
 
@@ -45,6 +49,22 @@ describe('Utility Functions', () => {
         JSON.stringify({ message: 'ok' })
       )
       expect(mockResponse.end).toHaveBeenCalled()
+    })
+
+    it('should log the response status with info if status code in 200-299', () => {
+      send(mockResponse as Response, 200, { message: 'ok' }, mockLogger)
+
+      expect(mockLogger.debug).toHaveBeenCalledWith(
+        'Sending status 200 with content {"message":"ok"}'
+      )
+    })
+
+    it('should log the response status with error if status code not in 200-299', () => {
+      send(mockResponse as Response, 400, { message: 'error' }, mockLogger)
+
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        'Sending status 400 with content {"message":"error"}'
+      )
     })
   })
 
@@ -102,6 +122,7 @@ describe('Utility Functions', () => {
         headers: { 'content-type': 'application/json' },
         on: (event: string, callback: any) => {
           if (event === 'data') {
+            // eslint-disable-next-line n/no-callback-literal
             callback('invalid json')
           }
           if (event === 'end') {
@@ -166,6 +187,46 @@ describe('Utility Functions', () => {
       expect(mockResponse.write).toHaveBeenCalled()
       expect(mockResponse.end).toHaveBeenCalled()
     })
+
+    it('should log a warning for additional parameters', () => {
+      const desc = { key: true }
+      const content = { key: 'value', extra: 'extra' }
+
+      validateParameters(
+        mockResponse as Response,
+        desc,
+        content,
+        mockLogger,
+        () => {
+          // No-op
+        }
+      )
+
+      expect(mockLogger.warn).toHaveBeenCalled()
+      expect(mockResponse.writeHead).not.toHaveBeenCalled()
+    })
+
+    it('should return an error for additional parameters in strict mode', () => {
+      const desc = { key: true }
+      const content = { key: 'value', extra: 'extra' }
+
+      validateParametersStrict(
+        mockResponse as Response,
+        desc,
+        content,
+        mockLogger,
+        () => {
+          // No-op
+        }
+      )
+
+      expect(mockResponse.writeHead).toHaveBeenCalledWith(
+        400,
+        expect.any(Object)
+      )
+      expect(mockResponse.write).toHaveBeenCalled()
+      expect(mockResponse.end).toHaveBeenCalled()
+    })
   })
 
   describe('epoch', () => {
@@ -178,13 +239,19 @@ describe('Utility Functions', () => {
   })
 
   describe('toMatrixId', () => {
-    it('should return a Matrix ID', () => {
+    it('should return a Matrix ID for a valid localpart and server', () => {
       expect(toMatrixId('localpart', 'server')).toBe('@localpart:server')
     })
+
     it('should throw an error for an invalid localpart', () => {
       expect(() =>
-        toMatrixId('invalid localpart', 'example.com')
+        toMatrixId('@testuser:example.com', 'example.com')
       ).toThrowError()
+    })
+
+    it('should throw an error for a localpart longer than 512 characters', () => {
+      const longLocalpart = 'a'.repeat(513)
+      expect(() => toMatrixId(longLocalpart, 'example.com')).toThrowError()
     })
   })
   describe('isValidUrl', () => {
@@ -216,6 +283,51 @@ describe('Utility Functions', () => {
 
     it('should return false for an invalid URL missing domain', () => {
       expect(isValidUrl('http://')).toBe(false)
+    })
+  })
+  describe('getAccessToken', () => {
+    it('should return the access token from the Authorization header', () => {
+      const req = {
+        headers: {
+          authorization: 'Bearer some-token'
+        },
+        query: {}
+      } as unknown as Request
+
+      const token = getAccessToken(req)
+      expect(token).toBe('some-token')
+    })
+
+    it('should return null if there is no authorization header', () => {
+      const req = {
+        headers: {},
+        query: {}
+      } as unknown as Request
+
+      const token = getAccessToken(req)
+      expect(token).toBeNull()
+    })
+
+    it('should return the access token from the query parameters', () => {
+      const req = {
+        headers: {},
+        query: {
+          access_token: 'some-token'
+        }
+      } as unknown as Request
+
+      const token = getAccessToken(req)
+      expect(token).toBe('some-token')
+    })
+
+    it('should return null if there is no token in headers or query', () => {
+      const req = {
+        headers: {},
+        query: {}
+      } as unknown as Request
+
+      const token = getAccessToken(req)
+      expect(token).toBeNull()
     })
   })
 })

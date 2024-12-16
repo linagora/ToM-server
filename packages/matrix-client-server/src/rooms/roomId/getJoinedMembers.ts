@@ -16,7 +16,7 @@ const GetJoinedMembers = (
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-expect-error
     const roomId: string = ((req as Request).params as parameters).roomId
-    ClientServer.authenticate(req, res, (data, id) => {
+    ClientServer.authenticate(req, res, (data) => {
       // Check if the user has permission to retrieve this event
       const userId: string = data.sub
       ClientServer.matrixDb
@@ -28,11 +28,12 @@ const GetJoinedMembers = (
           if (rows.length === 0 || rows[0].membership !== 'join') {
             send(
               res,
-              404,
+              403,
               errMsg(
                 'notFound',
                 'User not in the room - cannot retrieve members'
-              )
+              ),
+              ClientServer.logger
             )
             return
           }
@@ -62,16 +63,17 @@ const GetJoinedMembers = (
             })
             .catch((err) => {
               /* istanbul ignore next */
-              ClientServer.logger.error(err)
-              /* istanbul ignore next */
-              send(res, 500, errMsg('unknown', err))
+              send(
+                res,
+                500,
+                errMsg('unknown', err.toString()),
+                ClientServer.logger
+              )
             })
         })
         .catch((err) => {
           /* istanbul ignore next */
-          ClientServer.logger.error(err)
-          /* istanbul ignore next */
-          send(res, 500, errMsg('unknown', err))
+          send(res, 500, errMsg('unknown', err.toString()), ClientServer.logger)
         })
     })
   }

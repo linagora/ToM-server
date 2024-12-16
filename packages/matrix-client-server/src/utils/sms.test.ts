@@ -25,7 +25,7 @@ describe('SmsSender', () => {
   it('should write SMS content to the correct file', async () => {
     const sender = new SmsSender(conf)
     const smsData = { to: '1234567890', raw: 'Test SMS content' }
-    const fileName = `sms_${smsData.to}_${Date.now()}.txt`
+    const fileName = `sms_${smsData.to}}.txt`
     const filePath = path.join(conf.sms_folder, fileName)
 
     await sender.sendSMS(smsData)

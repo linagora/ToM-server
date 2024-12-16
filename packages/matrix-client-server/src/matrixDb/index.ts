@@ -34,6 +34,35 @@ export type Collections =
   | 'threepid_validation_session'
   | 'user_threepids'
   | 'presence'
+  | 'access_tokens'
+  | 'refresh_tokens'
+  | 'open_id_tokens'
+  | 'user_filters'
+  | 'ui_auth_sessions'
+  | 'ui_auth_sessions_ips'
+  | 'ui_auth_sessions_credentials'
+  | 'users_in_public_rooms'
+  | 'users_who_share_private_rooms'
+  | 'user_directory'
+  | 'user_directory_search'
+  | 'pushers'
+  | 'deleted_pushers'
+  | 'erased_users'
+  | 'event_expiry'
+  | 'account_validity'
+  | 'ignored_users'
+  | 'push_rules'
+  | 'push_rules_enable'
+  | 'push_rules_stream'
+  | 'e2e_room_keys'
+  | 'e2e_room_keys_versions'
+  | 'e2e_device_keys_json'
+  | 'e2e_one_time_keys_json'
+  | 'e2e_fallback_keys_json'
+  | 'event_json'
+  | 'device_auth_providers'
+  | 'dehydrated_devices'
+  | 'device_inbox'
 
 type sqlComparaisonOperator = '=' | '!=' | '>' | '<' | '>=' | '<=' | '<>'
 interface ISQLCondition {
@@ -95,7 +124,7 @@ type Insert = (
 ) => Promise<DbGetResult>
 type updateWithConditions = (
   table: Collections,
-  values: Record<string, string | number>,
+  values: Record<string, string | number | null>,
   conditions: Array<{ field: string; value: string | number }>
 ) => Promise<DbGetResult>
 type DeleteEqual = (
@@ -107,6 +136,19 @@ type DeleteWhere = (
   table: Collections,
   conditions: ISQLCondition | ISQLCondition[]
 ) => Promise<void>
+type SearchUserDirectory = (
+  userId: string,
+  searchTerm: string,
+  limit: number,
+  searchAllUsers: boolean
+) => Promise<DbGetResult>
+type GetMaxStreamId = (
+  userId: string,
+  deviceId: string,
+  lowerBoundStreamId: number,
+  upperBoundStreamId: number,
+  limit: number
+) => Promise<number | null>
 
 export interface MatrixDBmodifiedBackend {
   ready: Promise<void>
@@ -123,6 +165,9 @@ export interface MatrixDBmodifiedBackend {
   deleteEqual: DeleteEqual
   deleteWhere: DeleteWhere
   updateWithConditions: updateWithConditions
+  getMaxStreamId: GetMaxStreamId // This function is only used in the delete_devices function
+  // The following functions are specific to the user_directory module
+  searchUserDirectory: SearchUserDirectory
   close: () => void
 }
 
@@ -276,6 +321,165 @@ class MatrixDBmodified implements MatrixDBmodifiedBackend {
   }
 
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
+  getMaxWhereEqualAndLower(
+    table: Collections,
+    targetField: string,
+    fields: string[],
+    filterFields1: Record<string, string | number | Array<string | number>>,
+    filterFields2: Record<string, string | number | Array<string | number>>,
+    order?: string
+  ) {
+    return this.db.getMaxWhereEqualAndLower(
+      table,
+      targetField,
+      fields,
+      filterFields1,
+      filterFields2,
+      order
+    )
+  }
+
+  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
+  getMinWhereEqualAndHigher(
+    table: Collections,
+    targetField: string,
+    fields: string[],
+    filterFields1: Record<string, string | number | Array<string | number>>,
+    filterFields2: Record<string, string | number | Array<string | number>>,
+    order?: string
+  ) {
+    return this.db.getMinWhereEqualAndHigher(
+      table,
+      targetField,
+      fields,
+      filterFields1,
+      filterFields2,
+      order
+    )
+  }
+
+  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
+  getMaxWhereEqualAndLowerJoin(
+    tables: Collections[],
+    targetField: string,
+    fields: string[],
+    filterFields1: Record<string, string | number | Array<string | number>>,
+    filterFields2: Record<string, string | number | Array<string | number>>,
+    joinFields: Record<string, string>,
+    order?: string
+  ) {
+    return this.db.getMaxWhereEqualAndLowerJoin(
+      tables,
+      targetField,
+      fields,
+      filterFields1,
+      filterFields2,
+      joinFields,
+      order
+    )
+  }
+
+  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
+  getJoin(
+    table: Collections[],
+    fields: string[],
+    filterFields: Record<string, string | number | Array<string | number>>,
+    joinFields: Record<string, string>,
+    order?: string
+  ) {
+    return this.db.getJoin(table, fields, filterFields, joinFields, order)
+  }
+
+  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
+  getWhereEqualOrDifferent(
+    table: Collections,
+    fields: string[],
+    filterFields1: Record<string, string | number | Array<string | number>>,
+    filterFields2: Record<string, string | number | Array<string | number>>,
+    order?: string
+  ) {
+    return this.db.getWhereEqualOrDifferent(
+      table,
+      fields,
+      filterFields1,
+      filterFields2,
+      order
+    )
+  }
+
+  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
+  getWhereEqualAndHigher(
+    table: Collections,
+    fields: string[],
+    filterFields1: Record<string, string | number | Array<string | number>>,
+    filterFields2: Record<string, string | number | Array<string | number>>,
+    order?: string
+  ) {
+    return this.db.getWhereEqualAndHigher(
+      table,
+      fields,
+      filterFields1,
+      filterFields2,
+      order
+    )
+  }
+
+  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
+  getMaxWhereEqual(
+    table: Collections,
+    targetField: string,
+    fields: string[],
+    filterFields: Record<string, string | number | Array<string | number>>,
+    order?: string
+  ) {
+    return this.db.getMaxWhereEqual(
+      table,
+      targetField,
+      fields,
+      filterFields,
+      order
+    )
+  }
+
+  //eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
+  getMaxWhereEqualAndLower(
+    table: Collections,
+    targetField: string,
+    fields: string[],
+    filterFields1: Record<string, string | number | Array<string | number>>,
+    filterFields2: Record<string, string | number | Array<string | number>>,
+    order?: string
+  ) {
+    return this.db.getMaxWhereEqualAndLower(
+      table,
+      targetField,
+      fields,
+      filterFields1,
+      filterFields2,
+      order
+    )
+  }
+
+  //eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
+  getMinWhereEqualAndHigher(
+    table: Collections,
+    targetField: string,
+    fields: string[],
+    filterFields1: Record<string, string | number | Array<string | number>>,
+    filterFields2: Record<string, string | number | Array<string | number>>,
+    order?: string
+  ) {
+    return this.db.getMinWhereEqualAndHigher(
+      table,
+      targetField,
+      fields,
+      filterFields1,
+      filterFields2,
+      order
+    )
+  }
+
+  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
   getMaxWhereEqualAndLowerJoin(
     tables: Collections[],
     targetField: string,
@@ -316,7 +520,7 @@ class MatrixDBmodified implements MatrixDBmodifiedBackend {
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
   updateWithConditions(
     table: Collections,
-    values: Record<string, string | number>,
+    values: Record<string, string | number | null>,
     conditions: Array<{ field: string; value: string | number }>
   ) {
     return this.db.updateWithConditions(table, values, conditions)
@@ -440,6 +644,38 @@ class MatrixDBmodified implements MatrixDBmodifiedBackend {
 
   close(): void {
     this.db.close()
+  }
+
+  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
+  getMaxStreamId(
+    userId: string,
+    deviceId: string,
+    lowerBoundStreamId: number,
+    upperBoundStreamId: number,
+    limit: number
+  ) {
+    return this.db.getMaxStreamId(
+      userId,
+      deviceId,
+      lowerBoundStreamId,
+      upperBoundStreamId,
+      limit
+    )
+  }
+
+  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
+  searchUserDirectory(
+    userId: string,
+    searchTerm: string,
+    limit: number,
+    searchAllUsers: boolean
+  ) {
+    return this.db.searchUserDirectory(
+      userId,
+      searchTerm,
+      limit,
+      searchAllUsers
+    )
   }
 }
 

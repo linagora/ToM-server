@@ -23,8 +23,11 @@ import {
   getProfile,
   getAvatarUrl,
   getDisplayname
-} from './profiles/getProfiles'
-import { changeAvatarUrl, changeDisplayname } from './profiles/changeProfiles'
+} from './user_data/profiles/getProfiles'
+import {
+  changeAvatarUrl,
+  changeDisplayname
+} from './user_data/profiles/changeProfiles'
 import whoami from './account/whoami'
 import whois from './admin/whois'
 import getAccountData from './user/account_data/getAccountData'
@@ -56,10 +59,13 @@ import getTimestampToEvent from './rooms/roomId/getTimestampToEvent'
 import getStatus from './presence/getStatus'
 import putStatus from './presence/putStatus'
 import getLogin from './login/getLogin'
+import add from './account/3pid/add'
+import PostFilter from './user/filter/postFilter'
+import GetFilter from './user/filter/getFilter'
+import refresh from './refresh'
+import openIdRequestToken from './user/openid/requestToken'
 
-const tables = {
-  ui_auth_sessions: 'session_id TEXT NOT NULL, stage_type TEXT NOT NULL'
-}
+// const tables = {} // Add tables declaration here to add new tables to this.db
 
 export default class MatrixClientServer extends MatrixIdentityServer<clientDbCollections> {
   api: {
@@ -75,9 +81,9 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
   private _uiauthenticate!: UiAuthFunction
 
   set uiauthenticate(uiauthenticate: UiAuthFunction) {
-    this._uiauthenticate = (req, res, cb) => {
+    this._uiauthenticate = (req, res, allowedFlows, description, obj, cb) => {
       this.rateLimiter(req as Request, res as Response, () => {
-        uiauthenticate(req, res, cb)
+        uiauthenticate(req, res, allowedFlows, description, obj, cb)
       })
     }
   }
@@ -103,15 +109,10 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
         ? conf
         : undefined
     ) as Config
-    super(serverConf, confDesc, logger, tables)
+    super(serverConf, confDesc, logger) // Add tables in here if we add additional tables to this.db in the tables variable above
     this.api = { get: {}, post: {}, put: {}, delete: {} }
     this.matrixDb = new MatrixDBmodified(serverConf, this.logger)
-    this.uiauthenticate = UiAuthenticate(
-      this.db,
-      this.matrixDb,
-      serverConf,
-      this.logger
-    )
+    this.uiauthenticate = UiAuthenticate(this.matrixDb, serverConf, this.logger)
     this.authenticate = Authenticate(this.matrixDb, this.logger, this.conf)
     this.ready = new Promise((resolve, reject) => {
       this.ready
@@ -154,7 +155,10 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
             '/_matrix/client/v3/rooms/:roomId/timestamp_to_event':
               getTimestampToEvent(this),
             '/_matrix/client/v3/presence/:userId/status': getStatus(this),
-            '/_matrix/client/v3/login': getLogin(this)
+            '/_matrix/client/v3/login': getLogin(this),
+            '/_matrix/client/v3/account/3pid/add': badMethod,
+            '/_matrix/client/v3/refresh': badMethod,
+            '/_matrix/client/v3/user/:userId/openid/request_token': badMethod
           }
           this.api.post = {
             '/_matrix/client/v3/account/whoami': badMethod,
@@ -191,7 +195,11 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
             '/_matrix/client/v3/rooms/:roomId/timestamp_to_event': badMethod,
             '/_matrix/client/v3/user/:roomId/timestamp_to_event': badMethod,
             '/_matrix/client/v3/presence/:userId/status': badMethod,
-            '/_matrix/client/v3/login': badMethod
+            '/_matrix/client/v3/login': badMethod,
+            '/_matrix/client/v3/account/3pid/add': add(this),
+            '/_matrix/client/v3/refresh': refresh(this),
+            '/_matrix/client/v3/user/:userId/openid/request_token':
+              openIdRequestToken(this)
           }
           this.api.put = {
             '/_matrix/client/v3/account/whoami': badMethod,
@@ -228,7 +236,10 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
             '/_matrix/client/v3/rooms/:roomId/timestamp_to_event': badMethod,
             '/_matrix/client/v3/user/:roomId/timestamp_to_event': badMethod,
             '/_matrix/client/v3/presence/:userId/status': putStatus(this),
-            '/_matrix/client/v3/login': badMethod
+            '/_matrix/client/v3/login': badMethod,
+            '/_matrix/client/v3/account/3pid/add': badMethod,
+            '/_matrix/client/v3/refresh': badMethod,
+            '/_matrix/client/v3/user/:userId/openid/request_token': badMethod
           }
           this.api.delete = {
             '/_matrix/client/v3/account/whoami': badMethod,
@@ -238,7 +249,7 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
             '/_matrix/client/v3/profile/:userId/avatar_url': badMethod,
             '/_matrix/client/v3/profile/:userId/displayname': badMethod,
             '/_matrix/client/v3/devices': badMethod,
-            '/_matrix/client/v3/devices/:deviceId': badMethod,
+            '/_matrix/client/v3/devices/:deviceId': deleteDevice(this),
             '/_matrix/client/v3/user/:userId/rooms/:roomId/tags': badMethod,
             '/_matrix/client/v3/user/:userId/rooms/:roomId/tags/:tag':
               removeUserRoomTag(this),
@@ -255,7 +266,10 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
             '/_matrix/client/v3/register/email/submitToken': badMethod,
             '/_matrix/client/v3/rooms/:roomId/timestamp_to_event': badMethod,
             '/_matrix/client/v3/presence/:userId/status': badMethod,
-            '/_matrix/client/v3/login': badMethod
+            '/_matrix/client/v3/login': badMethod,
+            '/_matrix/client/v3/account/3pid/add': badMethod,
+            '/_matrix/client/v3/refresh': badMethod,
+            '/_matrix/client/v3/user/:userId/openid/request_token': badMethod
           }
           resolve(true)
         })

@@ -1,9 +1,9 @@
 /*
-This file implements the getDevices and getDeviceInfo functions, which are used to retrieve information about devices associated with a user. 
-The getDevices function returns a list of devices, while the getDeviceInfo function returns information about a specific device. 
+This file implements the getDevices and getDeviceInfo functions, which are used to retrieve information about devices associated with a user.
+The getDevices function returns a list of devices, while the getDeviceInfo function returns information about a specific device.
 These functions are used to provide device management functionality in the Matrix client server : https://spec.matrix.org/v1.11/client-server-api/#get_matrixclientv3devices
 
-One of the main differences between the implementation in the Twake codebase and the equivalent implementation in the Synapse codebase 
+One of the main differences between the implementation in the Twake codebase and the equivalent implementation in the Synapse codebase
 is that for now we are not updating the last_ip field of a device when it is looked upon by a user (as it is done here).
 
 It can be done by looking up the ip of the client (stored in the user_ips table) and updating the ip field of the device in the devices table.
@@ -34,11 +34,13 @@ export const getDevices = (
               last_seen_ts: row.last_seen
             }
           })
-          send(res, 200, { devices: _devices })
+          send(res, 200, { devices: _devices }, clientServer.logger)
         })
         .catch((e) => {
           /* istanbul ignore next */
-          clientServer.logger.error('Error querying devices:', e)
+          clientServer.logger.error('Error querying devices')
+          /* istanbul ignore next */
+          send(res, 500, errMsg('unknown', e.toString()), clientServer.logger)
         })
     })
   }
@@ -65,22 +67,28 @@ export const getDeviceInfo = (
               errMsg(
                 'notFound',
                 'The current user has no device with the given ID'
-              )
+              ),
+              clientServer.logger
             )
           } else {
-            send(res, 200, {
-              device_id: deviceId,
-              display_name: rows[0].display_name,
-              last_seen_ip: rows[0].ip,
-              last_seen_ts: rows[0].last_seen
-            })
+            send(
+              res,
+              200,
+              {
+                device_id: deviceId,
+                display_name: rows[0].display_name,
+                last_seen_ip: rows[0].ip,
+                last_seen_ts: rows[0].last_seen
+              },
+              clientServer.logger
+            )
           }
         })
         .catch((e) => {
           /* istanbul ignore next */
-          clientServer.logger.error('Error querying devices:', e)
+          clientServer.logger.error('Error querying devices:')
           /* istanbul ignore next */
-          send(res, 500, errMsg('unknown', 'Error querying devices'))
+          send(res, 500, errMsg('unknown', e.toString()), clientServer.logger)
         })
     })
   }

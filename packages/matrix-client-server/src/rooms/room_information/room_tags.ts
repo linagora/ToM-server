@@ -1,10 +1,32 @@
+/*
+ * This file defines handlers for managing room tags in the Matrix client-server API :
+ * https://spec.matrix.org/v1.11/client-server-api/#client-behaviour-15
+ * It includes three main functions:
+ *
+ * 1. `getUserRoomTags`: Retrieves tags associated with a user's room.
+ *
+ * 2. `addUserRoomTag`: Adds a new tag to a user's room.
+ *
+ * 3. `removeUserRoomTag`: Removes a tag from a user's room.
+ *
+ * The only part that is not specified in the Matrix Protocol is the access control logic.
+ * Following Synapse's implementation, we will allow a user to view, add, and remove their tags only.
+ *
+ * For now, it remains possible to add tags to a room you are not part of.
+ *
+ * Maximum lengths:
+ * - `room_tag`: 255 characters
+ */
+
 import type MatrixClientServer from '../../'
 import {
   errMsg,
   send,
   type expressAppHandler,
   jsonContent,
-  validateParameters
+  validateParameters,
+  isMatrixIdValid,
+  isRoomIdValid
 } from '@twake/utils'
 import { type Request } from 'express'
 
@@ -15,7 +37,27 @@ export const getUserRoomTags = (
     const userId = (req as Request).params.userId
     const roomId = (req as Request).params.roomId
 
-    clientServer.authenticate(req, res, (data, id) => {
+    if (!isMatrixIdValid(userId)) {
+      send(res, 400, errMsg('invalidParam', 'Invalid userId'))
+      return
+    }
+    if (!isRoomIdValid(roomId)) {
+      send(res, 400, errMsg('invalidParam', 'Invalid roomId'))
+      return
+    }
+
+    clientServer.authenticate(req, res, (data) => {
+      const requesterUserId = data.sub
+
+      if (requesterUserId !== userId) {
+        send(
+          res,
+          403,
+          errMsg('forbidden', 'You are not allowed to view these tags')
+        )
+        return
+      }
+
       clientServer.matrixDb
         .get('room_tags', ['tag', 'content'], {
           user_id: userId,
@@ -34,26 +76,24 @@ export const getUserRoomTags = (
               }
             } catch (error) {
               /* istanbul ignore next */
-              clientServer.logger.error(
-                'Error parsing room tag content:',
-                error
-              )
-              /* istanbul ignore next */
               send(
                 res,
                 500,
-                errMsg('unknown', 'Error parsing room tag content')
+                errMsg('unknown', 'Error parsing room tag content'),
+                clientServer.logger
               )
             }
           })
-
-          send(res, 200, { tags: _tags })
+          send(res, 200, { tags: _tags }, clientServer.logger)
         })
         .catch((e) => {
           /* istanbul ignore next */
-          clientServer.logger.error('Error querying room tags:', e)
-          /* istanbul ignore next */
-          send(res, 500, errMsg('unknown', 'Error querying room tags'))
+          send(
+            res,
+            500,
+            errMsg('unknown', 'Error querying room tags'),
+            clientServer.logger
+          )
         })
     })
   }
@@ -71,10 +111,41 @@ export const addUserRoomTag = (
     const roomId = (req as Request).params.roomId
     const _tag = (req as Request).params.tag
 
-    clientServer.authenticate(req, res, (data, id) => {
+    if (!isMatrixIdValid(userId)) {
+      send(res, 400, errMsg('invalidParam', 'Invalid userId'))
+      return
+    }
+    if (!isRoomIdValid(roomId)) {
+      send(res, 400, errMsg('invalidParam', 'Invalid roomId'))
+      return
+    }
+    if (_tag.length > 255) {
+      send(
+        res,
+        400,
+        errMsg('invalidParam', 'The tag must be less than 255 characters')
+      )
+      return
+    }
+
+    clientServer.authenticate(req, res, (data) => {
+      const requesterUserId = data.sub
+      if (requesterUserId !== userId) {
+        send(res, 403, errMsg('forbidden', 'You are not allowed to add tags'))
+        return
+      }
+
       jsonContent(req, res, clientServer.logger, (obj) => {
         validateParameters(res, schema, obj, clientServer.logger, (obj) => {
           const order = obj as { order: number }
+          if (typeof order.order !== 'number' || order.order <= 0) {
+            send(
+              res,
+              400,
+              errMsg('invalidParam', 'The order must be greater than 0')
+            )
+            return
+          }
           clientServer.matrixDb
             .insert('room_tags', {
               user_id: userId,
@@ -105,7 +176,26 @@ export const removeUserRoomTag = (
     const roomId = (req as Request).params.roomId
     const _tag = (req as Request).params.tag
 
-    clientServer.authenticate(req, res, (data, id) => {
+    if (!isMatrixIdValid(userId)) {
+      send(res, 400, errMsg('invalidParam', 'Invalid userId'))
+      return
+    }
+    if (!isRoomIdValid(roomId)) {
+      send(res, 400, errMsg('invalidParam', 'Invalid roomId'))
+      return
+    }
+
+    clientServer.authenticate(req, res, (data) => {
+      const requesterUserId = data.sub
+      if (requesterUserId !== userId) {
+        send(
+          res,
+          403,
+          errMsg('forbidden', 'You are not allowed to remove tags')
+        )
+        return
+      }
+
       clientServer.matrixDb
         .deleteWhere('room_tags', [
           { field: 'user_id', operator: '=', value: userId },

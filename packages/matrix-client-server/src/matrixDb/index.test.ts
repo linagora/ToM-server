@@ -1,10 +1,12 @@
+/* eslint-disable @typescript-eslint/promise-function-async */
 import MatrixDBmodified from './index'
 import { type TwakeLogger, getLogger } from '@twake/logger'
 import { type Config, type DbGetResult } from '../types'
-import DefaultConfig from '../__testData__/matrixDbTestConf.json'
+import DefaultConfig from '../__testData__/registerConf.json'
 import fs from 'fs'
 import { randomString } from '@twake/crypto'
 import { buildMatrixDb } from '../__testData__/buildUserDB'
+import { parseQuerySqlite, parseWordsWithRegex } from '../matrixDb/sql/sqlite'
 
 jest.mock('node-fetch', () => jest.fn())
 
@@ -20,6 +22,52 @@ const baseConf: Config = {
   matrix_database_host: './src/__testData__/matrixTestdb.db',
   sms_folder: './src/__testData__/sms'
 }
+
+describe('Testing auxiliary functions', () => {
+  describe('parseQuerySqlite', () => {
+    it('should create a query string with prefix matching', () => {
+      const result = parseQuerySqlite('test search')
+      expect(result).toBe('(test* OR test) & (search* OR search)')
+    })
+
+    it('should handle mixed case and accented characters', () => {
+      const result = parseQuerySqlite('TeSt Search')
+      expect(result).toBe('(test* OR test) & (search* OR search)')
+    })
+
+    it('should return an empty string for an empty input', () => {
+      const result = parseQuerySqlite('')
+      expect(result).toBe('')
+    })
+
+    it('should ignore special characters and only use word-like characters', () => {
+      const result = parseQuerySqlite('test@# search!')
+      expect(result).toBe('(test* OR test) & (search* OR search)')
+    })
+  })
+
+  describe('parseWordsWithRegex', () => {
+    it('should return an array of words', () => {
+      const result = parseWordsWithRegex('this is a test')
+      expect(result).toEqual(['this', 'is', 'a', 'test'])
+    })
+
+    it('should return an empty array for a string with no word characters', () => {
+      const result = parseWordsWithRegex('!!!')
+      expect(result).toEqual([])
+    })
+
+    it('should handle mixed alphanumeric and special characters', () => {
+      const result = parseWordsWithRegex('test-search123, more#words')
+      expect(result).toEqual(['test-search123', 'more', 'words'])
+    })
+
+    it('should handle an empty string', () => {
+      const result = parseWordsWithRegex('')
+      expect(result).toEqual([])
+    })
+  })
+})
 
 describe('Matrix DB', () => {
   let matrixDb: MatrixDBmodified
@@ -184,5 +232,133 @@ describe('Matrix DB', () => {
           .catch(done)
       })
       .catch(done)
+  })
+  describe('getMaxStreamId', () => {
+    it('should return the maximum stream ID within the given range', (done) => {
+      matrixDb = new MatrixDBmodified(baseConf, logger)
+      matrixDb.ready
+        .then(() => {
+          const userId = 'user1'
+          const deviceId = 'device1'
+
+          const insertsPromises: Array<Promise<DbGetResult>> = []
+          for (let streamId = 1; streamId <= 25; streamId++) {
+            insertsPromises.push(
+              matrixDb.insert('device_inbox', {
+                user_id: userId,
+                device_id: deviceId,
+                stream_id: streamId,
+                message_json: JSON.stringify({ content: `Message ${streamId}` })
+              })
+            )
+          }
+
+          return Promise.all(insertsPromises)
+        })
+        .then(() => {
+          return matrixDb.getMaxStreamId('user1', 'device1', 10, 20, 10)
+        })
+        .then((maxStreamId) => {
+          expect(maxStreamId).toBe(20)
+          matrixDb.close()
+        })
+        .then(() => done())
+        .catch(done)
+    })
+
+    it('should return an empty array if no stream IDs are found', (done) => {
+      matrixDb = new MatrixDBmodified(baseConf, logger)
+      matrixDb.ready
+        .then(() => {
+          const userId = 'user2'
+          const deviceId = 'device2'
+
+          return matrixDb.insert('device_inbox', {
+            user_id: userId,
+            device_id: deviceId,
+            stream_id: 1,
+            message_json: JSON.stringify({ content: 'Message 1' })
+          })
+        })
+        .then(() => {
+          return matrixDb.getMaxStreamId('user2', 'device2', 50, 100, 10)
+        })
+        .then((maxStreamId) => {
+          expect(maxStreamId).toBe(null)
+          matrixDb.close()
+        })
+        .then(() => done())
+        .catch(done)
+    })
+
+    it('should handle cases where limit is 1', (done) => {
+      matrixDb = new MatrixDBmodified(baseConf, logger)
+      matrixDb.ready
+        .then(() => {
+          const userId = 'user3'
+          const deviceId = 'device3'
+
+          const insertsPromises: Array<Promise<DbGetResult>> = []
+          for (let streamId = 1; streamId <= 15; streamId++) {
+            insertsPromises.push(
+              matrixDb.insert('device_inbox', {
+                user_id: userId,
+                device_id: deviceId,
+                stream_id: streamId,
+                message_json: JSON.stringify({ content: `Message ${streamId}` })
+              })
+            )
+          }
+
+          return Promise.all(insertsPromises)
+        })
+        .then(() => {
+          return matrixDb.getMaxStreamId('user3', 'device3', 5, 15, 1)
+        })
+        .then((maxStreamId) => {
+          expect(maxStreamId).toBe(6)
+          matrixDb.close()
+        })
+        .then(() => done())
+        .catch(done)
+    })
+
+    it('should handle cases with special characters in user_id or device_id', (done) => {
+      matrixDb = new MatrixDBmodified(baseConf, logger)
+      matrixDb.ready
+        .then(() => {
+          const userId = 'user@domain.com'
+          const deviceId = 'device#1'
+
+          const insertsPromises: Array<Promise<DbGetResult>> = []
+          for (let streamId = 1; streamId <= 10; streamId++) {
+            insertsPromises.push(
+              matrixDb.insert('device_inbox', {
+                user_id: userId,
+                device_id: deviceId,
+                stream_id: streamId,
+                message_json: JSON.stringify({ content: `Message ${streamId}` })
+              })
+            )
+          }
+
+          return Promise.all(insertsPromises)
+        })
+        .then(() => {
+          return matrixDb.getMaxStreamId(
+            'user@domain.com',
+            'device#1',
+            1,
+            10,
+            10
+          )
+        })
+        .then((maxStreamId) => {
+          expect(maxStreamId).toBe(10)
+          matrixDb.close()
+        })
+        .then(() => done())
+        .catch(done)
+    })
   })
 })

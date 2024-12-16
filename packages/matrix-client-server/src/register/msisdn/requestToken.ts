@@ -7,7 +7,10 @@ import {
   jsonContent,
   send,
   validateParameters,
-  type expressAppHandler
+  type expressAppHandler,
+  isClientSecretValid,
+  isCountryValid,
+  isPhoneNumberValid
 } from '@twake/utils'
 import type MatrixClientServer from '../../index'
 import SmsSender from '../../utils/smsSender'
@@ -33,10 +36,7 @@ const schema = {
   id_server: false,
   id_access_token: false
 }
-
-const clientSecretRegex = /^[0-9a-zA-Z.=_-]{6,255}$/
-const validCountryRegex = /^[A-Z]{2}$/ // ISO 3166-1 alpha-2 as per the spec : https://spec.matrix.org/v1.11/client-server-api/#post_matrixclientv3registermsisdnrequesttoken
-const validPhoneNumberRegex = /^[1-9]\d{1,14}$/
+const maxAttemps = 1000000000
 
 export const formatPhoneNumber = (
   rawNumber: string,
@@ -92,7 +92,7 @@ export const smsBody = (
   )
 }
 
-export const fillTable = (
+export const fillTableAndSend = (
   clientServer: MatrixClientServer,
   dst: string,
   clientSecret: string,
@@ -119,20 +119,31 @@ export const fillTable = (
           last_send_attempt: sendAttempt
         })
         .then(() => {
-          send(res, 200, { sid, submit_url: getSubmitUrl(clientServer.conf) })
+          send(
+            res,
+            200,
+            { sid, submit_url: getSubmitUrl(clientServer.conf) },
+            clientServer.logger
+          )
+          send(
+            res,
+            200,
+            { sid, submit_url: getSubmitUrl(clientServer.conf) },
+            clientServer.logger
+          )
         })
         .catch((err) => {
           // istanbul ignore next
-          console.error('Insertion error:', err)
+          clientServer.logger.error('Insertion error:', err)
           // istanbul ignore next
-          send(res, 500, errMsg('unknown', err))
+          send(res, 500, errMsg('unknown', err.toString()), clientServer.logger)
         })
     })
     .catch((err) => {
       /* istanbul ignore next */
-      console.error('Token error:', err)
+      clientServer.logger.error('Token error:', err)
       /* istanbul ignore next */
-      send(res, 500, errMsg('unknown', err))
+      send(res, 500, errMsg('unknown', err.toString()), clientServer.logger)
     })
 }
 
@@ -154,21 +165,51 @@ const RequestToken = (clientServer: MatrixClientServer): expressAppHandler => {
         const phoneNumber = (obj as RequestTokenArgs).phone_number
         const dst = formatPhoneNumber(phoneNumber, country)
         const nextLink = (obj as RequestTokenArgs).next_link
-        if (!clientSecretRegex.test(clientSecret)) {
-          send(res, 400, errMsg('invalidParam', 'Invalid client_secret'))
-        } else if (!validCountryRegex.test(country)) {
-          send(res, 400, errMsg('invalidParam', 'Invalid country'))
+        if (!isClientSecretValid(clientSecret)) {
+          send(
+            res,
+            400,
+            errMsg('invalidParam', 'Invalid client_secret'),
+            clientServer.logger
+          )
+        } else if (!isCountryValid(country)) {
+          send(
+            res,
+            400,
+            errMsg('invalidParam', 'Invalid country'),
+            clientServer.logger
+          )
           // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
         } else if (nextLink && !isValidUrl(nextLink)) {
-          send(res, 400, errMsg('invalidParam', 'Invalid next_link'))
-        } else if (!validPhoneNumberRegex.test(dst)) {
-          send(res, 400, errMsg('invalidParam', 'Invalid phone number'))
+          send(
+            res,
+            400,
+            errMsg('invalidParam', 'Invalid next_link'),
+            clientServer.logger
+          )
+        } else if (!isPhoneNumberValid(dst)) {
+          send(
+            res,
+            400,
+            errMsg('invalidParam', 'Invalid phone number'),
+            clientServer.logger
+          )
+        } else if (
+          typeof sendAttempt !== 'number' ||
+          sendAttempt > maxAttemps
+        ) {
+          send(
+            res,
+            400,
+            errMsg('invalidParam', 'Invalid send attempt'),
+            clientServer.logger
+          )
         } else {
           clientServer.matrixDb
             .get('user_threepids', ['user_id'], { address: dst })
             .then((rows) => {
               if (rows.length > 0) {
-                send(res, 400, errMsg('threepidInUse'))
+                send(res, 400, errMsg('threepidInUse'), clientServer.logger)
               } else {
                 clientServer.matrixDb
                   .get(
@@ -182,10 +223,15 @@ const RequestToken = (clientServer: MatrixClientServer): expressAppHandler => {
                   .then((rows) => {
                     if (rows.length > 0) {
                       if (sendAttempt === rows[0].last_send_attempt) {
-                        send(res, 200, {
-                          sid: rows[0].session_id,
-                          submit_url: getSubmitUrl(clientServer.conf)
-                        })
+                        send(
+                          res,
+                          200,
+                          {
+                            sid: rows[0].session_id,
+                            submit_url: getSubmitUrl(clientServer.conf)
+                          },
+                          clientServer.logger
+                        )
                       } else {
                         clientServer.matrixDb
                           .deleteWhere('threepid_validation_session', [
@@ -201,7 +247,7 @@ const RequestToken = (clientServer: MatrixClientServer): expressAppHandler => {
                             }
                           ])
                           .then(() => {
-                            fillTable(
+                            fillTableAndSend(
                               // The calls to send are made in this function
                               clientServer,
                               dst,
@@ -216,13 +262,18 @@ const RequestToken = (clientServer: MatrixClientServer): expressAppHandler => {
                           })
                           .catch((err) => {
                             // istanbul ignore next
-                            console.error('Deletion error:', err)
+                            clientServer.logger.error('Deletion error:', err)
                             // istanbul ignore next
-                            send(res, 500, errMsg('unknown', err))
+                            send(
+                              res,
+                              500,
+                              errMsg('unknown', err.toString()),
+                              clientServer.logger
+                            )
                           })
                       }
                     } else {
-                      fillTable(
+                      fillTableAndSend(
                         // The calls to send are made in this function
                         clientServer,
                         dst,
@@ -238,17 +289,27 @@ const RequestToken = (clientServer: MatrixClientServer): expressAppHandler => {
                   })
                   .catch((err) => {
                     /* istanbul ignore next */
-                    console.error('Send_attempt error:', err)
+                    clientServer.logger.error('Send_attempt error:', err)
                     /* istanbul ignore next */
-                    send(res, 500, errMsg('unknown', err))
+                    send(
+                      res,
+                      500,
+                      errMsg('unknown', err.toString()),
+                      clientServer.logger
+                    )
                   })
               }
             })
             .catch((err) => {
               /* istanbul ignore next */
-              console.error('Error getting userID :', err)
+              clientServer.logger.error('Error getting userID :', err)
               /* istanbul ignore next */
-              send(res, 500, errMsg('unknown', err))
+              send(
+                res,
+                500,
+                errMsg('unknown', err.toString()),
+                clientServer.logger
+              )
             })
         }
       })

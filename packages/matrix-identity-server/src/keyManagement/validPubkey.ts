@@ -3,7 +3,7 @@ import type IdentityServerDB from '../db'
 import { errMsg, send, type expressAppHandler } from '@twake/utils'
 
 const isPubkeyValid = <T extends string = never>(
-  idServer: IdentityServerDB<T>
+  idServerDB: IdentityServerDB<T>
 ): expressAppHandler => {
   return (req, res) => {
     const publicKey = (req as Request).query.public_key
@@ -12,7 +12,7 @@ const isPubkeyValid = <T extends string = never>(
       typeof publicKey === 'string' &&
       publicKey.length > 0
     ) {
-      idServer.db
+      idServerDB
         .get('longTermKeypairs', ['public'], {
           public: publicKey
         })
@@ -20,13 +20,13 @@ const isPubkeyValid = <T extends string = never>(
           if (rows.length === 0) {
             send(res, 200, { valid: false })
           } else {
-            // TO DO : ensure that the pubkey only appears one time
+            // TODO : ensure that the pubkey only appears one time
             send(res, 200, { valid: true })
           }
         })
         .catch((e) => {
           /* istanbul ignore next */
-          send(res, 500, errMsg('unknown', e))
+          send(res, 500, errMsg('unknown', e.toString()))
         })
     } else {
       send(res, 400, errMsg('missingParams'))

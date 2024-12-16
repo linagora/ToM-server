@@ -1,6 +1,6 @@
 import { errMsg, send, type expressAppHandler } from '@twake/utils'
 import type MatrixClientServer from '..'
-import { type tokenContent } from '../utils/authenticate'
+import { type TokenContent } from '../utils/authenticate'
 
 interface responseBody {
   user_id: string
@@ -9,13 +9,13 @@ interface responseBody {
 }
 const whoami = (clientServer: MatrixClientServer): expressAppHandler => {
   return (req, res) => {
-    clientServer.authenticate(req, res, (data: tokenContent) => {
+    clientServer.authenticate(req, res, (data: TokenContent) => {
       clientServer.matrixDb
         .get('users', ['name', 'is_guest'], { name: data.sub })
         .then((rows) => {
           // istanbul ignore if // might remove the istanbul ignore if an endpoint other than /register modifies the users table
           if (rows.length === 0) {
-            send(res, 403, errMsg('invalidUsername'))
+            send(res, 403, errMsg('invalidUsername'), clientServer.logger)
             return
           }
           const isGuest = rows[0].is_guest !== 0
@@ -24,13 +24,13 @@ const whoami = (clientServer: MatrixClientServer): expressAppHandler => {
           if (data.device_id) {
             body.device_id = data.device_id
           }
-          send(res, 200, body)
+          send(res, 200, body, clientServer.logger)
         })
         .catch((e) => {
           // istanbul ignore next
-          clientServer.logger.error('Error while fetching user data', e)
+          clientServer.logger.error('Error while fetching user data')
           // istanbul ignore next
-          send(res, 500, errMsg('unknown'))
+          send(res, 500, errMsg('unknown', e.toString()), clientServer.logger)
         })
     })
   }

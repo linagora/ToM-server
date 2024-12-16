@@ -57,7 +57,7 @@ const GetValidated3pid = <T extends string = never>(
           })
           .catch((err) => {
             /* istanbul ignore next */
-            send(res, 500, errMsg('unknown', err))
+            send(res, 500, errMsg('unknown', err.toString()))
           })
       })
     } else {

@@ -4,7 +4,9 @@ import {
   validateParameters,
   errMsg,
   type expressAppHandler,
-  send
+  send,
+  isMatrixIdValid,
+  isEventTypeValid
 } from '@twake/utils'
 
 interface Parameters {
@@ -19,9 +21,7 @@ interface PutRequestBody {
 const schema = {
   content: true
 }
-
-const matrixIdRegex = /^@[0-9a-zA-Z._=-]+:[0-9a-zA-Z.-]+$/
-const eventTypeRegex = /^(?:[a-z]+(?:\.[a-z][a-z0-9]*)*)$/ // Following Java's package naming convention as per : https://spec.matrix.org/v1.11/#events
+const contentRegex = /^.{0,2048}$/ // Prevent the client from sending too long messages that could crash the DB. This value is arbitrary and could be changed
 
 const putAccountData = (
   clientServer: MatrixClientServer
@@ -31,10 +31,10 @@ const putAccountData = (
     // @ts-expect-error
     const parameters: Parameters = req.params as Parameters
     if (
-      !matrixIdRegex.test(parameters.userId) ||
-      !eventTypeRegex.test(parameters.type)
+      !isMatrixIdValid(parameters.userId) ||
+      !isEventTypeValid(parameters.type)
     ) {
-      send(res, 400, errMsg('invalidParam'))
+      send(res, 400, errMsg('invalidParam'), clientServer.logger)
       return
     }
     clientServer.authenticate(req, res, (data, token) => {
@@ -42,11 +42,24 @@ const putAccountData = (
         validateParameters(res, schema, obj, clientServer.logger, (obj) => {
           if (parameters.userId !== data.sub) {
             // The config is only visible to the user that set the account data
-            send(res, 403, {
-              errcode: 'M_FORBIDDEN',
-              error:
-                'The access token provided is not authorized to update this user’s account data.'
-            })
+            send(
+              res,
+              403,
+              {
+                errcode: 'M_FORBIDDEN',
+                error:
+                  'The access token provided is not authorized to update this user’s account data.'
+              },
+              clientServer.logger
+            )
+            return
+          }
+          if (!contentRegex.test((obj as PutRequestBody).content)) {
+            send(res, 400, errMsg('invalidParam', 'Content is too long'))
+            return
+          }
+          if (!contentRegex.test((obj as PutRequestBody).content)) {
+            send(res, 400, errMsg('invalidParam', 'Content is too long'))
             return
           }
           clientServer.matrixDb
@@ -59,13 +72,16 @@ const putAccountData = (
               ]
             )
             .then(() => {
-              send(res, 200, {})
+              send(res, 200, {}, clientServer.logger)
             })
             .catch((e) => {
-              // istanbul ignore next
-              clientServer.logger.error("Error updating user's account data", e)
-              // istanbul ignore next
-              send(res, 500, errMsg('unknown'))
+              /* istanbul ignore next */
+              send(
+                res,
+                500,
+                errMsg('unknown', e.toString()),
+                clientServer.logger
+              )
             })
         })
       })

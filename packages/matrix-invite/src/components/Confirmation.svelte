@@ -3,7 +3,7 @@
 
 	export let domain: string;
   let existingDomains: string[];
-  
+
   preferredDomains.subscribe(domains => {
     existingDomains = domains;
   })

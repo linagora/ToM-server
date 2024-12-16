@@ -2,7 +2,13 @@ name: update-docs
 
 on:
   pull_request:
+    branches:
+    - main
+    - master
   merge_group:
+    branches:
+    - main
+    - master
 
 jobs:
   update:

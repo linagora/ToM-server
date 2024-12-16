@@ -20,7 +20,12 @@ export const getRoomVisibility = (
       })
       .then((roomsResult) => {
         if (roomsResult.length === 0) {
-          send(res, 404, errMsg('notFound', 'Room not found'))
+          send(
+            res,
+            404,
+            errMsg('notFound', 'Room not found'),
+            clientServer.logger
+          )
         } else {
           const roomInfo = roomsResult[0]
 
@@ -28,16 +33,24 @@ export const getRoomVisibility = (
             roomInfo.is_public !== null && roomInfo.is_public === 1
               ? 'public'
               : 'private'
-          send(res, 200, {
-            visibility: _visibility
-          })
+          send(
+            res,
+            200,
+            {
+              visibility: _visibility
+            },
+            clientServer.logger
+          )
         }
       })
       .catch((e) => {
         /* istanbul ignore next */
-        clientServer.logger.error('Error querying room directory info:', e)
-        /* istanbul ignore next */
-        send(res, 500, errMsg('unknown', 'Error querying room directory info'))
+        send(
+          res,
+          500,
+          errMsg('unknown', 'Error querying room directory info'),
+          clientServer.logger
+        )
       })
   }
 }
@@ -53,6 +66,7 @@ export const setRoomVisibility = (
     const roomId = (req as Request).params.roomId
 
     // TO DO : eventually implement additional access control checks here
+    // (not done in the Synapse implementation)
     clientServer.authenticate(req, res, (data, id) => {
       jsonContent(req, res, clientServer.logger, (obj) => {
         validateParameters(res, schema, obj, clientServer.logger, (obj) => {
@@ -68,19 +82,23 @@ export const setRoomVisibility = (
               ])
               .then((rows) => {
                 if (rows.length === 0) {
-                  send(res, 404, errMsg('notFound', 'Room not found'))
+                  send(
+                    res,
+                    404,
+                    errMsg('notFound', 'Room not found'),
+                    clientServer.logger
+                  )
                 } else {
-                  send(res, 200, {})
+                  send(res, 200, {}, clientServer.logger)
                 }
               })
               .catch((e) => {
                 /* istanbul ignore next */
-                clientServer.logger.error('Error updating room visibility:', e)
-                /* istanbul ignore next */
                 send(
                   res,
                   500,
-                  errMsg('unknown', 'Error updating room visibility')
+                  errMsg('unknown', 'Error updating room visibility'),
+                  clientServer.logger
                 )
               })
           }

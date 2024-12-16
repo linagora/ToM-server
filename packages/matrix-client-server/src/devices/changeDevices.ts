@@ -28,12 +28,24 @@ export const changeDeviceName = (
 ): expressAppHandler => {
   return (req, res) => {
     const deviceId: string = (req as Request).params.deviceId
-    clientServer.authenticate(req, res, (token) => {
-      const userId = token.sub
+    clientServer.authenticate(req, res, (data) => {
+      const userId = data.sub
       jsonContent(req, res, clientServer.logger, (obj) => {
         validateParameters(res, schema, obj, clientServer.logger, (obj) => {
           // eslint-disable-next-line @typescript-eslint/naming-convention
           const new_display_name = (obj as changeDeviceNameArgs).display_name
+
+          if (new_display_name.length > 255) {
+            send(
+              res,
+              400,
+              errMsg(
+                'invalidParam',
+                'The display name must be less than 255 characters'
+              )
+            )
+            return
+          }
 
           clientServer.matrixDb
             .updateWithConditions(
@@ -52,18 +64,24 @@ export const changeDeviceName = (
                   errMsg(
                     'notFound',
                     'The current user has no device with the given ID'
-                  )
+                  ),
+                  clientServer.logger
                 )
               } else {
                 clientServer.logger.debug('Device Name updated')
-                send(res, 200, {})
+                send(res, 200, {}, clientServer.logger)
               }
             })
             .catch((e) => {
               /* istanbul ignore next */
-              clientServer.logger.error('Error querying profiles:', e)
+              clientServer.logger.error('Error querying profiles:')
               /* istanbul ignore next */
-              send(res, 500, errMsg('unknown', 'Error querying profiles'))
+              send(
+                res,
+                500,
+                errMsg('unknown', e.toString()),
+                clientServer.logger
+              )
             })
         })
       })

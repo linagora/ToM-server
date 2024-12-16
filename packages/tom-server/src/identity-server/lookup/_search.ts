@@ -34,7 +34,7 @@ const _search = (
       /* istanbul ignore next */
       logger.error('Autocompletion error', e)
       /* istanbul ignore next */
-      send(res, 500, errMsg('unknown', e))
+      send(res, 500, errMsg('unknown', e.toString()))
     }
     let fields = data.fields
     let scope = data.scope

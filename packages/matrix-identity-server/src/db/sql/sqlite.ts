@@ -110,9 +110,7 @@ class SQLite<T extends string> extends SQL<T> implements IdDbBackend<T> {
           }
         }
       )
-      stmt.finalize((err) => {
-        reject(err)
-      })
+      stmt.finalize(reject)
     })
   }
 
@@ -150,9 +148,45 @@ class SQLite<T extends string> extends SQL<T> implements IdDbBackend<T> {
           }
         }
       )
-      stmt.finalize((err) => {
-        reject(err)
-      })
+      stmt.finalize(reject)
+    })
+  }
+
+  // TODO : Merge update and updateAnd into one function that takes an array of conditions as argument
+  // Done in Client server - go see updateWithConditions
+  updateAnd(
+    table: T,
+    values: Record<string, string | number>,
+    condition1: { field: string; value: string | number },
+    condition2: { field: string; value: string | number }
+  ): Promise<DbGetResult> {
+    return new Promise((resolve, reject) => {
+      /* istanbul ignore if */
+      if (this.db == null) {
+        throw new Error('Wait for database to be ready')
+      }
+      const names = Object.keys(values)
+      const vals = Object.values(values)
+      vals.push(condition1.value, condition2.value)
+
+      const setClause = names.map((name) => `${name} = ?`).join(', ')
+      const stmt = this.db.prepare(
+        `UPDATE ${table} SET ${setClause} WHERE ${condition1.field} = ? AND ${condition2.field} = ? RETURNING *;`
+      )
+
+      stmt.all(
+        vals,
+        (err: string, rows: Array<Record<string, string | number>>) => {
+          /* istanbul ignore if */
+          if (err != null) {
+            reject(err)
+          } else {
+            resolve(rows)
+          }
+        }
+      )
+
+      stmt.finalize(reject)
     })
   }
 
@@ -613,7 +647,7 @@ class SQLite<T extends string> extends SQL<T> implements IdDbBackend<T> {
   getMaxWhereEqualAndLower(
     table: T,
     targetField: string,
-    fields?: string[],
+    fields: string[],
     filterFields1?: Record<string, string | number | Array<string | number>>,
     filterFields2?: Record<string, string | number | Array<string | number>>,
     order?: string
@@ -794,9 +828,7 @@ class SQLite<T extends string> extends SQL<T> implements IdDbBackend<T> {
           resolve()
         }
       })
-      stmt.finalize((err) => {
-        reject(err)
-      })
+      stmt.finalize(reject)
     })
   }
 

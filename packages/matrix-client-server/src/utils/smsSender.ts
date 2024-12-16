@@ -16,7 +16,7 @@ class SmsSender {
 
   async sendSMS(obj: { to: string; raw: string }): Promise<void> {
     const { to, raw } = obj
-    const fileName = `sms_${to}_${Date.now()}.txt`
+    const fileName = `sms_${to}}.txt`
     const filePath = path.join(this.folderPath, fileName)
 
     try {
