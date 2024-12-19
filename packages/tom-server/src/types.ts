@@ -61,3 +61,4 @@ export type twakeDbCollections =
   | 'roomTags'
   | 'userQuotas'
   | 'rooms'
+  | 'invitations'

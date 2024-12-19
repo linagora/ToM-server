@@ -47,6 +47,7 @@
     "lodash": "^4.17.21",
     "qrcode": "^1.5.4",
     "redis": "^4.6.6",
+    "uuid": "^11.0.3",
     "validator": "^13.11.0"
   },
   "optionalDependencies": {
