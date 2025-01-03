@@ -1,5 +1,5 @@
 export interface IInvitationService {
-  invite: (payload: invitationPayload) => Promise<void>
+  invite: (payload: invitationPayload, authToken: string) => Promise<void>
   accept: (token: string) => Promise<void>
   list: (userId: string) => Promise<Invitation[]>
   generateLink: (payload: invitationPayload) => Promise<string>
