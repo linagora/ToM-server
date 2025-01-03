@@ -145,9 +145,23 @@ export default (
    */
   router.get(`${PATH}/list`, authenticate, controller.listInvitations)
 
+  /**
+   * @openapi
+   * /_twake/v1/invite/{id}:
+   *  get:
+   *    tags:
+   *     - Invitation
+   *    description: Accepts an invitation
+   *    responses:
+   *      301:
+   *        description: Redirect to the invitation redirect url
+   *      400:
+   *        description: Invalid invitation
+   *      404:
+   *        description: Invitation not found
+   */
   router.get(
     `${PATH}/:id`,
-    authenticate,
     middleware.checkInvitation,
     controller.acceptInvitation
   )
