@@ -1,14 +1,14 @@
 import { type TwakeLogger } from '@twake/logger'
 import { AuthRequest, Config, type TwakeDB } from '../../types'
 import { type NextFunction, type Request, type Response } from 'express'
-import { IInvitationService } from '../types'
+import { IInvitationService, InvitationRequestPayload } from '../types'
 import InvitationService from '../services'
 
 export default class InvitationApiController {
   private readonly invitationService: IInvitationService
 
   constructor(
-    private readonly db: TwakeDB,
+    db: TwakeDB,
     private readonly logger: TwakeLogger,
     private readonly config: Config
   ) {
@@ -23,17 +23,37 @@ export default class InvitationApiController {
    * @param {NextFunction} next - the next hundler
    */
   sendInvitation = async (
-    req: Request,
+    req: AuthRequest,
     res: Response,
     next: NextFunction
   ): Promise<void> => {
     try {
-      const { body } = req
+      const {
+        body: { contact: recepient, medium },
+        userId: sender
+      }: { body: InvitationRequestPayload; userId?: string } = req
 
-      await this.invitationService.invite(body)
+      if (!sender) {
+        res.status(400).json({ message: 'Sender is required' })
+        return
+      }
+
+      const { authorization } = req.headers
+
+      if (!authorization) {
+        res.status(400).json({ message: 'Authorization header is required' })
+        return
+      }
+
+      await this.invitationService.invite(
+        { recepient, medium, sender },
+        authorization
+      )
 
       res.status(200).json({ message: 'Invitation sent' })
     } catch (err) {
+      this.logger.error(`Failed to send invitation`, { err })
+
       next(err)
     }
   }
@@ -60,9 +80,13 @@ export default class InvitationApiController {
 
       await this.invitationService.accept(id)
 
-      // TODO: redirect to sign-up
-      res.redirect(this.config.base_url)
+      res.redirect(
+        301,
+        this.config.invitation_redirect_url ?? this.config.base_url
+      )
     } catch (err) {
+      this.logger.error(`Failed to accept invitation`, { err })
+
       next(err)
     }
   }
