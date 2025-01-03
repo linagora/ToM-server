@@ -49,7 +49,10 @@ export default class InvitationService implements IInvitationService {
    * @param {invitationPayload} payload - Invitation payload
    * @returns {Promise<void>}
    */
-  invite = async (payload: invitationPayload): Promise<void> => {
+  invite = async (
+    payload: invitationPayload,
+    authorization: string
+  ): Promise<void> => {
     try {
       await this.db.insert('invitations', {
         ...payload,
@@ -60,8 +63,8 @@ export default class InvitationService implements IInvitationService {
       await fetch(`${this.config.matrix_server}/${this.MATRIX_INVITE_PATH}`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
-          // TODO: add auth
+          'Content-Type': 'application/json',
+          Authorization: authorization
         },
         body: JSON.stringify({
           medium: payload.medium,
