@@ -132,9 +132,20 @@ export default class InvitationApiController {
     next: NextFunction
   ): Promise<void> => {
     try {
-      const { body } = req
+      const {
+        body: { contact: recepient, medium },
+        userId: sender
+      }: { body: InvitationRequestPayload; userId?: string } = req
 
-      const link = await this.invitationService.generateLink(body)
+      if (!sender) {
+        throw Error('Sender is required')
+      }
+
+      const link = await this.invitationService.generateLink({
+        sender,
+        recepient,
+        medium
+      })
 
       res.status(200).json({ link })
     } catch (err) {
