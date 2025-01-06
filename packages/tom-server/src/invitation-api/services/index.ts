@@ -54,12 +54,6 @@ export default class InvitationService implements IInvitationService {
     authorization: string
   ): Promise<void> => {
     try {
-      await this.db.insert('invitations', {
-        ...payload,
-        expiration: Date.now() + this.EXPIRATION,
-        accessed: 0
-      })
-
       await fetch(`${this.config.matrix_server}/${this.MATRIX_INVITE_PATH}`, {
         method: 'POST',
         headers: {
@@ -72,6 +66,12 @@ export default class InvitationService implements IInvitationService {
           sender: payload.sender
           // TODO: add room_id
         })
+      })
+
+      await this.db.insert('invitations', {
+        ...payload,
+        expiration: Date.now() + this.EXPIRATION,
+        accessed: 0
       })
     } catch (error) {
       this.logger.error(`Failed to send invitation`, { error })
