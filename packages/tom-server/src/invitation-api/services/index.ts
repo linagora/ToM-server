@@ -122,7 +122,7 @@ export default class InvitationService implements IInvitationService {
     try {
       const token = await this._createInvitation(payload)
 
-      return `${this.config.base_url}/${PATH}/${token}`
+      return `${this.config.base_url}${PATH}/${token}`
     } catch (error) {
       this.logger.error(`Failed to generate invitation link`, { error })
 
