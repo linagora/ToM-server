@@ -4,7 +4,7 @@ import type { NextFunction, Request, Response } from 'express'
 import { InvitationRequestPayload } from '../types'
 import { isEmail, isMobilePhone } from 'validator'
 
-export class invitationApiMiddleware {
+export default class invitationApiMiddleware {
   private readonly ONE_HOUR = 60 * 60 * 1000
 
   constructor(

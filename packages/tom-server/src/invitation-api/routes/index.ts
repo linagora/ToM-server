@@ -11,7 +11,7 @@ import {
 import { Router } from 'express'
 import authMiddleware from '../../utils/middlewares/auth.middleware'
 import InvitationApiController from '../controllers'
-import { invitationApiMiddleware } from '../middlewares'
+import invitationApiMiddleware from '../middlewares'
 
 export const PATH = '/_twake/v1/invite'
 
