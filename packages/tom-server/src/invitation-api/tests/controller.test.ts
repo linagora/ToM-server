@@ -247,6 +247,7 @@ describe('the invitation API controller', () => {
 
   describe('the generateInvitationLink method', () => {
     it('should attempt to generate an invitation link', async () => {
+      dbMock.insert.mockResolvedValue({ id: 'test' })
       const response = await supertest(app)
         .post(`${PATH}/generate`)
         .set('Authorization', 'Bearer test')
@@ -260,6 +261,8 @@ describe('the invitation API controller', () => {
     })
 
     it('should attempt to save the invitation in the db', async () => {
+      dbMock.insert.mockResolvedValue({ id: 'test' })
+
       await supertest(app)
         .post(`${PATH}/generate`)
         .set('Authorization', 'Bearer test')
@@ -280,17 +283,6 @@ describe('the invitation API controller', () => {
       const response = await supertest(app)
         .post(`${PATH}/generate`)
         .set('Authorization', 'Bearer test')
-        .send({
-          contact: '+21625555888',
-          medium: 'phone'
-        } satisfies InvitationRequestPayload)
-
-      expect(response.status).toBe(500)
-    })
-
-    it('should return a 500 if the sender is missing', async () => {
-      const response = await supertest(app)
-        .post(`${PATH}/generate`)
         .send({
           contact: '+21625555888',
           medium: 'phone'

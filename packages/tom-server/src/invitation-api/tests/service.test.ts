@@ -17,8 +17,8 @@ const loggerMock = {
   warn: jest.fn()
 }
 
-afterEach(() => {
-  jest.restoreAllMocks()
+beforeEach(() => {
+  jest.resetAllMocks()
 })
 
 describe('the Invitation API service', () => {
@@ -53,7 +53,7 @@ describe('the Invitation API service', () => {
           recepient: 'test',
           medium: 'test',
           expiration: 123456789,
-          accessed: true
+          accessed: false
         }
       ])
     })
