@@ -10,9 +10,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Set up Node LTS
-      uses: actions/setup-node@v3
+      uses: actions/setup-node@v4
       with:
         node-version: lts/*
     - name: Install dependencies 
@@ -26,9 +26,9 @@ jobs:
     steps:
     - name: Add hosts for integration tests
       run: sudo echo "127.0.0.1 localhost auth.example.com matrix.example.com matrix1.example.com matrix2.example.com matrix3.example.com federated-identity.example.com opensearch.example.com" | sudo tee -a /etc/hosts
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Set up Node LTS
-      uses: actions/setup-node@v3
+      uses: actions/setup-node@v4
       with:
         node-version: lts/*
     - name: Install dependencies 
