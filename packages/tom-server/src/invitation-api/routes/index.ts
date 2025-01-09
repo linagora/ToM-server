@@ -12,6 +12,7 @@ import { Router } from 'express'
 import authMiddleware from '../../utils/middlewares/auth.middleware'
 import InvitationApiController from '../controllers'
 import invitationApiMiddleware from '../middlewares'
+import bodyParser from 'body-parser'
 
 export const PATH = '/_twake/v1/invite'
 
@@ -26,6 +27,8 @@ export default (
   const authenticate = authMiddleware(authenticator, logger)
   const controller = new InvitationApiController(db, logger, config)
   const middleware = new invitationApiMiddleware(db, logger)
+
+  router.use(bodyParser.json())
 
   /**
    * @openapi
