@@ -1,8 +1,8 @@
 export interface IInvitationService {
-  invite: (payload: invitationPayload, authToken: string) => Promise<void>
-  accept: (token: string) => Promise<void>
+  invite: (payload: InvitationPayload, authToken: string) => Promise<void>
+  accept: (token: string, authToken: string) => Promise<void>
   list: (userId: string) => Promise<Invitation[]>
-  generateLink: (payload: invitationPayload) => Promise<string>
+  generateLink: (payload: InvitationPayload) => Promise<string>
 }
 
 export type medium = 'email' | 'phone'
@@ -14,6 +14,7 @@ export interface Invitation {
   medium: medium
   expiration: number
   accessed: boolean
+  room_id?: string
 }
 
 export interface InvitationRequestPayload {
@@ -21,8 +22,28 @@ export interface InvitationRequestPayload {
   medium: medium
 }
 
-export interface invitationPayload {
+export interface InvitationPayload {
   sender: string
   recepient: string
   medium: medium
+}
+
+export interface InsertInvitationPayload extends InvitationPayload {
+  room_id?: string
+}
+
+export interface RoomCreationPayload {
+  invite_3pid: Invite3pid[]
+  is_direct: boolean
+  preset: 'private_chat' | 'public_chat' | 'trusted_private_chat'
+}
+
+export interface Invite3pid {
+  id_server: string
+  medium: medium
+  address: string
+}
+
+export interface RoomCreationResponse {
+  room_id: string
 }
