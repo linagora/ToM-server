@@ -78,7 +78,14 @@ export default class InvitationApiController {
         return
       }
 
-      await this.invitationService.accept(id)
+      const { authorization } = req.headers
+
+      if (!authorization) {
+        res.status(400).json({ message: 'Authorization header is required' })
+        return
+      }
+
+      await this.invitationService.accept(id, authorization)
 
       res.redirect(
         301,
