@@ -25,6 +25,7 @@ export type Collections =
   | 'userPolicies'
   | 'userQuotas'
   | 'activeContacts'
+  | 'invitations'
 
 const cleanByExpires: Collections[] = ['oneTimeTokens', 'attempts']
 
@@ -49,7 +50,9 @@ const tables: Record<Collections, string> = {
     'keyID varchar(64) PRIMARY KEY, public text, private text, active integer',
   userHistory: 'address text PRIMARY KEY, active integer, timestamp integer',
   userPolicies: 'user_id text, policy_name text, accepted integer',
-  userQuotas: 'user_id varchar(64) PRIMARY KEY, size int'
+  userQuotas: 'user_id varchar(64) PRIMARY KEY, size int',
+  invitations:
+    'id varchar(64) PRIMARY KEY, sender varchar(64), recepient varchar(64), medium varchar(64), expiration int, accessed int, room_id varchar(64)'
 }
 
 const indexes: Partial<Record<Collections, string[]>> = {
