@@ -2,7 +2,7 @@ import { TwakeLogger } from '@twake/logger'
 import { TwakeDB } from '../../types'
 import type { NextFunction, Request, Response } from 'express'
 import { InvitationRequestPayload } from '../types'
-import { isEmail, isMobilePhone } from 'validator'
+import validator from 'validator'
 
 export default class invitationApiMiddleware {
   private readonly ONE_HOUR = 60 * 60 * 1000
@@ -44,12 +44,12 @@ export default class invitationApiMiddleware {
         return
       }
 
-      if (medium === 'email' && !isEmail(contact)) {
+      if (medium === 'email' && !validator.isEmail(contact)) {
         res.status(400).json({ message: 'Invalid email' })
         return
       }
 
-      if (medium === 'phone' && !isMobilePhone(contact)) {
+      if (medium === 'phone' && !validator.isMobilePhone(contact)) {
         res.status(400).json({ message: 'Invalid phone number' })
         return
       }
