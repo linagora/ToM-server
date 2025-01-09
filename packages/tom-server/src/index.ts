@@ -23,6 +23,7 @@ import WellKnown from './wellKnown'
 import ActiveContacts from './active-contacts-api'
 import QRCode from './qrcode-api'
 import MetricsRouter from './metrics-api'
+import Invitation from './invitation-api'
 
 export default class TwakeServer {
   conf: Config
@@ -154,6 +155,12 @@ export default class TwakeServer {
       this.idServer.authenticate,
       this.logger
     )
+    const invitationApi = Invitation(
+      this.conf,
+      this.idServer.db,
+      this.idServer.authenticate,
+      this.logger
+    )
 
     this.endpoints.use(privateNoteApi)
     this.endpoints.use(mutualRoolsApi)
@@ -164,6 +171,7 @@ export default class TwakeServer {
     this.endpoints.use(activeContactsApi)
     this.endpoints.use(qrCodeApi)
     this.endpoints.use(metricsApi)
+    this.endpoints.use(invitationApi)
 
     if (
       this.conf.opensearch_is_activated != null &&
