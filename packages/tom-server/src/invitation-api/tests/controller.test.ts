@@ -63,7 +63,10 @@ app.use(
 describe('the invitation API controller', () => {
   describe('the sendInvitation method', () => {
     it('should try to send an invitation', async () => {
-      global.fetch = jest.fn().mockResolvedValue({ status: 200 })
+      global.fetch = jest.fn().mockResolvedValue({
+        status: 200,
+        json: jest.fn().mockResolvedValue({ room_id: 'test' })
+      })
 
       const response = await supertest(app)
         .post(PATH)
@@ -77,7 +80,10 @@ describe('the invitation API controller', () => {
     })
 
     it('should store the invitation in the db', async () => {
-      global.fetch = jest.fn().mockResolvedValue({ status: 200 })
+      global.fetch = jest.fn().mockResolvedValue({
+        status: 200,
+        json: jest.fn().mockResolvedValue({ room_id: 'test' })
+      })
 
       await supertest(app)
         .post(PATH)
@@ -130,7 +136,10 @@ describe('the invitation API controller', () => {
     })
 
     it('should return a 500 if the db insert fails', async () => {
-      global.fetch = jest.fn().mockResolvedValue({ status: 200 })
+      global.fetch = jest.fn().mockResolvedValue({
+        status: 200,
+        json: jest.fn().mockResolvedValue({ room_id: 'test' })
+      })
       dbMock.insert.mockRejectedValue(new Error('test'))
 
       const response = await supertest(app)
@@ -154,11 +163,14 @@ describe('the invitation API controller', () => {
           recepient: 'test',
           medium: 'phone',
           expiration: Date.now() + EXPIRATION,
-          accessed: 0
+          accessed: 0,
+          room_id: 'test'
         }
       ])
 
-      const response = await supertest(app).get(`${PATH}/test`)
+      const response = await supertest(app)
+        .get(`${PATH}/test`)
+        .set('Authorization', 'Bearer test')
 
       expect(response.status).toBe(301)
     })
@@ -171,15 +183,18 @@ describe('the invitation API controller', () => {
           recepient: 'test',
           medium: 'phone',
           expiration: Date.now() + EXPIRATION,
-          accessed: 0
+          accessed: 0,
+          room_id: 'test'
         }
       ])
 
-      await supertest(app).get(`${PATH}/test`)
+      await supertest(app)
+        .get(`${PATH}/test`)
+        .set('Authorization', 'Bearer test')
 
       expect(dbMock.update).toHaveBeenCalledWith(
         'invitations',
-        { accessed: 1 },
+        { accessed: 1, room_id: 'test' },
         'id',
         'test'
       )
@@ -197,7 +212,9 @@ describe('the invitation API controller', () => {
         }
       ])
 
-      const response = await supertest(app).get(`${PATH}/test`)
+      const response = await supertest(app)
+        .get(`${PATH}/test`)
+        .set('Authorization', 'Bearer test')
 
       expect(response.status).toBe(500)
     })
@@ -205,9 +222,40 @@ describe('the invitation API controller', () => {
     it('should return a 500 if the invitation does not exist', async () => {
       dbMock.get.mockResolvedValue([])
 
-      const response = await supertest(app).get(`${PATH}/test`)
+      const response = await supertest(app)
+        .get(`${PATH}/test`)
+        .set('Authorization', 'Bearer test')
 
       expect(response.status).toBe(500)
+    })
+
+    it('should create a room if the invitation does not have a room_id', async () => {
+      dbMock.get.mockResolvedValue([
+        {
+          id: 'test',
+          sender: 'test',
+          recepient: 'test',
+          medium: 'phone',
+          expiration: Date.now() + EXPIRATION,
+          accessed: 0
+        }
+      ])
+
+      global.fetch = jest.fn().mockResolvedValue({
+        status: 200,
+        json: jest.fn().mockResolvedValue({ room_id: 'test' })
+      })
+
+      await supertest(app)
+        .get(`${PATH}/test`)
+        .set('Authorization', 'Bearer test')
+
+      expect(dbMock.update).toHaveBeenCalledWith(
+        'invitations',
+        { accessed: 1, room_id: 'test' },
+        'id',
+        'test'
+      )
     })
   })
 
