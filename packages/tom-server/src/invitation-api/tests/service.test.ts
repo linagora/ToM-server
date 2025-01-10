@@ -28,7 +28,7 @@ describe('the Invitation API service', () => {
     dbMock as unknown as TwakeDB,
     loggerMock as unknown as TwakeLogger,
     {
-      matrix_server: 'http://localhost:789',
+      matrix_server: 'localhost',
       base_url: 'http://localhost'
     } as unknown as Config
   )
