@@ -159,7 +159,7 @@ export default class InvitationService implements IInvitationService {
   ): Promise<string> => {
     try {
       const response = await fetch(
-        `${this.config.matrix_server}${this.MATRIX_ROOM_PATH}`,
+        `https://${this.config.matrix_server}${this.MATRIX_ROOM_PATH}`,
         {
           method: 'POST',
           headers: {
@@ -261,7 +261,7 @@ export default class InvitationService implements IInvitationService {
     room_id: string
   ) => {
     try {
-      await fetch(`${this.config.matrix_server}/${this.MATRIX_INVITE_PATH}`, {
+      await fetch(`https://${this.config.matrix_server}/${this.MATRIX_INVITE_PATH}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
