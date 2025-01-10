@@ -33,15 +33,8 @@ export interface InsertInvitationPayload extends InvitationPayload {
 }
 
 export interface RoomCreationPayload {
-  invite_3pid: Invite3pid[]
   is_direct: boolean
   preset: 'private_chat' | 'public_chat' | 'trusted_private_chat'
-}
-
-export interface Invite3pid {
-  id_server: string
-  medium: medium
-  address: string
 }
 
 export interface RoomCreationResponse {

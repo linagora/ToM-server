@@ -49,7 +49,7 @@ export default class InvitationService implements IInvitationService {
     authorization: string
   ): Promise<void> => {
     try {
-      const room_id = await this._createPrivateRoom(payload, authorization)
+      const room_id = await this._createPrivateRoom(authorization)
 
       if (!room_id) {
         throw Error('Failed to create room')
@@ -84,7 +84,7 @@ export default class InvitationService implements IInvitationService {
 
       if (!room_id) {
         const payload = { medium, recepient, sender }
-        room_id = await this._createPrivateRoom(payload, authorization)
+        room_id = await this._createPrivateRoom(authorization)
 
         if (!room_id) {
           throw Error('Failed to create room')
@@ -154,7 +154,6 @@ export default class InvitationService implements IInvitationService {
    * @returns {Promise<string>} - Room ID
    */
   private _createPrivateRoom = async (
-    payload: InvitationPayload,
     authorization: string
   ): Promise<string> => {
     try {
@@ -167,13 +166,6 @@ export default class InvitationService implements IInvitationService {
             Authorization: authorization
           },
           body: JSON.stringify({
-            invite_3pid: [
-              {
-                id_server: this.config.base_url,
-                medium: payload.medium,
-                address: payload.recepient
-              }
-            ],
             is_direct: true,
             preset: 'private_chat'
           } satisfies RoomCreationPayload)
@@ -261,19 +253,22 @@ export default class InvitationService implements IInvitationService {
     room_id: string
   ) => {
     try {
-      await fetch(`https://${this.config.matrix_server}/${this.MATRIX_INVITE_PATH}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: authorization
-        },
-        body: JSON.stringify({
-          medium: payload.medium,
-          address: payload.recepient,
-          sender: payload.sender,
-          room_id
-        })
-      })
+      await fetch(
+        `https://${this.config.matrix_server}/${this.MATRIX_INVITE_PATH}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: authorization
+          },
+          body: JSON.stringify({
+            medium: payload.medium,
+            address: payload.recepient,
+            sender: payload.sender,
+            room_id
+          })
+        }
+      )
     } catch (error) {
       this.logger.error(`Failed to store matrix invite`, { error })
 
