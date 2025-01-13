@@ -168,9 +168,7 @@ describe('the invitation API controller', () => {
         }
       ])
 
-      const response = await supertest(app)
-        .get(`${PATH}/test`)
-
+      const response = await supertest(app).get(`${PATH}/test`)
 
       expect(response.status).toBe(301)
     })
@@ -188,8 +186,7 @@ describe('the invitation API controller', () => {
         }
       ])
 
-      await supertest(app)
-        .get(`${PATH}/test`)
+      await supertest(app).get(`${PATH}/test`)
 
       expect(dbMock.update).toHaveBeenCalledWith(
         'invitations',
@@ -211,8 +208,7 @@ describe('the invitation API controller', () => {
         }
       ])
 
-      const response = await supertest(app)
-        .get(`${PATH}/test`)
+      const response = await supertest(app).get(`${PATH}/test`)
 
       expect(response.status).toBe(500)
     })
@@ -220,8 +216,7 @@ describe('the invitation API controller', () => {
     it('should return a 500 if the invitation does not exist', async () => {
       dbMock.get.mockResolvedValue([])
 
-      const response = await supertest(app)
-        .get(`${PATH}/test`)
+      const response = await supertest(app).get(`${PATH}/test`)
 
       expect(response.status).toBe(500)
     })
@@ -243,8 +238,7 @@ describe('the invitation API controller', () => {
         json: jest.fn().mockResolvedValue({ room_id: 'test' })
       })
 
-      await supertest(app)
-        .get(`${PATH}/test`)
+      await supertest(app).get(`${PATH}/test`)
 
       expect(dbMock.update).toHaveBeenCalledWith(
         'invitations',
