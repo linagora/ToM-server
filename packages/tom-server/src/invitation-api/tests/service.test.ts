@@ -41,7 +41,7 @@ describe('the Invitation API service', () => {
           sender: 'test',
           recepient: 'test',
           medium: 'test',
-          expiration: 123456789,
+          expiration: '123456789',
           accessed: 0
         }
       ])
@@ -54,7 +54,7 @@ describe('the Invitation API service', () => {
           sender: 'test',
           recepient: 'test',
           medium: 'test',
-          expiration: 123456789,
+          expiration: '123456789',
           accessed: false
         }
       ])
@@ -131,44 +131,39 @@ describe('the Invitation API service', () => {
           sender: 'test',
           recepient: 'test',
           medium: 'phone',
-          expiration: Date.now() + 123456789,
+          expiration: `${Date.now() + 123456789}`,
           room_id: 'test',
           accessed: 0
         }
       ])
 
-      await invitationService.accept('test', AUTHORIZATION)
+      await invitationService.accept('test')
 
       expect(dbMock.update).toHaveBeenCalledWith(
         'invitations',
-        { accessed: 1, room_id: 'test' },
+        { accessed: 1 },
         'id',
         'test'
       )
     })
 
     it('should create a room if the invitation does not have one', async () => {
-      global.fetch = jest.fn().mockResolvedValue({
-        status: 200,
-        json: jest.fn().mockResolvedValue({ room_id: 'test' })
-      })
-
       dbMock.get.mockResolvedValue([
         {
           id: 'test',
           sender: 'test',
           recepient: 'test',
           medium: 'phone',
-          expiration: Date.now() + 123456789,
+          expiration: `${Date.now() + 123456789}`,
           accessed: 0
         }
       ])
 
-      await invitationService.accept('test', AUTHORIZATION)
+      await invitationService.accept('test')
 
       expect(dbMock.update).toHaveBeenCalledWith(
         'invitations',
-        { accessed: 1, room_id: 'test' },
+        { accessed: 1 },
         'id',
         'test'
       )
@@ -177,17 +172,17 @@ describe('the Invitation API service', () => {
     it('should throw an error if the invitation is not found', async () => {
       dbMock.get.mockResolvedValue([])
 
-      await expect(
-        invitationService.accept('test', AUTHORIZATION)
-      ).rejects.toThrow('Failed to accept invitation')
+      await expect(invitationService.accept('test')).rejects.toThrow(
+        'Failed to accept invitation'
+      )
     })
 
     it('should throw an error if the database operation fails', async () => {
       dbMock.get.mockRejectedValue(new Error('test'))
 
-      await expect(
-        invitationService.accept('test', AUTHORIZATION)
-      ).rejects.toThrow('Failed to accept invitation')
+      await expect(invitationService.accept('test')).rejects.toThrow(
+        'Failed to accept invitation'
+      )
     })
 
     it('should throw an error if the invitation is expired', async () => {
@@ -197,26 +192,33 @@ describe('the Invitation API service', () => {
           sender: 'test',
           recepient: 'test',
           medium: 'phone',
-          expiration: Date.now() - 123456789,
+          expiration: `${Date.now() - 123456789}`,
           accessed: 0
         }
       ])
 
-      await expect(
-        invitationService.accept('test', AUTHORIZATION)
-      ).rejects.toThrow('Failed to accept invitation')
+      await expect(invitationService.accept('test')).rejects.toThrow(
+        'Failed to accept invitation'
+      )
     })
   })
 
   describe('the generateLink method', () => {
     it('should generate an invitation link', async () => {
+      global.fetch = jest.fn().mockResolvedValue({
+        status: 200,
+        json: jest.fn().mockResolvedValue({ room_id: 'test' })
+      })
       dbMock.insert.mockResolvedValue({ id: 'test' })
 
-      const result = await invitationService.generateLink({
-        sender: 'test',
-        recepient: 'test',
-        medium: 'phone'
-      })
+      const result = await invitationService.generateLink(
+        {
+          sender: 'test',
+          recepient: 'test',
+          medium: 'phone'
+        },
+        AUTHORIZATION
+      )
 
       expect(result.startsWith('http://localhost/_twake/v1/invite/')).toBe(true)
     })
@@ -225,22 +227,32 @@ describe('the Invitation API service', () => {
       dbMock.insert.mockRejectedValue(new Error('test'))
 
       await expect(
-        invitationService.generateLink({
-          sender: 'test',
-          recepient: 'test',
-          medium: 'phone'
-        })
+        invitationService.generateLink(
+          {
+            sender: 'test',
+            recepient: 'test',
+            medium: 'phone'
+          },
+          AUTHORIZATION
+        )
       ).rejects.toThrow('Failed to generate invitation link')
     })
 
     it('should insert the invitation into the database', async () => {
+      global.fetch = jest.fn().mockResolvedValue({
+        status: 200,
+        json: jest.fn().mockResolvedValue({ room_id: 'test' })
+      })
       dbMock.insert.mockResolvedValue({ id: 'test' })
 
-      await invitationService.generateLink({
-        sender: 'test',
-        recepient: 'test',
-        medium: 'phone'
-      })
+      await invitationService.generateLink(
+        {
+          sender: 'test',
+          recepient: 'test',
+          medium: 'phone'
+        },
+        AUTHORIZATION
+      )
 
       expect(dbMock.insert).toHaveBeenCalledWith(
         'invitations',
