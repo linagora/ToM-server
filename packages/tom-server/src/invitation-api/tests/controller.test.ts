@@ -190,7 +190,7 @@ describe('the invitation API controller', () => {
 
       expect(dbMock.update).toHaveBeenCalledWith(
         'invitations',
-        { accessed: 1, room_id: 'test' },
+        { accessed: 1 },
         'id',
         'test'
       )
@@ -285,6 +285,11 @@ describe('the invitation API controller', () => {
 
   describe('the generateInvitationLink method', () => {
     it('should attempt to generate an invitation link', async () => {
+      global.fetch = jest.fn().mockResolvedValue({
+        status: 200,
+        json: jest.fn().mockResolvedValue({ room_id: 'test' })
+      })
+
       dbMock.insert.mockResolvedValue({ id: 'test' })
       const response = await supertest(app)
         .post(`${PATH}/generate`)
@@ -299,6 +304,10 @@ describe('the invitation API controller', () => {
     })
 
     it('should attempt to save the invitation in the db', async () => {
+      global.fetch = jest.fn().mockResolvedValue({
+        status: 200,
+        json: jest.fn().mockResolvedValue({ room_id: 'test' })
+      })
       dbMock.insert.mockResolvedValue({ id: 'test' })
 
       await supertest(app)
