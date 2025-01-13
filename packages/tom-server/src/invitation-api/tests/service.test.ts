@@ -141,18 +141,13 @@ describe('the Invitation API service', () => {
 
       expect(dbMock.update).toHaveBeenCalledWith(
         'invitations',
-        { accessed: 1, room_id: 'test' },
+        { accessed: 1 },
         'id',
         'test'
       )
     })
 
     it('should create a room if the invitation does not have one', async () => {
-      global.fetch = jest.fn().mockResolvedValue({
-        status: 200,
-        json: jest.fn().mockResolvedValue({ room_id: 'test' })
-      })
-
       dbMock.get.mockResolvedValue([
         {
           id: 'test',
@@ -168,7 +163,7 @@ describe('the Invitation API service', () => {
 
       expect(dbMock.update).toHaveBeenCalledWith(
         'invitations',
-        { accessed: 1, room_id: 'test' },
+        { accessed: 1 },
         'id',
         'test'
       )
