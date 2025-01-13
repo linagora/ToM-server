@@ -170,7 +170,7 @@ describe('the invitation API controller', () => {
 
       const response = await supertest(app)
         .get(`${PATH}/test`)
-        .set('Authorization', 'Bearer test')
+
 
       expect(response.status).toBe(301)
     })
@@ -190,7 +190,6 @@ describe('the invitation API controller', () => {
 
       await supertest(app)
         .get(`${PATH}/test`)
-        .set('Authorization', 'Bearer test')
 
       expect(dbMock.update).toHaveBeenCalledWith(
         'invitations',
@@ -214,7 +213,6 @@ describe('the invitation API controller', () => {
 
       const response = await supertest(app)
         .get(`${PATH}/test`)
-        .set('Authorization', 'Bearer test')
 
       expect(response.status).toBe(500)
     })
@@ -224,7 +222,6 @@ describe('the invitation API controller', () => {
 
       const response = await supertest(app)
         .get(`${PATH}/test`)
-        .set('Authorization', 'Bearer test')
 
       expect(response.status).toBe(500)
     })
@@ -248,7 +245,6 @@ describe('the invitation API controller', () => {
 
       await supertest(app)
         .get(`${PATH}/test`)
-        .set('Authorization', 'Bearer test')
 
       expect(dbMock.update).toHaveBeenCalledWith(
         'invitations',

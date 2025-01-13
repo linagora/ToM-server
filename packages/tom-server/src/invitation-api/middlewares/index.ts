@@ -125,13 +125,13 @@ export default class invitationApiMiddleware {
         body: { contact }
       }: { body: InvitationRequestPayload } = req
 
-      const invitations = await this.db.get(
+      const invitations = (await this.db.get(
         'invitations',
         ['id', 'expiration'],
         {
           recepient: contact
         }
-      ) as unknown as Invitation[];
+      )) as unknown as Invitation[]
 
       if (!invitations || !invitations.length) {
         next()

@@ -137,7 +137,7 @@ describe('the Invitation API service', () => {
         }
       ])
 
-      await invitationService.accept('test', AUTHORIZATION)
+      await invitationService.accept('test')
 
       expect(dbMock.update).toHaveBeenCalledWith(
         'invitations',
@@ -164,7 +164,7 @@ describe('the Invitation API service', () => {
         }
       ])
 
-      await invitationService.accept('test', AUTHORIZATION)
+      await invitationService.accept('test')
 
       expect(dbMock.update).toHaveBeenCalledWith(
         'invitations',
@@ -177,17 +177,17 @@ describe('the Invitation API service', () => {
     it('should throw an error if the invitation is not found', async () => {
       dbMock.get.mockResolvedValue([])
 
-      await expect(
-        invitationService.accept('test', AUTHORIZATION)
-      ).rejects.toThrow('Failed to accept invitation')
+      await expect(invitationService.accept('test')).rejects.toThrow(
+        'Failed to accept invitation'
+      )
     })
 
     it('should throw an error if the database operation fails', async () => {
       dbMock.get.mockRejectedValue(new Error('test'))
 
-      await expect(
-        invitationService.accept('test', AUTHORIZATION)
-      ).rejects.toThrow('Failed to accept invitation')
+      await expect(invitationService.accept('test')).rejects.toThrow(
+        'Failed to accept invitation'
+      )
     })
 
     it('should throw an error if the invitation is expired', async () => {
@@ -202,9 +202,9 @@ describe('the Invitation API service', () => {
         }
       ])
 
-      await expect(
-        invitationService.accept('test', AUTHORIZATION)
-      ).rejects.toThrow('Failed to accept invitation')
+      await expect(invitationService.accept('test')).rejects.toThrow(
+        'Failed to accept invitation'
+      )
     })
   })
 
@@ -212,11 +212,14 @@ describe('the Invitation API service', () => {
     it('should generate an invitation link', async () => {
       dbMock.insert.mockResolvedValue({ id: 'test' })
 
-      const result = await invitationService.generateLink({
-        sender: 'test',
-        recepient: 'test',
-        medium: 'phone'
-      })
+      const result = await invitationService.generateLink(
+        {
+          sender: 'test',
+          recepient: 'test',
+          medium: 'phone'
+        },
+        AUTHORIZATION
+      )
 
       expect(result.startsWith('http://localhost/_twake/v1/invite/')).toBe(true)
     })
@@ -225,22 +228,28 @@ describe('the Invitation API service', () => {
       dbMock.insert.mockRejectedValue(new Error('test'))
 
       await expect(
-        invitationService.generateLink({
-          sender: 'test',
-          recepient: 'test',
-          medium: 'phone'
-        })
+        invitationService.generateLink(
+          {
+            sender: 'test',
+            recepient: 'test',
+            medium: 'phone'
+          },
+          AUTHORIZATION
+        )
       ).rejects.toThrow('Failed to generate invitation link')
     })
 
     it('should insert the invitation into the database', async () => {
       dbMock.insert.mockResolvedValue({ id: 'test' })
 
-      await invitationService.generateLink({
-        sender: 'test',
-        recepient: 'test',
-        medium: 'phone'
-      })
+      await invitationService.generateLink(
+        {
+          sender: 'test',
+          recepient: 'test',
+          medium: 'phone'
+        },
+        AUTHORIZATION
+      )
 
       expect(dbMock.insert).toHaveBeenCalledWith(
         'invitations',

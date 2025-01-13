@@ -78,14 +78,7 @@ export default class InvitationApiController {
         return
       }
 
-      const { authorization } = req.headers
-
-      if (!authorization) {
-        res.status(400).json({ message: 'Authorization header is required' })
-        return
-      }
-
-      await this.invitationService.accept(id, authorization)
+      await this.invitationService.accept(id)
 
       res.redirect(
         301,
@@ -148,11 +141,21 @@ export default class InvitationApiController {
         throw Error('Sender is required')
       }
 
-      const link = await this.invitationService.generateLink({
-        sender,
-        recepient,
-        medium
-      })
+      const { authorization } = req.headers
+
+      if (!authorization) {
+        res.status(400).json({ message: 'Authorization header is required' })
+        return
+      }
+
+      const link = await this.invitationService.generateLink(
+        {
+          sender,
+          recepient,
+          medium
+        },
+        authorization
+      )
 
       res.status(200).json({ link })
     } catch (err) {

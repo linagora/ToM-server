@@ -71,29 +71,17 @@ export default class InvitationService implements IInvitationService {
    * @param {string} authorization - Authorization token
    * @returns {Promise<void>}
    */
-  accept = async (id: string, authorization: string): Promise<void> => {
+  accept = async (id: string): Promise<void> => {
     try {
       const invitation = await this._getInvitationById(id)
-      let room_id: string | undefined = invitation.room_id
 
-      const { expiration, medium, sender, recepient } = invitation
+      const { expiration } = invitation
 
       if (parseInt(expiration) < Date.now()) {
         throw Error('Invitation expired')
       }
 
-      if (!room_id) {
-        const payload = { medium, recepient, sender }
-        room_id = await this._createPrivateRoom(authorization)
-
-        if (!room_id) {
-          throw Error('Failed to create room')
-        }
-
-        await this._storeMatrixInvite(payload, authorization, room_id)
-      }
-
-      await this.db.update('invitations', { accessed: 1, room_id }, 'id', id)
+      await this.db.update('invitations', { accessed: 1 }, 'id', id)
     } catch (error) {
       this.logger.error(`Failed to accept invitation`, { error })
 
@@ -105,10 +93,21 @@ export default class InvitationService implements IInvitationService {
    * Generates an invitation link
    *
    * @param {invitationPayload} payload - Invitation payload
+   * @param {string} authorization - Authorization token
    * @returns {Promise<string>} - Invitation link
    */
-  generateLink = async (payload: InvitationPayload): Promise<string> => {
+  generateLink = async (
+    payload: InvitationPayload,
+    authorization: string
+  ): Promise<string> => {
     try {
+      const room_id = await this._createPrivateRoom(authorization)
+
+      if (!room_id) {
+        throw Error('Failed to create room')
+      }
+
+      await this._storeMatrixInvite(payload, authorization, room_id)
       const token = await this._createInvitation(payload)
 
       return `${this.config.base_url}${PATH}/${token}`
