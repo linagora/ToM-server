@@ -220,33 +220,6 @@ describe('the invitation API controller', () => {
 
       expect(response.status).toBe(500)
     })
-
-    it('should create a room if the invitation does not have a room_id', async () => {
-      dbMock.get.mockResolvedValue([
-        {
-          id: 'test',
-          sender: 'test',
-          recepient: 'test',
-          medium: 'phone',
-          expiration: `${Date.now() + EXPIRATION}`,
-          accessed: 0
-        }
-      ])
-
-      global.fetch = jest.fn().mockResolvedValue({
-        status: 200,
-        json: jest.fn().mockResolvedValue({ room_id: 'test' })
-      })
-
-      await supertest(app).get(`${PATH}/test`)
-
-      expect(dbMock.update).toHaveBeenCalledWith(
-        'invitations',
-        { accessed: 1, room_id: 'test' },
-        'id',
-        'test'
-      )
-    })
   })
 
   describe('the listInvitations method', () => {

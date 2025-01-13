@@ -205,6 +205,10 @@ describe('the Invitation API service', () => {
 
   describe('the generateLink method', () => {
     it('should generate an invitation link', async () => {
+      global.fetch = jest.fn().mockResolvedValue({
+        status: 200,
+        json: jest.fn().mockResolvedValue({ room_id: 'test' })
+      })
       dbMock.insert.mockResolvedValue({ id: 'test' })
 
       const result = await invitationService.generateLink(
@@ -235,6 +239,10 @@ describe('the Invitation API service', () => {
     })
 
     it('should insert the invitation into the database', async () => {
+      global.fetch = jest.fn().mockResolvedValue({
+        status: 200,
+        json: jest.fn().mockResolvedValue({ room_id: 'test' })
+      })
       dbMock.insert.mockResolvedValue({ id: 'test' })
 
       await invitationService.generateLink(
