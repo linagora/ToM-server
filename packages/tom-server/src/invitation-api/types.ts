@@ -12,7 +12,7 @@ export interface Invitation {
   sender: string
   recepient: string
   medium: medium
-  expiration: number
+  expiration: string
   accessed: boolean
   room_id?: string
 }

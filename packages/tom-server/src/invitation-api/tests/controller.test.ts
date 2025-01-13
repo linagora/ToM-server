@@ -162,7 +162,7 @@ describe('the invitation API controller', () => {
           sender: 'test',
           recepient: 'test',
           medium: 'phone',
-          expiration: Date.now() + EXPIRATION,
+          expiration: `${Date.now() + EXPIRATION}`,
           accessed: 0,
           room_id: 'test'
         }
@@ -182,7 +182,7 @@ describe('the invitation API controller', () => {
           sender: 'test',
           recepient: 'test',
           medium: 'phone',
-          expiration: Date.now() + EXPIRATION,
+          expiration: `${Date.now() + EXPIRATION}`,
           accessed: 0,
           room_id: 'test'
         }
@@ -207,7 +207,7 @@ describe('the invitation API controller', () => {
           sender: 'test',
           recepient: 'test',
           medium: 'phone',
-          expiration: Date.now() - EXPIRATION,
+          expiration: `${Date.now() - EXPIRATION}`,
           accessed: 0
         }
       ])
@@ -236,7 +236,7 @@ describe('the invitation API controller', () => {
           sender: 'test',
           recepient: 'test',
           medium: 'phone',
-          expiration: Date.now() + EXPIRATION,
+          expiration: `${Date.now() + EXPIRATION}`,
           accessed: 0
         }
       ])
@@ -266,7 +266,7 @@ describe('the invitation API controller', () => {
         sender: 'test',
         recepient: 'test',
         medium: 'phone',
-        expiration: Date.now() + EXPIRATION,
+        expiration: `${Date.now() + EXPIRATION}`,
         accessed: 0
       }
 

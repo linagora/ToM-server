@@ -41,7 +41,7 @@ describe('the Invitation API service', () => {
           sender: 'test',
           recepient: 'test',
           medium: 'test',
-          expiration: 123456789,
+          expiration: '123456789',
           accessed: 0
         }
       ])
@@ -54,7 +54,7 @@ describe('the Invitation API service', () => {
           sender: 'test',
           recepient: 'test',
           medium: 'test',
-          expiration: 123456789,
+          expiration: '123456789',
           accessed: false
         }
       ])
@@ -131,7 +131,7 @@ describe('the Invitation API service', () => {
           sender: 'test',
           recepient: 'test',
           medium: 'phone',
-          expiration: Date.now() + 123456789,
+          expiration: `${Date.now() + 123456789}`,
           room_id: 'test',
           accessed: 0
         }
@@ -159,7 +159,7 @@ describe('the Invitation API service', () => {
           sender: 'test',
           recepient: 'test',
           medium: 'phone',
-          expiration: Date.now() + 123456789,
+          expiration: `${Date.now() + 123456789}`,
           accessed: 0
         }
       ])
@@ -197,7 +197,7 @@ describe('the Invitation API service', () => {
           sender: 'test',
           recepient: 'test',
           medium: 'phone',
-          expiration: Date.now() - 123456789,
+          expiration: `${Date.now() - 123456789}`,
           accessed: 0
         }
       ])

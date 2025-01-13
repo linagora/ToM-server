@@ -132,7 +132,7 @@ describe('the Invitation API middleware', () => {
         {
           contact: '+21652123456',
           medium: 'phone',
-          expiration: Date.now() + TEST_DELAY
+          expiration: `${Date.now() + TEST_DELAY}`
         }
       ])
 
@@ -152,7 +152,7 @@ describe('the Invitation API middleware', () => {
         {
           contact: '+21652123456',
           medium: 'phone',
-          expiration: Date.now() - TEST_DELAY
+          expiration: `${Date.now() - TEST_DELAY}`
         }
       ])
 
@@ -196,7 +196,7 @@ describe('the Invitation API middleware', () => {
         {
           contact: '+21652123456',
           medium: 'phone',
-          expiration: Date.now() - TEST_DELAY
+          expiration: `${Date.now() - TEST_DELAY}`
         }
       ])
 
@@ -228,7 +228,7 @@ describe('the Invitation API middleware', () => {
         {
           contact: '+21652123456',
           medium: 'phone',
-          expiration: Date.now() + EXPIRATION
+          expiration: `${Date.now() + EXPIRATION}`
         }
       ])
 
@@ -268,7 +268,7 @@ describe('the Invitation API middleware', () => {
         {
           contact: '+21652123456',
           medium: 'phone',
-          expiration: Date.now() - EXPIRATION + TEST_DELAY
+          expiration: `${Date.now() - EXPIRATION + TEST_DELAY}`
         }
       ])
 
@@ -291,7 +291,7 @@ describe('the Invitation API middleware', () => {
         {
           contact: '+21652123456',
           medium: 'phone',
-          expiration: Date.now() + EXPIRATION
+          expiration: `${Date.now() + EXPIRATION}`
         }
       ])
 

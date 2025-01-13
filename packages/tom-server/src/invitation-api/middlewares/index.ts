@@ -1,7 +1,7 @@
 import { TwakeLogger } from '@twake/logger'
 import { TwakeDB } from '../../types'
 import type { NextFunction, Request, Response } from 'express'
-import { InvitationRequestPayload } from '../types'
+import type { Invitation, InvitationRequestPayload } from '../types'
 import validator from 'validator'
 
 export default class invitationApiMiddleware {
@@ -131,7 +131,7 @@ export default class invitationApiMiddleware {
         {
           recepient: contact
         }
-      )
+      ) as unknown as Invitation[];
 
       if (!invitations || !invitations.length) {
         next()
@@ -141,7 +141,7 @@ export default class invitationApiMiddleware {
       const lastInvitation = invitations[invitations.length - 1]
       const { expiration } = lastInvitation
 
-      if (Date.now() - +expiration < this.ONE_HOUR) {
+      if (Date.now() - parseInt(expiration) < this.ONE_HOUR) {
         res
           .status(400)
           .json({ message: 'you already sent an invitation to this contact' })

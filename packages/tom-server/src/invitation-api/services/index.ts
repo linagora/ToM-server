@@ -78,7 +78,7 @@ export default class InvitationService implements IInvitationService {
 
       const { expiration, medium, sender, recepient } = invitation
 
-      if (expiration < Date.now()) {
+      if (parseInt(expiration) < Date.now()) {
         throw Error('Invitation expired')
       }
 
@@ -134,7 +134,7 @@ export default class InvitationService implements IInvitationService {
       await this.db.insert('invitations', {
         ...payload,
         id: token,
-        expiration: Date.now() + this.EXPIRATION,
+        expiration: `${Date.now() + this.EXPIRATION}`,
         accessed: 0
       })
 
@@ -149,7 +149,6 @@ export default class InvitationService implements IInvitationService {
   /**
    * Creates a private room
    *
-   * @param {invitationPayload} payload - Invitation payload
    * @param {string} authorization - Authorization token
    * @returns {Promise<string>} - Room ID
    */
