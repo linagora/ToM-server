@@ -10,6 +10,7 @@ import {
 } from '../types'
 import { v7 as uuidv7 } from 'uuid'
 import { PATH } from '../routes'
+import { buildUrl } from '../../utils'
 
 export default class InvitationService implements IInvitationService {
   private readonly EXPIRATION = 24 * 60 * 60 * 1000 // 24 hours
@@ -110,7 +111,7 @@ export default class InvitationService implements IInvitationService {
       await this._storeMatrixInvite(payload, authorization, room_id)
       const token = await this._createInvitation(payload)
 
-      return `${this.config.base_url}${PATH}/${token}`
+      return buildUrl(this.config.base_url, `${PATH}/${token}`)
     } catch (error) {
       this.logger.error(`Failed to generate invitation link`, { error })
 
@@ -156,7 +157,7 @@ export default class InvitationService implements IInvitationService {
   ): Promise<string> => {
     try {
       const response = await fetch(
-        `https://${this.config.matrix_server}${this.MATRIX_ROOM_PATH}`,
+        buildUrl(this.config.matrix_server, this.MATRIX_ROOM_PATH),
         {
           method: 'POST',
           headers: {
@@ -251,22 +252,19 @@ export default class InvitationService implements IInvitationService {
     room_id: string
   ) => {
     try {
-      await fetch(
-        `https://${this.config.matrix_server}/${this.MATRIX_INVITE_PATH}`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: authorization
-          },
-          body: JSON.stringify({
-            medium: payload.medium,
-            address: payload.recepient,
-            sender: payload.sender,
-            room_id
-          })
-        }
-      )
+      await fetch(buildUrl(this.config.base_url, this.MATRIX_INVITE_PATH), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: authorization
+        },
+        body: JSON.stringify({
+          medium: payload.medium,
+          address: payload.recepient,
+          sender: payload.sender,
+          room_id
+        })
+      })
     } catch (error) {
       this.logger.error(`Failed to store matrix invite`, { error })
 

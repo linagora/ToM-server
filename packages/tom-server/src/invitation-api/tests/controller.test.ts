@@ -53,7 +53,7 @@ app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({ extended: true }))
 app.use(
   router(
-    { matrix_server: 'http://localhost:789' } as unknown as Config,
+    { matrix_server: 'http://localhost:789', base_url: 'http://localhost' } as unknown as Config,
     dbMock as unknown as TwakeDB,
     authenticatorMock,
     loggerMock as unknown as TwakeLogger
