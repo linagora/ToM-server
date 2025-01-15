@@ -91,5 +91,6 @@
   "sms_api_key": "",
   "trust_x_forwarded_for": false,
   "qr_code_url": "twake.chat://login",
-  "invitation_redirect_url": "https://sign-up.twake.app/download/chat"
+  "invitation_redirect_url": "https://sign-up.twake.app/download/chat",
+  "invitation_server_name": "matrix.to"
 }
