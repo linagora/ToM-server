@@ -235,12 +235,19 @@ export default class MatrixIdentityServer<T extends string = never> {
                 resolve(true)
               })
               /* istanbul ignore next */
-              .catch(reject)
+              .catch((e) => {
+                console.error({ e })
+                reject(e)
+              })
           })
           /* istanbul ignore next */
-          .catch(reject)
+          .catch((e) => {
+            console.error({ e })
+            reject(e)
+          })
       })
     } catch (e) {
+      console.error({ e })
       this.logger.error(e)
       this.logger.close()
       throw e

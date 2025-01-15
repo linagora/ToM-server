@@ -1,6 +1,7 @@
 import { createRequestHandler } from '@remix-run/express'
 import AppServer from '@twake/matrix-application-server'
 import TomServer from '@twake/server'
+import MatrixIdentityServer from '@twake/matrix-identity-server'
 import express from 'express'
 import path from 'node:path'
 import { fileURLToPath } from 'url'
@@ -96,7 +97,8 @@ if (process.argv[2] === 'generate') {
     app.set('trust proxy', ...trustProxy)
   }
   const tomServer = new TomServer(conf)
-  const promises = [tomServer.ready]
+  const idServer = new MatrixIdentityServer(conf)
+  const promises = [idServer.ready, tomServer.ready]
 
   if (process.env.CROWDSEC_URI) {
     if (!process.env.CROWDSEC_KEY) {
@@ -146,11 +148,21 @@ if (process.argv[2] === 'generate') {
   Promise.all(promises)
     .then(() => {
       app.use(tomServer.endpoints)
+
+      Object.keys(idServer.api.get).forEach((k) => {
+        app.get(k, idServer.api.get[k])
+      })
+
+      Object.keys(idServer.api.post).forEach((k) => {
+        app.post(k, idServer.api.post[k])
+      })
+
       const port = process.argv[2] != null ? parseInt(process.argv[2]) : 3000
       console.log(`Listening on port ${port}`)
       app.listen(port)
     })
     .catch((e) => {
+      console.error(e)
       throw e
     })
 }

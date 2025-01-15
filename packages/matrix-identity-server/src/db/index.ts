@@ -263,32 +263,17 @@ class IdentityServerDb<T extends string = never>
     this.ready = new Promise((resolve, reject) => {
       this.db.ready
         .then(() => {
-          this.init()
-            .then(() => {
-              resolve()
-            })
-            .catch((e) => {
-              /* istanbul ignore next */
-              this.logger.error('initialization failed')
-              /* istanbul ignore next */
-              reject(e)
-            })
+          this.dbMaintenance(conf.database_vacuum_delay)
+          resolve()
         })
         .catch((e) => {
           /* istanbul ignore next */
+          console.error({ e })
           this.logger.error('Database initialization failed')
           /* istanbul ignore next */
           reject(e)
         })
     })
-    this.ready
-      .then(() => {
-        this.dbMaintenance(conf.database_vacuum_delay)
-      })
-      .catch((e) => {
-        /* istanbul ignore next */
-        this.logger.error('DB maintenance error', e)
-      })
   }
 
   // For later
