@@ -5,3 +5,14 @@ packages/*/example/*.js*
 *.map
 .nx/
 packages/matrix-identity-server/matrix-server/synapse-data
+
+## direnv
+.direnv/
+
+## compose related
+.compose/**/*.env
+
+# ignore sqlite files
+**/*.db
+**/*.db-shm
+**/*.db-wal

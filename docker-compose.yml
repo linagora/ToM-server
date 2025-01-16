@@ -1,0 +1,105 @@
+# File              : docker-compose.yml
+# License           : AGPL-3.0-or-later
+# Author            : Pierre 'McFly' Marty <pmarty@linagora.com>
+# Date              : 16.01.2025
+# Last Modified Date: 23.01.2025
+# Last Modified By  : Pierre 'McFly' Marty <pmarty@linagora.com>
+
+services:
+  auth:
+    image: yadd/lemonldap-ng-full
+    volumes:
+      - ./.compose/lemon/lmConf-1.json:/var/lib/lemonldap-ng/conf/lmConf-1.json
+      - ./.compose/lemon/ssl.conf:/etc/nginx/sites-enabled/0000default.conf
+      - ./.compose/lemon/root.conf:/etc/nginx/sites-enabled/root.conf
+      - ./.compose/synapse/wellknownserver.conf:/var/www/matrix-server.json
+      - ./.compose/synapse/wellknownclient.conf:/var/www/matrix-client.json
+      - ./.compose/ssl:/etc/nginx/ssl
+      - ./.compose/lemon/lemon.db:/db/lemon.db
+    environment:
+      - SSODOMAIN=docker.localhost
+      - PORTAL=https://auth.docker.localhost
+      - LOGLEVEL=debug
+      - LOGGER=stderr
+      - USERLOGGER=stderr
+    deploy:
+      mode: replicated
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+    networks:
+      frontend:
+        aliases:
+          - auth
+
+  synapse:
+    image: matrixdotorg/synapse
+    restart: unless-stopped
+    env_file:
+      - path: .compose/.env
+        required: true
+    volumes:
+      - ./.compose/synapse:/data
+      - ./.compose/ssl:/etc/ssl/certs
+    depends_on:
+      auth:
+        condition: service_started
+    networks:
+      frontend:
+        aliases:
+          - synapse
+
+  tom:
+    build:
+      context: .
+    volumes:
+      - ./.compose/tom/:/opt/twake/db/
+      - ./.compose/synapse/:/opt/synapse/db/
+    depends_on:
+      synapse:
+        condition: service_started
+    ports:
+      - 3000:3000
+    networks:
+      frontend:
+        aliases:
+          - tom.server
+    environment:
+      - BASE_URL=https://tom.docker.localhost
+      - DATABASE_ENGINE=sqlite
+      - DATABASE_HOST=/opt/twake/db/tom.db
+      - MATRIX_SERVER=matrix.docker.localhost
+      - MATRIX_DATABASE_ENGINE=sqlite
+      - MATRIX_DATABASE_HOST=/opt/synapse/db/homeserver.db
+      - OIDC_ISSUER=https://auth.docker.localhost
+      - SERVER_NAME=docker.localhost
+      - USERDB_ENGINE=sqlite
+      - LOG_LEVEL=debug
+      - LOG_TRANSPORTS=Console
+      - TEMPLATE_DIR=/usr/src/app/packages/tom-server/templates
+      - TRUSTED_PROXIES=uniquelocal
+      - NODE_TLS_REJECT_UNAUTHORIZED=0
+
+  haproxy:
+    image: haproxy:2.6-bookworm
+    ports:
+      - 443:443
+    volumes:
+      - ./.compose/haproxy:/usr/local/etc/haproxy:ro
+      - ./.compose/ssl/both.pem:/etc/ssl/certs/both.pem
+    sysctls:
+      - net.ipv4.ip_unprivileged_port_start=0
+    depends_on:
+      - auth
+      - synapse
+      - tom
+    networks:
+      frontend:
+        aliases:
+          - matrix.docker.localhost
+          - auth.docker.localhost
+          - tom.docker.localhost
+
+networks:
+  frontend:
+    name: frontend

@@ -40,6 +40,41 @@ REST API Endpoints documentation is available on https://linagora.github.io/ToM-
 
 [Try it with docker](#twake-chat-docker)
 
+## Development
+
+The local instance will be started using `docker.localhost` as root domain. Please make sure that your hosts file contains:
+
+```conf
+127.0.0.1 docker.localhost auth.docker.localhost matrix.docker.localhost tom.docker.localhost
+```
+
+```bash
+# pushd .compose/ssl/
+# mkcert -install
+# mkcert docker.localhost *.docker.localhost
+# cat docker.localhost+1.pem docker.localhost+1-key.pem > both.pem
+# popd
+
+pushd .compose/
+echo -e "TZ=$(timedatectl show | grep -Poh '(?<=^Timezone=).*')\nUID=$(id -u)\nGID=$(id -g)" > .env
+
+## OR - manual edition
+# cp .env.template .env
+# $EDITOR .env
+popd
+
+pushd .compose/lemon
+./init-db.sh  # Creates a user 'dwho' with pass 'dwho'
+
+## Add a new user
+# defaults -> ./create-user.sh 'dwho' 'Doctor Who' 'dwho'
+# ./create-user.sh 'nickname' 'givenname' 'password'
+popd
+
+docker-compose up # -d
+# docker compose up # -d
+```
+
 ## Scripts
 
 * `npm run build`: build all packages

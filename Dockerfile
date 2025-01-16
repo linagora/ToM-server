@@ -34,7 +34,7 @@ COPY landing /usr/src/app/landing
 
 RUN npm install
 RUN npm run build -- --skip-nx-cache
-RUN rm -rf node_modules */*/node_modules
+# RUN rm -rf node_modules */*/node_modules
 RUN npm install --production --ignore-scripts
 RUN npm cache clean --force
 

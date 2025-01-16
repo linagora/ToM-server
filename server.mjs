@@ -77,7 +77,7 @@ let conf = {
   update_federated_identity_hashes_cron:
     process.env.UPDATE_FEDERATED_IDENTITY_HASHES_CRON || '*/10 * * * *',
   update_users_cron: process.env.UPDATE_USERS_CRON || '*/10 * * * *',
-  userdb_engine: 'ldap',
+  userdb_engine: process.env.USERDB_ENGINE || 'ldap',
   sms_api_key: process.env.SMS_API_KEY,
   sms_api_login: process.env.SMS_API_LOGIN,
   sms_api_url: process.env.SMS_API_URL,
