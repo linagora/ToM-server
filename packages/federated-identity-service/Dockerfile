@@ -29,7 +29,6 @@ COPY ./packages/matrix-identity-server ./packages/matrix-identity-server
 COPY ./packages/config-parser ./packages/config-parser
 COPY ./packages/federated-identity-service ./packages/federated-identity-service
 COPY ./packages/utils ./packages/utils
-COPY .husky .husky
 COPY lerna.json ./
 COPY tsconfig-build.json ./
 COPY rollup-template.js ./
@@ -37,7 +36,7 @@ COPY package*.json ./
 
 RUN npm install && npm run build && \
     rm -rf node_modules */*/node_modules && \
-    npm install --production --ignore-scripts && \
+    npm install --production && \
     npm cache clean --force
 
 FROM node-minimal as federation-server

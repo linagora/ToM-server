@@ -1,0 +1,14 @@
+server {
+  listen ${TWAKECHAT_LISTEN_PORT} default;
+  listen [::]:${TWAKECHAT_LISTEN_PORT} default;
+
+  location = / {
+    return 301 https://chat.docker.localhost${TWAKECHAT_BASE_HREF};
+  }
+
+  location / {
+    root   /usr/share/nginx/html;
+    index  index.html index.htm;
+    try_files $uri $uri/ /index.html;
+  }
+}

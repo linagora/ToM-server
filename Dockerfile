@@ -1,5 +1,5 @@
 # Base for final image
-FROM debian:bookworm-slim as node-minimal
+FROM debian:bookworm-slim AS node-minimal
 
 RUN apt update && \
     apt -y dist-upgrade && \
@@ -9,7 +9,7 @@ RUN apt update && \
     rm -rf /var/lib/apt/lists/*
 
 # Temporary image to build app
-FROM debian:bookworm-slim as builder
+FROM debian:bookworm-slim AS builder
 
 RUN apt update && \
     apt -y dist-upgrade && \
@@ -25,20 +25,17 @@ WORKDIR /usr/src/app
 COPY package*.json .njsscan *.js *.json *.mjs LICENSE ./
 
 # 2. Directories
-COPY .husky ./.husky/
 COPY packages ./packages/
 COPY landing /usr/src/app/landing
-#COPY node_modules ./node_modules/
 
 # Build and clean
+RUN npm install && \
+    npm run build -- --skip-nx-cache && \
+    rm -rf node_modules */*/node_modules && \
+    npm install --production && \
+    npm cache clean --force
 
-RUN npm install
-RUN npm run build -- --skip-nx-cache
-RUN rm -rf node_modules */*/node_modules
-RUN npm install --production --ignore-scripts
-RUN npm cache clean --force
-
-FROM node-minimal as tom-server
+FROM node-minimal AS tom-server
 
 ENV BASE_URL= \
     CRON_SERVICE= \

@@ -10,7 +10,7 @@ interface Config {
 let created = false
 
 const createQuery =
-  'CREATE TABLE users (uid varchar(8), mobile varchar(12), mail varchar(32), sn varchar(32))'
+  'CREATE TABLE IF NOT EXISTS users (uid varchar(8), mobile varchar(12), mail varchar(32), sn varchar(32))'
 const insertQuery =
   "INSERT INTO users VALUES('dwho', '33612345678', 'dwho@example.com', 'Dwho')"
 
@@ -22,7 +22,7 @@ const buildUserDB = (conf: Config, recreate?: boolean): Promise<void> => {
       const matrixDb = new sqlite3.Database(conf.matrix_database_host)
 
       matrixDb.run(
-        'CREATE TABLE users (name text, desactivated text, admin integer)',
+        'CREATE TABLE IF NOT EXISTS users (name text, desactivated text, admin integer)',
         (err) => {
           if (err != null) {
             reject(err)

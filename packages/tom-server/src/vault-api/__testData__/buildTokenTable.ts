@@ -14,7 +14,7 @@ const buildTokenTable = (conf: Config): Promise<void> => {
     const matrixDbManager = new sqlite3.Database(conf.matrix_database_host)
 
     dbManager.run(
-      'CREATE TABLE matrixTokens (id varchar(64) primary key, data text)',
+      'CREATE TABLE IF NOT EXISTS matrixTokens (id varchar(64) primary key, data text)',
       () =>
         dbManager.run(
           `INSERT INTO matrixTokens VALUES('${token.value}', '${JSON.stringify(
@@ -22,7 +22,7 @@ const buildTokenTable = (conf: Config): Promise<void> => {
           )}')`,
           () => {
             dbManager.run(
-              'CREATE TABLE users (uid varchar(8), mobile varchar(12), mail varchar(32))',
+              'CREATE TABLE IF NOT EXISTS users (uid varchar(8), mobile varchar(12), mail varchar(32))',
               () => {
                 dbManager.close((err) => {
                   /* istanbul ignore if */
@@ -40,7 +40,7 @@ const buildTokenTable = (conf: Config): Promise<void> => {
     )
 
     matrixDbManager.run(
-      'CREATE TABLE users (uid varchar(8), name varchar(32), mobile varchar(12), mail varchar(32))'
+      'CREATE TABLE IF NOT EXISTS users (uid varchar(8), name varchar(32), mobile varchar(12), mail varchar(32))'
     )
   })
 }
