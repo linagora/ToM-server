@@ -254,23 +254,20 @@ export default class InvitationService implements IInvitationService {
     try {
       const medium = payload.medium === 'phone' ? 'msisdn' : payload.medium
 
-      await fetch(
-        buildUrl(this.config.base_url, this.MATRIX_INVITE_PATH),
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: authorization
-          },
-          body: JSON.stringify({
-            medium,
-            address: payload.recepient,
-            phone: payload.recepient,
-            sender: payload.sender,
-            room_id
-          })
-        }
-      )
+      await fetch(buildUrl(this.config.base_url, this.MATRIX_INVITE_PATH), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: authorization
+        },
+        body: JSON.stringify({
+          medium,
+          address: payload.recepient,
+          phone: payload.recepient,
+          sender: payload.sender,
+          room_id
+        })
+      })
     } catch (error) {
       console.error({ error })
       this.logger.error(`Failed to store matrix invite`, { error })
