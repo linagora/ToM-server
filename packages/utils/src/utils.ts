@@ -39,37 +39,14 @@ export const jsonContent = (
   logger: TwakeLogger,
   callback: (obj: Record<string, string>) => void
 ): void => {
-  let content = ''
-  let accept = true
-  req.on('data', (body: string) => {
-    content += body
-  })
-  /* istanbul ignore next */
-  req.on('error', (err) => {
-    send(res, 400, errMsg('unknown', err.message))
-    accept = false
-  })
-  req.on('end', () => {
-    let obj
-    try {
-      // eslint-disable-next-line @typescript-eslint/prefer-optional-chain
-      if (
-        req.headers['content-type']?.match(
-          /^application\/x-www-form-urlencoded/
-        ) != null
-      ) {
-        obj = querystring.parse(content)
-      } else {
-        obj = JSON.parse(content)
-      }
-    } catch (err) {
-      logger.error('JSON error', err)
-      logger.error(`Content was: ${content}`)
-      send(res, 400, errMsg('unknown', err as string))
-      accept = false
-    }
-    if (accept) callback(obj)
-  })
+  try {
+    const obj = (req as Request).body
+
+    callback(obj)
+  } catch (error) {
+    logger.error('Error while parsing JSON body', error)
+    send(res, 400, errMsg('unknown'))
+  }
 }
 
 type validateParametersSchema = Record<string, boolean>
