@@ -2,7 +2,6 @@
 import { type TwakeLogger } from '@twake/logger'
 import { type NextFunction, type Request, type Response } from 'express'
 import type http from 'http'
-import querystring from 'querystring'
 import { errMsg } from './errors'
 
 export const hostnameRe =
@@ -42,8 +41,13 @@ export const jsonContent = (
   try {
     const obj = (req as Request).body
 
+    if (!obj) {
+      throw new Error('No body')
+    }
+
     callback(obj)
   } catch (error) {
+    console.error({ error })
     logger.error('Error while parsing JSON body', error)
     send(res, 400, errMsg('unknown'))
   }
