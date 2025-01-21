@@ -41,6 +41,8 @@ export const jsonContent = (
   try {
     const obj = (req as Request).body
 
+    console.log({ obj })
+
     if (!obj) {
       throw new Error('No body')
     }
