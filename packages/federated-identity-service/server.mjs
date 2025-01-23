@@ -88,7 +88,7 @@ Promise.all(promises)
     app.use(federatedIdentityService.routes)
     const port = process.argv[2] != null ? parseInt(process.argv[2]) : 3000
     console.log(`Listening on port ${port}`)
-    app.listen(port)
+    app.listen(port, '0.0.0.0')
   })
   .catch((e) => {
     console.error(e)
