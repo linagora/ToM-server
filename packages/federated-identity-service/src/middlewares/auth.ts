@@ -19,11 +19,16 @@ export const Authenticate = (
   const tokenRe = /^Bearer (\S+)$/
   return (req, res, callbackMethod) => {
     const request = req as AuthRequest
-    const originalRequesterIPAddress = trustXForwardedForHeader
+    const remoteAddress = trustXForwardedForHeader
       ? // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
         (request.headers['x-forwarded-for'] as string) ||
         (request.socket.remoteAddress as string)
       : (request.socket.remoteAddress as string)
+
+    const parsedAdressArray = remoteAddress.split(':')
+    const originalRequesterIPAddress =
+      parsedAdressArray[parsedAdressArray.length - 1]
+
     logger.info('', {
       ip: originalRequesterIPAddress,
       httpMethod: request.method,
