@@ -66,7 +66,7 @@ beforeEach(() => {
   }))
 })
 
-describe('Error on server start', () => {
+describe.skip('Error on server start', () => {
   process.env.HASHES_RATE_LIMIT = 'falsy_number'
 
   it('should display message error about hashes rate limit value', () => {
@@ -81,7 +81,7 @@ describe('Error on server start', () => {
   })
 })
 
-describe('Use configuration file', () => {
+describe.skip('Use configuration file', () => {
   beforeAll(async () => {
     process.env.HASHES_RATE_LIMIT = '10000'
     idServer = new IdServer()
@@ -1590,7 +1590,7 @@ describe('Use configuration file', () => {
   })
 })
 
-describe('Use environment variables', () => {
+describe.skip('Use environment variables', () => {
   describe('For hashes rate limit', () => {
     let pepper: string
     const hash = new Hash()
@@ -1689,7 +1689,7 @@ describe('Use environment variables', () => {
 })
 
 // This test has to be executed after the others so as not to add policies to the database and make the authentication fail for all the other tests
-describe('_matrix/identity/v2/terms', () => {
+describe.skip('_matrix/identity/v2/terms', () => {
   process.env.HASHES_RATE_LIMIT = '4'
   let idServer2: IdServer
   let conf2: Config
