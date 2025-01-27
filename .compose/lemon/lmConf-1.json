@@ -9,7 +9,22 @@
    "SSLVarIf" : {},
    "activeTimer" : 1,
    "apacheAuthnLevel" : 3,
-   "applicationList" : {},
+   "applicationList" : {
+      "1matrix" : {
+         "catname" : "Matrix clients",
+         "Twake" : {
+            "options" : {
+               "description" : "Twake web client",
+               "display" : "on",
+               "logo" : "demo.png",
+               "name" : "Twake",
+               "uri" : "https://chat.docker.localhost/"
+            },
+            "type" : "application"
+         },
+         "type" : "category"
+      }
+   },
    "authChoiceParam" : "lmAuth",
    "authentication" : "DBI",
    "available2F" : "UTOTP,TOTP,U2F,REST,Mail2F,Ext2F,WebAuthn,Yubikey,Radius,Password",
@@ -80,7 +95,11 @@
    "dbiAuthTable" : "users",
    "dbiAuthUser" : "",
    "dbiAuthnLevel" : 2,
-   "dbiExportedVars" : {},
+   "dbiExportedVars" : {
+      "uid": "uid",
+      "name": "name",
+      "mail": "mail"
+   },
    "decryptValueRule" : 0,
    "defaultNewKeySize" : 2048,
    "demoExportedVars" : {
@@ -192,6 +211,9 @@
       "auth.docker.localhost" : {
          "(?#checkUser)^/checkuser" : "inGroup(\"timelords\")",
          "(?#errors)^/lmerror/" : "accept",
+         "default" : "accept"
+      },
+      "chat.docker.localhost" : {
          "default" : "accept"
       },
       "manager.docker.localhost" : {

@@ -2,7 +2,7 @@
 # License           : AGPL-3.0-or-later
 # Author            : Pierre 'McFly' Marty <pmarty@linagora.com>
 # Date              : 16.01.2025
-# Last Modified Date: 23.01.2025
+# Last Modified Date: 27.01.2025
 # Last Modified By  : Pierre 'McFly' Marty <pmarty@linagora.com>
 
 services:
@@ -80,6 +80,15 @@ services:
       - TRUSTED_PROXIES=uniquelocal
       - NODE_TLS_REJECT_UNAUTHORIZED=0
 
+  chat:
+    image: linagora/twake-web
+    volumes:
+      - ./.compose/chat/config.json:/usr/share/nginx/html/web/config.json
+    ports:
+      - 80:80
+    networks:
+      - frontend
+
   haproxy:
     image: haproxy:2.6-bookworm
     ports:
@@ -91,13 +100,15 @@ services:
       - net.ipv4.ip_unprivileged_port_start=0
     depends_on:
       - auth
+      - chat
       - synapse
       - tom
     networks:
       frontend:
         aliases:
-          - matrix.docker.localhost
           - auth.docker.localhost
+          - chat.docker.localhost
+          - matrix.docker.localhost
           - tom.docker.localhost
 
 networks:
