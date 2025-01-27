@@ -74,7 +74,7 @@ services:
       - OIDC_ISSUER=https://auth.docker.localhost
       - SERVER_NAME=docker.localhost
       - USERDB_ENGINE=sqlite
-      - LOG_LEVEL=debug
+      - LOG_LEVEL=silly
       - LOG_TRANSPORTS=Console
       - TEMPLATE_DIR=/usr/src/app/packages/tom-server/templates
       - TRUSTED_PROXIES=uniquelocal
