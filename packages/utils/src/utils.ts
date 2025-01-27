@@ -41,16 +41,15 @@ export const jsonContent = (
   try {
     const obj = (req as Request).body
 
-    console.log({ obj })
-
     if (!obj) {
-      throw new Error('No body')
+      logger.error('No JSON body')
+      throw new Error('JSON error')
     }
 
     callback(obj)
   } catch (error) {
     console.error({ error })
-    logger.error('Error while parsing JSON body', error)
+    logger.error('JSON error', error)
     send(res, 400, errMsg('unknown'))
   }
 }
