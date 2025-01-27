@@ -52,14 +52,7 @@ describe('Utility Functions', () => {
     it('should parse JSON content and call the callback', (done) => {
       const req = {
         headers: { 'content-type': 'application/json' },
-        on: (event: string, callback: any) => {
-          if (event === 'data') {
-            callback(JSON.stringify({ key: 'value' }))
-          }
-          if (event === 'end') {
-            callback()
-          }
-        }
+        body: { key: 'value' }
       } as unknown as Request
 
       jsonContent(
@@ -76,14 +69,7 @@ describe('Utility Functions', () => {
     it('should handle form-urlencoded content', (done) => {
       const req = {
         headers: { 'content-type': 'application/x-www-form-urlencoded' },
-        on: (event: string, callback: any) => {
-          if (event === 'data') {
-            callback(querystring.stringify({ key: 'value' }))
-          }
-          if (event === 'end') {
-            callback()
-          }
-        }
+        body: { key: 'value' }
       } as unknown as Request
 
       jsonContent(
@@ -97,7 +83,7 @@ describe('Utility Functions', () => {
       )
     })
 
-    it('should handle JSON parsing errors', (done) => {
+    it('should handle JSON parsing errors', () => {
       const req = {
         headers: { 'content-type': 'application/json' },
         on: (event: string, callback: any) => {
@@ -110,20 +96,15 @@ describe('Utility Functions', () => {
         }
       } as unknown as Request
 
-      jsonContent(req, mockResponse as Response, mockLogger, () => {
-        // No-op
-      })
+      jsonContent(req, mockResponse as Response, mockLogger, () => {})
 
-      setImmediate(() => {
-        expect(mockLogger.error).toHaveBeenCalled()
-        expect(mockResponse.writeHead).toHaveBeenCalledWith(
-          400,
-          expect.any(Object)
-        )
-        expect(mockResponse.write).toHaveBeenCalled()
-        expect(mockResponse.end).toHaveBeenCalled()
-        done()
-      })
+      expect(mockLogger.error).toHaveBeenCalled()
+      expect(mockResponse.writeHead).toHaveBeenCalledWith(
+        400,
+        expect.any(Object)
+      )
+      expect(mockResponse.write).toHaveBeenCalled()
+      expect(mockResponse.end).toHaveBeenCalled()
     })
   })
 

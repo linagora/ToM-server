@@ -105,6 +105,8 @@ if (process.argv[2] === 'generate') {
   //
   //  next()
   //})
+  app.use(express.json())
+  app.use(express.urlencoded({ extended: true }))
 
   const trustProxy = process.env.TRUSTED_PROXIES
     ? process.env.TRUSTED_PROXIES.split(/\s+/)

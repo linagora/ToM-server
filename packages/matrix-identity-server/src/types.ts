@@ -60,6 +60,7 @@ export interface Config {
   userdb_user?: string
   template_dir: string
   check_quota_cron?: string
+  matrix_server?: string
 }
 
 export type DbGetResult = Array<

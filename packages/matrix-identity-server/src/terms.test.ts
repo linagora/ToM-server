@@ -33,6 +33,8 @@ beforeAll((done) => {
     .then(() => {
       idServer = new IdServer()
       app = express()
+      app.use(express.json())
+      app.use(express.urlencoded({ extended: true }))
 
       idServer.ready
         .then(() => {
