@@ -91,3 +91,27 @@ export const Authenticate = <T extends string = never>(
     }
   }
 }
+
+/**
+ * Builds a URL from a base URL and a path
+ *
+ * @param {string} base - Base URL
+ * @param {string} path - Path
+ * @returns {string} - URL
+ */
+export const buildUrl = (base: string, path: string): string => {
+  let formattedUrl = base
+
+  if (
+    !formattedUrl.startsWith('https://') &&
+    !formattedUrl.startsWith('http://')
+  ) {
+    formattedUrl = `https://${formattedUrl}`
+  }
+
+  const url = new URL(formattedUrl)
+
+  url.pathname = path
+
+  return url.toString()
+}

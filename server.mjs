@@ -89,6 +89,9 @@ if (process.argv[2] === 'generate') {
   const appServer = new AppServer(appServerConf)
 } else {
   const app = express()
+  app.use(express.json())
+  app.use(express.urlencoded({ extended: true }))
+
   const trustProxy = process.env.TRUSTED_PROXIES
     ? process.env.TRUSTED_PROXIES.split(/\s+/)
     : []

@@ -5,12 +5,13 @@ import type MatrixIdentityServer from '../index'
 import { type Config } from '../types'
 import {
   errMsg,
-  jsonContent,
   send,
   validateParameters,
   type expressAppHandler
 } from '@twake/utils'
 import Mailer from '../utils/mailer'
+import validator from 'validator'
+import { buildUrl } from '../utils'
 
 interface storeInvitationArgs {
   address: string
@@ -163,11 +164,12 @@ const StoreInvit = <T extends string = never>(
   )
   return (req, res) => {
     idServer.authenticate(req, res, (_data, _id) => {
-      jsonContent(req, res, idServer.logger, (obj) => {
-        // eslint-disable-next-line @typescript-eslint/no-misused-promises
-        validateParameters(res, schema, obj, idServer.logger, async (obj) => {
+      const obj = (req as any).body
+      validateParameters(res, schema, obj, idServer.logger, async (obj) => {
+        try {
           const medium = (obj as storeInvitationArgs).medium
           if (!validMediums.includes(medium)) {
+            console.error('invalid medium')
             send(
               res,
               400,
@@ -182,12 +184,14 @@ const StoreInvit = <T extends string = never>(
           switch (medium) {
             case 'email':
               if (address == null || !validEmailRe.test(address)) {
+                console.error('invalid email address')
                 send(res, 400, errMsg('invalidParam', 'Invalid email address.'))
                 return
               } else mediumAddress = address
               break
             case 'msisdn':
-              if (phone == null || !validPhoneRe.test(phone)) {
+              if (phone == null || !validator.isMobilePhone(phone)) {
+                console.error('invalid phone number')
                 send(res, 400, errMsg('invalidParam', 'Invalid phone number.'))
                 return
               } else mediumAddress = phone
@@ -200,8 +204,9 @@ const StoreInvit = <T extends string = never>(
             const _pepper = idServer.db.get('keys', ['data'], {
               name: 'pepper'
             })
+
             const response = await fetch(
-              `https://${idServer.conf.server_name}/_matrix/identity/v2/lookup`,
+              buildUrl(idServer.conf.base_url, '/_matrix/identity/v2/lookup'),
               {
                 method: 'POST',
                 headers: {
@@ -216,14 +221,20 @@ const StoreInvit = <T extends string = never>(
                 })
               }
             )
-            if (response.status === 200) {
+
+            const result = (await response.json()) as {
+              mappings: Record<string, string>
+            }
+            const foundMappings = Object.keys(result.mappings).length > 0
+
+            if (response.status === 200 && foundMappings) {
               send(res, 400, {
                 errcode: 'M_THREEPID_IN_USE',
                 error:
                   'The third party identifier is already in use by another user.',
                 mxid: (obj as storeInvitationArgs).sender
               })
-            } else if (response.status === 400) {
+            } else if (response.status === 200 && !foundMappings) {
               // Create invitation token
               const ephemeralKey = await idServer.db.createKeypair(
                 'shortTerm',
@@ -282,6 +293,7 @@ const StoreInvit = <T extends string = never>(
                   send(res, 200, responseBody)
                 })
                 .catch((err) => {
+                  console.error('error while getting keys', { err })
                   /* istanbul ignore next */
                   idServer.logger.debug(
                     'Error while getting the current key',
@@ -291,6 +303,10 @@ const StoreInvit = <T extends string = never>(
                   send(res, 500, errMsg('unknown', err))
                 })
             } else {
+              console.error('unexpected response status', {
+                status: response.status,
+                result
+              })
               /* istanbul ignore next */
               idServer.logger.error(
                 'Unexpected response statusCode from the /_matrix/identity/v2/lookup API'
@@ -305,6 +321,9 @@ const StoreInvit = <T extends string = never>(
               )
             }
           } catch (err) {
+            console.error('error while making a call to the lookup API', {
+              err
+            })
             /* istanbul ignore next */
             idServer.logger.error(
               'Error while making a call to the lookup API (/_matrix/identity/v2/lookup)',
@@ -313,7 +332,9 @@ const StoreInvit = <T extends string = never>(
             /* istanbul ignore next */
             send(res, 500, errMsg('unknown', err as string))
           }
-        })
+        } catch (error) {
+          console.error({ error })
+        }
       })
     })
   }

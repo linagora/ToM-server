@@ -252,6 +252,8 @@ export default class InvitationService implements IInvitationService {
     room_id: string
   ) => {
     try {
+      const medium = payload.medium === 'phone' ? 'msisdn' : payload.medium
+
       await fetch(buildUrl(this.config.base_url, this.MATRIX_INVITE_PATH), {
         method: 'POST',
         headers: {
@@ -259,13 +261,15 @@ export default class InvitationService implements IInvitationService {
           Authorization: authorization
         },
         body: JSON.stringify({
-          medium: payload.medium,
+          medium,
           address: payload.recepient,
+          phone: payload.recepient,
           sender: payload.sender,
           room_id
         })
       })
     } catch (error) {
+      console.error({ error })
       this.logger.error(`Failed to store matrix invite`, { error })
 
       throw Error('Failed to store matrix invite')
