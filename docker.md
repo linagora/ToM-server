@@ -190,7 +190,30 @@ pushd .compose/lemon
 ## Add more users
 # ./create-user.sh 'nickname' 'givenname' 'password'
 popd
+```
+---
 
+*NixOS manages the rootCA installation differently ; https://search.nixos.org/options?channel=24.11&show=security.pki.certificates&from=0&size=50&sort=relevance&type=packages&query=certificates \
+Be sure to install yours accordingly.*
+
+```nix
+  # rootCA
+  security.pki.certificates = [
+    ''
+      docker.localhost
+      ================
+      -----BEGIN CERTIFICATE-----
+
+      content of .compose/rootCA.pem or yours
+
+      -----END CERTIFICATE-----
+    ''
+  ];
+```
+
+---
+
+```bash
 ## Fire up!
 docker-compose up # -d
 # docker compose up # -d
