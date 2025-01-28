@@ -15,7 +15,7 @@ export const buildUserDB = (conf: Partial<Config>): Promise<void> => {
     const matrixDb = new sqlite3.Database(conf.matrix_database_host)
 
     matrixDb.run(
-      'CREATE TABLE users (name text, desactivated text, admin integer)',
+      'CREATE TABLE IF NOT EXISTS users (name text, desactivated text, admin integer)',
       (err) => {
         if (err != null) {
           reject(err)
@@ -32,7 +32,7 @@ export const buildUserDB = (conf: Partial<Config>): Promise<void> => {
 export const deleteUserDB = (conf: Partial<Config>): Promise<void> => {
   return new Promise((resolve, reject) => {
     const matrixDb = new sqlite3.Database(conf.matrix_database_host)
-    matrixDb.run('DROP TABLE users', (err) => {
+    matrixDb.run('DROP TABLE IF EXISTS users', (err) => {
       if (err != null) {
         reject(err)
       } else {

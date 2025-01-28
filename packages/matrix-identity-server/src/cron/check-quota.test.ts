@@ -35,7 +35,7 @@ beforeAll(async () => {
         try {
           await new Promise((resolve, reject) => {
             testdb.run(
-              'CREATE TABLE local_media_repository (user_id  varchar(64), media_length int)',
+              'CREATE TABLE IF NOT EXISTS local_media_repository (user_id  varchar(64), media_length int)',
               (e: unknown) => {
                 if (e !== null)
                   reject(
