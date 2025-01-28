@@ -11,6 +11,7 @@ packages/matrix-identity-server/matrix-server/synapse-data
 
 ## compose related
 .compose/**/*.env
+.compose/synapse/media_store/
 
 # ignore sqlite files
 **/*.db

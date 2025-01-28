@@ -1,0 +1,25 @@
+server {
+  listen ${TWAKECHAT_LISTEN_PORT} default;
+  listen [::]:${TWAKECHAT_LISTEN_PORT} default;
+
+  #ssl_certificate /etc/nginx/ssl/docker.localhost+1.pem;
+  #ssl_certificate_key /etc/nginx/ssl/docker.localhost+1-key.pem;
+
+  location = / {
+    return 301 https://chat.docker.localhost${TWAKECHAT_BASE_HREF};
+  }
+
+  location / {
+    add_header plouk ok;
+
+    # try_files $uri $uri/ =404;
+
+    # proxy_pass http://localhost:80/;
+    # proxy_redirect off;
+    # proxy_set_header Host $host;
+
+    root   /usr/share/nginx/html;
+    index  index.html index.htm;
+    try_files $uri $uri/ /index.html;
+  }
+}

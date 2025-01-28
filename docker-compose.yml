@@ -53,8 +53,8 @@ services:
     build:
       context: .
     volumes:
-      - ./.compose/tom/:/opt/twake/db/
-      - ./.compose/synapse/:/opt/synapse/db/
+      - ./.compose/tom:/opt/twake/db/
+      - ./.compose/synapse:/opt/synapse/db/
     depends_on:
       synapse:
         condition: service_started
@@ -84,8 +84,12 @@ services:
     image: linagora/twake-web
     volumes:
       - ./.compose/chat/config.json:/usr/share/nginx/html/web/config.json
+      - ./.compose/chat/default.conf.template:/etc/nginx/templates/default.conf.template
+      - ./.compose/ssl:/etc/nginx/ssl
     ports:
-      - 80:80
+      - 6868:6868
+    environment:
+      - TWAKECHAT_LISTEN_PORT=6868
     networks:
       - frontend
 

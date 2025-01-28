@@ -18,7 +18,7 @@
                "display" : "on",
                "logo" : "demo.png",
                "name" : "Twake",
-               "uri" : "https://chat.docker.localhost/"
+               "uri" : "https://chat.docker.localhost/web/"
             },
             "type" : "application"
          },
