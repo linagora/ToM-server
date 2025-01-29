@@ -52,6 +52,8 @@ services:
   tom:
     build:
       context: .
+      args:
+        TOM_EXTRA_DEPS: sqlite3
     volumes:
       - ./.compose/tom:/opt/twake/db/
       - ./.compose/synapse:/opt/synapse/db/
