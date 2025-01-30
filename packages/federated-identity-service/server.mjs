@@ -54,7 +54,10 @@ const conf = {
     ? JSON.parse(process.env.USERDB_SSL)
     : false,
   trust_x_forwarded_for: process.env.TRUST_X_FORWARDED_FOR || false,
-  trusted_servers_addresses: process.env.TRUSTED_SERVERS_ADDRESSES
+  trusted_servers_addresses: process.env.TRUSTED_SERVERS_ADDRESSES,
+  sms_api_key: process.env.SMS_API_KEY,
+  sms_api_login: process.env.SMS_API_LOGIN,
+  sms_api_url: process.env.SMS_API_URL
 }
 
 const federatedIdentityService = new FederatedIdentityService(conf)
