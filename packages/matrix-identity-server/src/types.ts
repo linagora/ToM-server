@@ -61,6 +61,9 @@ export interface Config {
   template_dir: string
   check_quota_cron?: string
   matrix_server?: string
+  sms_api_login?: string
+  sms_api_key?: string
+  sms_api_url?: string
 }
 
 export type DbGetResult = Array<
@@ -80,4 +83,8 @@ export interface MatrixUser {
 export interface UserQuota {
   user_id: string
   size: number
+}
+
+export interface ISMSService {
+  send: (to: string, body: string) => Promise<void>
 }
