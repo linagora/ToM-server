@@ -12,6 +12,7 @@ import {
 import Mailer from '../utils/mailer'
 import validator from 'validator'
 import { buildUrl } from '../utils'
+import { SmsService } from '../utils/sms-service'
 
 interface storeInvitationArgs {
   address: string
@@ -155,6 +156,7 @@ const StoreInvit = <T extends string = never>(
   idServer: MatrixIdentityServer<T>
 ): expressAppHandler => {
   const transport = new Mailer(idServer.conf)
+  const smsService = new SmsService(idServer.conf, idServer.logger)
   const verificationTemplate = preConfigureTemplate(
     fs
       .readFileSync(`${idServer.conf.template_dir}/3pidInvitation.tpl`)
@@ -268,7 +270,10 @@ const StoreInvit = <T extends string = never>(
                   })
                   break
                 case 'msisdn':
-                  // TODO implement smsSender
+                  smsService.send(
+                    address,
+                    'you have been invited to use twake chat'
+                  )
                   break
               }
               // Send 200 response
