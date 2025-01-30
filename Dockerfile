@@ -31,13 +31,11 @@ COPY landing /usr/src/app/landing
 #COPY node_modules ./node_modules/
 
 # Build and clean
-ARG TOM_EXTRA_DEPS
-
 RUN npm install
 RUN npm run build -- --skip-nx-cache
 RUN rm -rf node_modules */*/node_modules
 RUN npm install --production --ignore-scripts
-RUN test -n "${TOM_EXTRA_DEPS}" && npm install --no-save "${TOM_EXTRA_DEPS}"
+RUN npm explore sqlite3 -- npm install --production
 RUN npm cache clean --force
 
 FROM node-minimal AS tom-server
