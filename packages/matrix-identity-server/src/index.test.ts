@@ -14,12 +14,24 @@ import defaultConfig from './__testData__/registerConf.json'
 import IdServer from './index'
 import { type Config } from './types'
 import { fillPoliciesDB } from './terms/index.post'
+import { SmsService } from './utils/sms-service'
+
 jest.mock('node-fetch', () => jest.fn())
 const sendMailMock = jest.fn()
 jest.mock('nodemailer', () => ({
   createTransport: jest.fn().mockImplementation(() => ({
     sendMail: sendMailMock
   }))
+}))
+
+const mockSend = jest.fn().mockResolvedValue(undefined)
+const mockSmsService = {
+  send: mockSend
+} as unknown as jest.Mocked<SmsService>
+
+// 2. Mock the SMS service class
+jest.mock('./utils/sms-service', () => ({
+  SmsService: jest.fn().mockImplementation(() => mockSmsService)
 }))
 
 process.env.TWAKE_IDENTITY_SERVER_CONF = './src/__testData__/registerConf.json'
@@ -1388,14 +1400,42 @@ describe.skip('Use configuration file', () => {
             room_id: '!room:matrix.org',
             sender: '@dwho:matrix.org'
           })
-        console.log(response.body)
         expect(response.statusCode).toBe(200)
-        // TODO : add call to smsMock when it will be implemented
+        expect(mockSend).toHaveBeenCalled()
         expect(response.body).toHaveProperty('display_name')
         expect(response.body.display_name).not.toBe('33612345678')
         expect(response.body).toHaveProperty('public_keys')
         expect(response.body).toHaveProperty('token')
         expect(response.body.token).toMatch(/^[a-zA-Z0-9]{64}$/)
+      })
+
+      it('should accept invitation link', async () => {
+        const mockResponse = Promise.resolve({
+          ok: false,
+          status: 400,
+          json: () => {
+            return {
+              errcode: 'M_INVALID_PEPPER',
+              error: 'Unknown or invalid pepper - has it been rotated?'
+            }
+          }
+        })
+        // @ts-expect-error mock is unknown
+        fetch.mockImplementation(async () => await mockResponse)
+        await mockResponse
+        const response = await request(app)
+          .post('/_matrix/identity/v2/store-invite')
+          .set('Authorization', `Bearer ${validToken}`)
+          .set('Accept', 'application/json')
+          .send({
+            phone: '33612345678',
+            medium: 'msisdn',
+            room_id: '!room:matrix.org',
+            sender: '@dwho:matrix.org',
+            invitation_link: 'https://example.com'
+          })
+
+        expect(mockSend).toHaveBeenCalledWith('33612345678', expect.anything())
       })
     })
 
