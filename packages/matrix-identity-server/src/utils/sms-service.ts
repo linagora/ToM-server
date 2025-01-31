@@ -1,10 +1,12 @@
 import type { TwakeLogger } from '@twake/logger'
 import { Config, ISMSService } from '../types'
+import { buildUrl } from '../utils'
 
 export class SmsService implements ISMSService {
   private API_ENDPOINT: string
   private HEADERS: Record<string, string>
   private readonly sender: string = 'Twake Chat'
+  private readonly SEND_ENDPOINT = '/sms-campaign/send'
 
   constructor(
     private readonly config: Config,
@@ -16,11 +18,11 @@ export class SmsService implements ISMSService {
       throw new Error('Missing SMS API configuration')
     }
 
-    this.API_ENDPOINT = `${sms_api_key}/sms-campaign/send`
+    this.API_ENDPOINT = buildUrl(sms_api_url, this.SEND_ENDPOINT)
     this.HEADERS = {
       'Content-Type': 'application/json',
-      'api-login': sms_api_url,
-      'api-key': sms_api_login
+      'api-login': sms_api_login,
+      'api-key': sms_api_key
     }
   }
 
