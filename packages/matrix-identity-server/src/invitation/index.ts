@@ -27,6 +27,7 @@ interface storeInvitationArgs {
   sender: string
   sender_avatar_url?: string
   sender_display_name?: string
+  invitation_link?: string
 }
 
 const schema = {
@@ -41,7 +42,26 @@ const schema = {
   room_type: false,
   sender: true,
   sender_avatar_url: false,
-  sender_display_name: false
+  sender_display_name: false,
+  invitation_link: false
+}
+
+/**
+ * Build an SMS body
+ *
+ * @param {string} template - the template to use
+ * @param {string} inviter - the inviter
+ * @param {string} link - the invitation link
+ * @returns {string} - the SMS body
+ */
+const buildSmsBody = (
+  template: string,
+  inviter: string,
+  link: string
+): string => {
+  return template
+    .replace(/__inviter__/g, inviter)
+    .replace(/__invitation_link__/g, link)
 }
 
 const preConfigureTemplate = (
@@ -115,7 +135,6 @@ const validMediums: string[] = ['email', 'msisdn']
 
 // Regular expressions for different mediums
 const validEmailRe = /^\w[+.-\w]*\w@\w[.-\w]*\w\.\w{2,6}$/
-const validPhoneRe = /^\d{4,16}$/
 
 const redactAddress = (medium: string, address: string): string => {
   switch (medium) {
@@ -270,9 +289,22 @@ const StoreInvit = <T extends string = never>(
                   })
                   break
                 case 'msisdn':
+                  const invitationLink =
+                    (obj as storeInvitationArgs).invitation_link ??
+                    idServer.conf.chat_url ??
+                    'https://chat.twake.app'
+
                   smsService.send(
                     address,
-                    'you have been invited to use twake chat'
+                    buildSmsBody(
+                      fs
+                        .readFileSync(
+                          `${idServer.conf.template_dir}/3pidInvitationSms.tpl`
+                        )
+                        .toString(),
+                      (obj as storeInvitationArgs).sender,
+                      invitationLink
+                    )
                   )
                   break
               }
