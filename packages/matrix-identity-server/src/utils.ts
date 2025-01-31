@@ -97,7 +97,7 @@ export const Authenticate = <T extends string = never>(
  *
  * @param {string} base - Base URL
  * @param {string} path - Path
- * @returns {string} - URL
+ * @returns {string} - Combined URL
  */
 export const buildUrl = (base: string, path: string): string => {
   let formattedUrl = base
@@ -109,9 +109,14 @@ export const buildUrl = (base: string, path: string): string => {
     formattedUrl = `https://${formattedUrl}`
   }
 
-  const url = new URL(formattedUrl)
+  const baseUrl = new URL(formattedUrl)
 
-  url.pathname = path
+  if (!baseUrl.pathname.endsWith('/')) {
+    baseUrl.pathname += '/'
+  }
 
-  return url.toString()
+  const processedPath = path.startsWith('/') ? path.slice(1) : path
+  const finalUrl = new URL(processedPath, baseUrl.href)
+
+  return finalUrl.toString()
 }
