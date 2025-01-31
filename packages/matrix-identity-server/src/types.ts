@@ -64,6 +64,7 @@ export interface Config {
   sms_api_login?: string
   sms_api_key?: string
   sms_api_url?: string
+  chat_url?: string
 }
 
 export type DbGetResult = Array<

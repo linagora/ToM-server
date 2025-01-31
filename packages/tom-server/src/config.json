@@ -92,5 +92,6 @@
   "trust_x_forwarded_for": false,
   "qr_code_url": "twake.chat://login",
   "invitation_redirect_url": "https://sign-up.twake.app/download/chat",
-  "invitation_server_name": "matrix.to"
+  "invitation_server_name": "matrix.to",
+  "chat_url": "https://chat.twake.app"
 }

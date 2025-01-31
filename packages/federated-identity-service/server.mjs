@@ -57,7 +57,8 @@ const conf = {
   trusted_servers_addresses: process.env.TRUSTED_SERVERS_ADDRESSES,
   sms_api_key: process.env.SMS_API_KEY,
   sms_api_login: process.env.SMS_API_LOGIN,
-  sms_api_url: process.env.SMS_API_URL
+  sms_api_url: process.env.SMS_API_URL,
+  chat_url: process.env.CHAT_URL ?? 'https://chat.twake.app'
 }
 
 const federatedIdentityService = new FederatedIdentityService(conf)
