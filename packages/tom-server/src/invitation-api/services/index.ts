@@ -56,8 +56,10 @@ export default class InvitationService implements IInvitationService {
         throw Error('Failed to create room')
       }
 
-      await this._storeMatrixInvite(payload, authorization, room_id)
-      await this._createInvitation({ ...payload, room_id })
+      const token = await this._createInvitation({ ...payload, room_id })
+      const link = buildUrl(this.config.base_url, `${PATH}/${token}`)
+
+      await this._storeMatrixInvite(payload, authorization, room_id, link)
     } catch (error) {
       this.logger.error(`Failed to send invitation`, { error })
 
@@ -69,7 +71,6 @@ export default class InvitationService implements IInvitationService {
    * Accepts an invitation by token
    *
    * @param {string} id - Invitation token
-   * @param {string} authorization - Authorization token
    * @returns {Promise<void>}
    */
   accept = async (id: string): Promise<void> => {
@@ -249,12 +250,19 @@ export default class InvitationService implements IInvitationService {
   private _storeMatrixInvite = async (
     payload: InvitationPayload,
     authorization: string,
-    room_id: string
+    room_id: string,
+    link?: string
   ) => {
     try {
       const medium = payload.medium === 'phone' ? 'msisdn' : payload.medium
+      let server =
+        this.config.federated_identity_services ?? this.config.base_url
 
-      await fetch(buildUrl(this.config.base_url, this.MATRIX_INVITE_PATH), {
+      if (Array.isArray(server)) {
+        server = server[0]
+      }
+
+      await fetch(buildUrl(server, this.MATRIX_INVITE_PATH), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -265,7 +273,8 @@ export default class InvitationService implements IInvitationService {
           address: payload.recepient,
           phone: payload.recepient,
           sender: payload.sender,
-          room_id
+          room_id,
+          ...(link ? { invitation_link: link } : {})
         })
       })
     } catch (error) {
