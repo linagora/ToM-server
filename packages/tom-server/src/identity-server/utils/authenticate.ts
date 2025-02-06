@@ -1,5 +1,6 @@
 import { type TwakeLogger } from '@twake/logger'
 import { type tokenContent } from '@twake/matrix-identity-server'
+import { Authenticate as RemoteAuthenticate } from '@twake/matrix-identity-server'
 import { epoch, errMsg, send } from '@twake/utils'
 import fetch from 'node-fetch'
 import type { AuthenticationFunction, Config, TwakeDB } from '../../types'
@@ -16,6 +17,7 @@ const Authenticate = (
   logger: TwakeLogger
 ): AuthenticationFunction => {
   const tokenRe = /^Bearer (\S+)$/
+  const remoteAuth = RemoteAuthenticate(db, logger)
   return (req, res, callback) => {
     let token: string | null = null
     if (req.headers?.authorization != null) {
@@ -74,7 +76,7 @@ const Authenticate = (
                 callback(data, token)
               } else {
                 logger.warn('Bad token', userInfo)
-                send(res, 401, errMsg('unAuthorized'))
+                remoteAuth(req, res, callback)
               }
             })
             .catch((e) => {
