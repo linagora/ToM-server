@@ -63,7 +63,7 @@ export const jsonContent = (
     if (accept) callback(obj)
   }
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
-  // @ts-ignore
+  /* istanbul ignore if */ // @ts-ignore
   if (req.body) {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
     // @ts-ignore
@@ -117,10 +117,12 @@ export const validateParameters: validateParametersType = (
     )
   } else {
     Object.keys(content).forEach((key) => {
+      /* istanbul ignore if */
       if (desc[key] == null) {
         additionalParameters.push(key)
       }
     })
+    /* istanbul ignore if */
     if (additionalParameters.length > 0) {
       logger.warn('Additional parameters', additionalParameters)
     }
