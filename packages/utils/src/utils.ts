@@ -41,15 +41,7 @@ export const jsonContent = (
 ): void => {
   let content = ''
   let accept = true
-  req.on('data', (body: string) => {
-    content += body
-  })
-  /* istanbul ignore next */
-  req.on('error', (err) => {
-    send(res, 400, errMsg('unknown', err.message))
-    accept = false
-  })
-  req.on('end', () => {
+  const end = (): void => {
     let obj
     try {
       // eslint-disable-next-line @typescript-eslint/prefer-optional-chain
@@ -69,7 +61,24 @@ export const jsonContent = (
       accept = false
     }
     if (accept) callback(obj)
+  }
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
+  // @ts-ignore
+  if (req.body) {
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
+    // @ts-ignore
+    content = req.body
+    end()
+  }
+  req.on('data', (body: string) => {
+    content += body
   })
+  /* istanbul ignore next */
+  req.on('error', (err) => {
+    send(res, 400, errMsg('unknown', err.message))
+    accept = false
+  })
+  req.on('end', end)
 }
 
 type validateParametersSchema = Record<string, boolean>
