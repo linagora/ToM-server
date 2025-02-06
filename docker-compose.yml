@@ -69,6 +69,7 @@ services:
       - NODE_OPTIONS="--inspect=0.0.0.0:9229"
       - BASE_URL=https://tom.docker.localhost
       - DATABASE_ENGINE=sqlite
+      # - DATABASE_HOST=/opt/twake/db/tom.db
       - DATABASE_HOST=file:tom?mode=memory&cache=shared
       - MATRIX_SERVER=matrix.docker.localhost
       - MATRIX_DATABASE_ENGINE=sqlite
@@ -76,6 +77,7 @@ services:
       - OIDC_ISSUER=https://auth.docker.localhost
       - SERVER_NAME=docker.localhost
       - USERDB_ENGINE=sqlite
+      # - USERSB_HOST=/opt/twake/db/users.db
       - USERDB_HOST=file:users?mode=memory&cache=shared
       - LOG_LEVEL=debug
       - LOG_TRANSPORTS=Console
