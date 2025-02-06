@@ -44,15 +44,19 @@ export const jsonContent = (
   const end = (): void => {
     let obj
     try {
-      // eslint-disable-next-line @typescript-eslint/prefer-optional-chain
-      if (
-        req.headers['content-type']?.match(
-          /^application\/x-www-form-urlencoded/
-        ) != null
-      ) {
-        obj = querystring.parse(content)
+      if (typeof content === 'string') {
+        // eslint-disable-next-line @typescript-eslint/prefer-optional-chain
+        if (
+          req.headers['content-type']?.match(
+            /^application\/x-www-form-urlencoded/
+          ) != null
+        ) {
+          obj = querystring.parse(content)
+        } else {
+          obj = JSON.parse(content)
+        }
       } else {
-        obj = JSON.parse(content)
+        obj = content
       }
     } catch (err) {
       logger.error('JSON error', err)
