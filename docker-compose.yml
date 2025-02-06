@@ -60,13 +60,13 @@ services:
         condition: service_started
     ports:
       - 3000:3000
-      - 9229:9229
+      # - 9229:9229
     networks:
       frontend:
         aliases:
           - tom.server
     environment:
-      - NODE_OPTIONS="--inspect=0.0.0.0:9229"
+      # - NODE_OPTIONS="--inspect=0.0.0.0:9229"
       - BASE_URL=https://tom.docker.localhost
       - DATABASE_ENGINE=sqlite
       # - DATABASE_HOST=/opt/twake/db/tom.db
