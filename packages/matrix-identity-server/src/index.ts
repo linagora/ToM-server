@@ -109,7 +109,8 @@ export default class MatrixIdentityServer<T extends string = never> {
     conf?: Partial<Config>,
     confDesc?: ConfigDescription,
     logger?: TwakeLogger,
-    additionnalTables?: Record<T, string>
+    additionnalTables?: Record<T, string>,
+    db?: IdentityServerDb<T>
   ) {
     this.api = { get: {}, post: {} }
     if (confDesc == null) confDesc = defaultConfDesc
@@ -155,11 +156,8 @@ export default class MatrixIdentityServer<T extends string = never> {
       }
       // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
       this.cache = this.conf.cache_engine ? new Cache(this.conf) : undefined
-      const db = (this.db = new IdentityServerDb<T>(
-        this.conf,
-        this.logger,
-        additionnalTables
-      ))
+      db = this.db =
+        db ?? new IdentityServerDb<T>(this.conf, this.logger, additionnalTables)
       const userDB = (this.userDB = new UserDB(
         this.conf,
         this.logger,
@@ -167,11 +165,11 @@ export default class MatrixIdentityServer<T extends string = never> {
       ))
       this.authenticate = utilsAuthenticate<T>(db, this.logger)
       this.ready = new Promise((resolve, reject) => {
-        Promise.all([db.ready, userDB.ready])
+        Promise.all([db!.ready, userDB.ready])
           .then(() => {
             this.cronTasks = new CronTasks<T>(
               this.conf,
-              db,
+              db!,
               userDB,
               this.logger
             )
@@ -216,7 +214,7 @@ export default class MatrixIdentityServer<T extends string = never> {
                     '/_matrix/identity/versions': badMethod,
                     '/_matrix/identity/v2/account': badMethod,
                     '/_matrix/identity/v2/account/register': register(
-                      db,
+                      db!,
                       this.logger
                     ),
                     '/_matrix/identity/v2/account/logout': logout(this),

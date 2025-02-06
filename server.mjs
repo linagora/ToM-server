@@ -78,6 +78,7 @@ let conf = {
     process.env.UPDATE_FEDERATED_IDENTITY_HASHES_CRON || '*/10 * * * *',
   update_users_cron: process.env.UPDATE_USERS_CRON || '*/10 * * * *',
   userdb_engine: process.env.USERDB_ENGINE || 'ldap',
+  userdb_host: process.env.USERDB_HOST,
   sms_api_key: process.env.SMS_API_KEY,
   sms_api_login: process.env.SMS_API_LOGIN,
   sms_api_url: process.env.SMS_API_URL,
@@ -89,6 +90,20 @@ if (process.argv[2] === 'generate') {
   const appServer = new AppServer(appServerConf)
 } else {
   const app = express()
+
+  app.use((req, res, next) => {
+    console.log(req.path)
+
+    req.on('error', () => {
+      console.error('ERROR:', req.path)
+    })
+    req.on('end', () => {
+      console.log('END:', req.path)
+    })
+
+    next()
+  })
+
   const trustProxy = process.env.TRUSTED_PROXIES
     ? process.env.TRUSTED_PROXIES.split(/\s+/)
     : []
@@ -96,9 +111,10 @@ if (process.argv[2] === 'generate') {
     conf.trust_x_forwarded_for = true
     app.set('trust proxy', ...trustProxy)
   }
+
   const tomServer = new TomServer(conf)
-  const idServer = new MatrixIdentityServer(conf)
-  const promises = [idServer.ready, tomServer.ready]
+
+  const promises = [tomServer.ready]
 
   if (process.env.CROWDSEC_URI) {
     if (!process.env.CROWDSEC_KEY) {
@@ -147,19 +163,30 @@ if (process.argv[2] === 'generate') {
 
   Promise.all(promises)
     .then(() => {
-      app.use(tomServer.endpoints)
+      const idServer = new MatrixIdentityServer(
+        { ...conf, cron_service: false }, // Cron service is already handled by tomServer
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        tomServer.db
+      )
+      return idServer.ready.then(() => {
+        app.use(tomServer.endpoints)
 
-      Object.keys(idServer.api.get).forEach((k) => {
-        app.get(k, idServer.api.get[k])
+        // TODO: These routes should already be setup by tomServer.endpoints above
+        Object.keys(idServer.api.get).forEach((k) => {
+          app.get(k, idServer.api.get[k])
+        })
+
+        Object.keys(idServer.api.post).forEach((k) => {
+          app.post(k, idServer.api.post[k])
+        })
+
+        const port = process.argv[2] != null ? parseInt(process.argv[2]) : 3000
+        console.log(`Listening on port ${port}`)
+        app.listen(port, '0.0.0.0')
       })
-
-      Object.keys(idServer.api.post).forEach((k) => {
-        app.post(k, idServer.api.post[k])
-      })
-
-      const port = process.argv[2] != null ? parseInt(process.argv[2]) : 3000
-      console.log(`Listening on port ${port}`)
-      app.listen(port, '0.0.0.0')
     })
     .catch((e) => {
       console.error(e)
