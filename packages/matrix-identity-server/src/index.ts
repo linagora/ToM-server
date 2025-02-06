@@ -10,7 +10,7 @@ import {
   send,
   type expressAppHandler
 } from '@twake/utils'
-import { Authenticate, type AuthenticationFunction } from './utils'
+import { Authenticate as utilsAuthenticate, type AuthenticationFunction } from './utils'
 import versions from './versions'
 
 // Endpoints
@@ -62,6 +62,7 @@ export { default as UserDBPg } from './userdb/sql/pg'
 export { default as UserDBSQLite } from './userdb/sql/sqlite'
 export const validateMatrixToken = _validateMatrixToken
 export const defaultConfig = defaultConfDesc
+export const Authenticate = utilsAuthenticate
 
 export type IdServerAPI = Record<string, expressAppHandler>
 
@@ -161,7 +162,7 @@ export default class MatrixIdentityServer<T extends string = never> {
         this.logger,
         this.cache
       ))
-      this.authenticate = Authenticate<T>(db, this.logger)
+      this.authenticate = utilsAuthenticate<T>(db, this.logger)
       this.ready = new Promise((resolve, reject) => {
         Promise.all([db.ready, userDB.ready])
           .then(() => {
