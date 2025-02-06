@@ -75,7 +75,7 @@ const Authenticate = (
                 // @ts-ignore token is defined
                 callback(data, token)
               } else {
-                logger.warn('Bad token', userInfo)
+                logger.info('Bad local token, trying remote', userInfo)
                 remoteAuth(req, res, callback)
               }
             })
