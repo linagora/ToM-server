@@ -10,7 +10,10 @@ import {
   send,
   type expressAppHandler
 } from '@twake/utils'
-import { Authenticate as utilsAuthenticate, type AuthenticationFunction } from './utils'
+import {
+  Authenticate as utilsAuthenticate,
+  type AuthenticationFunction
+} from './utils'
 import versions from './versions'
 
 // Endpoints
