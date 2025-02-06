@@ -22,7 +22,10 @@ WORKDIR /usr/src/app
 
 # COPIES
 # 1. Files
-COPY package*.json .njsscan *.js *.json *.mjs LICENSE ./
+COPY package*.json ./
+RUN npm install
+
+COPY .njsscan *.js *.json *.mjs LICENSE ./
 
 # 2. Directories
 COPY packages ./packages/
