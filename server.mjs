@@ -166,12 +166,13 @@ if (process.argv[2] === 'generate') {
   Promise.all(promises)
     .then(() => {
       const idServer = new MatrixIdentityServer(
-        { ...conf, cron_service: false }, // Cron service is already handled by tomServer
+        conf,
         undefined,
         undefined,
         undefined,
         undefined,
-        tomServer.db
+        tomServer.db,
+        false
       )
       return idServer.ready.then(() => {
         app.use(tomServer.endpoints)

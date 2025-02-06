@@ -110,7 +110,8 @@ export default class MatrixIdentityServer<T extends string = never> {
     confDesc?: ConfigDescription,
     logger?: TwakeLogger,
     additionnalTables?: Record<T, string>,
-    db?: IdentityServerDb<T>
+    db?: IdentityServerDb<T>,
+    cronAlreadyStarted: boolean = false
   ) {
     this.api = { get: {}, post: {} }
     if (confDesc == null) confDesc = defaultConfDesc
@@ -167,14 +168,11 @@ export default class MatrixIdentityServer<T extends string = never> {
       this.ready = new Promise((resolve, reject) => {
         Promise.all([db!.ready, userDB.ready])
           .then(() => {
-            this.cronTasks = new CronTasks<T>(
-              this.conf,
-              db!,
-              userDB,
-              this.logger
-            )
+            this.cronTasks = cronAlreadyStarted
+              ? undefined
+              : new CronTasks<T>(this.conf, db!, userDB, this.logger)
             this.updateHash = updateHash
-            this.cronTasks.ready
+            Promise.resolve(this.cronTasks?.ready)
               .then(() => {
                 const badMethod: expressAppHandler = (req, res) => {
                   send(res, 405, _errMsg('unrecognized'))
