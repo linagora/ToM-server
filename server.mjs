@@ -91,18 +91,20 @@ if (process.argv[2] === 'generate') {
 } else {
   const app = express()
 
-  app.use((req, res, next) => {
-    console.log(req.path)
-
-    req.on('error', () => {
-      console.error('ERROR:', req.path)
-    })
-    req.on('end', () => {
-      console.log('END:', req.path)
-    })
-
-    next()
-  })
+  // TODO: implement with logger debug/silly level
+  //
+  //app.use((req, res, next) => {
+  //  console.log(req.path)
+  //
+  //  req.on('error', () => {
+  //    console.error('ERROR:', req.path)
+  //  })
+  //  req.on('end', () => {
+  //    console.log('END:', req.path)
+  //  })
+  //
+  //  next()
+  //})
 
   const trustProxy = process.env.TRUSTED_PROXIES
     ? process.env.TRUSTED_PROXIES.split(/\s+/)
