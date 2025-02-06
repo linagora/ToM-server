@@ -19,9 +19,7 @@ function createTables<T extends string>(
           .then((count) => {
             /* istanbul ignore else */ // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
             if (!count) {
-              db.rawQuery(
-                `CREATE TABLE IF NOT EXISTS ${table}(${tables[table]})`
-              )
+              db.rawQuery(`CREATE TABLE ${table}(${tables[table]})`)
                 // eslint-disable-next-line @typescript-eslint/promise-function-async
                 .then(() =>
                   Promise.all(
@@ -34,7 +32,7 @@ function createTables<T extends string>(
                     >((index) =>
                       db
                         .rawQuery(
-                          `CREATE INDEX IF NOT EXISTS i_${table}_${index} ON ${table} (${index})`
+                          `CREATE INDEX i_${table}_${index} ON ${table} (${index})`
                         )
                         .catch((e) => {
                           /* istanbul ignore next */
