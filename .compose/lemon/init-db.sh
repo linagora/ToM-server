@@ -7,10 +7,10 @@
 # Last Modified By  : Pierre 'McFly' Marty <pmarty@linagora.com>
 
 echo "Inflating Auth DB."
-sqlite3 lemon.db "Create table if not exists users (uid text,name text,mail text,password text);"
+sqlite3 lemon.db "Create table if not exists users (uid text,name text,mail text,mobile text,password text,active integer);"
 [[ "$?" == '0' ]] && echo "Done."
 
-#                # nickname       # Full Name       # password
-./create-user.sh 'dwho'           'Doctor Who'      'dwho'
-./create-user.sh 'rtyler'         'R. Tyler'        'rtyler'
-./create-user.sh 'jbinks'         'Jar Jar Binks'   'jbinks'
+#                # nickname       # Full Name       # mobile	# password	# active
+./create-user.sh 'dwho'           'Doctor Who'      '123'	'dwho'		'1'
+./create-user.sh 'rtyler'         'R. Tyler'        '456'	'rtyler'	'1'
+./create-user.sh 'jbinks'         'Jar Jar Binks'   '789'	'jbinks'	'0'

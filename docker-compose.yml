@@ -54,6 +54,7 @@ services:
       context: .
     volumes:
       # - ./.compose/tom:/opt/twake/db/
+      - ./.compose/lemon:/opt/lemon/db/
       - ./.compose/synapse:/opt/synapse/db/
     depends_on:
       synapse:
@@ -77,14 +78,14 @@ services:
       - OIDC_ISSUER=https://auth.docker.localhost
       - SERVER_NAME=docker.localhost
       - USERDB_ENGINE=sqlite
-      # - USERSB_HOST=/opt/twake/db/users.db
-      - USERDB_HOST=file:users?mode=memory&cache=shared
+      - USERDB_HOST=/opt/lemon/db/lemon.db
       - LOG_LEVEL=silly
       - LOG_TRANSPORTS=Console
       - TEMPLATE_DIR=/usr/src/app/packages/tom-server/templates
       - TRUSTED_PROXIES=uniquelocal
       - CRON_SERVICE=true
-      - UPDATE_FEDERATED_IDENTITY_HASHES_CRON=*/2 * * * *
+      - UPDATE_FEDERATED_IDENTITY_HASHES_CRON=0-59/2 * * * *
+      - UPDATE_USERS_CRON=1-59/2 * * * *
       - ADDITIONAL_FEATURES=true
       - FEDERATED_IDENTITY_SERVICES=fed.docker.localhost
       - NODE_TLS_REJECT_UNAUTHORIZED=0
@@ -95,6 +96,7 @@ services:
       dockerfile: ./packages/federated-identity-service/Dockerfile
     volumes:
       # - ./.compose/fed:/opt/twake/db/
+      # - ./.compose/lemon:/opt/lemon/db/       ## Uncomment to enable local userDB
       - ./.compose/synapse:/opt/synapse/db/
     # ports:
     #   - 3001:3001
@@ -110,13 +112,14 @@ services:
       - DATABASE_ENGINE=sqlite
       # - DATABASE_HOST=/opt/twake/db/fed.db
       - DATABASE_HOST=file:fed?mode=memory&cache=shared
-      - USERDB_ENGINE=sqlite
-      # - USERSB_HOST=/opt/twake/db/users.db
-      - USERDB_HOST=file:users?mode=memory&cache=shared
+      # - USERDB_ENGINE=sqlite                  ## Uncomment to enable local userDB
+      # - USERDB_HOST=/opt/lemon/db/lemon.db    ## Uncomment to enable local userDB
       - LOG_LEVEL=silly
       - LOG_TRANSPORTS=Console
       - TRUSTED_PROXIES=uniquelocal
       - CRON_SERVICE=true
+      # - UPDATE_FEDERATED_IDENTITY_HASHES_CRON=0-59/2 * * * *
+      # - UPDATE_USERS_CRON=1-59/2 * * * *
       - ADDITIONAL_FEATURES=true
       - TRUSTED_SERVERS_ADDRESSES=172.18.0.1/16
       - NODE_TLS_REJECT_UNAUTHORIZED=0
