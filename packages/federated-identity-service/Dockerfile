@@ -21,7 +21,11 @@ RUN apt update && \
 WORKDIR /usr/src/app
 
 # COPIES
-COPY ./packages/federated-identity-service/server.mjs .
+COPY package*.json ./
+RUN npm install
+
+COPY lerna.json tsconfig-build.json rollup-template.js ./packages/federated-identity-service/server.mjs ./
+
 COPY ./packages/crypto ./packages/crypto
 COPY ./packages/logger ./packages/logger
 COPY ./packages/matrix-resolve ./packages/matrix-resolve
@@ -29,10 +33,6 @@ COPY ./packages/matrix-identity-server ./packages/matrix-identity-server
 COPY ./packages/config-parser ./packages/config-parser
 COPY ./packages/federated-identity-service ./packages/federated-identity-service
 COPY ./packages/utils ./packages/utils
-COPY lerna.json ./
-COPY tsconfig-build.json ./
-COPY rollup-template.js ./
-COPY package*.json ./
 
 RUN npm install && npm run build && \
     rm -rf node_modules */*/node_modules && \
