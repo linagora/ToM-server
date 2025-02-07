@@ -170,9 +170,8 @@ if (process.argv[2] === 'generate') {
         undefined,
         undefined,
         undefined,
-        undefined,
         tomServer.db,
-        false
+        true
       )
       return idServer.ready.then(() => {
         app.use(tomServer.endpoints)
