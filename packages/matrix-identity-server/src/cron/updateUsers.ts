@@ -71,7 +71,7 @@ const updateUsers = async <T extends string = never>(
     (row.value as string).replace(/^@(.*?):.*$/, '$1')
   )
   const knownActiveUsers = (res[1] as DbGetResult).map((row) => row.active)
-  const matrixUsers = res[3] as string[]
+  const matrixUsers = res[3] as string[] | undefined
   const existingHistory: Record<string, true> = {}
   if (res[2] != null)
     (res[2] as DbGetResult).forEach((histEntry) => {
@@ -90,7 +90,7 @@ const updateUsers = async <T extends string = never>(
     const uid = user.uid as string
     const matrixAddress = toMatrixId(uid, conf.server_name)
     const pos = knownUids.indexOf(uid)
-    const isMatrixUser = matrixUsers.includes(uid)
+    const isMatrixUser = Boolean(matrixUsers?.includes(uid))
     const data = {
       address: matrixAddress,
       timestamp,
