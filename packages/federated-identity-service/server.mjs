@@ -57,8 +57,19 @@ const conf = {
   trusted_servers_addresses: process.env.TRUSTED_SERVERS_ADDRESSES
 }
 
-const federatedIdentityService = new FederatedIdentityService(conf)
 const app = express()
+
+const trustProxy = process.env.TRUSTED_PROXIES
+  ? process.env.TRUSTED_PROXIES.split(/\s+/)
+  : []
+if (trustProxy.length > 0) {
+  conf.trust_x_forwarded_for = true
+  app.set('trust proxy', ...trustProxy)
+} else {
+  app.set('trust proxy', conf.trust_x_forwarded_for)
+}
+
+const federatedIdentityService = new FederatedIdentityService(conf)
 const promises = [federatedIdentityService.ready]
 
 if (process.env.CROWDSEC_URI) {
