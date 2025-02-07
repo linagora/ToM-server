@@ -53,32 +53,66 @@ services:
     build:
       context: .
     volumes:
-      - ./.compose/tom:/opt/twake/db/
+      # - ./.compose/tom:/opt/twake/db/
       - ./.compose/synapse:/opt/synapse/db/
     depends_on:
       synapse:
         condition: service_started
     ports:
       - 3000:3000
+      # - 9229:9229
     networks:
       frontend:
         aliases:
           - tom.server
     environment:
+      # - NODE_OPTIONS="--inspect=0.0.0.0:9229"
       - BASE_URL=https://tom.docker.localhost
       - DATABASE_ENGINE=sqlite
-      - DATABASE_HOST=/opt/twake/db/tom.db
+      # - DATABASE_HOST=/opt/twake/db/tom.db
+      - DATABASE_HOST=file:tom?mode=memory&cache=shared
       - MATRIX_SERVER=matrix.docker.localhost
       - MATRIX_DATABASE_ENGINE=sqlite
       - MATRIX_DATABASE_HOST=/opt/synapse/db/homeserver.db
       - OIDC_ISSUER=https://auth.docker.localhost
       - SERVER_NAME=docker.localhost
       - USERDB_ENGINE=sqlite
-      - LOG_LEVEL=silly
+      # - USERSB_HOST=/opt/twake/db/users.db
+      - USERDB_HOST=file:users?mode=memory&cache=shared
+      - LOG_LEVEL=debug
       - LOG_TRANSPORTS=Console
       - TEMPLATE_DIR=/usr/src/app/packages/tom-server/templates
       - TRUSTED_PROXIES=uniquelocal
+      - ADDITIONAL_FEATURES=true
       - NODE_TLS_REJECT_UNAUTHORIZED=0
+      - CRON_SERVICE=true
+
+  # fed:
+  #   build:
+  #     context: .
+  #   volumes:
+  #     - ./.compose/fed:/opt/twake/db/
+  #     - ./.compose/synapse:/opt/synapse/db/
+  #   depends_on:
+  #     synapse:
+  #       condition: service_started
+  #   ports:
+  #     - 3000:3000
+  #   networks:
+  #     frontend:
+  #       aliases:
+  #         - fed.server
+  #   environment:
+  #     - BASE_URL=https://tom.docker.localhost
+  #     - DATABASE_ENGINE=sqlite
+  #     - DATABASE_HOST=/opt/twake/db/fed.db
+  #     - MATRIX_SERVER=matrix.docker.localhost
+  #     - SERVER_NAME=docker.localhost
+  #     - USERDB_ENGINE=sqlite
+  #     - LOG_LEVEL=silly
+  #     - LOG_TRANSPORTS=Console
+  #     - TRUSTED_PROXIES=uniquelocal
+  #     - NODE_TLS_REJECT_UNAUTHORIZED=0
 
   chat:
     image: linagora/twake-web
@@ -114,6 +148,7 @@ services:
           - chat.docker.localhost
           - matrix.docker.localhost
           - tom.docker.localhost
+          - docker.localhost
 
 networks:
   frontend:

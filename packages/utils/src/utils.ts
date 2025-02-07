@@ -41,26 +41,22 @@ export const jsonContent = (
 ): void => {
   let content = ''
   let accept = true
-  req.on('data', (body: string) => {
-    content += body
-  })
-  /* istanbul ignore next */
-  req.on('error', (err) => {
-    send(res, 400, errMsg('unknown', err.message))
-    accept = false
-  })
-  req.on('end', () => {
+  const end = (): void => {
     let obj
     try {
-      // eslint-disable-next-line @typescript-eslint/prefer-optional-chain
-      if (
-        req.headers['content-type']?.match(
-          /^application\/x-www-form-urlencoded/
-        ) != null
-      ) {
-        obj = querystring.parse(content)
+      if (typeof content === 'string') {
+        // eslint-disable-next-line @typescript-eslint/prefer-optional-chain
+        if (
+          req.headers['content-type']?.match(
+            /^application\/x-www-form-urlencoded/
+          ) != null
+        ) {
+          obj = querystring.parse(content)
+        } else {
+          obj = JSON.parse(content)
+        }
       } else {
-        obj = JSON.parse(content)
+        obj = content
       }
     } catch (err) {
       logger.error('JSON error', err)
@@ -69,7 +65,24 @@ export const jsonContent = (
       accept = false
     }
     if (accept) callback(obj)
+  }
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
+  /* istanbul ignore if */ // @ts-ignore
+  if (req.body) {
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
+    // @ts-ignore
+    content = req.body
+    end()
+  }
+  req.on('data', (body: string) => {
+    content += body
   })
+  /* istanbul ignore next */
+  req.on('error', (err) => {
+    send(res, 400, errMsg('unknown', err.message))
+    accept = false
+  })
+  req.on('end', end)
 }
 
 type validateParametersSchema = Record<string, boolean>
@@ -108,10 +121,12 @@ export const validateParameters: validateParametersType = (
     )
   } else {
     Object.keys(content).forEach((key) => {
+      /* istanbul ignore if */
       if (desc[key] == null) {
         additionalParameters.push(key)
       }
     })
+    /* istanbul ignore if */
     if (additionalParameters.length > 0) {
       logger.warn('Additional parameters', additionalParameters)
     }

@@ -10,7 +10,10 @@ import {
   send,
   type expressAppHandler
 } from '@twake/utils'
-import { Authenticate, type AuthenticationFunction } from './utils'
+import {
+  Authenticate as utilsAuthenticate,
+  type AuthenticationFunction
+} from './utils'
 import versions from './versions'
 
 // Endpoints
@@ -62,6 +65,7 @@ export { default as UserDBPg } from './userdb/sql/pg'
 export { default as UserDBSQLite } from './userdb/sql/sqlite'
 export const validateMatrixToken = _validateMatrixToken
 export const defaultConfig = defaultConfDesc
+export const Authenticate = utilsAuthenticate
 
 export type IdServerAPI = Record<string, expressAppHandler>
 
@@ -105,7 +109,9 @@ export default class MatrixIdentityServer<T extends string = never> {
     conf?: Partial<Config>,
     confDesc?: ConfigDescription,
     logger?: TwakeLogger,
-    additionnalTables?: Record<T, string>
+    additionnalTables?: Record<T, string>,
+    db?: IdentityServerDb<T>,
+    cronAlreadyStarted: boolean = false
   ) {
     this.api = { get: {}, post: {} }
     if (confDesc == null) confDesc = defaultConfDesc
@@ -151,28 +157,22 @@ export default class MatrixIdentityServer<T extends string = never> {
       }
       // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
       this.cache = this.conf.cache_engine ? new Cache(this.conf) : undefined
-      const db = (this.db = new IdentityServerDb<T>(
-        this.conf,
-        this.logger,
-        additionnalTables
-      ))
+      db = this.db =
+        db ?? new IdentityServerDb<T>(this.conf, this.logger, additionnalTables)
       const userDB = (this.userDB = new UserDB(
         this.conf,
         this.logger,
         this.cache
       ))
-      this.authenticate = Authenticate<T>(db, this.logger)
+      this.authenticate = utilsAuthenticate<T>(db, this.logger)
       this.ready = new Promise((resolve, reject) => {
-        Promise.all([db.ready, userDB.ready])
+        Promise.all([db!.ready, userDB.ready])
           .then(() => {
-            this.cronTasks = new CronTasks<T>(
-              this.conf,
-              db,
-              userDB,
-              this.logger
-            )
+            this.cronTasks = cronAlreadyStarted
+              ? undefined
+              : new CronTasks<T>(this.conf, db!, userDB, this.logger)
             this.updateHash = updateHash
-            this.cronTasks.ready
+            Promise.resolve(this.cronTasks?.ready)
               .then(() => {
                 const badMethod: expressAppHandler = (req, res) => {
                   send(res, 405, _errMsg('unrecognized'))
@@ -212,7 +212,7 @@ export default class MatrixIdentityServer<T extends string = never> {
                     '/_matrix/identity/versions': badMethod,
                     '/_matrix/identity/v2/account': badMethod,
                     '/_matrix/identity/v2/account/register': register(
-                      db,
+                      db!,
                       this.logger
                     ),
                     '/_matrix/identity/v2/account/logout': logout(this),

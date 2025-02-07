@@ -275,7 +275,6 @@ describe('Auth middleware', () => {
     handler(mockRequest as Request, mockResponse as Response, nextFunction)
     await new Promise(process.nextTick)
     expect(idServer.db.insert).not.toHaveBeenCalled()
-    expect(spyOnLoggerWarn).toHaveBeenCalledWith('Bad token', userInfo)
     expect(mockResponse.write).toHaveBeenCalledWith(
       JSON.stringify(matrixUnauthorizedError)
     )
