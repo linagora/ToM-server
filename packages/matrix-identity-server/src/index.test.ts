@@ -41,7 +41,7 @@ let app: express.Application
 let validToken: string
 let conf: Config
 
-beforeAll(async () => {
+beforeAll((done) => {
   conf = {
     ...defaultConfig,
     database_engine: 'sqlite',
@@ -57,7 +57,13 @@ beforeAll(async () => {
     conf.database_name = process.env.PG_DATABASE ?? 'test'
   }
 
-  await buildUserDB(conf)
+  buildUserDB(conf)
+    .then(() => {
+      done()
+    })
+    .catch((e) => {
+      done(e)
+    })
 })
 
 afterAll(() => {
@@ -93,20 +99,24 @@ describe.skip('Error on server start', () => {
   })
 })
 
-describe.skip('Use configuration file', () => {
-  beforeAll(async () => {
+describe('Use configuration file', () => {
+  beforeAll((done) => {
     process.env.HASHES_RATE_LIMIT = '10000'
     idServer = new IdServer()
     app = express()
 
-    await idServer.ready
-
-    Object.keys(idServer.api.get).forEach((k) => {
-      app.get(k, idServer.api.get[k])
-    })
-    Object.keys(idServer.api.post).forEach((k) => {
-      app.post(k, idServer.api.post[k])
-    })
+    idServer.ready
+      .then(() => {
+        Object.keys(idServer.api.get).forEach((k) => {
+          app.get(k, idServer.api.get[k])
+        })
+        Object.keys(idServer.api.post).forEach((k) => {
+          app.post(k, idServer.api.post[k])
+        })
+      })
+      .catch((e) => {
+        done(e)
+      })
   })
 
   afterAll(() => {
