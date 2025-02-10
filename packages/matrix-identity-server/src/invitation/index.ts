@@ -5,6 +5,7 @@ import type MatrixIdentityServer from '../index'
 import { type Config } from '../types'
 import {
   errMsg,
+  jsonContent,
   send,
   validateParameters,
   type expressAppHandler
@@ -185,193 +186,202 @@ const StoreInvit = <T extends string = never>(
   )
   return (req, res) => {
     idServer.authenticate(req, res, (_data, _id) => {
-      const obj = (req as any).body
-      validateParameters(res, schema, obj, idServer.logger, async (obj) => {
-        try {
-          const medium = (obj as storeInvitationArgs).medium
-          if (!validMediums.includes(medium)) {
-            console.error('invalid medium')
-            send(
-              res,
-              400,
-              errMsg('unrecognized', 'This medium is not supported.')
-            )
-            return
-          }
-          const address = (obj as storeInvitationArgs).address
-          const phone = (obj as storeInvitationArgs).phone
-          let mediumAddress: string = ''
-          // Check the validity of the media
-          switch (medium) {
-            case 'email':
-              if (address == null || !validEmailRe.test(address)) {
-                console.error('invalid email address')
-                send(res, 400, errMsg('invalidParam', 'Invalid email address.'))
-                return
-              } else mediumAddress = address
-              break
-            case 'msisdn':
-              if (phone == null || !validator.isMobilePhone(phone)) {
-                console.error('invalid phone number')
-                send(res, 400, errMsg('invalidParam', 'Invalid phone number.'))
-                return
-              } else mediumAddress = phone
-              break
-          }
-          // Call to the lookup API to check for any existing third-party identifiers
+      jsonContent(req, res, idServer.logger, (obj) => {
+        validateParameters(res, schema, obj, idServer.logger, async (obj) => {
           try {
-            const authHeader = req.headers.authorization as string
-            const validToken = authHeader.split(' ')[1]
-            const _pepper = idServer.db.get('keys', ['data'], {
-              name: 'pepper'
-            })
-
-            const response = await fetch(
-              buildUrl(idServer.conf.base_url, '/_matrix/identity/v2/lookup'),
-              {
-                method: 'POST',
-                headers: {
-                  Authorization: `Bearer ${validToken}`,
-                  Accept: 'application/json',
-                  'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                  addresses: [mediumAddress],
-                  algorithm: 'sha256',
-                  pepper: _pepper
-                })
-              }
-            )
-
-            const result = (await response.json()) as {
-              mappings: Record<string, string>
+            const medium = (obj as storeInvitationArgs).medium
+            if (!validMediums.includes(medium)) {
+              console.error('invalid medium')
+              send(
+                res,
+                400,
+                errMsg('unrecognized', 'This medium is not supported.')
+              )
+              return
             }
-            const foundMappings = Object.keys(result.mappings).length > 0
-
-            if (response.status === 200 && foundMappings) {
-              send(res, 400, {
-                errcode: 'M_THREEPID_IN_USE',
-                error:
-                  'The third party identifier is already in use by another user.',
-                mxid: (obj as storeInvitationArgs).sender
+            const address = (obj as storeInvitationArgs).address
+            const phone = (obj as storeInvitationArgs).phone
+            let mediumAddress: string = ''
+            // Check the validity of the media
+            switch (medium) {
+              case 'email':
+                if (address == null || !validEmailRe.test(address)) {
+                  console.error('invalid email address')
+                  send(
+                    res,
+                    400,
+                    errMsg('invalidParam', 'Invalid email address.')
+                  )
+                  return
+                } else mediumAddress = address
+                break
+              case 'msisdn':
+                if (phone == null || !validator.isMobilePhone(phone)) {
+                  console.error('invalid phone number')
+                  send(
+                    res,
+                    400,
+                    errMsg('invalidParam', 'Invalid phone number.')
+                  )
+                  return
+                } else mediumAddress = phone
+                break
+            }
+            // Call to the lookup API to check for any existing third-party identifiers
+            try {
+              const authHeader = req.headers.authorization as string
+              const validToken = authHeader.split(' ')[1]
+              const _pepper = idServer.db.get('keys', ['data'], {
+                name: 'pepper'
               })
-            } else if (response.status === 200 && !foundMappings) {
-              // Create invitation token
-              const ephemeralKey = await idServer.db.createKeypair(
-                'shortTerm',
-                'curve25519'
-              )
-              const objWithKey = {
-                ...(obj as storeInvitationArgs),
-                key: ephemeralKey
-              }
-              const token = await idServer.db.createInvitationToken(
-                mediumAddress,
-                objWithKey
-              )
-              // Send email/sms
-              switch (medium) {
-                case 'email':
-                  void transport.sendMail({
-                    to: address,
-                    raw: mailBody(
-                      verificationTemplate,
-                      (obj as storeInvitationArgs).sender_display_name ??
-                        '*****',
-                      (obj as storeInvitationArgs).sender,
-                      address,
-                      (obj as storeInvitationArgs).room_name ?? '*****',
-                      (obj as storeInvitationArgs).room_avatar_url ?? '*****',
-                      (obj as storeInvitationArgs).room_type ?? '*****',
-                      idServer.conf.invitation_server_name ?? 'matrix.to',
-                      (obj as storeInvitationArgs).room_alias
-                    )
-                  })
-                  break
-                case 'msisdn':
-                  const invitationLink =
-                    (obj as storeInvitationArgs).invitation_link ??
-                    idServer.conf.chat_url ??
-                    'https://chat.twake.app'
 
-                  smsService.send(
-                    address,
-                    buildSmsBody(
-                      fs
-                        .readFileSync(
-                          `${idServer.conf.template_dir}/3pidInvitationSms.tpl`
-                        )
-                        .toString(),
-                      (obj as storeInvitationArgs).sender,
-                      invitationLink
-                    )
-                  )
-                  break
+              const response = await fetch(
+                buildUrl(idServer.conf.base_url, '/_matrix/identity/v2/lookup'),
+                {
+                  method: 'POST',
+                  headers: {
+                    Authorization: `Bearer ${validToken}`,
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json'
+                  },
+                  body: JSON.stringify({
+                    addresses: [mediumAddress],
+                    algorithm: 'sha256',
+                    pepper: _pepper
+                  })
+                }
+              )
+
+              const result = (await response.json()) as {
+                mappings: Record<string, string>
               }
-              // Send 200 response
-              const redactedAddress = redactAddress(medium, mediumAddress)
-              idServer.db
-                .getKeys('current')
-                .then((keys) => {
-                  const responseBody = {
-                    display_name: redactedAddress,
-                    public_keys: [
-                      {
-                        key_validity_url: `https://${idServer.conf.server_name}/_matrix/identity/v2/pubkey/isvalid`,
-                        public_key: keys.publicKey
-                      },
-                      {
-                        key_validity_url: `https://${idServer.conf.server_name}/_matrix/identity/v2/pubkey/ephemeral/isvalid`,
-                        public_key: ephemeralKey.privateKey
-                      }
-                    ],
-                    token
-                  }
-                  send(res, 200, responseBody)
+              const foundMappings = Object.keys(result.mappings).length > 0
+
+              if (response.status === 200 && foundMappings) {
+                send(res, 400, {
+                  errcode: 'M_THREEPID_IN_USE',
+                  error:
+                    'The third party identifier is already in use by another user.',
+                  mxid: (obj as storeInvitationArgs).sender
                 })
-                .catch((err) => {
-                  console.error('error while getting keys', { err })
-                  /* istanbul ignore next */
-                  idServer.logger.debug(
-                    'Error while getting the current key',
-                    err
+              } else if (response.status === 200 && !foundMappings) {
+                // Create invitation token
+                const ephemeralKey = await idServer.db.createKeypair(
+                  'shortTerm',
+                  'curve25519'
+                )
+                const objWithKey = {
+                  ...(obj as storeInvitationArgs),
+                  key: ephemeralKey
+                }
+                const token = await idServer.db.createInvitationToken(
+                  mediumAddress,
+                  objWithKey
+                )
+                // Send email/sms
+                switch (medium) {
+                  case 'email':
+                    void transport.sendMail({
+                      to: address,
+                      raw: mailBody(
+                        verificationTemplate,
+                        (obj as storeInvitationArgs).sender_display_name ??
+                          '*****',
+                        (obj as storeInvitationArgs).sender,
+                        address,
+                        (obj as storeInvitationArgs).room_name ?? '*****',
+                        (obj as storeInvitationArgs).room_avatar_url ?? '*****',
+                        (obj as storeInvitationArgs).room_type ?? '*****',
+                        idServer.conf.invitation_server_name ?? 'matrix.to',
+                        (obj as storeInvitationArgs).room_alias
+                      )
+                    })
+                    break
+                  case 'msisdn':
+                    const invitationLink =
+                      (obj as storeInvitationArgs).invitation_link ??
+                      idServer.conf.chat_url ??
+                      'https://chat.twake.app'
+
+                    smsService.send(
+                      address,
+                      buildSmsBody(
+                        fs
+                          .readFileSync(
+                            `${idServer.conf.template_dir}/3pidInvitationSms.tpl`
+                          )
+                          .toString(),
+                        (obj as storeInvitationArgs).sender,
+                        invitationLink
+                      )
+                    )
+                    break
+                }
+                // Send 200 response
+                const redactedAddress = redactAddress(medium, mediumAddress)
+                idServer.db
+                  .getKeys('current')
+                  .then((keys) => {
+                    const responseBody = {
+                      display_name: redactedAddress,
+                      public_keys: [
+                        {
+                          key_validity_url: `https://${idServer.conf.server_name}/_matrix/identity/v2/pubkey/isvalid`,
+                          public_key: keys.publicKey
+                        },
+                        {
+                          key_validity_url: `https://${idServer.conf.server_name}/_matrix/identity/v2/pubkey/ephemeral/isvalid`,
+                          public_key: ephemeralKey.privateKey
+                        }
+                      ],
+                      token
+                    }
+                    send(res, 200, responseBody)
+                  })
+                  .catch((err) => {
+                    console.error('error while getting keys', { err })
+                    /* istanbul ignore next */
+                    idServer.logger.debug(
+                      'Error while getting the current key',
+                      err
+                    )
+                    /* istanbul ignore next */
+                    send(res, 500, errMsg('unknown', err))
+                  })
+              } else {
+                console.error('unexpected response status', {
+                  status: response.status,
+                  result
+                })
+                /* istanbul ignore next */
+                idServer.logger.error(
+                  'Unexpected response statusCode from the /_matrix/identity/v2/lookup API'
+                )
+                send(
+                  res,
+                  500,
+                  errMsg(
+                    'unknown',
+                    'Unexpected response statusCode from the /_matrix/identity/v2/lookup API'
                   )
-                  /* istanbul ignore next */
-                  send(res, 500, errMsg('unknown', err))
-                })
-            } else {
-              console.error('unexpected response status', {
-                status: response.status,
-                result
+                )
+              }
+            } catch (err) {
+              console.error('error while making a call to the lookup API', {
+                err
               })
               /* istanbul ignore next */
               idServer.logger.error(
-                'Unexpected response statusCode from the /_matrix/identity/v2/lookup API'
+                'Error while making a call to the lookup API (/_matrix/identity/v2/lookup)',
+                err
               )
-              send(
-                res,
-                500,
-                errMsg(
-                  'unknown',
-                  'Unexpected response statusCode from the /_matrix/identity/v2/lookup API'
-                )
-              )
+              /* istanbul ignore next */
+              send(res, 500, errMsg('unknown', err as string))
             }
-          } catch (err) {
-            console.error('error while making a call to the lookup API', {
-              err
-            })
-            /* istanbul ignore next */
-            idServer.logger.error(
-              'Error while making a call to the lookup API (/_matrix/identity/v2/lookup)',
-              err
-            )
-            /* istanbul ignore next */
-            send(res, 500, errMsg('unknown', err as string))
+          } catch (error) {
+            console.error({ error })
           }
-        } catch (error) {
-          console.error({ error })
-        }
+        })
       })
     })
   }

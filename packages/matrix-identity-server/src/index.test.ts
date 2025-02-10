@@ -98,8 +98,6 @@ describe.skip('Use configuration file', () => {
     process.env.HASHES_RATE_LIMIT = '10000'
     idServer = new IdServer()
     app = express()
-    app.use(express.json()) // for parsing application/json
-    app.use(express.urlencoded({ extended: true })) // for parsing application/x-www-form-urlencoded
 
     await idServer.ready
 
@@ -1639,8 +1637,6 @@ describe.skip('Use environment variables', () => {
       process.env.HASHES_RATE_LIMIT = '4'
       idServer = new IdServer()
       app = express()
-      app.use(express.json())
-      app.use(express.urlencoded({ extended: true }))
 
       idServer.ready
         // eslint-disable-next-line @typescript-eslint/promise-function-async
@@ -1770,8 +1766,6 @@ describe.skip('_matrix/identity/v2/terms', () => {
     }
     idServer2 = new IdServer(conf2)
     app2 = express()
-    app2.use(express.json())
-    app2.use(express.urlencoded({ extended: true }))
 
     idServer2.ready
       .then(() => {

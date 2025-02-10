@@ -2,8 +2,8 @@
 import { type TwakeLogger } from '@twake/logger'
 import { type NextFunction, type Request, type Response } from 'express'
 import type http from 'http'
-import { errMsg } from './errors'
 import querystring from 'querystring'
+import { errMsg } from './errors'
 
 export const hostnameRe =
   /^((([a-zA-Z0-9][-a-zA-Z0-9]*)?[a-zA-Z0-9])[.])*([a-zA-Z][-a-zA-Z0-9]*[a-zA-Z0-9]|[a-zA-Z])(:(\d+))?$/
