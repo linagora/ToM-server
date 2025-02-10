@@ -102,7 +102,7 @@ describe.skip('Error on server start', () => {
 describe('Use configuration file', () => {
   beforeAll((done) => {
     process.env.HASHES_RATE_LIMIT = '10000'
-    idServer = new IdServer()
+    idServer = new IdServer(conf)
     app = express()
 
     idServer.ready

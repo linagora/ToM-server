@@ -255,7 +255,10 @@ const StoreInvit = <T extends string = never>(
               const result = (await response.json()) as {
                 mappings: Record<string, string>
               }
-              const foundMappings = Object.keys(result.mappings).length > 0
+              const foundMappings =
+                result &&
+                result.mappings &&
+                Object.keys(result.mappings).length > 0
 
               if (response.status === 200 && foundMappings) {
                 send(res, 400, {
