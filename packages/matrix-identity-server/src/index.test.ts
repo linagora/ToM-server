@@ -107,12 +107,15 @@ describe('Use configuration file', () => {
 
     idServer.ready
       .then(() => {
-        Object.keys(idServer.api.get).forEach((k) => {
+        for (const k of Object.keys(idServer.api.get)) {
           app.get(k, idServer.api.get[k])
-        })
-        Object.keys(idServer.api.post).forEach((k) => {
+        }
+
+        for (const k of Object.keys(idServer.api.post)) {
           app.post(k, idServer.api.post[k])
-        })
+        }
+
+        done()
       })
       .catch((e) => {
         done(e)
