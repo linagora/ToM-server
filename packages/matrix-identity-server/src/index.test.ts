@@ -84,8 +84,12 @@ beforeEach(() => {
   }))
 })
 
-describe.skip('Error on server start', () => {
-  process.env.HASHES_RATE_LIMIT = 'falsy_number'
+describe('Error on server start', () => {
+  beforeAll((done) => {
+    delete process.env.HASHES_RATE_LIMIT
+    process.env.HASHES_RATE_LIMIT = 'falsy_number'
+    done()
+  })
 
   it('should display message error about hashes rate limit value', () => {
     expect(() => {
@@ -101,7 +105,7 @@ describe.skip('Error on server start', () => {
 
 describe('Use configuration file', () => {
   beforeAll((done) => {
-    process.env.HASHES_RATE_LIMIT = '10000'
+    process.env.HASHES_RATE_LIMIT = '100'
     idServer = new IdServer(conf)
     app = express()
 
@@ -1357,13 +1361,8 @@ describe('Use configuration file', () => {
       it('should accept a valid email request', async () => {
         const mockResponse = Promise.resolve({
           ok: false,
-          status: 400,
-          json: () => {
-            return {
-              errcode: 'M_INVALID_PEPPER',
-              error: 'Unknown or invalid pepper - has it been rotated?'
-            }
-          }
+          status: 200,
+          json: () => {}
         })
         // @ts-expect-error mock is unknown
         fetch.mockImplementation(async () => await mockResponse)
@@ -1390,12 +1389,9 @@ describe('Use configuration file', () => {
       it('should accept a valid phone number request', async () => {
         const mockResponse = Promise.resolve({
           ok: false,
-          status: 400,
+          status: 200,
           json: () => {
-            return {
-              errcode: 'M_INVALID_PEPPER',
-              error: 'Unknown or invalid pepper - has it been rotated?'
-            }
+            return {}
           }
         })
         // @ts-expect-error mock is unknown
@@ -1423,18 +1419,12 @@ describe('Use configuration file', () => {
       it('should accept invitation link', async () => {
         const mockResponse = Promise.resolve({
           ok: false,
-          status: 400,
-          json: () => {
-            return {
-              errcode: 'M_INVALID_PEPPER',
-              error: 'Unknown or invalid pepper - has it been rotated?'
-            }
-          }
+          status: 200,
+          json: () => {}
         })
         // @ts-expect-error mock is unknown
         fetch.mockImplementation(async () => await mockResponse)
-        await mockResponse
-        const response = await request(app)
+        await request(app)
           .post('/_matrix/identity/v2/store-invite')
           .set('Authorization', `Bearer ${validToken}`)
           .set('Accept', 'application/json')
@@ -1641,7 +1631,7 @@ describe('Use configuration file', () => {
   })
 })
 
-describe.skip('Use environment variables', () => {
+describe('Use environment variables', () => {
   describe('For hashes rate limit', () => {
     let pepper: string
     const hash = new Hash()
@@ -1738,7 +1728,7 @@ describe.skip('Use environment variables', () => {
 })
 
 // This test has to be executed after the others so as not to add policies to the database and make the authentication fail for all the other tests
-describe.skip('_matrix/identity/v2/terms', () => {
+describe('_matrix/identity/v2/terms', () => {
   process.env.HASHES_RATE_LIMIT = '4'
   let idServer2: IdServer
   let conf2: Config
