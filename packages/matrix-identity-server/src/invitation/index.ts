@@ -307,11 +307,11 @@ const StoreInvit = <T extends string = never>(
                       'https://chat.twake.app'
 
                     smsService.send(
-                      address,
+                      mediumAddress,
                       buildSmsBody(
                         fs
                           .readFileSync(
-                            `${idServer.conf.template_dir}/3pidInvitationSms.tpl`
+                            `${idServer.conf.template_dir}/3pidSmsInvitation.tpl`
                           )
                           .toString(),
                         (obj as storeInvitationArgs).sender,
