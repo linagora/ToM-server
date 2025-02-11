@@ -211,11 +211,14 @@ class SQLite<T extends string> extends SQL<T> implements IdDbBackend<T> {
     joinFields?: Record<string, string>,
     order?: string
   ): Promise<DbGetResult> {
+    console.log('SQLite Backend use: _get')
     return new Promise((resolve, reject) => {
       /* istanbul ignore if */
       if (this.db == null) {
+        console.log('SQLite Backend _get: reject')
         reject(new Error('Wait for database to be ready'))
       } else {
+        console.log('SQLite Backend _get: not rejected -> performing search')
         let condition: string = ''
         const values: string[] = []
         if (fields == null || fields.length === 0) {
@@ -225,8 +228,13 @@ class SQLite<T extends string> extends SQL<T> implements IdDbBackend<T> {
           fields = fields.map((field) => {
             if (field.includes('.')) {
               const alias = field.replace(/\./g, '_')
+              console.log(
+                'SQLite Backend _get: returning:',
+                `${field} AS ${alias}`
+              )
               return `${field} AS ${alias}`
             }
+            console.log('SQLite Backend _get: returning:', field)
             return field
           })
         }
@@ -317,11 +325,15 @@ class SQLite<T extends string> extends SQL<T> implements IdDbBackend<T> {
 
         if (order != null) condition += ` ORDER BY ${order}`
 
+        // TODO: #180: If the following query is wrong no error thrown
+        const _q = `SELECT ${fields.join(',')} FROM ${tables.join(
+          ','
+        )} ${condition}`
+        console.log('SQLite Backend: _get: query:', _q)
+
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
         // @ts-ignore never undefined
-        const stmt = this.db.prepare(
-          `SELECT ${fields.join(',')} FROM ${tables.join(',')} ${condition}`
-        )
+        const stmt = this.db.prepare(_q)
         stmt.all(
           values,
           (err: string, rows: Array<Record<string, string | number>>) => {
@@ -346,6 +358,7 @@ class SQLite<T extends string> extends SQL<T> implements IdDbBackend<T> {
     filterFields?: Record<string, string | number | Array<string | number>>,
     order?: string
   ): Promise<DbGetResult> {
+    console.log('SQLite Backend use: get')
     return this._get(
       [table],
       fields,
@@ -687,9 +700,11 @@ class SQLite<T extends string> extends SQL<T> implements IdDbBackend<T> {
     value: string | number,
     order?: string
   ): Promise<DbGetResult> {
+    console.log('SQLite Backend use: match')
     return new Promise((resolve, reject) => {
       /* istanbul ignore if */
       if (this.db == null) {
+        console.log('SQLite Backend match: reject')
         reject(new Error('Wait for database to be ready'))
       } else {
         if (typeof searchFields !== 'object') searchFields = [searchFields]

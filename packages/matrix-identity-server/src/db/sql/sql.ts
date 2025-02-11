@@ -68,6 +68,7 @@ abstract class SQL<T extends string> {
 
   // eslint-disable-next-line @typescript-eslint/promise-function-async
   getAll(table: T, fields: string[], order?: string): Promise<DbGetResult> {
+    this.logger.debug('SQL Backend use: get')
     // @ts-expect-error implemented later
     return this.get(table, fields, undefined, order)
   }

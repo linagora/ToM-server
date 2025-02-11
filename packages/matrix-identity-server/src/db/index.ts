@@ -452,6 +452,7 @@ class IdentityServerDb<T extends string = never>
 
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/promise-function-async
   getAll(table: Collections | T, fields: string[], order?: string) {
+    this.logger.debug('DB Backend use: getAll')
     return this.db.getAll(table, fields, order)
   }
 
@@ -472,6 +473,7 @@ class IdentityServerDb<T extends string = never>
     searchFields: string[],
     value: string | number
   ) {
+    this.logger.debug('DB Backend use: match')
     return this.db.match(table, fields, searchFields, value)
   }
 

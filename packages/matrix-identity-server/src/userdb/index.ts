@@ -117,21 +117,30 @@ class UserDB implements UserDBBackend {
     fields: string[],
     order?: string
   ): Promise<DbGetResult> {
+    console.log('UserDB: getAll')
     if (typeof order !== 'string' || !/^[\w-]+$/.test(order)) order = undefined
     if (this.cache != null) {
+      console.log('UserDB: getAll: using cache')
       return new Promise((resolve, reject) => {
         let key: string = [table, ...fields].join(',')
         if (order != null) key += `_${order}`
         ;(this.cache as Cache)
           .get(key)
           .then((data) => {
+            console.log('UserDB: getAll: cached value:', data)
             if (data == null) throw new Error()
             resolve(data)
           })
           .catch(() => {
+            console.log('UserDB: getAll: cache error, calling DB')
             this.db
               .getAll(table, fields, order)
               .then((res) => {
+                console.log(
+                  'UserDB: getAll: DB result:',
+                  res,
+                  '| setting cache and leave'
+                )
                 ;(this.cache as Cache).set(key, res).catch(this.logger.error)
                 resolve(res)
               })
@@ -139,6 +148,7 @@ class UserDB implements UserDBBackend {
           })
       })
     } else {
+      console.log('UserDB: getAll: no cache')
       return this.db.getAll(table, fields, order)
     }
   }

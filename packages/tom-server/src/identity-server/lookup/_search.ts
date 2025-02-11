@@ -30,6 +30,7 @@ const _search = (
   logger: TwakeLogger
 ): SearchFunction => {
   return (res, data) => {
+    logger.debug('Searching for users')
     const sendError = (e: string): void => {
       /* istanbul ignore next */
       logger.error('Autocompletion error', e)
@@ -56,6 +57,10 @@ const _search = (
       const _fields = fields.includes('uid') ? fields : [...fields, 'uid']
       const _scope = scope.map((f) => (f === 'matrixAddress' ? 'uid' : f))
       const value = data.val?.replace(/^@(.*?):(?:.*)$/, '$1')
+
+      logger.debug('Searching value:', value)
+      logger.debug('Searching within:', _fields) // TODO: #180: fields are given by the client.. why?
+
       const request =
         typeof value === 'string' && value.length > 0
           ? idServer.userDB.match('users', _fields, _scope, value, _fields[0])
@@ -104,14 +109,25 @@ const _search = (
                 })
                 send(res, 200, { matches, inactive_matches })
               })
-              .catch(sendError)
+              .catch((e) => {
+                logger.debug('MatrixDB Get Failed')
+                sendError(e)
+              })
           }
         })
-        .catch(sendError)
+        .catch((e) => {
+          // TODO: #180: Catch is not called if SQLite request failed... Probably the same with PG backend
+          logger.debug('UserDB Request Failed')
+          sendError(e)
+        })
+
+      logger.debug('Searching: No Luck This time!')
     } else {
       send(res, 400, errMsg('invalidParam'))
     }
+    logger.debug('Searching: going out of scope!')
   }
+  logger.debug('Searching: After return?!')
 }
 
 export default _search
