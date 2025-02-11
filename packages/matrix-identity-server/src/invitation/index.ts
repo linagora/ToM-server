@@ -176,7 +176,6 @@ const StoreInvit = <T extends string = never>(
   idServer: MatrixIdentityServer<T>
 ): expressAppHandler => {
   const transport = new Mailer(idServer.conf)
-  const smsService = new SmsService(idServer.conf, idServer.logger)
   const verificationTemplate = preConfigureTemplate(
     fs
       .readFileSync(`${idServer.conf.template_dir}/3pidInvitation.tpl`)
@@ -305,6 +304,11 @@ const StoreInvit = <T extends string = never>(
                       (obj as storeInvitationArgs).invitation_link ??
                       idServer.conf.chat_url ??
                       'https://chat.twake.app'
+
+                    const smsService = new SmsService(
+                      idServer.conf,
+                      idServer.logger
+                    )
 
                     smsService.send(
                       mediumAddress,
