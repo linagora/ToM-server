@@ -79,8 +79,5 @@
     }
   ],
   "sms_folder": "./src/__testData__/sms",
-  "is_registration_enabled": true,
-  "sms_api_key": "key",
-  "sms_api_login": "login",
-  "sms_api_url": "https://example.com"
+  "is_registration_enabled": true
 }
