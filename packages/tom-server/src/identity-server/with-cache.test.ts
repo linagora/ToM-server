@@ -138,7 +138,7 @@ describe('Using Matrix Token', () => {
     })
 
     describe('/_matrix/identity/v2/lookup', () => {
-      it.skip('should return Matrix id', async () => {
+      it('should return Matrix id', async () => {
         const hash = new Hash()
         await hash.ready
         await twakeServer.idServer.cronTasks?.ready
@@ -160,7 +160,7 @@ describe('Using Matrix Token', () => {
   })
 
   describe('/_twake/identity/v1/lookup/match', () => {
-    it.skip('should find user with partial value', async () => {
+    it('should find user with partial value', async () => {
       const response = await request(app)
         .post('/_twake/identity/v1/lookup/match')
         .set('Authorization', `Bearer ${validToken}`)
@@ -177,8 +177,7 @@ describe('Using Matrix Token', () => {
       })
     })
 
-    // TODO: fix timeout issue
-    it.skip('should find user when searching by matrix address', async () => {
+    it('should find user when searching by matrix address', async () => {
       const response = await request(app)
         .post('/_twake/identity/v1/lookup/match')
         .set('Authorization', `Bearer ${validToken}`)
@@ -195,8 +194,7 @@ describe('Using Matrix Token', () => {
       })
     })
 
-    // TODO: fix timeout issue
-    it.skip('should respect limit', async () => {
+    it('should respect limit', async () => {
       const response = await request(app)
         .post('/_twake/identity/v1/lookup/match')
         .set('Authorization', `Bearer ${validToken}`)
@@ -219,8 +217,7 @@ describe('Using Matrix Token', () => {
       })
     })
 
-    // TODO: fix timeout issue
-    it.skip('should respect limit and offset', async () => {
+    it('should respect limit and offset', async () => {
       const response = await request(app)
         .post('/_twake/identity/v1/lookup/match')
         .set('Authorization', `Bearer ${validToken}`)
