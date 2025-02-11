@@ -713,8 +713,8 @@ class IdentityServerDb<T extends string = never>
       throw new Error('Wait for database to be ready')
     }
     const keyPair = generateKeyPair(algorithm)
-    if (type === 'longTerm') {
-      return new Promise((resolve) => {
+    return new Promise((resolve) => {
+      if (type === 'longTerm') {
         this.db
           .insert('longTermKeypairs', {
             name: 'currentKey',
@@ -729,9 +729,7 @@ class IdentityServerDb<T extends string = never>
             /* istanbul ignore next */
             this.logger.error('Failed to insert long term Key Pair', err)
           })
-      })
-    } else {
-      return new Promise((resolve) => {
+      } else {
         this.db
           .insert('shortTermKeypairs', {
             keyID: keyPair.keyId,
@@ -745,8 +743,8 @@ class IdentityServerDb<T extends string = never>
             /* istanbul ignore next */
             this.logger.error('Failed to insert ephemeral Key Pair', err)
           })
-      })
-    }
+      }
+    })
   }
 
   // Deletes a short term key pair from the database
