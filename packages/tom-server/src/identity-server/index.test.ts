@@ -128,6 +128,30 @@ describe('Using Matrix Token', () => {
   })
 
   describe('/_matrix/identity/v2/lookup', () => {
+    let pepper = ''
+    beforeEach(async () => {
+      const mockResponse = Promise.resolve({
+        ok: true,
+        status: 200,
+        json: () => {
+          return {
+            user_id: 'dwho'
+          }
+        }
+      })
+      // @ts-ignore
+      fetch.mockImplementation(async () => await mockResponse)
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      await twakeServer.idServer.cronTasks?.ready
+      const response = await request(app)
+        .get('/_matrix/identity/v2/hash_details')
+        .query({ access_token: validToken })
+        // .set('Authorization', `Bearer ${validToken}`)
+        .set('Accept', 'application/json')
+
+      pepper = response.body.lookup_pepper
+    })
+
     const mockResponse = Promise.resolve({
       ok: true,
       status: 200,
@@ -140,7 +164,6 @@ describe('Using Matrix Token', () => {
     // @ts-expect-error mock is unknown
     fetch.mockImplementation(async () => await mockResponse)
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    let pepper = ''
     describe('/_matrix/identity/v2/hash_details', () => {
       it('should display algorithms and pepper', async () => {
         await twakeServer.idServer.cronTasks?.ready
@@ -157,8 +180,7 @@ describe('Using Matrix Token', () => {
     })
 
     describe('/_matrix/identity/v2/lookup', () => {
-      // TODO: fix timeout
-      it.skip('should return Matrix id', async () => {
+      it('should return Matrix id', async () => {
         const hash = new Hash()
         await hash.ready
         await twakeServer.idServer.cronTasks?.ready
@@ -179,7 +201,7 @@ describe('Using Matrix Token', () => {
   })
 
   describe('/_twake/identity/v1/lookup/match', () => {
-    it.skip('should find user with partial value', async () => {
+    it('should find user with partial value', async () => {
       const response = await request(app)
         .post('/_twake/identity/v1/lookup/match')
         .set('Authorization', `Bearer ${validToken}`)
@@ -196,7 +218,7 @@ describe('Using Matrix Token', () => {
       })
     })
 
-    it.skip('should find user when searching by matrix address', async () => {
+    it('should find user when searching by matrix address', async () => {
       const response = await request(app)
         .post('/_twake/identity/v1/lookup/match')
         .set('Authorization', `Bearer ${validToken}`)
@@ -213,7 +235,7 @@ describe('Using Matrix Token', () => {
       })
     })
 
-    it.skip('should respect limit', async () => {
+    it('should respect limit', async () => {
       const response = await request(app)
         .post('/_twake/identity/v1/lookup/match')
         .set('Authorization', `Bearer ${validToken}`)
@@ -236,7 +258,7 @@ describe('Using Matrix Token', () => {
       })
     })
 
-    it.skip('should respect limit and offset', async () => {
+    it('should respect limit and offset', async () => {
       const response = await request(app)
         .post('/_twake/identity/v1/lookup/match')
         .set('Authorization', `Bearer ${validToken}`)
@@ -262,7 +284,7 @@ describe('Using Matrix Token', () => {
   })
 
   describe('/_twake/identity/v1/lookup/diff', () => {
-    it.skip('should work without changes', async () => {
+    it('should work without changes', async () => {
       const response = await request(app)
         .post('/_twake/identity/v1/lookup/diff')
         .set('Authorization', `Bearer ${validToken}`)
@@ -279,7 +301,7 @@ describe('Using Matrix Token', () => {
       })
     })
 
-    it.skip('should detect changes', (done) => {
+    it('should detect changes', (done) => {
       // @ts-expect-error db/db exists in SQLite
       const db = twakeServer.idServer.userDB.db.db as Database
       const matrixDb = new sqlite3.Database(
@@ -331,7 +353,7 @@ describe('Using Matrix Token', () => {
       })
     })
 
-    it.skip('should respect limit and offset', (done) => {
+    it('should respect limit and offset', (done) => {
       const matrixDb = new sqlite3.Database(
         twakeServer.conf.matrix_database_host
       )

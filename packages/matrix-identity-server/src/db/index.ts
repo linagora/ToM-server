@@ -686,9 +686,7 @@ class IdentityServerDb<T extends string = never>
     return new Promise((resolve, reject) => {
       const _type = type === 'current' ? 'currentKey' : 'previousKey'
       this.db
-        .get('longTermKeypairs', ['keyID', 'public', 'private'], {
-          name: _type
-        })
+        .getAll('shortTermKeypairs', ['keyID', 'public', 'private'])
         .then((rows) => {
           if (rows.length === 0) {
             reject(new Error(`No ${_type} found`))

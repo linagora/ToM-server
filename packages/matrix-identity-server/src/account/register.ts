@@ -54,6 +54,7 @@ const Register = <T extends string = never>(
                 send(res, 200, { token })
               })
               .catch((e) => {
+                console.error('Unable to creation session', { e })
                 /* istanbul ignore next */
                 logger.error('Unable to create session', e)
                 /* istanbul ignore next */
@@ -61,6 +62,7 @@ const Register = <T extends string = never>(
               })
           })
           .catch((e) => {
+            console.error('unable to validate token', { e })
             logger.warn(`Unable to validate token ${JSON.stringify(obj)}`, e)
             send(res, 401, errMsg('sessionNotValidated', e))
           })

@@ -34,7 +34,10 @@ const conf: Config = {
   matrix_database_engine: 'sqlite',
   matrix_database_host: 'src/__testData__/matrix.db',
   userdb_engine: 'sqlite',
-  userdb_host: 'src/__testData__/add.db'
+  userdb_host: 'src/__testData__/user.db',
+  sms_api_url: 'https://example.com',
+  sms_api_key: 'key',
+  sms_api_login: 'login'
 }
 beforeAll((done) => {
   if (process.env.TEST_PG === 'yes') {
@@ -54,19 +57,27 @@ beforeAll((done) => {
 
           idServer.ready
             .then(() => {
-              Object.keys(idServer.api.get).forEach((k) => {
+              for (const k of Object.keys(idServer.api.get)) {
                 app.get(k, idServer.api.get[k])
-              })
-              Object.keys(idServer.api.post).forEach((k) => {
+              }
+
+              for (const k of Object.keys(idServer.api.post)) {
                 app.post(k, idServer.api.post[k])
-              })
+              }
+
               done()
             })
             .catch(done)
         })
-        .catch(done)
+        .catch((e) => {
+          console.log({ e })
+          done(e)
+        })
     })
-    .catch(done)
+    .catch((e) => {
+      console.log({ e })
+      done(e)
+    })
 })
 
 beforeEach(() => {
@@ -80,9 +91,12 @@ beforeEach(() => {
 })
 
 afterAll(() => {
-  fs.unlinkSync('src/__testData__/add.db')
-  fs.unlinkSync('src/__testData__/matrix.db')
-  idServer.cleanJobs()
+  try {
+    fs.unlinkSync('src/__testData__/add.db')
+    fs.unlinkSync('src/__testData__/user.db')
+    fs.unlinkSync('src/__testData__/matrix.db')
+  } catch (error) {}
+  idServer?.cleanJobs()
 })
 
 describe('/_matrix/identity/v2/account/register', () => {
@@ -99,7 +113,6 @@ describe('/_matrix/identity/v2/account/register', () => {
     })
     // @ts-expect-error mock is unknown
     fetch.mockImplementation(async () => await mockResponse)
-    await mockResponse
     const response = await request(app)
       .post('/_matrix/identity/v2/account/register')
       .send({
@@ -116,6 +129,31 @@ describe('/_matrix/identity/v2/account/register', () => {
 })
 
 describe('/_matrix/identity/v2/lookup', () => {
+  beforeEach(async () => {
+    const mockResponse = Promise.resolve({
+      ok: true,
+      status: 200,
+      json: () => {
+        return {
+          sub: '@dwho:example.com',
+          'm.server': 'matrix.example.com:8448'
+        }
+      }
+    })
+    // @ts-expect-error mock is unknown
+    fetch.mockImplementation(async () => await mockResponse)
+    const response = await request(app)
+      .post('/_matrix/identity/v2/account/register')
+      .send({
+        access_token: 'bar',
+        expires_in: 86400,
+        matrix_server_name: 'matrix.example.com',
+        token_type: 'Bearer'
+      })
+      .set('Accept', 'application/json')
+
+    validToken = response.body.token
+  })
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   let pepper = ''
   describe('/_matrix/identity/v2/hash_details', () => {

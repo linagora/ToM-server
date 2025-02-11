@@ -59,7 +59,11 @@ const conf = {
   userdb_ssl: process.env.USERDB_SSL
     ? JSON.parse(process.env.USERDB_SSL)
     : false,
-  userdb_user: process.env.USERDB_USER
+  userdb_user: process.env.USERDB_USER,
+  sms_api_key: process.env.SMS_API_KEY,
+  sms_api_login: process.env.SMS_API_LOGIN,
+  sms_api_url: process.env.SMS_API_URL,
+  chat_url: process.env.CHAT_URL ?? 'https://chat.twake.app'
 }
 
 const app = express()

@@ -80,8 +80,6 @@ beforeAll(async () => {
   await twakeServer.ready
 
   app.use(twakeServer.endpoints)
-  app.use(express.json())
-  app.use(express.urlencoded({ extended: true }))
 })
 
 beforeEach(() => {

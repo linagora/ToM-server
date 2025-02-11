@@ -38,5 +38,8 @@
   },
   "template_dir": "./templates",
   "userdb_engine": "sqlite",
-  "userdb_host": "./src/__testData__/terms.db"
+  "userdb_host": "./src/__testData__/terms.db",
+  "sms_api_key": "test_key",
+  "sms_api_login": "test_secret",
+  "sms_api_url": "http://localhost/sms/api"
 }

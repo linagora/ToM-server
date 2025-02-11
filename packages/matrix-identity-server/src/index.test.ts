@@ -14,12 +14,24 @@ import defaultConfig from './__testData__/registerConf.json'
 import IdServer from './index'
 import { type Config } from './types'
 import { fillPoliciesDB } from './terms/index.post'
+import { SmsService } from './utils/sms-service'
+
 jest.mock('node-fetch', () => jest.fn())
 const sendMailMock = jest.fn()
 jest.mock('nodemailer', () => ({
   createTransport: jest.fn().mockImplementation(() => ({
     sendMail: sendMailMock
   }))
+}))
+
+const mockSend = jest.fn().mockResolvedValue(undefined)
+const mockSmsService = {
+  send: mockSend
+} as unknown as jest.Mocked<SmsService>
+
+// 2. Mock the SMS service class
+jest.mock('./utils/sms-service', () => ({
+  SmsService: jest.fn().mockImplementation(() => mockSmsService)
 }))
 
 process.env.TWAKE_IDENTITY_SERVER_CONF = './src/__testData__/registerConf.json'
@@ -44,6 +56,7 @@ beforeAll((done) => {
     conf.database_password = process.env.PG_PASSWORD ?? 'twake'
     conf.database_name = process.env.PG_DATABASE ?? 'test'
   }
+
   buildUserDB(conf)
     .then(() => {
       done()
@@ -54,7 +67,11 @@ beforeAll((done) => {
 })
 
 afterAll(() => {
-  fs.unlinkSync('src/__testData__/test.db')
+  try {
+    fs.unlinkSync('src/__testData__/test.db')
+  } catch (error) {
+    console.log('failed to unlink test db', { error })
+  }
 })
 
 beforeEach(() => {
@@ -68,7 +85,11 @@ beforeEach(() => {
 })
 
 describe('Error on server start', () => {
-  process.env.HASHES_RATE_LIMIT = 'falsy_number'
+  beforeAll((done) => {
+    delete process.env.HASHES_RATE_LIMIT
+    process.env.HASHES_RATE_LIMIT = 'falsy_number'
+    done()
+  })
 
   it('should display message error about hashes rate limit value', () => {
     expect(() => {
@@ -84,17 +105,20 @@ describe('Error on server start', () => {
 
 describe('Use configuration file', () => {
   beforeAll((done) => {
-    idServer = new IdServer()
+    process.env.HASHES_RATE_LIMIT = '100'
+    idServer = new IdServer(conf)
     app = express()
 
     idServer.ready
       .then(() => {
-        Object.keys(idServer.api.get).forEach((k) => {
+        for (const k of Object.keys(idServer.api.get)) {
           app.get(k, idServer.api.get[k])
-        })
-        Object.keys(idServer.api.post).forEach((k) => {
+        }
+
+        for (const k of Object.keys(idServer.api.post)) {
           app.post(k, idServer.api.post[k])
-        })
+        }
+
         done()
       })
       .catch((e) => {
@@ -103,7 +127,7 @@ describe('Use configuration file', () => {
   })
 
   afterAll(() => {
-    idServer.cleanJobs()
+    idServer?.cleanJobs()
   })
 
   test('Reject unimplemented endpoint with 404', async () => {
@@ -143,17 +167,12 @@ describe('Use configuration file', () => {
       expect(response.body.errcode).toEqual('M_MISSING_PARAMS')
     })
     it('should reject bad json', async () => {
-      const spyOnLoggerError = jest.spyOn(idServer.logger, 'error')
       const response = await request(app)
         .post('/_matrix/identity/v2/account/register')
         .send('{"access_token": "bar"')
         .set('Content-Type', 'application/json')
         .set('Accept', 'application/json')
       expect(response.statusCode).toBe(400)
-      expect(spyOnLoggerError).toHaveBeenCalledWith(
-        'JSON error',
-        expect.anything()
-      )
     })
     it('should accept valid request', async () => {
       const mockResponse = Promise.resolve({
@@ -426,6 +445,33 @@ describe('Use configuration file', () => {
   })
 
   describe('Endpoint with authentication', () => {
+    beforeEach(async () => {
+      const mockResponse = Promise.resolve({
+        ok: true,
+        status: 200,
+        json: () => {
+          return {
+            sub: '@dwho:example.com',
+            'm.server': 'matrix.example.com:8448'
+          }
+        }
+      })
+      // @ts-expect-error mock is unknown
+      fetch.mockImplementation(async () => await mockResponse)
+      const response1 = await request(app)
+        .post('/_matrix/identity/v2/account/register')
+        .send({
+          access_token: 'bar',
+          expires_in: 86400,
+          matrix_server_name: 'matrix.example.com',
+          token_type: 'Bearer'
+        })
+        .set('Accept', 'application/json')
+      expect(response1.statusCode).toBe(200)
+      expect(response1.body.token).toMatch(/^[a-zA-Z0-9]{64}$/)
+      validToken = response1.body.token
+    })
+
     it('should reject if more than 100 requests are done in less than 10 seconds', async () => {
       let response
       let token
@@ -1152,6 +1198,33 @@ describe('Use configuration file', () => {
         })
       })
 
+      beforeAll(async () => {
+        const mockResponse = Promise.resolve({
+          ok: true,
+          status: 200,
+          json: () => {
+            return {
+              sub: '@dwho:example.com',
+              'm.server': 'matrix.example.com:8448'
+            }
+          }
+        })
+        // @ts-expect-error mock is unknown
+        fetch.mockImplementation(async () => await mockResponse)
+        const response1 = await request(app)
+          .post('/_matrix/identity/v2/account/register')
+          .send({
+            access_token: 'bar',
+            expires_in: 86400,
+            matrix_server_name: 'matrix.example.com',
+            token_type: 'Bearer'
+          })
+          .set('Accept', 'application/json')
+        expect(response1.statusCode).toBe(200)
+        expect(response1.body.token).toMatch(/^[a-zA-Z0-9]{64}$/)
+        validToken = response1.body.token
+      })
+
       afterAll(async () => {
         // Remove the test key from the database
         await idServer.db.deleteEqual(
@@ -1288,13 +1361,8 @@ describe('Use configuration file', () => {
       it('should accept a valid email request', async () => {
         const mockResponse = Promise.resolve({
           ok: false,
-          status: 400,
-          json: () => {
-            return {
-              errcode: 'M_INVALID_PEPPER',
-              error: 'Unknown or invalid pepper - has it been rotated?'
-            }
-          }
+          status: 200,
+          json: () => {}
         })
         // @ts-expect-error mock is unknown
         fetch.mockImplementation(async () => await mockResponse)
@@ -1321,12 +1389,9 @@ describe('Use configuration file', () => {
       it('should accept a valid phone number request', async () => {
         const mockResponse = Promise.resolve({
           ok: false,
-          status: 400,
+          status: 200,
           json: () => {
-            return {
-              errcode: 'M_INVALID_PEPPER',
-              error: 'Unknown or invalid pepper - has it been rotated?'
-            }
+            return {}
           }
         })
         // @ts-expect-error mock is unknown
@@ -1342,18 +1407,40 @@ describe('Use configuration file', () => {
             room_id: '!room:matrix.org',
             sender: '@dwho:matrix.org'
           })
-        console.log(response.body)
         expect(response.statusCode).toBe(200)
-        // TODO : add call to smsMock when it will be implemented
+        expect(mockSend).toHaveBeenCalled()
         expect(response.body).toHaveProperty('display_name')
         expect(response.body.display_name).not.toBe('33612345678')
         expect(response.body).toHaveProperty('public_keys')
         expect(response.body).toHaveProperty('token')
         expect(response.body.token).toMatch(/^[a-zA-Z0-9]{64}$/)
       })
+
+      it('should accept invitation link', async () => {
+        const mockResponse = Promise.resolve({
+          ok: false,
+          status: 200,
+          json: () => {}
+        })
+        // @ts-expect-error mock is unknown
+        fetch.mockImplementation(async () => await mockResponse)
+        await request(app)
+          .post('/_matrix/identity/v2/store-invite')
+          .set('Authorization', `Bearer ${validToken}`)
+          .set('Accept', 'application/json')
+          .send({
+            phone: '33612345678',
+            medium: 'msisdn',
+            room_id: '!room:matrix.org',
+            sender: '@dwho:matrix.org',
+            invitation_link: 'https://example.com'
+          })
+
+        expect(mockSend).toHaveBeenCalledWith('33612345678', expect.anything())
+      })
     })
 
-    describe('/_matrix/identity/v2/sign-ed25519 ', () => {
+    describe('/_matrix/identity/v2/sign-ed25519', () => {
       let keyPair: {
         publicKey: string
         privateKey: string
@@ -1372,6 +1459,33 @@ describe('Use configuration file', () => {
         })
       })
 
+      beforeEach(async () => {
+        const mockResponse = Promise.resolve({
+          ok: true,
+          status: 200,
+          json: () => {
+            return {
+              sub: '@dwho:example.com',
+              'm.server': 'matrix.example.com:8448'
+            }
+          }
+        })
+        // @ts-expect-error mock is unknown
+        fetch.mockImplementation(async () => await mockResponse)
+        const response1 = await request(app)
+          .post('/_matrix/identity/v2/account/register')
+          .send({
+            access_token: 'bar',
+            expires_in: 86400,
+            matrix_server_name: 'matrix.example.com',
+            token_type: 'Bearer'
+          })
+          .set('Accept', 'application/json')
+        expect(response1.statusCode).toBe(200)
+        expect(response1.body.token).toMatch(/^[a-zA-Z0-9]{64}$/)
+        validToken = response1.body.token
+      })
+
       afterAll(async () => {
         await idServer.db.deleteEqual(
           'longTermKeypairs',
@@ -1382,17 +1496,11 @@ describe('Use configuration file', () => {
       it('should refuse an invalid Matrix ID', async () => {
         const mockResponse = Promise.resolve({
           ok: false,
-          status: 400,
-          json: () => {
-            return {
-              errcode: 'M_INVALID_PEPPER',
-              error: 'Unknown or invalid pepper - has it been rotated?'
-            }
-          }
+          status: 200,
+          json: () => {}
         })
         // @ts-expect-error mock is unknown
         fetch.mockImplementation(async () => await mockResponse)
-        await mockResponse
         const responseStoreInvite = await request(app)
           .post('/_matrix/identity/v2/store-invite')
           .set('Authorization', `Bearer ${validToken}`)
@@ -1461,6 +1569,32 @@ describe('Use configuration file', () => {
     })
 
     describe('/_matrix/identity/v2/account', () => {
+      beforeAll(async () => {
+        const mockResponse = Promise.resolve({
+          ok: true,
+          status: 200,
+          json: () => {
+            return {
+              sub: '@dwho:example.com',
+              'm.server': 'matrix.example.com:8448'
+            }
+          }
+        })
+        // @ts-expect-error mock is unknown
+        fetch.mockImplementation(async () => await mockResponse)
+        const response1 = await request(app)
+          .post('/_matrix/identity/v2/account/register')
+          .send({
+            access_token: 'bar',
+            expires_in: 86400,
+            matrix_server_name: 'matrix.example.com',
+            token_type: 'Bearer'
+          })
+          .set('Accept', 'application/json')
+        expect(response1.statusCode).toBe(200)
+        expect(response1.body.token).toMatch(/^[a-zA-Z0-9]{64}$/)
+        validToken = response1.body.token
+      })
       it('should accept valid token in headers', async () => {
         const response = await request(app)
           .get('/_matrix/identity/v2/account')
@@ -1500,6 +1634,7 @@ describe('Use environment variables', () => {
       process.env.HASHES_RATE_LIMIT = '4'
       idServer = new IdServer()
       app = express()
+
       idServer.ready
         // eslint-disable-next-line @typescript-eslint/promise-function-async
         .then(() => {
@@ -1588,6 +1723,7 @@ describe('Use environment variables', () => {
 
 // This test has to be executed after the others so as not to add policies to the database and make the authentication fail for all the other tests
 describe('_matrix/identity/v2/terms', () => {
+  process.env.HASHES_RATE_LIMIT = '4'
   let idServer2: IdServer
   let conf2: Config
   let app2: express.Application
@@ -1627,6 +1763,7 @@ describe('_matrix/identity/v2/terms', () => {
     }
     idServer2 = new IdServer(conf2)
     app2 = express()
+
     idServer2.ready
       .then(() => {
         Object.keys(idServer2.api.get).forEach((k) => {

@@ -92,5 +92,6 @@
   "sms_api_login": "",
   "sms_api_key": "",
   "qr_code_url": "twake.chat://login",
-  "invitation_redirect_url": "https://sign-up.twake.app/download/chat"
+  "invitation_redirect_url": "https://sign-up.twake.app/download/chat",
+  "chat_url": "https://chat.twake.app"
 }

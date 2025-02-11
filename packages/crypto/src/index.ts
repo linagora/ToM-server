@@ -1,6 +1,6 @@
 import _nacl, { type Nacl } from 'js-nacl'
 import nacl from 'tweetnacl'
-import * as naclUtil from 'tweetnacl-util'
+import naclUtil from 'tweetnacl-util'
 
 // export const supportedHashes = ['sha256', 'sha512']
 export const supportedHashes = ['sha256']
