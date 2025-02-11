@@ -445,7 +445,7 @@ describe('Use configuration file', () => {
   })
 
   describe('Endpoint with authentication', () => {
-    beforeAll(async () => {
+    beforeEach(async () => {
       const mockResponse = Promise.resolve({
         ok: true,
         status: 200,
@@ -1440,7 +1440,7 @@ describe('Use configuration file', () => {
       })
     })
 
-    describe.skip('/_matrix/identity/v2/sign-ed25519 ', () => {
+    describe('/_matrix/identity/v2/sign-ed25519', () => {
       let keyPair: {
         publicKey: string
         privateKey: string
@@ -1459,7 +1459,7 @@ describe('Use configuration file', () => {
         })
       })
 
-      beforeAll(async () => {
+      beforeEach(async () => {
         const mockResponse = Promise.resolve({
           ok: true,
           status: 200,
@@ -1493,20 +1493,14 @@ describe('Use configuration file', () => {
           longKeyPair.keyId
         )
       })
-      it.skip('should refuse an invalid Matrix ID', async () => {
+      it('should refuse an invalid Matrix ID', async () => {
         const mockResponse = Promise.resolve({
           ok: false,
-          status: 400,
-          json: () => {
-            return {
-              errcode: 'M_INVALID_PEPPER',
-              error: 'Unknown or invalid pepper - has it been rotated?'
-            }
-          }
+          status: 200,
+          json: () => {}
         })
         // @ts-expect-error mock is unknown
         fetch.mockImplementation(async () => await mockResponse)
-        await mockResponse
         const responseStoreInvite = await request(app)
           .post('/_matrix/identity/v2/store-invite')
           .set('Authorization', `Bearer ${validToken}`)
