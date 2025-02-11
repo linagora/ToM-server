@@ -18,11 +18,11 @@ export class SmsService implements ISMSService {
       this.logger.error('SMS API configuration is missing')
     }
 
-    this.API_ENDPOINT = buildUrl(sms_api_url ?? '', this.SEND_ENDPOINT)
+    this.API_ENDPOINT = buildUrl(sms_api_url as string, this.SEND_ENDPOINT)
     this.HEADERS = {
       'Content-Type': 'application/json',
-      'api-login': sms_api_login ?? '',
-      'api-key': sms_api_key ?? ''
+      'api-login': sms_api_login as string,
+      'api-key': sms_api_key as string
     }
   }
 

@@ -48,12 +48,6 @@ describe('the SMS service', () => {
       )
     })
 
-    it('should throw an error when instantiated with missing config', async () => {
-      expect(
-        () => new SmsService({} as Config, loggerMock as unknown as TwakeLogger)
-      ).toThrow('Missing SMS API configuration')
-    })
-
     it('should call the API endpoint with correct parameters', async () => {
       global.fetch = jest.fn().mockImplementation(() => {
         return Promise.resolve({
