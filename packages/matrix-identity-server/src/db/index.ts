@@ -714,24 +714,39 @@ class IdentityServerDb<T extends string = never>
     }
     const keyPair = generateKeyPair(algorithm)
     if (type === 'longTerm') {
-      throw new Error('Long term key pairs are not supported')
+      return new Promise((resolve) => {
+        this.db
+          .insert('longTermKeypairs', {
+            name: 'currentKey',
+            keyID: keyPair.keyId,
+            public: keyPair.publicKey,
+            private: keyPair.privateKey
+          })
+          .then(() => {
+            resolve(keyPair)
+          })
+          .catch((err) => {
+            /* istanbul ignore next */
+            this.logger.error('Failed to insert long term Key Pair', err)
+          })
+      })
+    } else {
+      return new Promise((resolve) => {
+        this.db
+          .insert('shortTermKeypairs', {
+            keyID: keyPair.keyId,
+            public: keyPair.publicKey,
+            private: keyPair.privateKey
+          })
+          .then(() => {
+            resolve(keyPair)
+          })
+          .catch((err) => {
+            /* istanbul ignore next */
+            this.logger.error('Failed to insert ephemeral Key Pair', err)
+          })
+      })
     }
-    const _type = 'shortTermKeypairs'
-    return new Promise((resolve, reject) => {
-      this.db
-        .insert(_type, {
-          keyID: keyPair.keyId,
-          public: keyPair.publicKey,
-          private: keyPair.privateKey
-        })
-        .then(() => {
-          resolve(keyPair)
-        })
-        .catch((err) => {
-          /* istanbul ignore next */
-          this.logger.error('Failed to insert ephemeral Key Pair', err)
-        })
-    })
   }
 
   // Deletes a short term key pair from the database
