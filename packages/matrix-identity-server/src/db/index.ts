@@ -703,7 +703,11 @@ class IdentityServerDb<T extends string = never>
     })
   }
 
-  // eslint-disable-next-line @typescript-eslint/promise-function-async
+  /**
+   * Create key pair and store it in the database
+   * @param {'longTerm' | 'shortTerm'} type
+   * @param {'ed25519' | 'curve25519'} algorithm
+   */
   createKeypair(
     type: 'longTerm' | 'shortTerm',
     algorithm: 'ed25519' | 'curve25519'
@@ -712,38 +716,27 @@ class IdentityServerDb<T extends string = never>
     if (this.db == null) {
       throw new Error('Wait for database to be ready')
     }
+
     const keyPair = generateKeyPair(algorithm)
+
     return new Promise((resolve) => {
-      if (type === 'longTerm') {
-        this.db
-          .insert('longTermKeypairs', {
-            name: 'currentKey',
+      this.db
+        .insert(
+          type === 'longTerm' ? 'longTermKeypairs' : 'shortTermKeypairs',
+          {
             keyID: keyPair.keyId,
             public: keyPair.publicKey,
-            private: keyPair.privateKey
-          })
-          .then(() => {
-            resolve(keyPair)
-          })
-          .catch((err) => {
-            /* istanbul ignore next */
-            this.logger.error('Failed to insert long term Key Pair', err)
-          })
-      } else {
-        this.db
-          .insert('shortTermKeypairs', {
-            keyID: keyPair.keyId,
-            public: keyPair.publicKey,
-            private: keyPair.privateKey
-          })
-          .then(() => {
-            resolve(keyPair)
-          })
-          .catch((err) => {
-            /* istanbul ignore next */
-            this.logger.error('Failed to insert ephemeral Key Pair', err)
-          })
-      }
+            private: keyPair.privateKey,
+            ...(type === 'longTerm' ? { name: 'currentKey' } : {})
+          }
+        )
+        .then(() => {
+          resolve(keyPair)
+        })
+        .catch((err) => {
+          /* istanbul ignore next */
+          this.logger.error(`Failed to insert ${type} Key Pair`, err)
+        })
     })
   }
 
