@@ -686,7 +686,7 @@ class IdentityServerDb<T extends string = never>
     return new Promise((resolve, reject) => {
       const _type = type === 'current' ? 'currentKey' : 'previousKey'
       this.db
-        .getAll('shortTermKeypairs', ['keyID', 'public', 'private'])
+        .getAll('longTermKeypairs', ['keyID', 'public', 'private'])
         .then((rows) => {
           if (rows.length === 0) {
             reject(new Error(`No ${_type} found`))
@@ -708,7 +708,7 @@ class IdentityServerDb<T extends string = never>
    * @param {'longTerm' | 'shortTerm'} type
    * @param {'ed25519' | 'curve25519'} algorithm
    */
-  createKeypair(
+  async createKeypair(
     type: 'longTerm' | 'shortTerm',
     algorithm: 'ed25519' | 'curve25519'
   ): Promise<keyPair> {
@@ -718,6 +718,34 @@ class IdentityServerDb<T extends string = never>
     }
 
     const keyPair = generateKeyPair(algorithm)
+
+    try {
+      if (type === 'longTerm') {
+        const currentKey = await this.db.get('longTermKeypairs', ['name'], {
+          name: 'currentKey'
+        })
+
+        if (currentKey.length > 0) {
+          const previousKey = await this.db.get('longTermKeypairs', ['name'], {
+            name: 'previousKey'
+          })
+
+          if (previousKey.length > 0) {
+            await this.db.deleteEqual('longTermKeypairs', 'name', 'previousKey')
+          }
+
+          await this.db.update(
+            'longTermKeypairs',
+            { name: 'previousKey' },
+            'name',
+            'currentKey'
+          )
+        }
+      }
+    } catch (error) {
+      console.error({ error })
+      this.logger.error(`Failed to update ${type} Key Pair`, error)
+    }
 
     return new Promise((resolve) => {
       this.db
@@ -734,6 +762,7 @@ class IdentityServerDb<T extends string = never>
           resolve(keyPair)
         })
         .catch((err) => {
+          console.error({ err })
           /* istanbul ignore next */
           this.logger.error(`Failed to insert ${type} Key Pair`, err)
         })

@@ -1451,12 +1451,21 @@ describe('Use configuration file', () => {
       beforeAll(async () => {
         keyPair = generateKeyPair('ed25519')
         longKeyPair = generateKeyPair('ed25519')
-        await idServer.db.insert('longTermKeypairs', {
-          name: 'currentKey',
-          keyID: longKeyPair.keyId,
-          public: longKeyPair.publicKey,
-          private: longKeyPair.privateKey
-        })
+        try {
+          await idServer.db.deleteEqual(
+            'longTermKeypairs',
+            'name',
+            'currentKey'
+          )
+          await idServer.db.insert('longTermKeypairs', {
+            name: 'currentKey',
+            keyID: longKeyPair.keyId,
+            public: longKeyPair.publicKey,
+            private: longKeyPair.privateKey
+          })
+        } catch (error) {
+          console.log({ error })
+        }
       })
 
       beforeEach(async () => {

@@ -269,7 +269,7 @@ const StoreInvit = <T extends string = never>(
               } else if (response.status === 200 && !foundMappings) {
                 // Create invitation token
                 const ephemeralKey = await idServer.db.createKeypair(
-                  'shortTerm',
+                  'longTerm',
                   'curve25519'
                 )
                 const objWithKey = {
