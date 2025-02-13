@@ -79,6 +79,12 @@ let conf = {
   update_users_cron: process.env.UPDATE_USERS_CRON || '*/10 * * * *',
   userdb_engine: process.env.USERDB_ENGINE || 'ldap',
   userdb_host: process.env.USERDB_HOST,
+  userdb_name: process.env.USERDB_NAME,
+  userdb_user: process.env.USERDB_USER,
+  userdb_password: process.env.USERDB_PASSWORD,
+  userdb_ssl: process.env.USERDB_SSL
+    ? JSON.parse(process.env.USERDB_SSL)
+    : false,
   sms_api_key: process.env.SMS_API_KEY,
   sms_api_login: process.env.SMS_API_LOGIN,
   sms_api_url: process.env.SMS_API_URL,
@@ -93,15 +99,15 @@ if (process.argv[2] === 'generate') {
 
   // TODO: implement with logger debug/silly level
   //
-  //app.use((req, res, next) => {
-  //  console.log(req.path)
+  // app.use((req, res, next) => {
+  //   console.log(req.path)
   //
-  //  req.on('error', () => {
-  //    console.error('ERROR:', req.path)
-  //  })
-  //  req.on('end', () => {
-  //    console.log('END:', req.path)
-  //  })
+  //   req.on('error', () => {
+  //     console.error('ERROR:', req.path)
+  //   })
+  //   req.on('end', () => {
+  //     console.log('END:', req.path)
+  //   })
   //
   //  next()
   //})
@@ -115,7 +121,6 @@ if (process.argv[2] === 'generate') {
   }
 
   const tomServer = new TomServer(conf)
-
   const promises = [tomServer.ready]
 
   if (process.env.CROWDSEC_URI) {

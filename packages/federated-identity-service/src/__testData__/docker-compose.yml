@@ -126,7 +126,7 @@ services:
     container_name: identity-server-1
     build:
       context: ../../../..
-      dockerfile: ./packages/federated-identity-service/src/__testData__/identity-server/Dockerfile
+      dockerfile: ./packages/matrix-identity-server/Dockerfile
     volumes:
       - ./nginx/ssl/ca.pem:/etc/ssl/certs/ca.pem
       - ./identity-server/conf/identity-server-1.conf:/etc/twake/identity-server.conf

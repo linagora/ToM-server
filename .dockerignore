@@ -9,13 +9,14 @@ node_modules/
 .gitlab-ci.yml
 **/Dockerfile
 **/.*md
-docker-compose.yml
+docker-compose*
 flake.lock
 flake.nix
 
 **/*.db
 **/*.db-shm
 **/*.db-wal
+**/*.db-journal
 
 **/*.map
 packages/**/example/*.js*

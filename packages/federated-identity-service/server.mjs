@@ -7,8 +7,8 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
 const conf = {
-  additional_features: process.env.ADDITIONAL_FEATURES || false,
   base_url: process.env.BASE_URL,
+  additional_features: process.env.ADDITIONAL_FEATURES || false,
   cron_service: process.env.CRON_SERVICE || true,
   database_engine: process.env.DATABASE_ENGINE,
   database_host: process.env.DATABASE_HOST,
@@ -18,7 +18,9 @@ const conf = {
   database_ssl: process.env.DATABASE_SSL
     ? JSON.parse(process.env.DATABASE_SSL)
     : false,
-  hashes_rate_limit: process.env.HASHES_RATE_LIMIT,
+  hashes_rate_limit: process.env.HASHES_RATE_LIMIT || 100,
+  rate_limiting_window: process.env.RATE_LIMITING_WINDOW || 600000,
+  rate_limiting_nb_requests: process.env.RATE_LIMITING_NB_REQUESTS || 100,
   is_federated_identity_service: true,
   ldap_base: process.env.LDAP_BASE,
   ldap_filter: process.env.LDAP_FILTER,
