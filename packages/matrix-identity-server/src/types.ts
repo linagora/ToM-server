@@ -89,3 +89,35 @@ export interface UserQuota {
 export interface ISMSService {
   send: (to: string, body: string) => Promise<void>
 }
+
+export interface IdentityServerDomainSignature {
+  'ed25519:0': string
+}
+
+export interface IdServerSignature {
+  mxid: string
+  signatures: Record<string, IdentityServerDomainSignature>
+  token: string
+}
+
+export interface ThirPartyInvitePayload {
+  address: string
+  medium: string
+  mxid: string
+  room_id: string
+  sender: string
+  signed: IdServerSignature
+}
+
+export interface onBindRequestPayload {
+  address: string
+  invites: ThirPartyInvitePayload[]
+  medium: string
+  mxid: string
+}
+
+export interface invitationToken {
+  id: string
+  address: string
+  data: ThirPartyInvitePayload
+}

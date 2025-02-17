@@ -1,6 +1,6 @@
 import { generateKeyPair, randomString } from '@twake/crypto'
 import { type TwakeLogger } from '@twake/logger'
-import { type Config, type DbGetResult } from '../types'
+import { type invitationToken, type Config, type DbGetResult } from '../types'
 import { epoch } from '@twake/utils'
 import Pg from './sql/pg'
 import { type ISQLCondition } from './sql/sql'
@@ -579,6 +579,35 @@ class IdentityServerDb<T extends string = never>
           reject(err)
         })
     })
+  }
+
+  /**
+   * list invitation tokens
+   *
+   * @param {string} address - the invited 3pid address
+   * @returns {Promise<invitationToken[]>} - list of invitation tokens
+   */
+  async listInvitationTokens(
+    address: string
+  ): Promise<invitationToken[] | undefined> {
+    if (this.db == null) {
+      throw new Error('Wait for database to be ready')
+    }
+
+    try {
+      const tokenResults = await this.db.get(
+        'invitationTokens',
+        ['data', 'address', 'id'],
+        { address }
+      )
+      return tokenResults.map((row) => JSON.parse(row.data as string))
+    } catch (error) {
+      console.error(`Failed to list invitation tokens for address`, {
+        error
+      })
+
+      this.logger.error('Failed to get tokens', error)
+    }
   }
 
   // eslint-disable-next-line @typescript-eslint/promise-function-async
