@@ -120,3 +120,13 @@ export const buildUrl = (base: string, path: string): string => {
 
   return finalUrl.toString()
 }
+
+/**
+ * Extracts the server name from a Matrix ID
+ *
+ * @param {string} mxid
+ * @return {string}
+ */
+export const getServerNameFromMatrixId = (mxid: string): string => {
+  return mxid.split(':')[1].split('.')[0]
+}
