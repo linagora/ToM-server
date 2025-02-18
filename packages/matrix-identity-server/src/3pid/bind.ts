@@ -7,6 +7,8 @@ import {
   validateParameters,
   type expressAppHandler
 } from '@twake/utils'
+import { buildUrl, getServerNameFromMatrixId } from '../utils'
+import type { onBindRequestPayload } from '../types'
 
 const clientSecretRe = /^[0-9a-zA-Z.=_-]{6,255}$/
 const mxidRe = /^@[0-9a-zA-Z._=-]+:[0-9a-zA-Z.-]+$/
@@ -78,7 +80,18 @@ const bind = <T extends string = never>(
                   return
                 }
 
-                // TODO : hook for any pending invite and call the onbind api : https://spec.matrix.org/v1.11/client-server-api/#room-aliases
+                _onBind(
+                  idServer,
+                  (obj as RequestTokenArgs).mxid,
+                  rows[0].address as string,
+                  rows[0].medium as string
+                )
+                  .then(() => {
+                    idServer.logger.info(`Finished server onbind for ${mxid}`)
+                  })
+                  .catch((err) => {
+                    idServer.logger.error('Error calling server onbind', err)
+                  })
 
                 idServer.db
                   .get('keys', ['data'], { name: 'pepper' })
@@ -149,6 +162,61 @@ const bind = <T extends string = never>(
         })
       })
     })
+  }
+}
+
+/**
+ * Calls the Matrix server onbind hook
+ * @summary spec: https://spec.matrix.org/v1.13/server-server-api/#third-party-invites
+ *
+ * @param {MatrixIdentityServer} idServer
+ * @param {string} mxid
+ * @param {string} address
+ * @param {string} medium
+ */
+const _onBind = async <T extends string = never>(
+  idServer: MatrixIdentityServer<T>,
+  mxid: string,
+  address: string,
+  medium: string
+): Promise<void> => {
+  try {
+    const server = getServerNameFromMatrixId(mxid)
+    const invitationTokens = await idServer.db.listInvitationTokens(address)
+
+    if (!invitationTokens || !invitationTokens.length) {
+      idServer.logger.info(`No pending invitations found for ${address}`)
+      console.info(`No pending invitations found for ${address}`)
+
+      return
+    }
+
+    const invites = invitationTokens.map(({ data }) => data)
+
+    const response = await fetch(
+      buildUrl(server, `/_matrix/federation/v1/3pid/onbind`),
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          mxid,
+          address,
+          medium,
+          invites
+        } satisfies onBindRequestPayload)
+      }
+    )
+
+    if (response.status !== 200) {
+      throw new Error(
+        `Failed to call onbind hook, status code: ${response.status}`
+      )
+    }
+  } catch (error) {
+    console.error(`Failed to call onbind hook`, { error })
+    idServer.logger.error('Error calling onbind hook', error)
   }
 }
 
