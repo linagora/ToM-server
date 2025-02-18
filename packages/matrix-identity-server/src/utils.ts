@@ -128,5 +128,5 @@ export const buildUrl = (base: string, path: string): string => {
  * @return {string}
  */
 export const getServerNameFromMatrixId = (mxid: string): string => {
-  return mxid.split(':')[1].split('.')[0]
+  return mxid.split(':')[1]
 }
