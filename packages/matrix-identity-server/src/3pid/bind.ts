@@ -183,7 +183,15 @@ const _onBind = async <T extends string = never>(
   try {
     const server = getServerNameFromMatrixId(mxid)
     const invitationTokens = await idServer.db.listInvitationTokens(address)
-    const invites = (invitationTokens || []).map(({ data }) => data)
+
+    if (!invitationTokens || !invitationTokens.length) {
+      idServer.logger.info(`No pending invitations found for ${address}`)
+      console.info(`No pending invitations found for ${address}`)
+
+      return
+    }
+
+    const invites = invitationTokens.map(({ data }) => data)
 
     const response = await fetch(
       buildUrl(server, `/_matrix/federation/v1/3pid/onbind`),
