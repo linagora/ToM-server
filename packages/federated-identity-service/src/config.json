@@ -49,5 +49,9 @@
   "userdb_user": "",
   "template_dir": "./templates",
   "trust_x_forwarded_for": false,
-  "trusted_servers_addresses": []
+  "trusted_servers_addresses": [],
+  "sms_api_login": "",
+  "sms_api_key": "",
+  "sms_api_url": "",
+  "chat_url": ""
 }
