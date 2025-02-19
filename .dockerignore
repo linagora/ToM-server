@@ -25,3 +25,5 @@ packages/**/example/*.js*
 **/node_modules/
 **/.nx/
 **/coverage/
+
+.compose
