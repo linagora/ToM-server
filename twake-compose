@@ -1,0 +1,333 @@
+#!/usr/bin/env bash
+[[ -n "${DEBUG}" ]] && set -x
+
+set -Eeuo pipefail
+IFS=$'\t\n'
+
+# ##
+# logging toolbox
+# ##
+
+if [[ -t 2 ]] && [[ -z "${NO_COLOR:-}" ]] && [[ "${TERM:-}" != "dumb" ]]; then
+  COLOR_NOFORMAT='\033[0m'
+  COLOR_RED='\033[1;31m'
+  COLOR_GREEN='\033[1;32m'
+  COLOR_ORANGE='\033[0;33m'
+  COLOR_BLUE='\033[1;34m'
+  COLOR_PURPLE='\033[1;35m'
+  COLOR_CYAN='\033[1;36m'
+  COLOR_YELLOW='\033[1;33m'
+else
+  COLOR_NOFORMAT=''
+  COLOR_RED=''
+  COLOR_GREEN=''
+  COLOR_ORANGE=''
+  COLOR_BLUE=''
+  COLOR_PURPLE=''
+  COLOR_CYAN=''
+  COLOR_YELLOW=''
+fi
+
+declare -A log_levels=(
+  [default]=2
+  [error]=1
+  [warning]=2
+  [info]=3
+  [debug]=4
+  [silly]=5
+)
+
+declare -A log_levels_names=(
+  [0]=default
+  [1]=error
+  [2]=warning
+  [3]=info
+  [4]=debug
+  [5]=silly
+)
+
+declare -A log_levels_colors=(
+  [1]="${COLOR_RED}"
+  [2]="${COLOR_ORANGE}"
+  [3]="${COLOR_GREEN}"
+  [4]="${COLOR_PURPLE}"
+  [5]="${COLOR_BLUE}"
+)
+
+to_log_level() {
+  local level="${1:-default}"
+  echo "${log_levels[${level}]}"
+}
+
+log_level=$(to_log_level "${LOG_LEVEL:-default}")
+
+log() { echo -e "${1+"$@"}" >&2; }
+log_info() { [[ $log_level -ge ${log_levels[info]} ]] && log "[~] $*" || :; }
+log_success() { [[ $log_level -ge ${log_levels[info]} ]] && log "${COLOR_GREEN}[+] $*${COLOR_NOFORMAT}" || :; }
+log_warning() { [[ $log_level -ge ${log_levels[warning]} ]] && log "${COLOR_ORANGE}[?] $*${COLOR_NOFORMAT}" || :; }
+log_error() { [[ $log_level -ge ${log_levels[error]} ]] && log "${COLOR_RED}[!] $*${COLOR_NOFORMAT}" || :; }
+log_debug() { [[ $log_level -ge ${log_levels[debug]} ]] && log "${COLOR_PURPLE}[:] $*${COLOR_NOFORMAT}" || :; }
+log_silly() { [[ $log_level -ge ${log_levels[silly]} ]] && log "${COLOR_BLUE}[ ] $*${COLOR_NOFORMAT}" || :; }
+
+log_info "log level: ${log_levels_names[${log_level}]} (${log_level})"
+
+# ##
+# constants
+# ##
+
+readonly license="AGPL-v3"
+readonly license_spdx="AGPL-3.0-or-later"
+log_silly "license: ${license} - SPDX: ${license_spdx}"
+
+readonly version_major="0"
+readonly version_minor="3"
+readonly version_revision="2"
+readonly version_suffix="-beta"
+readonly version="${version_major}.${version_minor}.${version_revision}${version_suffix}"
+log_silly "version: ${version}"
+
+readonly author_name="Pierre 'McFly' Marty"
+readonly author_mail="p.mcfly.m@gmail.com"
+readonly author="${author_name} <${author_mail}>"
+log_silly "author: ${author}"
+
+readonly script_name=$(basename "${0}")
+readonly script_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd -P)
+log_debug "script name: ${script_name}"
+
+readonly compose_dir="${COMPOSE_DIR:-${script_dir}/.compose/examples}"
+readonly compose_default_name_format='*.yml'
+readonly compose_name_format="${COMPOSE_NAME_FORMAT:-${compose_default_name_format}}"
+readonly compose_files=$(find "${compose_dir}" -type f -name "${compose_name_format}" -printf "%f\n")
+log_debug "compose dir: ${compose_dir}"
+log_debug "compose file names: ${compose_name_format}"
+log_debug "compose files:\n${compose_files[*]}"
+
+last_compose_file="/tmp/.last_compose_file"
+log_debug "using: ${last_compose_file}, to store the last compose file name"
+
+# ##
+# functions
+# ##
+
+help() {
+  cat <<EOF
+Usage: ${script_name} [options] [action]
+
+Options:
+  -h, --help                Show this help message and exit
+  -c, --compose_file FILE   Specify the compose file to use (cannot be used with -l)
+  -l, --last                Use the last compose file used (cannot be used with -c)
+
+  -v, --verbose             Increase verbosity level to debug
+
+Action:
+  re-up                     Rebuild and start the services
+
+  ---------------------------------------------------------
+  Or any docker-compose command (up, down, ps, logs, ...)
+
+Logs:
+  - By default, only warning and error logs are displayed
+  - Use -v or --verbose to display debug logs
+  - Use DEBUG=1 to set the script in debug mode (set -x)
+  - Use LOG_LEVEL to set the log level to one of the following: error, warning, info, debug, silly
+
+  Example:
+    LOG_LEVEL=debug ${script_name} -c docker-compose.yml up
+
+NOTES:
+  - If you'd like to use a compose command requiring options, you can use the following syntax:
+    ${script_name} [options] -- [action] [options]
+  - If no compose file is specified, and none is found in the history you will be prompted to choose one from the available files.
+
+Examples:
+  ${script_name} -c docker-compose.yml re-up
+  ${script_name} --compose_file docker-compose.yml down
+EOF
+}
+
+choose_compose_file() {
+  local files=($compose_files)
+  if [[ ${#files[@]} -eq 0 ]]; then
+    log_error "No compose files found in ${compose_dir}"
+    exit 1
+  fi
+
+  log_info "Please choose a compose file to execute:"
+  select file in "${files[@]}"; do
+    if [[ -n "$file" ]]; then
+      echo "$file"
+      return
+    else
+      log_warning "Invalid selection. Please try again."
+    fi
+  done
+}
+
+save_last_compose_file() {
+  if ! echo "$1" >"$last_compose_file"; then
+    log_error "Failed to save last compose file used"
+  else
+    log_success "Last compose file saved: $1"
+  fi
+}
+
+load_last_compose_file() {
+  if [[ -f "$last_compose_file" ]]; then
+    content=$(cat "$last_compose_file")
+    if [[ $? -ne 0 ]]; then
+      log_error "Failed to read last compose file"
+    else
+      echo "$content"
+    fi
+  else
+    echo ""
+  fi
+}
+
+execute_compose_action() {
+  local file="${1}"
+
+  if [[ -z "${file}" ]]; then
+    log_error "No compose file specified - Cannot recover!"
+    help
+    exit 1
+  fi
+
+  log_debug "File location: ${file}"
+
+  shift
+  case "${1}" in
+  down)
+    shift
+    log_info "Stopping the services"
+    log_debug "Running command: docker compose -f ${file} down --volumes --remove-orphans $@"
+    docker compose -f ${file} down --volumes --remove-orphans "$@"
+    ;;
+  re-up)
+    shift
+    log_debug "Running command: docker compose -f ${file} down --volumes --remove-orphans"
+    docker compose -f ${file} down --volumes --remove-orphans
+    log_info "Rebuilding the services"
+    log_debug "Running command: docker compose -f ${file} build --no-cache"
+    docker compose -f ${file} build --no-cache
+    log_info "Starting the services"
+    log_debug "Running command: docker compose -f ${file} up -d"
+    docker compose -f ${file} up -d
+    ;;
+  *)
+    log_debug "Running command: docker compose -f ${file} $@"
+    docker compose -f ${file} "$@"
+    ;;
+  esac
+
+  log_info "Saving as last compose file used: ${file}"
+  save_last_compose_file "${file}"
+}
+
+main() {
+  for arg in "$@"; do
+    case "$arg" in
+    -h | --help)
+      help
+      exit 0
+      ;;
+    esac
+  done
+
+  local compose_file=""
+  local options=$(getopt -o c:hlv --long compose_file:,help,last,verbose -- "$@")
+
+  if [[ $? -ne 0 ]]; then
+    log_error "Failed to parse options"
+    exit 1
+  fi
+
+  eval set -- "$options"
+
+  local compose_file_set=false
+  while true; do
+    case "$1" in
+    -c | --compose_file)
+      if [[ "$compose_file_set" == true ]]; then
+        log_info "compose file already set"
+        log_error "Cannot use -c and -l options at the same time"
+        help
+        exit 1
+      fi
+      compose_file=$2
+      compose_file_set=true
+      log_silly "Compose file set"
+      shift 2
+      ;;
+    -h | --help)
+      help
+      exit 0
+      ;;
+    -l | --last)
+      if [[ "$compose_file_set" == true ]]; then
+        log_info "compose file already set"
+        log_error "Cannot use -c and -l options at the same time"
+        help
+        exit 1
+      fi
+      compose_file=$(load_last_compose_file)
+      log_info "Reusing last compose file used"
+      compose_file_set=true
+      log_silly "Compose file set"
+      shift
+      ;;
+    -v | --verbose)
+      log_level=$(to_log_level "debug")
+      log "switching to log level: ${log_levels_names[${log_level}]} (${log_level})"
+      shift
+      ;;
+    --)
+      shift
+      break
+      ;;
+    *)
+      log_error "Invalid option: $1"
+      help
+      exit 1
+      ;;
+    esac
+  done
+
+  log_debug "Options parsed: $options"
+  log_debug "Remaining arguments: $@"
+
+  if [[ $# -gt 0 ]]; then
+    log_info "Running compose action: $@"
+  else
+    log_error "No compose action specified"
+    help
+    exit 1
+  fi
+
+  if [[ -z "${compose_file}" ]]; then
+    log_warning "No compose file specified"
+    log_info "Looking for last compose file used"
+    compose_file=$(load_last_compose_file)
+    log_debug "Last compose file used: ${compose_file}"
+  fi
+
+  if [[ ! -r "${compose_file}" ]]; then
+    log_warning "Compose file not readable..."
+    log_debug "...Trying to find it in the compose directory..."
+    compose_file=$(realpath -s --relative-to="${script_dir}" "${compose_dir}/${compose_file}")
+    log_debug "...Trying file: ${compose_file}..."
+  fi
+
+  if [[ ! -r "${compose_file}" ]]; then
+    log_warning "...Compose file not readable!"
+    log_info "No compose file specified, or found in the history"
+    compose_file=$(choose_compose_file)
+  fi
+
+  log_debug "Using compose file: ${compose_file}"
+  execute_compose_action "$compose_file" "$@"
+}
+
+main "$@"
