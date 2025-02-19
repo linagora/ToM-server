@@ -230,9 +230,16 @@ const StoreInvit = <T extends string = never>(
             try {
               const authHeader = req.headers.authorization as string
               const validToken = authHeader.split(' ')[1]
-              const _pepper = idServer.db.get('keys', ['data'], {
+              const papperQuery = (await idServer.db.get('keys', ['data'], {
                 name: 'pepper'
-              })
+              })) as unknown as Record<'data', string>[]
+
+              if (!papperQuery || !papperQuery.length) {
+                send(res, 500, errMsg('unknown', 'No pepper found'))
+                return
+              }
+
+              const _pepper = papperQuery[0].data
 
               const response = await fetch(
                 buildUrl(idServer.conf.base_url, '/_matrix/identity/v2/lookup'),

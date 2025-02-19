@@ -89,6 +89,9 @@ services:
       - ADDITIONAL_FEATURES=true
       - FEDERATED_IDENTITY_SERVICES=fed.docker.localhost
       - NODE_TLS_REJECT_UNAUTHORIZED=0
+      - SMS_API_KEY=SOME_SECRET_KEY
+      - SMS_API_LOGIN=login@domain.com
+      - SMS_API_URL=https://api.octopush.com/v1/public
 
   fed:
     build:
@@ -121,8 +124,11 @@ services:
       # - UPDATE_FEDERATED_IDENTITY_HASHES_CRON=0-59/2 * * * *
       # - UPDATE_USERS_CRON=1-59/2 * * * *
       - ADDITIONAL_FEATURES=true
-      - TRUSTED_SERVERS_ADDRESSES=172.18.0.1/16
+      - TRUSTED_SERVERS_ADDRESSES=172.18.0.1/16,172.31.0.6,172.31.0.5,172.31.0.1/16
       - NODE_TLS_REJECT_UNAUTHORIZED=0
+      - SMS_API_KEY=SOME_SECRET_KEY
+      - SMS_API_LOGIN=login@domain.com
+      - SMS_API_URL=https://api.octopush.com/v1/public
 
   chat:
     image: linagora/twake-web
@@ -151,6 +157,7 @@ services:
       - chat
       - synapse
       - tom
+      - fed
     networks:
       frontend:
         aliases:

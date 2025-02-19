@@ -68,9 +68,10 @@ describe('the SMS service', () => {
             'api-key': 'test_key'
           },
           body: JSON.stringify({
-            to: '+330744556688',
-            body: 'test sms',
-            from: 'Twake Chat'
+            sender: 'Twake',
+            recipients: [{ phone_number: '+330744556688' }],
+            text: 'test sms',
+            type: 'sms_low_cost'
           })
         }
       )
