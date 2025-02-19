@@ -60,6 +60,11 @@ export interface Config {
   userdb_user?: string
   template_dir: string
   check_quota_cron?: string
+  matrix_server?: string
+  sms_api_login?: string
+  sms_api_key?: string
+  sms_api_url?: string
+  chat_url?: string
 }
 
 export type DbGetResult = Array<
@@ -79,4 +84,51 @@ export interface MatrixUser {
 export interface UserQuota {
   user_id: string
   size: number
+}
+
+export interface ISMSService {
+  send: (to: string, body: string) => Promise<void>
+}
+
+export interface IdentityServerDomainSignature {
+  'ed25519:0': string
+}
+
+export interface IdServerSignature {
+  mxid: string
+  signatures: Record<string, IdentityServerDomainSignature>
+  token: string
+}
+
+export interface ThirPartyInvitePayload {
+  address: string
+  medium: string
+  mxid: string
+  room_id: string
+  sender: string
+  signed: IdServerSignature
+}
+
+export interface onBindRequestPayload {
+  address: string
+  invites: ThirPartyInvitePayload[]
+  medium: string
+  mxid: string
+}
+
+export interface invitationToken {
+  id: string
+  address: string
+  data: ThirPartyInvitePayload
+}
+
+export interface SendSmsPayload {
+  text: string
+  recipients: Recipient[]
+  type: 'sms_premium' | 'sms_low_cost'
+  sender: string
+}
+
+interface Recipient {
+  phone_number: string
 }

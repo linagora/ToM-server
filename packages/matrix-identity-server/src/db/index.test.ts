@@ -5,6 +5,7 @@ import DefaultConfig from '../config.json'
 import { type Config, type DbGetResult } from '../types'
 import IdDb from './index'
 import fs from 'fs'
+import { assert } from 'console'
 
 const baseConf: Config = {
   ...DefaultConfig,
@@ -1223,5 +1224,34 @@ describe('Id Server DB', () => {
           .catch(done)
       })
       .catch(done)
+  })
+
+  it('should list invitation tokens', async () => {
+    const idDb = new IdDb(baseConf, logger)
+
+    await idDb.ready
+
+    await idDb.createInvitationToken('test@example.com', { test: 'a' })
+    await idDb.createInvitationToken('+21652111333', { test: 'b' })
+    await idDb.createInvitationToken('test@example.com', { test: 'c' })
+
+    const tokens = await idDb.listInvitationTokens('test@example.com')
+    assert(tokens)
+
+    expect(tokens?.length).toBe(2)
+  })
+
+  it('should return an empty array of no invitation tokens were found', async () => {
+    const idDb = new IdDb(baseConf, logger)
+
+    await idDb.ready
+
+    await idDb.createInvitationToken('test@example.com', { test: 'a' })
+
+    const tokens = await idDb.listInvitationTokens('+21652111222')
+
+    assert(tokens)
+
+    expect(tokens?.length).toBe(0)
   })
 })

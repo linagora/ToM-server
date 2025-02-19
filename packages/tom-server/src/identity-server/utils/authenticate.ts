@@ -77,7 +77,9 @@ const Authenticate = (
               } else {
                 logger.info('Bad local token, trying remote', userInfo)
                 remoteAuth(req, res, (...args) => {
-                  logger.info('[From Remote]: Token that locally failed was validated')
+                  logger.info(
+                    '[From Remote]: Token that locally failed was validated'
+                  )
                   callback(...args)
                 })
               }

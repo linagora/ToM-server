@@ -1,6 +1,6 @@
 import { generateKeyPair, randomString } from '@twake/crypto'
 import { type TwakeLogger } from '@twake/logger'
-import { type Config, type DbGetResult } from '../types'
+import { type invitationToken, type Config, type DbGetResult } from '../types'
 import { epoch } from '@twake/utils'
 import Pg from './sql/pg'
 import { type ISQLCondition } from './sql/sql'
@@ -581,6 +581,35 @@ class IdentityServerDb<T extends string = never>
     })
   }
 
+  /**
+   * list invitation tokens
+   *
+   * @param {string} address - the invited 3pid address
+   * @returns {Promise<invitationToken[]>} - list of invitation tokens
+   */
+  async listInvitationTokens(
+    address: string
+  ): Promise<invitationToken[] | undefined> {
+    if (this.db == null) {
+      throw new Error('Wait for database to be ready')
+    }
+
+    try {
+      const tokenResults = await this.db.get(
+        'invitationTokens',
+        ['data', 'address', 'id'],
+        { address }
+      )
+      return tokenResults.map((row) => JSON.parse(row.data as string))
+    } catch (error) {
+      console.error(`Failed to list invitation tokens for address`, {
+        error
+      })
+
+      this.logger.error('Failed to get tokens', error)
+    }
+  }
+
   // eslint-disable-next-line @typescript-eslint/promise-function-async
   verifyInvitationToken(id: string): Promise<object> {
     /* istanbul ignore if */
@@ -686,9 +715,7 @@ class IdentityServerDb<T extends string = never>
     return new Promise((resolve, reject) => {
       const _type = type === 'current' ? 'currentKey' : 'previousKey'
       this.db
-        .get('longTermKeypairs', ['keyID', 'public', 'private'], {
-          name: _type
-        })
+        .getAll('longTermKeypairs', ['keyID', 'public', 'private'])
         .then((rows) => {
           if (rows.length === 0) {
             reject(new Error(`No ${_type} found`))
@@ -705,8 +732,12 @@ class IdentityServerDb<T extends string = never>
     })
   }
 
-  // eslint-disable-next-line @typescript-eslint/promise-function-async
-  createKeypair(
+  /**
+   * Create key pair and store it in the database
+   * @param {'longTerm' | 'shortTerm'} type
+   * @param {'ed25519' | 'curve25519'} algorithm
+   */
+  async createKeypair(
     type: 'longTerm' | 'shortTerm',
     algorithm: 'ed25519' | 'curve25519'
   ): Promise<keyPair> {
@@ -714,24 +745,55 @@ class IdentityServerDb<T extends string = never>
     if (this.db == null) {
       throw new Error('Wait for database to be ready')
     }
+
     const keyPair = generateKeyPair(algorithm)
-    if (type === 'longTerm') {
-      throw new Error('Long term key pairs are not supported')
-    }
-    const _type = 'shortTermKeypairs'
-    return new Promise((resolve, reject) => {
-      this.db
-        .insert(_type, {
-          keyID: keyPair.keyId,
-          public: keyPair.publicKey,
-          private: keyPair.privateKey
+
+    try {
+      if (type === 'longTerm') {
+        const currentKey = await this.db.get('longTermKeypairs', ['name'], {
+          name: 'currentKey'
         })
+
+        if (currentKey.length > 0) {
+          const previousKey = await this.db.get('longTermKeypairs', ['name'], {
+            name: 'previousKey'
+          })
+
+          if (previousKey.length > 0) {
+            await this.db.deleteEqual('longTermKeypairs', 'name', 'previousKey')
+          }
+
+          await this.db.update(
+            'longTermKeypairs',
+            { name: 'previousKey' },
+            'name',
+            'currentKey'
+          )
+        }
+      }
+    } catch (error) {
+      console.error({ error })
+      this.logger.error(`Failed to update ${type} Key Pair`, error)
+    }
+
+    return new Promise((resolve) => {
+      this.db
+        .insert(
+          type === 'longTerm' ? 'longTermKeypairs' : 'shortTermKeypairs',
+          {
+            keyID: keyPair.keyId,
+            public: keyPair.publicKey,
+            private: keyPair.privateKey,
+            ...(type === 'longTerm' ? { name: 'currentKey' } : {})
+          }
+        )
         .then(() => {
           resolve(keyPair)
         })
         .catch((err) => {
+          console.error({ err })
           /* istanbul ignore next */
-          this.logger.error('Failed to insert ephemeral Key Pair', err)
+          this.logger.error(`Failed to insert ${type} Key Pair`, err)
         })
     })
   }

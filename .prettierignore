@@ -17,3 +17,4 @@ packages/**/dist
 packages/**/coverage
 packages/**/__testData__
 packages/**/node_modules
+packages/**/*.tpl

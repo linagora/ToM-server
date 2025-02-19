@@ -27,7 +27,10 @@ beforeAll((done) => {
     ...defaultConfig,
     database_engine: 'sqlite',
     base_url: 'http://example.com/',
-    userdb_engine: 'sqlite'
+    userdb_engine: 'sqlite',
+    sms_api_key: 'test_key',
+    sms_api_login: 'test_secret',
+    sms_api_url: 'http://localhost/sms/api'
   }
   buildUserDB(conf)
     .then(() => {

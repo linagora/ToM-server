@@ -89,11 +89,14 @@ services:
       - MATRIX_DATABASE_ENGINE=sqlite
       - MATRIX_DATABASE_HOST=/opt/synapse/db/homeserver.db
 
+      - SMS_API_KEY=SOME_SECRET_KEY
+      - SMS_API_LOGIN=login@domain.com
+      - SMS_API_URL=https://api.octopush.com/v1/public
+
       - LOG_LEVEL=silly
       - LOG_TRANSPORTS=Console
 
   fed:
-    image: fed
     build:
       context: ../..
       dockerfile: ./packages/federated-identity-service/Dockerfile
@@ -130,6 +133,10 @@ services:
       ## For storing the federated identity raw users
       # - USERDB_ENGINE=sqlite                  ## Uncomment to enable local userDB
       # - USERDB_HOST=/opt/lemon/db/lemon.db    ## Uncomment to enable local userDB
+
+      - SMS_API_KEY=SOME_SECRET_KEY
+      - SMS_API_LOGIN=login@domain.com
+      - SMS_API_URL=https://api.octopush.com/v1/public
 
       - LOG_LEVEL=silly
       - LOG_TRANSPORTS=Console

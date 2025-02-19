@@ -40,6 +40,7 @@ export type Config = MConfig &
     sms_api_url?: string
     qr_code_url?: string
     invitation_redirect_url?: string
+    chat_url?: string
   }
 
 export interface AuthRequest extends Request {
