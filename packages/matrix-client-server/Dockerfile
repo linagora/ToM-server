@@ -9,9 +9,6 @@ COPY ./packages/config-parser ./packages/config-parser
 COPY ./packages/crypto ./packages/crypto
 COPY ./packages/logger ./packages/logger
 COPY ./packages/utils ./packages/utils
-# COPY ./packages/matrix-resolve ./packages/matrix-resolve
-# COPY ./packages/matrix-invite ./packages/matrix-invite
-# COPY ./packages/retry-promise ./packages/retry-promise
 
 COPY ./packages/matrix-client-server ./packages/matrix-client-server
 

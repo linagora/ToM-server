@@ -31,7 +31,7 @@ COPY --from=builder /usr/src/app /usr/src/app/
 
 WORKDIR /usr/src/app
 
-RUN ln -s packages/federated-identity-service/server.mjs .
+RUN ln -s packages/federated-identity-service/server.mjs ./server.mjs
 
 EXPOSE 3000
 CMD [ "node", "/usr/src/app/server.mjs" ]

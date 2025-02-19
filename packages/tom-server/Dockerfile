@@ -3,7 +3,7 @@ FROM node:18-alpine AS builder
 
 WORKDIR /usr/src/app
 
-COPY ./landing ./
+COPY ./landing ./landing
 
 COPY package*.json lerna.json tsconfig-build.json rollup-template.js ./
 
