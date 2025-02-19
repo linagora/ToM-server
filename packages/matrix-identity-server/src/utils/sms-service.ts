@@ -1,5 +1,5 @@
 import type { TwakeLogger } from '@twake/logger'
-import { Config, ISMSService } from '../types'
+import { Config, ISMSService, SendSmsPayload } from '../types'
 import { buildUrl } from '../utils'
 
 export class SmsService implements ISMSService {
@@ -29,19 +29,20 @@ export class SmsService implements ISMSService {
   /**
    * sends an sms to the given number
    *
-   * @param to - the number to send the sms to
-   * @param body - the body of the sms to send
+   * @param {string} to - the number to send the sms to
+   * @param {string} text - the body of the sms to send
    */
-  async send(to: string, body: string): Promise<void> {
+  async send(to: string, text: string): Promise<void> {
     try {
       const response = await fetch(this.API_ENDPOINT, {
         method: 'POST',
         headers: this.HEADERS,
         body: JSON.stringify({
-          to,
-          body,
-          from: this.sender
-        })
+          sender: 'Twake',
+          recipients: [{ phone_number: to }],
+          text,
+          type: 'sms_low_cost'
+        } satisfies SendSmsPayload)
       })
 
       const responseBody = await response.json()
