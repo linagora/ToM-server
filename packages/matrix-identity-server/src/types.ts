@@ -121,3 +121,14 @@ export interface invitationToken {
   address: string
   data: ThirPartyInvitePayload
 }
+
+export interface SendSmsPayload {
+  text: string
+  recipients: Recipient[]
+  type: 'sms_premium' | 'sms_low_cost'
+  sender: string
+}
+
+interface Recipient {
+  phone_number: string
+}
