@@ -1,73 +1,37 @@
-# Base for final image
-FROM debian:bookworm-slim as node-minimal
-
-RUN apt update && \
-    apt -y dist-upgrade && \
-    apt -y install nodejs && \
-    apt autoremove -y && \
-    apt clean && \
-    rm -rf /var/lib/apt/lists/*
-
 # Temporary image to build app
-FROM debian:bookworm-slim as builder
-
-RUN apt update && \
-    apt -y dist-upgrade && \
-    apt -y install nodejs npm && \
-    apt autoremove -y && \
-    apt clean && \
-    rm -rf /var/lib/apt/lists/*
+FROM node:18-alpine AS builder
 
 WORKDIR /usr/src/app
 
-# COPIES
-COPY package*.json ./
-RUN npm install
+COPY package*.json lerna.json tsconfig-build.json rollup-template.js ./
 
-COPY lerna.json tsconfig-build.json rollup-template.js ./packages/federated-identity-service/server.mjs ./
-
+COPY ./packages/config-parser ./packages/config-parser
 COPY ./packages/crypto ./packages/crypto
 COPY ./packages/logger ./packages/logger
-COPY ./packages/matrix-resolve ./packages/matrix-resolve
-COPY ./packages/matrix-identity-server ./packages/matrix-identity-server
-COPY ./packages/config-parser ./packages/config-parser
-COPY ./packages/federated-identity-service ./packages/federated-identity-service
 COPY ./packages/utils ./packages/utils
+COPY ./packages/matrix-resolve ./packages/matrix-resolve
 
-RUN npm install && npm run build && \
+COPY ./packages/matrix-identity-server ./packages/matrix-identity-server
+
+COPY ./packages/federated-identity-service ./packages/federated-identity-service
+
+RUN npm install && \
+    npm run build -- --skip-nx-cache && \
     rm -rf node_modules */*/node_modules && \
     npm install --production && \
     npm cache clean --force
 
-FROM node-minimal as federation-server
+FROM node:18-alpine AS federation-server
 
-ENV BASE_URL= \
-    CRON_SERVICE= \
-    CROWDSEC_URI= \
-    DATABASE_ENGINE= \
-    DATABASE_HOST= \
-    DATABASE_NAME= \
-    DATABASE_USER= \
-    DATABASE_PASSWORD= \
-    LDAP_BASE= \
-    LDAP_FILTER= \
-    LDAP_USER= \
-    LDAP_PASSWORD= \
-    LDAP_URI= \
-    MATRIX_DATABASE_ENGINE= \
-    MATRIX_DATABASE_HOST= \
-    MATRIX_DATABASE_NAME= \
-    MATRIX_DATABASE_PASSWORD= \
-    MATRIX_DATABASE_USER= \
-    NODE_EXTRA_CA_CERTS= \
-    SERVER_NAME= \
-    TEMPLATE_DIR= \
-    TRUST_X_FORWARDED_FOR= \
-    TRUSTED_SERVERS_ADDRESSES=
+ENV TEMPLATE_DIR=/usr/src/app/packages/federated-identity-service/templates \
+    LOG_LEVEL=error \
+    LOG_TRANSPORTS=Console
 
-COPY --from=1 /usr/src/app /usr/src/app/
+COPY --from=builder /usr/src/app /usr/src/app/
 
 WORKDIR /usr/src/app
+
+RUN ln -s packages/federated-identity-service/server.mjs ./server.mjs
 
 EXPOSE 3000
 CMD [ "node", "/usr/src/app/server.mjs" ]
