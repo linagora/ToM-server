@@ -1,0 +1,10 @@
+### Template for modifying an attribute of an entry ###
+#dn: uid=<USER_UID>,ou=users,dc=docker,dc=localhost
+#changetype: modify
+#replace: <ATTRIBUTE_NAME>
+#<ATTRIBUTE_NAME>: <NEW_ATTRIBUTE_VALUE>
+
+dn: uid=dwho,ou=users,dc=docker,dc=localhost
+changetype: modify
+replace: mobile
+mobile: 0671298766
