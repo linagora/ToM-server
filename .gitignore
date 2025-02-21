@@ -616,10 +616,9 @@ packages/matrix-identity-server/matrix-server/synapse-data
 ## compose related
 .compose/**/*.env
 .compose/synapse/media_store/
-
 .compose/haproxy/haproxy.cfg
-
 .compose/lemon/lmConf-1.json
+.compose/synapse/homeserver.yaml
 
 # ignore sqlite files
 **/*.db

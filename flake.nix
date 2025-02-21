@@ -28,6 +28,7 @@
             ## tools
             lazydocker
             sqlite    # For local db support
+            postgresql
 
             # Local SSL tooling
             mkcert    # Cert local toolchain

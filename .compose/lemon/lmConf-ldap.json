@@ -175,9 +175,13 @@
    "ldapAuthnLevel" : 2,
    "ldapBase" : "dc=docker,dc=localhost",
    "ldapExportedVars" : {
+      "uid" : "uid",
       "cn" : "cn",
+      "sn" : "sn",
+      "givenName" : "givenName",
+      "middleName": "middleName",
       "mail" : "mail",
-      "uid" : "uid"
+      "phone": "mobile"
    },
    "ldapGroupAttributeName" : "member",
    "ldapGroupAttributeNameGroup" : "dn",
@@ -277,12 +281,14 @@
    "oidcRPCallbackGetParam" : "openidconnectcallback",
    "oidcRPMetaDataExportedVars" : {
       "matrix" : {
-         "email" : "mail",
-         "family_name" : "name",
-         "given_name" : "name",
-         "name" : "name",
+         "name" : "cn",
+         "family_name" : "sn",
+         "given_name" : "givenName",
+         "middle_name": "middleName",
          "nickname" : "uid",
-         "preferred_username" : "uid"
+         "preferred_username" : "uid",
+         "email" : "mail",
+         "phone_number" : "phone"
       }
    },
    "oidcRPMetaDataMacros" : null,

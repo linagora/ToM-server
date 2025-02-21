@@ -96,17 +96,14 @@
    "dbiAuthUser" : "",
    "dbiAuthnLevel" : 2,
    "dbiExportedVars" : {
-      "uid": "uid",
-      "name": "name",
-      "mail": "mail"
+      "uid" : "uid",
+      "name" : "name",
+      "email" : "mail",
+      "phone" : "phone"
    },
    "decryptValueRule" : 0,
    "defaultNewKeySize" : 2048,
-   "demoExportedVars" : {
-      "cn" : "cn",
-      "mail" : "mail",
-      "uid" : "uid"
-   },
+   "demoExportedVars" : {},
    "displaySessionId" : 1,
    "domain" : "docker.localhost",
    "eventQueueName" : "llng_events",
@@ -174,11 +171,7 @@
    "krbRemoveDomain" : 1,
    "ldapAuthnLevel" : 2,
    "ldapBase" : "dc=docker,dc=localhost",
-   "ldapExportedVars" : {
-      "cn" : "cn",
-      "mail" : "mail",
-      "uid" : "uid"
-   },
+   "ldapExportedVars" : {},
    "ldapGroupAttributeName" : "member",
    "ldapGroupAttributeNameGroup" : "dn",
    "ldapGroupAttributeNameSearch" : "cn",
@@ -277,12 +270,11 @@
    "oidcRPCallbackGetParam" : "openidconnectcallback",
    "oidcRPMetaDataExportedVars" : {
       "matrix" : {
-         "email" : "mail",
-         "family_name" : "name",
-         "given_name" : "name",
          "name" : "name",
          "nickname" : "uid",
-         "preferred_username" : "uid"
+         "preferred_username" : "uid",
+         "email" : "mail",
+         "phone_number" : "phone"
       }
    },
    "oidcRPMetaDataMacros" : null,

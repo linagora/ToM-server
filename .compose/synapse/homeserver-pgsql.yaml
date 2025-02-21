@@ -136,7 +136,7 @@ oidc_providers:
     issuer: "https://auth.docker.localhost"
     client_id: "matrix1"
     client_secret: "matrix1"
-    scopes: ["openid", "profile", "email"]
+    scopes: ["openid", "profile", "email", "phone"]
 
     discover: true
 
