@@ -10,6 +10,7 @@ COPY ./packages/crypto ./packages/crypto
 COPY ./packages/logger ./packages/logger
 
 COPY ./packages/matrix-application-server ./packages/matrix-application-server
+# COPY ./packages/matrix-application-server/server.mjs ./server.mjs
 
 # Build and clean
 RUN npm install && \
@@ -29,8 +30,6 @@ FROM node:18-alpine AS tom-server
 COPY --from=builder /usr/src/app /usr/src/app/
 
 WORKDIR /usr/src/app
-
-RUN ln -s packages/matrix-application-server/server.mjs ./server.mjs
 
 EXPOSE 3000
 CMD [ "node", "/usr/src/app/server.mjs" ]

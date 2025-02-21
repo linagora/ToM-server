@@ -14,6 +14,7 @@ COPY ./packages/matrix-resolve ./packages/matrix-resolve
 COPY ./packages/matrix-identity-server ./packages/matrix-identity-server
 
 COPY ./packages/federated-identity-service ./packages/federated-identity-service
+COPY ./packages/federated-identity-service/server.mjs ./server.mjs
 
 RUN npm install && \
     npm run build -- --skip-nx-cache && \
@@ -30,8 +31,6 @@ ENV TEMPLATE_DIR=/usr/src/app/packages/federated-identity-service/templates \
 COPY --from=builder /usr/src/app /usr/src/app/
 
 WORKDIR /usr/src/app
-
-RUN ln -s packages/federated-identity-service/server.mjs ./server.mjs
 
 EXPOSE 3000
 CMD [ "node", "/usr/src/app/server.mjs" ]

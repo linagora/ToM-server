@@ -22,6 +22,7 @@ COPY ./packages/matrix-identity-server ./packages/matrix-identity-server
 COPY ./packages/federated-identity-service ./packages/federated-identity-service
 COPY ./packages/tom-server ./packages/tom-server
 
+# COPY ./packages/tom-server/server.mjs ./server.mjs
 COPY ./server.mjs ./server.mjs
 
 # Build and clean
@@ -41,8 +42,6 @@ ENV TEMPLATE_DIR=/usr/src/app/packages/tom-server/templates \
 COPY --from=builder /usr/src/app /usr/src/app/
 
 WORKDIR /usr/src/app
-
-# RUN ln -s packages/tom-server/server.mjs ./server.mjs
 
 EXPOSE 3000
 CMD [ "node", "/usr/src/app/server.mjs" ]

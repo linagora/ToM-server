@@ -11,6 +11,7 @@ COPY ./packages/logger ./packages/logger
 COPY ./packages/utils ./packages/utils
 
 COPY ./packages/matrix-client-server ./packages/matrix-client-server
+COPY ./packages/matrix-client-server/server.mjs ./server.mjs
 
 # Build and clean
 RUN npm install && \
@@ -28,8 +29,6 @@ ENV TEMPLATE_DIR=/usr/src/app/packages/matrix-client-server/templates \
 COPY --from=builder /usr/src/app /usr/src/app/
 
 WORKDIR /usr/src/app
-
-RUN ln -s packages/matrix-client-server/server.mjs ./server.mjs
 
 EXPOSE 3000
 CMD [ "node", "/usr/src/app/server.mjs" ]
