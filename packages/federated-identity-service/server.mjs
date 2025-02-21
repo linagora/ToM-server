@@ -18,7 +18,7 @@ const conf = {
   database_ssl: process.env.DATABASE_SSL
     ? JSON.parse(process.env.DATABASE_SSL)
     : false,
-  hashes_rate_limit: process.env.HASHES_RATE_LIMIT,
+  hashes_rate_limit: process.env.HASHES_RATE_LIMIT || 100,
   is_federated_identity_service: true,
   ldap_base: process.env.LDAP_BASE,
   ldap_filter: process.env.LDAP_FILTER,

@@ -21,7 +21,7 @@ const conf = {
   federated_identity_services: process.env.FEDERATED_IDENTITY_SERVICES
     ? process.env.FEDERATED_IDENTITY_SERVICES.split(/[,\s]+/)
     : [],
-  hashes_rate_limit: process.env.HASHES_RATE_LIMIT,
+  hashes_rate_limit: process.env.HASHES_RATE_LIMIT || 100,
   is_federated_identity_service: false,
   ldap_base: process.env.LDAP_BASE,
   ldap_filter: process.env.LDAP_FILTER,
