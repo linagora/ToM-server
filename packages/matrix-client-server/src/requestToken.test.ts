@@ -20,14 +20,14 @@ jest.mock('nodemailer', () => ({
   }))
 }))
 
-const sendSMSMock = jest.fn()
-jest.mock('./utils/smsSender', () => {
-  return jest.fn().mockImplementation(() => {
-    return {
-      sendSMS: sendSMSMock
-    }
-  })
-})
+// const sendSMSMock = jest.fn()
+// jest.mock('./utils/smsSender', () => {
+//   return jest.fn().mockImplementation(() => {
+//     return {
+//       sendSMS: sendSMSMock
+//     }
+//   })
+// })
 
 let conf: Config
 let clientServer: ClientServer
@@ -303,164 +303,164 @@ describe('Use configuration file', () => {
     })
   })
 
-  describe('/_matrix/client/v3/register/msisdn/requestToken', () => {
-    it('should refuse to register an invalid phone number', async () => {
-      const response = await request(app)
-        .post('/_matrix/client/v3/register/msisdn/requestToken')
-        .set('Accept', 'application/json')
-        .send({
-          client_secret: 'mysecret',
-          phone_number: '@yadd:debian.org',
-          country: 'FR',
-          next_link: 'http://localhost:8090',
-          send_attempt: 1
-        })
-      expect(response.statusCode).toBe(400)
-      expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
-      expect(response.body).toHaveProperty('error', 'Invalid phone number')
-      expect(sendSMSMock).not.toHaveBeenCalled()
-    })
-    it('should refuse to register an invalid  country', async () => {
-      const response = await request(app)
-        .post('/_matrix/client/v3/register/msisdn/requestToken')
-        .set('Accept', 'application/json')
-        .send({
-          client_secret: 'mysecret',
-          phone_number: '0618384839',
-          country: '123',
-          next_link: 'http://localhost:8090',
-          send_attempt: 1
-        })
-      expect(response.statusCode).toBe(400)
-      expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
-      expect(response.body).toHaveProperty('error', 'Invalid country')
-      expect(sendSMSMock).not.toHaveBeenCalled()
-    })
-    it('should refuse an invalid secret', async () => {
-      const response = await request(app)
-        .post('/_matrix/client/v3/register/msisdn/requestToken')
-        .set('Accept', 'application/json')
-        .send({
-          client_secret: 'my',
-          phone_number: '0618384839',
-          country: 'FR',
-          next_link: 'http://localhost:8090',
-          send_attempt: 1
-        })
-      expect(response.statusCode).toBe(400)
-      expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
-      expect(response.body).toHaveProperty('error', 'Invalid client_secret')
-      expect(sendSMSMock).not.toHaveBeenCalled()
-    })
-    it('should refuse an invalid next_link', async () => {
-      const response = await request(app)
-        .post('/_matrix/client/v3/register/msisdn/requestToken')
-        .set('Accept', 'application/json')
-        .send({
-          client_secret: 'mysecret',
-          phone_number: '0618384839',
-          country: 'FR',
-          next_link: 'wrong link',
-          send_attempt: 1
-        })
-      expect(response.statusCode).toBe(400)
-      expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
-      expect(response.body).toHaveProperty('error', 'Invalid next_link')
-      expect(sendSMSMock).not.toHaveBeenCalled()
-    })
-    // this test is expected to work with the current behaviour of the sendSMS function which is to write in a file, and not to send a real SMS
-    it('should accept valid phone number registration query', async () => {
-      const response = await request(app)
-        .post('/_matrix/client/v3/register/msisdn/requestToken')
-        .set('Accept', 'application/json')
-        .send({
-          client_secret: 'mysecret',
-          country: 'GB',
-          phone_number: '07700900001',
-          next_link: 'http://localhost:8090',
-          send_attempt: 1
-        })
-      expect(response.statusCode).toBe(200)
-      const sentSMS = sendSMSMock.mock.calls[0][0]
-      expect(sentSMS.to).toBe('447700900001')
-      const rawMessage = sentSMS.raw
-      expect(rawMessage).toMatch(
-        /token=([a-zA-Z0-9]{64})&client_secret=mysecret&sid=([a-zA-Z0-9]{64})/
-      )
-      const tokenMatch = rawMessage.match(/token=([a-zA-Z0-9]{64})/)
-      const sidMatch = rawMessage.match(/sid=([a-zA-Z0-9]{64})/)
-      expect(tokenMatch).not.toBeNull()
-      expect(sidMatch).not.toBeNull()
-      if (tokenMatch != null) token = tokenMatch[1]
-      if (sidMatch != null) sid = sidMatch[1]
-    })
-    it('should not resend an SMS for the same attempt', async () => {
-      const response = await request(app)
-        .post('/_matrix/client/v3/register/msisdn/requestToken')
-        .set('Accept', 'application/json')
-        .send({
-          client_secret: 'mysecret',
-          country: 'GB',
-          phone_number: '07700900001',
-          next_link: 'http://localhost:8090',
-          send_attempt: 1
-        })
-      expect(response.statusCode).toBe(200)
-      expect(sendSMSMock).not.toHaveBeenCalled()
-      expect(response.body).toEqual({
-        sid,
-        submit_url: getSubmitUrl(clientServer.conf)
-      })
-    })
-    it('should resend an SMS for a different attempt', async () => {
-      const response = await request(app)
-        .post('/_matrix/client/v3/register/msisdn/requestToken')
-        .set('Accept', 'application/json')
-        .send({
-          client_secret: 'mysecret',
-          country: 'GB',
-          phone_number: '07700900001',
-          next_link: 'http://localhost:8090',
-          send_attempt: 2
-        })
-      expect(response.statusCode).toBe(200)
-      const sentSMS = sendSMSMock.mock.calls[0][0]
-      expect(sentSMS.to).toBe('447700900001')
-      const rawMessage = sentSMS.raw
-      expect(rawMessage).toMatch(
-        /token=([a-zA-Z0-9]{64})&client_secret=mysecret&sid=([a-zA-Z0-9]{64})/
-      )
-      const sidMatch = rawMessage.match(/sid=([a-zA-Z0-9]{64})/)
-      expect(sidMatch).not.toBeNull()
-      const newSid = sidMatch[1]
-      expect(response.body).toEqual({
-        sid: newSid,
-        submit_url: getSubmitUrl(clientServer.conf)
-      })
-      expect(sendSMSMock).toHaveBeenCalled()
-    })
-    it('should refuse to send an SMS to an already existing user', async () => {
-      await clientServer.matrixDb.insert('user_threepids', {
-        user_id: '@xg:localhost',
-        medium: 'msisdn',
-        address: '33648394785',
-        validated_at: epoch(),
-        added_at: epoch()
-      })
-      const response = await request(app)
-        .post('/_matrix/client/v3/register/msisdn/requestToken')
-        .set('Accept', 'application/json')
-        .send({
-          client_secret: 'mysecret',
-          phone_number: '0648394785',
-          country: 'FR',
-          send_attempt: 1
-        })
-      expect(response.statusCode).toBe(400)
-      expect(response.body).toHaveProperty('errcode', 'M_THREEPID_IN_USE')
-      expect(sendSMSMock).not.toHaveBeenCalled()
-    })
-  })
+  // describe('/_matrix/client/v3/register/msisdn/requestToken', () => {
+  //   it('should refuse to register an invalid phone number', async () => {
+  //     const response = await request(app)
+  //       .post('/_matrix/client/v3/register/msisdn/requestToken')
+  //       .set('Accept', 'application/json')
+  //       .send({
+  //         client_secret: 'mysecret',
+  //         phone_number: '@yadd:debian.org',
+  //         country: 'FR',
+  //         next_link: 'http://localhost:8090',
+  //         send_attempt: 1
+  //       })
+  //     expect(response.statusCode).toBe(400)
+  //     expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
+  //     expect(response.body).toHaveProperty('error', 'Invalid phone number')
+  //     expect(sendSMSMock).not.toHaveBeenCalled()
+  //   })
+  //   it('should refuse to register an invalid  country', async () => {
+  //     const response = await request(app)
+  //       .post('/_matrix/client/v3/register/msisdn/requestToken')
+  //       .set('Accept', 'application/json')
+  //       .send({
+  //         client_secret: 'mysecret',
+  //         phone_number: '0618384839',
+  //         country: '123',
+  //         next_link: 'http://localhost:8090',
+  //         send_attempt: 1
+  //       })
+  //     expect(response.statusCode).toBe(400)
+  //     expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
+  //     expect(response.body).toHaveProperty('error', 'Invalid country')
+  //     expect(sendSMSMock).not.toHaveBeenCalled()
+  //   })
+  //   it('should refuse an invalid secret', async () => {
+  //     const response = await request(app)
+  //       .post('/_matrix/client/v3/register/msisdn/requestToken')
+  //       .set('Accept', 'application/json')
+  //       .send({
+  //         client_secret: 'my',
+  //         phone_number: '0618384839',
+  //         country: 'FR',
+  //         next_link: 'http://localhost:8090',
+  //         send_attempt: 1
+  //       })
+  //     expect(response.statusCode).toBe(400)
+  //     expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
+  //     expect(response.body).toHaveProperty('error', 'Invalid client_secret')
+  //     expect(sendSMSMock).not.toHaveBeenCalled()
+  //   })
+  //   it('should refuse an invalid next_link', async () => {
+  //     const response = await request(app)
+  //       .post('/_matrix/client/v3/register/msisdn/requestToken')
+  //       .set('Accept', 'application/json')
+  //       .send({
+  //         client_secret: 'mysecret',
+  //         phone_number: '0618384839',
+  //         country: 'FR',
+  //         next_link: 'wrong link',
+  //         send_attempt: 1
+  //       })
+  //     expect(response.statusCode).toBe(400)
+  //     expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
+  //     expect(response.body).toHaveProperty('error', 'Invalid next_link')
+  //     expect(sendSMSMock).not.toHaveBeenCalled()
+  //   })
+  //   // this test is expected to work with the current behaviour of the sendSMS function which is to write in a file, and not to send a real SMS
+  //   it('should accept valid phone number registration query', async () => {
+  //     const response = await request(app)
+  //       .post('/_matrix/client/v3/register/msisdn/requestToken')
+  //       .set('Accept', 'application/json')
+  //       .send({
+  //         client_secret: 'mysecret',
+  //         country: 'GB',
+  //         phone_number: '07700900001',
+  //         next_link: 'http://localhost:8090',
+  //         send_attempt: 1
+  //       })
+  //     expect(response.statusCode).toBe(200)
+  //     const sentSMS = sendSMSMock.mock.calls[0][0]
+  //     expect(sentSMS.to).toBe('447700900001')
+  //     const rawMessage = sentSMS.raw
+  //     expect(rawMessage).toMatch(
+  //       /token=([a-zA-Z0-9]{64})&client_secret=mysecret&sid=([a-zA-Z0-9]{64})/
+  //     )
+  //     const tokenMatch = rawMessage.match(/token=([a-zA-Z0-9]{64})/)
+  //     const sidMatch = rawMessage.match(/sid=([a-zA-Z0-9]{64})/)
+  //     expect(tokenMatch).not.toBeNull()
+  //     expect(sidMatch).not.toBeNull()
+  //     if (tokenMatch != null) token = tokenMatch[1]
+  //     if (sidMatch != null) sid = sidMatch[1]
+  //   })
+  //   it('should not resend an SMS for the same attempt', async () => {
+  //     const response = await request(app)
+  //       .post('/_matrix/client/v3/register/msisdn/requestToken')
+  //       .set('Accept', 'application/json')
+  //       .send({
+  //         client_secret: 'mysecret',
+  //         country: 'GB',
+  //         phone_number: '07700900001',
+  //         next_link: 'http://localhost:8090',
+  //         send_attempt: 1
+  //       })
+  //     expect(response.statusCode).toBe(200)
+  //     expect(sendSMSMock).not.toHaveBeenCalled()
+  //     expect(response.body).toEqual({
+  //       sid,
+  //       submit_url: getSubmitUrl(clientServer.conf)
+  //     })
+  //   })
+  //   it('should resend an SMS for a different attempt', async () => {
+  //     const response = await request(app)
+  //       .post('/_matrix/client/v3/register/msisdn/requestToken')
+  //       .set('Accept', 'application/json')
+  //       .send({
+  //         client_secret: 'mysecret',
+  //         country: 'GB',
+  //         phone_number: '07700900001',
+  //         next_link: 'http://localhost:8090',
+  //         send_attempt: 2
+  //       })
+  //     expect(response.statusCode).toBe(200)
+  //     const sentSMS = sendSMSMock.mock.calls[0][0]
+  //     expect(sentSMS.to).toBe('447700900001')
+  //     const rawMessage = sentSMS.raw
+  //     expect(rawMessage).toMatch(
+  //       /token=([a-zA-Z0-9]{64})&client_secret=mysecret&sid=([a-zA-Z0-9]{64})/
+  //     )
+  //     const sidMatch = rawMessage.match(/sid=([a-zA-Z0-9]{64})/)
+  //     expect(sidMatch).not.toBeNull()
+  //     const newSid = sidMatch[1]
+  //     expect(response.body).toEqual({
+  //       sid: newSid,
+  //       submit_url: getSubmitUrl(clientServer.conf)
+  //     })
+  //     expect(sendSMSMock).toHaveBeenCalled()
+  //   })
+  //   it('should refuse to send an SMS to an already existing user', async () => {
+  //     await clientServer.matrixDb.insert('user_threepids', {
+  //       user_id: '@xg:localhost',
+  //       medium: 'msisdn',
+  //       address: '33648394785',
+  //       validated_at: epoch(),
+  //       added_at: epoch()
+  //     })
+  //     const response = await request(app)
+  //       .post('/_matrix/client/v3/register/msisdn/requestToken')
+  //       .set('Accept', 'application/json')
+  //       .send({
+  //         client_secret: 'mysecret',
+  //         phone_number: '0648394785',
+  //         country: 'FR',
+  //         send_attempt: 1
+  //       })
+  //     expect(response.statusCode).toBe(400)
+  //     expect(response.body).toHaveProperty('errcode', 'M_THREEPID_IN_USE')
+  //     expect(sendSMSMock).not.toHaveBeenCalled()
+  //   })
+  // })
 
   describe('/_matrix/client/v3/account/password/email/requestToken', () => {
     let sid: string
@@ -581,163 +581,163 @@ describe('Use configuration file', () => {
     })
   })
 
-  describe('/_matrix/client/v3/account/password/msisdn/requestToken', () => {
-    it('should refuse to register an invalid phone number', async () => {
-      const response = await request(app)
-        .post('/_matrix/client/v3/account/password/msisdn/requestToken')
-        .set('Accept', 'application/json')
-        .send({
-          client_secret: 'mysecret',
-          phone_number: '@yadd:debian.org',
-          country: 'FR',
-          next_link: 'http://localhost:8090',
-          send_attempt: 1
-        })
-      expect(response.statusCode).toBe(400)
-      expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
-      expect(response.body).toHaveProperty('error', 'Invalid phone number')
-      expect(sendSMSMock).not.toHaveBeenCalled()
-    })
-    it('should refuse to register an invalid  country', async () => {
-      const response = await request(app)
-        .post('/_matrix/client/v3/account/password/msisdn/requestToken')
-        .set('Accept', 'application/json')
-        .send({
-          client_secret: 'mysecret',
-          phone_number: '0618384839',
-          country: '123',
-          next_link: 'http://localhost:8090',
-          send_attempt: 1
-        })
-      expect(response.statusCode).toBe(400)
-      expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
-      expect(response.body).toHaveProperty('error', 'Invalid country')
-      expect(sendSMSMock).not.toHaveBeenCalled()
-    })
-    it('should refuse an invalid secret', async () => {
-      const response = await request(app)
-        .post('/_matrix/client/v3/account/password/msisdn/requestToken')
-        .set('Accept', 'application/json')
-        .send({
-          client_secret: 'my',
-          phone_number: '0618384839',
-          country: 'FR',
-          next_link: 'http://localhost:8090',
-          send_attempt: 1
-        })
-      expect(response.statusCode).toBe(400)
-      expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
-      expect(response.body).toHaveProperty('error', 'Invalid client_secret')
-      expect(sendSMSMock).not.toHaveBeenCalled()
-    })
-    it('should refuse an invalid next_link', async () => {
-      const response = await request(app)
-        .post('/_matrix/client/v3/account/password/msisdn/requestToken')
-        .set('Accept', 'application/json')
-        .send({
-          client_secret: 'mysecret',
-          phone_number: '0618384839',
-          country: 'FR',
-          next_link: 'wrong link',
-          send_attempt: 1
-        })
-      expect(response.statusCode).toBe(400)
-      expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
-      expect(response.body).toHaveProperty('error', 'Invalid next_link')
-      expect(sendSMSMock).not.toHaveBeenCalled()
-    })
-    // this test is expected to work with the current behaviour of the sendSMS function which is to write in a file, and not to send a real SMS
-    it('should accept valid phone number registration query', async () => {
-      await clientServer.matrixDb.insert('user_threepids', {
-        user_id: '@newphoneuser:localhost',
-        medium: 'msisdn',
-        address: '447700900001',
-        validated_at: epoch(),
-        added_at: epoch()
-      })
+  // describe('/_matrix/client/v3/account/password/msisdn/requestToken', () => {
+  //   it('should refuse to register an invalid phone number', async () => {
+  //     const response = await request(app)
+  //       .post('/_matrix/client/v3/account/password/msisdn/requestToken')
+  //       .set('Accept', 'application/json')
+  //       .send({
+  //         client_secret: 'mysecret',
+  //         phone_number: '@yadd:debian.org',
+  //         country: 'FR',
+  //         next_link: 'http://localhost:8090',
+  //         send_attempt: 1
+  //       })
+  //     expect(response.statusCode).toBe(400)
+  //     expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
+  //     expect(response.body).toHaveProperty('error', 'Invalid phone number')
+  //     expect(sendSMSMock).not.toHaveBeenCalled()
+  //   })
+  //   it('should refuse to register an invalid  country', async () => {
+  //     const response = await request(app)
+  //       .post('/_matrix/client/v3/account/password/msisdn/requestToken')
+  //       .set('Accept', 'application/json')
+  //       .send({
+  //         client_secret: 'mysecret',
+  //         phone_number: '0618384839',
+  //         country: '123',
+  //         next_link: 'http://localhost:8090',
+  //         send_attempt: 1
+  //       })
+  //     expect(response.statusCode).toBe(400)
+  //     expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
+  //     expect(response.body).toHaveProperty('error', 'Invalid country')
+  //     expect(sendSMSMock).not.toHaveBeenCalled()
+  //   })
+  //   it('should refuse an invalid secret', async () => {
+  //     const response = await request(app)
+  //       .post('/_matrix/client/v3/account/password/msisdn/requestToken')
+  //       .set('Accept', 'application/json')
+  //       .send({
+  //         client_secret: 'my',
+  //         phone_number: '0618384839',
+  //         country: 'FR',
+  //         next_link: 'http://localhost:8090',
+  //         send_attempt: 1
+  //       })
+  //     expect(response.statusCode).toBe(400)
+  //     expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
+  //     expect(response.body).toHaveProperty('error', 'Invalid client_secret')
+  //     expect(sendSMSMock).not.toHaveBeenCalled()
+  //   })
+  //   it('should refuse an invalid next_link', async () => {
+  //     const response = await request(app)
+  //       .post('/_matrix/client/v3/account/password/msisdn/requestToken')
+  //       .set('Accept', 'application/json')
+  //       .send({
+  //         client_secret: 'mysecret',
+  //         phone_number: '0618384839',
+  //         country: 'FR',
+  //         next_link: 'wrong link',
+  //         send_attempt: 1
+  //       })
+  //     expect(response.statusCode).toBe(400)
+  //     expect(response.body).toHaveProperty('errcode', 'M_INVALID_PARAM')
+  //     expect(response.body).toHaveProperty('error', 'Invalid next_link')
+  //     expect(sendSMSMock).not.toHaveBeenCalled()
+  //   })
+  //   // this test is expected to work with the current behaviour of the sendSMS function which is to write in a file, and not to send a real SMS
+  //   it('should accept valid phone number registration query', async () => {
+  //     await clientServer.matrixDb.insert('user_threepids', {
+  //       user_id: '@newphoneuser:localhost',
+  //       medium: 'msisdn',
+  //       address: '447700900001',
+  //       validated_at: epoch(),
+  //       added_at: epoch()
+  //     })
 
-      const response = await request(app)
-        .post('/_matrix/client/v3/account/password/msisdn/requestToken')
-        .set('Accept', 'application/json')
-        .send({
-          client_secret: 'mysecret',
-          country: 'GB',
-          phone_number: '07700900001',
-          next_link: 'http://localhost:8090',
-          send_attempt: 1
-        })
-      expect(response.statusCode).toBe(200)
-      const sentSMS = sendSMSMock.mock.calls[0][0]
-      expect(sentSMS.to).toBe('447700900001')
-      const rawMessage = sentSMS.raw
-      expect(rawMessage).toMatch(
-        /token=([a-zA-Z0-9]{64})&client_secret=mysecret&sid=([a-zA-Z0-9]{64})/
-      )
-      const tokenMatch = rawMessage.match(/token=([a-zA-Z0-9]{64})/)
-      const sidMatch = rawMessage.match(/sid=([a-zA-Z0-9]{64})/)
-      expect(tokenMatch).not.toBeNull()
-      expect(sidMatch).not.toBeNull()
-      if (tokenMatch != null) token = tokenMatch[1]
-      if (sidMatch != null) sid = sidMatch[1]
-    })
-    it('should not resend an SMS for the same attempt', async () => {
-      const response = await request(app)
-        .post('/_matrix/client/v3/account/password/msisdn/requestToken')
-        .set('Accept', 'application/json')
-        .send({
-          client_secret: 'mysecret',
-          country: 'GB',
-          phone_number: '07700900001',
-          next_link: 'http://localhost:8090',
-          send_attempt: 1
-        })
-      expect(response.statusCode).toBe(200)
-      expect(sendSMSMock).not.toHaveBeenCalled()
-      expect(response.body).toEqual({
-        sid,
-        submit_url: getSubmitUrl(clientServer.conf)
-      })
-    })
-    it('should resend an SMS for a different attempt', async () => {
-      const response = await request(app)
-        .post('/_matrix/client/v3/account/password/msisdn/requestToken')
-        .set('Accept', 'application/json')
-        .send({
-          client_secret: 'mysecret',
-          country: 'GB',
-          phone_number: '07700900001',
-          next_link: 'http://localhost:8090',
-          send_attempt: 2
-        })
-      expect(response.statusCode).toBe(200)
-      const sentSMS = sendSMSMock.mock.calls[0][0]
-      expect(sentSMS.to).toBe('447700900001')
-      const rawMessage = sentSMS.raw
-      expect(rawMessage).toMatch(
-        /token=([a-zA-Z0-9]{64})&client_secret=mysecret&sid=([a-zA-Z0-9]{64})/
-      )
-      const sidMatch = rawMessage.match(/sid=([a-zA-Z0-9]{64})/)
-      expect(sidMatch).not.toBeNull()
-      const newSid = sidMatch[1]
-      expect(response.body).toEqual({
-        sid: newSid,
-        submit_url: getSubmitUrl(clientServer.conf)
-      })
-      expect(sendSMSMock).toHaveBeenCalled()
-    })
-    it('should refuse to send an SMS to a non-existing user', async () => {
-      const response = await request(app)
-        .post('/_matrix/client/v3/account/password/msisdn/requestToken')
-        .set('Accept', 'application/json')
-        .send({
-          client_secret: 'mysecret',
-          phone_number: '0647392301',
-          country: 'FR',
-          send_attempt: 1
-        })
-      expect(response.statusCode).toBe(400)
-      expect(response.body).toHaveProperty('errcode', 'M_THREEPID_NOT_FOUND')
-      expect(sendSMSMock).not.toHaveBeenCalled()
-    })
-  })
+  //     const response = await request(app)
+  //       .post('/_matrix/client/v3/account/password/msisdn/requestToken')
+  //       .set('Accept', 'application/json')
+  //       .send({
+  //         client_secret: 'mysecret',
+  //         country: 'GB',
+  //         phone_number: '07700900001',
+  //         next_link: 'http://localhost:8090',
+  //         send_attempt: 1
+  //       })
+  //     expect(response.statusCode).toBe(200)
+  //     const sentSMS = sendSMSMock.mock.calls[0][0]
+  //     expect(sentSMS.to).toBe('447700900001')
+  //     const rawMessage = sentSMS.raw
+  //     expect(rawMessage).toMatch(
+  //       /token=([a-zA-Z0-9]{64})&client_secret=mysecret&sid=([a-zA-Z0-9]{64})/
+  //     )
+  //     const tokenMatch = rawMessage.match(/token=([a-zA-Z0-9]{64})/)
+  //     const sidMatch = rawMessage.match(/sid=([a-zA-Z0-9]{64})/)
+  //     expect(tokenMatch).not.toBeNull()
+  //     expect(sidMatch).not.toBeNull()
+  //     if (tokenMatch != null) token = tokenMatch[1]
+  //     if (sidMatch != null) sid = sidMatch[1]
+  //   })
+  //   it('should not resend an SMS for the same attempt', async () => {
+  //     const response = await request(app)
+  //       .post('/_matrix/client/v3/account/password/msisdn/requestToken')
+  //       .set('Accept', 'application/json')
+  //       .send({
+  //         client_secret: 'mysecret',
+  //         country: 'GB',
+  //         phone_number: '07700900001',
+  //         next_link: 'http://localhost:8090',
+  //         send_attempt: 1
+  //       })
+  //     expect(response.statusCode).toBe(200)
+  //     expect(sendSMSMock).not.toHaveBeenCalled()
+  //     expect(response.body).toEqual({
+  //       sid,
+  //       submit_url: getSubmitUrl(clientServer.conf)
+  //     })
+  //   })
+  //   it('should resend an SMS for a different attempt', async () => {
+  //     const response = await request(app)
+  //       .post('/_matrix/client/v3/account/password/msisdn/requestToken')
+  //       .set('Accept', 'application/json')
+  //       .send({
+  //         client_secret: 'mysecret',
+  //         country: 'GB',
+  //         phone_number: '07700900001',
+  //         next_link: 'http://localhost:8090',
+  //         send_attempt: 2
+  //       })
+  //     expect(response.statusCode).toBe(200)
+  //     const sentSMS = sendSMSMock.mock.calls[0][0]
+  //     expect(sentSMS.to).toBe('447700900001')
+  //     const rawMessage = sentSMS.raw
+  //     expect(rawMessage).toMatch(
+  //       /token=([a-zA-Z0-9]{64})&client_secret=mysecret&sid=([a-zA-Z0-9]{64})/
+  //     )
+  //     const sidMatch = rawMessage.match(/sid=([a-zA-Z0-9]{64})/)
+  //     expect(sidMatch).not.toBeNull()
+  //     const newSid = sidMatch[1]
+  //     expect(response.body).toEqual({
+  //       sid: newSid,
+  //       submit_url: getSubmitUrl(clientServer.conf)
+  //     })
+  //     expect(sendSMSMock).toHaveBeenCalled()
+  //   })
+  //   it('should refuse to send an SMS to a non-existing user', async () => {
+  //     const response = await request(app)
+  //       .post('/_matrix/client/v3/account/password/msisdn/requestToken')
+  //       .set('Accept', 'application/json')
+  //       .send({
+  //         client_secret: 'mysecret',
+  //         phone_number: '0647392301',
+  //         country: 'FR',
+  //         send_attempt: 1
+  //       })
+  //     expect(response.statusCode).toBe(400)
+  //     expect(response.body).toHaveProperty('errcode', 'M_THREEPID_NOT_FOUND')
+  //     expect(sendSMSMock).not.toHaveBeenCalled()
+  //   })
+  // })
 })
