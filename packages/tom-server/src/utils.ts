@@ -9,7 +9,7 @@ export const tables = {
   rooms: 'id varchar(64) PRIMARY KEY, filter varchar(64)',
   invitations:
     'id varchar(64) PRIMARY KEY, sender varchar(64), recepient varchar(64), medium varchar(64), expiration varchar(64), accessed int, room_id varchar(64)',
-  addressbooks: 'id varchar(64) PRIMARU KEY, owner varchar(64)',
+  addressbooks: 'id varchar(64) PRIMARY KEY, owner varchar(64)',
   contacts:
     'id varchar(64) PRIMARY KEY, addressbook_id varchar(64), mxid: varchar(64), display_name: string, active int'
 }
