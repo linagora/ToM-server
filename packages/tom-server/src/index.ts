@@ -24,6 +24,7 @@ import ActiveContacts from './active-contacts-api'
 import QRCode from './qrcode-api'
 import MetricsRouter from './metrics-api'
 import Invitation from './invitation-api'
+import AddressBook from './addressbook-api'
 
 export default class TwakeServer {
   conf: Config
@@ -162,6 +163,13 @@ export default class TwakeServer {
       this.logger
     )
 
+    const addressbookApi = AddressBook(
+      this.conf,
+      this.idServer.db,
+      this.idServer.authenticate,
+      this.logger
+    )
+
     this.endpoints.use(privateNoteApi)
     this.endpoints.use(mutualRoolsApi)
     this.endpoints.use(vaultServer.endpoints)
@@ -172,6 +180,7 @@ export default class TwakeServer {
     this.endpoints.use(qrCodeApi)
     this.endpoints.use(metricsApi)
     this.endpoints.use(invitationApi)
+    this.endpoints.use(addressbookApi)
 
     if (
       this.conf.opensearch_is_activated != null &&
