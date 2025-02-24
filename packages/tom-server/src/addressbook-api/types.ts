@@ -42,14 +42,6 @@ export interface IAddressbookService {
   list(owner: string): Promise<AddressbookListResponse>
 
   /**
-   * Create a new addressbook with initial contact list
-   */
-  create(
-    owner: string,
-    contacts?: ContactCreationPayload[]
-  ): Promise<AddressbookListResponse | undefined>
-
-  /**
    * Deletes an addressbook
    */
   delete(owner: string): Promise<void>
@@ -57,10 +49,10 @@ export interface IAddressbookService {
   /**
    * Add a new contact to an existing addressbook
    */
-  addContact(
-    addressbookId: string,
-    contact: ContactCreationPayload
-  ): Promise<Contact | undefined>
+  addContacts(
+    owner: string,
+    contacts?: ContactCreationPayload[]
+  ): Promise<AddressbookListResponse | undefined>
 
   /**
    * Update an existing contact
@@ -74,6 +66,11 @@ export interface IAddressbookService {
    * Deletes a contact from an addressbook
    */
   deleteContact(contactId: string): Promise<void>
+
+  /**
+   * Fetch a contact from an addressbook
+   */
+  getContact(contactId: string): Promise<Contact | undefined>
 }
 
 export type ApiRequestHandler = (
@@ -83,10 +80,16 @@ export type ApiRequestHandler = (
 ) => void
 
 export interface IAddressbookApiController {
-  listAddressbooks: ApiRequestHandler
-  createAddressbook: ApiRequestHandler
+  listAddressbook: ApiRequestHandler
   deleteAddressbook: ApiRequestHandler
-  addContact: ApiRequestHandler
+  addContacts: ApiRequestHandler
   updateContact: ApiRequestHandler
   deleteContact: ApiRequestHandler
+  fetchContact: ApiRequestHandler
+}
+
+export interface IAddressbookApiMiddleware {
+  validateContactsCreation: ApiRequestHandler
+  validateContactUpdate: ApiRequestHandler
+  checkContactOwnership: ApiRequestHandler
 }
