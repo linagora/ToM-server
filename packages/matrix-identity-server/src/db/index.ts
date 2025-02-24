@@ -57,7 +57,7 @@ const tables: Record<Collections, string> = {
     'id varchar(64) PRIMARY KEY, sender varchar(64), recepient varchar(64), medium varchar(64), expiration varchar(64), accessed int, room_id varchar(64)',
   addressbooks: 'id varchar(64) PRIMARY KEY, owner varchar(64)',
   contacts:
-    'id varchar(64) PRIMARY KEY, addressbook_id varchar(64), mxid: varchar(64), display_name: string, active int'
+    'id varchar(64) PRIMARY KEY, addressbook_id varchar(64), mxid varchar(64), display_name varchar(64), active int'
 }
 
 const indexes: Partial<Record<Collections, string[]>> = {
