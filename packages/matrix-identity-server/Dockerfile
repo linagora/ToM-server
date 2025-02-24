@@ -1,5 +1,5 @@
 # Temporary image to build app
-FROM node:18-alpine AS builder
+FROM node:bookworm-slim AS builder
 
 WORKDIR /usr/src/app
 
@@ -23,7 +23,8 @@ RUN npm install && \
     npm install --production && \
     npm cache clean --force
 
-FROM node:18-alpine AS tom-server
+# Final image
+FROM node:bookworm-slim AS tom-server
 
 ENV TEMPLATE_DIR=/usr/src/app/packages/matrix-identity-server/templates \
     LOG_LEVEL=error \

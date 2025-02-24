@@ -1,5 +1,5 @@
 # Temporary image to build app
-FROM node:18-alpine AS builder
+FROM node:bookworm-slim AS builder
 
 WORKDIR /usr/src/app
 
@@ -33,7 +33,7 @@ RUN npm install && \
     npm cache clean --force
 
 # Final image
-FROM node:18-alpine AS tom-server
+FROM node:bookworm-slim AS tom-server
 
 ENV TEMPLATE_DIR=/usr/src/app/packages/tom-server/templates \
     LOG_LEVEL=error \
