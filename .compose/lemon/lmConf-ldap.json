@@ -26,7 +26,7 @@
       }
    },
    "authChoiceParam" : "lmAuth",
-   "authentication" : "DBI",
+   "authentication" : "LDAP",
    "available2F" : "UTOTP,TOTP,U2F,REST,Mail2F,Ext2F,WebAuthn,Yubikey,Radius,Password",
    "available2FSelfRegistration" : "Password,TOTP,U2F,WebAuthn,Yubikey",
    "bruteForceProtectionLockTimes" : "15, 30, 60, 300, 600",
@@ -173,11 +173,15 @@
    "krbAuthnLevel" : 3,
    "krbRemoveDomain" : 1,
    "ldapAuthnLevel" : 2,
-   "ldapBase" : "dc=example,dc=com",
+   "ldapBase" : "dc=docker,dc=localhost",
    "ldapExportedVars" : {
+      "uid" : "uid",
       "cn" : "cn",
+      "sn" : "sn",
+      "givenName" : "givenName",
+      "middleName": "middleName",
       "mail" : "mail",
-      "uid" : "uid"
+      "phone": "mobile"
    },
    "ldapGroupAttributeName" : "member",
    "ldapGroupAttributeNameGroup" : "dn",
@@ -189,7 +193,7 @@
    "ldapPasswordResetAttributeValue" : "TRUE",
    "ldapPwdEnc" : "utf-8",
    "ldapSearchDeref" : "find",
-   "ldapServer" : "ldap://localhost",
+   "ldapServer" : "ldap",
    "ldapTimeout" : 10,
    "ldapUsePasswordResetAttribute" : 1,
    "ldapVerify" : "require",
@@ -277,12 +281,14 @@
    "oidcRPCallbackGetParam" : "openidconnectcallback",
    "oidcRPMetaDataExportedVars" : {
       "matrix" : {
-         "email" : "mail",
-         "family_name" : "name",
-         "given_name" : "name",
-         "name" : "name",
+         "name" : "cn",
+         "family_name" : "sn",
+         "given_name" : "givenName",
+         "middle_name": "middleName",
          "nickname" : "uid",
-         "preferred_username" : "uid"
+         "preferred_username" : "uid",
+         "email" : "mail",
+         "phone_number" : "phone"
       }
    },
    "oidcRPMetaDataMacros" : null,
