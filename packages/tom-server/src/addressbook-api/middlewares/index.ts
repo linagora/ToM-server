@@ -9,7 +9,9 @@ import type {
 } from '../types'
 import type { NextFunction, Response } from 'express'
 
-export class AddressBookApiMiddleware implements IAddressbookApiMiddleware {
+export default class AddressBookApiMiddleware
+  implements IAddressbookApiMiddleware
+{
   constructor(
     private readonly db: TwakeDB,
     private readonly logger: TwakeLogger
@@ -77,6 +79,10 @@ export class AddressBookApiMiddleware implements IAddressbookApiMiddleware {
   ): Promise<void> => {
     try {
       const payload = req.body as ContactUpdatePayload
+
+      if (!payload) {
+        throw new Error('Missing body')
+      }
 
       if (!payload.display_name) {
         res.status(400).json({ message: 'Missing display_name' })
