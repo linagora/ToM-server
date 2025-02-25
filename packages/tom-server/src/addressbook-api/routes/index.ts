@@ -6,8 +6,8 @@ import {
 import type { AuthenticationFunction, Config, TwakeDB } from '../../types'
 import { Router } from 'express'
 import authMiddleware from '../../utils/middlewares/auth.middleware'
-import { AddressbookApiController } from '../controllers'
-import { AddressBookApiMiddleware } from '../middlewares'
+import AddressbookApiController from '../controllers'
+import AddressBookApiMiddleware from '../middlewares'
 
 export const PATH = '/_twake/addressbook'
 
