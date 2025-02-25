@@ -76,6 +76,8 @@ export class AddressbookService implements IAddressbookService {
       await this.db.deleteEqual('addressbooks', 'id', id)
     } catch (error) {
       this.logger.error('Failed to delete addressbook', { error })
+
+      throw error
     }
   }
 
@@ -197,6 +199,8 @@ export class AddressbookService implements IAddressbookService {
       await this.db.deleteEqual('contacts', 'id', contactId)
     } catch (error) {
       this.logger.error('Failed to delete contact', { error })
+
+      throw error
     }
   }
 
