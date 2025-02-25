@@ -4,7 +4,9 @@ import type { IAddressbookApiController, IAddressbookService } from '../types'
 import { AddressbookService } from '../services'
 import type { NextFunction, Response } from 'express'
 
-export default class AddressbookApiController implements IAddressbookApiController {
+export default class AddressbookApiController
+  implements IAddressbookApiController
+{
   private readonly service: IAddressbookService
 
   constructor(db: TwakeDB, private readonly logger: TwakeLogger) {
