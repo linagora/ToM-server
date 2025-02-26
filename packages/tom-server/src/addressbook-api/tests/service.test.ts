@@ -220,7 +220,6 @@ describe('the addressbooK API service', () => {
   })
 
   describe('the addContacts method', () => {
-
     beforeEach(() => {
       jest.clearAllMocks()
     })
