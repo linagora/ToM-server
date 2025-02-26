@@ -115,7 +115,7 @@ export default (
 
   /**
    * @openapi
-   * /_twake/addressbook/contacts:
+   * /_twake/addressbook:
    *  post:
    *   tags:
    *   - Addressbook
@@ -159,7 +159,7 @@ export default (
 
   /**
    * @openapi
-   * /_twake/addressbook/contacts/{id}:
+   * /_twake/addressbook/{id}:
    *  get:
    *   tags:
    *   - Addressbook
@@ -189,7 +189,7 @@ export default (
 
   /**
    * @openapi
-   * /_twake/addressbook/contacts/{id}:
+   * /_twake/addressbook/{id}:
    *  put:
    *   tags:
    *   - Addressbook
@@ -229,7 +229,7 @@ export default (
 
   /**
    * @openapi
-   * /_twake/addressbook/contacts/{id}:
+   * /_twake/addressbook/{id}:
    *  delete:
    *   tags:
    *   - Addressbook
