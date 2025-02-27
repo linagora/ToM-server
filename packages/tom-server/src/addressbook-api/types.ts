@@ -4,7 +4,7 @@ export interface Contact {
   id: string
   mxid: string
   display_name: string
-  active: number
+  active: boolean
   addressbook_id: string
 }
 
@@ -16,7 +16,6 @@ export interface AddressBook {
 export interface ContactCreationPayload {
   mxid: string
   display_name: string
-  active: number
 }
 
 export interface ContactCreationRequest {
@@ -26,7 +25,7 @@ export interface ContactCreationRequest {
 export interface ContactUpdatePayload {
   mxid: string
   display_name: string
-  active: number
+  active?: boolean
 }
 
 export interface AddressbookListResponse {
