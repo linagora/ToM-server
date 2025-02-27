@@ -80,13 +80,15 @@ describe('the Addressbook API controller', () => {
               id: 'contactId1',
               mxid: '@test1:server.com',
               display_name: 'my test contact 1',
-              addressbook_id: 'addressbookId'
+              addressbook_id: 'addressbookId',
+              active: 1
             },
             {
               id: 'contactId2',
               mxid: '@test2:server.com',
               display_name: 'my test contact 2',
-              addressbook_id: 'addressbookId'
+              addressbook_id: 'addressbookId',
+              active: 1
             }
           ]
         }
@@ -106,13 +108,15 @@ describe('the Addressbook API controller', () => {
             id: 'contactId1',
             mxid: '@test1:server.com',
             display_name: 'my test contact 1',
-            addressbook_id: 'addressbookId'
+            addressbook_id: 'addressbookId',
+            active: true
           },
           {
             id: 'contactId2',
             mxid: '@test2:server.com',
             display_name: 'my test contact 2',
-            addressbook_id: 'addressbookId'
+            addressbook_id: 'addressbookId',
+            active: true
           }
         ]
       })
@@ -224,7 +228,8 @@ describe('the Addressbook API controller', () => {
           id: 'contactId',
           mxid: '@test:server.com',
           display_name: 'my test contact',
-          addressbook_id: 'addressbookId'
+          addressbook_id: 'addressbookId',
+          active: 1
         }
       ])
       const response = await supertest(app)
@@ -237,7 +242,8 @@ describe('the Addressbook API controller', () => {
         id: 'contactId',
         mxid: '@test:server.com',
         display_name: 'my test contact',
-        addressbook_id: 'addressbookId'
+        addressbook_id: 'addressbookId',
+        active: true
       })
     })
 
@@ -276,7 +282,8 @@ describe('the Addressbook API controller', () => {
           id: 'contactId',
           mxid: '@test1:server.com',
           display_name: 'test1',
-          addressbook_id: 'addressbookId'
+          addressbook_id: 'addressbookId',
+          active: 1
         }
       ])
 
@@ -286,8 +293,7 @@ describe('the Addressbook API controller', () => {
           contacts: [
             {
               mxid: '@test1:server.com',
-              display_name: 'test1',
-              active: 1
+              display_name: 'test1'
             }
           ]
         })
@@ -303,7 +309,8 @@ describe('the Addressbook API controller', () => {
             id: 'contactId',
             mxid: '@test1:server.com',
             display_name: 'test1',
-            addressbook_id: 'addressbookId'
+            addressbook_id: 'addressbookId',
+            active: true
           }
         ]
       })
@@ -326,7 +333,8 @@ describe('the Addressbook API controller', () => {
               id: 'contactId',
               mxid: '@test1:server.com',
               display_name: 'test1',
-              addressbook_id: 'addressbookId'
+              addressbook_id: 'addressbookId',
+              active: 1
             }
           ]
         }
@@ -337,7 +345,8 @@ describe('the Addressbook API controller', () => {
           id: 'contactId2',
           mxid: '@test1:server.com',
           display_name: 'test1',
-          addressbook_id: 'addressbookId'
+          addressbook_id: 'addressbookId',
+          active: 1
         }
       ])
 
@@ -347,8 +356,7 @@ describe('the Addressbook API controller', () => {
           contacts: [
             {
               mxid: '@test1:server.com',
-              display_name: 'test1',
-              active: 1
+              display_name: 'test1'
             }
           ]
         })
@@ -381,7 +389,8 @@ describe('the Addressbook API controller', () => {
                 id: 'contactId',
                 mxid: '@test1:server.com',
                 display_name: 'test1',
-                addressbook_id: 'addressbookId'
+                addressbook_id: 'addressbookId',
+                active: 1
               }
             ]
           } else {
@@ -398,7 +407,8 @@ describe('the Addressbook API controller', () => {
                 id: 'contactId',
                 mxid: '@test1:server.com',
                 display_name: 'test1',
-                addressbook_id: 'addressbookId'
+                addressbook_id: 'addressbookId',
+                active: 1
               }
             ]
           } else {
@@ -407,7 +417,8 @@ describe('the Addressbook API controller', () => {
                 id: 'contactId2',
                 mxid: '@test2:server.com',
                 display_name: 'test2',
-                addressbook_id: 'addressbookId'
+                addressbook_id: 'addressbookId',
+                active: 1
               }
             ]
           }
@@ -420,13 +431,11 @@ describe('the Addressbook API controller', () => {
           contacts: [
             {
               mxid: '@test1:server.com',
-              display_name: 'test1',
-              active: 1
+              display_name: 'test1'
             },
             {
               mxid: '@test2:server.com',
-              display_name: 'test2',
-              active: 1
+              display_name: 'test2'
             }
           ]
         })
@@ -442,7 +451,8 @@ describe('the Addressbook API controller', () => {
             id: 'contactId2',
             mxid: '@test2:server.com',
             display_name: 'test2',
-            addressbook_id: 'addressbookId'
+            addressbook_id: 'addressbookId',
+            active: true
           }
         ]
       })
@@ -475,7 +485,8 @@ describe('the Addressbook API controller', () => {
               id: 'contactId',
               mxid: '@test1:server.com',
               display_name: 'test1',
-              addressbook_id: 'addressbookId'
+              addressbook_id: 'addressbookId',
+              active: 1
             }
           ]
         }
@@ -487,8 +498,7 @@ describe('the Addressbook API controller', () => {
           contacts: [
             {
               mxid: '@test1:server.com',
-              display_name: 'test1',
-              active: 1
+              display_name: 'test1'
             }
           ]
         })
@@ -504,7 +514,8 @@ describe('the Addressbook API controller', () => {
             id: 'contactId',
             mxid: '@test1:server.com',
             display_name: 'test1',
-            addressbook_id: 'addressbookId'
+            addressbook_id: 'addressbookId',
+            active: true
           }
         ]
       })
@@ -518,7 +529,8 @@ describe('the Addressbook API controller', () => {
           id: 'contactId',
           mxid: '@test:server.com',
           display_name: 'new name',
-          addressbook_id: 'addressbookId'
+          addressbook_id: 'addressbookId',
+          active: 1
         }
       ])
 
@@ -527,7 +539,7 @@ describe('the Addressbook API controller', () => {
         .send({
           mxid: '@test:server.com',
           display_name: 'new name',
-          active: 1
+          active: true
         })
         .set('Authorization', 'Bearer test')
         .set('Accept', 'application/json')
@@ -537,7 +549,8 @@ describe('the Addressbook API controller', () => {
         id: 'contactId',
         mxid: '@test:server.com',
         display_name: 'new name',
-        addressbook_id: 'addressbookId'
+        addressbook_id: 'addressbookId',
+        active: true
       })
     })
 
@@ -549,7 +562,7 @@ describe('the Addressbook API controller', () => {
         .send({
           mxid: '@test:server.com',
           display_name: 'new name',
-          active: 1
+          active: true
         })
         .set('Authorization', 'Bearer test')
         .set('Accept', 'application/json')

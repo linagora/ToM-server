@@ -98,7 +98,7 @@ export class AddressbookService implements IAddressbookService {
         throw new Error('Contact not found')
       }
 
-      return queryResult[0]
+      return { ...queryResult[0], active: !!queryResult[0].active }
     } catch (error) {
       this.logger.error('Failed to get contact', { error })
     }
@@ -108,7 +108,7 @@ export class AddressbookService implements IAddressbookService {
    * Add a contact to an addressbook
    *
    * @param {string} owner - The id of the addressbook
-   * @param {ContactCreationPayload} contact - The contact to add
+   * @param {ContactCreationPayload} contacts - The contact to add
    * @returns {Promise<Contact>}
    */
   public addContacts = async (
@@ -169,11 +169,11 @@ export class AddressbookService implements IAddressbookService {
     contact: ContactUpdatePayload
   ): Promise<Contact | undefined> => {
     try {
-      const { mxid, ...payload } = contact
+      const { display_name, active = undefined } = contact
 
       const updatedContact = (await this.db.update(
         'contacts',
-        payload,
+        { display_name, ...(active !== undefined ? { active: +active } : {}) },
         'id',
         id
       )) as unknown as Contact[]
@@ -182,7 +182,7 @@ export class AddressbookService implements IAddressbookService {
         throw new Error()
       }
 
-      return updatedContact[0]
+      return { ...updatedContact[0], active: !!updatedContact[0].active }
     } catch (error) {
       this.logger.error('Failed to update contact', { error })
     }
@@ -216,14 +216,18 @@ export class AddressbookService implements IAddressbookService {
     addressbookId: string
   ): Promise<Contact | undefined> => {
     try {
+      const { display_name, mxid } = contact
       const id = uuidv7()
+
       const created = (await this.db.insert('contacts', {
-        ...contact,
+        mxid,
+        display_name,
+        active: 1,
         id,
         addressbook_id: addressbookId
       })) as unknown as Contact[]
 
-      return created[0]
+      return { ...created[0], active: !!created[0].active }
     } catch (error) {
       this.logger.error('Failed to insert contact', { error })
     }
@@ -241,7 +245,10 @@ export class AddressbookService implements IAddressbookService {
         addressbook_id: id
       })) as unknown as Contact[]
 
-      return contacts
+      return contacts.map((contact: Contact) => ({
+        ...contact,
+        active: !!contact.active
+      }))
     } catch (error) {
       this.logger.error('Failed to list addressbook', { error })
 

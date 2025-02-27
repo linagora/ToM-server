@@ -58,8 +58,6 @@ export default (
    *          type: string
    *        display_name:
    *          type: string
-   *        active:
-   *          type: boolean
    *    ContactUpdatePayload:
    *      type: object
    *      properties:
@@ -67,6 +65,7 @@ export default (
    *          type: string
    *        active:
    *          type: boolean
+   *          required: false
    */
 
   /**

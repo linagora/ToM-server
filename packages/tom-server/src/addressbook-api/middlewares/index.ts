@@ -89,6 +89,13 @@ export default class AddressBookApiMiddleware
         return
       }
 
+      if (payload.active !== undefined) {
+        if (typeof payload.active !== 'boolean') {
+          res.status(400).json({ message: 'Invalid active value' })
+          return
+        }
+      }
+
       next()
     } catch (error) {
       this.logger.error('Failed to validate contact update payload')
@@ -125,11 +132,6 @@ export default class AddressBookApiMiddleware
 
         if (!contact.display_name) {
           res.status(400).json({ message: 'Missing display_name' })
-          return
-        }
-
-        if (contact.active === undefined || isNaN(contact.active)) {
-          res.status(400).json({ message: 'Missing active' })
           return
         }
       }

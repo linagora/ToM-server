@@ -1,6 +1,7 @@
 import { TwakeDB } from '../../types'
 import { AddressbookService } from '../services'
 import { type TwakeLogger } from '@twake/logger'
+import { Contact } from '../types'
 
 const dbMock = {
   get: jest.fn(),
@@ -53,7 +54,8 @@ describe('the addressbooK API service', () => {
               id: 'contact-id',
               addressbook_id: 'addressbook-id',
               display_name: 'contact-name',
-              mxid: '@user:server.com'
+              mxid: '@user:server.com',
+              active: 1
             }
           ]
         }
@@ -69,7 +71,8 @@ describe('the addressbooK API service', () => {
             id: 'contact-id',
             addressbook_id: 'addressbook-id',
             display_name: 'contact-name',
-            mxid: '@user:server.com'
+            mxid: '@user:server.com',
+            active: true
           }
         ]
       })
@@ -121,7 +124,8 @@ describe('the addressbooK API service', () => {
           id: 'contact-id',
           addressbook_id: 'addressbook-id',
           display_name: 'contact-name',
-          mxid: '@user:server.com'
+          mxid: '@user:server.com',
+          active: 1
         }
       ])
 
@@ -131,7 +135,8 @@ describe('the addressbooK API service', () => {
         id: 'contact-id',
         addressbook_id: 'addressbook-id',
         display_name: 'contact-name',
-        mxid: '@user:server.com'
+        mxid: '@user:server.com',
+        active: true
       })
     })
 
@@ -156,25 +161,25 @@ describe('the addressbooK API service', () => {
         id: 'contact-id',
         addressbook_id: 'addressbook-id',
         display_name: 'contact-name',
-        mxid: '@user:server.com'
+        mxid: '@user:server.com',
+        active: 0
       }
 
       dbMock.update.mockResolvedValue([contact])
 
       const result = await service.updateContact('contact-id', {
         display_name: 'contact-name',
-        mxid: '@user:server.com',
-        active: 0
+        mxid: '@user:server.com'
       })
 
-      expect(result).toEqual(contact)
+      expect(result).toEqual({ ...contact, active: false })
     })
 
     it('should avoid updating the user mxid', async () => {
       await service.updateContact('contact-id', {
         display_name: 'contact-name',
         mxid: '@user:server.com',
-        active: 0
+        active: false
       })
 
       expect(dbMock.update).toHaveBeenCalledWith(
@@ -193,8 +198,7 @@ describe('the addressbooK API service', () => {
 
       const result = await service.updateContact('contact-id', {
         display_name: 'contact-name',
-        mxid: '@user:server.com',
-        active: 0
+        mxid: '@user:server.com'
       })
 
       expect(result).toBeUndefined()
@@ -228,8 +232,7 @@ describe('the addressbooK API service', () => {
       {
         id: 'contact-id',
         display_name: 'contact-name',
-        mxid: '@user:server.com',
-        active: 0
+        mxid: '@user:server.com'
       }
     ]
 
@@ -248,14 +251,24 @@ describe('the addressbooK API service', () => {
           return []
         })
 
-        dbMock.insert.mockResolvedValue(demoContacts)
+        dbMock.insert.mockResolvedValue(
+          demoContacts.map((contact) => ({
+            ...contact,
+            active: 1,
+            addressbook_id: 'addressbook-id'
+          }))
+        )
 
         const result = await service.addContacts('user-id', demoContacts)
 
         expect(result).toEqual({
           id: 'addressbook-id',
           owner: 'user-id',
-          contacts: demoContacts
+          contacts: demoContacts.map((contact) => ({
+            ...contact,
+            active: true,
+            addressbook_id: 'addressbook-id'
+          }))
         })
       })
 
