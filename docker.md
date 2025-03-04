@@ -142,12 +142,15 @@ $ docker run -d -p 3000:3000 \
     linagora/tom-server
 ```
 
-## Start a Lightweight Local Environment
+## Docker Compose
 
-To facilitate your debuts we provide a [`docker-compose.yml`](./docker-compose.yml)
-featuring a complete environment to run and try ToM.
+To facilitate your debuts we provide several compose files, featuring complete environments to run and try ToM:
+- [`docker-compose.yml`](./docker-compose.yml): for a basic lightweight deployment (the bare minimum)
+- `.compose/examples/`:
+  - [`tom+fed+chat.pgsql+ldap.yml`](./.compose/examples/tom+fed+chat.pgsql+ldap.yml): full-featured deployment
+  - [`tom+fed+chat.sqlite.yml`](./.compose/examples/tom+fed+chat.sqlite.yml): the lightweight env
 
-This environment uses `docker.localhost` as default domain, and stores its
+These environments are using `docker.localhost` as default domain, and store the
 rootCA in [`./.compose/ssl/`](./.compose/ssl/). Feel free to use another domain,
 but remember to update the configurations (in the `.compose` folder)
 accordingly.
@@ -159,10 +162,14 @@ accordingly.
 127.0.0.1 auth.docker.localhost   # SSO
 127.0.0.1 matrix.docker.localhost # matrix server
 127.0.0.1 tom.docker.localhost    # tom server
+127.0.0.1 fed.docker.localhost    # local federation server
 127.0.0.1 chat.docker.localhost   # matrix client (Twake Chat)
 ```
 
 ### Kickstart
+
+To run the compose files, make sure to create the `.compose/.env` file with the `TZ`, `UID` and `GID` fields ; with `UID` and `GID` matching the user's that is running the compose.
+Also, when running the lightweight environment make sure to initialize the lemon sqlite database to be able to connect to the service.
 
 ```bash
 ## Uncomment the following to create your own certificate
@@ -213,10 +220,19 @@ Be sure to install yours accordingly.*
 
 ---
 
+### Default docker-compose
+
 ```bash
 ## Fire up!
 docker-compose up # -d
-# docker compose up # -d
+# OR: docker compose up # -d
+```
+### Full-featured compose
+
+```bash
+## Fire up!
+docker-compose -f .compose/examples/tom+fed+chat.pgsql+ldap.yml up # -d
+# OR: docker compose -f .compose/examples/tom+fed+chat.pgsql+ldap.yml up # -d
 ```
 
 ### Default users
@@ -227,3 +243,6 @@ docker-compose up # -d
 | R. Tyler      | rtyler   | rtyler   |
 | Jar Jar Binks | jbinks   | jbinks   |
 
+---
+
+When using the LDAP deployment, [more users are available](./.compose/ldap/ldif/update_password.ldif)
