@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import type { MatrixDB } from '@twake/matrix-identity-server'
+import type { MatrixDBBackend } from '@twake/matrix-identity-server'
 import {
   getLogger,
   type Config as LoggerConfig,
@@ -13,7 +13,7 @@ export const PATH = '/_twake/admin/deactivate-user'
 
 export default (
   config: Config,
-  db: MatrixDB,
+  db: MatrixDBBackend,
   defaultLogger?: TwakeLogger
 ): Router => {
   const logger = defaultLogger ?? getLogger(config as unknown as LoggerConfig)
