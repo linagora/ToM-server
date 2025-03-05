@@ -83,7 +83,11 @@ let conf = {
   sms_api_login: process.env.SMS_API_LOGIN,
   sms_api_url: process.env.SMS_API_URL,
   qr_code_url: process.env.QRCODE_URL ?? 'twake.chat://login',
-  chat_url: process.env.CHAT_URL ?? 'https://chat.twake.app'
+  chat_url: process.env.CHAT_URL ?? 'https://chat.twake.app',
+  auth_url: process.env.AUTH_URL ?? 'https://auth.example.com',
+  matrix_admin_login: process.env.MATRIX_ADMIN_LOGIN ?? 'admin',
+  matrix_admin_password: process.env.MATRIX_ADMIN_PASSWORD ?? 'change-me',
+  admin_access_token: process.env.ADMIN_ACCESS_TOKEN ?? 'secret'
 }
 
 if (process.argv[2] === 'generate') {
