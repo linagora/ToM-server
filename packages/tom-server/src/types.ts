@@ -8,7 +8,7 @@ import {
   type expressAppHandler as _expressAppHandler,
   errCodes
 } from '@twake/utils'
-import { type Request } from 'express'
+import { type NextFunction, type Request, type Response } from 'express'
 import type { PathOrFileDescriptor } from 'fs'
 
 export type expressAppHandler = _expressAppHandler
@@ -41,6 +41,10 @@ export type Config = MConfig &
     qr_code_url?: string
     invitation_redirect_url?: string
     chat_url?: string
+    auth_url?: string
+    matrix_admin_login: string
+    matrix_admin_password: string
+    admin_access_token: string
   }
 
 export interface AuthRequest extends Request {
@@ -66,3 +70,80 @@ export type twakeDbCollections =
   | 'invitations'
   | 'addressbooks'
   | 'contacts'
+
+export type ApiRequestHandler = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => void
+
+export interface OIDCRedirectResponse {
+  location: string
+  cookies: string
+}
+
+export interface ITokenService {
+  getAccessTokenWithCookie: (cookies: string) => Promise<string | null>
+  getAccessTokenWithCreds: (
+    username: string,
+    password: string
+  ) => Promise<string | null>
+  requestAccessToken: (loginToken: string) => Promise<string | null>
+  getOidcProvider: () => Promise<string | null>
+  getOidcRedirectLocation: (
+    oidcProvider: string
+  ) => Promise<OIDCRedirectResponse | null>
+  getLoginToken: (
+    location: string,
+    sessionCookies: string,
+    authCookie: string
+  ) => Promise<string | null>
+}
+
+export interface TokenLoginPayload {
+  initial_device_display_name: string
+  token: string
+  type: string
+}
+
+export interface GenericResponse {
+  errcode?: string
+  error?: string
+}
+
+export interface TokenLoginResponse extends GenericResponse {
+  access_token: string
+  device_id: string
+  expires_in_ms: number
+  home_server: string
+  refresh_token: string
+  user_id: string
+  well_known?: object
+}
+
+export interface loginFlowsResponse extends GenericResponse {
+  flows: LoginFlow[]
+}
+
+export interface LoginFlow {
+  type: string
+  identity_providers?: IdentityProvider[]
+}
+
+export interface IdentityProvider {
+  name: string
+  id: string
+}
+
+export interface AuthAPIResponse {
+  error: string
+  result: number
+}
+
+export interface AuthResponse extends AuthAPIResponse {
+  id: string
+}
+
+export interface TokenResponse extends AuthAPIResponse {
+  token: string
+}
