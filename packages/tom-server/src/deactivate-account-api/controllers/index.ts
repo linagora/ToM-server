@@ -9,10 +9,7 @@ export default class DeactivateUserController
 {
   private adminService: IAdminService
 
-  constructor(
-    config: Config,
-    private readonly logger: TwakeLogger
-  ) {
+  constructor(config: Config, private readonly logger: TwakeLogger) {
     this.adminService = new AdminService(config, logger)
   }
 
