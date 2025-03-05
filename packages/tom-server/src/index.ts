@@ -25,6 +25,7 @@ import QRCode from './qrcode-api'
 import MetricsRouter from './metrics-api'
 import Invitation from './invitation-api'
 import AddressBook from './addressbook-api'
+import DeactivateAccount from './deactivate-account-api'
 
 export default class TwakeServer {
   conf: Config
@@ -170,6 +171,12 @@ export default class TwakeServer {
       this.logger
     )
 
+    const DeactivateAccountApi = DeactivateAccount(
+      this.conf,
+      this.matrixDb.db,
+      this.logger
+    )
+
     this.endpoints.use(privateNoteApi)
     this.endpoints.use(mutualRoolsApi)
     this.endpoints.use(vaultServer.endpoints)
@@ -181,6 +188,7 @@ export default class TwakeServer {
     this.endpoints.use(metricsApi)
     this.endpoints.use(invitationApi)
     this.endpoints.use(addressbookApi)
+    this.endpoints.use(DeactivateAccountApi)
 
     if (
       this.conf.opensearch_is_activated != null &&
