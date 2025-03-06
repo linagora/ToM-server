@@ -21,7 +21,7 @@ export default class DeactivateUserMiddleware
    * @param {NextFunction} next - the next function
    */
   checkAccessToken = (req: Request, res: Response, next: NextFunction) => {
-    const accessToken = req.headers['x-access-token']
+    const accessToken = req.headers?.['x-access-token']
 
     if (!accessToken || accessToken !== this.config.admin_access_token) {
       this.logger.error('Unauthorized: invalid or missing access_token')
@@ -40,7 +40,7 @@ export default class DeactivateUserMiddleware
    * @param {NextFunction} next - the next function
    */
   checkUserExists = async (req: Request, res: Response, next: NextFunction) => {
-    const userId = req.params.id
+    const userId = req.params?.id
 
     if (!userId) {
       this.logger.error('Missing user ID')
@@ -58,13 +58,9 @@ export default class DeactivateUserMiddleware
       return
     }
 
-    const fetchUserQueryResult = await this.db.get(
-      'users',
-      ['deactivateddeactivated'],
-      {
-        name: userId
-      }
-    )
+    const fetchUserQueryResult = await this.db.get('users', ['deactivated'], {
+      name: userId
+    })
 
     if (!fetchUserQueryResult.length) {
       this.logger.error('User not found')
