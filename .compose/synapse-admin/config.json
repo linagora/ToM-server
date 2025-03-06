@@ -1,0 +1,5 @@
+{
+  "restrictBaseUrl": [
+    "https://matrix.docker.localhost"
+  ]
+}

@@ -1,0 +1,195 @@
+services:
+  auth:
+    image: yadd/lemonldap-ng-full
+    volumes:
+      - ../lemon/lmConf-sqlite.json:/var/lib/lemonldap-ng/conf/lmConf-1.json
+      - ../lemon/ssl.conf:/etc/nginx/sites-enabled/0000default.conf
+      - ../lemon/root.conf:/etc/nginx/sites-enabled/root.conf
+      - ../synapse/wellknownserver.conf:/var/www/matrix-server.json
+      - ../synapse/wellknownclient.conf:/var/www/matrix-client.json
+      - ../ssl:/etc/nginx/ssl
+      - ../lemon/lemon.db:/db/lemon.db
+    environment:
+      - SSODOMAIN=docker.localhost
+      - PORTAL=https://auth.docker.localhost
+      - LOGLEVEL=debug
+      - LOGGER=stderr
+      - USERLOGGER=stderr
+    deploy:
+      mode: replicated
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+    networks:
+      frontend:
+        aliases:
+          - auth
+
+  synapse:
+    image: matrixdotorg/synapse
+    restart: unless-stopped
+    env_file:
+      - path: ../.env
+        required: true
+    volumes:
+      - ../synapse:/data
+      - ../synapse/homeserver-sqlite.yaml:/data/homeserver.yaml
+      - ../ssl:/etc/ssl/certs
+    depends_on:
+      auth:
+        condition: service_started
+    networks:
+      frontend:
+        aliases:
+          - synapse
+
+  tom:
+    image: tom
+    build:
+      context: ../..
+      # dockerfile: ./packages/tom-server/Dockerfile
+      dockerfile: ./Dockerfile
+    volumes:
+      # - ../tom:/opt/twake/db/
+      - ../lemon:/opt/lemon/db/
+      - ../synapse:/opt/synapse/db/
+    depends_on:
+      synapse:
+        condition: service_started
+    # ports:
+    #   - 3000:3000
+    #   - 9229:9229
+    networks:
+      frontend:
+        aliases:
+          - tom.server
+    environment:
+      # - NODE_OPTIONS="--inspect=0.0.0.0:9229"
+      - NODE_TLS_REJECT_UNAUTHORIZED=0
+
+      - SERVER_NAME=docker.localhost
+      - BASE_URL=https://tom.docker.localhost
+      - OIDC_ISSUER=https://auth.docker.localhost
+      - TRUSTED_PROXIES=uniquelocal
+
+      - ADDITIONAL_FEATURES=true
+      - FEDERATED_IDENTITY_SERVICES=fed.docker.localhost
+
+      - CRON_SERVICE=true
+      - UPDATE_FEDERATED_IDENTITY_HASHES_CRON=0-59/2 * * * *
+      - UPDATE_USERS_CRON=1-59/2 * * * *
+
+      - DATABASE_ENGINE=sqlite
+      # - DATABASE_HOST=/opt/twake/db/tom.db
+      - DATABASE_HOST=file:tom?mode=memory&cache=shared
+
+      - USERDB_ENGINE=sqlite
+      - USERDB_HOST=/opt/lemon/db/lemon.db
+
+      - MATRIX_SERVER=matrix.docker.localhost
+      - MATRIX_DATABASE_ENGINE=sqlite
+      - MATRIX_DATABASE_HOST=/opt/synapse/db/homeserver.db
+
+      - SMS_API_KEY=SOME_SECRET_KEY
+      - SMS_API_LOGIN=login@domain.com
+      - SMS_API_URL=https://api.octopush.com/v1/public
+
+      - LOG_LEVEL=silly
+      - LOG_TRANSPORTS=Console
+
+  fed:
+    build:
+      context: ../..
+      dockerfile: ./packages/federated-identity-service/Dockerfile
+    volumes:
+      # - ../fed:/opt/twake/db/
+      # - ../lemon:/opt/lemon/db/       ## Uncomment to enable local userDB
+      - ../synapse:/opt/synapse/db/
+    # ports:
+    #   - 3001:3001
+    #   - 9229:9229
+    networks:
+      frontend:
+        aliases:
+          - fed.server
+    environment:
+      # - NODE_OPTIONS="--inspect=0.0.0.0:9229"
+      - NODE_TLS_REJECT_UNAUTHORIZED=0
+
+      - BASE_URL=https://fed.docker.localhost
+      - SERVER_NAME=docker.localhost
+      - TRUSTED_PROXIES=uniquelocal
+      - TRUSTED_SERVERS_ADDRESSES=172.0.0.0/8
+
+      - ADDITIONAL_FEATURES=true
+
+      - CRON_SERVICE=true
+      # - UPDATE_FEDERATED_IDENTITY_HASHES_CRON=0-59/2 * * * *
+      # - UPDATE_USERS_CRON=1-59/2 * * * *
+
+      - DATABASE_ENGINE=sqlite
+      # - DATABASE_HOST=/opt/twake/db/fed.db
+      - DATABASE_HOST=file:fed?mode=memory&cache=shared
+
+      ## For storing the federated identity raw users
+      # - USERDB_ENGINE=sqlite                  ## Uncomment to enable local userDB
+      # - USERDB_HOST=/opt/lemon/db/lemon.db    ## Uncomment to enable local userDB
+
+      - SMS_API_KEY=SOME_SECRET_KEY
+      - SMS_API_LOGIN=login@domain.com
+      - SMS_API_URL=https://api.octopush.com/v1/public
+
+      - LOG_LEVEL=silly
+      - LOG_TRANSPORTS=Console
+
+  chat:
+    image: linagora/twake-web
+    volumes:
+      - ../chat/config.json:/usr/share/nginx/html/web/config.json
+      - ../chat/default.conf.template:/etc/nginx/templates/default.conf.template
+      - ../ssl:/etc/nginx/ssl
+    # ports:
+    #   - 6868:6868
+    environment:
+      - TWAKECHAT_LISTEN_PORT=6868
+    networks:
+      - frontend
+
+  admin:
+    image: ghcr.io/etkecc/synapse-admin
+    volumes:
+      - ../synapse-admin/config.json:/app/config.json:ro
+    networks:
+      - frontend
+
+  haproxy:
+    image: haproxy:2.6-bookworm
+    ports:
+      - 443:443
+    volumes:
+      - ../haproxy:/usr/local/etc/haproxy
+      - ../haproxy/haproxy.tom+fed+chat+admin.cfg:/usr/local/etc/haproxy/haproxy.cfg
+      - ../ssl/both.pem:/etc/ssl/certs/both.pem
+    sysctls:
+      - net.ipv4.ip_unprivileged_port_start=0
+    depends_on:
+      - auth
+      - synapse
+      - tom
+      - fed
+      - chat
+      - admin
+    networks:
+      frontend:
+        aliases:
+          - admin.docker.localhost
+          - auth.docker.localhost
+          - chat.docker.localhost
+          - matrix.docker.localhost
+          - tom.docker.localhost
+          - fed.docker.localhost
+          - docker.localhost
+
+networks:
+  frontend:
+    name: frontend
