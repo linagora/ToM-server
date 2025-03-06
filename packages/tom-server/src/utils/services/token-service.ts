@@ -7,7 +7,7 @@ import {
   type OIDCRedirectResponse
 } from '../../types'
 
-export class TokenService implements ITokenService {
+export default class TokenService implements ITokenService {
   JSON_HEADERS = {
     Accept: 'application/json',
     'Content-Type': 'application/json'

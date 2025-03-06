@@ -1,7 +1,7 @@
 import { TwakeLogger } from '@twake/logger'
 import { DeleteUserMediaResponse, IAdminService } from '../types'
 import { Config, ITokenService } from '../../types'
-import { TokenService } from '../../utils/services/token-service'
+import TokenService from '../../utils/services/token-service'
 import { buildUrl } from '../../utils'
 
 export default class AdminService implements IAdminService {
