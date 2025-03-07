@@ -21,8 +21,44 @@ export default (
   const controller = new DeactivateUserController(config, logger)
   const middleware = new DeactivateUserMiddleware(config, db, logger)
 
-  // TODO: add swagger docs
+  /**
+   * @openapi
+   * components:
+   *   securitySchemes:
+   *     AccessToken:
+   *       type: apiKey
+   *       in: header
+   *       name: x-access-token
+   */
 
+  /**
+   * @openapi
+   * /_twake/admin/deactivate-user/{id}:
+   *   post:
+   *     summary: Deactivate a user
+   *     tags:
+   *       - Admin
+   *     security:
+   *       - AccessToken: []
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         required: true
+   *         description: The user ID to deactivate
+   *         schema:
+   *           type: string
+   *     responses:
+   *       200:
+   *         description: User deactivated
+   *       400:
+   *         description: Missing user ID or user is already deactivated
+   *       401:
+   *         description: Unauthorized
+   *       404:
+   *         description: User not found
+   *       500:
+   *         description: Internal server error
+   */
   router.post(
     `${PATH}/:id`,
     middleware.checkAccessToken,
