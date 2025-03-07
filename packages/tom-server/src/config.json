@@ -96,5 +96,6 @@
   "chat_url": "https://chat.twake.app",
   "auth_url": "https://auth.example.com",
   "matrix_admin_login": "admin",
-  "matrix_admin_password": "change-me"
+  "matrix_admin_password": "change-me",
+  "admin_access_token": "secret"
 }
