@@ -26,6 +26,7 @@
             typescript
 
             ## tools
+            postgresql
             lazydocker
             sqlite    # For local db support
 

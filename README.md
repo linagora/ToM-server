@@ -35,7 +35,10 @@ Here is the architecture principle:
 
 REST API Endpoints documentation is available on https://linagora.github.io/ToM-server/
 
-[Try it with docker](./docker.md)
+## Try it yourself
+
+- [Running our Dockers](./docker.md)
+- [Deploy locally with compose](./docker.md#docker-compose)
 
 ## Modules
 

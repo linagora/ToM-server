@@ -14,7 +14,7 @@ identityServer.ready
       app.post(k, identityServer.api.post[k])
     })
     const port = process.argv[2] != null ? parseInt(process.argv[2]) : 3000
-    console.log(`Listening on port ${port}`)
+    console.log(`(Test) Identity Server listening on port: ${port}`)
     app.listen(port)
   })
   .catch((e) => {

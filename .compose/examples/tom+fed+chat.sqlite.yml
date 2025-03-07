@@ -2,13 +2,13 @@ services:
   auth:
     image: yadd/lemonldap-ng-full
     volumes:
-      - ./.compose/lemon/lmConf-sqlite.json:/var/lib/lemonldap-ng/conf/lmConf-1.json
-      - ./.compose/lemon/ssl.conf:/etc/nginx/sites-enabled/0000default.conf
-      - ./.compose/lemon/root.conf:/etc/nginx/sites-enabled/root.conf
-      - ./.compose/synapse/wellknownserver.conf:/var/www/matrix-server.json
-      - ./.compose/synapse/wellknownclient.conf:/var/www/matrix-client.json
-      - ./.compose/ssl:/etc/nginx/ssl
-      - ./.compose/lemon/lemon.db:/db/lemon.db
+      - ../lemon/lmConf-sqlite.json:/var/lib/lemonldap-ng/conf/lmConf-1.json
+      - ../lemon/ssl.conf:/etc/nginx/sites-enabled/0000default.conf
+      - ../lemon/root.conf:/etc/nginx/sites-enabled/root.conf
+      - ../synapse/wellknownserver.conf:/var/www/matrix-server.json
+      - ../synapse/wellknownclient.conf:/var/www/matrix-client.json
+      - ../ssl:/etc/nginx/ssl
+      - ../lemon/lemon.db:/db/lemon.db
     environment:
       - SSODOMAIN=docker.localhost
       - PORTAL=https://auth.docker.localhost
@@ -29,12 +29,12 @@ services:
     image: matrixdotorg/synapse
     restart: unless-stopped
     env_file:
-      - path: ./.compose/.env
+      - path: ../.env
         required: true
     volumes:
-      - ./.compose/synapse:/data
-      - ./.compose/synapse/homeserver-sqlite.yaml:/data/homeserver.yaml
-      - ./.compose/ssl:/etc/ssl/certs
+      - ../synapse:/data
+      - ../synapse/homeserver-sqlite.yaml:/data/homeserver.yaml
+      - ../ssl:/etc/ssl/certs
     depends_on:
       auth:
         condition: service_started
@@ -46,12 +46,13 @@ services:
   tom:
     image: tom
     build:
-      context: ./
+      context: ../..
+      # dockerfile: ./packages/tom-server/Dockerfile
       dockerfile: ./Dockerfile
     volumes:
-      # - ./.compose/tom:/opt/twake/db/
-      - ./.compose/lemon:/opt/lemon/db/
-      - ./.compose/synapse:/opt/synapse/db/
+      # - ../tom:/opt/twake/db/
+      - ../lemon:/opt/lemon/db/
+      - ../synapse:/opt/synapse/db/
     depends_on:
       synapse:
         condition: service_started
@@ -98,12 +99,12 @@ services:
 
   fed:
     build:
-      context: ./
+      context: ../..
       dockerfile: ./packages/federated-identity-service/Dockerfile
     volumes:
-      # - ./.compose/fed:/opt/twake/db/
-      # - ./.compose/lemon:/opt/lemon/db/       ## Uncomment to enable local userDB
-      - ./.compose/synapse:/opt/synapse/db/
+      # - ../fed:/opt/twake/db/
+      # - ../lemon:/opt/lemon/db/       ## Uncomment to enable local userDB
+      - ../synapse:/opt/synapse/db/
     # ports:
     #   - 3001:3001
     #   - 9229:9229
@@ -144,9 +145,9 @@ services:
   chat:
     image: linagora/twake-web
     volumes:
-      - ./.compose/chat/config.json:/usr/share/nginx/html/web/config.json
-      - ./.compose/chat/default.conf.template:/etc/nginx/templates/default.conf.template
-      - ./.compose/ssl:/etc/nginx/ssl
+      - ../chat/config.json:/usr/share/nginx/html/web/config.json
+      - ../chat/default.conf.template:/etc/nginx/templates/default.conf.template
+      - ../ssl:/etc/nginx/ssl
     # ports:
     #   - 6868:6868
     environment:
@@ -159,9 +160,9 @@ services:
     ports:
       - 443:443
     volumes:
-      - ./.compose/haproxy:/usr/local/etc/haproxy
-      - ./.compose/haproxy/haproxy.tom+fed+chat.cfg:/usr/local/etc/haproxy/haproxy.cfg
-      - ./.compose/ssl/both.pem:/etc/ssl/certs/both.pem
+      - ../haproxy:/usr/local/etc/haproxy
+      - ../haproxy/haproxy.tom+fed+chat.cfg:/usr/local/etc/haproxy/haproxy.cfg
+      - ../ssl/both.pem:/etc/ssl/certs/both.pem
     sysctls:
       - net.ipv4.ip_unprivileged_port_start=0
     depends_on:

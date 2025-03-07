@@ -193,7 +193,7 @@ if (process.argv[2] === 'generate') {
         })
 
         const port = process.argv[2] != null ? parseInt(process.argv[2]) : 3000
-        console.log(`Listening on port ${port}`)
+        console.log(`ToM-Server listening on port: ${port}`)
         app.listen(port, '0.0.0.0')
       })
     })
