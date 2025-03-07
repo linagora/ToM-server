@@ -13,6 +13,7 @@ export type Collections =
   | 'event_json'
   | 'events'
   | 'user_ips'
+  | 'erased_users'
 
 type Get = (
   table: Collections,

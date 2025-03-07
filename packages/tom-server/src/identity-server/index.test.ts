@@ -56,7 +56,11 @@ beforeAll((done) => {
     matrix_database_host: matrixDb,
     sms_api_key: '',
     sms_api_login: '',
-    sms_api_url: ''
+    sms_api_url: '',
+    auth_url: 'https://auth.example.com',
+    matrix_admin_login: 'admin',
+    matrix_admin_password: 'change-me',
+    admin_access_token: 'secret'
   }
   if (process.env.TEST_PG === 'yes') {
     conf.database_engine = 'pg'

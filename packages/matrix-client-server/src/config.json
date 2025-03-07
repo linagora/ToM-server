@@ -116,5 +116,9 @@
   ],
   "sms_folder": "./src/__testData__/sms",
   "is_registration_enabled": true,
-  "qr_code_url": "twake.chat://login"
+  "qr_code_url": "twake.chat://login",
+  "auth_url": "https://auth.example.com",
+  "matrix_admin_login": "admin",
+  "matrix_admin_password": "change-me",
+  "admin_access_token": "secret"
 }

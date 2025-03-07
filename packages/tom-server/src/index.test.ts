@@ -35,7 +35,11 @@ describe('Tom-server', () => {
       sms_api_key: '',
       sms_api_login: '',
       sms_api_url: '',
-      qr_code_url: 'http://example.com/'
+      qr_code_url: 'http://example.com/',
+      auth_url: 'https://auth.example.com',
+      matrix_admin_login: 'admin',
+      matrix_admin_password: 'change-me',
+      admin_access_token: 'secret'
     }
     if (process.env.TEST_PG === 'yes') {
       conf.database_engine = 'pg'
