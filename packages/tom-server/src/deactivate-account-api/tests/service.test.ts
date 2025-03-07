@@ -1,6 +1,7 @@
 import { type TwakeLogger } from '@twake/logger'
 import Service from '../services'
 import type { Config } from '../../types'
+import { IAdminService } from '../types'
 
 const loggerMock = {
   info: jest.fn(),
@@ -18,18 +19,19 @@ jest.mock('../../utils/services/token-service.ts', () => {
   }
 })
 
+let service: IAdminService
+
 beforeEach(() => {
   jest.resetAllMocks()
+  service = new Service(
+    {
+      matrix_admin_login: 'admin',
+      matrix_admin_password: 'XXXXX',
+      matrix_server: 'https://localhost'
+    } as unknown as Config,
+    loggerMock as unknown as TwakeLogger
+  )
 })
-
-const service = new Service(
-  {
-    matrix_admin_login: 'admin',
-    matrix_admin_password: 'XXXXX',
-    matrix_server: 'https://localhost'
-  } as unknown as Config,
-  loggerMock as unknown as TwakeLogger
-)
 
 describe('the admin service', () => {
   describe('the removeAccount method', () => {
@@ -91,9 +93,9 @@ describe('the admin service', () => {
 
   describe('the deleteUserMedia method', () => {
     it('should call the synapse admin API to delete user media', async () => {
-      global.fetch = jest.fn().mockResolvedValueOnce({
+      global.fetch = jest.fn().mockResolvedValue({
         ok: true,
-        json: jest.fn().mockResolvedValueOnce({ total: 1 })
+        json: jest.fn().mockResolvedValue({ total: 1 })
       })
 
       await service.deleteUserMedia('some_user_id', 'some_access_token')
@@ -115,28 +117,30 @@ describe('the admin service', () => {
       await service.deleteUserMedia('some_user_id', 'some_access_token')
 
       expect(loggerMock.error).toHaveBeenLastCalledWith(
-        'Failed to delete user media'
+        'Failed to delete user media',
+        expect.anything()
       )
     })
 
     it('should log an error if the synapse admin API returns a bad response', async () => {
-      global.fetch = jest.fn().mockResolvedValueOnce({
-        json: jest.fn().mockResolvedValueOnce({ somethingelse: true })
+      global.fetch = jest.fn().mockResolvedValue({
+        json: jest.fn().mockResolvedValue({ somethingelse: true })
       })
 
       await service.deleteUserMedia('some_user_id', 'some_access_token')
 
       expect(loggerMock.error).toHaveBeenLastCalledWith(
-        'Failed to delete user media'
+        'Failed to delete user media',
+        expect.anything()
       )
     })
   })
 
   describe('the disableUserAccount', () => {
     it('should call the synapse admin API to disable the user account', async () => {
-      global.fetch = jest.fn().mockResolvedValueOnce({
+      global.fetch = jest.fn().mockResolvedValue({
         ok: true,
-        json: jest.fn().mockResolvedValueOnce({ total: 1 })
+        json: jest.fn().mockResolvedValue({ total: 1 })
       })
 
       await service.disableUserAccount('some_user_id', 'some_access_token')
