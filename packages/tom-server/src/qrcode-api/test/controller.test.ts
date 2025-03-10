@@ -15,17 +15,18 @@ const loggerMock = {
 }
 
 jest.mock('../services', () => {
-  return {
-    QRCodeTokenService: jest.fn().mockImplementation(() => {
-      return {
-        getAccessToken: getAccessTokenMock
-      }
-    }),
-    QRCodeService: jest.fn().mockImplementation(() => {
-      return {
-        getImage: getImageMock
-      }
-    })
+  return function () {
+    return {
+      getImage: getImageMock
+    }
+  }
+})
+
+jest.mock('../../utils/services/token-service.ts', () => {
+  return function () {
+    return {
+      getAccessTokenWithCookie: getAccessTokenMock
+    }
   }
 })
 
