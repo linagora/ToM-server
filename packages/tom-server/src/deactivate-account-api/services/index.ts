@@ -68,6 +68,8 @@ export default class AdminService implements IAdminService {
       if (!data || data.total === undefined) {
         throw new Error()
       }
+
+      this.logger.info(`Deleted ${data.total} media files for user ${userId}`)
     } catch (error) {
       this.logger.error(`Failed to delete user media`, { error })
     }
@@ -93,13 +95,16 @@ export default class AdminService implements IAdminService {
         {
           method: 'POST',
           headers: {
-            Authorization: `Bearer ${token}`
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json'
           },
           body: JSON.stringify({
             erase: true
           })
         }
       )
+
+      this.logger.info(`Disabled user account ${userId}`)
     } catch (error) {
       this.logger.error(`Failed to disable user account`, { error })
 
