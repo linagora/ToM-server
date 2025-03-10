@@ -150,7 +150,8 @@ describe('the admin service', () => {
         {
           method: 'POST',
           headers: {
-            Authorization: 'Bearer some_access_token'
+            Authorization: 'Bearer some_access_token',
+            'Content-Type': 'application/json'
           },
           body: JSON.stringify({ erase: true })
         }
