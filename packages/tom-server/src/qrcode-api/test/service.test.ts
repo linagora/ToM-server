@@ -1,6 +1,5 @@
 import { type TwakeLogger } from '@twake/logger'
-import { QRCodeService } from '../services'
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import QRCodeService from '../services'
 import QRCode from 'qrcode'
 import type { Config } from '../../types'
 
