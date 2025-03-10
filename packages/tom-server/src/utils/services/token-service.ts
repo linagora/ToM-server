@@ -13,6 +13,10 @@ export default class TokenService implements ITokenService {
     'Content-Type': 'application/json'
   }
 
+  ACCEPT_JSON = {
+    Accept: 'application/json'
+  }
+
   private matrixUrl: string
   private authProviderUrl: string
 
@@ -281,9 +285,9 @@ export default class TokenService implements ITokenService {
         throw new Error('Failed to get login token from auth provider')
       }
 
-      const response = await fetch(`${this.config.auth_url}`, {
+      const response = await fetch(this.authProviderUrl, {
         method: 'POST',
-        headers: this.JSON_HEADERS,
+        headers: this.ACCEPT_JSON,
         body: new URLSearchParams({ user, password, token })
       })
 
