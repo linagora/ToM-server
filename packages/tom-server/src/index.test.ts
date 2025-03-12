@@ -39,7 +39,8 @@ describe('Tom-server', () => {
       auth_url: 'https://auth.example.com',
       matrix_admin_login: 'admin',
       matrix_admin_password: 'change-me',
-      admin_access_token: 'secret'
+      admin_access_token: 'secret',
+      signup_url: 'https://signup.example.com'
     }
     if (process.env.TEST_PG === 'yes') {
       conf.database_engine = 'pg'

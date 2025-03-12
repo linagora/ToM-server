@@ -87,7 +87,8 @@ let conf = {
   auth_url: process.env.AUTH_URL ?? 'https://auth.example.com',
   matrix_admin_login: process.env.MATRIX_ADMIN_LOGIN ?? 'admin',
   matrix_admin_password: process.env.MATRIX_ADMIN_PASSWORD ?? 'change-me',
-  admin_access_token: process.env.ADMIN_ACCESS_TOKEN ?? 'secret'
+  admin_access_token: process.env.ADMIN_ACCESS_TOKEN ?? 'secret',
+  signup_url: process.env.SIGNUP_URL ?? 'https://sign-up.twake.app/?app=chat'
 }
 
 if (process.argv[2] === 'generate') {
