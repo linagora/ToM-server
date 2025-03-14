@@ -10,7 +10,6 @@ import {
   medium
 } from '../types'
 import { v7 as uuidv7 } from 'uuid'
-import { PATH } from '../routes'
 import { buildUrl } from '../../utils'
 import NotificationService from '../../utils/services/notification-service'
 import type { SendMailOptions } from 'nodemailer'
@@ -52,6 +51,7 @@ export default class InvitationService implements IInvitationService {
    * Sends an invitation
    *
    * @param {invitationPayload} payload - Invitation payload
+   * @param {string} authorization - Authorization header
    * @returns {Promise<void>}
    */
   public invite = async (
@@ -446,7 +446,10 @@ export default class InvitationService implements IInvitationService {
    * @param {string} token - Invitation token
    * @returns {string} - Invitation URL
    */
-  // TODO: fix url concat
-  private _getInvitationUrl = (token: string): string =>
-    buildUrl(this.config.signup_url, `${PATH}/${token}`)
+  private _getInvitationUrl = (token: string): string => {
+    const url = new URL(this.config.signup_url)
+    url.searchParams.set('invitation_token', token)
+
+    return url.toString()
+  }
 }
