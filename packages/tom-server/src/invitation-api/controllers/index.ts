@@ -94,10 +94,7 @@ export default class InvitationApiController {
 
       await this.invitationService.accept(id, userId, authorization)
 
-      res.redirect(
-        301,
-        this.config.invitation_redirect_url ?? this.config.base_url
-      )
+      res.status(200).json({ message: 'Invitation accepted' })
     } catch (err) {
       this.logger.error(`Failed to accept invitation`, { err })
 
