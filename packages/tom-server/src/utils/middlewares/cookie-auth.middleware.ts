@@ -4,7 +4,6 @@ import TokenService from '../services/token-service'
 import { Config, ITokenService } from '../../types'
 
 export default class CookieAuthenticator {
-  private readonly AUTH_COOKIE_NAME = 'lemonldap'
   private tokenService: ITokenService
 
   /**
@@ -24,10 +23,10 @@ export default class CookieAuthenticator {
    * Authenticate user with cookie
    *
    * @param {Request} req - the request object.
-   * @param {Response} res - the response object.
+   * @param {Response} _res - the response object.
    * @param {NextFunction} next - the next hundler
    */
-  public authenticateWithCookie = (
+  public authenticateWithCookie = async (
     req: Request,
     _res: Response,
     next: NextFunction
@@ -42,18 +41,20 @@ export default class CookieAuthenticator {
         return
       }
 
-      const cookie = req.cookies[this.AUTH_COOKIE_NAME]
+      const cookie = req.headers?.['cookie'] as string
 
       if (!cookie) {
-        this.logger.error(`${this.AUTH_COOKIE_NAME} cookie is not found`)
+        this.logger.error('cookie is not found')
+
+        throw new Error('cookie is not found')
       }
 
-      const token = this.tokenService.getAccessTokenWithCookie(
-        `${this.AUTH_COOKIE_NAME}=${cookie}`
-      )
+      const token = await this.tokenService.getAccessTokenWithCookie(cookie)
 
       if (!token) {
-        this.logger.error(`Failed to authenticate with cookie`)
+        this.logger.error('Failed to obtain token with cookie')
+
+        throw new Error('Failed to obtain token with cookie')
       }
 
       req.headers.authorization = `Bearer ${token}`
