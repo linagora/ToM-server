@@ -46,8 +46,7 @@ export default class SmsService implements ISMSService {
         body: JSON.stringify({
           sender: this.SENDER,
           recipients: [{ phone_number: to }],
-          text,
-          type: 'sms_low_cost'
+          text
         } satisfies SendSmsPayload)
       })
 
