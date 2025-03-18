@@ -43,8 +43,7 @@ describe('the Invitation API service', () => {
       matrix_server: 'localhost',
       base_url: 'http://localhost',
       signup_url: 'https://signup.example.com/?app=chat',
-      template_dir:
-        '/home/kferjani/workspace/ToM-server/packages/tom-server/templates'
+      template_dir: './templates'
     } as unknown as Config
   )
 
