@@ -19,7 +19,7 @@ export default class InvitationService implements IInvitationService {
   private readonly EXPIRATION = 24 * 60 * 60 * 1000 // 24 hours
   private readonly MATRIX_INVITE_PATH = '/_matrix/identity/v2/store-invite'
   private readonly MATRIX_ROOM_PATH = '/_matrix/client/v3/createRoom'
-  private readonly MATRIX_ROOM_INVITE_PATH = ' /_matrix/client/v3/rooms'
+  private readonly MATRIX_ROOM_INVITE_PATH = '/_matrix/client/v3/rooms'
 
   private notificationService: INotificationService
 
