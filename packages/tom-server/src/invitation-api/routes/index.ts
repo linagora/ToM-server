@@ -45,6 +45,11 @@ export default (
    *      medium:
    *        type: string
    *        description: The medium to send the invitation through
+   *  securitySchemes:
+   *    cookieAuth:
+   *      type: apiKey
+   *      in: cookie
+   *      name: lemonldap
    */
 
   /**
@@ -156,6 +161,15 @@ export default (
    *  get:
    *    tags:
    *     - Invitation
+   *    security:
+   *      - cookieAuth: []
+   *    parameters:
+   *      - in: path
+   *        name: id
+   *        required: true
+   *        schema:
+   *          type: string
+   *        description: The invitation ID
    *    description: Accepts an invitation
    *    responses:
    *      301:
