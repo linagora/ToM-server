@@ -159,7 +159,6 @@ export interface INotificationService {
 export interface SendSmsPayload {
   text: string
   recipients: Recipient[]
-  type: 'sms_premium' | 'sms_low_cost'
   sender: string
 }
 
