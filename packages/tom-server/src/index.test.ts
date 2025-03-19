@@ -34,7 +34,7 @@ describe('Tom-server', () => {
       userdb_host: userDb,
       sms_api_key: '',
       sms_api_login: '',
-      sms_api_url: '',
+      sms_api_url: 'http://example.com/',
       qr_code_url: 'http://example.com/',
       auth_url: 'https://auth.example.com',
       matrix_admin_login: 'admin',

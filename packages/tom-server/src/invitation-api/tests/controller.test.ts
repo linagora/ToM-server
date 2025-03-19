@@ -151,12 +151,13 @@ describe('the invitation API controller', () => {
   })
 
   describe('the acceptInvitation method', () => {
-    beforeEach(() => {
+    afterEach(() => {
       spyMock.mockClear()
     })
 
     it('should try to accept an invitation', async () => {
       spyMock.mockClear()
+      spyMock.mockResolvedValue('Invitation accepted')
       const response = await supertest(app)
         .get(`${PATH}/token`)
         .set('Authorization', 'Bearer test')

@@ -24,5 +24,10 @@
     "users": [{ "exclusive": false, "regex": "@.*" }]
   },
   "opensearch_is_activated": false,
-  "push_ephemeral": true
+  "push_ephemeral": true,
+  "sms_api_url": "https://sms.example.com",
+  "sms_api_key": "1234567890",
+  "sms_api_login": "login",
+  "signup_url": "https://signup.example.com",
+  "auth_url": "https://auth.example.com"
 }
