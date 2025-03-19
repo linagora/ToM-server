@@ -56,7 +56,7 @@ beforeAll((done) => {
     matrix_database_host: matrixDb,
     sms_api_key: '',
     sms_api_login: '',
-    sms_api_url: '',
+    sms_api_url: 'https://api.example.com/',
     auth_url: 'https://auth.example.com',
     matrix_admin_login: 'admin',
     matrix_admin_password: 'change-me',

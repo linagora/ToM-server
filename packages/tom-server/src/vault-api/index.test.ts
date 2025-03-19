@@ -76,7 +76,7 @@ describe('Vault API server', () => {
       rate_limiting_nb_requests: 100,
       sms_api_key: '',
       sms_api_login: '',
-      sms_api_url: ''
+      sms_api_url: 'https://api.example.com/'
     }
     buildTokenTable(conf as Config)
       .then(() => {

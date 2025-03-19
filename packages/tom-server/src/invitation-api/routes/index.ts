@@ -9,10 +9,11 @@ import {
   type TwakeDB
 } from '../../types'
 import { Router } from 'express'
-import authMiddleware from '../../utils/middlewares/auth.middleware'
+import bodyParser from 'body-parser'
 import InvitationApiController from '../controllers'
 import invitationApiMiddleware from '../middlewares'
-import bodyParser from 'body-parser'
+import authMiddleware from '../../utils/middlewares/auth.middleware'
+import CookieAuthenticator from '../../utils/middlewares/cookie-auth.middleware'
 
 export const PATH = '/_twake/v1/invite'
 
@@ -27,6 +28,7 @@ export default (
   const authenticate = authMiddleware(authenticator, logger)
   const controller = new InvitationApiController(db, logger, config)
   const middleware = new invitationApiMiddleware(db, logger)
+  const cookieAuthMiddleware = new CookieAuthenticator(config, logger)
 
   router.use(bodyParser.json())
 
@@ -43,6 +45,11 @@ export default (
    *      medium:
    *        type: string
    *        description: The medium to send the invitation through
+   *  securitySchemes:
+   *    cookieAuth:
+   *      type: apiKey
+   *      in: cookie
+   *      name: lemonldap
    */
 
   /**
@@ -154,6 +161,15 @@ export default (
    *  get:
    *    tags:
    *     - Invitation
+   *    security:
+   *      - cookieAuth: []
+   *    parameters:
+   *      - in: path
+   *        name: id
+   *        required: true
+   *        schema:
+   *          type: string
+   *        description: The invitation ID
    *    description: Accepts an invitation
    *    responses:
    *      301:
@@ -165,6 +181,8 @@ export default (
    */
   router.get(
     `${PATH}/:id`,
+    cookieAuthMiddleware.authenticateWithCookie,
+    authenticate,
     middleware.checkInvitation,
     controller.acceptInvitation
   )

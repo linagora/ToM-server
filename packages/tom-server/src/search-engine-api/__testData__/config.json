@@ -22,5 +22,10 @@
   "opensearch_user": "admin",
   "registration_file_path": "./src/search-engine-api/__testData__/synapse-data/registration.yaml",
   "server_name": "example.com",
-  "userdb_engine": "ldap"
+  "userdb_engine": "ldap",
+  "sms_api_url": "https://sms.example.com",
+  "sms_api_key": "1234567890",
+  "sms_api_login": "login",
+  "signup_url": "https://signup.example.com",
+  "auth_url": "https://auth.example.com"
 }

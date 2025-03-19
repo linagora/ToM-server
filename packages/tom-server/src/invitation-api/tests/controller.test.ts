@@ -28,7 +28,7 @@ const loggerMock = {
 const authenticatorMock = jest
   .fn()
   .mockImplementation((_req, _res, callbackMethod) => {
-    callbackMethod('test', 'test')
+    callbackMethod({ sub: 'test' }, 'test')
   })
 
 jest.mock('../middlewares/index.ts', () => {
@@ -49,13 +49,44 @@ jest.mock('../middlewares/index.ts', () => {
   }
 })
 
+jest.mock('../../utils/middlewares/cookie-auth.middleware', () => {
+  const passiveMiddlewareMock = (
+    _req: AuthRequest,
+    _res: Response,
+    next: NextFunction
+  ): void => {
+    next()
+  }
+
+  return function () {
+    return {
+      authenticateWithCookie: passiveMiddlewareMock
+    }
+  }
+})
+
+const spyMock = jest.fn()
+
+jest.mock('../services/index.ts', () => {
+  return function () {
+    return {
+      invite: spyMock,
+      accept: spyMock,
+      list: spyMock,
+      generateLink: spyMock
+    }
+  }
+})
+
 app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({ extended: true }))
 app.use(
   router(
     {
       matrix_server: 'http://localhost:789',
-      base_url: 'http://localhost'
+      base_url: 'http://localhost',
+      signup_url: 'http://example.com/?app=chat',
+      sms_api_url: 'http://sms.example.com/api'
     } as unknown as Config,
     dbMock as unknown as TwakeDB,
     authenticatorMock,
@@ -66,11 +97,6 @@ app.use(
 describe('the invitation API controller', () => {
   describe('the sendInvitation method', () => {
     it('should try to send an invitation', async () => {
-      global.fetch = jest.fn().mockResolvedValue({
-        status: 200,
-        json: jest.fn().mockResolvedValue({ room_id: 'test' })
-      })
-
       const response = await supertest(app)
         .post(PATH)
         .send({
@@ -79,27 +105,12 @@ describe('the invitation API controller', () => {
         } satisfies InvitationRequestPayload)
         .set('Authorization', 'Bearer test')
 
-      expect(response.status).toBe(200)
-    })
-
-    it('should store the invitation in the db', async () => {
-      global.fetch = jest.fn().mockResolvedValue({
-        status: 200,
-        json: jest.fn().mockResolvedValue({ room_id: 'test' })
-      })
-
-      await supertest(app)
-        .post(PATH)
-        .set('Authorization', 'Bearer test')
-        .send({
-          contact: '+21625555888',
-          medium: 'phone'
-        } satisfies InvitationRequestPayload)
-
-      expect(dbMock.insert).toHaveBeenCalledWith(
-        'invitations',
-        expect.any(Object)
+      expect(spyMock).toHaveBeenCalledWith(
+        { recepient: '+21625555888', medium: 'phone', sender: 'test' },
+        'Bearer test'
       )
+
+      expect(response.status).toBe(200)
     })
 
     it('should return a 400 if the sender is missing', async () => {
@@ -124,26 +135,8 @@ describe('the invitation API controller', () => {
       expect(response.status).toBe(400)
     })
 
-    it('should return a 500 if the fetch to matrix server fails', async () => {
-      global.fetch = jest.fn().mockRejectedValue(new Error('test'))
-
-      const response = await supertest(app)
-        .post(PATH)
-        .send({
-          contact: '+21625555888',
-          medium: 'phone'
-        } satisfies InvitationRequestPayload)
-        .set('Authorization', 'Bearer test')
-
-      expect(response.status).toBe(500)
-    })
-
-    it('should return a 500 if the db insert fails', async () => {
-      global.fetch = jest.fn().mockResolvedValue({
-        status: 200,
-        json: jest.fn().mockResolvedValue({ room_id: 'test' })
-      })
-      dbMock.insert.mockRejectedValue(new Error('test'))
+    it('should return a 500 if something wrong happens', async () => {
+      spyMock.mockRejectedValue(new Error('test'))
 
       const response = await supertest(app)
         .post(PATH)
@@ -158,70 +151,40 @@ describe('the invitation API controller', () => {
   })
 
   describe('the acceptInvitation method', () => {
+    afterEach(() => {
+      spyMock.mockClear()
+    })
+
     it('should try to accept an invitation', async () => {
-      dbMock.get.mockResolvedValue([
-        {
-          id: 'test',
-          sender: 'test',
-          recepient: 'test',
-          medium: 'phone',
-          expiration: `${Date.now() + EXPIRATION}`,
-          accessed: 0,
-          room_id: 'test'
-        }
-      ])
+      spyMock.mockClear()
+      spyMock.mockResolvedValue('Invitation accepted')
+      const response = await supertest(app)
+        .get(`${PATH}/token`)
+        .set('Authorization', 'Bearer test')
 
-      const response = await supertest(app).get(`${PATH}/test`)
-
-      expect(response.status).toBe(301)
+      expect(spyMock).toHaveBeenCalledWith('token', 'test', 'Bearer test')
+      expect(response.status).toBe(200)
+      expect(response.body).toEqual({ message: 'Invitation accepted' })
     })
 
-    it('should try to update the invitation status in db', async () => {
-      dbMock.get.mockResolvedValue([
-        {
-          id: 'test',
-          sender: 'test',
-          recepient: 'test',
-          medium: 'phone',
-          expiration: `${Date.now() + EXPIRATION}`,
-          accessed: 0,
-          room_id: 'test'
-        }
-      ])
+    it('should return a 500 if something wrong happens', async () => {
+      spyMock.mockClear()
+      spyMock.mockRejectedValue(new Error('something wrong happens'))
 
-      await supertest(app).get(`${PATH}/test`)
-
-      expect(dbMock.update).toHaveBeenCalledWith(
-        'invitations',
-        { accessed: 1 },
-        'id',
-        'test'
-      )
-    })
-
-    it('should return a 500 if the invitation is expired', async () => {
-      dbMock.get.mockResolvedValue([
-        {
-          id: 'test',
-          sender: 'test',
-          recepient: 'test',
-          medium: 'phone',
-          expiration: `${Date.now() - EXPIRATION}`,
-          accessed: 0
-        }
-      ])
-
-      const response = await supertest(app).get(`${PATH}/test`)
+      const response = await supertest(app)
+        .get(`${PATH}/test`)
+        .set('Authorization', 'Bearer test')
 
       expect(response.status).toBe(500)
     })
 
-    it('should return a 500 if the invitation does not exist', async () => {
-      dbMock.get.mockResolvedValue([])
+    it('should return a 400 if the authorization header is missing', async () => {
+      const response = await supertest(app).get(`${PATH}/token`)
 
-      const response = await supertest(app).get(`${PATH}/test`)
-
-      expect(response.status).toBe(500)
+      expect(response.status).toBe(400)
+      expect(response.body).toEqual({
+        message: 'Authorization header is required'
+      })
     })
   })
 
@@ -233,10 +196,10 @@ describe('the invitation API controller', () => {
         recepient: 'test',
         medium: 'phone',
         expiration: `${Date.now() + EXPIRATION}`,
-        accessed: 0
+        accessed: false
       }
 
-      dbMock.get.mockResolvedValue([sampleInvitation])
+      spyMock.mockResolvedValue([sampleInvitation])
 
       const response = await supertest(app)
         .get(`${PATH}/list`)
@@ -244,12 +207,12 @@ describe('the invitation API controller', () => {
 
       expect(response.status).toBe(200)
       expect(response.body).toEqual({
-        invitations: [{ ...sampleInvitation, accessed: false }]
+        invitations: [sampleInvitation]
       })
     })
 
-    it('should return a 500 if the db fails to get the invitations', async () => {
-      dbMock.get.mockRejectedValue(new Error('test'))
+    it('should return a 500 if something wrong happens', async () => {
+      spyMock.mockRejectedValue(new Error('error'))
 
       const response = await supertest(app)
         .get(`${PATH}/list`)
@@ -261,12 +224,8 @@ describe('the invitation API controller', () => {
 
   describe('the generateInvitationLink method', () => {
     it('should attempt to generate an invitation link', async () => {
-      global.fetch = jest.fn().mockResolvedValue({
-        status: 200,
-        json: jest.fn().mockResolvedValue({ room_id: 'test' })
-      })
+      spyMock.mockResolvedValue('https://localhost/?invitation_token=test')
 
-      dbMock.insert.mockResolvedValue({ id: 'test' })
       const response = await supertest(app)
         .post(`${PATH}/generate`)
         .set('Authorization', 'Bearer test')
@@ -279,29 +238,8 @@ describe('the invitation API controller', () => {
       expect(response.body).toEqual({ link: expect.any(String) })
     })
 
-    it('should attempt to save the invitation in the db', async () => {
-      global.fetch = jest.fn().mockResolvedValue({
-        status: 200,
-        json: jest.fn().mockResolvedValue({ room_id: 'test' })
-      })
-      dbMock.insert.mockResolvedValue({ id: 'test' })
-
-      await supertest(app)
-        .post(`${PATH}/generate`)
-        .set('Authorization', 'Bearer test')
-        .send({
-          contact: '+21625555888',
-          medium: 'phone'
-        } satisfies InvitationRequestPayload)
-
-      expect(dbMock.insert).toHaveBeenCalledWith(
-        'invitations',
-        expect.any(Object)
-      )
-    })
-
-    it('should return a 500 if the db insert fails', async () => {
-      dbMock.insert.mockRejectedValue(new Error('test'))
+    it('should return a 500 if something wrong happens', async () => {
+      spyMock.mockRejectedValue(new Error('error'))
 
       const response = await supertest(app)
         .post(`${PATH}/generate`)

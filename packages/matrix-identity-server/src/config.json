@@ -97,5 +97,6 @@
   "auth_url": "https://auth.example.com",
   "matrix_admin_login": "admin",
   "matrix_admin_password": "change-me",
-  "admin_access_token": "secret"
+  "admin_access_token": "secret",
+  "signup_url": "https://sign-up.example.com/?app=chat"
 }

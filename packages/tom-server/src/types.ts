@@ -10,6 +10,7 @@ import {
 } from '@twake/utils'
 import { type NextFunction, type Request, type Response } from 'express'
 import type { PathOrFileDescriptor } from 'fs'
+import type { SendMailOptions } from 'nodemailer'
 
 export type expressAppHandler = _expressAppHandler
 export type AuthenticationFunction = MUtils.AuthenticationFunction
@@ -45,6 +46,7 @@ export type Config = MConfig &
     matrix_admin_login: string
     matrix_admin_password: string
     admin_access_token: string
+    signup_url: string
   }
 
 export interface AuthRequest extends Request {
@@ -146,4 +148,39 @@ export interface AuthResponse extends AuthAPIResponse {
 
 export interface TokenResponse extends AuthAPIResponse {
   token: string
+}
+
+export interface INotificationService {
+  emailFrom: string
+  sendEmail: (options: SendMailOptions) => Promise<void>
+  sendSMS: (to: string, body: string) => Promise<void>
+}
+
+export interface SendSmsPayload {
+  text: string
+  recipients: Recipient[]
+  sender: string
+}
+
+interface Recipient {
+  phone_number: string
+}
+
+export interface ISMSService {
+  send: (to: string, body: string) => Promise<void>
+}
+
+export interface IEmailService {
+  from: string
+  send: (options: SendMailOptions) => Promise<void>
+}
+
+export interface MailerConfig {
+  host: string
+  port: number
+  auth?: Record<string, string>
+  secure?: boolean
+  tls?: {
+    rejectUnauthorized: boolean
+  }
 }

@@ -1,11 +1,12 @@
 export interface IInvitationService {
   invite: (payload: InvitationPayload, authToken: string) => Promise<void>
-  accept: (token: string) => Promise<void>
+  accept: (
+    token: string,
+    userId: string,
+    authorization: string
+  ) => Promise<void>
   list: (userId: string) => Promise<Invitation[]>
-  generateLink: (
-    payload: InvitationPayload,
-    authToken: string
-  ) => Promise<string>
+  generateLink: (payload: InvitationPayload) => Promise<string>
 }
 
 export type medium = 'email' | 'phone'
@@ -23,12 +24,14 @@ export interface Invitation {
 export interface InvitationRequestPayload {
   contact: string
   medium: medium
+  room_id?: string
 }
 
 export interface InvitationPayload {
   sender: string
   recepient: string
   medium: medium
+  room_id?: string
 }
 
 export interface InsertInvitationPayload extends InvitationPayload {
@@ -38,6 +41,7 @@ export interface InsertInvitationPayload extends InvitationPayload {
 export interface RoomCreationPayload {
   is_direct: boolean
   preset: 'private_chat' | 'public_chat' | 'trusted_private_chat'
+  invite?: string[]
 }
 
 export interface RoomCreationResponse {

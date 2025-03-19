@@ -1,6 +1,6 @@
-import { type TwakeLogger } from '@twake/logger'
-import { AuthRequest, Config, type TwakeDB } from '../../types'
-import { type NextFunction, type Request, type Response } from 'express'
+import type { TwakeLogger } from '@twake/logger'
+import type { AuthRequest, Config, TwakeDB } from '../../types'
+import type { NextFunction, Request, Response } from 'express'
 import { IInvitationService, InvitationRequestPayload } from '../types'
 import InvitationService from '../services'
 
@@ -29,7 +29,7 @@ export default class InvitationApiController {
   ): Promise<void> => {
     try {
       const {
-        body: { contact: recepient, medium },
+        body: { contact: recepient, medium, room_id = undefined },
         userId: sender
       }: { body: InvitationRequestPayload; userId?: string } = req
 
@@ -46,7 +46,7 @@ export default class InvitationApiController {
       }
 
       await this.invitationService.invite(
-        { recepient, medium, sender },
+        { recepient, medium, sender, room_id },
         authorization
       )
 
@@ -61,12 +61,12 @@ export default class InvitationApiController {
   /**
    * Accepts an invitation
    *
-   * @param {Request} req - the request object.
+   * @param {AuthRequest} req - the request object.
    * @param {Response} res - the response object.
    * @param {NextFunction} next - the next hundler
    */
   acceptInvitation = async (
-    req: Request,
+    req: AuthRequest,
     res: Response,
     next: NextFunction
   ): Promise<void> => {
@@ -78,13 +78,25 @@ export default class InvitationApiController {
         return
       }
 
-      await this.invitationService.accept(id)
+      const { userId } = req
 
-      res.redirect(
-        301,
-        this.config.invitation_redirect_url ?? this.config.base_url
-      )
+      if (!userId) {
+        res.status(400).json({ message: 'User id is required' })
+        return
+      }
+
+      const { authorization } = req.headers
+
+      if (!authorization) {
+        res.status(400).json({ message: 'Authorization header is required' })
+        return
+      }
+
+      await this.invitationService.accept(id, userId, authorization)
+
+      res.status(200).json({ message: 'Invitation accepted' })
     } catch (err) {
+      console.log({ err })
       this.logger.error(`Failed to accept invitation`, { err })
 
       next(err)
@@ -133,7 +145,7 @@ export default class InvitationApiController {
   ): Promise<void> => {
     try {
       const {
-        body: { contact: recepient, medium },
+        body: { contact: recepient, medium, room_id = undefined },
         userId: sender
       }: { body: InvitationRequestPayload; userId?: string } = req
 
@@ -141,21 +153,12 @@ export default class InvitationApiController {
         throw Error('Sender is required')
       }
 
-      const { authorization } = req.headers
-
-      if (!authorization) {
-        res.status(400).json({ message: 'Authorization header is required' })
-        return
-      }
-
-      const link = await this.invitationService.generateLink(
-        {
-          sender,
-          recepient,
-          medium
-        },
-        authorization
-      )
+      const link = await this.invitationService.generateLink({
+        sender,
+        recepient,
+        medium,
+        room_id
+      })
 
       res.status(200).json({ link })
     } catch (err) {
