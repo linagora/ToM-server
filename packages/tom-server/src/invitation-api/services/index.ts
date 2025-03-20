@@ -1,5 +1,10 @@
 import { type TwakeLogger } from '@twake/logger'
-import type { Config, INotificationService, TwakeDB } from '../../types'
+import type {
+  Config,
+  INotificationService,
+  ITokenService,
+  TwakeDB
+} from '../../types'
 import {
   type Invitation,
   type IInvitationService,
@@ -14,14 +19,16 @@ import { buildUrl } from '../../utils'
 import NotificationService from '../../utils/services/notification-service'
 import type { SendMailOptions } from 'nodemailer'
 import { buildEmailBody, buildSmsBody } from '../../utils/helpers'
+import TokenService from '../../utils/services/token-service'
 
 export default class InvitationService implements IInvitationService {
   private readonly EXPIRATION = 24 * 60 * 60 * 1000 // 24 hours
   private readonly MATRIX_INVITE_PATH = '/_matrix/identity/v2/store-invite'
   private readonly MATRIX_ROOM_PATH = '/_matrix/client/v3/createRoom'
-  private readonly MATRIX_ROOM_INVITE_PATH = '/_matrix/client/v3/rooms'
+  private readonly MATRIX_ADMIN_ROOM_JOIN_PATH = '/_synapse/admin/v1/join'
 
   private notificationService: INotificationService
+  private tokenService: ITokenService
 
   constructor(
     private readonly db: TwakeDB,
@@ -29,6 +36,7 @@ export default class InvitationService implements IInvitationService {
     private readonly config: Config
   ) {
     this.notificationService = new NotificationService(config, logger)
+    this.tokenService = new TokenService(config, logger, 'invitation')
   }
 
   /**
@@ -292,31 +300,42 @@ export default class InvitationService implements IInvitationService {
    *
    * @param {string} roomId - Room ID
    * @param {string} userId - User ID
-   * @param {string} authorization - the authorization header
    * @returns {Promise<void>}
    */
   private _inviteToRoom = async (
     roomId: string,
-    userId: string,
-    authorization: string
+    userId: string
   ): Promise<void> => {
     try {
+      const accessToken = await this.tokenService.getAccessTokenWithCreds(
+        this.config.matrix_admin_login,
+        this.config.matrix_admin_password
+      )
+
       const response = await fetch(
         buildUrl(
           this.config.matrix_server,
-          `${this.MATRIX_ROOM_INVITE_PATH}/${roomId}/invite`
+          `${this.MATRIX_ADMIN_ROOM_JOIN_PATH}/${roomId}`
         ),
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: authorization
+            Authorization: `Bearer ${accessToken}`
           },
           body: JSON.stringify({
             user_id: userId
           })
         }
       )
+
+      try {
+        const data = await response.json()
+
+        this.logger.warn('Failed to join user to room', { data })
+      } catch (error) {
+        this.logger.error({ error })
+      }
 
       if (response.status !== 200) {
         throw Error('Failed to invite to room')
@@ -351,7 +370,7 @@ export default class InvitationService implements IInvitationService {
           }
 
           if (room_id) {
-            await this._inviteToRoom(room_id, userId, authorization)
+            await this._inviteToRoom(room_id, userId)
           } else {
             await this._createPrivateRoom(authorization, sender)
           }
