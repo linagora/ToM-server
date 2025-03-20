@@ -25,12 +25,21 @@ beforeEach(() => {
 
 const sendSMSMock = jest.fn()
 const sendEmailMock = jest.fn()
+const tokenAccessMock = jest.fn().mockResolvedValue('test')
 
 jest.mock('../../utils/services/notification-service', () => {
   return function () {
     return {
       sendSMS: sendSMSMock,
       sendEmail: sendEmailMock
+    }
+  }
+})
+
+jest.mock('../../utils/services/token-service.ts', () => {
+  return function () {
+    return {
+      getAccessTokenWithCreds: tokenAccessMock
     }
   }
 })
@@ -43,7 +52,9 @@ describe('the Invitation API service', () => {
       matrix_server: 'localhost',
       base_url: 'http://localhost',
       signup_url: 'https://signup.example.com/?app=chat',
-      template_dir: './templates'
+      template_dir: './templates',
+      matrix_admin_login: 'login',
+      matrix_admin_password: 'password'
     } as unknown as Config
   )
 
@@ -223,6 +234,8 @@ describe('the Invitation API service', () => {
         json: jest.fn().mockResolvedValue({ room_id: 'test' })
       })
 
+      tokenAccessMock.mockResolvedValue('test')
+
       dbMock.get.mockResolvedValue([
         {
           id: 'test',
@@ -237,8 +250,10 @@ describe('the Invitation API service', () => {
 
       await invitationService.accept('test', 'test', AUTHORIZATION)
 
+      expect(tokenAccessMock).toHaveBeenCalledWith('login', 'password')
+
       expect(global.fetch).toHaveBeenCalledWith(
-        'https://localhost/_matrix/client/v3/rooms/room-5/invite',
+        'https://localhost/_synapse/admin/v1/join/room-5',
         {
           method: 'POST',
           headers: {

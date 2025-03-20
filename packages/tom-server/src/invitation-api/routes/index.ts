@@ -45,6 +45,12 @@ export default (
    *      medium:
    *        type: string
    *        description: The medium to send the invitation through
+   *      room_id:
+   *        type: string
+   *        description: The room id to invite the contact to
+   *    required:
+   *      - contact
+   *      - medium
    *  securitySchemes:
    *    cookieAuth:
    *      type: apiKey
