@@ -22,7 +22,7 @@
   ],
   "scripts": {
     "build": "npm run softClean && lerna run build",
-    "clean": "rimraf packages/*/dist packages/*/coverage ./node_modules/.cache/nx packages/*/example/*.js*",
+    "clean": "rimraf packages/*/dist packages/*/coverage packages/*/example/*.js*",
     "doc": "npm run doc:swagger && npm run doc:arch",
     "doc:swagger": "node docs/swagger.cjs",
     "doc:arch": "dot -Tpng -o docs/arch.png docs/arch.dot",
@@ -79,8 +79,6 @@
     "moment": "^2.29.4",
     "node-fetch": "^3.3.0",
     "node-fetch-jest": "npm:node-fetch@^2.6.9",
-    "nx": "^16.5.3",
-    "nx-cloud": "latest",
     "prettier": "2.8.7",
     "prettier-plugin-svelte": "^2.10.0",
     "rimraf": "^4.3.1",
@@ -93,9 +91,5 @@
     "toad-cache": "^3.3.0",
     "ts-jest": "^29.1.0",
     "typescript": "^4.9.5"
-  },
-  "optionalDependencies": {
-    "@nx/nx-darwin-arm64": "^19.4.0",
-    "@nx/nx-linux-x64-gnu": "^19.4.0"
   }
 }
