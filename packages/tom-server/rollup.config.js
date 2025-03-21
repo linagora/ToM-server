@@ -4,7 +4,7 @@ export default config([
   'express',
   'express-validator',
   'fs',
-  'ldapjs',
+  'ldapts',
   'lodash',
   'node-fetch',
   '@twake/config-parser',

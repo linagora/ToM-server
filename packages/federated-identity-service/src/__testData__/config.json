@@ -11,7 +11,7 @@
   "ldap_base": "",
   "ldap_filter": "(ObjectClass=inetOrgPerson)",
   "ldap_uri": "",
-  "ldapjs_opts": {},
+  "ldapts_opts": {},
   "mail_link_delay": 7200,
   "matrix_database_engine": "sqlite",
   "matrix_database_host": "./src/__testData__/matrix.db",

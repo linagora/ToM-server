@@ -19,7 +19,7 @@
   "ldap_password": "",
   "ldap_uri": "",
   "ldap_user": "",
-  "ldapjs_opts": {},
+  "ldapts_opts": {},
   "mail_link_delay": 7200,
   "matrix_database_engine": null,
   "matrix_database_host": null,
