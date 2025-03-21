@@ -165,14 +165,14 @@ export class TwakeLoggerOptions {
 
         return message.concat(
           requestDetails(
-            info.ip,
-            info.matrixUserId,
-            info.httpMethod,
-            info.requestUrl,
-            info.endpointPath,
-            info.status
+            info.ip as string,
+            info.matrixUserId as string,
+            info.httpMethod as string,
+            info.requestUrl as string,
+            info.endpointPath as string,
+            info.status as string
           ),
-          info.message,
+          info.message as string,
           additionnalDetails()
         )
       }),
