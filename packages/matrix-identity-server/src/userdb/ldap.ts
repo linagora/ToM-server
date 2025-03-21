@@ -1,5 +1,7 @@
+/* istanbul ignore file */
 import { type TwakeLogger } from '@twake/logger'
-import ldapts, { type Client, type SearchOptions } from 'ldapts'
+import { type Client, type SearchOptions } from 'ldapts'
+import * as ldapts from 'ldapts'
 import { type Config, type DbGetResult } from '../types'
 import { type UserDBBackend } from './index'
 import { isBuffer, isArray } from 'lodash'
