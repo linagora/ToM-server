@@ -69,7 +69,7 @@ export default class InvitationService implements IInvitationService {
    * Accepts an invitation by token
    *
    * @param {string} id - Invitation token
-   * @param {string} authorization - the auth header 
+   * @param {string} authorization - the auth header
    * @returns {Promise<void>}
    */
   public accept = async (id: string, authorization: string): Promise<void> => {
