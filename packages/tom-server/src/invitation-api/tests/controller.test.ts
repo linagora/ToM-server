@@ -105,10 +105,11 @@ describe('the invitation API controller', () => {
         } satisfies InvitationRequestPayload)
         .set('Authorization', 'Bearer test')
 
-      expect(spyMock).toHaveBeenCalledWith(
-        { recepient: '+21625555888', medium: 'phone', sender: 'test' },
-        'Bearer test'
-      )
+      expect(spyMock).toHaveBeenCalledWith({
+        recepient: '+21625555888',
+        medium: 'phone',
+        sender: 'test'
+      })
 
       expect(response.status).toBe(200)
     })
@@ -158,11 +159,12 @@ describe('the invitation API controller', () => {
     it('should try to accept an invitation', async () => {
       spyMock.mockClear()
       spyMock.mockResolvedValue('Invitation accepted')
+
       const response = await supertest(app)
         .get(`${PATH}/token`)
         .set('Authorization', 'Bearer test')
 
-      expect(spyMock).toHaveBeenCalledWith('token', 'test', 'Bearer test')
+      expect(spyMock).toHaveBeenCalledWith('token', 'Bearer test')
       expect(response.status).toBe(200)
       expect(response.body).toEqual({ message: 'Invitation accepted' })
     })
