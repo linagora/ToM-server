@@ -27,7 +27,7 @@ const sendSMSMock = jest.fn()
 const sendEmailMock = jest.fn()
 const tokenAccessMock = jest.fn().mockResolvedValue('test')
 
-jest.mock('../../utils/services/notification-service', () => {
+jest.mock('../../utils/services/notification-service.ts', () => {
   return function () {
     return {
       sendSMS: sendSMSMock,
@@ -104,15 +104,13 @@ describe('the Invitation API service', () => {
 
   describe('the invite method', () => {
     it('should send an invitation and insert it into the database', async () => {
-      global.fetch = jest.fn().mockResolvedValue({
-        status: 200,
-        json: jest.fn().mockResolvedValue({ room_id: 'test' })
-      })
+      sendSMSMock.mockResolvedValue(true)
 
-      await invitationService.invite(
-        { recepient: 'test', medium: 'phone', sender: 'test' },
-        'Bearer test'
-      )
+      await invitationService.invite({
+        recepient: 'test',
+        medium: 'phone',
+        sender: 'test'
+      })
 
       expect(dbMock.insert).toHaveBeenCalledWith(
         'invitations',
@@ -121,33 +119,26 @@ describe('the Invitation API service', () => {
     })
 
     it('should send an SMS notification if the room is not defined', async () => {
-      await invitationService.invite(
-        { recepient: 'test', medium: 'phone', sender: 'test' },
-        'Bearer test'
-      )
+      sendSMSMock.mockResolvedValue(true)
+
+      await invitationService.invite({
+        recepient: 'test',
+        medium: 'phone',
+        sender: 'test'
+      })
 
       expect(sendSMSMock).toHaveBeenCalledWith('test', expect.anything())
-    })
-
-    it('should throw an error if the store-invite API call fails fails', async () => {
-      global.fetch = jest.fn().mockRejectedValue(new Error('test'))
-
-      await expect(
-        invitationService.invite(
-          { recepient: 'test', medium: 'phone', sender: 'test', room_id: '5' },
-          'Bearer test'
-        )
-      ).rejects.toThrow('Failed to send invitation')
     })
 
     it('should throw an error if it fails to deliver the invitation', async () => {
       sendEmailMock.mockRejectedValue(new Error('test'))
 
       await expect(
-        invitationService.invite(
-          { recepient: 'test', medium: 'email', sender: 'test' },
-          'Bearer test'
-        )
+        invitationService.invite({
+          recepient: 'test',
+          medium: 'email',
+          sender: 'test'
+        })
       ).rejects.toThrow('Failed to send invitation')
     })
 
@@ -160,10 +151,11 @@ describe('the Invitation API service', () => {
       dbMock.insert.mockRejectedValue(new Error('test'))
 
       await expect(
-        invitationService.invite(
-          { recepient: 'test', medium: 'phone', sender: 'test' },
-          'Bearer test'
-        )
+        invitationService.invite({
+          recepient: 'test',
+          medium: 'phone',
+          sender: 'test'
+        })
       ).rejects.toThrow('Failed to send invitation')
     })
   })
@@ -182,7 +174,7 @@ describe('the Invitation API service', () => {
         }
       ])
 
-      await invitationService.accept('test', 'test', AUTHORIZATION)
+      await invitationService.accept('test', AUTHORIZATION)
 
       expect(dbMock.update).toHaveBeenCalledWith(
         'invitations',
@@ -209,7 +201,7 @@ describe('the Invitation API service', () => {
         }
       ])
 
-      await invitationService.accept('test', 'test', AUTHORIZATION)
+      await invitationService.accept('test', AUTHORIZATION)
 
       expect(global.fetch).toHaveBeenCalledWith(
         'https://localhost/_matrix/client/v3/createRoom',
@@ -228,50 +220,11 @@ describe('the Invitation API service', () => {
       )
     })
 
-    it('should invite the user to the room he was invited too', async () => {
-      global.fetch = jest.fn().mockResolvedValue({
-        status: 200,
-        json: jest.fn().mockResolvedValue({ room_id: 'test' })
-      })
-
-      tokenAccessMock.mockResolvedValue('test')
-
-      dbMock.get.mockResolvedValue([
-        {
-          id: 'test',
-          sender: 'test',
-          recepient: 'test',
-          medium: 'phone',
-          expiration: `${Date.now() + 123456789}`,
-          room_id: 'room-5',
-          accessed: 0
-        }
-      ])
-
-      await invitationService.accept('test', 'test', AUTHORIZATION)
-
-      expect(tokenAccessMock).toHaveBeenCalledWith('login', 'password')
-
-      expect(global.fetch).toHaveBeenCalledWith(
-        'https://localhost/_synapse/admin/v1/join/room-5',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: AUTHORIZATION
-          },
-          body: JSON.stringify({
-            user_id: 'test'
-          })
-        }
-      )
-    })
-
     it('should throw an error if the invitation is not found', async () => {
       dbMock.get.mockResolvedValue([])
 
       await expect(
-        invitationService.accept('test', 'test', AUTHORIZATION)
+        invitationService.accept('test', AUTHORIZATION)
       ).rejects.toThrow('Failed to accept invitation')
     })
 
@@ -279,7 +232,7 @@ describe('the Invitation API service', () => {
       dbMock.get.mockRejectedValue(new Error('test'))
 
       await expect(
-        invitationService.accept('test', 'test', AUTHORIZATION)
+        invitationService.accept('test', AUTHORIZATION)
       ).rejects.toThrow('Failed to accept invitation')
     })
 
@@ -296,7 +249,7 @@ describe('the Invitation API service', () => {
       ])
 
       await expect(
-        invitationService.accept('test', 'test', AUTHORIZATION)
+        invitationService.accept('test', AUTHORIZATION)
       ).rejects.toThrow('Failed to accept invitation')
     })
   })

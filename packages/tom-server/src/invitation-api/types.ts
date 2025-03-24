@@ -1,10 +1,6 @@
 export interface IInvitationService {
-  invite: (payload: InvitationPayload, authToken: string) => Promise<void>
-  accept: (
-    token: string,
-    userId: string,
-    authorization: string
-  ) => Promise<void>
+  invite: (payload: InvitationPayload) => Promise<void>
+  accept: (token: string, authorization: string) => Promise<void>
   list: (userId: string) => Promise<Invitation[]>
   generateLink: (payload: InvitationPayload) => Promise<string>
 }
@@ -18,24 +14,17 @@ export interface Invitation {
   medium: medium
   expiration: string
   accessed: boolean
-  room_id?: string
 }
 
 export interface InvitationRequestPayload {
   contact: string
   medium: medium
-  room_id?: string
 }
 
 export interface InvitationPayload {
   sender: string
   recepient: string
   medium: medium
-  room_id?: string
-}
-
-export interface InsertInvitationPayload extends InvitationPayload {
-  room_id?: string
 }
 
 export interface RoomCreationPayload {

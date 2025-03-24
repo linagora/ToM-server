@@ -29,7 +29,7 @@ export default class InvitationApiController {
   ): Promise<void> => {
     try {
       const {
-        body: { contact: recepient, medium, room_id = undefined },
+        body: { contact: recepient, medium },
         userId: sender
       }: { body: InvitationRequestPayload; userId?: string } = req
 
@@ -45,10 +45,7 @@ export default class InvitationApiController {
         return
       }
 
-      await this.invitationService.invite(
-        { recepient, medium, sender, room_id },
-        authorization
-      )
+      await this.invitationService.invite({ recepient, medium, sender })
 
       res.status(200).json({ message: 'Invitation sent' })
     } catch (err) {
@@ -78,13 +75,6 @@ export default class InvitationApiController {
         return
       }
 
-      const { userId } = req
-
-      if (!userId) {
-        res.status(400).json({ message: 'User id is required' })
-        return
-      }
-
       const { authorization } = req.headers
 
       if (!authorization) {
@@ -92,7 +82,7 @@ export default class InvitationApiController {
         return
       }
 
-      await this.invitationService.accept(id, userId, authorization)
+      await this.invitationService.accept(id, authorization)
 
       res.status(200).json({ message: 'Invitation accepted' })
     } catch (err) {
@@ -145,7 +135,7 @@ export default class InvitationApiController {
   ): Promise<void> => {
     try {
       const {
-        body: { contact: recepient, medium, room_id = undefined },
+        body: { contact: recepient, medium },
         userId: sender
       }: { body: InvitationRequestPayload; userId?: string } = req
 
@@ -156,8 +146,7 @@ export default class InvitationApiController {
       const link = await this.invitationService.generateLink({
         sender,
         recepient,
-        medium,
-        room_id
+        medium
       })
 
       res.status(200).json({ link })

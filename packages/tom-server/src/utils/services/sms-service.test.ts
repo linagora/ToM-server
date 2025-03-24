@@ -32,7 +32,7 @@ describe('the SMS service', () => {
       expect(loggerMock.error).not.toHaveBeenCalled()
     })
 
-    it('should log an error when failed to send SMS', async () => {
+    it('should throw and log an error when failed to send SMS', async () => {
       global.fetch = jest.fn().mockImplementation(() => {
         return Promise.resolve({
           json: () => Promise.resolve({}),
@@ -40,7 +40,7 @@ describe('the SMS service', () => {
         })
       })
 
-      await smsService.send('test', 'test')
+      await expect(smsService.send('test', 'test')).rejects.toThrow()
 
       expect(loggerMock.error).toHaveBeenCalledWith(
         'Failed to send SMS',
