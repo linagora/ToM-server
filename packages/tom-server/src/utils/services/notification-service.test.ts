@@ -54,7 +54,6 @@ describe('the notification service', () => {
         service.sendSMS('123456789', 'Hello World')
       ).rejects.toThrow()
     })
-    
   })
 
   describe('the sendEmail method', () => {
