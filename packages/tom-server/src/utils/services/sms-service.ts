@@ -62,7 +62,9 @@ export default class SmsService implements ISMSService {
     } catch (error) {
       console.error('Failed to send SMS', { error })
 
-      this.logger.error('Failed to send SMS', { error })
+      this.logger.error('Failed to send SMS', error)
+
+      throw error
     }
   }
 }
