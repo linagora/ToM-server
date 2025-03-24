@@ -45,18 +45,16 @@ describe('the notification service', () => {
       expect(sendSMSMock).toHaveBeenCalledWith('123456789', 'Hello World')
     })
 
-    it('should log an error if something wrong happens while sending an SMS', async () => {
+    it('should throw an error if something wrong happens while sending an SMS', async () => {
       sendSMSMock.mockImplementationOnce(() => {
         throw new Error('Something went wrong')
       })
 
-      await service.sendSMS('123456789', 'Hello World')
-
-      expect(loggerMock.error).toHaveBeenCalledWith(
-        'Failed to send SMS',
-        expect.anything()
-      )
+      await expect(
+        service.sendSMS('123456789', 'Hello World')
+      ).rejects.toThrow()
     })
+    
   })
 
   describe('the sendEmail method', () => {
@@ -77,17 +75,12 @@ describe('the notification service', () => {
       expect(sendEmailMock).toHaveBeenCalledWith(options)
     })
 
-    it('should log an error if something wrong happens while sending an email', async () => {
+    it('should throw an error if something wrong happens while sending an email', async () => {
       sendEmailMock.mockImplementationOnce(() => {
         throw new Error('Something went wrong')
       })
 
-      await service.sendEmail(options)
-
-      expect(loggerMock.error).toHaveBeenCalledWith(
-        'Failed to send email',
-        expect.anything()
-      )
+      await expect(service.sendEmail(options)).rejects.toThrow()
     })
   })
 })
