@@ -39,7 +39,9 @@ export default class NotificationService implements INotificationService {
     } catch (error) {
       console.error('Failed to send SMS', { error })
 
-      this.logger.error('Failed to send SMS', { error })
+      this.logger.error('Failed to send SMS', error)
+
+      throw error
     }
   }
 
@@ -55,7 +57,9 @@ export default class NotificationService implements INotificationService {
     } catch (error) {
       console.error('Failed to send email', { error })
 
-      this.logger.error('Failed to send email', { error })
+      this.logger.error('Failed to send email', error)
+
+      throw error
     }
   }
 }
