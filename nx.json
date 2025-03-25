@@ -7,7 +7,8 @@
           "build",
           "test"
         ],
-        "accessToken": "YTgyZmEyMWEtYTBkMi00MWUwLWIzMjYtZjQ1YWU1YThlMjM4fHJlYWQtd3JpdGU="
+        "accessToken": "MDE1ZWJkYTktMzFhMi00NGZiLWFhMGMtZTM0NDU5ZWI3MGY2fHJlYWQtd3JpdGU=",
+        "// accessToken is managed at": "https://cloud.nx.app/orgs/67a215e895a16a2b2700859d/workspaces/67a2162cb7a06c469a8df1a3/settings/access"
       }
     }
   },
