@@ -1,17 +1,4 @@
 {
-  "tasksRunnerOptions": {
-    "default": {
-      "runner": "nx-cloud",
-      "options": {
-        "cacheableOperations": [
-          "build",
-          "test"
-        ],
-        "accessToken": "MDE1ZWJkYTktMzFhMi00NGZiLWFhMGMtZTM0NDU5ZWI3MGY2fHJlYWQtd3JpdGU=",
-        "// accessToken is managed at": "https://cloud.nx.app/orgs/67a215e895a16a2b2700859d/workspaces/67a2162cb7a06c469a8df1a3/settings/access"
-      }
-    }
-  },
   "defaultBase": "master",
   "$schema": "./node_modules/nx/schemas/nx-schema.json",
   "namedInputs": {
@@ -23,5 +10,63 @@
     "production": [
       "default"
     ]
-  }
+  },
+  "nxCloudAccessToken": "MDE1ZWJkYTktMzFhMi00NGZiLWFhMGMtZTM0NDU5ZWI3MGY2fHJlYWQtd3JpdGU=",
+  "targetDefaults": {
+    "build": {
+      "cache": true,
+      "dependsOn": [
+        "^build"
+      ],
+      "outputs": [
+        "{projectRoot}/dist"
+      ]
+    },
+    "test": {
+      "cache": true,
+      "dependsOn": [
+        "^test"
+      ]
+    },
+    "dev": {
+      "dependsOn": []
+    },
+    "dev:node": {
+      "dependsOn": []
+    },
+    "dev:remix": {
+      "dependsOn": []
+    },
+    "start": {
+      "dependsOn": []
+    },
+    "typecheck": {
+      "dependsOn": []
+    },
+    "build:example": {
+      "dependsOn": []
+    },
+    "build:lib": {
+      "dependsOn": []
+    },
+    "check": {
+      "dependsOn": []
+    },
+    "check:watch": {
+      "dependsOn": []
+    },
+    "format": {
+      "dependsOn": []
+    },
+    "lint": {
+      "dependsOn": []
+    },
+    "preview": {
+      "dependsOn": []
+    },
+    "test:unit": {
+      "dependsOn": []
+    }
+  },
+  "useInferencePlugins": false
 }

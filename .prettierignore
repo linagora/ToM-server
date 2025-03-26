@@ -17,3 +17,5 @@ packages/**/dist
 packages/**/coverage
 packages/**/__testData__
 packages/**/node_modules
+/.nx/cache
+/.nx/workspace-data
