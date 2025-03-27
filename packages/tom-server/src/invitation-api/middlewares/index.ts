@@ -1,5 +1,5 @@
 import { TwakeLogger } from '@twake/logger'
-import { TwakeDB } from '../../types'
+import { AuthRequest, TwakeDB } from '../../types'
 import type { NextFunction, Request, Response } from 'express'
 import type { Invitation, InvitationRequestPayload } from '../types'
 import validator from 'validator'
@@ -103,6 +103,54 @@ export default class invitationApiMiddleware {
       next()
     } catch (error) {
       this.logger.error(`Failed to check invitation`, { error })
+
+      res.status(400).json({ message: 'Invalid invitation' })
+    }
+  }
+
+  /**
+   * Checks if the invitation is owned by the current user
+   *
+   * @param {AuthRequest} req - the request object.
+   * @param {Response} res - the response object.
+   * @param {NextFunction} next - the next hundler
+   */
+  checkInvitationOwnership = async (
+    req: AuthRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
+    try {
+      const {
+        params: { id }
+      } = req
+
+      if (!id) {
+        res.status(400).json({ message: 'Invitation id is required' })
+        return
+      }
+
+      const invitation = await this.db.get('invitations', ['sender'], {
+        id
+      })
+
+      if (!invitation || !invitation.length) {
+        res.status(404).json({ message: 'Invitation not found' })
+        return
+      }
+
+      const { sender } = invitation[0]
+
+      if (sender !== req.userId) {
+        res
+          .status(403)
+          .json({ message: 'You are not the owner of this invitation' })
+        return
+      }
+
+      next()
+    } catch (error) {
+      this.logger.error(`Failed to check invitation ownership`, error)
 
       res.status(400).json({ message: 'Invalid invitation' })
     }
