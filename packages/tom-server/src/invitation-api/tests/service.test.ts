@@ -335,7 +335,7 @@ describe('the Invitation API service', () => {
 
       await expect(
         invitationService.getInvitationStatus('test')
-      ).rejects.toThrow('Failed to get invitation status')
+      ).rejects.toThrow('Failed to get invitation')
     })
   })
 })
