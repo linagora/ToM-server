@@ -44,7 +44,8 @@ jest.mock('../middlewares/index.ts', () => {
     return {
       checkInvitationPayload: passiveMiddlewareMock,
       checkInvitation: passiveMiddlewareMock,
-      rateLimitInvitations: passiveMiddlewareMock
+      rateLimitInvitations: passiveMiddlewareMock,
+      checkInvitationOwnership: passiveMiddlewareMock
     }
   }
 })
@@ -73,7 +74,8 @@ jest.mock('../services/index.ts', () => {
       invite: spyMock,
       accept: spyMock,
       list: spyMock,
-      generateLink: spyMock
+      generateLink: spyMock,
+      getInvitationStatus: spyMock
     }
   }
 })
@@ -250,6 +252,45 @@ describe('the invitation API controller', () => {
           contact: '+21625555888',
           medium: 'phone'
         } satisfies InvitationRequestPayload)
+
+      expect(response.status).toBe(500)
+    })
+  })
+
+  describe('the getInvitationStatus method', () => {
+    it('should attempt to get the invitation status', async () => {
+      spyMock.mockResolvedValue({
+        id: 'test',
+        sender: 'test',
+        recepient: 'test',
+        medium: 'phone',
+        expiration: `${EXPIRATION}`,
+        accessed: false
+      })
+
+      const response = await supertest(app)
+        .get(`${PATH}/test/status`)
+        .set('Authorization', 'Bearer test')
+
+      expect(response.status).toBe(200)
+      expect(response.body).toEqual({
+        invitation: {
+          id: 'test',
+          sender: 'test',
+          recepient: 'test',
+          medium: 'phone',
+          expiration: `${EXPIRATION}`,
+          accessed: false
+        }
+      })
+    })
+
+    it('should return a 500 if something wrong happens', async () => {
+      spyMock.mockRejectedValue(new Error('error'))
+
+      const response = await supertest(app)
+        .get(`${PATH}/test/status`)
+        .set('Authorization', 'Bearer test')
 
       expect(response.status).toBe(500)
     })
