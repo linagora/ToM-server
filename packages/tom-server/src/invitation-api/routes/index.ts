@@ -70,6 +70,15 @@ export default (
    *   responses:
    *    200:
    *      description: Invitation sent
+   *      content:
+   *        application/json:
+   *          schema:
+   *            type: object
+   *            properties:
+   *             message:
+   *              type: string
+   *             id:
+   *              type: string
    *    400:
    *      description: Bad request
    *    401:
