@@ -50,16 +50,24 @@ export default class InvitationService implements IInvitationService {
    * @param {invitationPayload} payload - Invitation payload
    * @returns {Promise<void>}
    */
-  public invite = async (payload: InvitationPayload): Promise<void> => {
+  public invite = async (payload: InvitationPayload): Promise<string> => {
+    let token: string | undefined
+
     try {
       const { medium, recepient, sender } = payload
 
-      const token = await this._createInvitation(payload)
+      token = await this._createInvitation(payload)
       const link = this._getInvitationUrl(token)
 
       await this._deliverInvitation(sender, recepient, medium, link)
+
+      return token
     } catch (error) {
       this.logger.error(`Failed to send invitation`, error)
+
+      if (token) {
+        await this._removeInvitation(token)
+      }
 
       throw Error('Failed to send invitation')
     }
@@ -342,5 +350,19 @@ export default class InvitationService implements IInvitationService {
     url.searchParams.set('invitation_token', token)
 
     return url.toString()
+  }
+
+  /**
+   * Removes an invitation
+   *
+   * @param {string} token - Invitation token
+   * @returns {Promise<void>}
+   */
+  private _removeInvitation = async (token: string): Promise<void> => {
+    try {
+      await this.db.deleteEqual('invitations', 'id', token)
+    } catch (error) {
+      this.logger.error(`Failed to remove invitation`, error)
+    }
   }
 }
