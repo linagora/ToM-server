@@ -118,7 +118,7 @@ describe('the Invitation API service', () => {
       )
     })
 
-    it('should send an SMS notification if the room is not defined', async () => {
+    it('should send an SMS notification', async () => {
       sendSMSMock.mockResolvedValue(true)
 
       await invitationService.invite({
