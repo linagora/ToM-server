@@ -14,6 +14,7 @@ import InvitationApiController from '../controllers'
 import invitationApiMiddleware from '../middlewares'
 import authMiddleware from '../../utils/middlewares/auth.middleware'
 import CookieAuthenticator from '../../utils/middlewares/cookie-auth.middleware'
+import errorMiddleware from '../../utils/middlewares/error.middleware'
 
 export const PATH = '/_twake/v1/invite'
 
@@ -198,6 +199,8 @@ export default (
     middleware.checkInvitation,
     controller.acceptInvitation
   )
+
+  router.use(errorMiddleware(logger))
 
   return router
 }
