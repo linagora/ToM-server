@@ -42,9 +42,12 @@ const conf = {
   redis_uri: process.env.REDIS_URI,
   server_name: process.env.SERVER_NAME,
   smtp_password: process.env.SMTP_PASSWORD,
-  smtp_tls: process.env.SMTP_TLS ?? true,
+  smtp_tls: process.env.SMTP_TLS.toLocaleLowerCase() === 'true' ? true : false,
   smtp_user: process.env.SMTP_USER,
-  smtp_verify_certificate: process.env.SMTP_VERIFY_CERTIFICATE,
+  smtp_verify_certificate:
+    process.env.SMTP_VERIFY_CERTIFICATE.toLocaleLowerCase() === 'true'
+      ? true
+      : false,
   smtp_sender: process.env.SMTP_SENDER ?? '',
   smtp_server: process.env.SMTP_SERVER || 'localhost',
   smtp_port: process.env.SMTP_PORT || 25,

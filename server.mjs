@@ -88,7 +88,17 @@ let conf = {
   matrix_admin_login: process.env.MATRIX_ADMIN_LOGIN ?? 'admin',
   matrix_admin_password: process.env.MATRIX_ADMIN_PASSWORD ?? 'change-me',
   admin_access_token: process.env.ADMIN_ACCESS_TOKEN ?? 'secret',
-  signup_url: process.env.SIGNUP_URL ?? 'https://sign-up.twake.app/?app=chat'
+  signup_url: process.env.SIGNUP_URL ?? 'https://sign-up.twake.app/?app=chat',
+  smtp_password: process.env.SMTP_PASSWORD,
+  smtp_tls: process.env.SMTP_TLS.toLocaleLowerCase() === 'true' ? true : false,
+  smtp_user: process.env.SMTP_USER,
+  smtp_verify_certificate:
+    process.env.SMTP_VERIFY_CERTIFICATE.toLocaleLowerCase() === 'true'
+      ? true
+      : false,
+  smtp_sender: process.env.SMTP_SENDER ?? '',
+  smtp_server: process.env.SMTP_SERVER || 'localhost',
+  smtp_port: process.env.SMTP_PORT || 25
 }
 
 if (process.argv[2] === 'generate') {
