@@ -49,7 +49,10 @@ export default class invitationApiMiddleware {
         return
       }
 
-      if (medium === 'phone' && !validator.isMobilePhone(contact)) {
+      if (
+        medium === 'phone' &&
+        (!validator.isMobilePhone(contact) || !contact.startsWith('+'))
+      ) {
         res.status(400).json({ message: 'Invalid phone number' })
         return
       }

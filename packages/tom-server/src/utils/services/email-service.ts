@@ -18,13 +18,20 @@ export default class EmailService implements IEmailService {
   constructor(config: Config) {
     const opt: MailerConfig = {
       host: config.smtp_server,
-      port: config.smtp_port ?? 25,
-      tls: { rejectUnauthorized: !!config.smtp_verify_certificate }
+      port:
+        config.smtp_port && Number(config.smtp_port) ? +config.smtp_port : 25,
+      tls: {
+        rejectUnauthorized:
+          typeof config.smtp_verify_certificate === 'string'
+            ? config.smtp_verify_certificate === 'true'
+            : config.smtp_verify_certificate ?? false
+      }
     }
 
-    if (config.smtp_tls !== null) {
-      opt.secure = config.smtp_tls
-    }
+    opt.secure =
+      typeof config.smtp_tls === 'string'
+        ? config.smtp_tls === 'true'
+        : config.smtp_tls ?? false
 
     if (config.smtp_user && config.smtp_user !== null) {
       opt.auth = {
@@ -49,10 +56,16 @@ export default class EmailService implements IEmailService {
    * @returns {Promise<void>} - A Promise that resolves when the email is sent successfully
    */
   public send = async (options: SendMailOptions): Promise<void> => {
-    if (!options.from) {
-      options.from = this.from
-    }
+    try {
+      if (!options.from) {
+        options.from = this.from
+      }
 
-    await this.transport.sendMail(options)
+      await this.transport.sendMail(options)
+    } catch (error) {
+      console.error('Error sending email:', error)
+
+      throw error
+    }
   }
 }
