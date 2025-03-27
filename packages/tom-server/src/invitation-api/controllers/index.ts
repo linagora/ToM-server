@@ -45,11 +45,15 @@ export default class InvitationApiController {
         return
       }
 
-      await this.invitationService.invite({ recepient, medium, sender })
+      const id = await this.invitationService.invite({
+        recepient,
+        medium,
+        sender
+      })
 
-      res.status(200).json({ message: 'Invitation sent' })
+      res.status(200).json({ message: 'Invitation sent', id })
     } catch (err) {
-      this.logger.error(`Failed to send invitation`, { err })
+      this.logger.error(`Failed to send invitation`, err)
 
       next(err)
     }
