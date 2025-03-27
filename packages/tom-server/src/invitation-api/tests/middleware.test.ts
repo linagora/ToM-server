@@ -2,6 +2,7 @@ import type { AuthRequest, TwakeDB } from '../../types'
 import type { Response, NextFunction } from 'express'
 import Middleware from '../middlewares'
 import { type TwakeLogger } from '@twake/logger'
+import type { Invitation } from '../types'
 
 let mockRequest: Partial<AuthRequest>
 let mockResponse: Partial<Response>
@@ -319,6 +320,81 @@ describe('the Invitation API middleware', () => {
       )
 
       expect(mockResponse.status).toHaveBeenCalledWith(400)
+    })
+  })
+
+  describe('the checkInvitationOwnership', () => {
+    it('should not call the next handler if the invitation is not owned by the user', async () => {
+      dbMock.get.mockResolvedValue([
+        {
+          recepient: '000000000000',
+          medium: 'phone',
+          expiration: `${Date.now() + EXPIRATION}`,
+          sender: 'test2',
+          accessed: false,
+          id: 'test'
+        } satisfies Invitation
+      ])
+
+      await middleware.checkInvitationOwnership(
+        { ...mockRequest, params: { id: 'test' } } as AuthRequest,
+        mockResponse as Response,
+        nextFunction
+      )
+
+      expect(nextFunction).not.toHaveBeenCalled()
+    })
+
+    it('should call the next handler if the invitation is owned by the user', async () => {
+      dbMock.get.mockResolvedValue([
+        {
+          recepient: '000000000000',
+          medium: 'phone',
+          expiration: `${Date.now() + EXPIRATION}`,
+          sender: 'test',
+          accessed: false,
+          id: 'test'
+        } satisfies Invitation
+      ])
+
+      await middleware.checkInvitationOwnership(
+        { ...mockRequest, params: { id: 'test' } } as AuthRequest,
+        mockResponse as Response,
+        nextFunction
+      )
+
+      expect(nextFunction).toHaveBeenCalled()
+    })
+
+    it('should return 403 if the invitation is not owned by the user', async () => {
+      dbMock.get.mockResolvedValue([
+        {
+          contact: '000000000000',
+          medium: 'phone',
+          expiration: `${Date.now() + EXPIRATION}`,
+          sender: 'test2'
+        }
+      ])
+
+      await middleware.checkInvitationOwnership(
+        { ...mockRequest, params: { id: 'test' } } as AuthRequest,
+        mockResponse as Response,
+        nextFunction
+      )
+
+      expect(mockResponse.status).toHaveBeenCalledWith(403)
+    })
+
+    it('should return 404 if the invitation is not found', async () => {
+      dbMock.get.mockResolvedValue([])
+
+      await middleware.checkInvitationOwnership(
+        { ...mockRequest, params: { id: 'test' } } as AuthRequest,
+        mockResponse as Response,
+        nextFunction
+      )
+
+      expect(mockResponse.status).toHaveBeenCalledWith(404)
     })
   })
 })
