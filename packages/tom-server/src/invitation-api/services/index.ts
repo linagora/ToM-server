@@ -118,6 +118,22 @@ export default class InvitationService implements IInvitationService {
   }
 
   /**
+   * Returns the invitation status
+   *
+   * @param {string} token - Invitation token
+   * @returns {Promise<Invitation>} - Invitation status
+   */
+  public getInvitationStatus = (token: string): Promise<Invitation> => {
+    try {
+      return this._getInvitationById(token)
+    } catch (error) {
+      this.logger.error(`Failed to get invitation status`, error)
+
+      throw error
+    }
+  }
+
+  /**
    * Creates an invitation
    *
    * @param {invitationPayload} payload - Invitation payload
@@ -201,7 +217,9 @@ export default class InvitationService implements IInvitationService {
         throw Error('Invitation not found')
       }
 
-      return invitations[0]
+      const invitation = invitations[0]
+
+      return { ...invitation, accessed: Boolean(invitation.accessed) }
     } catch (error) {
       this.logger.error(`Failed to get invitation`, error)
 
