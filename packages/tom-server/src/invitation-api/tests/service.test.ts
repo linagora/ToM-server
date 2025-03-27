@@ -118,7 +118,7 @@ describe('the Invitation API service', () => {
       )
     })
 
-    it('should send an SMS notification if the room is not defined', async () => {
+    it('should send an SMS notification', async () => {
       sendSMSMock.mockResolvedValue(true)
 
       await invitationService.invite({
@@ -302,6 +302,40 @@ describe('the Invitation API service', () => {
         'invitations',
         expect.any(Object)
       )
+    })
+  })
+
+  describe('the getInvitationStatus method', () => {
+    it('should return the invitation status', async () => {
+      dbMock.get.mockResolvedValue([
+        {
+          id: 'test',
+          sender: 'test',
+          recepient: 'test',
+          medium: 'phone',
+          expiration: `${Date.now() + 123456789}`,
+          accessed: 0
+        }
+      ])
+
+      const result = await invitationService.getInvitationStatus('test')
+
+      expect(result).toEqual({
+        id: 'test',
+        sender: 'test',
+        recepient: 'test',
+        medium: 'phone',
+        expiration: `${Date.now() + 123456789}`,
+        accessed: false
+      })
+    })
+
+    it('should throw an error if the database operation fails', async () => {
+      dbMock.get.mockRejectedValue(new Error('test'))
+
+      await expect(
+        invitationService.getInvitationStatus('test')
+      ).rejects.toThrow('Failed to get invitation')
     })
   })
 })

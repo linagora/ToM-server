@@ -14,6 +14,7 @@ import InvitationApiController from '../controllers'
 import invitationApiMiddleware from '../middlewares'
 import authMiddleware from '../../utils/middlewares/auth.middleware'
 import CookieAuthenticator from '../../utils/middlewares/cookie-auth.middleware'
+import errorMiddleware from '../../utils/middlewares/error.middleware'
 
 export const PATH = '/_twake/v1/invite'
 
@@ -70,6 +71,15 @@ export default (
    *   responses:
    *    200:
    *      description: Invitation sent
+   *      content:
+   *        application/json:
+   *          schema:
+   *            type: object
+   *            properties:
+   *             message:
+   *              type: string
+   *             id:
+   *              type: string
    *    400:
    *      description: Bad request
    *    401:
@@ -189,6 +199,60 @@ export default (
     middleware.checkInvitation,
     controller.acceptInvitation
   )
+
+  /**
+   * @openapi
+   * /_twake/v1/invite/{id}/status:
+   *  get:
+   *    tags:
+   *     - Invitation
+   *    parameters:
+   *      - in: path
+   *        name: id
+   *        required: true
+   *        schema:
+   *          type: string
+   *        description: The invitation ID
+   *    description: Get the status of an invitation
+   *    responses:
+   *      200:
+   *        description: Invitation status
+   *        content:
+   *          application/json:
+   *            schema:
+   *              type: object
+   *              properties:
+   *                id:
+   *                  type: string
+   *                sender:
+   *                  type: string
+   *                recepient:
+   *                  type: string
+   *                medium:
+   *                  type: string
+   *                expiration:
+   *                  type: number
+   *                accessed:
+   *                  type: boolean
+   *      400:
+   *        description: Invalid invitation
+   *      401:
+   *        description: Unauthorized
+   *      404:
+   *        description: Invitation not found
+   *      403:
+   *        description: You are not the owner of this invitation
+   *      500:
+   *        description: Internal error
+   */
+  router.get(
+    `${PATH}/:id/status`,
+    authenticate,
+    middleware.checkInvitationOwnership,
+    controller.getInvitationStatus
+  )
+
+  router.use(errorMiddleware(logger))
 
   return router
 }

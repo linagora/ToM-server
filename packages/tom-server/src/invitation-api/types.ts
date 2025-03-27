@@ -1,8 +1,9 @@
 export interface IInvitationService {
-  invite: (payload: InvitationPayload) => Promise<void>
+  invite: (payload: InvitationPayload) => Promise<string>
   accept: (token: string, authorization: string) => Promise<void>
   list: (userId: string) => Promise<Invitation[]>
   generateLink: (payload: InvitationPayload) => Promise<string>
+  getInvitationStatus: (token: string) => Promise<Invitation>
 }
 
 export type medium = 'email' | 'phone'

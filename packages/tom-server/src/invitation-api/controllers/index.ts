@@ -45,11 +45,15 @@ export default class InvitationApiController {
         return
       }
 
-      await this.invitationService.invite({ recepient, medium, sender })
+      const id = await this.invitationService.invite({
+        recepient,
+        medium,
+        sender
+      })
 
-      res.status(200).json({ message: 'Invitation sent' })
+      res.status(200).json({ message: 'Invitation sent', id })
     } catch (err) {
-      this.logger.error(`Failed to send invitation`, { err })
+      this.logger.error(`Failed to send invitation`, err)
 
       next(err)
     }
@@ -150,6 +154,34 @@ export default class InvitationApiController {
       })
 
       res.status(200).json({ link })
+    } catch (err) {
+      next(err)
+    }
+  }
+
+  /**
+   * Gets an invitation status
+   *
+   * @param {Request} req - the request object.
+   * @param {Response} res - the response object.
+   * @param {NextFunction} next - the next hundler
+   */
+  getInvitationStatus = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
+    try {
+      const { id } = req.params
+
+      if (id.length === 0) {
+        res.status(400).json({ message: 'Invitation id is required' })
+        return
+      }
+
+      const invitation = await this.invitationService.getInvitationStatus(id)
+
+      res.status(200).json({ invitation })
     } catch (err) {
       next(err)
     }
