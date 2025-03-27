@@ -304,4 +304,38 @@ describe('the Invitation API service', () => {
       )
     })
   })
+
+  describe('the getInvitationStatus method', () => {
+    it('should return the invitation status', async () => {
+      dbMock.get.mockResolvedValue([
+        {
+          id: 'test',
+          sender: 'test',
+          recepient: 'test',
+          medium: 'phone',
+          expiration: `${Date.now() + 123456789}`,
+          accessed: 0
+        }
+      ])
+
+      const result = await invitationService.getInvitationStatus('test')
+
+      expect(result).toEqual({
+        id: 'test',
+        sender: 'test',
+        recepient: 'test',
+        medium: 'phone',
+        expiration: `${Date.now() + 123456789}`,
+        accessed: false
+      })
+    })
+
+    it('should throw an error if the database operation fails', async () => {
+      dbMock.get.mockRejectedValue(new Error('test'))
+
+      await expect(
+        invitationService.getInvitationStatus('test')
+      ).rejects.toThrow('Failed to get invitation status')
+    })
+  })
 })
