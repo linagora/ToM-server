@@ -318,11 +318,13 @@ describe('Federated identity service', () => {
       })
 
       afterAll((done) => {
-        fs.writeFileSync(
-          pathToFederatedIdentityServiceConf,
-          confOriginalContent,
-          'utf-8'
-        )
+        if (confOriginalContent) {
+          fs.writeFileSync(
+            pathToFederatedIdentityServiceConf,
+            confOriginalContent,
+            'utf-8'
+          )
+        }
         if (federatedIdentityServiceContainer != null) {
           federatedIdentityServiceContainer
             .stop()
