@@ -43,11 +43,12 @@
     "@twake/config-parser": "*",
     "@twake/crypto": "*",
     "@twake/logger": "*",
-    "@twake/utils": "*",
     "@twake/matrix-identity-server": "*",
+    "@twake/utils": "*",
     "express-validator": "^7.0.1",
     "ip-address": "^9.0.5",
-    "lodash": "^4.17.21"
+    "lodash": "^4.17.21",
+    "validator": "^13.15.0"
   },
   "optionalDependencies": {
     "@crowdsec/express-bouncer": "^0.1.0"
