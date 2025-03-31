@@ -14,7 +14,7 @@ beforeAll((done) => {
     const obj = {
       dn: req.dn.toString(),
       attributes: {
-        objectclass: ['inetOrgPerson'],
+        objectClass: ['inetOrgPerson'],
         uid: 'dwho',
         sn: 'doctor'
       }

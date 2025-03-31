@@ -1,7 +1,7 @@
-import ldapjs from 'ldapjs'
-import { type TwakeDB } from '../../types'
+import ldapts from 'ldapts'
 import { type ITwakeRoomModel } from '../types'
-const { EqualityFilter, OrFilter, SubstringFilter } = ldapjs
+import { TwakeDB } from '../../types'
+const { EqualityFilter, OrFilter, SubstringFilter } = ldapts
 
 export class TwakeRoom implements ITwakeRoomModel {
   constructor(
@@ -75,10 +75,7 @@ export class TwakeRoom implements ITwakeRoomModel {
     return ldapFilter.matches(user)
   }
 
-  private static _getLdapFilter(
-    attribute: string,
-    value: string
-  ): ldapjs.Filter {
+  private static _getLdapFilter(attribute: string, value: string) {
     if (value.includes('*')) {
       const filterValues = value.split('*')
       return new SubstringFilter({

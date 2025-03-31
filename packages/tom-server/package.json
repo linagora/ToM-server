@@ -52,7 +52,7 @@
   },
   "optionalDependencies": {
     "@crowdsec/express-bouncer": "^0.1.0",
-    "ldapjs": "^2.3.3",
+    "ldapts": "^7.1.0",
     "pg": "^8.10.0",
     "sqlite3": "^5.1.6"
   },

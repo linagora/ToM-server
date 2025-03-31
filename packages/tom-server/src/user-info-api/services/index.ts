@@ -14,7 +14,7 @@ class UserInfoService implements IUserInfoService {
     try {
       const userInfo = (await this.userDb.db.get(
         'users',
-        ['uid', 'sn', 'givenName'],
+        ['uid', 'sn', 'givenname', 'givenName'],
         { uid: id }
       )) as unknown as Array<Record<string, string | number>>
 
@@ -23,7 +23,7 @@ class UserInfoService implements IUserInfoService {
       }
 
       if (
-        userInfo.some((u) => u.givenName === undefined || u.sn === undefined)
+        userInfo.some((u) => u.givenName === undefined && u.sn === undefined)
       ) {
         return null
       }
