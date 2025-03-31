@@ -4,7 +4,7 @@ import { type Client, type SearchOptions } from 'ldapts'
 import * as ldapts from 'ldapts'
 import { type Config, type DbGetResult } from '../types'
 import { type UserDBBackend } from './index'
-import { isBuffer, isArray } from 'lodash'
+import _ from 'lodash'
 
 class UserDBLDAP implements UserDBBackend {
   base: string
@@ -78,9 +78,9 @@ class UserDBLDAP implements UserDBBackend {
                 if (fields != null && fields.length > 0) {
                   fields.forEach((k) => {
                     res[k] = (
-                      isBuffer(entry[k])
+                      _.isBuffer(entry[k])
                         ? entry[k].toString()
-                        : isArray(entry[k])
+                        : _.isArray(entry[k])
                         ? entry[k][0]
                         : entry[k]
                     ) as string
@@ -89,9 +89,9 @@ class UserDBLDAP implements UserDBBackend {
                   Object.keys(entry).forEach((k) => {
                     if (k !== 'controls')
                       res[k] = (
-                        isBuffer(entry[k])
+                        _.isBuffer(entry[k])
                           ? entry[k].toString()
-                          : isArray(entry[k])
+                          : _.isArray(entry[k])
                           ? entry[k][0]
                           : entry[k]
                       ) as string
