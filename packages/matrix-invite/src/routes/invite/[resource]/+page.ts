@@ -7,7 +7,7 @@ export const load: PageLoad = ({ params }) => {
   const { resource } = params
 
   if (!resource || !valid(resource)) {
-    throw error(400, 'Invalid resource')
+    error(400, 'Invalid resource')
   }
 
   return {
