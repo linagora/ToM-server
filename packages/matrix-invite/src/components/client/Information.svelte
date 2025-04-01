@@ -1,7 +1,11 @@
 <script lang="ts">
 	import type { IClient } from '$lib/types';
 
-	export let client: IClient;
+	interface Props {
+		client: IClient;
+	}
+
+	let { client }: Props = $props();
 </script>
 
 <div class="flex flex-row justify-center items-center">

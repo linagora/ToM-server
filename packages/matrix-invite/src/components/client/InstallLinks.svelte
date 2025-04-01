@@ -1,7 +1,11 @@
 <script lang="ts">
 	import type { InstallLink } from '$lib/types';
 
-	export let links: InstallLink[];
+	interface Props {
+		links: InstallLink[];
+	}
+
+	let { links }: Props = $props();
 </script>
 
 {#each links as { url, platform }}

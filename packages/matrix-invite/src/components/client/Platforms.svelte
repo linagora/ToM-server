@@ -2,9 +2,13 @@
 	import type { PlatformType } from '$lib/types';
 	import { getPlatformString } from '../../utils/platform';
 
-	export let platforms: PlatformType[];
+	interface Props {
+		platforms: PlatformType[];
+	}
 
-	$: platformsString = (platforms || []).reduce((acc, curr, index) => {
+	let { platforms }: Props = $props();
+
+	let platformsString = $derived((platforms || []).reduce((acc, curr, index) => {
 		const platformRepresentation = getPlatformString(curr);
 
 		if (!acc) return platformRepresentation;
@@ -14,7 +18,7 @@
 		}
 
 		return `${acc}, ${platformRepresentation}`;
-	}, '');
+	}, ''));
 </script>
 
 <div class="flex flex-row">

@@ -1,9 +1,11 @@
 <script lang="ts">
+	import { preventDefault } from 'svelte/legacy';
+
 	import { goto } from '$app/navigation';
 	import { valid } from '../utils/validation';
 
-	let resource: string = '';
-	let reference: HTMLInputElement;
+	let resource: string = $state('');
+	let reference: HTMLInputElement = $state();
 
 	const handleSubmit = () => {
 		if (!valid(resource)) {
@@ -35,7 +37,7 @@
 </script>
 
 <div class="bg-white rounded-xl p-8 pt-16 shadow-lg">
-	<form class="flex flex-col space-y-6" on:submit|preventDefault={handleSubmit}>
+	<form class="flex flex-col space-y-6" onsubmit={preventDefault(handleSubmit)}>
 		<p class="text-3xl font-bold">
 			Create shareable links to Matrix rooms, users or messages without being tied to any app
 		</p>
@@ -49,7 +51,7 @@
 			class="block w-full p-4 text-md text-gray-900 border rounded-lg bg-gray-50 focus:ring-1 focus:outline-none focus:ring-zinc-800 border-zinc-300"
 		/>
 		<button
-			on:click={handleSubmit}
+			onclick={handleSubmit}
 			type="submit"
 			class="w-full bg-sky-600 rounded-xl p-4 text-white text-base font-bold flex flex-row"
 		>
