@@ -1,9 +1,8 @@
-import tailwindcss from './tailwind.css'
-import animationStyles from './styles.css'
+import tailwindcss from './tailwind.css?url'
+import animationStyles from './styles.css?url'
 import type { LinksFunction } from '@remix-run/node'
 import {
   Links,
-  LiveReload,
   Meta,
   Outlet,
   Scripts,
@@ -32,7 +31,6 @@ export default function App(): JSX.Element {
           <ScrollRestoration />
         </div>
         <Scripts />
-        <LiveReload />
       </body>
     </html>
   )
