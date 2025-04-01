@@ -58,6 +58,6 @@
 				class="text-sky-500">Matrix</a
 			>, an open network for secure, decentralized communication.
 		</p>
-		<button class="text-sky-600 cursor-pointer" on:click={clearPreferences}>clear preferences</button>
+		<button class="text-sky-600 cursor-pointer" onclick={clearPreferences}>clear preferences</button>
 	</div>
 </div>

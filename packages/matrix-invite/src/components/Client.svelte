@@ -6,7 +6,11 @@
 	import Instructions from './client/Instructions.svelte';
 	import Platforms from './client/Platforms.svelte';
 
-	export let client: IClient;
+	interface Props {
+		client: IClient;
+	}
+
+	let { client }: Props = $props();
 </script>
 
 <div class="flex flex-col space-y-3">

@@ -10,10 +10,14 @@
 	import { onMount } from 'svelte';
 	import Loading from '../../../components/Loading.svelte';
 
-	export let data: { clients: IClient[]; resource: string };
+	interface Props {
+		data: { clients: IClient[]; resource: string };
+	}
+
+	let { data }: Props = $props();
 
 	const { domain } = parseURL(data.resource);
-	let loading = true;
+	let loading = $state(true);
 
 	onMount(() => {
 		loading = false;
@@ -37,7 +41,7 @@
 						<span class="text-zinc-500">You selected {$selectedClient.name}</span>
 						<button
 							class="text-sky-600 cursor-pointer"
-							on:click={() => ($selectedClient = null)}>change</button
+							onclick={() => ($selectedClient = null)}>change</button
 						>
 					</div>
 				</div>

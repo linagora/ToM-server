@@ -1,8 +1,8 @@
-import type { V2_MetaFunction } from '@remix-run/node'
-import Hero from '~/components/hero'
-import MatrixInfo from '~/components/matrix-info'
+import type { MetaFunction } from '@remix-run/node'
+import Hero from '../components/hero'
+import MatrixInfo from '../components/matrix-info'
 
-export const meta: V2_MetaFunction = () => {
+export const meta: MetaFunction = () => {
   return [{ title: 'Twake on Matrix' }]
 }
 

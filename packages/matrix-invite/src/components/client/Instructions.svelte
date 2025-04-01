@@ -1,5 +1,9 @@
 <script lang="ts">
-	export let instructions: string | null;
+	interface Props {
+		instructions: string | null;
+	}
+
+	let { instructions }: Props = $props();
 </script>
 
 {#if instructions}

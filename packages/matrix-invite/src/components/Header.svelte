@@ -1,6 +1,10 @@
 <script lang="ts">
 	import { selectedClient } from '$store/selected-client';
-	export let resource: string;
+	interface Props {
+		resource: string;
+	}
+
+	let { resource }: Props = $props();
 </script>
 
 <div class="flex flex-col space-y-5 font-semibold text-3xl text-center items-center justify-center">
