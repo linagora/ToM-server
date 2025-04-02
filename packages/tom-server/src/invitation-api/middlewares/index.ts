@@ -195,7 +195,7 @@ export default class invitationApiMiddleware {
       if (Date.now() - parseInt(expiration) < this.ONE_HOUR) {
         res
           .status(400)
-          .json({ message: 'you already sent an invitation to this contact' })
+          .json({ message: 'You already sent an invitation to this contact' })
 
         return
       }
