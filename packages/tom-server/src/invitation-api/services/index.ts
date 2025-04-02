@@ -107,6 +107,19 @@ export default class InvitationService implements IInvitationService {
    */
   public generateLink = async (payload: InvitationPayload): Promise<string> => {
     try {
+      const { sender, medium, recepient } = payload
+
+      const previouslyGeneratedInvite =
+        await this._getPreviouslyGeneratedInviteToAddress(
+          sender,
+          recepient,
+          medium
+        )
+
+      if (previouslyGeneratedInvite) {
+        return this._getInvitationUrl(previouslyGeneratedInvite.id)
+      }
+
       const token = await this._createInvitation(payload)
 
       return this._getInvitationUrl(token)
@@ -303,6 +316,76 @@ export default class InvitationService implements IInvitationService {
       this.logger.error(`Failed to list invitations`, error)
 
       throw Error('Failed to list invitations')
+    }
+  }
+
+  /**
+   * List all pending invitations to a user
+   *
+   * @param {string} sender - User address
+   * @param {string} address - User address
+   * @param {medium} medium - Invitation medium
+   * @returns {Promise<Invitation[]>} - List of invitations
+   */
+  private _getPendingUserInvitesToAddress = async (
+    sender: string,
+    address: string,
+    medium: medium
+  ): Promise<Invitation[] | null> => {
+    try {
+      const userInvitations = (await this.db.get('invitations', ['*'], {
+        sender,
+        recepient: address,
+        medium
+      })) as unknown as Invitation[]
+
+      if (userInvitations.length) {
+        return userInvitations.filter(({ accessed }) => !accessed)
+      }
+
+      return null
+    } catch (error) {
+      this.logger.error(`Failed to list user invitations to address`, error)
+
+      return null
+    }
+  }
+
+  /**
+   * List the latest generated invitation to user
+   *
+   * @param {string} sender - User address
+   * @param {string} address - User address
+   * @returns {Promise<Invitation | null>} - List of invitations
+   */
+  private _getPreviouslyGeneratedInviteToAddress = async (
+    sender: string,
+    address: string,
+    medium: medium
+  ): Promise<Invitation | null> => {
+    try {
+      const pendingInvitations = await this._getPendingUserInvitesToAddress(
+        sender,
+        address,
+        medium
+      )
+
+      if (pendingInvitations) {
+        const validInvitations = pendingInvitations
+          .filter(({ expiration }) => parseInt(expiration) > Date.now())
+          .sort((a, b) => parseInt(b.expiration) - parseInt(a.expiration))
+
+        return validInvitations[0]
+      }
+
+      return null
+    } catch (error) {
+      this.logger.error(
+        `Failed to list generated user invitations to address`,
+        error
+      )
+
+      return null
     }
   }
 
