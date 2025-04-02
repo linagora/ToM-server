@@ -1,10 +1,13 @@
 import { createRequestHandler } from '@remix-run/express'
+import { installGlobals } from '@remix-run/node'
 import AppServer from '@twake/matrix-application-server'
 import TomServer from '@twake/server'
 import MatrixIdentityServer from '@twake/matrix-identity-server'
 import express from 'express'
 import path from 'node:path'
 import { fileURLToPath } from 'url'
+
+installGlobals()
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -90,12 +93,17 @@ let conf = {
   admin_access_token: process.env.ADMIN_ACCESS_TOKEN ?? 'secret',
   signup_url: process.env.SIGNUP_URL ?? 'https://sign-up.twake.app/?app=chat',
   smtp_password: process.env.SMTP_PASSWORD,
-  smtp_tls: process.env.SMTP_TLS.toLocaleLowerCase() === 'true' ? true : false,
-  smtp_user: process.env.SMTP_USER,
-  smtp_verify_certificate:
-    process.env.SMTP_VERIFY_CERTIFICATE.toLocaleLowerCase() === 'true'
+  smtp_tls: process.env.SMTP_TLS
+    ? process.env.SMTP_TLS.toLocaleLowerCase() === 'true'
       ? true
-      : false,
+      : false
+    : false,
+  smtp_user: process.env.SMTP_USER,
+  smtp_verify_certificate: process.env.SMTP_VERIFY_CERTIFICATE
+    ? process.env.SMTP_VERIFY_CERTIFICATE.toLocaleLowerCase() === 'true'
+      ? true
+      : false
+    : false,
   smtp_sender: process.env.SMTP_SENDER ?? '',
   smtp_server: process.env.SMTP_SERVER || 'localhost',
   smtp_port: process.env.SMTP_PORT || 25
@@ -159,25 +167,19 @@ if (process.argv[2] === 'generate') {
   }
 
   app.use(
-    '/build',
-    express.static(path.join(process.cwd(), 'landing', 'public', 'build'), {
+    '/assets',
+    express.static('./landing/build/client/assets', {
       immutable: true,
       maxAge: '1y'
     })
   )
 
-  app.use(
-    express.static(path.join(process.cwd(), 'landing', 'public'), {
-      maxAge: '1h'
-    })
-  )
+  app.use(express.static('./landing/build/client', { maxAge: '1h' }))
 
   app.get(
     '/',
     createRequestHandler({
-      build: await import(
-        path.join(process.cwd(), 'landing', 'build', 'index.js')
-      )
+      build: await import('./landing/build/server/index.js')
     })
   )
 
