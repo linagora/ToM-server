@@ -86,6 +86,8 @@ export default (
    *      description: Unauthorized
    *    429:
    *      description: Too many requests
+   *    500:
+   *      description: Internal Server Error
    */
   router.post(
     PATH,
@@ -121,14 +123,13 @@ export default (
    *      description: Bad request
    *    401:
    *      description: Unauthorized
-   *    429:
-   *      description: Too many requests
+   *    500:
+   *      description: Internal Server Error
    */
   router.post(
     `${PATH}/generate`,
     authenticate,
     middleware.checkInvitationPayload,
-    middleware.rateLimitInvitations,
     controller.generateInvitationLink
   )
 
@@ -153,7 +154,7 @@ export default (
    *                  type: string
    *                sender:
    *                  type: string
-   *                recepient:
+   *                recipient:
    *                  type: string
    *                medium:
    *                  type: string
@@ -226,7 +227,7 @@ export default (
    *                  type: string
    *                sender:
    *                  type: string
-   *                recepient:
+   *                recipient:
    *                  type: string
    *                medium:
    *                  type: string

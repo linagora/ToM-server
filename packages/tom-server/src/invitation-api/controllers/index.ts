@@ -29,7 +29,7 @@ export default class InvitationApiController {
   ): Promise<void> => {
     try {
       const {
-        body: { contact: recepient, medium },
+        body: { contact: recipient, medium },
         userId: sender
       }: { body: InvitationRequestPayload; userId?: string } = req
 
@@ -46,7 +46,7 @@ export default class InvitationApiController {
       }
 
       const id = await this.invitationService.invite({
-        recepient,
+        recipient,
         medium,
         sender
       })
@@ -90,8 +90,7 @@ export default class InvitationApiController {
 
       res.status(200).json({ message: 'Invitation accepted' })
     } catch (err) {
-      console.log({ err })
-      this.logger.error(`Failed to accept invitation`, { err })
+      this.logger.error(`Failed to accept invitation`, err)
 
       next(err)
     }
@@ -139,7 +138,7 @@ export default class InvitationApiController {
   ): Promise<void> => {
     try {
       const {
-        body: { contact: recepient, medium },
+        body: { contact: recipient, medium },
         userId: sender
       }: { body: InvitationRequestPayload; userId?: string } = req
 
@@ -149,7 +148,7 @@ export default class InvitationApiController {
 
       const link = await this.invitationService.generateLink({
         sender,
-        recepient,
+        recipient,
         medium
       })
 

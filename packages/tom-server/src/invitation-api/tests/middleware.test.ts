@@ -327,7 +327,7 @@ describe('the Invitation API middleware', () => {
     it('should not call the next handler if the invitation is not owned by the user', async () => {
       dbMock.get.mockResolvedValue([
         {
-          recepient: '000000000000',
+          recipient: '000000000000',
           medium: 'phone',
           expiration: `${Date.now() + EXPIRATION}`,
           sender: 'test2',
@@ -348,7 +348,7 @@ describe('the Invitation API middleware', () => {
     it('should call the next handler if the invitation is owned by the user', async () => {
       dbMock.get.mockResolvedValue([
         {
-          recepient: '000000000000',
+          recipient: '000000000000',
           medium: 'phone',
           expiration: `${Date.now() + EXPIRATION}`,
           sender: 'test',

@@ -11,7 +11,7 @@ export type medium = 'email' | 'phone'
 export interface Invitation {
   id: string
   sender: string
-  recepient: string
+  recipient: string
   medium: medium
   expiration: string
   accessed: boolean
@@ -24,7 +24,7 @@ export interface InvitationRequestPayload {
 
 export interface InvitationPayload {
   sender: string
-  recepient: string
+  recipient: string
   medium: medium
 }
 
