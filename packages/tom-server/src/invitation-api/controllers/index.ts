@@ -90,8 +90,7 @@ export default class InvitationApiController {
 
       res.status(200).json({ message: 'Invitation accepted' })
     } catch (err) {
-      console.log({ err })
-      this.logger.error(`Failed to accept invitation`, { err })
+      this.logger.error(`Failed to accept invitation`, err)
 
       next(err)
     }
