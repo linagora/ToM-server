@@ -1,5 +1,5 @@
 import { createRequestHandler } from '@remix-run/express'
-import { installGlobals } from "@remix-run/node";
+import { installGlobals } from '@remix-run/node'
 import AppServer from '@twake/matrix-application-server'
 import TomServer from '@twake/server'
 import MatrixIdentityServer from '@twake/matrix-identity-server'
@@ -7,7 +7,7 @@ import express from 'express'
 import path from 'node:path'
 import { fileURLToPath } from 'url'
 
-installGlobals();
+installGlobals()
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -167,19 +167,19 @@ if (process.argv[2] === 'generate') {
   }
 
   app.use(
-    "/assets",
-    express.static("./landing/build/client/assets", {
+    '/assets',
+    express.static('./landing/build/client/assets', {
       immutable: true,
-      maxAge: "1y",
+      maxAge: '1y'
     })
-  );
-  
-  app.use(express.static("./landing/build/client", { maxAge: "1h" }));
+  )
+
+  app.use(express.static('./landing/build/client', { maxAge: '1h' }))
 
   app.get(
     '/',
     createRequestHandler({
-      build: await import('./landing/build/server/index.js'),
+      build: await import('./landing/build/server/index.js')
     })
   )
 
