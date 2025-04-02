@@ -108,7 +108,7 @@ describe('the invitation API controller', () => {
         .set('Authorization', 'Bearer test')
 
       expect(spyMock).toHaveBeenCalledWith({
-        recepient: '+21625555888',
+        recipient: '+21625555888',
         medium: 'phone',
         sender: 'test'
       })
@@ -197,7 +197,7 @@ describe('the invitation API controller', () => {
       const sampleInvitation = {
         id: 'test',
         sender: 'test',
-        recepient: 'test',
+        recipient: 'test',
         medium: 'phone',
         expiration: `${Date.now() + EXPIRATION}`,
         accessed: false
@@ -262,7 +262,7 @@ describe('the invitation API controller', () => {
       spyMock.mockResolvedValue({
         id: 'test',
         sender: 'test',
-        recepient: 'test',
+        recipient: 'test',
         medium: 'phone',
         expiration: `${EXPIRATION}`,
         accessed: false
@@ -277,7 +277,7 @@ describe('the invitation API controller', () => {
         invitation: {
           id: 'test',
           sender: 'test',
-          recepient: 'test',
+          recipient: 'test',
           medium: 'phone',
           expiration: `${EXPIRATION}`,
           accessed: false

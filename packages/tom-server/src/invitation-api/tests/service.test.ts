@@ -64,7 +64,7 @@ describe('the Invitation API service', () => {
         {
           id: 'test',
           sender: 'test',
-          recepient: 'test',
+          recipient: 'test',
           medium: 'test',
           expiration: '123456789',
           accessed: 0
@@ -77,7 +77,7 @@ describe('the Invitation API service', () => {
         {
           id: 'test',
           sender: 'test',
-          recepient: 'test',
+          recipient: 'test',
           medium: 'test',
           expiration: '123456789',
           accessed: false
@@ -107,7 +107,7 @@ describe('the Invitation API service', () => {
       sendSMSMock.mockResolvedValue(true)
 
       await invitationService.invite({
-        recepient: 'test',
+        recipient: 'test',
         medium: 'phone',
         sender: 'test'
       })
@@ -122,7 +122,7 @@ describe('the Invitation API service', () => {
       sendSMSMock.mockResolvedValue(true)
 
       await invitationService.invite({
-        recepient: 'test',
+        recipient: 'test',
         medium: 'phone',
         sender: 'test'
       })
@@ -135,7 +135,7 @@ describe('the Invitation API service', () => {
 
       await expect(
         invitationService.invite({
-          recepient: 'test',
+          recipient: 'test',
           medium: 'email',
           sender: 'test'
         })
@@ -152,7 +152,7 @@ describe('the Invitation API service', () => {
 
       await expect(
         invitationService.invite({
-          recepient: 'test',
+          recipient: 'test',
           medium: 'phone',
           sender: 'test'
         })
@@ -166,7 +166,7 @@ describe('the Invitation API service', () => {
         {
           id: 'test',
           sender: 'test',
-          recepient: 'test',
+          recipient: 'test',
           medium: 'phone',
           expiration: `${Date.now() + 123456789}`,
           room_id: 'test',
@@ -194,7 +194,7 @@ describe('the Invitation API service', () => {
         {
           id: 'test',
           sender: 'test',
-          recepient: 'test',
+          recipient: 'test',
           medium: 'phone',
           expiration: `${Date.now() + 123456789}`,
           accessed: 0
@@ -241,7 +241,7 @@ describe('the Invitation API service', () => {
         {
           id: 'test',
           sender: 'test',
-          recepient: 'test',
+          recipient: 'test',
           medium: 'phone',
           expiration: `${Date.now() - 123456789}`,
           accessed: 0
@@ -264,7 +264,7 @@ describe('the Invitation API service', () => {
 
       const result = await invitationService.generateLink({
         sender: 'test',
-        recepient: 'test',
+        recipient: 'test',
         medium: 'phone'
       })
 
@@ -279,7 +279,7 @@ describe('the Invitation API service', () => {
       await expect(
         invitationService.generateLink({
           sender: 'test',
-          recepient: 'test',
+          recipient: 'test',
           medium: 'phone'
         })
       ).rejects.toThrow('Failed to generate invitation link')
@@ -294,7 +294,7 @@ describe('the Invitation API service', () => {
 
       await invitationService.generateLink({
         sender: 'test',
-        recepient: 'test',
+        recipient: 'test',
         medium: 'phone'
       })
 
@@ -311,7 +311,7 @@ describe('the Invitation API service', () => {
         {
           id: 'test',
           sender: 'test',
-          recepient: 'test',
+          recipient: 'test',
           medium: 'phone',
           expiration: `${Date.now() + 123456789}`,
           accessed: 0
@@ -323,7 +323,7 @@ describe('the Invitation API service', () => {
       expect(result).toEqual({
         id: 'test',
         sender: 'test',
-        recepient: 'test',
+        recipient: 'test',
         medium: 'phone',
         expiration: `${Date.now() + 123456789}`,
         accessed: false

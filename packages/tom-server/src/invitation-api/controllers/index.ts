@@ -29,7 +29,7 @@ export default class InvitationApiController {
   ): Promise<void> => {
     try {
       const {
-        body: { contact: recepient, medium },
+        body: { contact: recipient, medium },
         userId: sender
       }: { body: InvitationRequestPayload; userId?: string } = req
 
@@ -46,7 +46,7 @@ export default class InvitationApiController {
       }
 
       const id = await this.invitationService.invite({
-        recepient,
+        recipient,
         medium,
         sender
       })
@@ -138,7 +138,7 @@ export default class InvitationApiController {
   ): Promise<void> => {
     try {
       const {
-        body: { contact: recepient, medium },
+        body: { contact: recipient, medium },
         userId: sender
       }: { body: InvitationRequestPayload; userId?: string } = req
 
@@ -148,7 +148,7 @@ export default class InvitationApiController {
 
       const link = await this.invitationService.generateLink({
         sender,
-        recepient,
+        recipient,
         medium
       })
 

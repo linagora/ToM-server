@@ -54,12 +54,12 @@ export default class InvitationService implements IInvitationService {
     let token: string | undefined
 
     try {
-      const { medium, recepient, sender } = payload
+      const { medium, recipient, sender } = payload
 
       token = await this._createInvitation(payload)
       const link = this._getInvitationUrl(token)
 
-      await this._deliverInvitation(sender, recepient, medium, link)
+      await this._deliverInvitation(sender, recipient, medium, link)
 
       return token
     } catch (error) {
@@ -83,7 +83,7 @@ export default class InvitationService implements IInvitationService {
   public accept = async (id: string, authorization: string): Promise<void> => {
     try {
       const invitation = await this._getInvitationById(id)
-      const { expiration, recepient: threepid } = invitation
+      const { expiration, recipient: threepid } = invitation
 
       if (parseInt(expiration) < Date.now()) {
         throw Error('Invitation expired')
@@ -107,12 +107,12 @@ export default class InvitationService implements IInvitationService {
    */
   public generateLink = async (payload: InvitationPayload): Promise<string> => {
     try {
-      const { sender, medium, recepient } = payload
+      const { sender, medium, recipient } = payload
 
       const previouslyGeneratedInvite =
         await this._getPreviouslyGeneratedInviteToAddress(
           sender,
-          recepient,
+          recipient,
           medium
         )
 
@@ -308,7 +308,7 @@ export default class InvitationService implements IInvitationService {
   ): Promise<Invitation[]> => {
     try {
       const invitations = (await this.db.get('invitations', ['*'], {
-        recepient: address
+        recipient: address
       })) as unknown as Invitation[]
 
       return invitations.filter(({ accessed }) => !accessed)
@@ -335,7 +335,7 @@ export default class InvitationService implements IInvitationService {
     try {
       const userInvitations = (await this.db.get('invitations', ['*'], {
         sender,
-        recepient: address,
+        recipient: address,
         medium
       })) as unknown as Invitation[]
 

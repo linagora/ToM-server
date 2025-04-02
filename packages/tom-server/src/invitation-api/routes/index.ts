@@ -154,7 +154,7 @@ export default (
    *                  type: string
    *                sender:
    *                  type: string
-   *                recepient:
+   *                recipient:
    *                  type: string
    *                medium:
    *                  type: string
@@ -227,7 +227,7 @@ export default (
    *                  type: string
    *                sender:
    *                  type: string
-   *                recepient:
+   *                recipient:
    *                  type: string
    *                medium:
    *                  type: string

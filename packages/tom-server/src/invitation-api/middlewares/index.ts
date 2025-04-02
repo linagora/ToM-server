@@ -30,7 +30,7 @@ export default class invitationApiMiddleware {
       }: { body: InvitationRequestPayload } = req
 
       if (!contact) {
-        res.status(400).json({ message: 'Recepient is required' })
+        res.status(400).json({ message: 'Recipient is required' })
         return
       }
 
@@ -180,7 +180,7 @@ export default class invitationApiMiddleware {
         'invitations',
         ['id', 'expiration'],
         {
-          recepient: contact
+          recipient: contact
         }
       )) as unknown as Invitation[]
 
