@@ -1,4 +1,4 @@
-import ldapts from 'ldapts'
+import * as ldapts from 'ldapts'
 import { type ITwakeRoomModel } from '../types'
 import { TwakeDB } from '../../types'
 const { EqualityFilter, OrFilter, SubstringFilter } = ldapts
