@@ -6,7 +6,7 @@
     "esModuleInterop": true,
     "jsx": "react-jsx",
     "resolveJsonModule": true,
-    "target": "ES2019",
+    "target": "ESNext",
     "strict": true,
     "allowJs": true,
     "forceConsistentCasingInFileNames": true,
@@ -19,7 +19,6 @@
     "noEmit": true,
     "skipLibCheck": true,
     "types": ["@remix-run/node", "vite/client"],
-    "module": "ESNext",
-    "moduleResolution": "Bundler"
+    "module": "CommonJS"
   }
 }
