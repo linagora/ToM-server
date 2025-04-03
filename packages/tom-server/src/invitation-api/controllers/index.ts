@@ -146,13 +146,13 @@ export default class InvitationApiController {
         throw Error('Sender is required')
       }
 
-      const link = await this.invitationService.generateLink({
+      const { link, id } = await this.invitationService.generateLink({
         sender,
         recipient,
         medium
       })
 
-      res.status(200).json({ link })
+      res.status(200).json({ link, id })
     } catch (err) {
       next(err)
     }
