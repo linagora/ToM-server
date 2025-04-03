@@ -228,7 +228,10 @@ describe('the invitation API controller', () => {
 
   describe('the generateInvitationLink method', () => {
     it('should attempt to generate an invitation link', async () => {
-      spyMock.mockResolvedValue('https://localhost/?invitation_token=test')
+      spyMock.mockResolvedValue({
+        link: 'https://localhost/?invitation_token=test',
+        id: 'test'
+      })
 
       const response = await supertest(app)
         .post(`${PATH}/generate`)
@@ -239,7 +242,7 @@ describe('the invitation API controller', () => {
         } satisfies InvitationRequestPayload)
 
       expect(response.status).toBe(200)
-      expect(response.body).toEqual({ link: expect.any(String) })
+      expect(response.body).toEqual({ link: expect.any(String), id: 'test' })
     })
 
     it('should return a 500 if something wrong happens', async () => {

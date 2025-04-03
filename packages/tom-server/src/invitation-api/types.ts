@@ -2,7 +2,9 @@ export interface IInvitationService {
   invite: (payload: InvitationPayload) => Promise<string>
   accept: (token: string, authorization: string) => Promise<void>
   list: (userId: string) => Promise<Invitation[]>
-  generateLink: (payload: InvitationPayload) => Promise<string>
+  generateLink: (
+    payload: InvitationPayload
+  ) => Promise<GenerateInvitationLinkResponse>
   getInvitationStatus: (token: string) => Promise<Invitation>
 }
 
@@ -36,4 +38,9 @@ export interface RoomCreationPayload {
 
 export interface RoomCreationResponse {
   room_id: string
+}
+
+export interface GenerateInvitationLinkResponse {
+  link: string
+  id: string
 }

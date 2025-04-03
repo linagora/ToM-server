@@ -256,21 +256,44 @@ describe('the Invitation API service', () => {
 
   describe('the generateLink method', () => {
     it('should generate an invitation link', async () => {
-      global.fetch = jest.fn().mockResolvedValue({
-        status: 200,
-        json: jest.fn().mockResolvedValue({ room_id: 'test' })
-      })
       dbMock.insert.mockResolvedValue({ id: 'test' })
+      dbMock.get.mockResolvedValue([])
 
-      const result = await invitationService.generateLink({
+      const { link } = await invitationService.generateLink({
         sender: 'test',
         recipient: 'test',
         medium: 'phone'
       })
 
-      expect(result.startsWith('https://signup.example.com/?app=chat')).toBe(
-        true
+      expect(
+        link.startsWith(
+          'https://signup.example.com/?app=chat&invitation_token='
+        )
+      ).toBe(true)
+    })
+
+    it('should return the link to a previously generated invitation to the same contact if there is a valid one', async () => {
+      dbMock.get.mockResolvedValue([
+        {
+          id: 'test_old_invite',
+          sender: 'test',
+          recipient: 'test',
+          medium: 'phone',
+          expiration: `${Date.now() + 123456789}`,
+          accessed: 0
+        }
+      ])
+
+      const { link, id } = await invitationService.generateLink({
+        sender: 'test',
+        recipient: 'test',
+        medium: 'phone'
+      })
+
+      expect(link).toEqual(
+        'https://signup.example.com/?app=chat&invitation_token=test_old_invite'
       )
+      expect(id).toEqual('test_old_invite')
     })
 
     it('should throw an error if the database operation fails', async () => {
