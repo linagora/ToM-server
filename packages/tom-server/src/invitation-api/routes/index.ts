@@ -119,6 +119,8 @@ export default (
    *            properties:
    *             link:
    *              type: string
+   *             id:
+   *              type: string
    *    400:
    *      description: Bad request
    *    401:
