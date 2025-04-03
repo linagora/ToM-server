@@ -8,7 +8,8 @@ import {
   InvitationPayload,
   RoomCreationResponse,
   RoomCreationPayload,
-  medium
+  medium,
+  GenerateInvitationLinkResponse
 } from '../types'
 import { buildUrl } from '../../utils'
 import NotificationService from '../../utils/services/notification-service'
@@ -105,24 +106,15 @@ export default class InvitationService implements IInvitationService {
    * @param {invitationPayload} payload - Invitation payload
    * @returns {Promise<string>} - Invitation link
    */
-  public generateLink = async (payload: InvitationPayload): Promise<string> => {
+  public generateLink = async (
+    payload: InvitationPayload
+  ): Promise<GenerateInvitationLinkResponse> => {
     try {
-      const { sender, medium, recipient } = payload
+      const invite =
+        (await this._getPreviouslyGeneratedInviteToAddress(payload)) ??
+        ({ id: await this._createInvitation(payload) } as Invitation)
 
-      const previouslyGeneratedInvite =
-        await this._getPreviouslyGeneratedInviteToAddress(
-          sender,
-          recipient,
-          medium
-        )
-
-      if (previouslyGeneratedInvite) {
-        return this._getInvitationUrl(previouslyGeneratedInvite.id)
-      }
-
-      const token = await this._createInvitation(payload)
-
-      return this._getInvitationUrl(token)
+      return { link: this._getInvitationUrl(invite.id), id: invite.id }
     } catch (error) {
       this.logger.error(`Failed to generate invitation link`, error)
 
@@ -327,15 +319,15 @@ export default class InvitationService implements IInvitationService {
    * @param {medium} medium - Invitation medium
    * @returns {Promise<Invitation[]>} - List of invitations
    */
-  private _getPendingUserInvitesToAddress = async (
-    sender: string,
-    address: string,
-    medium: medium
-  ): Promise<Invitation[] | null> => {
+  private _getPendingUserInvitesToAddress = async ({
+    sender,
+    recipient,
+    medium
+  }: InvitationPayload): Promise<Invitation[] | null> => {
     try {
       const userInvitations = (await this.db.get('invitations', ['*'], {
         sender,
-        recipient: address,
+        recipient,
         medium
       })) as unknown as Invitation[]
 
@@ -359,15 +351,11 @@ export default class InvitationService implements IInvitationService {
    * @returns {Promise<Invitation | null>} - List of invitations
    */
   private _getPreviouslyGeneratedInviteToAddress = async (
-    sender: string,
-    address: string,
-    medium: medium
+    payload: InvitationPayload
   ): Promise<Invitation | null> => {
     try {
       const pendingInvitations = await this._getPendingUserInvitesToAddress(
-        sender,
-        address,
-        medium
+        payload
       )
 
       if (pendingInvitations) {
