@@ -35,9 +35,9 @@ export default class InvitationService implements IInvitationService {
    * Lists all user invitations
    *
    * @param {string} userId - User ID
-   * @returns {Promise<Invitation[]>} - List of invitations
+   * @returns {Promise<InvitationResponse[]>} - List of invitations
    */
-  public list = async (userId: string): Promise<Invitation[]> => {
+  public list = async (userId: string): Promise<InvitationResponse[]> => {
     try {
       return this._getUserInvitations(userId)
     } catch (error) {
@@ -264,7 +264,7 @@ export default class InvitationService implements IInvitationService {
    */
   private _getUserInvitations = async (
     userId: string
-  ): Promise<Invitation[]> => {
+  ): Promise<InvitationResponse[]> => {
     try {
       const userInvitations = (await this.db.get(this.INVITATION_TABLE, ['*'], {
         sender: userId
@@ -272,7 +272,8 @@ export default class InvitationService implements IInvitationService {
 
       return userInvitations.map((invitation) => ({
         ...invitation,
-        accessed: Boolean(invitation.accessed)
+        accessed: Boolean(invitation.accessed),
+        expiration: parseInt(invitation.expiration)
       }))
     } catch (error) {
       this.logger.error(`Failed to list invitations`, error)
