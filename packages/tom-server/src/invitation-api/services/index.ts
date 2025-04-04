@@ -9,13 +9,15 @@ import type {
   RoomCreationResponse,
   RoomCreationPayload,
   medium,
-  GenerateInvitationLinkResponse
+  GenerateInvitationLinkResponse,
+  InvitationResponse
 } from '../types'
 import { buildUrl } from '../../utils'
 import NotificationService from '../../utils/services/notification-service'
 import { buildEmailBody, buildSmsBody } from '../../utils/helpers'
 
 export default class InvitationService implements IInvitationService {
+  private readonly INVITATION_TABLE = 'invitations'
   private readonly EXPIRATION = 24 * 60 * 60 * 1000 // 24 hours
   private readonly MATRIX_ROOM_PATH = '/_matrix/client/v3/createRoom'
 
@@ -86,13 +88,13 @@ export default class InvitationService implements IInvitationService {
       const invitation = await this._getInvitationById(id)
       const { expiration, recipient: threepid } = invitation
 
-      if (parseInt(expiration) < Date.now()) {
+      if (expiration < Date.now()) {
         throw Error('Invitation expired')
       }
 
       await this._processUserInvitations(threepid, authorization)
 
-      await this.db.update('invitations', { accessed: 1 }, 'id', id)
+      await this.db.update(this.INVITATION_TABLE, { accessed: 1 }, 'id', id)
     } catch (error) {
       this.logger.error(`Failed to accept invitation`, error)
 
@@ -128,7 +130,7 @@ export default class InvitationService implements IInvitationService {
    * @param {string} token - Invitation token
    * @returns {Promise<Invitation>} - Invitation status
    */
-  public getInvitationStatus = (token: string): Promise<Invitation> => {
+  public getInvitationStatus = (token: string): Promise<InvitationResponse> => {
     try {
       return this._getInvitationById(token)
     } catch (error) {
@@ -146,7 +148,7 @@ export default class InvitationService implements IInvitationService {
    */
   public removeInvitation = async (token: string): Promise<void> => {
     try {
-      await this.db.deleteEqual('invitations', 'id', token)
+      await this.db.deleteEqual(this.INVITATION_TABLE, 'id', token)
     } catch (error) {
       this.logger.error(`Failed to remove invitation`, error)
 
@@ -166,7 +168,7 @@ export default class InvitationService implements IInvitationService {
     try {
       const token = uuidv7()
 
-      await this.db.insert('invitations', {
+      await this.db.insert(this.INVITATION_TABLE, {
         ...payload,
         id: token,
         expiration: `${Date.now() + this.EXPIRATION}`,
@@ -228,9 +230,11 @@ export default class InvitationService implements IInvitationService {
    * @param {string} id - Invitation ID
    * @returns {Promise<Invitation>} - Invitation
    */
-  private _getInvitationById = async (id: string): Promise<Invitation> => {
+  private _getInvitationById = async (
+    id: string
+  ): Promise<InvitationResponse> => {
     try {
-      const invitations = (await this.db.get('invitations', ['*'], {
+      const invitations = (await this.db.get(this.INVITATION_TABLE, ['*'], {
         id
       })) as unknown as Invitation[]
 
@@ -240,7 +244,11 @@ export default class InvitationService implements IInvitationService {
 
       const invitation = invitations[0]
 
-      return { ...invitation, accessed: Boolean(invitation.accessed) }
+      return {
+        ...invitation,
+        accessed: Boolean(invitation.accessed),
+        expiration: parseInt(invitation.expiration)
+      }
     } catch (error) {
       this.logger.error(`Failed to get invitation`, error)
 
@@ -258,7 +266,7 @@ export default class InvitationService implements IInvitationService {
     userId: string
   ): Promise<Invitation[]> => {
     try {
-      const userInvitations = (await this.db.get('invitations', ['*'], {
+      const userInvitations = (await this.db.get(this.INVITATION_TABLE, ['*'], {
         sender: userId
       })) as unknown as Invitation[]
 
@@ -315,7 +323,7 @@ export default class InvitationService implements IInvitationService {
     address: string
   ): Promise<Invitation[]> => {
     try {
-      const invitations = (await this.db.get('invitations', ['*'], {
+      const invitations = (await this.db.get(this.INVITATION_TABLE, ['*'], {
         recipient: address
       })) as unknown as Invitation[]
 
@@ -341,7 +349,7 @@ export default class InvitationService implements IInvitationService {
     medium
   }: InvitationPayload): Promise<Invitation[] | null> => {
     try {
-      const userInvitations = (await this.db.get('invitations', ['*'], {
+      const userInvitations = (await this.db.get(this.INVITATION_TABLE, ['*'], {
         sender,
         recipient,
         medium
@@ -465,7 +473,7 @@ export default class InvitationService implements IInvitationService {
    */
   private _removeInvitation = async (token: string): Promise<void> => {
     try {
-      await this.db.deleteEqual('invitations', 'id', token)
+      await this.db.deleteEqual(this.INVITATION_TABLE, 'id', token)
     } catch (error) {
       this.logger.error(`Failed to remove invitation`, error)
     }
