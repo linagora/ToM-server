@@ -1,7 +1,7 @@
 export interface IInvitationService {
   invite: (payload: InvitationPayload) => Promise<string>
   accept: (token: string, authorization: string) => Promise<void>
-  list: (userId: string) => Promise<Invitation[]>
+  list: (userId: string) => Promise<InvitationResponse[]>
   generateLink: (
     payload: InvitationPayload
   ) => Promise<GenerateInvitationLinkResponse>
