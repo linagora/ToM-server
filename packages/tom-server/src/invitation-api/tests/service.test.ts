@@ -79,7 +79,7 @@ describe('the Invitation API service', () => {
           sender: 'test',
           recipient: 'test',
           medium: 'test',
-          expiration: '123456789',
+          expiration: 123456789,
           accessed: false
         }
       ])
