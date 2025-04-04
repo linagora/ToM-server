@@ -361,4 +361,24 @@ describe('the Invitation API service', () => {
       ).rejects.toThrow('Failed to get invitation')
     })
   })
+
+  describe('the removeInvitation method', () => {
+    it('should remove the invitation from the database', async () => {
+      await invitationService.removeInvitation('test')
+
+      expect(dbMock.deleteEqual).toHaveBeenCalledWith(
+        'invitations',
+        'id',
+        'test'
+      )
+    })
+
+    it('should throw an error if the database operation fails', async () => {
+      dbMock.deleteEqual.mockRejectedValue(new Error('test'))
+
+      await expect(invitationService.removeInvitation('test')).rejects.toThrow(
+        'Failed to remove invitation'
+      )
+    })
+  })
 })

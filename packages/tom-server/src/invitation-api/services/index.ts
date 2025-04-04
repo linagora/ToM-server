@@ -2,9 +2,9 @@ import type { SendMailOptions } from 'nodemailer'
 import { v7 as uuidv7 } from 'uuid'
 import { type TwakeLogger } from '@twake/logger'
 import type { Config, INotificationService, TwakeDB } from '../../types'
-import {
-  type Invitation,
-  type IInvitationService,
+import type {
+  Invitation,
+  IInvitationService,
   InvitationPayload,
   RoomCreationResponse,
   RoomCreationPayload,
@@ -135,6 +135,22 @@ export default class InvitationService implements IInvitationService {
       this.logger.error(`Failed to get invitation status`, error)
 
       throw error
+    }
+  }
+
+  /**
+   * Removes an invitation
+   *
+   * @param {string} token - Invitation token
+   * @returns {Promise<void>}
+   */
+  public removeInvitation = async (token: string): Promise<void> => {
+    try {
+      await this.db.deleteEqual('invitations', 'id', token)
+    } catch (error) {
+      this.logger.error(`Failed to remove invitation`, error)
+
+      throw new Error('Failed to remove invitation', { cause: error })
     }
   }
 

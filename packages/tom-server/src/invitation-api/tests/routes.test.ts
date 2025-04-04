@@ -70,7 +70,8 @@ jest.mock('../controllers', () => {
       acceptInvitation: passiveController,
       listInvitations: passiveController,
       generateInvitationLink: passiveController,
-      getInvitationStatus: passiveController
+      getInvitationStatus: passiveController,
+      removeInvitation: passiveController
     }
   }
 })
