@@ -5,7 +5,7 @@ export interface IInvitationService {
   generateLink: (
     payload: InvitationPayload
   ) => Promise<GenerateInvitationLinkResponse>
-  getInvitationStatus: (token: string) => Promise<Invitation>
+  getInvitationStatus: (token: string) => Promise<InvitationResponse>
   removeInvitation: (token: string) => Promise<void>
 }
 
@@ -18,6 +18,10 @@ export interface Invitation {
   medium: medium
   expiration: string
   accessed: boolean
+}
+
+export interface InvitationResponse extends Omit<Invitation, 'expiration'> {
+  expiration: number
 }
 
 export interface InvitationRequestPayload {
