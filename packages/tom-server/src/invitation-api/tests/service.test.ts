@@ -348,7 +348,7 @@ describe('the Invitation API service', () => {
         sender: 'test',
         recipient: 'test',
         medium: 'phone',
-        expiration: `${Date.now() + 123456789}`,
+        expiration: Date.now() + 123456789,
         accessed: false
       })
     })

@@ -200,7 +200,7 @@ describe('the invitation API controller', () => {
         sender: 'test',
         recipient: 'test',
         medium: 'phone',
-        expiration: `${Date.now() + EXPIRATION}`,
+        expiration: Date.now() + EXPIRATION,
         accessed: false
       }
 
