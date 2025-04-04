@@ -75,7 +75,8 @@ jest.mock('../services/index.ts', () => {
       accept: spyMock,
       list: spyMock,
       generateLink: spyMock,
-      getInvitationStatus: spyMock
+      getInvitationStatus: spyMock,
+      removeInvitation: spyMock
     }
   }
 })
@@ -293,6 +294,29 @@ describe('the invitation API controller', () => {
 
       const response = await supertest(app)
         .get(`${PATH}/test/status`)
+        .set('Authorization', 'Bearer test')
+
+      expect(response.status).toBe(500)
+    })
+  })
+
+  describe('the removeInvitation method', () => {
+    it('should attempt to remove an invitation', async () => {
+      spyMock.mockResolvedValue('Invitation removed')
+
+      const response = await supertest(app)
+        .delete(`${PATH}/test`)
+        .set('Authorization', 'Bearer test')
+
+      expect(response.status).toBe(200)
+      expect(response.body).toEqual({ message: 'Invitation removed' })
+    })
+
+    it('should return a 500 if something wrong happens', async () => {
+      spyMock.mockRejectedValue(new Error('error'))
+
+      const response = await supertest(app)
+        .delete(`${PATH}/test`)
         .set('Authorization', 'Bearer test')
 
       expect(response.status).toBe(500)
