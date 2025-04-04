@@ -6,6 +6,7 @@ export interface IInvitationService {
     payload: InvitationPayload
   ) => Promise<GenerateInvitationLinkResponse>
   getInvitationStatus: (token: string) => Promise<Invitation>
+  removeInvitation: (token: string) => Promise<void>
 }
 
 export type medium = 'email' | 'phone'
