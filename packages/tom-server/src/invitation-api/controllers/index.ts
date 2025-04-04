@@ -185,4 +185,27 @@ export default class InvitationApiController {
       next(err)
     }
   }
+
+  /**
+   * Removes an invitation
+   *
+   * @param {Request} req - the request object.
+   * @param {Response} res - the response object.
+   * @param {NextFunction} next - the next hundler
+   */
+  removeInvitation = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
+    try {
+      const { id } = req.params
+
+      await this.invitationService.removeInvitation(id)
+
+      res.status(200).json({ message: 'Invitation removed' })
+    } catch (err) {
+      next(err)
+    }
+  }
 }
