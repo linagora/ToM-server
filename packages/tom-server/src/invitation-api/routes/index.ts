@@ -255,6 +255,41 @@ export default (
     controller.getInvitationStatus
   )
 
+  /**
+   * @openapi
+   * /_twake/v1/invite/{id}:
+   *  delete:
+   *    tags:
+   *     - Invitation
+   *    parameters:
+   *      - in: path
+   *        name: id
+   *        required: true
+   *        schema:
+   *          type: string
+   *        description: The invitation ID
+   *    description: Remove an invitation
+   *    responses:
+   *      200:
+   *        description: Invitation removed
+   *      400:
+   *        description: Invalid invitation
+   *      401:
+   *        description: Unauthorized
+   *      403:
+   *        description: Forbidden
+   *      404:
+   *        description: Invitation not found
+   *      500:
+   *        description: Internal error
+   */
+  router.delete(
+    `${PATH}/:id`,
+    authenticate,
+    middleware.checkInvitationOwnership,
+    controller.removeInvitation
+  )
+
   router.use(errorMiddleware(logger))
 
   return router
