@@ -50,7 +50,7 @@ jest.mock('../middlewares', () => {
       checkInvitationPayload: middlewareSpy,
       checkInvitation: middlewareSpy,
       rateLimitInvitations: middlewareSpy,
-      checkInvitationOwnership: middlewareSpy,
+      checkInvitationOwnership: middlewareSpy
     }
   }
 })
