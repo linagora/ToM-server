@@ -50,7 +50,7 @@ jest.mock('../middlewares', () => {
       checkInvitationPayload: middlewareSpy,
       checkInvitation: middlewareSpy,
       rateLimitInvitations: middlewareSpy,
-      checkInvitationOwnership: middlewareSpy
+      checkInvitationOwnership: middlewareSpy,
     }
   }
 })
@@ -70,7 +70,8 @@ jest.mock('../controllers', () => {
       acceptInvitation: passiveController,
       listInvitations: passiveController,
       generateInvitationLink: passiveController,
-      getInvitationStatus: passiveController
+      getInvitationStatus: passiveController,
+      removeInvitation: passiveController
     }
   }
 })
