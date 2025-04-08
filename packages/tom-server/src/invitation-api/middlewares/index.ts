@@ -104,7 +104,9 @@ export default class invitationApiMiddleware {
       const { expiration, sender } = invitation[0]
 
       if (userId === sender) {
-        res.status(400).json({ message: 'You cannot accept your own invitation' })
+        res
+          .status(400)
+          .json({ message: 'You cannot accept your own invitation' })
         return
       }
 
