@@ -10,7 +10,7 @@ export default class InvitationApiController {
   constructor(
     db: TwakeDB,
     private readonly logger: TwakeLogger,
-    private readonly config: Config
+    config: Config
   ) {
     this.invitationService = new InvitationService(db, logger, config)
   }
@@ -86,7 +86,14 @@ export default class InvitationApiController {
         return
       }
 
-      await this.invitationService.accept(id, authorization)
+      const { userId } = req
+
+      if (!userId) {
+        res.status(400).json({ message: 'User id is required' })
+        return
+      }
+
+      await this.invitationService.accept(id, userId, authorization)
 
       res.status(200).json({ message: 'Invitation accepted' })
     } catch (err) {
