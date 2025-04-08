@@ -1,6 +1,10 @@
 export interface IInvitationService {
   invite: (payload: InvitationPayload) => Promise<string>
-  accept: (token: string, authorization: string) => Promise<void>
+  accept: (
+    token: string,
+    userId: string,
+    authorization: string
+  ) => Promise<void>
   list: (userId: string) => Promise<InvitationResponse[]>
   generateLink: (
     payload: InvitationPayload
@@ -18,6 +22,7 @@ export interface Invitation {
   medium: medium
   expiration: string
   accessed: boolean
+  matrix_id?: string
 }
 
 export interface InvitationResponse extends Omit<Invitation, 'expiration'> {
