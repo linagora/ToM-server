@@ -8,7 +8,7 @@ export const tables = {
   userQuotas: 'user_id varchar(64) PRIMARY KEY, size int',
   rooms: 'id varchar(64) PRIMARY KEY, filter varchar(64)',
   invitations:
-    'id varchar(64) PRIMARY KEY, sender varchar(64), recipient varchar(64), medium varchar(64), expiration varchar(64), accessed int, room_id varchar(64)',
+    'id varchar(64) PRIMARY KEY, sender varchar(64), recipient varchar(64), medium varchar(64), expiration varchar(64), accessed int, room_id varchar(64), matrix_id varchar(64)',
   addressbooks: 'id varchar(64) PRIMARY KEY, owner varchar(64)',
   contacts:
     'id varchar(64) PRIMARY KEY, addressbook_id varchar(64), mxid varchar(64), display_name varchar(64), active int'

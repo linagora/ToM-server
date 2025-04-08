@@ -83,18 +83,31 @@ export default class InvitationService implements IInvitationService {
    * @param {string} authorization - the auth header
    * @returns {Promise<void>}
    */
-  public accept = async (id: string, authorization: string): Promise<void> => {
+  public accept = async (
+    id: string,
+    userId: string,
+    authorization: string
+  ): Promise<void> => {
     try {
       const invitation = await this._getInvitationById(id)
-      const { expiration, recipient: threepid } = invitation
+      const { expiration, recipient: threepid, accessed } = invitation
 
       if (expiration < Date.now()) {
         throw Error('Invitation expired')
       }
 
-      await this._processUserInvitations(threepid, authorization)
+      if (accessed) {
+        throw Error('Invitation already used')
+      }
 
-      await this.db.update(this.INVITATION_TABLE, { accessed: 1 }, 'id', id)
+      await this._processUserInvitations(threepid, userId, authorization)
+
+      await this.db.update(
+        this.INVITATION_TABLE,
+        { accessed: 1, matrix_id: userId },
+        'id',
+        id
+      )
     } catch (error) {
       this.logger.error(`Failed to accept invitation`, error)
 
@@ -200,6 +213,7 @@ export default class InvitationService implements IInvitationService {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            Accept: 'application/json',
             Authorization: authorization
           },
           body: JSON.stringify({
@@ -211,6 +225,10 @@ export default class InvitationService implements IInvitationService {
       )
 
       if (response.status !== 200) {
+        const resp = await response.json()
+
+        this.logger.error('Failed to create room', resp)
+
         throw Error('Failed to create room')
       }
 
@@ -247,7 +265,8 @@ export default class InvitationService implements IInvitationService {
       return {
         ...invitation,
         accessed: Boolean(invitation.accessed),
-        expiration: parseInt(invitation.expiration)
+        expiration: parseInt(invitation.expiration),
+        ...(invitation.matrix_id ? { matrix_id: invitation.matrix_id } : {})
       }
     } catch (error) {
       this.logger.error(`Failed to get invitation`, error)
@@ -273,7 +292,8 @@ export default class InvitationService implements IInvitationService {
       return userInvitations.map((invitation) => ({
         ...invitation,
         accessed: Boolean(invitation.accessed),
-        expiration: parseInt(invitation.expiration)
+        expiration: parseInt(invitation.expiration),
+        ...(invitation.matrix_id ? { matrix_id: invitation.matrix_id } : {})
       }))
     } catch (error) {
       this.logger.error(`Failed to list invitations`, error)
@@ -291,11 +311,11 @@ export default class InvitationService implements IInvitationService {
    */
   private _processUserInvitations = async (
     address: string,
+    userId: string,
     authorization: string
   ): Promise<void> => {
     try {
       const invitations = await this._listPendingInvitationToAddress(address)
-
       for (const { sender, id, expiration } of invitations) {
         try {
           if (parseInt(expiration) < Date.now()) {
@@ -303,6 +323,13 @@ export default class InvitationService implements IInvitationService {
           }
 
           await this._createPrivateChat(authorization, sender)
+
+          await this.db.update(
+            this.INVITATION_TABLE,
+            { accessed: 1, matrix_id: userId },
+            'id',
+            id
+          )
         } catch (error) {
           this.logger.error(`Failed to process invitation: ${id}`, error)
         }
@@ -339,9 +366,7 @@ export default class InvitationService implements IInvitationService {
   /**
    * List all pending invitations to a user
    *
-   * @param {string} sender - User address
-   * @param {string} address - User address
-   * @param {medium} medium - Invitation medium
+   * @param {InvitationPayload} payload - Invitation payload
    * @returns {Promise<Invitation[]>} - List of invitations
    */
   private _getPendingUserInvitesToAddress = async ({
@@ -371,8 +396,7 @@ export default class InvitationService implements IInvitationService {
   /**
    * List the latest generated invitation to user
    *
-   * @param {string} sender - User address
-   * @param {string} address - User address
+   * @param {InvitationPayload} payload - Invitation payload
    * @returns {Promise<Invitation | null>} - List of invitations
    */
   private _getPreviouslyGeneratedInviteToAddress = async (

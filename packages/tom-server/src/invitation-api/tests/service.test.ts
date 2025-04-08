@@ -161,7 +161,7 @@ describe('the Invitation API service', () => {
   })
 
   describe('the accept method', () => {
-    it('should update the invitation status', async () => {
+    it('should update the invitation status and matrix_id', async () => {
       dbMock.get.mockResolvedValue([
         {
           id: 'test',
@@ -174,11 +174,11 @@ describe('the Invitation API service', () => {
         }
       ])
 
-      await invitationService.accept('test', AUTHORIZATION)
+      await invitationService.accept('test', '@test:server.com', AUTHORIZATION)
 
       expect(dbMock.update).toHaveBeenCalledWith(
         'invitations',
-        { accessed: 1 },
+        { accessed: 1, matrix_id: '@test:server.com' },
         'id',
         'test'
       )
@@ -201,7 +201,7 @@ describe('the Invitation API service', () => {
         }
       ])
 
-      await invitationService.accept('test', AUTHORIZATION)
+      await invitationService.accept('test', '@user:server.com', AUTHORIZATION)
 
       expect(global.fetch).toHaveBeenCalledWith(
         'https://localhost/_matrix/client/v3/createRoom',
@@ -209,6 +209,7 @@ describe('the Invitation API service', () => {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            Accept: 'application/json',
             Authorization: AUTHORIZATION
           },
           body: JSON.stringify({
@@ -224,7 +225,7 @@ describe('the Invitation API service', () => {
       dbMock.get.mockResolvedValue([])
 
       await expect(
-        invitationService.accept('test', AUTHORIZATION)
+        invitationService.accept('test', '@user:server.com', AUTHORIZATION)
       ).rejects.toThrow('Failed to accept invitation')
     })
 
@@ -232,7 +233,7 @@ describe('the Invitation API service', () => {
       dbMock.get.mockRejectedValue(new Error('test'))
 
       await expect(
-        invitationService.accept('test', AUTHORIZATION)
+        invitationService.accept('test', '@user:server.com', AUTHORIZATION)
       ).rejects.toThrow('Failed to accept invitation')
     })
 
@@ -249,7 +250,7 @@ describe('the Invitation API service', () => {
       ])
 
       await expect(
-        invitationService.accept('test', AUTHORIZATION)
+        invitationService.accept('test', '@user:server.com', AUTHORIZATION)
       ).rejects.toThrow('Failed to accept invitation')
     })
   })
@@ -336,7 +337,7 @@ describe('the Invitation API service', () => {
           sender: 'test',
           recipient: 'test',
           medium: 'phone',
-          expiration: `${Date.now() + 123456789}`,
+          expiration: 123456789,
           accessed: 0
         }
       ])
@@ -348,7 +349,7 @@ describe('the Invitation API service', () => {
         sender: 'test',
         recipient: 'test',
         medium: 'phone',
-        expiration: Date.now() + 123456789,
+        expiration: 123456789,
         accessed: false
       })
     })
@@ -359,6 +360,32 @@ describe('the Invitation API service', () => {
       await expect(
         invitationService.getInvitationStatus('test')
       ).rejects.toThrow('Failed to get invitation')
+    })
+
+    it('should return the matrix id if it is set', async () => {
+      dbMock.get.mockResolvedValue([
+        {
+          id: 'test',
+          sender: 'test',
+          recipient: 'test',
+          medium: 'phone',
+          expiration: 123456789,
+          accessed: 0,
+          matrix_id: '@test:server.com'
+        }
+      ])
+
+      const result = await invitationService.getInvitationStatus('test')
+
+      expect(result).toEqual({
+        id: 'test',
+        sender: 'test',
+        recipient: 'test',
+        medium: 'phone',
+        expiration: 123456789,
+        accessed: false,
+        matrix_id: '@test:server.com'
+      })
     })
   })
 
