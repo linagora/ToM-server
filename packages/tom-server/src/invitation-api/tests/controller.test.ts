@@ -167,7 +167,7 @@ describe('the invitation API controller', () => {
         .get(`${PATH}/token`)
         .set('Authorization', 'Bearer test')
 
-      expect(spyMock).toHaveBeenCalledWith('token', 'Bearer test')
+      expect(spyMock).toHaveBeenCalledWith('token', 'test', 'Bearer test')
       expect(response.status).toBe(200)
       expect(response.body).toEqual({ message: 'Invitation accepted' })
     })
