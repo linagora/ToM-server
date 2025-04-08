@@ -58,9 +58,11 @@ export default class CookieAuthenticator {
       }
 
       req.headers.authorization = `Bearer ${token}`
+
+      next()
     } catch (error) {
       this.logger.error(`Failed to authenticate with cookie`, { error })
-    } finally {
+
       next()
     }
   }
