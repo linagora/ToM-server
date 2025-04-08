@@ -209,6 +209,7 @@ describe('the Invitation API service', () => {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            Accept: 'application/json',
             Authorization: AUTHORIZATION
           },
           body: JSON.stringify({
