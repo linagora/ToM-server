@@ -164,6 +164,8 @@ export default (
    *                  type: number
    *                accessed:
    *                  type: boolean
+   *                matrix_id:
+   *                  type: string
    *    400:
    *      description: Bad request
    *    401:
@@ -272,6 +274,8 @@ export default (
    *                  type: number
    *                accessed:
    *                  type: boolean
+   *                matrix_id:
+   *                  type: string
    *      400:
    *        description: Invalid invitation
    *      401:
