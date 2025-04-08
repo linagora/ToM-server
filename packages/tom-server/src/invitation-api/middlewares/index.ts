@@ -68,17 +68,18 @@ export default class invitationApiMiddleware {
   /**
    * Checks if the invitation exists and not expired
    *
-   * @param {Request} req - the request object.
+   * @param {AuthRequest} req - the request object.
    * @param {Response} res - the response object.
    * @param {NextFunction} next - the next hundler
    */
   checkInvitation = async (
-    req: Request,
+    req: AuthRequest,
     res: Response,
     next: NextFunction
   ): Promise<void> => {
     try {
       const {
+        userId,
         params: { id }
       } = req
 
@@ -87,16 +88,25 @@ export default class invitationApiMiddleware {
         return
       }
 
-      const invitation = await this.db.get('invitations', ['expiration'], {
-        id
-      })
+      const invitation = (await this.db.get(
+        'invitations',
+        ['expiration', 'sender'],
+        {
+          id
+        }
+      )) as unknown as Invitation[]
 
       if (!invitation || !invitation.length) {
         res.status(404).json({ message: 'Invitation not found' })
         return
       }
 
-      const { expiration } = invitation[0]
+      const { expiration, sender } = invitation[0]
+
+      if (userId === sender) {
+        res.status(400).json({ message: 'You cannot accept your own invitation' })
+        return
+      }
 
       if (+expiration < Date.now()) {
         res.status(400).json({ message: 'Invitation expired' })
