@@ -218,7 +218,7 @@ export default class InvitationService implements IInvitationService {
           },
           body: JSON.stringify({
             is_direct: true,
-            preset: 'private_chat',
+            preset: 'trusted_private_chat',
             ...(invitedMxid ? { invite: [invitedMxid] } : {})
           } satisfies RoomCreationPayload)
         }
