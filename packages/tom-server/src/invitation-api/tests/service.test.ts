@@ -214,7 +214,7 @@ describe('the Invitation API service', () => {
           },
           body: JSON.stringify({
             is_direct: true,
-            preset: 'private_chat',
+            preset: 'trusted_private_chat',
             invite: ['test']
           })
         }
