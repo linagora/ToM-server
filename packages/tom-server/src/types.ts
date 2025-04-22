@@ -47,6 +47,7 @@ export type Config = MConfig &
     matrix_admin_password: string
     admin_access_token: string
     signup_url: string
+    twake_chat: TwakeChatEnvironmentConfig
   }
 
 export interface AuthRequest extends Request {
@@ -183,4 +184,29 @@ export interface MailerConfig {
   tls?: {
     rejectUnauthorized: boolean
   }
+}
+
+export interface TwakeChatEnvironmentConfig {
+  application_name: string
+  application_welcome_message: string
+  privacy_url: string
+  render_html: boolean
+  hide_redacted_events: boolean
+  hide_unknown_events: boolean
+  issue_id: string
+  registration_url: string
+  twake_workplace_homeserver: string
+  app_grid_dashboard_available: boolean
+  platform: string
+  default_max_upload_avatar_size_in_bytes: string
+  dev_mode: boolean
+  qr_code_download_url: string
+  enable_logs: boolean
+  support_url: string
+  enable_invitations: boolean
+}
+
+export interface TwakeChatConfig extends TwakeChatEnvironmentConfig {
+  default_homeserver: string
+  homeserver: string
 }
