@@ -96,7 +96,7 @@
  */
 
 import { send } from '@twake/utils'
-import { type Config, type expressAppHandler } from '../types'
+import { TwakeChatConfig, type Config, type expressAppHandler } from '../types'
 
 interface WellKnownType {
   'm.homeserver': {
@@ -131,6 +131,7 @@ interface WellKnownType {
     issuer: string
     account?: string
   }
+  'app.twake.chat'?: TwakeChatConfig
 }
 
 class WellKnown {
@@ -141,7 +142,7 @@ class WellKnown {
   _wellKnownClient: expressAppHandler
 
   constructor(conf: Config) {
-    this._wellKnownClient = (req, res) => {
+    this._wellKnownClient = (_req, res) => {
       const wellKnown: WellKnownType = {
         'm.homeserver': {
           base_url: `https://${conf.matrix_server}/`
@@ -162,14 +163,17 @@ class WellKnown {
             baseUrl: conf.jitsiBaseUrl,
             useJwt: conf.jitsiUseJwt
           }
-        }
+        },
+        'app.twake.chat': this._getTwakeChatConfig(conf)
       }
+
       conf.federated_identity_services =
         typeof conf.federated_identity_services === 'object'
           ? conf.federated_identity_services
           : typeof conf.federated_identity_services === 'string'
           ? (conf.federated_identity_services as string).split(/[,\s]+/)
           : []
+
       if (
         conf.federated_identity_services != null &&
         conf.federated_identity_services.length > 0
@@ -180,6 +184,7 @@ class WellKnown {
           )
         }
       }
+
       /* istanbul ignore if */ // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
       if (conf.jitsiUseJwt) {
         wellKnown['m.integrations'].jitsi.jwt = {
@@ -200,6 +205,20 @@ class WellKnown {
         '/.well-known/matrix/client': this._wellKnownClient,
         '/.well-known/twake/client': this._wellKnownClient
       }
+    }
+  }
+
+  /**
+   * Return the Twake chat configuration object
+   *
+   * @param {Config} config - the application config
+   * @returns {TwakeChatConfig} the Twake chat configuration object
+   */
+  private _getTwakeChatConfig = (config: Config): TwakeChatConfig => {
+    return {
+      ...config.twake_chat,
+      default_homeserver: config.matrix_server,
+      homeserver: `https://${config.matrix_server}/`
     }
   }
 }
