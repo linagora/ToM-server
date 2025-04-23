@@ -12,6 +12,23 @@ installGlobals()
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
+/**
+ * Parses a boolean environment variable
+ *
+ * @param {string} variable - The environment variable to parse
+ * @param {boolean} defaultValue - The default value to use if the environment variable is not set
+ * @returns {boolean} The parsed boolean value
+ */
+const _parseBooleanEnv = (variable, defaultValue) => {
+  if (!variable) {
+    return defaultValue
+  }
+
+  const val = variable.trim().toLowerCase()
+
+  return val === 'true' || val === '1'
+}
+
 const appServerConf = {
   base_url: process.env.BASE_URL,
   sender_localpart: process.env.SENDER_LOCALPART,
@@ -249,21 +266,4 @@ if (process.argv[2] === 'generate') {
       console.error(e)
       throw e
     })
-}
-
-/**
- * Parses a boolean environment variable
- *
- * @param {string} variable - The environment variable to parse
- * @param {boolean} defaultValue - The default value to use if the environment variable is not set
- * @returns {boolean} The parsed boolean value
- */
-const _parseBooleanEnv = (variable, defaultValue) => {
-  if (!variable) {
-    return defaultValue
-  }
-
-  const val = variable.trim().toLowerCase()
-
-  return val === 'true' || val === '1'
 }
