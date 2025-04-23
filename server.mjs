@@ -20,6 +20,45 @@ const appServerConf = {
   push_ephemeral: process.env.PUSH_EPHEMERAL || true
 }
 
+/**
+ * Twake Chat client configuration
+ *
+ * @constant
+ */
+const twakeChatConf = {
+  application_name: process.env.TCHAT_APPLICATION_NAME,
+  application_welcome_message: process.env.TCHAT_APPLICATION_WELCOME_MESSAGE,
+  default_homeserver: process.env.MATRIX_SERVER,
+  privacy_url: process.env.TCHAT_PRIVACY_URL,
+  render_html: _parseBooleanEnv(process.env.TCHAT_RENDER_HTML, false),
+  hide_redacted_events: _parseBooleanEnv(
+    process.env.TCHAT_HIDE_REDACTED_EVENTS,
+    false
+  ),
+  hide_unknown_events: _parseBooleanEnv(
+    process.env.TCHAT_HIDE_UNKNOWN_EVENTS,
+    false
+  ),
+  issue_id: process.env.TCHAT_ISSUE_ID,
+  registration_url: process.env.TCHAT_REGISTRATION_URL,
+  twake_workplace_homeserver: process.env.TCHAT_TWAKE_WORKPLACE_HOMESERVER,
+  app_grid_dashboard_available: _parseBooleanEnv(
+    process.env.TCHAT_APP_GRID_DASHBOARD_AVAILABLE,
+    false
+  ),
+  platform: process.env.TCHAT_PLATFORM,
+  default_max_upload_avatar_size_in_bytes:
+    process.env.TCHAT_MAX_UPLOAD_AVATAR_SIZE,
+  dev_mode: _parseBooleanEnv(process.env.TCHAT_DEV_MODE, false),
+  qr_code_download_url: process.env.TCHAT_QR_CODE_DOWNLOAD_URL,
+  enable_logs: _parseBooleanEnv(process.env.TCHAT_ENABLE_LOGS),
+  support_url: process.env.TCHAT_SUPPORT_URL,
+  enable_invitations: _parseBooleanEnv(
+    process.env.TCHAT_ENABLE_INVITATIONS,
+    false
+  )
+}
+
 let conf = {
   ...appServerConf,
   additional_features: process.env.ADDITIONAL_FEATURES || false,
@@ -93,20 +132,16 @@ let conf = {
   admin_access_token: process.env.ADMIN_ACCESS_TOKEN ?? 'secret',
   signup_url: process.env.SIGNUP_URL ?? 'https://sign-up.twake.app/?app=chat',
   smtp_password: process.env.SMTP_PASSWORD,
-  smtp_tls: process.env.SMTP_TLS
-    ? process.env.SMTP_TLS.toLocaleLowerCase() === 'true'
-      ? true
-      : false
-    : false,
+  smtp_tls: _parseBooleanEnv(process.env.SMTP_TLS, false),
   smtp_user: process.env.SMTP_USER,
-  smtp_verify_certificate: process.env.SMTP_VERIFY_CERTIFICATE
-    ? process.env.SMTP_VERIFY_CERTIFICATE.toLocaleLowerCase() === 'true'
-      ? true
-      : false
-    : false,
+  smtp_verify_certificate: _parseBooleanEnv(
+    process.env.SMTP_VERIFY_CERTIFICATE,
+    false
+  ),
   smtp_sender: process.env.SMTP_SENDER ?? '',
   smtp_server: process.env.SMTP_SERVER || 'localhost',
-  smtp_port: process.env.SMTP_PORT || 25
+  smtp_port: process.env.SMTP_PORT || 25,
+  twake_chat: twakeChatConf
 }
 
 if (process.argv[2] === 'generate') {
@@ -214,4 +249,21 @@ if (process.argv[2] === 'generate') {
       console.error(e)
       throw e
     })
+}
+
+/**
+ * Parses a boolean environment variable
+ *
+ * @param {string} variable - The environment variable to parse
+ * @param {boolean} defaultValue - The default value to use if the environment variable is not set
+ * @returns {boolean} The parsed boolean value
+ */
+const _parseBooleanEnv = (variable, defaultValue) => {
+  if (!variable) {
+    return defaultValue
+  }
+
+  const val = variable.trim().toLowerCase()
+
+  return val === 'true' || val === '1'
 }

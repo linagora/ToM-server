@@ -101,6 +101,27 @@ describe('Tom-server', () => {
       const response = await request(app).get('/.well-known/matrix/client')
       expect(response.statusCode).toBe(200)
       expect(response.body).toEqual({
+        'app.twake.chat': {
+          app_grid_dashboard_available: false,
+          application_name: '',
+          application_welcome_message: '',
+          default_homeserver: 'localhost',
+          default_max_upload_avatar_size_in_bytes: '',
+          dev_mode: false,
+          enable_invitations: false,
+          enable_logs: false,
+          hide_redacted_events: false,
+          hide_unknown_events: false,
+          homeserver: 'https://localhost/',
+          issue_id: '',
+          platform: '',
+          privacy_url: '',
+          qr_code_download_url: '',
+          registration_url: '',
+          render_html: false,
+          support_url: '',
+          twake_workplace_homeserver: ''
+        },
         'm.homeserver': { base_url: 'https://localhost/' },
         'm.identity_server': { base_url: 'http://example.com/' },
         'm.integrations': {

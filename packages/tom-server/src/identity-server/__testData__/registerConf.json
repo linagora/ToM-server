@@ -29,5 +29,24 @@
   "sms_api_key": "1234567890",
   "sms_api_login": "login",
   "signup_url": "https://signup.example.com",
-  "auth_url": "https://auth.example.com"
+  "auth_url": "https://auth.example.com",
+  "twake_chat": {
+    "application_name": "",
+    "application_welcome_message": "",
+    "privacy_url": "",
+    "render_html": false,
+    "hide_redacted_events": false,
+    "hide_unknown_events": false,
+    "issue_id": "",
+    "registration_url": "",
+    "twake_workplace_homeserver": "",
+    "app_grid_dashboard_available": false,
+    "platform": "",
+    "default_max_upload_avatar_size_in_bytes": "",
+    "dev_mode": false,
+    "qr_code_download_url": "",
+    "enable_logs": false,
+    "support_url": "",
+    "enable_invitations": false
+  }
 }
