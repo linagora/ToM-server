@@ -20,6 +20,7 @@ export default class InvitationService implements IInvitationService {
   private readonly INVITATION_TABLE = 'invitations'
   private readonly EXPIRATION = 24 * 60 * 60 * 1000 // 24 hours
   private readonly MATRIX_ROOM_PATH = '/_matrix/client/v3/createRoom'
+  private readonly MATRIX_USER_PATH = '/_matrix/client/v3/user'
 
   private notificationService: INotificationService
 
@@ -204,7 +205,7 @@ export default class InvitationService implements IInvitationService {
    */
   private _createPrivateChat = async (
     authorization: string,
-    invitedMxid?: string
+    invitedMxid: string
   ): Promise<string> => {
     try {
       const response = await fetch(
@@ -219,7 +220,7 @@ export default class InvitationService implements IInvitationService {
           body: JSON.stringify({
             is_direct: true,
             preset: 'trusted_private_chat',
-            ...(invitedMxid ? { invite: [invitedMxid] } : {})
+            invite: [invitedMxid]
           } satisfies RoomCreationPayload)
         }
       )
@@ -239,6 +240,52 @@ export default class InvitationService implements IInvitationService {
       this.logger.error(`Failed to create room`, error)
 
       throw Error('Failed to create room')
+    }
+  }
+
+  /**
+   * Mark private chat room as direct message
+   *
+   * @param {string} authorization - Authorization token
+   * @param {string} sender - Sender user ID
+   * @param {string} recipient - Recipient user ID
+   * @param {string} room - Room ID
+   * @returns {Promise<void>}
+   */
+  private _markPrivateChatAsDirectMessage = async (
+    authorization: string,
+    sender: string,
+    recipient: string,
+    room: string
+  ): Promise<void> => {
+    try {
+      const response = await fetch(
+        buildUrl(
+          this.config.matrix_server,
+          `${this.MATRIX_USER_PATH}/${sender}/account_data/m.direct`
+        ),
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+            Authorization: authorization
+          },
+          body: JSON.stringify({ [recipient]: [room] })
+        }
+      )
+
+      if (response.status !== 200) {
+        const resp = await response.json()
+
+        this.logger.error('Failed to mark room as direct message', resp)
+
+        throw Error('Failed to mark room as DM')
+      }
+    } catch (error) {
+      this.logger.error(`Failed to mark room as direct message`, error)
+
+      throw Error('Failed to mark room as direct message')
     }
   }
 
@@ -322,7 +369,22 @@ export default class InvitationService implements IInvitationService {
             throw Error('Invitation expired')
           }
 
-          await this._createPrivateChat(authorization, sender)
+          /**
+           * context: we create a room with the new user and the original invitation sender
+           * since we can't perform this action as the original sender the new user creates the room
+           */
+          const room = await this._createPrivateChat(authorization, sender)
+
+          /**
+           * context: we need to transform the created room to a direct message
+           * so the sender here is the new user and the receipient is the original invitation sender
+           */
+          await this._markPrivateChatAsDirectMessage(
+            authorization,
+            userId,
+            sender,
+            room
+          )
 
           await this.db.update(
             this.INVITATION_TABLE,
