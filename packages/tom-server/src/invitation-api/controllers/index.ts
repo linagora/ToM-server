@@ -1,7 +1,11 @@
 import type { TwakeLogger } from '@twake/logger'
 import type { AuthRequest, Config, TwakeDB } from '../../types'
 import type { NextFunction, Request, Response } from 'express'
-import { IInvitationService, InvitationRequestPayload } from '../types'
+import {
+  GenerateInvitationLinkRequestPayload,
+  IInvitationService,
+  InvitationRequestPayload
+} from '../types'
 import InvitationService from '../services'
 
 export default class InvitationApiController {
@@ -145,9 +149,9 @@ export default class InvitationApiController {
   ): Promise<void> => {
     try {
       const {
-        body: { contact: recipient, medium },
+        body: { contact: recipient = null, medium = null },
         userId: sender
-      }: { body: InvitationRequestPayload; userId?: string } = req
+      }: { body: GenerateInvitationLinkRequestPayload; userId?: string } = req
 
       if (!sender) {
         throw Error('Sender is required')
