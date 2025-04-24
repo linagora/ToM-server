@@ -10,7 +10,8 @@ import type {
   RoomCreationPayload,
   medium,
   GenerateInvitationLinkResponse,
-  InvitationResponse
+  InvitationResponse,
+  GenerateInvitationLinkPayload
 } from '../types'
 import { buildUrl } from '../../utils'
 import NotificationService from '../../utils/services/notification-service'
@@ -90,7 +91,9 @@ export default class InvitationService implements IInvitationService {
     authorization: string
   ): Promise<void> => {
     try {
-      const invitation = await this._getInvitationById(id)
+      const invitation = (await this._getInvitationById(
+        id
+      )) as InvitationResponse
       const { expiration, recipient: threepid, accessed } = invitation
 
       if (expiration < Date.now()) {
@@ -101,14 +104,11 @@ export default class InvitationService implements IInvitationService {
         throw Error('Invitation already used')
       }
 
-      await this._processUserInvitations(threepid, userId, authorization)
-
-      await this.db.update(
-        this.INVITATION_TABLE,
-        { accessed: 1, matrix_id: userId },
-        'id',
-        id
-      )
+      if (threepid) {
+        await this._processInvitationsToAddress(threepid, userId, authorization)
+      } else {
+        await this._processInvitation(invitation, userId, authorization)
+      }
     } catch (error) {
       this.logger.error(`Failed to accept invitation`, error)
 
@@ -123,7 +123,7 @@ export default class InvitationService implements IInvitationService {
    * @returns {Promise<string>} - Invitation link
    */
   public generateLink = async (
-    payload: InvitationPayload
+    payload: GenerateInvitationLinkPayload
   ): Promise<GenerateInvitationLinkResponse> => {
     try {
       const invite =
@@ -177,13 +177,13 @@ export default class InvitationService implements IInvitationService {
    * @returns {Promise<string>} - Invitation token
    */
   private _createInvitation = async (
-    payload: InvitationPayload
+    payload: GenerateInvitationLinkPayload
   ): Promise<string> => {
     try {
       const token = uuidv7()
 
       await this.db.insert(this.INVITATION_TABLE, {
-        ...payload,
+        ...(payload as InvitationPayload),
         id: token,
         expiration: `${Date.now() + this.EXPIRATION}`,
         accessed: 0
@@ -350,56 +350,80 @@ export default class InvitationService implements IInvitationService {
   }
 
   /**
-   * Process user all invitations
+   * Process all invitations to address
    *
    * @param {string} address - User address
+   * @param {string} userId - the new user id
    * @param {string} authorization - Authorization token
    * @returns {Promise<void>}
    */
-  private _processUserInvitations = async (
+  private _processInvitationsToAddress = async (
     address: string,
     userId: string,
     authorization: string
   ): Promise<void> => {
     try {
       const invitations = await this._listPendingInvitationToAddress(address)
-      for (const { sender, id, expiration } of invitations) {
+
+      for (const invitation of invitations) {
         try {
-          if (parseInt(expiration) < Date.now()) {
-            throw Error('Invitation expired')
-          }
-
-          /**
-           * context: we create a room with the new user and the original invitation sender
-           * since we can't perform this action as the original sender the new user creates the room
-           */
-          const room = await this._createPrivateChat(authorization, sender)
-
-          /**
-           * context: we need to transform the created room to a direct message
-           * so the sender here is the new user and the receipient is the original invitation sender
-           */
-          await this._markPrivateChatAsDirectMessage(
-            authorization,
-            userId,
-            sender,
-            room
-          )
-
-          await this.db.update(
-            this.INVITATION_TABLE,
-            { accessed: 1, matrix_id: userId },
-            'id',
-            id
-          )
+          this._processInvitation(invitation, userId, authorization)
         } catch (error) {
-          this.logger.error(`Failed to process invitation: ${id}`, error)
+          this.logger.error(`Failed to process invitation`)
         }
       }
     } catch (error) {
       this.logger.error(`Failed to process invitations`, error)
 
       throw Error('Failed to process invitations')
+    }
+  }
+
+  /**
+   * Process a single invitation
+   *
+   * @param {Invitation} invitation - Invitation
+   * @param {string} userId - the new user id
+   * @param {string} authorization - Authorization token
+   * @returns {Promise<void>}
+   */
+  private _processInvitation = async (
+    invitation: InvitationResponse,
+    userId: string,
+    authorization: string
+  ): Promise<void> => {
+    const { sender, id, expiration } = invitation
+
+    try {
+      if (expiration < Date.now()) {
+        throw Error('Invitation expired')
+      }
+
+      /**
+       * context: we create a room with the new user and the original invitation sender
+       * since we can't perform this action as the original sender the new user creates the room
+       */
+      const room = await this._createPrivateChat(authorization, sender)
+
+      /**
+       * context: we need to transform the created room to a direct message
+       * so the sender here is the new user and the receipient is the original invitation sender
+       */
+      await this._markPrivateChatAsDirectMessage(
+        authorization,
+        userId,
+        sender,
+        room
+      )
+
+      await this.db.update(
+        this.INVITATION_TABLE,
+        { accessed: 1, matrix_id: userId },
+        'id',
+        id
+      )
+    } catch (error) {
+      this.logger.error(`Failed to process invitation: ${id}`, error)
     }
   }
 
@@ -411,13 +435,19 @@ export default class InvitationService implements IInvitationService {
    */
   private _listPendingInvitationToAddress = async (
     address: string
-  ): Promise<Invitation[]> => {
+  ): Promise<InvitationResponse[]> => {
     try {
       const invitations = (await this.db.get(this.INVITATION_TABLE, ['*'], {
         recipient: address
       })) as unknown as Invitation[]
 
-      return invitations.filter(({ accessed }) => !accessed)
+      return invitations
+        .filter(({ accessed, recipient }) => !accessed && recipient === address)
+        .map(({ accessed, expiration, ...data }) => ({
+          ...data,
+          accessed: Boolean(accessed),
+          expiration: parseInt(expiration)
+        }))
     } catch (error) {
       this.logger.error(`Failed to list invitations`, error)
 
@@ -435,16 +465,19 @@ export default class InvitationService implements IInvitationService {
     sender,
     recipient,
     medium
-  }: InvitationPayload): Promise<Invitation[] | null> => {
+  }: GenerateInvitationLinkPayload): Promise<Invitation[] | null> => {
     try {
       const userInvitations = (await this.db.get(this.INVITATION_TABLE, ['*'], {
         sender,
-        recipient,
-        medium
+        ...(recipient ? { recipient } : {}),
+        ...(medium ? { medium } : {})
       })) as unknown as Invitation[]
 
       if (userInvitations.length) {
-        return userInvitations.filter(({ accessed }) => !accessed)
+        return userInvitations.filter(
+          ({ accessed, recipient: rec, medium: med }) =>
+            !accessed && rec === recipient && med === medium
+        )
       }
 
       return null
@@ -458,11 +491,11 @@ export default class InvitationService implements IInvitationService {
   /**
    * List the latest generated invitation to user
    *
-   * @param {InvitationPayload} payload - Invitation payload
+   * @param {GenerateInvitationLinkPayload} payload - Invitation payload
    * @returns {Promise<Invitation | null>} - List of invitations
    */
   private _getPreviouslyGeneratedInviteToAddress = async (
-    payload: InvitationPayload
+    payload: GenerateInvitationLinkPayload
   ): Promise<Invitation | null> => {
     try {
       const pendingInvitations = await this._getPendingUserInvitesToAddress(
