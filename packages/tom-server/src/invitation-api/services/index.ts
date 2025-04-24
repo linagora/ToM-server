@@ -1,6 +1,6 @@
 import type { SendMailOptions } from 'nodemailer'
 import { v7 as uuidv7 } from 'uuid'
-import { type TwakeLogger } from '@twake/logger'
+import type { TwakeLogger } from '@twake/logger'
 import type { Config, INotificationService, TwakeDB } from '../../types'
 import type {
   Invitation,

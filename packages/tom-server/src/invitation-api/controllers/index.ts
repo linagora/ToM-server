@@ -1,7 +1,7 @@
 import type { TwakeLogger } from '@twake/logger'
 import type { AuthRequest, Config, TwakeDB } from '../../types'
 import type { NextFunction, Request, Response } from 'express'
-import {
+import type {
   GenerateInvitationLinkRequestPayload,
   IInvitationService,
   InvitationRequestPayload

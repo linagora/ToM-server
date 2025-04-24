@@ -3,11 +3,7 @@ import {
   type TwakeLogger,
   type Config as LoggerConfig
 } from '@twake/logger'
-import {
-  type AuthenticationFunction,
-  type Config,
-  type TwakeDB
-} from '../../types'
+import type { AuthenticationFunction, Config, TwakeDB } from '../../types'
 import { Router } from 'express'
 import bodyParser from 'body-parser'
 import InvitationApiController from '../controllers'
