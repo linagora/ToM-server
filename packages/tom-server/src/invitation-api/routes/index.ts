@@ -105,6 +105,7 @@ export default (
    *   - Invitation
    *   description: generates an invitation link
    *   requestBody:
+   *    required: false
    *    content:
    *      application/json:
    *       schema:
@@ -131,7 +132,7 @@ export default (
   router.post(
     `${PATH}/generate`,
     authenticate,
-    middleware.checkInvitationPayload,
+    middleware.checkGenerateInvitationLinkPayload,
     controller.generateInvitationLink
   )
 
@@ -157,15 +158,21 @@ export default (
    *                sender:
    *                  type: string
    *                recipient:
-   *                  type: string
+   *                  oneOf:
+   *                    - type: string
+   *                    - type: null
    *                medium:
-   *                  type: string
+   *                  oneOf:
+   *                    - type: string
+   *                    - type: null
    *                expiration:
    *                  type: number
    *                accessed:
    *                  type: boolean
    *                matrix_id:
-   *                  type: string
+   *                  oneOf:
+   *                    - type: string
+   *                    - type: null
    *    400:
    *      description: Bad request
    *    401:
@@ -267,15 +274,21 @@ export default (
    *                sender:
    *                  type: string
    *                recipient:
-   *                  type: string
+   *                  oneOf:
+   *                    - type: string
+   *                    - type: null
    *                medium:
-   *                  type: string
+   *                  oneOf:
+   *                    - type: string
+   *                    - type: null
    *                expiration:
    *                  type: number
    *                accessed:
    *                  type: boolean
    *                matrix_id:
-   *                  type: string
+   *                  oneOf:
+   *                    - type: string
+   *                    - type: null
    *      400:
    *        description: Invalid invitation
    *      401:
