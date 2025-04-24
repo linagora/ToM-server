@@ -45,7 +45,8 @@ jest.mock('../middlewares/index.ts', () => {
       checkInvitationPayload: passiveMiddlewareMock,
       checkInvitation: passiveMiddlewareMock,
       rateLimitInvitations: passiveMiddlewareMock,
-      checkInvitationOwnership: passiveMiddlewareMock
+      checkInvitationOwnership: passiveMiddlewareMock,
+      checkGenerateInvitationLinkPayload: passiveMiddlewareMock
     }
   }
 })
@@ -258,6 +259,44 @@ describe('the invitation API controller', () => {
         } satisfies InvitationRequestPayload)
 
       expect(response.status).toBe(500)
+    })
+
+    describe('without 3pid ( unknown user )', () => {
+      it('should generate an invitation link without a body', async () => {
+        spyMock.mockResolvedValue({
+          link: 'https://localhost/?invitation_token=test',
+          id: 'test'
+        })
+
+        const response = await supertest(app)
+          .post(`${PATH}/generate`)
+          .set('Authorization', 'Bearer test')
+          .send()
+
+        expect(response.status).toBe(200)
+        expect(response.body).toEqual({
+          link: expect.any(String),
+          id: 'test'
+        })
+      })
+
+      it('should generate an invitation link with an empty body', async () => {
+        spyMock.mockResolvedValue({
+          link: 'https://localhost/?invitation_token=test',
+          id: 'test'
+        })
+
+        const response = await supertest(app)
+          .post(`${PATH}/generate`)
+          .set('Authorization', 'Bearer test')
+          .send({})
+
+        expect(response.status).toBe(200)
+        expect(response.body).toEqual({
+          link: expect.any(String),
+          id: 'test'
+        })
+      })
     })
   })
 
