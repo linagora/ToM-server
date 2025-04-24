@@ -162,6 +162,19 @@ describe('the Invitation API service', () => {
 
   describe('the accept method', () => {
     it('should update the invitation status and matrix_id', async () => {
+      global.fetch = jest.fn().mockImplementation((url) => {
+        if (url.includes('m.direct')) {
+          return Promise.resolve({
+            status: 200
+          })
+        }
+
+        return Promise.resolve({
+          status: 200,
+          json: jest.fn().mockResolvedValue({ room_id: 'test' })
+        })
+      })
+
       dbMock.get.mockResolvedValue([
         {
           id: 'test',
@@ -175,6 +188,11 @@ describe('the Invitation API service', () => {
       ])
 
       await invitationService.accept('test', '@test:server.com', AUTHORIZATION)
+
+      /**
+       * context: everything is mocked correctly but somehow jest doesn't wait for all operations
+       */
+      await new Promise((resolve) => setTimeout(resolve, 100))
 
       expect(dbMock.update).toHaveBeenCalledWith(
         'invitations',
@@ -281,6 +299,11 @@ describe('the Invitation API service', () => {
 
       await invitationService.accept('test', '@user:server.com', AUTHORIZATION)
 
+      /**
+       * context: everything is mocked correctly but somehow jest doesn't wait for all operations
+       */
+      await new Promise((resolve) => setTimeout(resolve, 100))
+
       expect(global.fetch).toHaveBeenNthCalledWith(
         2,
         'https://localhost/_matrix/client/v3/user/@user:server.com/account_data/m.direct',
@@ -293,6 +316,45 @@ describe('the Invitation API service', () => {
           },
           body: JSON.stringify({ sender: ['test'] })
         }
+      )
+    })
+
+    it('should support accepting an invitation to unknown 3pid address', async () => {
+      global.fetch = jest.fn().mockImplementation((url) => {
+        if (url.includes('m.direct')) {
+          return Promise.resolve({
+            status: 200
+          })
+        }
+
+        return Promise.resolve({
+          status: 200,
+          json: jest.fn().mockResolvedValue({ room_id: 'test' })
+        })
+      })
+
+      dbMock.get.mockResolvedValue([
+        {
+          id: 'someunknowninvitationid',
+          sender: 'sender',
+          recipient: null,
+          medium: null,
+          expiration: `${Date.now() + 123456789}`,
+          accessed: 0
+        }
+      ])
+
+      await invitationService.accept(
+        'someunknowninvitationid',
+        '@user:server.com',
+        AUTHORIZATION
+      )
+
+      expect(dbMock.update).toHaveBeenCalledWith(
+        'invitations',
+        { accessed: 1, matrix_id: '@user:server.com' },
+        'id',
+        'someunknowninvitationid'
       )
     })
   })
@@ -352,16 +414,32 @@ describe('the Invitation API service', () => {
     })
 
     it('should insert the invitation into the database', async () => {
-      global.fetch = jest.fn().mockResolvedValue({
-        status: 200,
-        json: jest.fn().mockResolvedValue({ room_id: 'test' })
-      })
       dbMock.insert.mockResolvedValue({ id: 'test' })
 
       await invitationService.generateLink({
         sender: 'test',
         recipient: 'test',
         medium: 'phone'
+      })
+
+      expect(dbMock.insert).toHaveBeenCalledWith(
+        'invitations',
+        expect.any(Object)
+      )
+    })
+
+    it('should generate an invitation link without 3pid or medium', async () => {
+      global.fetch = jest.fn().mockResolvedValue({
+        status: 200,
+        json: jest.fn().mockResolvedValue({ room_id: 'test' })
+      })
+
+      dbMock.insert.mockResolvedValue({ id: 'test' })
+
+      await invitationService.generateLink({
+        sender: 'test',
+        recipient: null,
+        medium: null
       })
 
       expect(dbMock.insert).toHaveBeenCalledWith(

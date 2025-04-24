@@ -7,7 +7,7 @@ export interface IInvitationService {
   ) => Promise<void>
   list: (userId: string) => Promise<InvitationResponse[]>
   generateLink: (
-    payload: InvitationPayload
+    payload: GenerateInvitationLinkPayload
   ) => Promise<GenerateInvitationLinkResponse>
   getInvitationStatus: (token: string) => Promise<InvitationResponse>
   removeInvitation: (token: string) => Promise<void>
@@ -34,10 +34,21 @@ export interface InvitationRequestPayload {
   medium: medium
 }
 
+export interface GenerateInvitationLinkRequestPayload {
+  contact?: string | null
+  medium?: medium | null
+}
+
 export interface InvitationPayload {
   sender: string
   recipient: string
   medium: medium
+}
+
+export interface GenerateInvitationLinkPayload {
+  sender: string
+  recipient?: string | null
+  medium?: medium | null
 }
 
 export interface RoomCreationPayload {

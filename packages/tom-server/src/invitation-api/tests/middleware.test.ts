@@ -397,4 +397,44 @@ describe('the Invitation API middleware', () => {
       expect(mockResponse.status).toHaveBeenCalledWith(404)
     })
   })
+  describe('the checkGenerateInvitationLinkPayload method', () => {
+    it('should call the next handler if the body is empty', async () => {
+      await middleware.checkGenerateInvitationLinkPayload(
+        mockRequest as AuthRequest,
+        mockResponse as Response,
+        nextFunction
+      )
+
+      expect(nextFunction).toHaveBeenCalled()
+    })
+
+    it('should not call the next handler if there body contains invalid data', async () => {
+      await middleware.checkGenerateInvitationLinkPayload(
+        { ...mockRequest, body: { medium: 'test' } } as AuthRequest,
+        mockResponse as Response,
+        nextFunction
+      )
+
+      expect(nextFunction).not.toHaveBeenCalled()
+    })
+
+    it('should call the checkInvitationPayload middleware body contains enough data', async () => {
+      middleware.checkInvitationPayload = jest.fn()
+
+      await middleware.checkGenerateInvitationLinkPayload(
+        {
+          ...mockRequest,
+          body: {
+            medium: 'phone',
+            contact: '000000000000'
+          }
+        } as AuthRequest,
+        mockResponse as Response,
+        nextFunction
+      )
+
+      expect(middleware.checkInvitationPayload).toHaveBeenCalled()
+      jest.resetAllMocks()
+    })
+  })
 })

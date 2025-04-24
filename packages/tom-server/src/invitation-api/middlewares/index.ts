@@ -219,4 +219,35 @@ export default class invitationApiMiddleware {
       res.status(400).json({ message: 'Failed to rate limit invitations' })
     }
   }
+
+  /**
+   * Checks the generate invitation link payload
+   *
+   * @param {Request} req - the request object.
+   * @param {Response} res - the response object.
+   * @param {NextFunction} next - the next hundler
+   */
+  checkGenerateInvitationLinkPayload = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
+    try {
+      if (!req.body || Object.keys(req.body).length === 0) {
+        next()
+        return
+      }
+
+      return this.checkInvitationPayload(req, res, next)
+    } catch (error) {
+      this.logger.error(
+        `Failed to check generate invitation link payload`,
+        error
+      )
+
+      res
+        .status(400)
+        .json({ message: 'Invalid generate invitation link payload' })
+    }
+  }
 }
