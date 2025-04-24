@@ -184,7 +184,7 @@ describe('the Invitation API service', () => {
       )
     })
 
-    it('should create a room if the invitation does not have one', async () => {
+    it('should create a new room', async () => {
       global.fetch = jest.fn().mockResolvedValue({
         status: 200,
         json: jest.fn().mockResolvedValue({ room_id: 'test' })
@@ -252,6 +252,48 @@ describe('the Invitation API service', () => {
       await expect(
         invitationService.accept('test', '@user:server.com', AUTHORIZATION)
       ).rejects.toThrow('Failed to accept invitation')
+    })
+
+    it('should mark the new room as direct message', async () => {
+      global.fetch = jest.fn().mockImplementation((url) => {
+        if (url.includes('m.direct')) {
+          return Promise.resolve({
+            status: 200
+          })
+        }
+
+        return Promise.resolve({
+          status: 200,
+          json: jest.fn().mockResolvedValue({ room_id: 'test' })
+        })
+      })
+
+      dbMock.get.mockResolvedValue([
+        {
+          id: 'test',
+          sender: 'sender',
+          recipient: 'test',
+          medium: 'phone',
+          expiration: `${Date.now() + 123456789}`,
+          accessed: 0
+        }
+      ])
+
+      await invitationService.accept('test', '@user:server.com', AUTHORIZATION)
+
+      expect(global.fetch).toHaveBeenNthCalledWith(
+        2,
+        'https://localhost/_matrix/client/v3/user/@user:server.com/account_data/m.direct',
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+            Authorization: AUTHORIZATION
+          },
+          body: JSON.stringify({ sender: ['test'] })
+        }
+      )
     })
   })
 
