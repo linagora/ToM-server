@@ -55,7 +55,9 @@ jest.mock('../middlewares', () => {
       rateLimitInvitations: middlewareSpy,
       checkInvitationOwnership: middlewareSpy,
       checkGenerateInvitationLinkPayload: middlewareSpy,
-      checkFeatureEnabled: middlewareSpy
+      checkFeatureEnabled: jest.fn().mockImplementation((_req, _res, next) => {
+        next()
+      })
     }
   }
 })
