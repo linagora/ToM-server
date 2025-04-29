@@ -28,7 +28,7 @@ export default (
   const cookieAuthMiddleware = new CookieAuthenticator(config, logger)
 
   router.use(bodyParser.json())
-  router.use(middleware.checkFeatureEnabled)
+  router.use(PATH, middleware.checkFeatureEnabled)
 
   /**
    * @openapi
