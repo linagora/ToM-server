@@ -1,4 +1,4 @@
-import type { AuthRequest, TwakeDB } from '../../types'
+import type { AuthRequest, Config, TwakeDB } from '../../types'
 import type { Response, NextFunction } from 'express'
 import Middleware from '../middlewares'
 import { type TwakeLogger } from '@twake/logger'
@@ -28,7 +28,8 @@ const loggerMock = {
 const nextFunction: NextFunction = jest.fn()
 const middleware = new Middleware(
   dbMock as unknown as TwakeDB,
-  loggerMock as unknown as TwakeLogger
+  loggerMock as unknown as TwakeLogger,
+  {} as unknown as Config
 )
 
 beforeEach(() => {
@@ -435,6 +436,37 @@ describe('the Invitation API middleware', () => {
 
       expect(middleware.checkInvitationPayload).toHaveBeenCalled()
       jest.resetAllMocks()
+    })
+  })
+  describe('the checkFeatureEnabled method', () => {
+    it('should not call the next handler if the invitations are disabled', async () => {
+      await middleware.checkFeatureEnabled(
+        mockRequest as AuthRequest,
+        mockResponse as Response,
+        nextFunction
+      )
+
+      expect(nextFunction).not.toHaveBeenCalled()
+    })
+
+    it('should call the next handler if the invitations are enabled', async () => {
+      const altMiddleware = new Middleware(
+        dbMock as unknown as TwakeDB,
+        loggerMock as unknown as TwakeLogger,
+        {
+          twake_chat: {
+            enable_invitations: true
+          }
+        } as unknown as Config
+      )
+
+      await altMiddleware.checkFeatureEnabled(
+        mockRequest as AuthRequest,
+        mockResponse as Response,
+        nextFunction
+      )
+
+      expect(nextFunction).toHaveBeenCalled()
     })
   })
 })

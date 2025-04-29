@@ -46,7 +46,8 @@ jest.mock('../middlewares/index.ts', () => {
       checkInvitation: passiveMiddlewareMock,
       rateLimitInvitations: passiveMiddlewareMock,
       checkInvitationOwnership: passiveMiddlewareMock,
-      checkGenerateInvitationLinkPayload: passiveMiddlewareMock
+      checkGenerateInvitationLinkPayload: passiveMiddlewareMock,
+      checkFeatureEnabled: passiveMiddlewareMock
     }
   }
 })
