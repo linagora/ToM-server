@@ -1,5 +1,5 @@
 import { TwakeLogger } from '@twake/logger'
-import { AuthRequest, TwakeDB } from '../../types'
+import type { AuthRequest, Config, TwakeDB } from '../../types'
 import type { NextFunction, Request, Response } from 'express'
 import type { Invitation, InvitationRequestPayload } from '../types'
 import validator from 'validator'
@@ -9,7 +9,8 @@ export default class invitationApiMiddleware {
 
   constructor(
     private readonly db: TwakeDB,
-    private readonly logger: TwakeLogger
+    private readonly logger: TwakeLogger,
+    private readonly config: Config
   ) {}
 
   /**
@@ -248,6 +249,34 @@ export default class invitationApiMiddleware {
       res
         .status(400)
         .json({ message: 'Invalid generate invitation link payload' })
+    }
+  }
+
+  /**
+   * Checks if invitations feature is enabled
+   *
+   * @param {Request} _req - the request object.
+   * @param {Response} res - the response object.
+   * @param {NextFunction} next - the next hundler
+   */
+  checkFeatureEnabled = async (
+    _req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
+    try {
+      if (!this.config?.twake_chat?.enable_invitations) {
+        this.logger.warn(`Invitations are not enabled`)
+        res.status(400).json({ message: 'Invitations are not enabled' })
+
+        return
+      }
+
+      next()
+    } catch (error) {
+      this.logger.error(`Failed to check invitations enabled`, error)
+
+      res.status(400).json({ message: 'Failed to check invitations enabled' })
     }
   }
 }
