@@ -34,7 +34,10 @@ const idServer = new IdServer(
     rate_limiting_window: 5000,
     rate_limiting_nb_requests: 10,
     template_dir: './templates',
-    userdb_host: './tokens.db'
+    userdb_host: './tokens.db',
+    twake_chat: {
+      enable_invitations: true
+    }
   } as unknown as ConfigDescription,
   mockLogger as TwakeLogger
 )
@@ -51,7 +54,8 @@ jest.mock('../middlewares', () => {
       checkInvitation: middlewareSpy,
       rateLimitInvitations: middlewareSpy,
       checkInvitationOwnership: middlewareSpy,
-      checkGenerateInvitationLinkPayload: middlewareSpy
+      checkGenerateInvitationLinkPayload: middlewareSpy,
+      checkFeatureEnabled: middlewareSpy
     }
   }
 })
