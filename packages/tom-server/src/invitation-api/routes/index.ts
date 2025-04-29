@@ -24,10 +24,11 @@ export default (
   const router = Router()
   const authenticate = authMiddleware(authenticator, logger)
   const controller = new InvitationApiController(db, logger, config)
-  const middleware = new invitationApiMiddleware(db, logger)
+  const middleware = new invitationApiMiddleware(db, logger, config)
   const cookieAuthMiddleware = new CookieAuthenticator(config, logger)
 
   router.use(bodyParser.json())
+  router.use(middleware.checkFeatureEnabled)
 
   /**
    * @openapi
