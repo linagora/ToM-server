@@ -26,6 +26,7 @@ import MetricsRouter from './metrics-api'
 import Invitation from './invitation-api'
 import AddressBook from './addressbook-api'
 import DeactivateAccount from './deactivate-account-api'
+import MatrixclientApi from './matrix-api/client'
 
 export default class TwakeServer {
   conf: Config
@@ -171,11 +172,13 @@ export default class TwakeServer {
       this.logger
     )
 
-    const DeactivateAccountApi = DeactivateAccount(
+    const deactivateAccountApi = DeactivateAccount(
       this.conf,
       this.matrixDb.db,
       this.logger
     )
+
+    const matrixClientApi = MatrixclientApi(this.conf, this.logger)
 
     this.endpoints.use(privateNoteApi)
     this.endpoints.use(mutualRoolsApi)
@@ -188,7 +191,8 @@ export default class TwakeServer {
     this.endpoints.use(metricsApi)
     this.endpoints.use(invitationApi)
     this.endpoints.use(addressbookApi)
-    this.endpoints.use(DeactivateAccountApi)
+    this.endpoints.use(deactivateAccountApi)
+    this.endpoints.use(matrixClientApi)
 
     if (
       this.conf.opensearch_is_activated != null &&
