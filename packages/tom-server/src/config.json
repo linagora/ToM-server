@@ -117,5 +117,8 @@
     "enable_logs": false,
     "support_url": "",
     "enable_invitations": false
+  },
+  "default_permissions": {
+    
   }
 }
