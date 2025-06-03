@@ -30,7 +30,10 @@ export default class CreateRoomController {
         return
       }
 
-      return this.roomService.create(req.body, authorization)
+      const operation = await this.roomService.create(req.body, authorization)
+      const data = await operation.json()
+
+      res.status(operation.status).json(data)
     } catch (error) {
       this.logger.error(`Failed to create room`, error)
 
