@@ -48,6 +48,13 @@ export type Config = MConfig &
     admin_access_token: string
     signup_url: string
     twake_chat: TwakeChatEnvironmentConfig
+    default_permissions: {
+      direct_chat: PowerLevelEventContent
+      private_group_chat: PowerLevelEventContent
+      public_group_chat: PowerLevelEventContent
+      private_channel: PowerLevelEventContent
+      public_channel: PowerLevelEventContent
+    }
   }
 
 export interface AuthRequest extends Request {
@@ -210,3 +217,64 @@ export interface TwakeChatConfig extends TwakeChatEnvironmentConfig {
   default_homeserver: string
   homeserver: string
 }
+
+export interface CreateRoomPayload {
+  creation_content: CreationContent
+  initial_state: StateEvent[]
+  invite: string[]
+  invite_3pid: Invite3pid[]
+  is_direct: boolean
+  name: string
+  power_level_content_override: PowerLevelEventContent
+  preset: 'private_chat' | 'public_chat' | 'trusted_private_chat'
+  room_alias_name: string
+  room_version: string
+  topic: string
+  visibility: 'public' | 'private'
+}
+
+export type CreationContent = Content
+
+export interface StateEvent {
+  content: Content
+  state_key?: string
+  type: string
+}
+
+export interface Invite3pid {
+  address: string
+  id_access_token: string
+  id_server: string
+  medium: string
+}
+
+export interface PowerLevelEventContent {
+  users_default: number
+  events_default: number
+  invite: number
+  state_default: number
+  kick: number
+  ban: number
+  redact: number
+  notifications: {
+    room: number
+  }
+  events: {
+    'm.reaction': number
+    'm.room.redaction': number
+    'm.room.pinned_events': number
+    'org.matrix.msc3401.call': number
+    'org.matrix.msc3401.call.member': number
+    'm.room.name': number
+    'm.room.topic': number
+    'm.room.avatar': number
+    'm.room.history_visibility': number
+    'm.room.power_levels': number
+    'm.room.encryption': number
+  }
+}
+
+export type Content = Record<
+  string,
+  string[] | string | number | boolean | Object
+>
