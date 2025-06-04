@@ -13,11 +13,17 @@ export default class CreateRoomMiddleware {
     const { body } = req
 
     if (!body) {
+      this.logger.error('Missing body')
       res.status(400).send('Missing body')
+      return
     }
 
-    if (!body.name) {
-      res.status(400).send('Missing name')
+    try {
+      JSON.parse(JSON.stringify(body))
+    } catch (error) {
+      this.logger.error('Invalid JSON', error)
+      res.status(400).send('Invalid JSON')
+      return
     }
 
     next()
