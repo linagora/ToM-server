@@ -48,7 +48,7 @@ export type Config = MConfig &
     admin_access_token: string
     signup_url: string
     twake_chat: TwakeChatEnvironmentConfig
-    default_permissions: {
+    room_permissions: {
       direct_chat: PowerLevelEventContent
       private_group_chat: PowerLevelEventContent
       public_group_chat: PowerLevelEventContent
