@@ -73,14 +73,12 @@ export default class RoomService {
       const { preset } = payload
 
       if (payload.invite.length < 2) {
-        return this.config.default_permissions.direct_chat
-      } else if (preset === 'private_chat') {
-        return this.config.default_permissions.private_group_chat
+        return this.config.room_permissions.direct_chat
       } else if (preset === 'public_chat') {
-        return this.config.default_permissions.public_group_chat
-      } else {
-        return this.config.default_permissions.private_group_chat
+        return this.config.room_permissions.public_group_chat
       }
+
+      return this.config.room_permissions.private_group_chat
     } catch (error) {
       this.logger.error(`Failed to get default power level content`, error)
     }
