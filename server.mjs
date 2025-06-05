@@ -105,6 +105,8 @@ let conf = {
   ldap_password: process.env.LDAP_PASSWORD,
   ldap_uri: process.env.LDAP_URI,
   matrix_server: process.env.MATRIX_SERVER,
+  matrix_internal_host:
+    process.env.MATRIX_INTERNAL_HOST || process.env.MATRIX_SERVER,
   matrix_database_engine: process.env.MATRIX_DATABASE_ENGINE,
   matrix_database_host: process.env.MATRIX_DATABASE_HOST,
   matrix_database_name: process.env.MATRIX_DATABASE_NAME,
