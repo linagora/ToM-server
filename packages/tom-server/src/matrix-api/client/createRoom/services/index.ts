@@ -43,7 +43,7 @@ export default class RoomService {
       }
 
       return await fetch(
-        buildUrl(this.config.matrix_server, this.CREATE_ROOM_API_PATH),
+        buildUrl(this.config.matrix_internal_host, this.CREATE_ROOM_API_PATH),
         {
           method: 'POST',
           headers: {
