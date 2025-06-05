@@ -24,6 +24,7 @@ export type Config = MConfig &
     jitsiPreferredDomain: string
     jitsiUseJwt: boolean
     matrix_server: string
+    matrix_internal_host: string
     matrix_database_host: string
     oidc_issuer?: string
     opensearch_ca_cert_path?: string
