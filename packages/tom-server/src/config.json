@@ -43,6 +43,7 @@
   },
   "mail_link_delay": 7200,
   "matrix_server": "localhost",
+  "matrix_internal_host": "localhost",
   "matrix_database_engine": "sqlite",
   "matrix_database_host": "./matrix.db",
   "matrix_database_name": null,
