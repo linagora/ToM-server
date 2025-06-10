@@ -23,7 +23,7 @@ export default class CreateRoomController {
     next: NextFunction
   ): Promise<void> => {
     try {
-      const { authorization } = req.headers
+      const { authorization = undefined } = req.headers
 
       if (!authorization) {
         res.status(400).json({ message: 'Authorization header is required' })
@@ -35,6 +35,7 @@ export default class CreateRoomController {
 
       res.status(operation.status).json(data)
     } catch (error) {
+      console.log({ error })
       this.logger.error(`Failed to create room`, error)
 
       next(error)
