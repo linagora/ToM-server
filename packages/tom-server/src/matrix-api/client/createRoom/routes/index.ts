@@ -19,7 +19,7 @@ export default (config: Config, defaultLogger?: TwakeLogger): Router => {
   const logger = defaultLogger ?? getLogger(config as unknown as LoggerConfig)
   const router = Router()
   const controller = new CreateRoomController(config, logger)
-  const middleware = new CreateRoomMiddleware(config, logger)
+  const middleware = new CreateRoomMiddleware(logger)
 
   router.post('/', middleware.checkPayload, controller.createRoom)
 
