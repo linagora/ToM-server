@@ -1,6 +1,6 @@
 import { TwakeLogger } from '@twake/logger'
 import type { NextFunction, Request, Response } from 'express'
-
+import validator from 'validator'
 export default class CreateRoomMiddleware {
   constructor(private readonly logger: TwakeLogger) {}
 
@@ -18,7 +18,9 @@ export default class CreateRoomMiddleware {
     }
 
     try {
-      JSON.parse(JSON.stringify(body))
+      if (!validator.isJSON(JSON.stringify(body))) {
+        throw Error('Invalid JSON')
+      }
     } catch (error) {
       this.logger.error('Invalid JSON', error)
       res.status(400).send('Invalid JSON')
