@@ -28,7 +28,7 @@ export default class RoomService {
    * @returns {Promise<void>}
    */
   public create = async (
-    payload: CreateRoomPayload,
+    payload: Partial<CreateRoomPayload>,
     authorization: string
   ): Promise<Response> => {
     try {
@@ -67,12 +67,12 @@ export default class RoomService {
    * @returns {PowerLevelEventContent | undefined} - the power level content.
    */
   private getDefaultPowerLevelContent = (
-    payload: CreateRoomPayload
+    payload: Partial<CreateRoomPayload>
   ): PowerLevelEventContent | undefined => {
     try {
-      const { preset } = payload
+      const { preset = undefined } = payload
 
-      if (payload.invite.length < 2) {
+      if (payload.invite && payload.invite.length < 2) {
         return this.config.room_permissions.direct_chat
       } else if (preset === 'public_chat') {
         return this.config.room_permissions.public_group_chat
@@ -80,6 +80,7 @@ export default class RoomService {
 
       return this.config.room_permissions.private_group_chat
     } catch (error) {
+      console.log({ error })
       this.logger.error(`Failed to get default power level content`, error)
     }
   }
