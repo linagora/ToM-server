@@ -1,9 +1,8 @@
 import { TwakeLogger } from '@twake/logger'
-import { Config } from '../../../../types'
 import type { NextFunction, Request, Response } from 'express'
 
 export default class CreateRoomMiddleware {
-  constructor(config: Config, private readonly logger: TwakeLogger) {}
+  constructor(private readonly logger: TwakeLogger) {}
 
   public checkPayload = (
     req: Request,
@@ -12,7 +11,7 @@ export default class CreateRoomMiddleware {
   ): void => {
     const { body } = req
 
-    if (!body) {
+    if (!body || !Object.keys(body).length) {
       this.logger.error('Missing body')
       res.status(400).send('Missing body')
       return
