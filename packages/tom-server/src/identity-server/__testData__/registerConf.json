@@ -16,6 +16,7 @@
   "keys_depth": 5,
   "mail_link_delay": 7200,
   "matrix_server": "localhost",
+  "matrix_internal_host": "localhost",
   "opensearch_is_activated": false,
   "server_name": "example.com",
   "smtp_sender": "yadd@debian.org",
@@ -48,5 +49,132 @@
     "enable_logs": false,
     "support_url": "",
     "enable_invitations": false
+  },
+  "room_permissions": {
+    "direct_chat": {
+      "users_default": 0,
+      "events_default": 10,
+      "invite": 100,
+      "state_default": 100,
+      "kick": 100,
+      "ban": 100,
+      "redact": 100,
+      "notifications": {
+        "room": 100
+      },
+      "events": {
+        "m.reaction": 10,
+        "m.room.redaction": 10,
+        "m.room.pinned_events": 10,
+        "org.matrix.msc3401.call": 10,
+        "org.matrix.msc3401.call.member": 10,
+        "m.room.name": 100,
+        "m.room.topic": 100,
+        "m.room.avatar": 100,
+        "m.room.history_visibility": 100,
+        "m.room.power_levels": 100,
+        "m.room.encryption": 10
+      }
+    },
+    "private_group_chat": {
+      "users_default": 10,
+      "events_default": 10,
+      "invite": 50,
+      "state_default": 100,
+      "kick": 50,
+      "ban": 50,
+      "redact": 50,
+      "notifications": {
+        "room": 10
+      },
+      "events": {
+        "m.reaction": 10,
+        "m.room.redaction": 10,
+        "m.room.pinned_events": 10,
+        "org.matrix.msc3401.call": 10,
+        "org.matrix.msc3401.call.member": 10,
+        "m.room.name": 80,
+        "m.room.topic": 80,
+        "m.room.avatar": 80,
+        "m.room.history_visibility": 80,
+        "m.room.power_levels": 80,
+        "m.room.encryption": 80
+      }
+    },
+    "public_group_chat": {
+      "users_default": 10,
+      "events_default": 10,
+      "invite": 0,
+      "state_default": 100,
+      "kick": 50,
+      "ban": 50,
+      "redact": 50,
+      "notifications": {
+        "room": 10
+      },
+      "events": {
+        "m.reaction": 10,
+        "m.room.redaction": 10,
+        "m.room.pinned_events": 50,
+        "org.matrix.msc3401.call": 50,
+        "org.matrix.msc3401.call.member": 10,
+        "m.room.name": 80,
+        "m.room.topic": 80,
+        "m.room.avatar": 80,
+        "m.room.history_visibility": 80,
+        "m.room.power_levels": 80,
+        "m.room.encryption": 90
+      }
+    },
+    "private_channel": {
+      "users_default": 10,
+      "events_default": 80,
+      "invite": 50,
+      "state_default": 100,
+      "kick": 50,
+      "ban": 50,
+      "redact": 80,
+      "notifications": {
+        "room": 80
+      },
+      "events": {
+        "m.reaction": 10,
+        "m.room.redaction": 80,
+        "m.room.pinned_events": 50,
+        "org.matrix.msc3401.call": 100,
+        "org.matrix.msc3401.call.member": 100,
+        "m.room.name": 80,
+        "m.room.topic": 80,
+        "m.room.avatar": 80,
+        "m.room.history_visibility": 90,
+        "m.room.power_levels": 50,
+        "m.room.encryption": 90
+      }
+    },
+    "public_channel": {
+      "users_default": 10,
+      "events_default": 80,
+      "invite": 0,
+      "state_default": 100,
+      "kick": 50,
+      "ban": 50,
+      "redact": 80,
+      "notifications": {
+        "room": 80
+      },
+      "events": {
+        "m.reaction": 10,
+        "m.room.redaction": 80,
+        "m.room.pinned_events": 50,
+        "org.matrix.msc3401.call": 100,
+        "org.matrix.msc3401.call.member": 100,
+        "m.room.name": 80,
+        "m.room.topic": 80,
+        "m.room.avatar": 80,
+        "m.room.history_visibility": 100,
+        "m.room.power_levels": 50,
+        "m.room.encryption": 100
+      }
+    }
   }
 }
