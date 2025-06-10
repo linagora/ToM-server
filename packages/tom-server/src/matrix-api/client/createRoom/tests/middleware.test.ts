@@ -50,7 +50,7 @@ describe('the create room API middleware', () => {
     expect(nextFunction).not.toHaveBeenCalled()
   })
 
-  it('should return 400 if the body is not a json', () => {
+  it('should return 400 if the body is not a json object', () => {
     middleware.checkPayload(
       { body: 'something' } as AuthRequest,
       mockResponse as Response,
