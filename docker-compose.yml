@@ -134,10 +134,6 @@ services:
       # - USERDB_ENGINE=sqlite                  ## Uncomment to enable local userDB
       # - USERDB_HOST=/opt/lemon/db/lemon.db    ## Uncomment to enable local userDB
 
-      - SMS_API_KEY=SOME_SECRET_KEY
-      - SMS_API_LOGIN=login@domain.com
-      - SMS_API_URL=https://api.octopush.com/v1/public
-
       - LOG_LEVEL=silly
       - LOG_TRANSPORTS=Console
 
@@ -145,12 +141,9 @@ services:
     image: linagora/twake-web
     volumes:
       - ./.compose/chat/config.json:/usr/share/nginx/html/web/config.json
-      - ./.compose/chat/default.conf.template:/etc/nginx/templates/default.conf.template
       - ./.compose/ssl:/etc/nginx/ssl
     # ports:
-    #   - 6868:6868
-    environment:
-      - TWAKECHAT_LISTEN_PORT=6868
+    #   - 80:80
     networks:
       - frontend
 
@@ -159,8 +152,13 @@ services:
     ports:
       - 443:443
     volumes:
-      - ./.compose/haproxy:/usr/local/etc/haproxy
+      # Reverse proxy routing configuration
       - ./.compose/haproxy/haproxy.tom+fed+chat.cfg:/usr/local/etc/haproxy/haproxy.cfg
+      - ./.compose/haproxy/cors.lua:/usr/local/etc/haproxy/cors.lua
+      - ./.compose/haproxy/lua_endpoint_to_function.map_rewrite.cfg:/usr/local/etc/haproxy/lua_endpoint_to_function.map_rewrite.cfg
+      - ./.compose/haproxy/lua_endpoint_to_worker.map_rewrite.lua:/usr/local/etc/haproxy/lua_endpoint_to_worker.map_rewrite.lua
+      - ./.compose/haproxy/synapse_worker_endpoint_indexer.lua:/usr/local/etc/haproxy/synapse_worker_endpoint_indexer.lua
+      # HTTPS SSL Certs
       - ./.compose/ssl/both.pem:/etc/ssl/certs/both.pem
     sysctls:
       - net.ipv4.ip_unprivileged_port_start=0
