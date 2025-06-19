@@ -3,8 +3,12 @@ import { errMsg, send, toMatrixId } from '@twake/utils'
 import { type Response } from 'express'
 import type http from 'http'
 import type TwakeIdentityServer from '..'
+import { type Contact } from '../../addressbook-api/types'
 
-type SearchFunction = (res: Response | http.ServerResponse, data: Query) => void
+type SearchFunction = (
+  res: Response | http.ServerResponse,
+  data: Query
+) => Promise<void>
 
 export interface Query {
   scope: string[]
@@ -12,6 +16,7 @@ export interface Query {
   limit?: number
   offset?: number
   val?: string
+  owner?: string
 }
 
 export const SearchFields = new Set<string>([
@@ -25,11 +30,30 @@ export const SearchFields = new Set<string>([
   'matrixAddress'
 ])
 
-const _search = (
+const _search = async (
   idServer: TwakeIdentityServer,
   logger: TwakeLogger
-): SearchFunction => {
-  return (res, data) => {
+): Promise<SearchFunction> => {
+  return async (res, data) => {
+    const addressBook = await idServer.db.get('addressbooks', ['id'], {
+      owner: data.owner ?? ''
+    })
+
+    const contacts = (await idServer.db.get('contacts', ['*'], {
+      addressbook_id: addressBook[0].id as string
+    })) as unknown as Contact[]
+
+    const contactsList = [] as any
+    contacts.forEach((contact) => {
+      const uid = contact.mxid?.replace(/^@(.*?):.*/, '$1')
+      if (uid !== null && uid.length > 0) {
+        contactsList.push({
+          uid,
+          cn: contact.display_name,
+          address: contact.mxid
+        })
+      }
+    })
     const sendError = (e: string): void => {
       /* istanbul ignore next */
       logger.error('Autocompletion error', e)
@@ -102,7 +126,53 @@ const _search = (
                     inactive_matches.push(row)
                   }
                 })
-                send(res, 200, { matches, inactive_matches })
+                const normalizedScope = scope.map((f) =>
+                  f === 'matrixAddress' ? 'uid' : f
+                )
+                const val =
+                  typeof data.val === 'string' ? data.val.toLowerCase() : ''
+                // Merge contactList into matches if not already present
+                contactsList
+                  .filter((contact: any) => {
+                    if (val.length === 0) return true // match all, like getAll
+
+                    return normalizedScope.some((field) => {
+                      const fieldVal = (() => {
+                        switch (field) {
+                          case 'uid':
+                            return contact.uid
+                          case 'cn':
+                          case 'displayName':
+                            return contact.cn
+                          case 'mail':
+                          case 'mobile':
+                            return contact.address // fallback
+                          default:
+                            return ''
+                        }
+                      })()
+                      return fieldVal?.toLowerCase().includes(val)
+                    })
+                  })
+                  .forEach((contact: any) => {
+                    const existsInMatches = matches.some(
+                      (m) => m.uid === contact.uid
+                    )
+                    const existsInInactive = inactive_matches.some(
+                      (m) => m.uid === contact.uid
+                    )
+                    if (!existsInMatches && !existsInInactive) {
+                      matches.push({
+                        uid: contact.uid,
+                        cn: contact.cn,
+                        address: contact.address
+                      })
+                    }
+                  })
+                send(res, 200, {
+                  matches,
+                  inactive_matches
+                })
               })
               .catch(sendError)
           }
