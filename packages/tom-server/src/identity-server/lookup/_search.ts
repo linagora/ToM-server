@@ -35,25 +35,6 @@ const _search = async (
   logger: TwakeLogger
 ): Promise<SearchFunction> => {
   return async (res, data) => {
-    const addressBook = await idServer.db.get('addressbooks', ['id'], {
-      owner: data.owner ?? ''
-    })
-
-    const contacts = (await idServer.db.get('contacts', ['*'], {
-      addressbook_id: addressBook[0].id as string
-    })) as unknown as Contact[]
-
-    const contactsList = [] as any
-    contacts.forEach((contact) => {
-      const uid = contact.mxid?.replace(/^@(.*?):.*/, '$1')
-      if (uid !== null && uid.length > 0) {
-        contactsList.push({
-          uid,
-          cn: contact.display_name,
-          address: contact.mxid
-        })
-      }
-    })
     const sendError = (e: string): void => {
       /* istanbul ignore next */
       logger.error('Autocompletion error', e)
@@ -77,6 +58,52 @@ const _search = async (
     })
     /* istanbul ignore else */
     if (!error) {
+      const addressBook = await idServer.db.get('addressbooks', ['id'], {
+        owner: data.owner ?? ''
+      })
+
+      let contacts = (await idServer.db.get('contacts', ['*'], {
+        addressbook_id: addressBook[0].id as string
+      })) as unknown as Contact[]
+
+      const val = data.val?.toLowerCase() ?? ''
+      const normalizedScope = scope.map((f) =>
+        f === 'matrixAddress' ? 'uid' : f
+      )
+
+      if (val.length > 0) {
+        contacts = contacts.filter((contact) =>
+          normalizedScope.some((field) => {
+            const fieldVal = (() => {
+              switch (field) {
+                case 'uid':
+                  return contact.mxid?.replace(/^@(.*?):.*/, '$1')
+                case 'cn':
+                case 'displayName':
+                  return contact.display_name
+                case 'mail':
+                case 'mobile':
+                  return contact.mxid
+                default:
+                  return ''
+              }
+            })()
+            return fieldVal?.toLowerCase().includes(val)
+          })
+        )
+      }
+
+      const contactMap = new Map<string, any>()
+      for (const contact of contacts) {
+        const uid = contact.mxid?.replace(/^@(.*?):.*/, '$1')
+        if (uid.length > 0) {
+          contactMap.set(uid, {
+            uid,
+            cn: contact.display_name,
+            address: contact.mxid
+          })
+        }
+      }
       const _fields = fields.includes('uid') ? fields : [...fields, 'uid']
       const _scope = scope.map((f) => (f === 'matrixAddress' ? 'uid' : f))
       const value = data.val?.replace(/^@(.*?):(?:.*)$/, '$1')
@@ -120,55 +147,25 @@ const _search = async (
                     row.uid as string,
                     idServer.conf.server_name
                   )
-                  if (mUids[row.uid as string]) {
+                  const uid = row.uid as string
+
+                  if (contactMap.has(uid)) {
+                    row.cn = contactMap.get(uid).cn // Update display name from addressbook
+                    contactMap.delete(uid)
+                  }
+
+                  if (mUids[uid]) {
                     matches.push(row)
                   } else {
                     inactive_matches.push(row)
                   }
                 })
-                const normalizedScope = scope.map((f) =>
-                  f === 'matrixAddress' ? 'uid' : f
-                )
-                const val =
-                  typeof data.val === 'string' ? data.val.toLowerCase() : ''
-                // Merge contactList into matches if not already present
-                contactsList
-                  .filter((contact: any) => {
-                    if (val.length === 0) return true // match all, like getAll
 
-                    return normalizedScope.some((field) => {
-                      const fieldVal = (() => {
-                        switch (field) {
-                          case 'uid':
-                            return contact.uid
-                          case 'cn':
-                          case 'displayName':
-                            return contact.cn
-                          case 'mail':
-                          case 'mobile':
-                            return contact.address // fallback
-                          default:
-                            return ''
-                        }
-                      })()
-                      return fieldVal?.toLowerCase().includes(val)
-                    })
-                  })
-                  .forEach((contact: any) => {
-                    const existsInMatches = matches.some(
-                      (m) => m.uid === contact.uid
-                    )
-                    const existsInInactive = inactive_matches.some(
-                      (m) => m.uid === contact.uid
-                    )
-                    if (!existsInMatches && !existsInInactive) {
-                      matches.push({
-                        uid: contact.uid,
-                        cn: contact.cn,
-                        address: contact.address
-                      })
-                    }
-                  })
+                // Merge remaining contacts from Map into matches
+                for (const contact of contactMap.values()) {
+                  matches.push(contact)
+                }
+
                 send(res, 200, {
                   matches,
                   inactive_matches
