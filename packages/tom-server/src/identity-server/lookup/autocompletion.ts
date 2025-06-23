@@ -21,8 +21,9 @@ const autocompletion = async (
     idServer.authenticate(req, res, (token, id) => {
       jsonContent(req, res, logger, (obj) => {
         validateParameters(res, schema, obj, logger, (data) => {
-          const parsedID = JSON.parse(id ?? '{}')
-          ;(data as Query).owner = parsedID.sub ?? '@default:server'
+          // const parsedID = JSON.parse(id ?? '{}')
+          // ;(data as Query).owner = parsedID.sub ?? '@default:server'
+          ;(data as Query).owner = '@default:server'
           void search(res, data as Query)
         })
       })
