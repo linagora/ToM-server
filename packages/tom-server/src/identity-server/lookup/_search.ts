@@ -3,7 +3,7 @@ import { errMsg, send, toMatrixId } from '@twake/utils'
 import { type Response } from 'express'
 import type http from 'http'
 import type TwakeIdentityServer from '..'
-import { type Contact } from '../../addressbook-api/types'
+import { AddressbookService } from '../../addressbook-api/services'
 
 type SearchFunction = (
   res: Response | http.ServerResponse,
@@ -58,13 +58,8 @@ const _search = async (
     })
     /* istanbul ignore else */
     if (!error) {
-      const addressBook = await idServer.db.get('addressbooks', ['id'], {
-        owner: data.owner ?? ''
-      })
-
-      let contacts = (await idServer.db.get('contacts', ['*'], {
-        addressbook_id: addressBook[0].id as string
-      })) as unknown as Contact[]
+      const addressBookService = new AddressbookService(idServer.db, logger)
+      let { contacts } = await addressBookService.list(data.owner ?? '')
 
       const val = data.val?.toLowerCase() ?? ''
       const normalizedScope = scope.map((f) =>
