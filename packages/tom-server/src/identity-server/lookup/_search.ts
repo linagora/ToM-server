@@ -108,7 +108,7 @@ const _search = async (
           : idServer.userDB.getAll('users', _fields, _fields[0])
       request
         .then((rows) => {
-          if (rows.length === 0) {
+          if (rows.length === 0 && contactMap.size === 0) {
             /* istanbul ignore next */
             send(res, 200, { matches: [], inactive_matches: [] })
           } else {
@@ -132,16 +132,18 @@ const _search = async (
                 // eslint-disable-next-line @typescript-eslint/naming-convention
                 const inactive_matches: typeof rows = []
 
-                matrixRows.forEach((mrow) => {
+                for (const mrow of matrixRows) {
                   mUids[
                     (mrow.name as string).replace(/^@(.*?):(?:.*)$/, '$1')
                   ] = true
-                })
-                rows.forEach((row) => {
+                }
+
+                for (const row of rows) {
                   row.address = toMatrixId(
                     row.uid as string,
                     idServer.conf.server_name
                   )
+
                   const uid = row.uid as string
 
                   if (contactMap.has(uid)) {
@@ -154,7 +156,7 @@ const _search = async (
                   } else {
                     inactive_matches.push(row)
                   }
-                })
+                }
 
                 // Merge remaining contacts from Map into matches
                 for (const contact of contactMap.values()) {
