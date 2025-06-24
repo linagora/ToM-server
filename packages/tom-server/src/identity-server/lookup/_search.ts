@@ -103,9 +103,12 @@ const _search = async (
       const _scope = scope.map((f) => (f === 'matrixAddress' ? 'uid' : f))
       const value = data.val?.replace(/^@(.*?):(?:.*)$/, '$1')
       const request =
-        typeof value === 'string' && value.length > 0
-          ? idServer.userDB.match('users', _fields, _scope, value, _fields[0])
-          : idServer.userDB.getAll('users', _fields, _fields[0])
+        process.env.ADDITIONAL_FEATURES === 'true' ||
+        (idServer.conf.additional_features as boolean)
+          ? typeof value === 'string' && value.length > 0
+            ? idServer.userDB.match('users', _fields, _scope, value, _fields[0])
+            : idServer.userDB.getAll('users', _fields, _fields[0])
+          : Promise.resolve([])
       request
         .then((rows) => {
           if (rows.length === 0 && contactMap.size === 0) {

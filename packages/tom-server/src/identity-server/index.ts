@@ -32,11 +32,7 @@ export default class TwakeIdentityServer extends MatrixIdentityServer<twakeDbCol
     this.ready = new Promise((resolve, reject) => {
       superReady
         .then(async () => {
-          if (
-            process.env.ADDITIONAL_FEATURES === 'true' ||
-            (this.conf.additional_features as boolean)
-          ) {
-            // Extend API
+           // Extend API
             /**
              * @openapi
              * '/_twake/identity/v1/lookup/match':
@@ -171,7 +167,11 @@ export default class TwakeIdentityServer extends MatrixIdentityServer<twakeDbCol
              */
             this.api.post['/_twake/identity/v1/lookup/match'] =
               await autocompletion(this, this.logger)
-            this.api.post['/_twake/identity/v1/lookup/diff'] = diff(
+          if (
+            process.env.ADDITIONAL_FEATURES === 'true' ||
+            (this.conf.additional_features as boolean)
+          ) {
+             this.api.post['/_twake/identity/v1/lookup/diff'] = diff(
               this,
               this.logger
             )
