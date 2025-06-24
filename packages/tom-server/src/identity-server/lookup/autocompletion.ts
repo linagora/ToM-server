@@ -12,16 +12,17 @@ const schema = {
   val: false
 }
 
-const autocompletion = (
+const autocompletion = async (
   idServer: TwakeIdentityServer,
   logger: TwakeLogger
-): expressAppHandler => {
-  const search = _search(idServer, logger)
+): Promise<expressAppHandler> => {
+  const search = await _search(idServer, logger)
   return (req, res) => {
     idServer.authenticate(req, res, (token, id) => {
       jsonContent(req, res, logger, (obj) => {
         validateParameters(res, schema, obj, logger, (data) => {
-          search(res, data as Query)
+          ;(data as Query).owner = token.sub ?? '@default:server'
+          void search(res, data as Query)
         })
       })
     })

@@ -3,8 +3,12 @@ import { errMsg, send, toMatrixId } from '@twake/utils'
 import { type Response } from 'express'
 import type http from 'http'
 import type TwakeIdentityServer from '..'
+import { AddressbookService } from '../../addressbook-api/services'
 
-type SearchFunction = (res: Response | http.ServerResponse, data: Query) => void
+type SearchFunction = (
+  res: Response | http.ServerResponse,
+  data: Query
+) => Promise<void>
 
 export interface Query {
   scope: string[]
@@ -12,6 +16,7 @@ export interface Query {
   limit?: number
   offset?: number
   val?: string
+  owner?: string
 }
 
 export const SearchFields = new Set<string>([
@@ -25,11 +30,11 @@ export const SearchFields = new Set<string>([
   'matrixAddress'
 ])
 
-const _search = (
+const _search = async (
   idServer: TwakeIdentityServer,
   logger: TwakeLogger
-): SearchFunction => {
-  return (res, data) => {
+): Promise<SearchFunction> => {
+  return async (res, data) => {
     const sendError = (e: string): void => {
       /* istanbul ignore next */
       logger.error('Autocompletion error', e)
@@ -53,6 +58,47 @@ const _search = (
     })
     /* istanbul ignore else */
     if (!error) {
+      const addressBookService = new AddressbookService(idServer.db, logger)
+      let { contacts } = await addressBookService.list(data.owner ?? '')
+
+      const val = data.val?.toLowerCase() ?? ''
+      const normalizedScope = scope.map((f) =>
+        f === 'matrixAddress' ? 'uid' : f
+      )
+
+      if (val.length > 0) {
+        contacts = contacts.filter((contact) =>
+          normalizedScope.some((field) => {
+            const fieldVal = (() => {
+              switch (field) {
+                case 'uid':
+                  return contact.mxid?.replace(/^@(.*?):.*/, '$1')
+                case 'cn':
+                case 'displayName':
+                  return contact.display_name
+                case 'mail':
+                case 'mobile':
+                  return contact.mxid
+                default:
+                  return ''
+              }
+            })()
+            return fieldVal?.toLowerCase().includes(val)
+          })
+        )
+      }
+
+      const contactMap = new Map<string, any>()
+      for (const contact of contacts) {
+        const uid = contact.mxid?.replace(/^@(.*?):.*/, '$1')
+        if (uid.length > 0) {
+          contactMap.set(uid, {
+            uid,
+            cn: contact.display_name,
+            address: contact.mxid
+          })
+        }
+      }
       const _fields = fields.includes('uid') ? fields : [...fields, 'uid']
       const _scope = scope.map((f) => (f === 'matrixAddress' ? 'uid' : f))
       const value = data.val?.replace(/^@(.*?):(?:.*)$/, '$1')
@@ -62,7 +108,7 @@ const _search = (
           : idServer.userDB.getAll('users', _fields, _fields[0])
       request
         .then((rows) => {
-          if (rows.length === 0) {
+          if (rows.length === 0 && contactMap.size === 0) {
             /* istanbul ignore next */
             send(res, 200, { matches: [], inactive_matches: [] })
           } else {
@@ -86,23 +132,41 @@ const _search = (
                 // eslint-disable-next-line @typescript-eslint/naming-convention
                 const inactive_matches: typeof rows = []
 
-                matrixRows.forEach((mrow) => {
+                for (const mrow of matrixRows) {
                   mUids[
                     (mrow.name as string).replace(/^@(.*?):(?:.*)$/, '$1')
                   ] = true
-                })
-                rows.forEach((row) => {
+                }
+
+                for (const row of rows) {
                   row.address = toMatrixId(
                     row.uid as string,
                     idServer.conf.server_name
                   )
-                  if (mUids[row.uid as string]) {
+
+                  const uid = row.uid as string
+
+                  if (contactMap.has(uid)) {
+                    row.cn = contactMap.get(uid).cn // Update display name from addressbook
+                    contactMap.delete(uid)
+                  }
+
+                  if (mUids[uid]) {
                     matches.push(row)
                   } else {
                     inactive_matches.push(row)
                   }
+                }
+
+                // Merge remaining contacts from Map into matches
+                for (const contact of contactMap.values()) {
+                  matches.push(contact)
+                }
+
+                send(res, 200, {
+                  matches,
+                  inactive_matches
                 })
-                send(res, 200, { matches, inactive_matches })
               })
               .catch(sendError)
           }
