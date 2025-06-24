@@ -169,7 +169,7 @@ export default class TwakeIdentityServer extends MatrixIdentityServer<twakeDbCol
              *            example:
              *              matches: [{uid: dwho, mail: dwho@badwolf.com}]
              */
-            this.api.post['/_twake/identity/v1/lookup/match'] =
+            this.api.post['/_matrix/identity/api/v1/lookup'] =
               await autocompletion(this, this.logger)
             this.api.post['/_twake/identity/v1/lookup/diff'] = diff(
               this,
