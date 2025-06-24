@@ -204,10 +204,10 @@ describe('Using Matrix Token', () => {
     })
   })
 
-  describe('/_twake/identity/v1/lookup/match', () => {
+  describe('/_matrix/identity/api/v1/lookup', () => {
     it('should find user with partial value', async () => {
       const response = await request(app)
-        .post('/_twake/identity/v1/lookup/match')
+        .post('/_matrix/identity/api/v1/lookup')
         .set('Authorization', `Bearer ${validToken}`)
         .set('Accept', 'application/json')
         .send({
@@ -224,7 +224,7 @@ describe('Using Matrix Token', () => {
 
     it('should find user when searching by matrix address', async () => {
       const response = await request(app)
-        .post('/_twake/identity/v1/lookup/match')
+        .post('/_matrix/identity/api/v1/lookup')
         .set('Authorization', `Bearer ${validToken}`)
         .set('Accept', 'application/json')
         .send({
@@ -241,7 +241,7 @@ describe('Using Matrix Token', () => {
 
     it('should respect limit', async () => {
       const response = await request(app)
-        .post('/_twake/identity/v1/lookup/match')
+        .post('/_matrix/identity/api/v1/lookup')
         .set('Authorization', `Bearer ${validToken}`)
         .set('Accept', 'application/json')
         .send({
@@ -264,7 +264,7 @@ describe('Using Matrix Token', () => {
 
     it('should respect limit and offset', async () => {
       const response = await request(app)
-        .post('/_twake/identity/v1/lookup/match')
+        .post('/_matrix/identity/api/v1/lookup')
         .set('Authorization', `Bearer ${validToken}`)
         .set('Accept', 'application/json')
         .send({
