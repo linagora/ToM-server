@@ -136,6 +136,7 @@ services:
       # - LDAP_USER=uid=tom,dc=docker,dc=localhost  ## Local LDAP is fully readable
       # - LDAP_PASSWORD=T0m_p@Ss                    ## Local LDAP is fully readable
 
+      - MATRIX_INTERNAL_HOST=http://synapse:8008
       - MATRIX_SERVER=matrix.docker.localhost
       - MATRIX_DATABASE_ENGINE=pg
       - MATRIX_DATABASE_HOST=pgsql

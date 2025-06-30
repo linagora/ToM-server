@@ -86,6 +86,7 @@ services:
       - USERDB_ENGINE=sqlite
       - USERDB_HOST=/opt/lemon/db/lemon.db
 
+      - MATRIX_INTERNAL_HOST=http://synapse:8008
       - MATRIX_SERVER=matrix.docker.localhost
       - MATRIX_DATABASE_ENGINE=sqlite
       - MATRIX_DATABASE_HOST=/opt/synapse/db/homeserver.db
