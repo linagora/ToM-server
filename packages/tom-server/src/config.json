@@ -121,7 +121,7 @@
   },
   "room_permissions": {
     "direct_chat": {
-      "users_default": 0,
+      "users_default": 10,
       "events_default": 10,
       "invite": 100,
       "state_default": 100,
@@ -146,10 +146,10 @@
       }
     },
     "private_group_chat": {
-      "users_default": 0,
+      "users_default": 10,
       "events_default": 10,
       "invite": 50,
-      "state_default": 80,
+      "state_default": 100,
       "kick": 50,
       "ban": 50,
       "redact": 50,
