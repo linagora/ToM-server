@@ -29,13 +29,22 @@ export default class RoomService {
    */
   public create = async (
     payload: Partial<CreateRoomPayload>,
-    authorization: string
+    authorization: string,
+    roomOwner: string
   ): Promise<Response> => {
     try {
       let body = payload
       const defaultPowerLevelContent = this.getDefaultPowerLevelContent(payload)
 
       if (defaultPowerLevelContent) {
+        // Ensure the 'users' field exists
+        if (defaultPowerLevelContent?.users == null) {
+          defaultPowerLevelContent.users = {}
+        }
+
+        // Set the owner's power level to 90
+        defaultPowerLevelContent.users[roomOwner] = 90
+
         body = {
           ...body,
           power_level_content_override: defaultPowerLevelContent

@@ -146,10 +146,10 @@
       }
     },
     "private_group_chat": {
-      "users_default": 10,
+      "users_default": 0,
       "events_default": 10,
       "invite": 50,
-      "state_default": 100,
+      "state_default": 80,
       "kick": 50,
       "ban": 50,
       "redact": 50,
