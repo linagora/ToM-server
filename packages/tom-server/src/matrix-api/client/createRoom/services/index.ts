@@ -36,14 +36,27 @@ export default class RoomService {
       let body = payload
       const defaultPowerLevelContent = this.getDefaultPowerLevelContent(payload)
 
-      if (defaultPowerLevelContent) {
-        // Ensure the 'users' field exists
-        if (defaultPowerLevelContent?.users == null) {
-          defaultPowerLevelContent.users = {}
-        }
+      const invitedUsers = Array.isArray(payload.invite) ? payload.invite : [];
 
-        // Set the owner's power level to 90
-        defaultPowerLevelContent.users[roomOwner] = 90
+      if (defaultPowerLevelContent) {
+        const initialUsers = defaultPowerLevelContent.users || {};
+
+        const updatedUsers = invitedUsers
+        .filter(invitedUser => {
+          let hasToBeInvited = false;
+          if (!initialUsers[invitedUser]) {
+            hasToBeInvited = true;
+          }
+          return hasToBeInvited;
+        })
+        .reduce((users, invitedUser) => {
+          if (invitedUser !== roomOwner) {
+            return { ...users, [invitedUser]: defaultPowerLevelContent.users_default };
+          }
+          return users;
+        }, { ...initialUsers, [roomOwner]: 100 });
+
+        defaultPowerLevelContent.users = updatedUsers;
 
         body = {
           ...body,
