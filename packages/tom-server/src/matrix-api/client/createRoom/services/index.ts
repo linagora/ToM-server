@@ -118,6 +118,40 @@ export default class RoomService {
       })
       this.logger.info('Room creation request completed.')
       this.logger.silly('Exiting RoomService.create method with API response.')
+
+      const createData = await response.json() as { room_id: string }
+      const roomId = createData.room_id
+      this.logger.info(`Room created with ID: ${roomId}`)
+
+      const powerLevelUrl = `${this.config.matrix_internal_host}/_matrix/client/v3/rooms/${encodeURIComponent(roomId)}/state/m.room.power_levels`
+      const demotionContent = {
+        ...defaultPowerLevelContent,
+        users: {
+          ...defaultPowerLevelContent?.users,
+          [roomOwner]: 90 // demote to 90
+        }
+      }
+
+      this.logger.info(`Sending power level update to demote owner ${roomOwner} to 90.`)
+
+      const demotionResp = await fetch(powerLevelUrl, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: authorization
+        },
+        body: JSON.stringify(demotionContent)
+      })
+
+      if (!demotionResp.ok) {
+        this.logger.warn('Failed to demote room owner after creation.', {
+          status: demotionResp.status,
+          statusText: demotionResp.statusText
+        })
+      } else {
+        this.logger.info('Successfully demoted room owner to 90.')
+      }
+
       return response
     } catch (error: any) {
       this.logger.error('Failed to create room due to an exception:', {
