@@ -178,7 +178,7 @@ export default class TwakeServer {
       this.logger
     )
 
-    const matrixClientApi = MatrixclientApi(this.conf, this.logger)
+    const matrixClientApi = MatrixclientApi(this.conf, this.idServer.authenticate, this.logger)
 
     this.endpoints.use(privateNoteApi)
     this.endpoints.use(mutualRoolsApi)

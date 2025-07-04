@@ -3,7 +3,7 @@ import {
   type TwakeLogger,
   type Config as LoggerConfig
 } from '@twake/logger'
-import type { Config } from '../../types'
+import type { AuthenticationFunction, Config } from '../../types'
 import { Router } from 'express'
 import bodyParser from 'body-parser'
 import CreateRoomAPI from './createRoom'
@@ -17,10 +17,14 @@ export const PATH = '/_matrix/client/v3'
  * @param {TwakeLogger} defaultLogger
  * @returns {Router}
  */
-export default (config: Config, defaultLogger?: TwakeLogger): Router => {
+export default (
+  config: Config,
+  authenticator: AuthenticationFunction,
+  defaultLogger?: TwakeLogger
+): Router => {
   const router = Router()
   const logger = defaultLogger ?? getLogger(config as unknown as LoggerConfig)
-  const createRoomAPI = CreateRoomAPI(config, logger)
+  const createRoomAPI = CreateRoomAPI(config, authenticator, logger)
 
   router.use(bodyParser.json())
   router.use(`${PATH}/createRoom`, createRoomAPI)

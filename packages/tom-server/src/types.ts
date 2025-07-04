@@ -272,7 +272,8 @@ export interface PowerLevelEventContent {
     'm.room.history_visibility': number
     'm.room.power_levels': number
     'm.room.encryption': number
-  }
+  },
+  users?: Record<string, number>
 }
 
 export type Content = Record<

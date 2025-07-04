@@ -3,10 +3,10 @@ import {
   type TwakeLogger,
   type Config as LoggerConfig
 } from '@twake/logger'
-import type { Config } from '../../../../types'
+import type { AuthenticationFunction, Config } from '../../../../types'
 import { Router } from 'express'
 import CreateRoomController from '../controllers'
-import CreateRoomMiddleware from '../middlewares'
+import authMiddleware from '../../../../utils/middlewares/auth.middleware'
 
 /**
  * Create room route
@@ -15,13 +15,13 @@ import CreateRoomMiddleware from '../middlewares'
  * @param {TwakeLogger} defaultLogger
  * @returns {Router}
  */
-export default (config: Config, defaultLogger?: TwakeLogger): Router => {
+export default (config: Config, authenticator: AuthenticationFunction, defaultLogger?: TwakeLogger): Router => {
   const logger = defaultLogger ?? getLogger(config as unknown as LoggerConfig)
   const router = Router()
   const controller = new CreateRoomController(config, logger)
-  const middleware = new CreateRoomMiddleware(logger)
+  const authenticate = authMiddleware(authenticator, logger)
 
-  router.post('/', middleware.checkPayload, controller.createRoom)
+  router.post('/', authenticate, controller.createRoom)
 
   return router
 }
