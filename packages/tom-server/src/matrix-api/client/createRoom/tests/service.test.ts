@@ -161,7 +161,7 @@ describe('the RoomService', () => {
       })
     ) as jest.Mock
 
-    roomService.create({ invite: ['@user:server.com'] }, 'Bearer token')
+    roomService.create({ invite: ['@user:server.com'] }, 'Bearer token', '@user:server.com')
 
     expect(global.fetch).toHaveBeenCalledWith(
       'http://internal.server.com/_matrix/client/v3/createRoom',
@@ -191,7 +191,8 @@ describe('the RoomService', () => {
         invite: ['@user:server.com', '@user2:server.com'],
         preset: 'public_chat'
       },
-      'Bearer token'
+      'Bearer token',
+      '@user:server.com'
     )
 
     expect(global.fetch).toHaveBeenCalledWith(
@@ -221,7 +222,8 @@ describe('the RoomService', () => {
 
     const response = await roomService.create(
       { invite: ['@user:server.com'] },
-      'Bearer token'
+      'Bearer token',
+      '@user:server.com'
     )
 
     expect(response.status).toEqual(500)
