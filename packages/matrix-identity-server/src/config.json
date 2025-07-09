@@ -120,6 +120,14 @@
     "enable_invitations": false
   },
   "room_permissions": {
+    "roles": {
+      "read_only": 0,
+      "member": 10,
+      "moderator": 50,
+      "administrator": 70,
+      "owner": 90,
+      "super_user": 100
+    },
     "direct_chat": {
       "users_default": 0,
       "events_default": 10,
