@@ -1,7 +1,7 @@
 import express, { type NextFunction } from 'express'
-import bodyParser, { json } from 'body-parser'
+import bodyParser from 'body-parser'
 import { TwakeLogger } from '@twake/logger'
-import type { AuthRequest, Config, CreateRoomPayload } from '../../../../types'
+import type { AuthenticationFunction, AuthRequest, Config, CreateRoomPayload } from '../../../../types'
 import router from '../routes'
 import supertest from 'supertest'
 
@@ -36,6 +36,27 @@ jest.mock('../services/index.ts', () => {
     }
   }
 })
+
+const mockAuthenticationFunction: AuthenticationFunction = (
+  req,
+  res,
+  callback,
+  requiresTerms
+) => {
+  // Attach mock user ID on the request object
+  // Must cast req as any because it's typed as IncomingMessage | Request
+  (req as any).userId = '@user:server.com'
+
+  const mockTokenContent = {
+    user_id: '@user:server.com',
+    name: 'Test User',
+    sub: '@user:server.com',
+    epoch: 1000000
+  }
+
+  callback(mockTokenContent, '@user:server.com')
+}
+
 const app = express()
 
 app.use(bodyParser.json())
@@ -48,6 +69,7 @@ app.use(
       signup_url: 'http://example.com/?app=chat',
       sms_api_url: 'http://sms.example.com/api'
     } as unknown as Config,
+    mockAuthenticationFunction,
     loggerMock as unknown as TwakeLogger
   )
 )
@@ -70,7 +92,8 @@ describe('the createRoom controller', () => {
           name: 'test',
           visibility: 'private'
         } satisfies Partial<CreateRoomPayload>,
-        'Bearer test'
+        'Bearer test',
+        '@user:server.com'
       )
     })
 
