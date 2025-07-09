@@ -13,7 +13,9 @@ export default class RoomService {
     private readonly config: Config,
     private readonly logger: TwakeLogger
   ) {
-    this.logger.debug('RoomService initialized with matrix_internal_host', { matrixHost: this.config.matrix_internal_host })
+    this.logger.debug('RoomService initialized with matrix_internal_host', {
+      matrixHost: this.config.matrix_internal_host
+    })
   }
 
   public create = async (
@@ -39,7 +41,9 @@ export default class RoomService {
       })
 
       const defaultPowerLevelContent = this.getDefaultPowerLevelContent(payload)
-      const onwerPowerLevelBecomes = this.extractCreatorBecomes(defaultPowerLevelContent)
+      const onwerPowerLevelBecomes = this.extractCreatorBecomes(
+        defaultPowerLevelContent
+      )
       this.logger.debug('Determined default power level content:', {
         preset: payload.preset,
         resolvedContent: JSON.stringify(defaultPowerLevelContent)
@@ -52,12 +56,16 @@ export default class RoomService {
       })
 
       if (defaultPowerLevelContent) {
-        this.logger.silly('Default power level content found, proceeding to modify users.')
+        this.logger.silly(
+          'Default power level content found, proceeding to modify users.'
+        )
         const initialUsers = defaultPowerLevelContent.users || {}
-        this.logger.debug('Initial power level users:', { initialUsers: JSON.stringify(initialUsers) })
+        this.logger.debug('Initial power level users:', {
+          initialUsers: JSON.stringify(initialUsers)
+        })
 
         const updatedUsers = invitedUsers
-          .filter(invitedUser => {
+          .filter((invitedUser) => {
             const isAlreadyPresent = invitedUser in initialUsers
             this.logger.silly('Filtering invited user:', {
               invitedUser,
@@ -65,16 +73,21 @@ export default class RoomService {
             })
             return !isAlreadyPresent
           })
-          .reduce((users, invitedUser) => {
-            const isOwner = invitedUser === roomOwner
-            const level = isOwner ? 100 : defaultPowerLevelContent.users_default
-            this.logger.debug('Assigning power level for user:', {
-              invitedUser,
-              isOwner,
-              assignedLevel: level
-            })
-            return { ...users, [invitedUser]: level }
-          }, { ...initialUsers, [roomOwner]: 100 })
+          .reduce(
+            (users, invitedUser) => {
+              const isOwner = invitedUser === roomOwner
+              const level = isOwner
+                ? 100
+                : defaultPowerLevelContent.users_default
+              this.logger.debug('Assigning power level for user:', {
+                invitedUser,
+                isOwner,
+                assignedLevel: level
+              })
+              return { ...users, [invitedUser]: level }
+            },
+            { ...initialUsers, [roomOwner]: 100 }
+          )
 
         this.logger.debug('Updated users power levels for initial_state:', {
           updatedUsers: JSON.stringify(updatedUsers)
@@ -86,20 +99,33 @@ export default class RoomService {
           ...body,
           power_level_content_override: defaultPowerLevelContent
         }
-        this.logger.debug('Final request body with power_level_content_override:', {
-          powerLevelKeys: JSON.stringify(body.power_level_content_override?.users || {})
-        })
+        this.logger.debug(
+          'Final request body with power_level_content_override:',
+          {
+            powerLevelKeys: JSON.stringify(
+              body.power_level_content_override?.users || {}
+            )
+          }
+        )
       } else {
-        this.logger.warn('No default power level content determined, proceeding without override.')
+        this.logger.warn(
+          'No default power level content determined, proceeding without override.'
+        )
       }
 
-      const apiUrl = buildUrl(this.config.matrix_internal_host, this.CREATE_ROOM_API_PATH)
+      const apiUrl = buildUrl(
+        this.config.matrix_internal_host,
+        this.CREATE_ROOM_API_PATH
+      )
       this.logger.debug('Constructed Matrix API URL:', { url: apiUrl })
       this.logger.info('Sending room creation request to Matrix API.')
       this.logger.silly('Performing fetch call with:', {
         method: 'POST',
         url: apiUrl,
-        headers: JSON.stringify({ 'Content-Type': 'application/json', Authorization: 'Bearer [masked]' }),
+        headers: JSON.stringify({
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer [masked]'
+        }),
         body: JSON.stringify(body)
       })
 
@@ -121,13 +147,21 @@ export default class RoomService {
       this.logger.silly('Exiting RoomService.create method with API response.')
 
       const respForUpdate = response.clone()
-      const createData = await respForUpdate.json() as { room_id: string }
+      const createData = (await respForUpdate.json()) as { room_id: string }
       const roomId = createData.room_id
       this.logger.info(`Room created with ID: ${roomId}`)
 
       // Demote the room owner to power level 90
-      this.logger.info(`Demoting room owner ${roomOwner} to power level ${onwerPowerLevelBecomes}`)
-      await this.updateUserPowerLevel(roomId, authorization, roomOwner, onwerPowerLevelBecomes)
+      this.logger.info(
+        `Demoting room owner ${roomOwner} to power level ${onwerPowerLevelBecomes}`
+      )
+      await this.updateUserPowerLevel(
+        roomId,
+        authorization,
+        roomOwner,
+        onwerPowerLevelBecomes,
+        defaultPowerLevelContent
+      )
 
       return response
     } catch (error: any) {
@@ -135,7 +169,9 @@ export default class RoomService {
         message: error.message,
         stack: error.stack
       })
-      this.logger.silly('RoomService.create method caught an error, returning 500 response.')
+      this.logger.silly(
+        'RoomService.create method caught an error, returning 500 response.'
+      )
       return new Response('Failed to create room', { status: 500 })
     }
   }
@@ -144,19 +180,30 @@ export default class RoomService {
     roomId: string,
     authorization: string,
     roomOwner: string,
-    powerLevel: number
+    powerLevel: number,
+    roomPowerLevels: PowerLevelEventContent | undefined
   ): Promise<void> {
-    const powerLevelUrl = `${this.config.matrix_internal_host}/_matrix/client/v3/rooms/${encodeURIComponent(roomId)}/state/m.room.power_levels`
+    const powerLevelUrl = `${
+      this.config.matrix_internal_host
+    }/_matrix/client/v3/rooms/${encodeURIComponent(
+      roomId
+    )}/state/m.room.power_levels`
 
     const demotionContent = {
+      ...roomPowerLevels,
       users: {
+        ...roomPowerLevels?.users,
         [roomOwner]: powerLevel
       }
     }
 
-    this.logger.info(`Sending power level update to demote owner ${roomOwner} to ${powerLevel}.`)
-
     try {
+      this.logger.debug('Constructed body for owner demotion:', {
+        body: JSON.stringify(demotionContent)
+      })
+      this.logger.info(
+        `Sending power level update to demote owner ${roomOwner} to ${powerLevel}.`
+      )
       const response = await fetch(powerLevelUrl, {
         method: 'PUT',
         headers: {
@@ -167,15 +214,20 @@ export default class RoomService {
       })
 
       if (!response.ok) {
-        this.logger.warn('Failed to demote room owner after creation.', {
-          status: response.status,
-          statusText: response.statusText
-        })
+        this.logger.warn(
+          `Failed to demote room owner (${roomOwner}) after creation.`,
+          {
+            status: response.status,
+            statusText: response.statusText
+          }
+        )
       } else {
-        this.logger.info(`Successfully demoted room owner to ${powerLevel}.`)
+        this.logger.info(
+          `Successfully demoted room owner (${roomOwner}) to ${powerLevel}.`
+        )
       }
     } catch (err: any) {
-      this.logger.error('Exception while demoting room owner:', {
+      this.logger.error(`Exception while demoting room owner (${roomOwner}):`, {
         message: err.message,
         stack: err.stack
       })
@@ -194,10 +246,13 @@ export default class RoomService {
     try {
       const { preset = undefined } = payload
       const isDirect = payload.invite && payload.invite.length < 2
-      this.logger.debug('Checking conditions for default power level content:', {
-        preset,
-        isDirect
-      })
+      this.logger.debug(
+        'Checking conditions for default power level content:',
+        {
+          preset,
+          isDirect
+        }
+      )
 
       if (isDirect) {
         this.logger.silly('Returning direct_chat permissions.')
@@ -214,7 +269,9 @@ export default class RoomService {
         message: error.message,
         stack: error.stack
       })
-      this.logger.silly('getDefaultPowerLevelContent method caught an error, returning undefined.')
+      this.logger.silly(
+        'getDefaultPowerLevelContent method caught an error, returning undefined.'
+      )
       return undefined
     }
   }
@@ -227,5 +284,4 @@ export default class RoomService {
     delete powerLevelContent.creator_becomes
     return level
   }
-
 }
