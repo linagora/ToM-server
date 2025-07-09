@@ -39,6 +39,7 @@ export default class RoomService {
       })
 
       const defaultPowerLevelContent = this.getDefaultPowerLevelContent(payload)
+      const onwerPowerLevelBecomes = this.extractCreatorBecomes(defaultPowerLevelContent)
       this.logger.debug('Determined default power level content:', {
         preset: payload.preset,
         resolvedContent: JSON.stringify(defaultPowerLevelContent)
@@ -119,13 +120,14 @@ export default class RoomService {
       this.logger.info('Room creation request completed.')
       this.logger.silly('Exiting RoomService.create method with API response.')
 
-      const createData = await response.json() as { room_id: string }
+      const respForUpdate = response.clone()
+      const createData = await respForUpdate.json() as { room_id: string }
       const roomId = createData.room_id
       this.logger.info(`Room created with ID: ${roomId}`)
 
       // Demote the room owner to power level 90
-      this.logger.info(`Demoting room owner ${roomOwner} to power level 90`)
-      await this.updateUserPowerLevel(roomId, authorization, roomOwner, 90)
+      this.logger.info(`Demoting room owner ${roomOwner} to power level ${onwerPowerLevelBecomes}`)
+      await this.updateUserPowerLevel(roomId, authorization, roomOwner, onwerPowerLevelBecomes)
 
       return response
     } catch (error: any) {
@@ -216,4 +218,14 @@ export default class RoomService {
       return undefined
     }
   }
+
+  private extractCreatorBecomes = (
+    powerLevelContent?: PowerLevelEventContent
+  ): number => {
+    if (!powerLevelContent) return 90
+    const level = powerLevelContent.creator_becomes ?? 90
+    delete powerLevelContent.creator_becomes
+    return level
+  }
+
 }
