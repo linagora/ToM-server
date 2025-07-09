@@ -143,7 +143,8 @@
         "m.room.history_visibility": 100,
         "m.room.power_levels": 100,
         "m.room.encryption": 10
-      }
+      },
+      "creator_becomes": 10
     },
     "private_group_chat": {
       "users_default": 10,
@@ -168,7 +169,8 @@
         "m.room.history_visibility": 80,
         "m.room.power_levels": 80,
         "m.room.encryption": 80
-      }
+      },
+      "creator_becomes": 90
     },
     "public_group_chat": {
       "users_default": 10,
@@ -193,7 +195,8 @@
         "m.room.history_visibility": 80,
         "m.room.power_levels": 80,
         "m.room.encryption": 90
-      }
+      },
+      "creator_becomes": 90
     },
     "private_channel": {
       "users_default": 10,
@@ -218,7 +221,8 @@
         "m.room.history_visibility": 90,
         "m.room.power_levels": 50,
         "m.room.encryption": 90
-      }
+      },
+      "creator_becomes": 90
     },
     "public_channel": {
       "users_default": 10,
@@ -243,7 +247,8 @@
         "m.room.history_visibility": 100,
         "m.room.power_levels": 50,
         "m.room.encryption": 100
-      }
+      },
+      "creator_becomes": 90
     }
   }
 }
