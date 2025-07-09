@@ -154,7 +154,7 @@ export default class RoomService {
       }
     }
 
-    this.logger.info(`Sending power level update to demote owner ${roomOwner} to 90.`)
+    this.logger.info(`Sending power level update to demote owner ${roomOwner} to ${powerLevel}.`)
 
     try {
       const response = await fetch(powerLevelUrl, {
@@ -172,7 +172,7 @@ export default class RoomService {
           statusText: response.statusText
         })
       } else {
-        this.logger.info('Successfully demoted room owner to 90.')
+        this.logger.info(`Successfully demoted room owner to ${powerLevel}.`)
       }
     } catch (err: any) {
       this.logger.error('Exception while demoting room owner:', {
