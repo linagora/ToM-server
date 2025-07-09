@@ -83,7 +83,9 @@ const public_group_chat = {
 const loggerMock = {
   info: jest.fn(),
   error: jest.fn(),
-  warn: jest.fn()
+  warn: jest.fn(),
+  debug: jest.fn(),
+  silly: jest.fn()
 }
 
 const roomService = new Service(
@@ -161,14 +163,21 @@ describe('the RoomService', () => {
       })
     ) as jest.Mock
 
-    roomService.create({ invite: ['@user:server.com'] }, 'Bearer token')
+    const ownerUser = '@user:server.com';
+    const ownerUserLevel = 100;
+    roomService.create({ invite: [`${ownerUser}`] }, 'Bearer token', `${ownerUser}`)
 
     expect(global.fetch).toHaveBeenCalledWith(
       'http://internal.server.com/_matrix/client/v3/createRoom',
       {
         body: JSON.stringify({
           invite: ['@user:server.com'],
-          power_level_content_override: direct_chat
+          power_level_content_override: {
+            ...direct_chat,
+            users: {
+              [ownerUser]: ownerUserLevel
+            }
+          }
         }),
         headers: {
           'Content-Type': 'application/json',
@@ -186,12 +195,17 @@ describe('the RoomService', () => {
       })
     ) as jest.Mock
 
+    const ownerUser = '@user:server.com';
+    const ownerUserLevel = 100;
+    const invitedUser = '@user2:server.com';
+    const invitedUserLevel = 10;
     roomService.create(
       {
-        invite: ['@user:server.com', '@user2:server.com'],
+        invite: [`${ownerUser}`, `${invitedUser}`],
         preset: 'public_chat'
       },
-      'Bearer token'
+      'Bearer token',
+      `${ownerUser}`
     )
 
     expect(global.fetch).toHaveBeenCalledWith(
@@ -200,7 +214,13 @@ describe('the RoomService', () => {
         body: JSON.stringify({
           invite: ['@user:server.com', '@user2:server.com'],
           preset: 'public_chat',
-          power_level_content_override: public_group_chat
+          power_level_content_override: {
+            ...direct_chat,
+            users: {
+              [ownerUser]: ownerUserLevel,
+              [invitedUser]: invitedUserLevel
+            }
+          }
         }),
         headers: {
           'Content-Type': 'application/json',
@@ -221,7 +241,8 @@ describe('the RoomService', () => {
 
     const response = await roomService.create(
       { invite: ['@user:server.com'] },
-      'Bearer token'
+      'Bearer token',
+      '@user:server.com'
     )
 
     expect(response.status).toEqual(500)

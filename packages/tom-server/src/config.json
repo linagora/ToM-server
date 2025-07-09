@@ -120,11 +120,19 @@
     "enable_invitations": false
   },
   "room_permissions": {
+    "roles": {
+      "read_only": 0,
+      "member": 10,
+      "moderator": 50,
+      "administrator": 70,
+      "owner": 90,
+      "super_user": 100
+    },
     "direct_chat": {
-      "users_default": 0,
+      "users_default": 10,
       "events_default": 10,
       "invite": 100,
-      "state_default": 100,
+      "state_default": 10,
       "kick": 100,
       "ban": 100,
       "redact": 100,
@@ -143,13 +151,14 @@
         "m.room.history_visibility": 100,
         "m.room.power_levels": 100,
         "m.room.encryption": 10
-      }
+      },
+      "creator_becomes": 10
     },
     "private_group_chat": {
       "users_default": 10,
       "events_default": 10,
       "invite": 50,
-      "state_default": 100,
+      "state_default": 90,
       "kick": 50,
       "ban": 50,
       "redact": 50,
@@ -168,13 +177,14 @@
         "m.room.history_visibility": 80,
         "m.room.power_levels": 80,
         "m.room.encryption": 80
-      }
+      },
+      "creator_becomes": 90
     },
     "public_group_chat": {
       "users_default": 10,
       "events_default": 10,
       "invite": 0,
-      "state_default": 100,
+      "state_default": 90,
       "kick": 50,
       "ban": 50,
       "redact": 50,
@@ -193,13 +203,14 @@
         "m.room.history_visibility": 80,
         "m.room.power_levels": 80,
         "m.room.encryption": 90
-      }
+      },
+      "creator_becomes": 90
     },
     "private_channel": {
       "users_default": 10,
       "events_default": 80,
       "invite": 50,
-      "state_default": 100,
+      "state_default": 90,
       "kick": 50,
       "ban": 50,
       "redact": 80,
@@ -218,13 +229,14 @@
         "m.room.history_visibility": 90,
         "m.room.power_levels": 50,
         "m.room.encryption": 90
-      }
+      },
+      "creator_becomes": 90
     },
     "public_channel": {
       "users_default": 10,
       "events_default": 80,
       "invite": 0,
-      "state_default": 100,
+      "state_default": 90,
       "kick": 50,
       "ban": 50,
       "redact": 80,
@@ -243,7 +255,8 @@
         "m.room.history_visibility": 100,
         "m.room.power_levels": 50,
         "m.room.encryption": 100
-      }
+      },
+      "creator_becomes": 90
     }
   }
 }
