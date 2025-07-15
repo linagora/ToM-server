@@ -61,8 +61,7 @@ export default class TwakeServer {
       this._initServer(confDesc)
         .then(() => {
           if (
-            process.env.ADDITIONAL_FEATURES === 'true' ||
-            (this.conf.additional_features as boolean)
+            this.conf.additional_features === true
           ) {
             const appServiceApi = new AppServiceAPI(this, confDesc, this.logger)
             this.endpoints.use(appServiceApi.router.routes)
