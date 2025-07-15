@@ -23,23 +23,17 @@ export class AddressbookService implements IAddressbookService {
    * @returns {Promise<AddressbookListResponse[]>}
    */
   public list = async (owner: string): Promise<AddressbookListResponse> => {
-    try {
-      const userAddressbook = await this.db.get('addressbooks', ['id'], {
+    try {      
+      const userAddressbook = await this._getOrCreateUserAddressBook(owner)
+      this.logger.info('Listing addressbook', {
+        addressbookId: userAddressbook.id,
         owner
       })
 
-      if (!userAddressbook || !userAddressbook.length) {
-        this.logger.info('Addressbook not found')
-
-        throw new Error('Addressbook not found')
-      }
-
-      const addressbookId = userAddressbook[0].id as string
-
-      const contacts = await this._listAddressbookContacts(addressbookId)
+      const contacts = await this._listAddressbookContacts(userAddressbook.id)
 
       return {
-        id: addressbookId,
+        id: userAddressbook.id,
         owner,
         contacts
       }
@@ -117,17 +111,7 @@ export class AddressbookService implements IAddressbookService {
   ): Promise<AddressbookListResponse | undefined> => {
     try {
       let createdContacts: Contact[] = []
-      let addressbook = await this._getUserAddressBook(owner)
-
-      if (!addressbook) {
-        this.logger.info('Addressbook not found, creating one')
-
-        addressbook = await this._createUserAddressBook(owner)
-
-        if (!addressbook) {
-          throw new Error('Failed to create addressbook')
-        }
-      }
+      const addressbook = await this._getOrCreateUserAddressBook(owner)
 
       const { id } = addressbook
 
@@ -255,6 +239,44 @@ export class AddressbookService implements IAddressbookService {
       return []
     }
   }
+
+
+  /**
+   * Fetches the user addressbook or create a new one if it does not exist
+   *
+   * @param {string} owner
+   * @returns {Promise<AddressBook>}
+   */
+  private readonly _getOrCreateUserAddressBook = async (
+    owner: string
+  ): Promise<AddressBook> => {
+    try {
+      // Assert that the owner is provided
+      if (owner.length === 0) {
+        this.logger.error('Owner is required to get or create addressbook')
+        throw new Error('Owner is required')
+      }
+
+      // Fetch the user addressbook
+      let userAddressbook = await this._getUserAddressBook(owner)
+      if (userAddressbook == null) {
+        this.logger.info('Addressbook not found, creating one')
+
+        // If the addressbook does not exist, create a new one
+        userAddressbook = await this._createUserAddressBook(owner)
+        if (userAddressbook == null) {
+          this.logger.error('Failed to create addressbook')
+          throw new Error('Failed to create addressbook')
+        }
+      }
+      return userAddressbook
+    } catch (error) {
+      this.logger.error('Failed to get or create user addressbook', { error })
+      throw error
+    }
+  }
+
+
 
   /**
    * Fetches the user addressbook

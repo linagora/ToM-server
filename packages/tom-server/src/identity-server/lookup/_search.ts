@@ -58,8 +58,10 @@ const _search = async (
     })
     /* istanbul ignore else */
     if (!error) {
+      const owner = data.owner ?? '';
       const addressBookService = new AddressbookService(idServer.db, logger)
-      let { contacts } = await addressBookService.list(data.owner ?? '')
+      let { contacts } = await addressBookService.list(owner)
+      logger.info(`Found ${contacts.length} contacts in addressbook for owner ${owner}`);
 
       const val = data.val?.toLowerCase() ?? ''
       const normalizedScope = scope.map((f) =>
