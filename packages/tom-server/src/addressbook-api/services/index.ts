@@ -267,13 +267,8 @@ export class AddressbookService implements IAddressbookService {
 
     // Create if it doesn’t exist
     if (userAddressbook == null) {
-      try {
-        this.logger.info('Addressbook not found, creating one')
-        userAddressbook = await this._createUserAddressBook(owner)
-      } catch (error) {
-        this.logger.error('Failed to create user addressbook', { error })
-        throw error
-      }
+      this.logger.info('Addressbook not found, creating one')
+      userAddressbook = await this._createUserAddressBook(owner)
     }
 
     // Throw an error is we couldn't get or create an addressbook
