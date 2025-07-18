@@ -4,6 +4,7 @@ import { type Response } from 'express'
 import type http from 'http'
 import type TwakeIdentityServer from '..'
 import { AddressbookService } from '../../addressbook-api/services'
+import { type Contact } from '../../addressbook-api/types'
 
 type SearchFunction = (
   res: Response | http.ServerResponse,
@@ -60,8 +61,12 @@ const _search = async (
     if (!error) {
       const owner = data.owner ?? '';
       const addressBookService = new AddressbookService(idServer.db, logger)
-      let { contacts } = await addressBookService.list(owner)
-      logger.info(`Found ${contacts.length} contacts in addressbook for owner ${owner}`);
+      let contacts: Contact[] = [];
+
+      if (owner.length !== 0) {
+        ({ contacts } = await addressBookService.list(owner));
+        logger.info(`Found ${contacts.length} contacts in addressbook for owner ${owner}`);
+      }
 
       const val = data.val?.toLowerCase() ?? ''
       const normalizedScope = scope.map((f) =>

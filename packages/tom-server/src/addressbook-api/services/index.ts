@@ -31,6 +31,7 @@ export class AddressbookService implements IAddressbookService {
       })
 
       const contacts = await this._listAddressbookContacts(userAddressbook.id)
+      this.logger.info(`Got contacts ${JSON.stringify(contacts)} for ${owner}.`)
 
       return {
         id: userAddressbook.id,
@@ -250,30 +251,36 @@ export class AddressbookService implements IAddressbookService {
   private readonly _getOrCreateUserAddressBook = async (
     owner: string
   ): Promise<AddressBook> => {
+    if (owner.length === 0) {
+      this.logger.error('Owner is required to get or create addressbook')
+      throw new Error('Owner is required')
+    }
+
+    let userAddressbook: AddressBook | undefined
+
+    // Try fetching the existing address book
     try {
-      // Assert that the owner is provided
-      if (owner.length === 0) {
-        this.logger.error('Owner is required to get or create addressbook')
-        throw new Error('Owner is required')
-      }
+      userAddressbook = await this._getUserAddressBook(owner)
+    } catch (error) {
+      this.logger.warn('Failed to fetch user addressbook, will try to create one', { error })
+    }
 
-      // Fetch the user addressbook
-      let userAddressbook = await this._getUserAddressBook(owner)
-      if (userAddressbook == null) {
+    // Create if it doesn’t exist
+    if (userAddressbook == null) {
+      try {
         this.logger.info('Addressbook not found, creating one')
-
-        // If the addressbook does not exist, create a new one
         userAddressbook = await this._createUserAddressBook(owner)
         if (userAddressbook == null) {
           this.logger.error('Failed to create addressbook')
           throw new Error('Failed to create addressbook')
         }
+      } catch (error) {
+        this.logger.error('Failed to create user addressbook', { error })
+        throw error
       }
-      return userAddressbook
-    } catch (error) {
-      this.logger.error('Failed to get or create user addressbook', { error })
-      throw error
     }
+
+    return userAddressbook
   }
 
 
