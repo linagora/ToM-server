@@ -84,12 +84,14 @@ services:
       - DATABASE_HOST=file:tom?mode=memory&cache=shared
 
       - USERDB_ENGINE=sqlite
-      - USERDB_HOST=/opt/lemon/db/lemon.db
+      # - USERDB_HOST=/opt/lemon/db/lemon.db
+      - USERDB_HOST=file:lemon?mode=memory&cache=shared
 
       - MATRIX_INTERNAL_HOST=http://synapse:8008
       - MATRIX_SERVER=matrix.docker.localhost
       - MATRIX_DATABASE_ENGINE=sqlite
-      - MATRIX_DATABASE_HOST=/opt/synapse/db/homeserver.db
+      # - MATRIX_DATABASE_HOST=/opt/synapse/db/homeserver.db
+      - MATRIX_DATABASE_HOST=file:synapse?mode=memory&cache=shared
 
       - SMS_API_KEY=SOME_SECRET_KEY
       - SMS_API_LOGIN=login@domain.com
