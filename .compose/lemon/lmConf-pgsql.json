@@ -88,12 +88,12 @@
    "cspImg" : "'self' data:",
    "cspScript" : "'self'",
    "cspStyle" : "'self'",
-   "dbiAuthChain" : "dbi:SQLite:dbname=/db/lemon.db",
+   "dbiAuthChain" : "DBI:Pg:database=lemonldapng;host=pgsql",
    "dbiAuthLoginCol" : "uid",
-   "dbiAuthPassword" : "",
+   "dbiAuthPassword" : "lemonldap",
    "dbiAuthPasswordCol" : "password",
    "dbiAuthTable" : "users",
-   "dbiAuthUser" : "",
+   "dbiAuthUser" : "lemonldap",
    "dbiAuthnLevel" : 2,
    "dbiExportedVars" : {
       "uid" : "uid",
@@ -341,7 +341,13 @@
    "oidcServiceOldKeyTypeSig" : "RSA",
    "oidcServicePrivateKeySig" : "-----BEGIN PRIVATE KEY-----\nMIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQDywteBzIOlhKc4\nO+vhMStDYOpPYrWDOodkUZ7OsxlWVNZ/b/lqIFS56+MHPkKNQuT4zZCyO8bEKmmR\nZ6kPFJoGbO1zJCPQ/RKjimX4J/5gDb1BAlo+6agJi55e3Bw0zKNJDU0mRyedcIzW\n7ywTgyj6B35pl/Sfloi4Q1XEizHar+26h66SOEtnppMxGvwsxO8gFWz26CPmalvY\n5GNYR0txbXUZn7I4kDa4mMWgNfeocWc78Qbt4RV5EuQdbRh1sou4tL9Nn4EuGhg0\nmfsSI0xVAj7f82Wn3kW6qEbhuejrY7aqmZjN7yrMKtCBuV7o4hVrjYLuM2j0mInY\nMy5nRNOVAgMBAAECggEAJ145nK8R2lG83H27LvXOUkrxNJaJYRKoyjgCTPr2bO2t\nK1V5WSCNHOmIE7ChEk962m5bvMu83CsUm6P34p4wrEIV78o4lLe1whe7mZbCxcj0\nnApJoFI8EfA2aqO/X0CgakRh8ocvgXSzIlf/CdsHViTI907ROOAso9Unn4wDNbdp\nMrhi3H2SnA+ewzj85WygBVTNQmVBjJSSLXTQRkfHye0ztvQm59gqqaJaM2rkBjvA\nlPWAVsgakOk4pgClKElCsIjWPJwdYtcd8VJrwnro5J9KhMwB//AArGgqOaXUHnLH\nv5aZZp6FjV/M3BxbSp4cG6hXmK1hrDFLecRddYP1gQKBgQD+Y4/ee57Z0E2V8833\nYfrK3F23sfxmZ7zUwEbgFXUfRy3RVW7Hbc7PAJzxzrk+LYk/zaZrrfEJguqG2O6m\nVNYkqxKu69Nn964CMdV15JGxVzpzsN5adKlcvKVVv9gx2rF3SMUOHiRutj2BlUtO\niCq0G3jFsXWIRzePig9PbWP6CQKBgQD0TG2DeDDUgKbeJYIzXfmCvGxlm5MZqCc/\nK7d8P9U0svG//jJRTsa9hcLjk7N24CzhLNHyJmT7dh1Xy1oLyHNPZ4nQRmCe+HUf\nu0SK10WZ2K55ekUmqS+xSuDFWJtWa5SE46cKg0fKu7YkiDKI1s6I3qrF4lew2aDE\n2p8GJRrgLQKBgCh2PZPtpb6PW0fWl5QZiYJqup1VOggvx+EvFBbgUti+wZLiO9SM\nqrBSMKRldSFmrMXxN984s3YH1LXOG2dpZwY+D6Ky79VBl/PRaVpvGJ1Uen+cSkGo\n/Kc7ejDBaunDFycZ8/3i3Xiek/ngfTHohqJPHE6Vg1RBv5ydIQJJK/XBAoGAU1XO\n9c4GOjc4tQbuhz9DYgmMoIyVfWcTHEV5bfUIcdWpCelYmMval8QNWzyDN8X5CUcU\nxxm50N3V3KENsn9KdofHRzj6tL/klFJ5azNMFtMHkYDYHfwQvNXiHu++7Zf9LefK\nj5eA4fNuir+7HVrJUX9DmgVADJ/wa7Z4EMyPgnECgYA/NLUs4920h10ie5lFffpM\nqq6CRcBjsQ7eGK9UI1Z2KZUh94eqIENSJ7whBjXKvJJvhAlH4//lVFMMRs7oJePY\nThg+8In7PB64yMOIJZLc5Fekn9aGG6YtErPzePQkXSYCKZxWl5EpjQZGgPRVkNtD\n2nflyJLjiCbTjeNgWIOZlw==\n-----END PRIVATE KEY-----\n",
    "oidcServicePublicKeySig" : "-----BEGIN CERTIFICATE-----\nMIICuDCCAaCgAwIBAgIEFU77HjANBgkqhkiG9w0BAQsFADAeMRwwGgYDVQQDDBNt\nYXRyaXgubGluYWdvcmEuY29tMB4XDTIzMDIxNTAzMTk0NloXDTQzMDIxMDAzMTk0\nNlowHjEcMBoGA1UEAwwTbWF0cml4LmxpbmFnb3JhLmNvbTCCASIwDQYJKoZIhvcN\nAQEBBQADggEPADCCAQoCggEBAPLC14HMg6WEpzg76+ExK0Ng6k9itYM6h2RRns6z\nGVZU1n9v+WogVLnr4wc+Qo1C5PjNkLI7xsQqaZFnqQ8UmgZs7XMkI9D9EqOKZfgn\n/mANvUECWj7pqAmLnl7cHDTMo0kNTSZHJ51wjNbvLBODKPoHfmmX9J+WiLhDVcSL\nMdqv7bqHrpI4S2emkzEa/CzE7yAVbPboI+ZqW9jkY1hHS3FtdRmfsjiQNriYxaA1\n96hxZzvxBu3hFXkS5B1tGHWyi7i0v02fgS4aGDSZ+xIjTFUCPt/zZafeRbqoRuG5\n6OtjtqqZmM3vKswq0IG5XujiFWuNgu4zaPSYidgzLmdE05UCAwEAATANBgkqhkiG\n9w0BAQsFAAOCAQEArNmGxZVvmvdOLctv+zQ+npzQtOTaJcf+r/1xYuM4FZVe4yLc\ny9ElDskoDWjvQU7jKeJeaDOYgMJQNrek8Doj8uHPWNe6jYFa62Csg9aPz6e8qbtq\nWI+sXds5GJd6xZ8mi2L4MdT/tf8dBgcgybuoRyhBtJwG1rLNAYkeXMxkBzOFcU7K\nR/SZ0q9ToLAWFDhn42MTjPN3t6GwKDzGNsM/SI/3WvUwpQbtK91hjPnNDwKiAtGG\nfUteuigfXY+0hEcQwJdR0St/FQ8UYYcAB5YT9IkT1wCcU5LfPHCBf3OXNpbnQsHh\netQMKLibM6wWdXNwmsd1szO66ft3QZ4h4EG3Vw==\n-----END CERTIFICATE-----\n",
-   "oidcStorageOptions" : {},
+   "oidcStorage": "Apache::Session::Browseable::PgJSON",
+   "oidcStorageOptions" : {
+      "DataSource": "DBI:Pg:database=lemonldapng;host=pgsql",
+      "UserName":"lemonldap",
+      "Password":"lemonldap",
+      "TableName":"oidcsessions"
+   },
    "okta2fActivation" : 0,
    "openIdAuthnLevel" : 1,
    "openIdExportedVars" : {},
@@ -367,10 +373,12 @@
    "passwordPolicySpecialChar" : "__ALL__",
    "passwordResetAllowedRetries" : 3,
    "persistentSessionAttributes" : "_loginHistory _2fDevices notification_",
-   "persistentStorage" : "Apache::Session::File",
+   "persistentStorage": "Apache::Session::Browseable::PgJSON",
    "persistentStorageOptions" : {
-      "Directory" : "/var/lib/lemonldap-ng/psessions",
-      "LockDirectory" : "/var/lib/lemonldap-ng/psessions/lock"
+      "DataSource": "DBI:Pg:database=lemonldapng;host=pgsql",
+      "UserName":"lemonldap",
+      "Password":"lemonldap",
+      "TableName":"psessions"
    },
    "port" : -1,
    "portal" : "https://auth.docker.localhost/",

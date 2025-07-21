@@ -3,7 +3,7 @@
 readonly nickname="${1:-dwho}"
 readonly fullname="${2:-Doctor Who}"
 readonly mail="${3:-${nickname}@docker.localhost}"
-readonly mobile="${4:-330123456789}"
+readonly mobile="${4:-+330123456789}"
 readonly password="${5:-$nickname}"
 
 echo -e "Adding user: ${fullname} (${nickname})\n\tpass: ${password}\n\tmail: ${mail}\n\tmobile: ${mobile}"
