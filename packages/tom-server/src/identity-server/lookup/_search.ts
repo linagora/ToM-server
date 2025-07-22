@@ -4,6 +4,7 @@ import { type Response } from 'express'
 import type http from 'http'
 import type TwakeIdentityServer from '..'
 import { AddressbookService } from '../../addressbook-api/services'
+import { type Contact } from '../../addressbook-api/types'
 
 type SearchFunction = (
   res: Response | http.ServerResponse,
@@ -95,15 +96,21 @@ const _search = async (
     /* istanbul ignore else */
     if (!error) {
       logger.debug('[_search] Input fields and scope validated successfully.')
-      const addressBookService = new AddressbookService(idServer.db, logger)
+      const owner = data.owner ?? '';
+      let contacts: Contact[] = [];
       logger.debug(
         '[_search] Attempting to fetch contacts from address book.',
         { owner: data.owner ?? 'no-owner-provided' }
       )
-      let { contacts } = await addressBookService.list(data.owner ?? '')
-      logger.info('[_search] Contacts fetched from address book.', {
-        numberOfContacts: contacts.length
-      })
+
+      if (owner.length !== 0) {
+        const addressBookService = new AddressbookService(idServer.db, logger)
+        
+        { contacts } = await addressBookService.list(owner));
+        logger.info('[_search] Contacts fetched from address book.', {
+          numberOfContacts: contacts.length
+        }
+      }
 
       const val = data.val?.toLowerCase() ?? ''
       const normalizedScope = scope.map((f) =>
