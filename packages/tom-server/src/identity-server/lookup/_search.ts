@@ -190,8 +190,7 @@ const _search = async (
       })
 
       const request =
-        process.env.ADDITIONAL_FEATURES === 'true' ||
-        (idServer.conf.additional_features as boolean)
+        (idServer.conf.additional_features === true)
           ? typeof value === 'string' && value.length > 0
             ? idServer.userDB.match('users', _fields, _scope, value, _fields[0])
             : idServer.userDB.getAll('users', _fields, _fields[0])

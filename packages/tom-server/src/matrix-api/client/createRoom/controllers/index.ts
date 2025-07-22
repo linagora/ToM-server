@@ -30,7 +30,19 @@ export default class CreateRoomController {
         return
       }
 
-      const operation = await this.roomService.create(req.body, authorization)
+      const roomOwner = req.userId ?? ''
+
+      if (roomOwner.length === 0) {
+        this.logger.error(`Missing room owner`)
+        res.status(400).json({ message: 'Missing room owner' })
+        return
+      }
+
+      const operation = await this.roomService.create(
+        req.body,
+        authorization,
+        roomOwner
+      )
       const data = await operation.json()
 
       res.status(operation.status).json(data)

@@ -78,8 +78,8 @@ const twakeChatConf = {
 
 let conf = {
   ...appServerConf,
-  additional_features: process.env.ADDITIONAL_FEATURES || false,
-  cron_service: process.env.CRON_SERVICE ?? true,
+  additional_features: _parseBooleanEnv(process.env.ADDITIONAL_FEATURES, false),
+  cron_service: _parseBooleanEnv(process.env.CRON_SERVICE, false),
   database_engine: process.env.DATABASE_ENGINE,
   database_host: process.env.DATABASE_HOST,
   database_name: process.env.DATABASE_NAME,

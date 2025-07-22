@@ -3,10 +3,10 @@ import { type TwakeLogger } from '@twake/logger'
 import { type Config } from '../../../../types'
 
 const direct_chat = {
-  users_default: 0,
+  users_default: 10,
   events_default: 10,
   invite: 100,
-  state_default: 100,
+  state_default: 10,
   kick: 100,
   ban: 100,
   redact: 100,
@@ -25,14 +25,15 @@ const direct_chat = {
     'm.room.history_visibility': 100,
     'm.room.power_levels': 100,
     'm.room.encryption': 10
-  }
+  },
+  creator_becomes: 10
 }
 
 const private_group_chat = {
   users_default: 10,
   events_default: 10,
   invite: 50,
-  state_default: 100,
+  state_default: 90,
   kick: 50,
   ban: 50,
   redact: 50,
@@ -51,14 +52,15 @@ const private_group_chat = {
     'm.room.history_visibility': 80,
     'm.room.power_levels': 80,
     'm.room.encryption': 80
-  }
+  },
+  creator_becomes: 90
 }
 
 const public_group_chat = {
   users_default: 10,
   events_default: 10,
   invite: 0,
-  state_default: 100,
+  state_default: 90,
   kick: 50,
   ban: 50,
   redact: 50,
@@ -77,13 +79,70 @@ const public_group_chat = {
     'm.room.history_visibility': 80,
     'm.room.power_levels': 80,
     'm.room.encryption': 90
-  }
+  },
+  creator_becomes: 90
+}
+
+const private_channel = {
+  users_default: 10,
+  events_default: 80,
+  invite: 50,
+  state_default: 90,
+  kick: 50,
+  ban: 50,
+  redact: 80,
+  notifications: {
+    room: 80
+  },
+  events: {
+    'm.reaction': 10,
+    'm.room.redaction': 80,
+    'm.room.pinned_events': 50,
+    'org.matrix.msc3401.call': 100,
+    'org.matrix.msc3401.call.member': 100,
+    'm.room.name': 80,
+    'm.room.topic': 80,
+    'm.room.avatar': 80,
+    'm.room.history_visibility': 90,
+    'm.room.power_levels': 50,
+    'm.room.encryption': 90
+  },
+  creator_becomes: 90
+}
+
+const public_channel = {
+  users_default: 10,
+  events_default: 80,
+  invite: 0,
+  state_default: 90,
+  kick: 50,
+  ban: 50,
+  redact: 80,
+  notifications: {
+    room: 80
+  },
+  events: {
+    'm.reaction': 10,
+    'm.room.redaction': 80,
+    'm.room.pinned_events': 50,
+    'org.matrix.msc3401.call': 100,
+    'org.matrix.msc3401.call.member': 100,
+    'm.room.name': 80,
+    'm.room.topic': 80,
+    'm.room.avatar': 80,
+    'm.room.history_visibility': 100,
+    'm.room.power_levels': 50,
+    'm.room.encryption': 100
+  },
+  creator_becomes: 90
 }
 
 const loggerMock = {
   info: jest.fn(),
   error: jest.fn(),
-  warn: jest.fn()
+  warn: jest.fn(),
+  debug: jest.fn(),
+  silly: jest.fn()
 }
 
 const roomService = new Service(
@@ -99,56 +158,8 @@ const roomService = new Service(
       direct_chat,
       private_group_chat,
       public_group_chat,
-      private_channel: {
-        users_default: 10,
-        events_default: 80,
-        invite: 50,
-        state_default: 100,
-        kick: 50,
-        ban: 50,
-        redact: 80,
-        notifications: {
-          room: 80
-        },
-        events: {
-          'm.reaction': 10,
-          'm.room.redaction': 80,
-          'm.room.pinned_events': 50,
-          'org.matrix.msc3401.call': 100,
-          'org.matrix.msc3401.call.member': 100,
-          'm.room.name': 80,
-          'm.room.topic': 80,
-          'm.room.avatar': 80,
-          'm.room.history_visibility': 90,
-          'm.room.power_levels': 50,
-          'm.room.encryption': 90
-        }
-      },
-      public_channel: {
-        users_default: 10,
-        events_default: 80,
-        invite: 0,
-        state_default: 100,
-        kick: 50,
-        ban: 50,
-        redact: 80,
-        notifications: {
-          room: 80
-        },
-        events: {
-          'm.reaction': 10,
-          'm.room.redaction': 80,
-          'm.room.pinned_events': 50,
-          'org.matrix.msc3401.call': 100,
-          'org.matrix.msc3401.call.member': 100,
-          'm.room.name': 80,
-          'm.room.topic': 80,
-          'm.room.avatar': 80,
-          'm.room.history_visibility': 100,
-          'm.room.power_levels': 50,
-          'm.room.encryption': 100
-        }
-      }
+      private_channel,
+      public_channel
     }
   } as unknown as Config,
   loggerMock as unknown as TwakeLogger
@@ -161,14 +172,26 @@ describe('the RoomService', () => {
       })
     ) as jest.Mock
 
-    roomService.create({ invite: ['@user:server.com'] }, 'Bearer token')
+    const { creator_becomes, ...config } = direct_chat
+    const ownerUser = '@user:server.com'
+    const ownerUserLevel = 100
+    roomService.create(
+      { invite: [`${ownerUser}`] },
+      'Bearer token',
+      `${ownerUser}`
+    )
 
     expect(global.fetch).toHaveBeenCalledWith(
       'http://internal.server.com/_matrix/client/v3/createRoom',
       {
         body: JSON.stringify({
           invite: ['@user:server.com'],
-          power_level_content_override: direct_chat
+          power_level_content_override: {
+            ...config,
+            users: {
+              [ownerUser]: ownerUserLevel
+            }
+          }
         }),
         headers: {
           'Content-Type': 'application/json',
@@ -186,12 +209,18 @@ describe('the RoomService', () => {
       })
     ) as jest.Mock
 
+    const { creator_becomes, ...config } = public_group_chat
+    const ownerUser = '@user:server.com'
+    const ownerUserLevel = 100
+    const invitedUser = '@user2:server.com'
+    const invitedUserLevel = config.users_default
     roomService.create(
       {
-        invite: ['@user:server.com', '@user2:server.com'],
+        invite: [`${ownerUser}`, `${invitedUser}`],
         preset: 'public_chat'
       },
-      'Bearer token'
+      'Bearer token',
+      `${ownerUser}`
     )
 
     expect(global.fetch).toHaveBeenCalledWith(
@@ -200,7 +229,13 @@ describe('the RoomService', () => {
         body: JSON.stringify({
           invite: ['@user:server.com', '@user2:server.com'],
           preset: 'public_chat',
-          power_level_content_override: public_group_chat
+          power_level_content_override: {
+            ...config,
+            users: {
+              [ownerUser]: ownerUserLevel,
+              [invitedUser]: invitedUserLevel
+            }
+          }
         }),
         headers: {
           'Content-Type': 'application/json',
@@ -221,7 +256,8 @@ describe('the RoomService', () => {
 
     const response = await roomService.create(
       { invite: ['@user:server.com'] },
-      'Bearer token'
+      'Bearer token',
+      '@user:server.com'
     )
 
     expect(response.status).toEqual(500)
