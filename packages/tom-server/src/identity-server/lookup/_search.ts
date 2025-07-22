@@ -96,8 +96,9 @@ const _search = async (
     /* istanbul ignore else */
     if (!error) {
       logger.debug('[_search] Input fields and scope validated successfully.')
-      const owner = data.owner ?? '';
-      let contacts: Contact[] = [];
+      const owner = data.owner ?? ''
+      let contacts: Contact[] // Declare contacts without immediate initialization
+
       logger.debug(
         '[_search] Attempting to fetch contacts from address book.',
         { owner: data.owner ?? 'no-owner-provided' }
@@ -105,11 +106,14 @@ const _search = async (
 
       if (owner.length !== 0) {
         const addressBookService = new AddressbookService(idServer.db, logger)
-        
-        { contacts } = await addressBookService.list(owner));
+        const result = await addressBookService.list(owner) // Call and get the result
+        contacts = result.contacts // Assign directly
         logger.info('[_search] Contacts fetched from address book.', {
           numberOfContacts: contacts.length
-        }
+        })
+      } else {
+        contacts = [] // Initialize to empty if owner is empty, and skip service call
+        logger.debug('[_search] Owner is empty, skipping address book fetch.')
       }
 
       const val = data.val?.toLowerCase() ?? ''
