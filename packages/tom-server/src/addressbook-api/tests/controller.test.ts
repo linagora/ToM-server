@@ -17,9 +17,11 @@ const dbMock = {
 }
 
 const loggerMock = {
-  info: jest.fn(),
   error: jest.fn(),
-  warn: jest.fn()
+  warn: jest.fn(),
+  info: jest.fn(),
+  debug: jest.fn(),
+  silly: jest.fn()
 }
 
 const authenticatorMock = jest
