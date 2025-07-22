@@ -14,7 +14,9 @@ export class AddressbookService implements IAddressbookService {
   constructor(
     private readonly db: TwakeDB,
     private readonly logger: TwakeLogger
-  ) {}
+  ) {
+    this.logger.debug('[AddressbookService] Initialized.', {})
+  }
 
   /**
    * list the addressbook of an owner
@@ -23,24 +25,47 @@ export class AddressbookService implements IAddressbookService {
    * @returns {Promise<AddressbookListResponse[]>}
    */
   public list = async (owner: string): Promise<AddressbookListResponse> => {
-    try {      
+    this.logger.silly('[AddressbookService.list] Entering method.', { owner })
+    try {
+      this.logger.debug(
+        '[AddressbookService.list] Attempting to get or create user addressbook.'
+      )
       const userAddressbook = await this._getOrCreateUserAddressBook(owner)
-      this.logger.info('Listing addressbook', {
+      this.logger.info('[AddressbookService.list] Listing addressbook.', {
         addressbookId: userAddressbook.id,
         owner
       })
 
+      this.logger.debug(
+        '[AddressbookService.list] Attempting to list contacts for addressbook.'
+      )
       const contacts = await this._listAddressbookContacts(userAddressbook.id)
-      this.logger.info(`Got contacts ${JSON.stringify(contacts)} for ${owner}.`)
+      this.logger.info(
+        `[AddressbookService.list] Got ${contacts.length} contacts for owner.`,
+        { owner, contactsCount: contacts.length }
+      )
+      this.logger.silly(
+        `[AddressbookService.list] Retrieved contacts: ${JSON.stringify(
+          contacts
+        )}`
+      )
 
+      this.logger.silly('[AddressbookService.list] Exiting method (success).')
       return {
         id: userAddressbook.id,
         owner,
         contacts
       }
-    } catch (error) {
-      this.logger.error('Failed to list addressbook', { error })
-
+    } catch (error: any) {
+      this.logger.error(
+        '[AddressbookService.list] Failed to list addressbook.',
+        {
+          message: error.message,
+          stack: error.stack,
+          errorName: error.name
+        }
+      )
+      this.logger.silly('[AddressbookService.list] Exiting method (error).')
       return {
         id: '',
         owner,
@@ -56,22 +81,52 @@ export class AddressbookService implements IAddressbookService {
    * @returns {Promise<void>}
    */
   public delete = async (owner: string): Promise<void> => {
+    this.logger.silly('[AddressbookService.delete] Entering method.', { owner })
     try {
+      this.logger.debug(
+        '[AddressbookService.delete] Fetching addressbook by owner.'
+      )
       const userAddressbook = (await this.db.get('addressbooks', ['id'], {
         owner
       })) as unknown as AddressBook[]
 
       if (!userAddressbook || !userAddressbook.length) {
-        throw new Error()
+        this.logger.warn(
+          '[AddressbookService.delete] Addressbook not found for owner, nothing to delete.',
+          { owner }
+        )
+        throw new Error('Addressbook not found') // Re-throwing for consistent error flow
       }
 
       const id = userAddressbook[0].id as string
+      this.logger.info(
+        '[AddressbookService.delete] Found addressbook, proceeding with deletion.',
+        { addressbookId: id, owner }
+      )
 
+      this.logger.debug(
+        '[AddressbookService.delete] Deleting contacts associated with addressbook.'
+      )
       await this.db.deleteEqual('contacts', 'addressbook_id', id)
+      this.logger.debug(
+        '[AddressbookService.delete] Contacts deleted. Deleting addressbook entry.'
+      )
       await this.db.deleteEqual('addressbooks', 'id', id)
-    } catch (error) {
-      this.logger.error('Failed to delete addressbook', { error })
-
+      this.logger.info(
+        '[AddressbookService.delete] Addressbook and associated contacts deleted successfully.',
+        { addressbookId: id, owner }
+      )
+      this.logger.silly('[AddressbookService.delete] Exiting method (success).')
+    } catch (error: any) {
+      this.logger.error(
+        '[AddressbookService.delete] Failed to delete addressbook.',
+        {
+          message: error.message,
+          stack: error.stack,
+          errorName: error.name
+        }
+      )
+      this.logger.silly('[AddressbookService.delete] Exiting method (error).')
       throw error
     }
   }
@@ -84,18 +139,53 @@ export class AddressbookService implements IAddressbookService {
   public getContact = async (
     contactId: string
   ): Promise<Contact | undefined> => {
+    this.logger.silly('[AddressbookService.getContact] Entering method.', {
+      contactId
+    })
     try {
+      this.logger.debug(
+        '[AddressbookService.getContact] Querying database for contact.',
+        { contactId }
+      )
       const queryResult = (await this.db.get('contacts', ['*'], {
         id: contactId
       })) as unknown as Contact[]
 
       if (!queryResult || !queryResult.length) {
+        this.logger.warn('[AddressbookService.getContact] Contact not found.', {
+          contactId
+        })
         throw new Error('Contact not found')
       }
 
-      return { ...queryResult[0], active: !!queryResult[0].active }
-    } catch (error) {
-      this.logger.error('Failed to get contact', { error })
+      const contact = { ...queryResult[0], active: !!queryResult[0].active }
+      this.logger.info('[AddressbookService.getContact] Contact found.', {
+        contactId,
+        contactMxid: contact.mxid
+      })
+      this.logger.silly(
+        `[AddressbookService.getContact] Retrieved contact: ${JSON.stringify(
+          contact
+        )}`
+      )
+      this.logger.silly(
+        '[AddressbookService.getContact] Exiting method (success).'
+      )
+      return contact
+    } catch (error: any) {
+      this.logger.error(
+        '[AddressbookService.getContact] Failed to get contact.',
+        {
+          contactId,
+          message: error.message,
+          stack: error.stack,
+          errorName: error.name
+        }
+      )
+      this.logger.silly(
+        '[AddressbookService.getContact] Exiting method (error).'
+      )
+      return undefined
     }
   }
 
@@ -103,42 +193,100 @@ export class AddressbookService implements IAddressbookService {
    * Add a contact to an addressbook
    *
    * @param {string} owner - The id of the addressbook
-   * @param {ContactCreationPayload} contacts - The contact to add
-   * @returns {Promise<Contact>}
+   * @param {ContactCreationPayload[]} contacts - The contacts to add
+   * @returns {Promise<AddressbookListResponse>}
    */
   public addContacts = async (
     owner: string,
     contacts?: ContactCreationPayload[]
   ): Promise<AddressbookListResponse | undefined> => {
+    this.logger.silly('[AddressbookService.addContacts] Entering method.', {
+      owner,
+      contactsCount: contacts?.length ?? 0
+    })
     try {
       let createdContacts: Contact[] = []
+      this.logger.debug(
+        '[AddressbookService.addContacts] Getting or creating user addressbook.'
+      )
       const addressbook = await this._getOrCreateUserAddressBook(owner)
-
       const { id } = addressbook
+      this.logger.info(
+        '[AddressbookService.addContacts] Retrieved addressbook for adding contacts.',
+        { addressbookId: id, owner }
+      )
 
-      if (contacts) {
+      if (contacts && contacts.length > 0) {
+        this.logger.debug(
+          `[AddressbookService.addContacts] Processing ${contacts.length} contacts for addition.`
+        )
         for (const contact of contacts) {
+          this.logger.silly(
+            '[AddressbookService.addContacts] Checking if contact already exists.',
+            { contactMxid: contact.mxid, addressbookId: id }
+          )
           const exists = await this._checkIfContactExists(contact, id)
 
           if (!exists) {
+            this.logger.debug(
+              '[AddressbookService.addContacts] Contact does not exist, inserting new contact.',
+              { contactMxid: contact.mxid }
+            )
             const createdContact = await this._insertContact(contact, id)
 
             if (createdContact && createdContact.id) {
               createdContacts.push(createdContact)
+              this.logger.info(
+                '[AddressbookService.addContacts] Successfully created new contact.',
+                {
+                  contactId: createdContact.id,
+                  contactMxid: createdContact.mxid
+                }
+              )
             } else {
-              this.logger.error(`Failed to create contact`)
+              this.logger.error(
+                '[AddressbookService.addContacts] Failed to create contact (insert returned no ID).',
+                { contactPayload: JSON.stringify(contact) }
+              )
             }
+          } else {
+            this.logger.info(
+              '[AddressbookService.addContacts] Contact already exists, skipping insertion.',
+              { contactMxid: contact.mxid }
+            )
           }
         }
+      } else {
+        this.logger.debug(
+          '[AddressbookService.addContacts] No contacts provided in payload.'
+        )
       }
 
+      this.logger.info(
+        '[AddressbookService.addContacts] Finished processing contacts.',
+        { createdContactsCount: createdContacts.length }
+      )
+      this.logger.silly(
+        '[AddressbookService.addContacts] Exiting method (success).'
+      )
       return {
         id,
         owner,
         contacts: createdContacts
       }
-    } catch (error) {
-      this.logger.error('Failed to add contact', { error })
+    } catch (error: any) {
+      this.logger.error(
+        '[AddressbookService.addContacts] Failed to add contacts.',
+        {
+          message: error.message,
+          stack: error.stack,
+          errorName: error.name
+        }
+      )
+      this.logger.silly(
+        '[AddressbookService.addContacts] Exiting method (error).'
+      )
+      return undefined
     }
   }
 
@@ -153,23 +301,71 @@ export class AddressbookService implements IAddressbookService {
     id: string,
     contact: ContactUpdatePayload
   ): Promise<Contact | undefined> => {
+    this.logger.silly('[AddressbookService.updateContact] Entering method.', {
+      contactId: id,
+      updatePayload: JSON.stringify(contact)
+    })
     try {
       const { display_name, active = undefined } = contact
 
+      const updatePayload = {
+        display_name,
+        ...(active !== undefined ? { active: +active } : {})
+      }
+      this.logger.debug(
+        '[AddressbookService.updateContact] Prepared update payload for contact.',
+        { contactId: id, payload: JSON.stringify(updatePayload) }
+      )
+
       const updatedContact = (await this.db.update(
         'contacts',
-        { display_name, ...(active !== undefined ? { active: +active } : {}) },
+        updatePayload,
         'id',
         id
       )) as unknown as Contact[]
 
       if (!updatedContact || !updatedContact.length) {
-        throw new Error()
+        this.logger.warn(
+          '[AddressbookService.updateContact] No contact found or updated.',
+          { contactId: id }
+        )
+        throw new Error('Contact not found or failed to update')
       }
 
-      return { ...updatedContact[0], active: !!updatedContact[0].active }
-    } catch (error) {
-      this.logger.error('Failed to update contact', { error })
+      const resultContact = {
+        ...updatedContact[0],
+        active: !!updatedContact[0].active
+      }
+      this.logger.info(
+        '[AddressbookService.updateContact] Contact updated successfully.',
+        {
+          contactId: id,
+          updatedMxid: resultContact.mxid
+        }
+      )
+      this.logger.silly(
+        `[AddressbookService.updateContact] Updated contact details: ${JSON.stringify(
+          resultContact
+        )}`
+      )
+      this.logger.silly(
+        '[AddressbookService.updateContact] Exiting method (success).'
+      )
+      return resultContact
+    } catch (error: any) {
+      this.logger.error(
+        '[AddressbookService.updateContact] Failed to update contact.',
+        {
+          contactId: id,
+          message: error.message,
+          stack: error.stack,
+          errorName: error.name
+        }
+      )
+      this.logger.silly(
+        '[AddressbookService.updateContact] Exiting method (error).'
+      )
+      return undefined
     }
   }
 
@@ -180,11 +376,35 @@ export class AddressbookService implements IAddressbookService {
    * @returns {Promise<void>}
    */
   public deleteContact = async (contactId: string): Promise<void> => {
+    this.logger.silly('[AddressbookService.deleteContact] Entering method.', {
+      contactId
+    })
     try {
+      this.logger.debug(
+        '[AddressbookService.deleteContact] Deleting contact from database.',
+        { contactId }
+      )
       await this.db.deleteEqual('contacts', 'id', contactId)
-    } catch (error) {
-      this.logger.error('Failed to delete contact', { error })
-
+      this.logger.info(
+        '[AddressbookService.deleteContact] Contact deleted successfully.',
+        { contactId }
+      )
+      this.logger.silly(
+        '[AddressbookService.deleteContact] Exiting method (success).'
+      )
+    } catch (error: any) {
+      this.logger.error(
+        '[AddressbookService.deleteContact] Failed to delete contact.',
+        {
+          contactId,
+          message: error.message,
+          stack: error.stack,
+          errorName: error.name
+        }
+      )
+      this.logger.silly(
+        '[AddressbookService.deleteContact] Exiting method (error).'
+      )
       throw error
     }
   }
@@ -192,18 +412,30 @@ export class AddressbookService implements IAddressbookService {
   /**
    * Insert a contact into the database
    *
-   * @param {Contact} contact - The contact to insert
+   * @param {ContactCreationPayload} contact - The contact to insert
    * @param {string} addressbookId - The addressbook id
-   * @returns Promise<void>
+   * @returns Promise<Contact | undefined>
    */
   private _insertContact = async (
     contact: ContactCreationPayload,
     addressbookId: string
   ): Promise<Contact | undefined> => {
+    this.logger.silly('[AddressbookService._insertContact] Entering method.', {
+      addressbookId,
+      contactMxid: contact.mxid
+    })
     try {
       const { display_name, mxid } = contact
       const id = uuidv7()
+      this.logger.debug(
+        '[AddressbookService._insertContact] Generated new UUID for contact.',
+        { contactId: id }
+      )
 
+      this.logger.debug(
+        '[AddressbookService._insertContact] Inserting contact into database.',
+        { contactId: id, addressbookId, mxid }
+      )
       const created = (await this.db.insert('contacts', {
         mxid,
         display_name,
@@ -212,9 +444,43 @@ export class AddressbookService implements IAddressbookService {
         addressbook_id: addressbookId
       })) as unknown as Contact[]
 
-      return { ...created[0], active: !!created[0].active }
-    } catch (error) {
-      this.logger.error('Failed to insert contact', { error })
+      if (!created || !created.length) {
+        this.logger.error(
+          '[AddressbookService._insertContact] Database insert returned no created contact.',
+          { contactId: id, addressbookId, mxid }
+        )
+        throw new Error('Failed to insert contact: no data returned')
+      }
+
+      const resultContact = { ...created[0], active: !!created[0].active }
+      this.logger.info(
+        '[AddressbookService._insertContact] Contact inserted successfully.',
+        { contactId: resultContact.id, contactMxid: resultContact.mxid }
+      )
+      this.logger.silly(
+        `[AddressbookService._insertContact] Inserted contact details: ${JSON.stringify(
+          resultContact
+        )}`
+      )
+      this.logger.silly(
+        '[AddressbookService._insertContact] Exiting method (success).'
+      )
+      return resultContact
+    } catch (error: any) {
+      this.logger.error(
+        '[AddressbookService._insertContact] Failed to insert contact.',
+        {
+          addressbookId,
+          contactMxid: contact.mxid,
+          message: error.message,
+          stack: error.stack,
+          errorName: error.name
+        }
+      )
+      this.logger.silly(
+        '[AddressbookService._insertContact] Exiting method (error).'
+      )
+      return undefined
     }
   }
 
@@ -222,25 +488,57 @@ export class AddressbookService implements IAddressbookService {
    * List the contacts of an addressbook
    *
    * @param {string} id - The id of the addressbook
-   * @returns {Promise<AddressbookListResponse>}
+   * @returns {Promise<Contact[]>}
    */
   private _listAddressbookContacts = async (id: string): Promise<Contact[]> => {
+    this.logger.silly(
+      '[AddressbookService._listAddressbookContacts] Entering method.',
+      {
+        addressbookId: id
+      }
+    )
     try {
+      this.logger.debug(
+        '[AddressbookService._listAddressbookContacts] Querying database for contacts.',
+        { addressbookId: id }
+      )
       const contacts = (await this.db.get('contacts', ['*'], {
         addressbook_id: id
       })) as unknown as Contact[]
 
-      return contacts.map((contact: Contact) => ({
+      const mappedContacts = contacts.map((contact: Contact) => ({
         ...contact,
         active: !!contact.active
       }))
-    } catch (error) {
-      this.logger.error('Failed to list addressbook', { error })
-
+      this.logger.info(
+        '[AddressbookService._listAddressbookContacts] Contacts retrieved and mapped.',
+        { addressbookId: id, contactsCount: mappedContacts.length }
+      )
+      this.logger.silly(
+        `[AddressbookService._listAddressbookContacts] Mapped contacts: ${JSON.stringify(
+          mappedContacts
+        )}`
+      )
+      this.logger.silly(
+        '[AddressbookService._listAddressbookContacts] Exiting method (success).'
+      )
+      return mappedContacts
+    } catch (error: any) {
+      this.logger.error(
+        '[AddressbookService._listAddressbookContacts] Failed to list addressbook contacts.',
+        {
+          addressbookId: id,
+          message: error.message,
+          stack: error.stack,
+          errorName: error.name
+        }
+      )
+      this.logger.silly(
+        '[AddressbookService._listAddressbookContacts] Exiting method (error).'
+      )
       return []
     }
   }
-
 
   /**
    * Fetches the user addressbook or create a new one if it does not exist
@@ -251,8 +549,16 @@ export class AddressbookService implements IAddressbookService {
   private readonly _getOrCreateUserAddressBook = async (
     owner: string
   ): Promise<AddressBook> => {
+    this.logger.silly(
+      '[AddressbookService._getOrCreateUserAddressBook] Entering method.',
+      {
+        owner
+      }
+    )
     if (owner.length === 0) {
-      this.logger.error('Owner is required to get or create addressbook')
+      this.logger.error(
+        '[AddressbookService._getOrCreateUserAddressBook] Owner is required to get or create addressbook.'
+      )
       throw new Error('Owner is required')
     }
 
@@ -260,26 +566,50 @@ export class AddressbookService implements IAddressbookService {
 
     // Try fetching the existing address book
     try {
+      this.logger.debug(
+        '[AddressbookService._getOrCreateUserAddressBook] Attempting to fetch existing user addressbook.'
+      )
       userAddressbook = await this._getUserAddressBook(owner)
-    } catch (error) {
-      this.logger.warn('Failed to fetch user addressbook, will try to create one', { error })
+      if (userAddressbook) {
+        this.logger.info(
+          '[AddressbookService._getOrCreateUserAddressBook] Existing addressbook found.',
+          { addressbookId: userAddressbook.id }
+        )
+      }
+    } catch (error: any) {
+      this.logger.warn(
+        '[AddressbookService._getOrCreateUserAddressBook] Failed to fetch user addressbook, will try to create one.',
+        { owner, message: error.message }
+      )
     }
 
     // Create if it doesn’t exist
     if (userAddressbook == null) {
-      this.logger.info('Addressbook not found, creating one')
+      this.logger.info(
+        '[AddressbookService._getOrCreateUserAddressBook] Addressbook not found, creating a new one.'
+      )
       userAddressbook = await this._createUserAddressBook(owner)
       // Throw an error is we couldn't get or create an addressbook
       if (userAddressbook == null) {
-        this.logger.error('Failed to get or create addressbook')
+        this.logger.error(
+          '[AddressbookService._getOrCreateUserAddressBook] Failed to get or create addressbook after attempt.'
+        )
+        this.logger.silly(
+          '[AddressbookService._getOrCreateUserAddressBook] Exiting method (error during creation).'
+        )
         throw new Error('Failed to get or create addressbook')
       }
+      this.logger.info(
+        '[AddressbookService._getOrCreateUserAddressBook] Successfully created new addressbook.',
+        { addressbookId: userAddressbook.id }
+      )
     }
 
+    this.logger.silly(
+      '[AddressbookService._getOrCreateUserAddressBook] Exiting method (success).'
+    )
     return userAddressbook
   }
-
-
 
   /**
    * Fetches the user addressbook
@@ -290,18 +620,61 @@ export class AddressbookService implements IAddressbookService {
   private _getUserAddressBook = async (
     owner: string
   ): Promise<AddressBook | undefined> => {
+    this.logger.silly(
+      '[AddressbookService._getUserAddressBook] Entering method.',
+      {
+        owner
+      }
+    )
     try {
+      this.logger.debug(
+        '[AddressbookService._getUserAddressBook] Querying database for addressbook by owner.',
+        { owner }
+      )
       const userAddressbook = (await this.db.get('addressbooks', ['*'], {
         owner
       })) as unknown as AddressBook[]
 
       if (!userAddressbook || !userAddressbook.length) {
+        this.logger.info(
+          '[AddressbookService._getUserAddressBook] Addressbook not found for owner.',
+          { owner }
+        )
+        // Throwing an error here to be caught by _getOrCreateUserAddressBook logic
         throw new Error('Addressbook not found')
       }
 
-      return userAddressbook[0]
-    } catch (error) {
-      this.logger.error('Failed to get user addressbook', { error })
+      const result = userAddressbook[0]
+      this.logger.info(
+        '[AddressbookService._getUserAddressBook] Addressbook found.',
+        {
+          addressbookId: result.id,
+          owner
+        }
+      )
+      this.logger.silly(
+        `[AddressbookService._getUserAddressBook] Retrieved addressbook: ${JSON.stringify(
+          result
+        )}`
+      )
+      this.logger.silly(
+        '[AddressbookService._getUserAddressBook] Exiting method (success).'
+      )
+      return result
+    } catch (error: any) {
+      this.logger.error(
+        '[AddressbookService._getUserAddressBook] Failed to get user addressbook.',
+        {
+          owner,
+          message: error.message,
+          stack: error.stack,
+          errorName: error.name
+        }
+      )
+      this.logger.silly(
+        '[AddressbookService._getUserAddressBook] Exiting method (error).'
+      )
+      return undefined
     }
   }
 
@@ -314,20 +687,63 @@ export class AddressbookService implements IAddressbookService {
   private _createUserAddressBook = async (
     owner: string
   ): Promise<AddressBook | undefined> => {
+    this.logger.silly(
+      '[AddressbookService._createUserAddressBook] Entering method.',
+      {
+        owner
+      }
+    )
     try {
       const id = uuidv7()
+      this.logger.debug(
+        '[AddressbookService._createUserAddressBook] Generated new UUID for addressbook.',
+        { addressbookId: id }
+      )
+      this.logger.debug(
+        '[AddressbookService._createUserAddressBook] Inserting new addressbook into database.',
+        { owner, addressbookId: id }
+      )
       const addressbook = (await this.db.insert('addressbooks', {
         owner,
         id
       })) as unknown as AddressBook[]
 
       if (!addressbook || !addressbook.length) {
-        throw new Error()
+        this.logger.error(
+          '[AddressbookService._createUserAddressBook] Database insert returned no created addressbook.',
+          { owner, addressbookId: id }
+        )
+        throw new Error('Failed to create addressbook: no data returned')
       }
 
-      return addressbook[0]
-    } catch (error) {
-      this.logger.error('Failed to create user addressbook', { error })
+      const result = addressbook[0]
+      this.logger.info(
+        '[AddressbookService._createUserAddressBook] Addressbook created successfully.',
+        { addressbookId: result.id, owner }
+      )
+      this.logger.silly(
+        `[AddressbookService._createUserAddressBook] Created addressbook details: ${JSON.stringify(
+          result
+        )}`
+      )
+      this.logger.silly(
+        '[AddressbookService._createUserAddressBook] Exiting method (success).'
+      )
+      return result
+    } catch (error: any) {
+      this.logger.error(
+        '[AddressbookService._createUserAddressBook] Failed to create user addressbook.',
+        {
+          owner,
+          message: error.message,
+          stack: error.stack,
+          errorName: error.name
+        }
+      )
+      this.logger.silly(
+        '[AddressbookService._createUserAddressBook] Exiting method (error).'
+      )
+      return undefined
     }
   }
 
@@ -342,19 +758,49 @@ export class AddressbookService implements IAddressbookService {
     contact: ContactCreationPayload,
     addressbookId: string
   ): Promise<boolean> => {
+    this.logger.silly(
+      '[AddressbookService._checkIfContactExists] Entering method.',
+      {
+        addressbookId,
+        contactMxid: contact.mxid
+      }
+    )
     try {
       const { mxid, display_name } = contact
 
+      this.logger.debug(
+        '[AddressbookService._checkIfContactExists] Querying database to check for existing contact.',
+        { addressbookId, mxid, display_name }
+      )
       const contactExists = (await this.db.get('contacts', ['*'], {
         mxid,
         display_name,
         addressbook_id: addressbookId
       })) as unknown as Contact[]
 
-      return contactExists.length > 0
-    } catch (error) {
-      this.logger.error('Failed to check if contact exists', { error })
-
+      const exists = contactExists.length > 0
+      this.logger.info(
+        '[AddressbookService._checkIfContactExists] Contact existence check complete.',
+        { addressbookId, mxid, exists }
+      )
+      this.logger.silly(
+        '[AddressbookService._checkIfContactExists] Exiting method (success).'
+      )
+      return exists
+    } catch (error: any) {
+      this.logger.error(
+        '[AddressbookService._checkIfContactExists] Failed to check if contact exists.',
+        {
+          addressbookId,
+          contactMxid: contact.mxid,
+          message: error.message,
+          stack: error.stack,
+          errorName: error.name
+        }
+      )
+      this.logger.silly(
+        '[AddressbookService._checkIfContactExists] Exiting method (error).'
+      )
       return false
     }
   }
