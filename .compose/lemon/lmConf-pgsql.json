@@ -89,15 +89,15 @@
    "cspScript" : "'self'",
    "cspStyle" : "'self'",
    "dbiAuthChain" : "DBI:Pg:database=lemonldapng;host=pgsql",
-   "dbiAuthLoginCol" : "uid",
+   "dbiAuthLoginCol" : "username",
    "dbiAuthPassword" : "lemonldap",
    "dbiAuthPasswordCol" : "password",
    "dbiAuthTable" : "users",
    "dbiAuthUser" : "lemonldap",
    "dbiAuthnLevel" : 2,
    "dbiExportedVars" : {
-      "uid" : "uid",
-      "name" : "name",
+      "uid" : "username",
+      "name" : "sn",
       "email" : "mail",
       "phone" : "mobile"
    },

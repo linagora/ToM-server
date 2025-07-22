@@ -89,15 +89,15 @@
    "cspScript" : "'self'",
    "cspStyle" : "'self'",
    "dbiAuthChain" : "dbi:SQLite:dbname=/db/lemon.db",
-   "dbiAuthLoginCol" : "uid",
+   "dbiAuthLoginCol" : "username",
    "dbiAuthPassword" : "",
    "dbiAuthPasswordCol" : "password",
    "dbiAuthTable" : "users",
    "dbiAuthUser" : "",
    "dbiAuthnLevel" : 2,
    "dbiExportedVars" : {
-      "uid" : "uid",
-      "name" : "name",
+      "uid" : "username",
+      "name" : "sn",
       "email" : "mail",
       "phone" : "mobile"
    },

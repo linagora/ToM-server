@@ -155,8 +155,8 @@ services:
       # - NODE_OPTIONS="--inspect=0.0.0.0:9229"
       - NODE_TLS_REJECT_UNAUTHORIZED=0
 
-      - BASE_URL=https://fed.docker.localhost
       - SERVER_NAME=docker.localhost
+      - BASE_URL=https://fed.docker.localhost
       - TRUSTED_PROXIES=uniquelocal
       - TRUSTED_SERVERS_ADDRESSES=172.0.0.0/8
 
