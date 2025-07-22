@@ -37,10 +37,7 @@ const _search = async (
   logger.debug('[_search] Initializing search function factory.')
 
   return async (res, data) => {
-    logger.silly('[_search] Entering search request handler.', {
-      queryData: data
-    })
-    logger.info('[_search] Incoming search request.', { queryData: data })
+    logger.info('[_search] Incoming search request.', { queryData: JSON.stringify(data) })
 
     const sendError = (e: string, context?: string): void => {
       /* istanbul ignore next */
@@ -190,7 +187,8 @@ const _search = async (
       })
 
       const request =
-        (idServer.conf.additional_features === true)
+        process.env.ADDITIONAL_FEATURES === 'true' ||
+        (idServer.conf.additional_features as boolean)
           ? typeof value === 'string' && value.length > 0
             ? idServer.userDB.match('users', _fields, _scope, value, _fields[0])
             : idServer.userDB.getAll('users', _fields, _fields[0])
