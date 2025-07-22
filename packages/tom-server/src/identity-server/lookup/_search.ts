@@ -37,7 +37,9 @@ const _search = async (
   logger.debug('[_search] Initializing search function factory.')
 
   return async (res, data) => {
-    logger.info('[_search] Incoming search request.', { queryData: JSON.stringify(data) })
+    logger.info('[_search] Incoming search request.', {
+      queryData: JSON.stringify(data)
+    })
 
     const sendError = (e: string, context?: string): void => {
       /* istanbul ignore next */
