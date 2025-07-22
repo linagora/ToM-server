@@ -15,7 +15,11 @@ import authMiddleware from '../../../../utils/middlewares/auth.middleware'
  * @param {TwakeLogger} defaultLogger
  * @returns {Router}
  */
-export default (config: Config, authenticator: AuthenticationFunction, defaultLogger?: TwakeLogger): Router => {
+export default (
+  config: Config,
+  authenticator: AuthenticationFunction,
+  defaultLogger?: TwakeLogger
+): Router => {
   const logger = defaultLogger ?? getLogger(config as unknown as LoggerConfig)
   const router = Router()
   const controller = new CreateRoomController(config, logger)

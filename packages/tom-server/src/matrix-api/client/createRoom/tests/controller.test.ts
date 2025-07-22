@@ -1,7 +1,12 @@
 import express, { type NextFunction } from 'express'
 import bodyParser from 'body-parser'
 import { TwakeLogger } from '@twake/logger'
-import type { AuthenticationFunction, AuthRequest, Config, CreateRoomPayload } from '../../../../types'
+import type {
+  AuthenticationFunction,
+  AuthRequest,
+  Config,
+  CreateRoomPayload
+} from '../../../../types'
 import router from '../routes'
 import supertest from 'supertest'
 
@@ -45,7 +50,7 @@ const mockAuthenticationFunction: AuthenticationFunction = (
 ) => {
   // Attach mock user ID on the request object
   // Must cast req as any because it's typed as IncomingMessage | Request
-  (req as any).userId = '@user:server.com'
+  ;(req as any).userId = '@user:server.com'
 
   const mockTokenContent = {
     user_id: '@user:server.com',

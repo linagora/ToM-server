@@ -60,9 +60,7 @@ export default class TwakeServer {
     this.ready = new Promise<boolean>((resolve, reject) => {
       this._initServer(confDesc)
         .then(() => {
-          if (
-            this.conf.additional_features === true
-          ) {
+          if (this.conf.additional_features === true) {
             const appServiceApi = new AppServiceAPI(this, confDesc, this.logger)
             this.endpoints.use(appServiceApi.router.routes)
           }
@@ -177,7 +175,11 @@ export default class TwakeServer {
       this.logger
     )
 
-    const matrixClientApi = MatrixclientApi(this.conf, this.idServer.authenticate, this.logger)
+    const matrixClientApi = MatrixclientApi(
+      this.conf,
+      this.idServer.authenticate,
+      this.logger
+    )
 
     this.endpoints.use(privateNoteApi)
     this.endpoints.use(mutualRoolsApi)
