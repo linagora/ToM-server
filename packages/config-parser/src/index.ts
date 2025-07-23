@@ -15,28 +15,28 @@ export interface ConfigDescription {
 
 export type ConfigurationFile = object | fs.PathOrFileDescriptor | undefined;
 
-class ConfigError extends Error {
+export class ConfigError extends Error { // Added export
   constructor(message: string) {
     super(message);
     this.name = 'ConfigError';
   }
 }
 
-class InvalidNumberFormatError extends ConfigError {
+export class InvalidNumberFormatError extends ConfigError { // Added export
   constructor(value: string) {
     super(`Invalid number format for value: '${value}'`);
     this.name = 'InvalidNumberFormatError';
   }
 }
 
-class InvalidBooleanFormatError extends ConfigError {
+export class InvalidBooleanFormatError extends ConfigError { // Added export
   constructor(value: string) {
     super(`Invalid boolean format for value: '${value}'. Expected 'true', 'false', '1', or '0'.`);
     this.name = 'InvalidBooleanFormatError';
   }
 }
 
-class InvalidJsonFormatError extends ConfigError {
+export class InvalidJsonFormatError extends ConfigError { // Added export
   constructor(value: string, originalError: Error) {
     super(`Invalid JSON format for value: '${value}'. Error: ${originalError.message}`);
     this.name = 'InvalidJsonFormatError';
@@ -44,7 +44,7 @@ class InvalidJsonFormatError extends ConfigError {
   }
 }
 
-class FileReadParseError extends ConfigError {
+export class FileReadParseError extends ConfigError { // Added export
   constructor(filePath: string, originalError: Error) {
     super(`Failed to read or parse configuration file '${filePath}': ${originalError.message}`);
     this.name = 'FileReadParseError';
@@ -52,14 +52,14 @@ class FileReadParseError extends ConfigError {
   }
 }
 
-class UnacceptedKeyError extends ConfigError {
+export class UnacceptedKeyError extends ConfigError { // Added export
   constructor(key: string) {
     super(`Configuration key '${key}' isn't accepted as it's not defined in the ConfigDescription.`);
     this.name = 'UnacceptedKeyError';
   }
 }
 
-class ConfigCoercionError extends ConfigError {
+export class ConfigCoercionError extends ConfigError { // Added export
   constructor(key: string, source: 'environment' | 'default', originalError: Error) {
     const sourceMsg = source === 'environment' ? `from environment variable '${key.toUpperCase()}'` : `for default value of '${key}'`;
     super(`Configuration error for '${key}' ${sourceMsg}: ${originalError.message}`);
@@ -68,7 +68,7 @@ class ConfigCoercionError extends ConfigError {
   }
 }
 
-class MissingRequiredConfigError extends ConfigError {
+export class MissingRequiredConfigError extends ConfigError { // Added export
   constructor(key: string) {
     super(`Required configuration key '${key}' is missing.`);
     this.name = 'MissingRequiredConfigError';
