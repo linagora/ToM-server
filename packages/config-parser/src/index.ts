@@ -21,6 +21,11 @@ export interface ConfigDescription {
 
 export type ConfigurationFile = object | fs.PathOrFileDescriptor | undefined
 
+/**
+ * @typedef {Record<string, any>} Configuration - Represents the consolidated configuration object.
+ */
+export type Configuration = Record<string, any>
+
 export class ConfigError extends Error {
   constructor(message: string) {
     super(message)
@@ -146,9 +151,7 @@ const coerceValue = (value: string, targetType: ConfigValueType): any => {
  * @returns The parsed configuration object from the file.
  * @throws FileReadParseError if the file cannot be read or parsed.
  */
-const loadConfigFromFile = async (
-  filePath: string
-): Promise<Record<string, any>> => {
+const loadConfigFromFile = async (filePath: string): Promise<Configuration> => {
   try {
     const fileContent = await fsPromises.readFile(filePath, 'utf8')
     return JSON.parse(fileContent)
@@ -166,7 +169,7 @@ const loadConfigFromFile = async (
  * @throws ConfigCoercionError if an environment variable value cannot be coerced to the expected type.
  */
 const applyEnvironmentVariables = (
-  config: Record<string, any>,
+  config: Configuration,
   desc: ConfigDescription,
   useEnv: boolean
 ): void => {
@@ -194,7 +197,7 @@ const applyEnvironmentVariables = (
  * @throws ConfigCoercionError if a default value string cannot be coerced to its expected type.
  */
 const applyDefaultValues = (
-  config: Record<string, any>,
+  config: Configuration,
   desc: ConfigDescription
 ): void => {
   Object.keys(desc).forEach((key: string) => {
@@ -235,7 +238,7 @@ const applyDefaultValues = (
  * @throws UnacceptedKeyError if an unexpected key is found in the configuration.
  */
 const validateUnwantedKeys = (
-  config: Record<string, any>,
+  config: Configuration,
   desc: ConfigDescription
 ): void => {
   Object.keys(config).forEach((key: string) => {
@@ -252,7 +255,7 @@ const validateUnwantedKeys = (
  * @throws MissingRequiredConfigError if a required key is missing.
  */
 const validateRequiredKeys = (
-  config: Record<string, any>,
+  config: Configuration,
   desc: ConfigDescription
 ): void => {
   Object.keys(desc).forEach((key: string) => {
@@ -280,8 +283,8 @@ const twakeConfig = async (
   desc: ConfigDescription,
   defaultConfigurationFile?: ConfigurationFile,
   useEnv: boolean = false
-): Promise<Record<string, any>> => {
-  let config: Record<string, any> = {}
+): Promise<Configuration> => {
+  let config: Configuration = {}
 
   if (defaultConfigurationFile != null) {
     if (typeof defaultConfigurationFile === 'string') {
