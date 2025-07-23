@@ -25,7 +25,7 @@ export default class TwakeIdentityServer extends MatrixIdentityServer<twakeDbCol
     logger?: TwakeLogger
   ) {
     // istanbul ignore if
-    if (confDesc == null) confDesc = defaultConfig
+    if (confDesc == null) confDesc = defaultConfig as ConfigDescription
     super(conf, confDesc, logger, tables)
     this.authenticate = Authenticate(this.db, this.conf, this.logger)
     const superReady = this.ready

@@ -14,10 +14,7 @@ export const getLogger = (
   conf?: Partial<Config>,
   confDesc?: ConfigDescription
 ): Logger => {
-  confDesc =
-    (confDesc?.logging as ConfigDescription) ??
-    confDesc ??
-    defaultConfDesc.logging
+  confDesc = confDesc ?? (defaultConfDesc as ConfigDescription)
   const loggingConf = configParser(confDesc, getConfigurationFile(conf))
   return createLogger(
     new TwakeLoggerOptions(loggingConf).convertToWinstonLoggerOptions()

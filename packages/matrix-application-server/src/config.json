@@ -1,10 +1,36 @@
 {
-    "base_url": "http://localhost:3000",
-    "sender_localpart": "twake",
-    "registration_file_path": "registration.yaml",
-    "namespaces": { "users": [] },
-    "push_ephemeral": true,
-    "rate_limiting_window": 600000,
-    "rate_limiting_nb_requests": 100,
-    "trust_x_forwarded_for": false
+  "base_url": {
+    "type": "string",
+    "default": "http://localhost:3000"
+  },
+  "sender_localpart": {
+    "type": "string",
+    "default": "twake"
+  },
+  "registration_file_path": {
+    "type": "string",
+    "default": "registration.yaml"
+  },
+  "namespaces": {
+    "type": "object",
+    "default": {
+      "users": []
+    }
+  },
+  "push_ephemeral": {
+    "type": "boolean",
+    "default": true
+  },
+  "rate_limiting_window": {
+    "type": "number",
+    "default": 600000
+  },
+  "rate_limiting_nb_requests": {
+    "type": "number",
+    "default": 100
+  },
+  "trust_x_forwarded_for": {
+    "type": "boolean",
+    "default": false
+  }
 }
