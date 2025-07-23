@@ -1,55 +1,34 @@
 {
-  "logging": {
-    "type": "object",
-    "default": {
-      "log_level": {
-        "type": "string",
-        "default": "info",
-        "required": false
-      },
-      "log_transports": {
-        "type": "array",
-        "default": [
-          {
-            "type": "object",
-            "default": {
-              "type": {
-                "type": "string",
-                "default": "Console",
-                "required": true
-              }
-            },
-            "required": true
-          }
-        ],
-        "required": false
-      },
-      "silent": {
-        "type": "boolean",
-        "default": false,
-        "required": false
-      },
-      "exit_on_error": {
-        "type": "boolean",
-        "default": false,
-        "required": false
-      },
-      "default_meta": {
-        "type": "any",
-        "default": null,
-        "required": false
-      },
-      "exception_handlers": {
-        "type": "array",
-        "default": [],
-        "required": false
-      },
-      "rejection_handlers": {
-        "type": "array",
-        "default": [],
-        "required": false
+  "log_level": {
+    "type": "string",
+    "default": "info"
+  },
+  "log_transports": {
+    "type": "array",
+    "default": [
+      {
+        "type": "Console"
       }
-    },
-    "required": false
+    ]
+  },
+  "silent": {
+    "type": "boolean",
+    "default": false
+  },
+  "exit_on_error": {
+    "type": "boolean",
+    "default": false
+  },
+  "default_meta": {
+    "type": "object",
+    "default": null
+  },
+  "exception_handlers": {
+    "type": "array",
+    "default": []
+  },
+  "rejection_handlers": {
+    "type": "array",
+    "default": []
   }
 }
