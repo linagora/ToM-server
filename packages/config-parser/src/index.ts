@@ -1,77 +1,100 @@
-import fs from 'fs';
-import { promises as fsPromises } from 'fs';
+import fs from 'fs'
+import { promises as fsPromises } from 'fs'
 
-export type ConfigValueType = 'string' | 'number' | 'boolean' | 'array' | 'object' | 'json';
+export type ConfigValueType =
+  | 'string'
+  | 'number'
+  | 'boolean'
+  | 'array'
+  | 'object'
+  | 'json'
 
 export interface ConfigProperty {
-  type: ConfigValueType;
-  default?: any;
-  required?: boolean;
+  type: ConfigValueType
+  default?: any
+  required?: boolean
 }
 
 export interface ConfigDescription {
-  [key: string]: ConfigProperty;
+  [key: string]: ConfigProperty
 }
 
-export type ConfigurationFile = object | fs.PathOrFileDescriptor | undefined;
+export type ConfigurationFile = object | fs.PathOrFileDescriptor | undefined
 
-export class ConfigError extends Error { // Added export
+export class ConfigError extends Error {
   constructor(message: string) {
-    super(message);
-    this.name = 'ConfigError';
+    super(message)
+    this.name = 'ConfigError'
   }
 }
 
-export class InvalidNumberFormatError extends ConfigError { // Added export
+export class InvalidNumberFormatError extends ConfigError {
   constructor(value: string) {
-    super(`Invalid number format for value: '${value}'`);
-    this.name = 'InvalidNumberFormatError';
+    super(`Invalid number format for value: '${value}'`)
+    this.name = 'InvalidNumberFormatError'
   }
 }
 
-export class InvalidBooleanFormatError extends ConfigError { // Added export
+export class InvalidBooleanFormatError extends ConfigError {
   constructor(value: string) {
-    super(`Invalid boolean format for value: '${value}'. Expected 'true', 'false', '1', or '0'.`);
-    this.name = 'InvalidBooleanFormatError';
+    super(
+      `Invalid boolean format for value: '${value}'. Expected 'true', 'false', '1', or '0'.`
+    )
+    this.name = 'InvalidBooleanFormatError'
   }
 }
 
-export class InvalidJsonFormatError extends ConfigError { // Added export
+export class InvalidJsonFormatError extends ConfigError {
   constructor(value: string, originalError: Error) {
-    super(`Invalid JSON format for value: '${value}'. Error: ${originalError.message}`);
-    this.name = 'InvalidJsonFormatError';
-    this.cause = originalError;
+    super(
+      `Invalid JSON format for value: '${value}'. Error: ${originalError.message}`
+    )
+    this.name = 'InvalidJsonFormatError'
+    this.cause = originalError
   }
 }
 
-export class FileReadParseError extends ConfigError { // Added export
+export class FileReadParseError extends ConfigError {
   constructor(filePath: string, originalError: Error) {
-    super(`Failed to read or parse configuration file '${filePath}': ${originalError.message}`);
-    this.name = 'FileReadParseError';
-    this.cause = originalError;
+    super(
+      `Failed to read or parse configuration file '${filePath}': ${originalError.message}`
+    )
+    this.name = 'FileReadParseError'
+    this.cause = originalError
   }
 }
 
-export class UnacceptedKeyError extends ConfigError { // Added export
+export class UnacceptedKeyError extends ConfigError {
   constructor(key: string) {
-    super(`Configuration key '${key}' isn't accepted as it's not defined in the ConfigDescription.`);
-    this.name = 'UnacceptedKeyError';
+    super(
+      `Configuration key '${key}' isn't accepted as it's not defined in the ConfigDescription.`
+    )
+    this.name = 'UnacceptedKeyError'
   }
 }
 
-export class ConfigCoercionError extends ConfigError { // Added export
-  constructor(key: string, source: 'environment' | 'default', originalError: Error) {
-    const sourceMsg = source === 'environment' ? `from environment variable '${key.toUpperCase()}'` : `for default value of '${key}'`;
-    super(`Configuration error for '${key}' ${sourceMsg}: ${originalError.message}`);
-    this.name = 'ConfigCoercionError';
-    this.cause = originalError;
+export class ConfigCoercionError extends ConfigError {
+  constructor(
+    key: string,
+    source: 'environment' | 'default',
+    originalError: Error
+  ) {
+    const sourceMsg =
+      source === 'environment'
+        ? `from environment variable '${key.toUpperCase()}'`
+        : `for default value of '${key}'`
+    super(
+      `Configuration error for '${key}' ${sourceMsg}: ${originalError.message}`
+    )
+    this.name = 'ConfigCoercionError'
+    this.cause = originalError
   }
 }
 
-export class MissingRequiredConfigError extends ConfigError { // Added export
+export class MissingRequiredConfigError extends ConfigError {
   constructor(key: string) {
-    super(`Required configuration key '${key}' is missing.`);
-    this.name = 'MissingRequiredConfigError';
+    super(`Required configuration key '${key}' is missing.`)
+    this.name = 'MissingRequiredConfigError'
   }
 }
 
@@ -87,35 +110,35 @@ export class MissingRequiredConfigError extends ConfigError { // Added export
 const coerceValue = (value: string, targetType: ConfigValueType): any => {
   switch (targetType) {
     case 'number':
-      const num = parseFloat(value);
+      const num = parseFloat(value)
       if (isNaN(num)) {
-        throw new InvalidNumberFormatError(value);
+        throw new InvalidNumberFormatError(value)
       }
-      return num;
+      return num
     case 'boolean':
-      const lowerValue = value.toLowerCase().trim();
+      const lowerValue = value.toLowerCase().trim()
       if (lowerValue === 'true' || lowerValue === '1') {
-        return true;
+        return true
       }
       if (lowerValue === 'false' || lowerValue === '0') {
-        return false;
+        return false
       }
-      throw new InvalidBooleanFormatError(value);
+      throw new InvalidBooleanFormatError(value)
     case 'array':
-      return value.split(/[,\s]+/).filter(s => s.length > 0);
+      return value.split(/[,\s]+/).filter((s) => s.length > 0)
     case 'json':
+    case 'object':
       try {
-        return JSON.parse(value);
+        return JSON.parse(value)
       } catch (e: unknown) {
-        const error = e instanceof Error ? e : new Error(String(e));
-        throw new InvalidJsonFormatError(value, error);
+        const error = e instanceof Error ? e : new Error(String(e))
+        throw new InvalidJsonFormatError(value, error)
       }
     case 'string':
-    case 'object':
     default:
-      return value;
+      return value
   }
-};
+}
 
 /**
  * Loads configuration from a specified file path.
@@ -123,15 +146,17 @@ const coerceValue = (value: string, targetType: ConfigValueType): any => {
  * @returns The parsed configuration object from the file.
  * @throws FileReadParseError if the file cannot be read or parsed.
  */
-const loadConfigFromFile = async (filePath: string): Promise<Record<string, any>> => {
+const loadConfigFromFile = async (
+  filePath: string
+): Promise<Record<string, any>> => {
   try {
-    const fileContent = await fsPromises.readFile(filePath, 'utf8');
-    return JSON.parse(fileContent);
+    const fileContent = await fsPromises.readFile(filePath, 'utf8')
+    return JSON.parse(fileContent)
   } catch (e: unknown) {
-    const error = e instanceof Error ? e : new Error(String(e));
-    throw new FileReadParseError(filePath, error);
+    const error = e instanceof Error ? e : new Error(String(e))
+    throw new FileReadParseError(filePath, error)
   }
-};
+}
 
 /**
  * Applies environment variable overrides to the configuration.
@@ -146,20 +171,20 @@ const applyEnvironmentVariables = (
   useEnv: boolean
 ): void => {
   Object.keys(desc).forEach((key: string) => {
-    const configProp = desc[key];
-    const envVarName = key.toUpperCase();
-    const envValue = process.env[envVarName];
+    const configProp = desc[key]
+    const envVarName = key.toUpperCase()
+    const envValue = process.env[envVarName]
 
     if (useEnv && envValue != null && envValue !== '') {
       try {
-        config[key] = coerceValue(envValue, configProp.type);
+        config[key] = coerceValue(envValue, configProp.type)
       } catch (e: unknown) {
-        const error = e instanceof Error ? e : new Error(String(e));
-        throw new ConfigCoercionError(key, 'environment', error);
+        const error = e instanceof Error ? e : new Error(String(e))
+        throw new ConfigCoercionError(key, 'environment', error)
       }
     }
-  });
-};
+  })
+}
 
 /**
  * Applies default values from ConfigDescription if a key is not already set.
@@ -173,21 +198,35 @@ const applyDefaultValues = (
   desc: ConfigDescription
 ): void => {
   Object.keys(desc).forEach((key: string) => {
-    const configProp = desc[key];
+    const configProp = desc[key]
     if (config[key] == null && configProp.default !== undefined) {
-      if (typeof configProp.default === 'string' && configProp.type !== 'string') {
+      if (
+        typeof configProp.default === 'string' &&
+        configProp.type !== 'string' &&
+        configProp.type !== 'array'
+      ) {
         try {
-          config[key] = coerceValue(configProp.default, configProp.type);
+          config[key] = coerceValue(configProp.default, configProp.type)
         } catch (e: unknown) {
-          const error = e instanceof Error ? e : new Error(String(e));
-          throw new ConfigCoercionError(key, 'default', error);
+          const error = e instanceof Error ? e : new Error(String(e))
+          throw new ConfigCoercionError(key, 'default', error)
+        }
+      } else if (
+        typeof configProp.default === 'string' &&
+        configProp.type === 'array'
+      ) {
+        try {
+          config[key] = coerceValue(configProp.default, configProp.type)
+        } catch (e: unknown) {
+          const error = e instanceof Error ? e : new Error(String(e))
+          throw new ConfigCoercionError(key, 'default', error)
         }
       } else {
-        config[key] = configProp.default;
+        config[key] = configProp.default
       }
     }
-  });
-};
+  })
+}
 
 /**
  * Validates that all keys in the final configuration are defined in the ConfigDescription.
@@ -201,10 +240,10 @@ const validateUnwantedKeys = (
 ): void => {
   Object.keys(config).forEach((key: string) => {
     if (desc[key] === undefined) {
-      throw new UnacceptedKeyError(key);
+      throw new UnacceptedKeyError(key)
     }
-  });
-};
+  })
+}
 
 /**
  * Validates that all required configuration keys are present in the final configuration.
@@ -217,12 +256,12 @@ const validateRequiredKeys = (
   desc: ConfigDescription
 ): void => {
   Object.keys(desc).forEach((key: string) => {
-    const configProp = desc[key];
+    const configProp = desc[key]
     if (configProp.required && config[key] === undefined) {
-      throw new MissingRequiredConfigError(key);
+      throw new MissingRequiredConfigError(key)
     }
-  });
-};
+  })
+}
 
 /**
  * Loads and consolidates application configuration from multiple sources.
@@ -242,22 +281,22 @@ const twakeConfig = async (
   defaultConfigurationFile?: ConfigurationFile,
   useEnv: boolean = false
 ): Promise<Record<string, any>> => {
-  let config: Record<string, any> = {};
+  let config: Record<string, any> = {}
 
   if (defaultConfigurationFile != null) {
     if (typeof defaultConfigurationFile === 'string') {
-      config = await loadConfigFromFile(defaultConfigurationFile);
+      config = await loadConfigFromFile(defaultConfigurationFile)
     } else {
-      config = JSON.parse(JSON.stringify(defaultConfigurationFile));
+      config = JSON.parse(JSON.stringify(defaultConfigurationFile))
     }
   }
 
-  applyEnvironmentVariables(config, desc, useEnv);
-  applyDefaultValues(config, desc);
-  validateUnwantedKeys(config, desc);
-  validateRequiredKeys(config, desc);
+  applyEnvironmentVariables(config, desc, useEnv)
+  applyDefaultValues(config, desc)
+  validateUnwantedKeys(config, desc)
+  validateRequiredKeys(config, desc)
 
-  return config;
-};
+  return config
+}
 
-export default twakeConfig;
+export default twakeConfig
