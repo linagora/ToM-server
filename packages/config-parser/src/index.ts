@@ -1,10 +1,12 @@
 import fs from 'fs';
+import { promises as fsPromises } from 'fs';
 
 export type ConfigValueType = 'string' | 'number' | 'boolean' | 'array' | 'object' | 'json';
 
 export interface ConfigProperty {
   type: ConfigValueType;
   default?: any;
+  required?: boolean;
 }
 
 export interface ConfigDescription {
@@ -13,11 +15,6 @@ export interface ConfigDescription {
 
 export type ConfigurationFile = object | fs.PathOrFileDescriptor | undefined;
 
-// --- Custom Error Types ---
-
-/**
- * Base custom error for configuration parsing.
- */
 class ConfigError extends Error {
   constructor(message: string) {
     super(message);
@@ -25,9 +22,6 @@ class ConfigError extends Error {
   }
 }
 
-/**
- * Error thrown when a string cannot be coerced to a number.
- */
 class InvalidNumberFormatError extends ConfigError {
   constructor(value: string) {
     super(`Invalid number format for value: '${value}'`);
@@ -35,9 +29,6 @@ class InvalidNumberFormatError extends ConfigError {
   }
 }
 
-/**
- * Error thrown when a string cannot be coerced to a boolean.
- */
 class InvalidBooleanFormatError extends ConfigError {
   constructor(value: string) {
     super(`Invalid boolean format for value: '${value}'. Expected 'true', 'false', '1', or '0'.`);
@@ -45,9 +36,6 @@ class InvalidBooleanFormatError extends ConfigError {
   }
 }
 
-/**
- * Error thrown when a string cannot be parsed as JSON.
- */
 class InvalidJsonFormatError extends ConfigError {
   constructor(value: string, originalError: Error) {
     super(`Invalid JSON format for value: '${value}'. Error: ${originalError.message}`);
@@ -56,9 +44,6 @@ class InvalidJsonFormatError extends ConfigError {
   }
 }
 
-/**
- * Error thrown when a configuration file cannot be read or parsed.
- */
 class FileReadParseError extends ConfigError {
   constructor(filePath: string, originalError: Error) {
     super(`Failed to read or parse configuration file '${filePath}': ${originalError.message}`);
@@ -67,9 +52,6 @@ class FileReadParseError extends ConfigError {
   }
 }
 
-/**
- * Error thrown when an unaccepted key is found in the configuration.
- */
 class UnacceptedKeyError extends ConfigError {
   constructor(key: string) {
     super(`Configuration key '${key}' isn't accepted as it's not defined in the ConfigDescription.`);
@@ -77,9 +59,6 @@ class UnacceptedKeyError extends ConfigError {
   }
 }
 
-/**
- * Error thrown when a coercion fails during configuration processing, wrapping a more specific error.
- */
 class ConfigCoercionError extends ConfigError {
   constructor(key: string, source: 'environment' | 'default', originalError: Error) {
     const sourceMsg = source === 'environment' ? `from environment variable '${key.toUpperCase()}'` : `for default value of '${key}'`;
@@ -89,10 +68,16 @@ class ConfigCoercionError extends ConfigError {
   }
 }
 
+class MissingRequiredConfigError extends ConfigError {
+  constructor(key: string) {
+    super(`Required configuration key '${key}' is missing.`);
+    this.name = 'MissingRequiredConfigError';
+  }
+}
 
 /**
- * Coerces a string value from an environment variable to the target type.
- * @param value The string value.
+ * Coerces a string value to the target type.
+ * @param value The string value to coerce.
  * @param targetType The desired type.
  * @returns The coerced value.
  * @throws InvalidNumberFormatError if coercion to number fails.
@@ -133,36 +118,33 @@ const coerceValue = (value: string, targetType: ConfigValueType): any => {
 };
 
 /**
- * Loads and consolidates application configuration.
- * @param desc The ConfigDescription defining expected keys, types, and defaults.
- * @param defaultConfigurationFile An optional base configuration object or path to a JSON file.
- * @param useEnv Whether to use environment variables for overrides. Defaults to false.
- * @returns The consolidated configuration object with coerced types.
- * @throws FileReadParseError if reading/parsing the configuration file fails.
- * @throws UnacceptedKeyError if a key isn't accepted (not defined in ConfigDescription).
- * @throws ConfigCoercionError if type coercion fails for environment variables or default values.
+ * Loads configuration from a specified file path.
+ * @param filePath The path to the configuration JSON file.
+ * @returns The parsed configuration object from the file.
+ * @throws FileReadParseError if the file cannot be read or parsed.
  */
-const twakeConfig = (
-  desc: ConfigDescription,
-  defaultConfigurationFile?: ConfigurationFile,
-  useEnv: boolean = false
-): Record<string, any> => {
-  let res: { [key: string]: any } = {};
-
-  if (defaultConfigurationFile != null) {
-    if (typeof defaultConfigurationFile === 'string') {
-      try {
-        const fileContent = fs.readFileSync(defaultConfigurationFile).toString();
-        res = JSON.parse(fileContent);
-      } catch (e: unknown) {
-        const error = e instanceof Error ? e : new Error(String(e));
-        throw new FileReadParseError(defaultConfigurationFile, error);
-      }
-    } else {
-      res = JSON.parse(JSON.stringify(defaultConfigurationFile));
-    }
+const loadConfigFromFile = async (filePath: string): Promise<Record<string, any>> => {
+  try {
+    const fileContent = await fsPromises.readFile(filePath, 'utf8');
+    return JSON.parse(fileContent);
+  } catch (e: unknown) {
+    const error = e instanceof Error ? e : new Error(String(e));
+    throw new FileReadParseError(filePath, error);
   }
+};
 
+/**
+ * Applies environment variable overrides to the configuration.
+ * @param config The current configuration object to modify.
+ * @param desc The ConfigDescription for type information.
+ * @param useEnv Whether to enable environment variable overrides.
+ * @throws ConfigCoercionError if an environment variable value cannot be coerced to the expected type.
+ */
+const applyEnvironmentVariables = (
+  config: Record<string, any>,
+  desc: ConfigDescription,
+  useEnv: boolean
+): void => {
   Object.keys(desc).forEach((key: string) => {
     const configProp = desc[key];
     const envVarName = key.toUpperCase();
@@ -170,34 +152,112 @@ const twakeConfig = (
 
     if (useEnv && envValue != null && envValue !== '') {
       try {
-        res[key] = coerceValue(envValue, configProp.type);
+        config[key] = coerceValue(envValue, configProp.type);
       } catch (e: unknown) {
         const error = e instanceof Error ? e : new Error(String(e));
         throw new ConfigCoercionError(key, 'environment', error);
       }
-    } else {
-      if (res[key] == null && configProp.default !== undefined) {
-        if (typeof configProp.default === 'string' && configProp.type !== 'string') {
-          try {
-            res[key] = coerceValue(configProp.default, configProp.type);
-          } catch (e: unknown) {
-            const error = e instanceof Error ? e : new Error(String(e));
-            throw new ConfigCoercionError(key, 'default', error);
-          }
-        } else {
-          res[key] = configProp.default;
+    }
+  });
+};
+
+/**
+ * Applies default values from ConfigDescription if a key is not already set.
+ * Coerces string defaults if their target type is not string.
+ * @param config The current configuration object to modify.
+ * @param desc The ConfigDescription for default values and type information.
+ * @throws ConfigCoercionError if a default value string cannot be coerced to its expected type.
+ */
+const applyDefaultValues = (
+  config: Record<string, any>,
+  desc: ConfigDescription
+): void => {
+  Object.keys(desc).forEach((key: string) => {
+    const configProp = desc[key];
+    if (config[key] == null && configProp.default !== undefined) {
+      if (typeof configProp.default === 'string' && configProp.type !== 'string') {
+        try {
+          config[key] = coerceValue(configProp.default, configProp.type);
+        } catch (e: unknown) {
+          const error = e instanceof Error ? e : new Error(String(e));
+          throw new ConfigCoercionError(key, 'default', error);
         }
+      } else {
+        config[key] = configProp.default;
       }
     }
   });
+};
 
-  Object.keys(res).forEach((key: string) => {
+/**
+ * Validates that all keys in the final configuration are defined in the ConfigDescription.
+ * @param config The final consolidated configuration object.
+ * @param desc The ConfigDescription.
+ * @throws UnacceptedKeyError if an unexpected key is found in the configuration.
+ */
+const validateUnwantedKeys = (
+  config: Record<string, any>,
+  desc: ConfigDescription
+): void => {
+  Object.keys(config).forEach((key: string) => {
     if (desc[key] === undefined) {
       throw new UnacceptedKeyError(key);
     }
   });
+};
 
-  return res;
+/**
+ * Validates that all required configuration keys are present in the final configuration.
+ * @param config The final consolidated configuration object.
+ * @param desc The ConfigDescription.
+ * @throws MissingRequiredConfigError if a required key is missing.
+ */
+const validateRequiredKeys = (
+  config: Record<string, any>,
+  desc: ConfigDescription
+): void => {
+  Object.keys(desc).forEach((key: string) => {
+    const configProp = desc[key];
+    if (configProp.required && config[key] === undefined) {
+      throw new MissingRequiredConfigError(key);
+    }
+  });
+};
+
+/**
+ * Loads and consolidates application configuration from multiple sources.
+ * The priority order is: defaultConfigurationFile > environment variables > ConfigDescription defaults.
+ *
+ * @param desc The ConfigDescription defining expected keys, types, defaults, and required status.
+ * @param defaultConfigurationFile An optional base configuration object or path to a JSON file.
+ * @param useEnv Whether to use environment variables for overrides. Defaults to false.
+ * @returns The consolidated configuration object with coerced types.
+ * @throws FileReadParseError if reading/parsing the configuration file fails.
+ * @throws UnacceptedKeyError if a key isn't accepted (not defined in ConfigDescription).
+ * @throws ConfigCoercionError if type coercion fails for environment variables or default values.
+ * @throws MissingRequiredConfigError if a required configuration key is missing.
+ */
+const twakeConfig = async (
+  desc: ConfigDescription,
+  defaultConfigurationFile?: ConfigurationFile,
+  useEnv: boolean = false
+): Promise<Record<string, any>> => {
+  let config: Record<string, any> = {};
+
+  if (defaultConfigurationFile != null) {
+    if (typeof defaultConfigurationFile === 'string') {
+      config = await loadConfigFromFile(defaultConfigurationFile);
+    } else {
+      config = JSON.parse(JSON.stringify(defaultConfigurationFile));
+    }
+  }
+
+  applyEnvironmentVariables(config, desc, useEnv);
+  applyDefaultValues(config, desc);
+  validateUnwantedKeys(config, desc);
+  validateRequiredKeys(config, desc);
+
+  return config;
 };
 
 export default twakeConfig;
