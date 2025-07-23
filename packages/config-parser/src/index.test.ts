@@ -4,7 +4,7 @@ import twakeConfig, {
   UnacceptedKeyError,
   ConfigCoercionError,
   MissingRequiredConfigError,
-  Configuration // Import the new Configuration type
+  Configuration
 } from './index'
 import fs from 'fs'
 import path from 'path'
@@ -34,7 +34,6 @@ const createTestConfigDesc = (): ConfigDescription => ({
   NULL_KEY: { type: 'string', default: null },
   UNDEFINED_KEY: { type: 'string', default: undefined },
   NO_DEFAULT_KEY: { type: 'string' },
-  // Provide a default for REQUIRED_KEY so most tests don't fail due to its absence
   REQUIRED_KEY: { type: 'string', default: 'defaultRequiredValue' }
 })
 
@@ -53,7 +52,7 @@ const clearEnv = () => {
   delete process.env.TEST_ENV_JSON
   delete process.env.TEST_ENV_OBJECT
   delete process.env.UNWANTED_VALUE
-  delete process.env.MY_REQUIRED_KEY // Ensure this is cleared for specific tests
+  delete process.env.MY_REQUIRED_KEY
 }
 
 /**
