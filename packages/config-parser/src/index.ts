@@ -106,10 +106,7 @@ const applyEnvironmentVariables = (
       }
 
       try {
-        config[key] = coerceValue(
-          envValue as string,
-          (configProp as ConfigProperty).type
-        )
+        config[key] = coerceValue(envValue as string, configProp.type)
       } catch (e: unknown) {
         const error = e instanceof Error ? e : new Error(String(e))
         throw new ConfigCoercionError(key, 'environment', error)
@@ -138,10 +135,7 @@ const applyDefaultValues = (
         configProp.type !== 'array'
       ) {
         try {
-          config[key] = coerceValue(
-            configProp.default,
-            (configProp as ConfigProperty).type
-          )
+          config[key] = coerceValue(configProp.default, configProp.type)
         } catch (e: unknown) {
           const error = e instanceof Error ? e : new Error(String(e))
           throw new ConfigCoercionError(key, 'default', error)
@@ -192,10 +186,7 @@ const validateRequiredKeys = (
 ): void => {
   Object.keys(desc).forEach((key: string) => {
     const configProp = desc[key]
-    if (
-      ((configProp as ConfigProperty).required ?? false) &&
-      config[key] === undefined
-    ) {
+    if ((configProp.required ?? false) && config[key] === undefined) {
       throw new MissingRequiredConfigError(key)
     }
   })

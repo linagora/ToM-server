@@ -30,9 +30,7 @@ export interface ConfigProperty {
  * @interface ConfigDescription
  * @property {Object.<string, ConfigProperty>} [key: string] - A mapping of configuration keys to their respective ConfigProperty definitions.
  */
-export interface ConfigDescription {
-  [key: string]: ConfigProperty | ConfigDescription
-}
+export type ConfigDescription = Record<string, ConfigProperty>;
 
 /**
  * Defines the possible types for the default configuration file input.
