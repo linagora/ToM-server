@@ -1,11 +1,11 @@
-import twakeConfig, {
-  ConfigDescription,
+import twakeConfig from './index'
+import { ConfigDescription, Configuration } from './types'
+import {
   FileReadParseError,
   UnacceptedKeyError,
   ConfigCoercionError,
-  MissingRequiredConfigError,
-  Configuration
-} from './index'
+  MissingRequiredConfigError
+} from './errors'
 import fs from 'fs'
 import path from 'path'
 

@@ -1,172 +1,19 @@
-import fs from 'fs'
 import { promises as fsPromises } from 'fs'
-
-/**
- * Defines the possible types for configuration values.
- * @typedef {'string' | 'number' | 'boolean' | 'array' | 'object' | 'json'} ConfigValueType
- */
-export type ConfigValueType =
-  | 'string'
-  | 'number'
-  | 'boolean'
-  | 'array'
-  | 'object'
-  | 'json'
-
-/**
- * Defines the properties of a single configuration key.
- * @interface ConfigProperty
- * @property {ConfigValueType} type - The expected data type of the configuration value.
- * @property {any} [default] - The optional default value for the configuration key.
- * @property {boolean} [required] - Indicates if the configuration key is mandatory.
- */
-export interface ConfigProperty {
-  type: ConfigValueType
-  default?: any
-  required?: boolean
-}
-
-/**
- * Defines the overall structure of the configuration, mapping keys to their properties.
- * @interface ConfigDescription
- * @property {Object.<string, ConfigProperty>} [key: string] - A mapping of configuration keys to their respective ConfigProperty definitions.
- */
-export interface ConfigDescription {
-  [key: string]: ConfigProperty
-}
-
-/**
- * Defines the possible types for the default configuration file input.
- * It can be an object representing configuration or a file path.
- * @typedef {object | fs.PathOrFileDescriptor | undefined} ConfigurationFile
- */
-export type ConfigurationFile = object | fs.PathOrFileDescriptor | undefined
-
-/**
- * Represents the consolidated configuration object, where keys are strings and values can be of any type.
- * @typedef {Record<string, any>} Configuration
- */
-export type Configuration = Record<string, any>
-
-/**
- * Base class for all configuration-related errors.
- * @class ConfigError
- * @extends Error
- */
-export class ConfigError extends Error {
-  constructor(message: string) {
-    super(message)
-    this.name = 'ConfigError'
-  }
-}
-
-/**
- * Error thrown when a string cannot be coerced to a number.
- * @class InvalidNumberFormatError
- * @extends ConfigError
- */
-export class InvalidNumberFormatError extends ConfigError {
-  constructor(value: string) {
-    super(`Invalid number format for value: '${value}'`)
-    this.name = 'InvalidNumberFormatError'
-  }
-}
-
-/**
- * Error thrown when a string cannot be coerced to a boolean.
- * @class InvalidBooleanFormatError
- * @extends ConfigError
- */
-export class InvalidBooleanFormatError extends ConfigError {
-  constructor(value: string) {
-    super(
-      `Invalid boolean format for value: '${value}'. Expected 'true', 'false', '1', or '0'.`
-    )
-    this.name = 'InvalidBooleanFormatError'
-  }
-}
-
-/**
- * Error thrown when a string cannot be parsed as JSON.
- * @class InvalidJsonFormatError
- * @extends ConfigError
- * @property {Error} cause - The original error that caused this error.
- */
-export class InvalidJsonFormatError extends ConfigError {
-  constructor(value: string, originalError: Error) {
-    super(
-      `Invalid JSON format for value: '${value}'. Error: ${originalError.message}`
-    )
-    this.name = 'InvalidJsonFormatError'
-    this.cause = originalError
-  }
-}
-
-/**
- * Error thrown when a configuration file cannot be read or parsed.
- * @class FileReadParseError
- * @extends ConfigError
- * @property {Error} cause - The original error that caused this error.
- */
-export class FileReadParseError extends ConfigError {
-  constructor(filePath: string, originalError: Error) {
-    super(
-      `Failed to read or parse configuration file '${filePath}': ${originalError.message}`
-    )
-    this.name = 'FileReadParseError'
-    this.cause = originalError
-  }
-}
-
-/**
- * Error thrown when an unexpected configuration key is encountered (not defined in ConfigDescription).
- * @class UnacceptedKeyError
- * @extends ConfigError
- */
-export class UnacceptedKeyError extends ConfigError {
-  constructor(key: string) {
-    super(
-      `Configuration key '${key}' isn't accepted as it's not defined in the ConfigDescription.`
-    )
-    this.name = 'UnacceptedKeyError'
-  }
-}
-
-/**
- * Error thrown when type coercion fails for an environment variable or a default value.
- * @class ConfigCoercionError
- * @extends ConfigError
- * @property {Error} cause - The original error that caused this error.
- */
-export class ConfigCoercionError extends ConfigError {
-  constructor(
-    key: string,
-    source: 'environment' | 'default',
-    originalError: Error
-  ) {
-    const sourceMsg =
-      source === 'environment'
-        ? `from environment variable '${key.toUpperCase()}'`
-        : `for default value of '${key}'`
-    super(
-      `Configuration error for '${key}' ${sourceMsg}: ${originalError.message}`
-    )
-    this.name = 'ConfigCoercionError'
-    this.cause = originalError
-  }
-}
-
-/**
- * Error thrown when a required configuration key is missing.
- * @class MissingRequiredConfigError
- * @extends ConfigError
- */
-export class MissingRequiredConfigError extends ConfigError {
-  constructor(key: string) {
-    super(`Required configuration key '${key}' is missing.`)
-    this.name = 'MissingRequiredConfigError'
-  }
-}
+import {
+  ConfigValueType,
+  ConfigDescription,
+  ConfigurationFile,
+  Configuration
+} from './types'
+import {
+  InvalidNumberFormatError,
+  InvalidBooleanFormatError,
+  InvalidJsonFormatError,
+  FileReadParseError,
+  UnacceptedKeyError,
+  ConfigCoercionError,
+  MissingRequiredConfigError
+} from './errors'
 
 /**
  * Coerces a string value to the target type.
@@ -212,7 +59,7 @@ const coerceValue = (value: string, targetType: ConfigValueType): any => {
 
 /**
  * Loads configuration from a specified file path.
- * @param {fs.PathOrFileDescriptor} filePath - The path to the configuration JSON file.
+ * @param {string} filePath - The path to the configuration JSON file.
  * @returns {Promise<Configuration>} The parsed configuration object from the file.
  * @throws {FileReadParseError} if the file cannot be read or parsed.
  */
@@ -243,9 +90,7 @@ const applyEnvironmentVariables = (
     const envVarName = key.toUpperCase()
     const envValue = process.env[envVarName]
 
-    // Only process if useEnv is true and the environment variable is explicitly set (even if to empty string)
     if (useEnv && process.env.hasOwnProperty(envVarName)) {
-      // If the environment variable is an empty string, throw an error
       if (envValue === '') {
         throw new ConfigCoercionError(
           key,
