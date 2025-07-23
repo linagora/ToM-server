@@ -22,7 +22,7 @@ export default class TwakeApplicationServer
     confDesc?: ConfigDescription,
     logger?: TwakeLogger
   ) {
-    if (confDesc == null) confDesc = defaultConfig
+    if (confDesc == null) confDesc = defaultConfig as ConfigDescription
     super(parent.conf, confDesc, logger)
     extendRoutes(this, parent)
 

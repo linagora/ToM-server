@@ -91,7 +91,7 @@ export default class MatrixClientServer extends MatrixIdentityServer<clientDbCol
     confDesc?: ConfigDescription,
     logger?: TwakeLogger
   ) {
-    if (confDesc == null) confDesc = defaultConfig
+    if (confDesc == null) confDesc = defaultConfig as ConfigDescription
     const serverConf = configParser(
       confDesc,
       /* istanbul ignore next */

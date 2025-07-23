@@ -1,13 +1,55 @@
 {
   "logging": {
-    "log_level": "info",
-    "log_transports": [{
-      "type":"Console"
-    }],
-    "silent": false,
-    "exit_on_error": false,
-    "default_meta": null,
-    "exception_handlers": [],
-    "rejection_handlers": []
+    "type": "object",
+    "default": {
+      "log_level": {
+        "type": "string",
+        "default": "info",
+        "required": false
+      },
+      "log_transports": {
+        "type": "array",
+        "default": [
+          {
+            "type": "object",
+            "default": {
+              "type": {
+                "type": "string",
+                "default": "Console",
+                "required": true
+              }
+            },
+            "required": true
+          }
+        ],
+        "required": false
+      },
+      "silent": {
+        "type": "boolean",
+        "default": false,
+        "required": false
+      },
+      "exit_on_error": {
+        "type": "boolean",
+        "default": false,
+        "required": false
+      },
+      "default_meta": {
+        "type": "any",
+        "default": null,
+        "required": false
+      },
+      "exception_handlers": {
+        "type": "array",
+        "default": [],
+        "required": false
+      },
+      "rejection_handlers": {
+        "type": "array",
+        "default": [],
+        "required": false
+      }
+    },
+    "required": false
   }
 }

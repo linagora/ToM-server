@@ -23,7 +23,7 @@ export default class FederatedIdentityService extends MatrixIdentityServer<fdDbC
     confDesc?: ConfigDescription,
     logger?: TwakeLogger
   ) {
-    if (confDesc == null) confDesc = defaultConfig
+    if (confDesc == null) confDesc = defaultConfig as ConfigDescription
     const serverConf = configParser(
       confDesc,
       /* istanbul ignore next */

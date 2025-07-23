@@ -1,62 +1,242 @@
 {
-  "additional_features": false,
-  "base_url": "",
-  "cache_engine": "",
-  "cron_service": true,
-  "database_engine": "sqlite",
-  "database_host": "./tokens.db",
-  "database_name": "",
-  "database_password": "",
-  "database_ssl": false,
-  "database_user": "",
-  "database_vacuum_delay": 3600,
-  "hashes_rate_limit": 100,
-  "is_federated_identity_service": true,
-  "key_delay": 3600,
-  "keys_depth": 5,
-  "ldap_base": "",
-  "ldap_filter": "(ObjectClass=inetOrgPerson)",
-  "ldap_password": "",
-  "ldap_uri": "",
-  "ldap_user": "",
-  "ldapts_opts": {},
-  "mail_link_delay": 7200,
-  "matrix_database_engine": null,
-  "matrix_database_host": null,
-  "matrix_database_name": null,
-  "matrix_database_password": null,
-  "matrix_database_ssl": false,
-  "matrix_database_user": null,
-  "pepperCron": "0 0 * * *",
-  "policies": null,
-  "rate_limiting_window": 600000,
-  "rate_limiting_nb_requests": 100,
-  "redis_uri": "",
-  "server_name": "localhost",
-  "smtp_password": "",
-  "smtp_tls": true,
-  "smtp_user": "",
-  "smtp_verify_certificate": true,
-  "smtp_sender": "",
-  "smtp_server": "localhost",
-  "smtp_port": 25,
-  "update_users_cron": "*/10 * * * *",
-  "userdb_engine": "sqlite",
-  "userdb_host": "./tokens.db",
-  "userdb_name": "",
-  "userdb_password": "",
-  "userdb_ssl": false,
-  "userdb_user": "",
-  "template_dir": "./templates",
-  "trust_x_forwarded_for": false,
-  "trusted_servers_addresses": [],
-  "sms_api_login": "",
-  "sms_api_key": "",
-  "sms_api_url": "",
-  "chat_url": "https://chat.twake.app",
-  "auth_url": "https://auth.example.com",
-  "matrix_admin_login": "admin",
-  "matrix_admin_password": "change-me",
-  "admin_access_token": "secret",
-  "signup_url": "https://sign-up.example.com/?app=chat"
+  "additional_features": {
+    "type": "boolean",
+    "default": false
+  },
+  "base_url": {
+    "type": "string",
+    "default": ""
+  },
+  "cache_engine": {
+    "type": "string",
+    "default": ""
+  },
+  "cron_service": {
+    "type": "boolean",
+    "default": true
+  },
+  "database_engine": {
+    "type": "string",
+    "default": "sqlite"
+  },
+  "database_host": {
+    "type": "string",
+    "default": "./tokens.db"
+  },
+  "database_name": {
+    "type": "string",
+    "default": ""
+  },
+  "database_password": {
+    "type": "string",
+    "default": ""
+  },
+  "database_ssl": {
+    "type": "boolean",
+    "default": false
+  },
+  "database_user": {
+    "type": "string",
+    "default": ""
+  },
+  "database_vacuum_delay": {
+    "type": "number",
+    "default": 3600
+  },
+  "hashes_rate_limit": {
+    "type": "number",
+    "default": 100
+  },
+  "is_federated_identity_service": {
+    "type": "boolean",
+    "default": true
+  },
+  "key_delay": {
+    "type": "number",
+    "default": 3600
+  },
+  "keys_depth": {
+    "type": "number",
+    "default": 5
+  },
+  "ldap_base": {
+    "type": "string",
+    "default": ""
+  },
+  "ldap_filter": {
+    "type": "string",
+    "default": "(ObjectClass=inetOrgPerson)"
+  },
+  "ldap_password": {
+    "type": "string",
+    "default": ""
+  },
+  "ldap_uri": {
+    "type": "string",
+    "default": ""
+  },
+  "ldap_user": {
+    "type": "string",
+    "default": ""
+  },
+  "ldapts_opts": {
+    "type": "object",
+    "default": {}
+  },
+  "mail_link_delay": {
+    "type": "number",
+    "default": 7200
+  },
+  "matrix_database_engine": {
+    "type": "string",
+    "default": null
+  },
+  "matrix_database_host": {
+    "type": "string",
+    "default": null
+  },
+  "matrix_database_name": {
+    "type": "string",
+    "default": null
+  },
+  "matrix_database_password": {
+    "type": "string",
+    "default": null
+  },
+  "matrix_database_ssl": {
+    "type": "boolean",
+    "default": false
+  },
+  "matrix_database_user": {
+    "type": "string",
+    "default": null
+  },
+  "pepperCron": {
+    "type": "string",
+    "default": "0 0 * * *"
+  },
+  "policies": {
+    "type": "object",
+    "default": null
+  },
+  "rate_limiting_window": {
+    "type": "number",
+    "default": 600000
+  },
+  "rate_limiting_nb_requests": {
+    "type": "number",
+    "default": 100
+  },
+  "redis_uri": {
+    "type": "string",
+    "default": ""
+  },
+  "server_name": {
+    "type": "string",
+    "default": "localhost"
+  },
+  "smtp_password": {
+    "type": "string",
+    "default": ""
+  },
+  "smtp_tls": {
+    "type": "boolean",
+    "default": true
+  },
+  "smtp_user": {
+    "type": "string",
+    "default": ""
+  },
+  "smtp_verify_certificate": {
+    "type": "boolean",
+    "default": true
+  },
+  "smtp_sender": {
+    "type": "string",
+    "default": ""
+  },
+  "smtp_server": {
+    "type": "string",
+    "default": "localhost"
+  },
+  "smtp_port": {
+    "type": "number",
+    "default": 25
+  },
+  "update_users_cron": {
+    "type": "string",
+    "default": "*/10 * * * *"
+  },
+  "userdb_engine": {
+    "type": "string",
+    "default": "sqlite"
+  },
+  "userdb_host": {
+    "type": "string",
+    "default": "./tokens.db"
+  },
+  "userdb_name": {
+    "type": "string",
+    "default": ""
+  },
+  "userdb_password": {
+    "type": "string",
+    "default": ""
+  },
+  "userdb_ssl": {
+    "type": "boolean",
+    "default": false
+  },
+  "userdb_user": {
+    "type": "string",
+    "default": ""
+  },
+  "template_dir": {
+    "type": "string",
+    "default": "./templates"
+  },
+  "trust_x_forwarded_for": {
+    "type": "boolean",
+    "default": false
+  },
+  "trusted_servers_addresses": {
+    "type": "array",
+    "default": []
+  },
+  "sms_api_login": {
+    "type": "string",
+    "default": ""
+  },
+  "sms_api_key": {
+    "type": "string",
+    "default": ""
+  },
+  "sms_api_url": {
+    "type": "string",
+    "default": ""
+  },
+  "chat_url": {
+    "type": "string",
+    "default": "https://chat.twake.app"
+  },
+  "auth_url": {
+    "type": "string",
+    "default": "https://auth.example.com"
+  },
+  "matrix_admin_login": {
+    "type": "string",
+    "default": "admin"
+  },
+  "matrix_admin_password": {
+    "type": "string",
+    "default": "change-me"
+  },
+  "admin_access_token": {
+    "type": "string",
+    "default": "secret"
+  },
+  "signup_url": {
+    "type": "string",
+    "default": "https://sign-up.example.com/?app=chat"
+  }
 }

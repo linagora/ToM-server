@@ -1,7 +1,6 @@
 import configParser, { type ConfigDescription } from '@twake/config-parser'
 import {
   getLogger,
-  type Config as LoggerConfig,
   type TwakeLogger
 } from '@twake/logger'
 import { MatrixDB } from '@twake/matrix-identity-server'
@@ -48,7 +47,7 @@ export default class TwakeServer {
       confDesc,
       this._getConfigurationFile(conf)
     ) as Config
-    this.logger = logger ?? getLogger(this.conf as unknown as LoggerConfig)
+    this.logger = logger ?? getLogger(this.conf as unknown as ConfigDescription)
     this.matrixDb = new MatrixDB(this.conf, this.logger)
     this.idServer = new IdServer(
       this.matrixDb,

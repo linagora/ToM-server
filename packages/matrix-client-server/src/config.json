@@ -1,85 +1,261 @@
 {
-  "additional_features": false,
-  "base_url": "",
-  "cache_engine": "",
-  "cron_service": true,
-  "database_engine": "sqlite",
-  "database_host": "./tokens.db",
-  "database_name": "",
-  "database_password": "",
-  "database_ssl": false,
-  "database_user": "",
-  "database_vacuum_delay": 3600,
-  "federated_identity_services": null,
-  "hashes_rate_limit": 100,
-  "invitation_server_name": "matrix.to",
-  "is_federated_identity_service": false,
-  "key_delay": 3600,
-  "keys_depth": 5,
-  "ldap_base": "",
-  "ldap_filter": "(ObjectClass=inetOrgPerson)",
-  "ldap_password": "",
-  "ldap_uri": "",
-  "ldap_user": "",
-  "ldapjs_opts": {},
-  "mail_link_delay": 7200,
-  "matrix_server": "localhost",
-  "matrix_database_engine": "sqlite",
-  "matrix_database_host": "./matrix.db",
-  "matrix_database_name": null,
-  "matrix_database_password": null,
-  "matrix_database_ssl": false,
-  "matrix_database_user": null,
-  "pepperCron": "0 0 * * *",
-  "policies": null,
-  "rate_limiting_window": 600000,
-  "rate_limiting_nb_requests": 100,
-  "redis_uri": "",
-  "server_name": "localhost",
-  "smtp_password": "",
-  "smtp_tls": true,
-  "smtp_user": "",
-  "smtp_verify_certificate": true,
-  "smtp_sender": "",
-  "smtp_server": "localhost",
-  "smtp_port": 25,
-  "trust_x_forwarded_for": false,
-  "update_federated_identity_hashes_cron": "3 3 3 * * *",
-  "update_users_cron": "*/10 * * * *",
-  "userdb_engine": "sqlite",
-  "userdb_host": "./tokens.db",
-  "userdb_name": "",
-  "userdb_password": "",
-  "userdb_ssl": false,
-  "userdb_user": "",
-  "template_dir": "./templates",
+  "additional_features": {
+    "type": "boolean",
+    "default": false
+  },
+  "base_url": {
+    "type": "string",
+    "default": ""
+  },
+  "cache_engine": {
+    "type": "string",
+    "default": ""
+  },
+  "cron_service": {
+    "type": "boolean",
+    "default": true
+  },
+  "database_engine": {
+    "type": "string",
+    "default": "sqlite"
+  },
+  "database_host": {
+    "type": "string",
+    "default": "./tokens.db"
+  },
+  "database_name": {
+    "type": "string",
+    "default": ""
+  },
+  "database_password": {
+    "type": "string",
+    "default": ""
+  },
+  "database_ssl": {
+    "type": "boolean",
+    "default": false
+  },
+  "database_user": {
+    "type": "string",
+    "default": ""
+  },
+  "database_vacuum_delay": {
+    "type": "number",
+    "default": 3600
+  },
+  "federated_identity_services": {
+    "type": "json",
+    "default": null
+  },
+  "hashes_rate_limit": {
+    "type": "number",
+    "default": 100
+  },
+  "invitation_server_name": {
+    "type": "string",
+    "default": "matrix.to"
+  },
+  "is_federated_identity_service": {
+    "type": "boolean",
+    "default": false
+  },
+  "key_delay": {
+    "type": "number",
+    "default": 3600
+  },
+  "keys_depth": {
+    "type": "number",
+    "default": 5
+  },
+  "ldap_base": {
+    "type": "string",
+    "default": ""
+  },
+  "ldap_filter": {
+    "type": "string",
+    "default": "(ObjectClass=inetOrgPerson)"
+  },
+  "ldap_password": {
+    "type": "string",
+    "default": ""
+  },
+  "ldap_uri": {
+    "type": "string",
+    "default": ""
+  },
+  "ldap_user": {
+    "type": "string",
+    "default": ""
+  },
+  "ldapjs_opts": {
+    "type": "object",
+    "default": {}
+  },
+  "mail_link_delay": {
+    "type": "number",
+    "default": 7200
+  },
+  "matrix_server": {
+    "type": "string",
+    "default": "localhost"
+  },
+  "matrix_database_engine": {
+    "type": "string",
+    "default": "sqlite"
+  },
+  "matrix_database_host": {
+    "type": "string",
+    "default": "./matrix.db"
+  },
+  "matrix_database_name": {
+    "type": "json",
+    "default": null
+  },
+  "matrix_database_password": {
+    "type": "json",
+    "default": null
+  },
+  "matrix_database_ssl": {
+    "type": "boolean",
+    "default": false
+  },
+  "matrix_database_user": {
+    "type": "json",
+    "default": null
+  },
+  "pepperCron": {
+    "type": "string",
+    "default": "0 0 * * *"
+  },
+  "policies": {
+    "type": "json",
+    "default": null
+  },
+  "rate_limiting_window": {
+    "type": "number",
+    "default": 600000
+  },
+  "rate_limiting_nb_requests": {
+    "type": "number",
+    "default": 100
+  },
+  "redis_uri": {
+    "type": "string",
+    "default": ""
+  },
+  "server_name": {
+    "type": "string",
+    "default": "localhost"
+  },
+  "smtp_password": {
+    "type": "string",
+    "default": ""
+  },
+  "smtp_tls": {
+    "type": "boolean",
+    "default": true
+  },
+  "smtp_user": {
+    "type": "string",
+    "default": ""
+  },
+  "smtp_verify_certificate": {
+    "type": "boolean",
+    "default": true
+  },
+  "smtp_sender": {
+    "type": "string",
+    "default": ""
+  },
+  "smtp_server": {
+    "type": "string",
+    "default": "localhost"
+  },
+  "smtp_port": {
+    "type": "number",
+    "default": 25
+  },
+  "trust_x_forwarded_for": {
+    "type": "boolean",
+    "default": false
+  },
+  "update_federated_identity_hashes_cron": {
+    "type": "string",
+    "default": "3 3 3 * * *"
+  },
+  "update_users_cron": {
+    "type": "string",
+    "default": "*/10 * * * *"
+  },
+  "userdb_engine": {
+    "type": "string",
+    "default": "sqlite"
+  },
+  "userdb_host": {
+    "type": "string",
+    "default": "./tokens.db"
+  },
+  "userdb_name": {
+    "type": "string",
+    "default": ""
+  },
+  "userdb_password": {
+    "type": "string",
+    "default": ""
+  },
+  "userdb_ssl": {
+    "type": "boolean",
+    "default": false
+  },
+  "userdb_user": {
+    "type": "string",
+    "default": ""
+  },
+  "template_dir": {
+    "type": "string",
+    "default": "./templates"
+  },
   "authentication_flows": {
-    "flows": [
-      {
-        "stages": ["m.login.dummy"]
-      },
-      {
-        "stages": ["m.login.password", "m.login.dummy"]
-      },
-      {
-        "stages": ["m.login.terms", "m.login.password"]
-      },
-      {
-        "stages": ["m.login.registration_token", "m.login.dummy"]
-      }
-    ],
-    "params": {
-      "m.login.terms": {
-        "policies": {
-          "terms_of_service": {
-            "version": "1.2",
-            "en": {
-              "name": "Terms of Service",
-              "url": "https://example.org/somewhere/terms-1.2-en.html"
-            },
-            "fr": {
-              "name": "Conditions d'utilisation",
-              "url": "https://example.org/somewhere/terms-1.2-fr.html"
+    "type": "object",
+    "default": {
+      "flows": [
+        {
+          "stages": [
+            "m.login.dummy"
+          ]
+        },
+        {
+          "stages": [
+            "m.login.password",
+            "m.login.dummy"
+          ]
+        },
+        {
+          "stages": [
+            "m.login.terms",
+            "m.login.password"
+          ]
+        },
+        {
+          "stages": [
+            "m.login.registration_token",
+            "m.login.dummy"
+          ]
+        }
+      ],
+      "params": {
+        "m.login.terms": {
+          "policies": {
+            "terms_of_service": {
+              "version": "1.2",
+              "en": {
+                "name": "Terms of Service",
+                "url": "https://example.org/somewhere/terms-1.2-en.html"
+              },
+              "fr": {
+                "name": "Conditions d'utilisation",
+                "url": "https://example.org/somewhere/terms-1.2-fr.html"
+              }
             }
           }
         }
@@ -87,39 +263,69 @@
     }
   },
   "login_flows": {
-    "flows": [
+    "type": "object",
+    "default": {
+      "flows": [
+        {
+          "type": "m.login.password"
+        },
+        {
+          "get_login_token": true,
+          "type": "m.login.token"
+        }
+      ]
+    }
+  },
+  "application_services": {
+    "type": "array",
+    "default": [
       {
-        "type": "m.login.password"
-      },
-      {
-        "get_login_token": true,
-        "type": "m.login.token"
+        "id": "test",
+        "hs_token": "hsTokenTestwdakZQunWWNe3DZitAerw9aNqJ2a6HVp0sJtg7qTJWXcHnBjgN0NL",
+        "as_token": "as_token_test",
+        "url": "http://localhost:3000",
+        "sender_localpart": "sender_localpart_test",
+        "namespaces": {
+          "users": [
+            {
+              "exclusive": false,
+              "regex": "@_irc_bridge_.*"
+            }
+          ]
+        }
       }
     ]
   },
-  "application_services": [
-    {
-      "id": "test",
-      "hs_token": "hsTokenTestwdakZQunWWNe3DZitAerw9aNqJ2a6HVp0sJtg7qTJWXcHnBjgN0NL",
-      "as_token": "as_token_test",
-      "url": "http://localhost:3000",
-      "sender_localpart": "sender_localpart_test",
-      "namespaces": {
-        "users": [
-          {
-            "exclusive": false,
-            "regex": "@_irc_bridge_.*"
-          }
-        ]
-      }
-    }
-  ],
-  "sms_folder": "./src/__testData__/sms",
-  "is_registration_enabled": true,
-  "qr_code_url": "twake.chat://login",
-  "auth_url": "https://auth.example.com",
-  "matrix_admin_login": "admin",
-  "matrix_admin_password": "change-me",
-  "admin_access_token": "secret",
-  "signup_url": "https://sign-up.example.com/?app=chat"
+  "sms_folder": {
+    "type": "string",
+    "default": "./src/__testData__/sms"
+  },
+  "is_registration_enabled": {
+    "type": "boolean",
+    "default": true
+  },
+  "qr_code_url": {
+    "type": "string",
+    "default": "twake.chat://login"
+  },
+  "auth_url": {
+    "type": "string",
+    "default": "https://auth.example.com"
+  },
+  "matrix_admin_login": {
+    "type": "string",
+    "default": "admin"
+  },
+  "matrix_admin_password": {
+    "type": "string",
+    "default": "change-me"
+  },
+  "admin_access_token": {
+    "type": "string",
+    "default": "secret"
+  },
+  "signup_url": {
+    "type": "string",
+    "default": "https://sign-up.example.com/?app=chat"
+  }
 }

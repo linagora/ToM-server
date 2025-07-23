@@ -1,9 +1,10 @@
-import { promises as fsPromises } from 'fs'
+import fs from 'fs'
 import {
-  ConfigValueType,
-  ConfigDescription,
-  ConfigurationFile,
-  Configuration
+  type ConfigValueType,
+  type ConfigDescription,
+  type ConfigurationFile,
+  type Configuration,
+  type ConfigProperty
 } from './types'
 import {
   InvalidNumberFormatError,
@@ -26,13 +27,15 @@ import {
  */
 const coerceValue = (value: string, targetType: ConfigValueType): any => {
   switch (targetType) {
-    case 'number':
+    case 'number': {
       const num = parseFloat(value)
       if (isNaN(num)) {
         throw new InvalidNumberFormatError(value)
       }
       return num
-    case 'boolean':
+    }
+
+    case 'boolean': {
       const lowerValue = value.toLowerCase().trim()
       if (lowerValue === 'true' || lowerValue === '1') {
         return true
@@ -41,6 +44,7 @@ const coerceValue = (value: string, targetType: ConfigValueType): any => {
         return false
       }
       throw new InvalidBooleanFormatError(value)
+    }
     case 'array':
       return value.split(/[,\s]+/).filter((s) => s.length > 0)
     case 'json':
@@ -60,12 +64,12 @@ const coerceValue = (value: string, targetType: ConfigValueType): any => {
 /**
  * Loads configuration from a specified file path.
  * @param {string} filePath - The path to the configuration JSON file.
- * @returns {Promise<Configuration>} The parsed configuration object from the file.
+ * @returns {Configuration} The parsed configuration object from the file.
  * @throws {FileReadParseError} if the file cannot be read or parsed.
  */
-const loadConfigFromFile = async (filePath: string): Promise<Configuration> => {
+const loadConfigFromFile = (filePath: string): Configuration => {
   try {
-    const fileContent = await fsPromises.readFile(filePath, 'utf8')
+    const fileContent = fs.readFileSync(filePath, 'utf8')
     return JSON.parse(fileContent)
   } catch (e: unknown) {
     const error = e instanceof Error ? e : new Error(String(e))
@@ -102,7 +106,10 @@ const applyEnvironmentVariables = (
       }
 
       try {
-        config[key] = coerceValue(envValue as string, configProp.type)
+        config[key] = coerceValue(
+          envValue as string,
+          (configProp as ConfigProperty).type
+        )
       } catch (e: unknown) {
         const error = e instanceof Error ? e : new Error(String(e))
         throw new ConfigCoercionError(key, 'environment', error)
@@ -131,7 +138,10 @@ const applyDefaultValues = (
         configProp.type !== 'array'
       ) {
         try {
-          config[key] = coerceValue(configProp.default, configProp.type)
+          config[key] = coerceValue(
+            configProp.default,
+            (configProp as ConfigProperty).type
+          )
         } catch (e: unknown) {
           const error = e instanceof Error ? e : new Error(String(e))
           throw new ConfigCoercionError(key, 'default', error)
@@ -182,7 +192,10 @@ const validateRequiredKeys = (
 ): void => {
   Object.keys(desc).forEach((key: string) => {
     const configProp = desc[key]
-    if (configProp.required && config[key] === undefined) {
+    if (
+      ((configProp as ConfigProperty).required ?? false) &&
+      config[key] === undefined
+    ) {
       throw new MissingRequiredConfigError(key)
     }
   })
@@ -201,16 +214,16 @@ const validateRequiredKeys = (
  * @throws {ConfigCoercionError} if type coercion fails for environment variables or default values.
  * @throws {MissingRequiredConfigError} if a required configuration key is missing.
  */
-const twakeConfig = async (
+const twakeConfig = (
   desc: ConfigDescription,
   defaultConfigurationFile?: ConfigurationFile,
   useEnv: boolean = false
-): Promise<Configuration> => {
+): Configuration => {
   let config: Configuration = {}
 
   if (defaultConfigurationFile != null) {
     if (typeof defaultConfigurationFile === 'string') {
-      config = await loadConfigFromFile(defaultConfigurationFile)
+      config = loadConfigFromFile(defaultConfigurationFile)
     } else {
       config = JSON.parse(JSON.stringify(defaultConfigurationFile))
     }
@@ -223,5 +236,7 @@ const twakeConfig = async (
 
   return config
 }
+
+export type { ConfigDescription } from './types'
 
 export default twakeConfig

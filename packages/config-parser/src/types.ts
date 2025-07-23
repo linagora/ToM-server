@@ -31,7 +31,7 @@ export interface ConfigProperty {
  * @property {Object.<string, ConfigProperty>} [key: string] - A mapping of configuration keys to their respective ConfigProperty definitions.
  */
 export interface ConfigDescription {
-  [key: string]: ConfigProperty
+  [key: string]: ConfigProperty | ConfigDescription
 }
 
 /**

@@ -64,7 +64,7 @@ export * as Utils from './utils'
 export { default as UserDBPg } from './userdb/sql/pg'
 export { default as UserDBSQLite } from './userdb/sql/sqlite'
 export const validateMatrixToken = _validateMatrixToken
-export const defaultConfig = defaultConfDesc
+export const defaultConfig = defaultConfDesc as ConfigDescription
 export const Authenticate = utilsAuthenticate
 
 export type IdServerAPI = Record<string, expressAppHandler>
@@ -114,7 +114,7 @@ export default class MatrixIdentityServer<T extends string = never> {
     cronAlreadyStarted: boolean = false
   ) {
     this.api = { get: {}, post: {} }
-    if (confDesc == null) confDesc = defaultConfDesc
+    if (confDesc == null) confDesc = defaultConfig
     this.conf = configParser(
       confDesc,
       /* istanbul ignore next */
