@@ -7,7 +7,8 @@ export type ConfigDescription = Record<
 
 const twakeConfig = (
   desc: ConfigDescription,
-  defaultConfigurationFile?: object | fs.PathOrFileDescriptor
+  defaultConfigurationFile?: object | fs.PathOrFileDescriptor,
+  useEnv: boolean = false
 ): object => {
   // Use optional configuration file if given
   const res =
@@ -20,6 +21,7 @@ const twakeConfig = (
   Object.keys(desc).forEach((key: string) => {
     // If environment variable exists, it overrides current value
     if (
+      useEnv &&
       process.env[key.toUpperCase()] != null &&
       process.env[key.toUpperCase()] !== ''
     ) {
