@@ -231,7 +231,7 @@ const loadConfigFromFile = async (filePath: string): Promise<Configuration> => {
  * @param {Configuration} config - The current configuration object to modify.
  * @param {ConfigDescription} desc - The ConfigDescription for type information.
  * @param {boolean} useEnv - Whether to enable environment variable overrides.
- * @throws {ConfigCoercionError} if an environment variable value cannot be coerced to the expected type.
+ * @throws {ConfigCoercionError} if an environment variable value cannot be coerced to the expected type or is an empty string.
  */
 const applyEnvironmentVariables = (
   config: Configuration,
@@ -243,9 +243,21 @@ const applyEnvironmentVariables = (
     const envVarName = key.toUpperCase()
     const envValue = process.env[envVarName]
 
-    if (useEnv && envValue != null && envValue !== '') {
+    // Only process if useEnv is true and the environment variable is explicitly set (even if to empty string)
+    if (useEnv && process.env.hasOwnProperty(envVarName)) {
+      // If the environment variable is an empty string, throw an error
+      if (envValue === '') {
+        throw new ConfigCoercionError(
+          key,
+          'environment',
+          new Error(
+            'Empty string values are not allowed for this configuration key from environment variables.'
+          )
+        )
+      }
+
       try {
-        config[key] = coerceValue(envValue, configProp.type)
+        config[key] = coerceValue(envValue as string, configProp.type)
       } catch (e: unknown) {
         const error = e instanceof Error ? e : new Error(String(e))
         throw new ConfigCoercionError(key, 'environment', error)
