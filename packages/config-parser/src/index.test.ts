@@ -380,13 +380,14 @@ describe('twakeConfig - Hard Cases (Complex Coercion & Defaults)', () => {
     )
     expect(res.ARRAY_KEY).toEqual(['item1', 'item2'])
 
+    // This test now expects an error because empty strings are not allowed from env vars
     process.env.ARRAY_KEY = ''
-    const resEmpty: Configuration = await twakeConfig(
-      createTestConfigDesc(),
-      undefined,
-      true
-    )
-    expect(resEmpty.ARRAY_KEY).toEqual([])
+    await expect(
+      twakeConfig(createTestConfigDesc(), undefined, true)
+    ).rejects.toThrow(ConfigCoercionError)
+    await expect(
+      twakeConfig(createTestConfigDesc(), undefined, true)
+    ).rejects.toThrow(/Empty string values are not allowed/)
   })
 
   test('Default value is a string but needs coercion to target type', async () => {
@@ -456,14 +457,14 @@ describe('twakeConfig - Edge Cases and Error Handling', () => {
     consoleWarnSpy.mockRestore()
   })
 
-  test('Should fall back to default if environment variable is empty string', async () => {
+  test('Should throw ConfigCoercionError if environment variable is empty string', async () => {
     process.env.STRING_KEY = ''
-    const res: Configuration = await twakeConfig(
-      createTestConfigDesc(),
-      undefined,
-      true
-    )
-    expect(res.STRING_KEY).toBe('defaultString')
+    await expect(
+      twakeConfig(createTestConfigDesc(), undefined, true)
+    ).rejects.toThrow(ConfigCoercionError)
+    await expect(
+      twakeConfig(createTestConfigDesc(), undefined, true)
+    ).rejects.toThrow(/Empty string values are not allowed/)
   })
 
   test('Should fall back to default if environment variable is null/undefined (not set)', async () => {
