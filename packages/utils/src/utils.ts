@@ -153,7 +153,7 @@ const VALID_LOCALPART_REGEX = /^[a-z0-9_\-.=/+]+$/
 // - Port: (?:(?::\d{1,5}))? - Optional colon followed by 1 to 5 digits.
 // (See "Server Name Grammar" note below for detailed rules and https://spec.matrix.org/v1.15/appendices/#server-name)
 const VALID_SERVER_NAME_REGEX =
-  /^(?:(?:\d{1,3}\.){3}\d{1,3}|\[[\da-fA-F:.]{2,45}\]|[\da-zA-Z-.]{1,255})(?:(?::\d{1,5}))?$/
+  /^(?:(?:\d{1,3}\.){3}\d{1,3}|\[[\da-fA-F:.]{2,45}\]|(?:(?!.*\.\.)[\da-zA-Z-.]{1,255}))(?:(?::\d{1,5}))?$/
 
 /**
  * Converts a localpart and server name into a Matrix ID.
