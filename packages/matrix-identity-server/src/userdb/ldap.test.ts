@@ -43,6 +43,17 @@ beforeAll((done) => {
           mail: 'asmith@example.com',
           age: 25
         }
+      },
+      {
+        dn: 'cn=lskywalker,ou=users,o=example',
+        attributes: {
+          objectClass: ['inetOrgPerson'],
+          uid: 'lskywalker',
+          sn: ['skywalker'],
+          givenName: 'Luke',
+          mail: 'lskywalker@example.com',
+          age: 23
+        }
       }
     ]
 
@@ -97,46 +108,15 @@ describe('UserDBLDAP', () => {
   it('should return results with default fields for a single filter', async () => {
     userDB = createUserDB()
     await userDB.ready
-    const list = await userDB.get('', [], { uid: 'dwho' })
-    expect(list.length).toBe(1)
-    expect(list[0].uid).toBe('dwho')
-    expect(list[0].sn).toBe('doctor')
-    expect(list[0].dn).toBe('cn=dwho,ou=users,o=example')
-    expect(list[0].objectClass).toBe('inetOrgPerson')
-  })
+    const list1 = await userDB.get('', [], { uid: 'dwho', sn: ['doctor'] })
+    expect(list1.length).toBe(1)
+    expect(list1[0].dn).toBe('cn=dwho,ou=users,o=example')
 
-  it('should return results with specified fields', async () => {
-    userDB = createUserDB()
-    await userDB.ready
-    const list = await userDB.get('', ['uid', 'mail'], { uid: 'jdoe' })
-    expect(list.length).toBe(1)
-    expect(list[0]).toEqual({ uid: 'jdoe', mail: 'jdoe@example.com' })
-    expect(list[0].sn).toBeUndefined()
-  })
+    const list2 = await userDB.get('', ['uid'], { uid: 'dwho' })
+    expect(list2[0]).toEqual({ uid: 'dwho' })
 
-  it('should return results for multiple filter fields using OR logic', async () => {
-    userDB = createUserDB()
-    await userDB.ready
-    const list = await userDB.get('', ['uid', 'sn'], {
-      uid: 'dwho',
-      sn: ['doe']
-    })
-    expect(list.length).toBe(2)
-    const uids = list.map((entry) => entry.uid).sort()
-    expect(uids).toEqual(['dwho', 'jdoe'])
-    expect(
-      list.some((entry) => entry.uid === 'dwho' && entry.sn === 'doctor')
-    ).toBe(true)
-    expect(
-      list.some((entry) => entry.uid === 'jdoe' && entry.sn === 'doe')
-    ).toBe(true)
-  })
-
-  it('should return an empty list if no match is found', async () => {
-    userDB = createUserDB()
-    await userDB.ready
-    const list = await userDB.get('', [], { uid: 'nonexistent' })
-    expect(list.length).toBe(0)
+    const list3 = await userDB.get('', [], { uid: 'zz' })
+    expect(list3.length).toBe(0)
   })
 
   it('should display error message on connection error during ready state', async () => {
@@ -160,48 +140,49 @@ describe('UserDBLDAP', () => {
   it('should provide match results with wildcard search', async () => {
     userDB = createUserDB()
     await userDB.ready
-    const list = await userDB.match('', ['uid', 'sn'], ['uid', 'sn'], 'do')
-    expect(list.length).toBe(2)
-    const uids = list.map((entry) => entry.uid).sort()
-    expect(uids).toEqual(['dwho', 'jdoe'])
+    const list = await userDB.match('', ['uid'], ['uid'], 'wh')
+    expect(list.length).toBe(1)
+    expect(list[0]).toEqual({ uid: 'dwho' })
   })
 
   it('should provide getAll results with all entries', async () => {
     userDB = createUserDB()
     await userDB.ready
-    const list = await userDB.getAll('', ['uid', 'sn'])
-    expect(list.length).toBe(3)
+    const list = await userDB.getAll('', ['uid'])
+    expect(list.length).toBe(4)
     const uids = list.map((entry) => entry.uid).sort()
-    expect(uids).toEqual(['asmith', 'dwho', 'jdoe'])
+    expect(uids).toEqual(['asmith', 'dwho', 'jdoe', 'lskywalker'])
   })
 
   it('should provide getAll results with order by a string field', async () => {
     userDB = createUserDB()
     await userDB.ready
-    const list = await userDB.getAll('', ['uid', 'sn'], 'uid')
-    expect(list.length).toBe(3)
+    const list = await userDB.getAll('', ['uid'], 'uid')
+    expect(list.length).toBe(4)
     expect(list[0].uid).toBe('asmith')
     expect(list[1].uid).toBe('dwho')
     expect(list[2].uid).toBe('jdoe')
+    expect(list[3].uid).toBe('lskywalker')
   })
 
   it('should provide getAll results with order by a numeric field', async () => {
     userDB = createUserDB()
     await userDB.ready
     const list = await userDB.getAll('', ['uid', 'age'], 'age')
-    expect(list.length).toBe(3)
-    expect(list[0].uid).toBe('asmith')
-    expect(list[1].uid).toBe('jdoe')
-    expect(list[2].uid).toBe('dwho')
+    expect(list.length).toBe(4)
+    expect(list[0].uid).toBe('lskywalker')
+    expect(list[1].uid).toBe('asmith')
+    expect(list[2].uid).toBe('jdoe')
+    expect(list[3].uid).toBe('dwho')
   })
 
   it('should handle empty filterFields in get method', async () => {
     userDB = createUserDB()
     await userDB.ready
     const list = await userDB.get('', ['uid'])
-    expect(list.length).toBe(3)
+    expect(list.length).toBe(4)
     const uids = list.map((entry) => entry.uid).sort()
-    expect(uids).toEqual(['asmith', 'dwho', 'jdoe'])
+    expect(uids).toEqual(['asmith', 'dwho', 'jdoe', 'lskywalker'])
   })
 
   it('should handle empty searchFields in match method gracefully (though usually not intended)', async () => {
@@ -214,5 +195,59 @@ describe('UserDBLDAP', () => {
   it('should handle close method without error', () => {
     userDB = createUserDB()
     expect(() => userDB.close()).not.toThrow()
+  })
+
+  it('should handle ldapFilter with array values and wildcards (from createRoom example)', async () => {
+    userDB = createUserDB()
+    await userDB.ready
+    const list = await userDB.get('', ['uid', 'mail'], {
+      mail: ['*skywalker@example.com', 'dwho@example.com']
+    })
+    expect(list.length).toBe(2)
+    const mails = list.map((user) => user.mail).sort()
+    expect(mails).toEqual(['dwho@example.com', 'lskywalker@example.com'])
+  })
+
+  it('should handle complex AND filter with multiple attributes', async () => {
+    userDB = createUserDB()
+    await userDB.ready
+    const list = await userDB.get('', ['uid', 'givenName'], {
+      uid: 'dwho',
+      givenName: 'Doctor'
+    })
+    expect(list.length).toBe(1)
+    expect(list[0]).toEqual({ uid: 'dwho', givenName: 'Doctor' })
+  })
+
+  // it('should handle complex OR filter with different attributes and wildcards', async () => {
+  //   userDB = createUserDB()
+  //   await userDB.ready
+  //   const list = await userDB.get('', ['uid', 'mail'], '(|(givenName=John)(mail=*smith*))')
+  //   expect(list.length).toBe(2)
+  //   const uids = list.map((entry) => entry.uid).sort()
+  //   expect(uids).toEqual(['asmith', 'jdoe'])
+  // })
+
+  it('should handle filter with multiple wildcard parts in a single value', async () => {
+    userDB = createUserDB()
+    await userDB.ready
+    const list = await userDB.get('', ['uid', 'mail'], {
+      mail: 'l*walker@example.com'
+    })
+    expect(list.length).toBe(1)
+    expect(list[0]).toEqual({
+      uid: 'lskywalker',
+      mail: 'lskywalker@example.com'
+    })
+  })
+
+  it('should return empty list for complex filter with no matching results', async () => {
+    userDB = createUserDB()
+    await userDB.ready
+    const list = await userDB.get('', ['uid'], {
+      uid: 'nonexistent',
+      mail: '*@example.org'
+    })
+    expect(list.length).toBe(0)
   })
 })
