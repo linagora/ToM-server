@@ -138,12 +138,30 @@ export const epoch = (): number => {
   return Date.now()
 }
 
+/**
+ * Converts a localpart and server name into a Matrix ID.
+ *
+ * @param localpart - The local part of the Matrix ID (e.g., "user").
+ * @param serverName - The server name for the Matrix ID (e.g., "matrix.org").
+ * @returns The full Matrix ID string (e.g., "@user:matrix.org").
+ * @throws {TypeError} If localpart or serverName are not strings, are empty.
+ * @throws {errMas} If localpart contains invalid character
+ */
 export const toMatrixId = (localpart: string, serverName: string): string => {
-  // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
-  if (!localpart.match(/^[a-z0-9_\-.=/]+$/)) {
-    // eslint-disable-next-line @typescript-eslint/no-throw-literal
-    throw errMsg('invalidUsername')
+  if (typeof localpart !== 'string' || localpart.length === 0) {
+    throw new TypeError('[_toMatrixId] localpart must be a non-empty string')
   }
+
+  if (typeof serverName !== 'string' || serverName.length === 0) {
+    throw new TypeError('[_toMatrixId] serverName must be a non-empty string')
+  }
+
+  if (!localpart.match(/^[a-z0-9_\-.=/]+$/)) {
+    throw errMsg(
+      'localpart contains invalid characters. Allowed characters are a-z, 0-9, _, -, ., =, /'
+    )
+  }
+
   return `@${localpart}:${serverName}`
 }
 
