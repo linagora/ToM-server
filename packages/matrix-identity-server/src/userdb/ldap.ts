@@ -8,14 +8,16 @@ import _ from 'lodash'
 
 class UserDBLDAP implements UserDBBackend {
   base: string
+  filter: string
   ready: Promise<void>
   ldap: () => Promise<Client>
 
   constructor(conf: Config, private readonly logger: TwakeLogger) {
     this.logger = logger
     this.base = conf.ldap_base != null ? conf.ldap_base : ''
+    this.filter =
+      conf.ldap_filter != null ? conf.ldap_filter : '(objectClass=*)'
     const ldaptsOpts = conf.ldapts_opts != null ? conf.ldapts_opts : {}
-    // eslint-disable-next-line @typescript-eslint/promise-function-async
     this.ldap = (): Promise<Client> => {
       const client = new ldapts.Client({
         ...ldaptsOpts,
@@ -53,7 +55,6 @@ class UserDBLDAP implements UserDBBackend {
     })
   }
 
-  // eslint-disable-next-line @typescript-eslint/promise-function-async
   _get(
     table: string,
     filter: string,
@@ -62,7 +63,7 @@ class UserDBLDAP implements UserDBBackend {
   ): Promise<DbGetResult> {
     return new Promise((resolve, reject) => {
       const opts: SearchOptions = {
-        filter,
+        filter: filter,
         scope: 'sub'
       }
       if (fields != null && fields.length > 0) opts.attributes = fields
@@ -95,7 +96,6 @@ class UserDBLDAP implements UserDBBackend {
                           ? entry[k][0]
                           : entry[k]
                       ) as string
-                    console.debug(k, res[k])
                   })
                 }
                 let realEntry = false
@@ -126,17 +126,15 @@ class UserDBLDAP implements UserDBBackend {
     })
   }
 
-  // eslint-disable-next-line @typescript-eslint/promise-function-async
   get(
     table: string,
     fields?: string[],
     filterFields?: Record<string, string | number | string[]>,
     order?: string
   ): Promise<DbGetResult> {
-    let filter: string = ''
+    let specificFilter: string = ''
     if (filterFields == null) {
-      /* istanbul ignore next */
-      filter = '(objectClass=*)'
+      specificFilter = '(objectClass=*)'
     } else {
       Object.keys(filterFields)
         .filter(
@@ -146,41 +144,46 @@ class UserDBLDAP implements UserDBBackend {
         )
         .forEach((key) => {
           if (Array.isArray(filterFields[key])) {
-            filter += `${(filterFields[key] as string[]).reduce((prev, val) => {
-              return `${prev}(${key}=${val})`
-            }, '')}`
+            specificFilter += `${(filterFields[key] as string[]).reduce(
+              (prev, val) => {
+                return `${prev}(${key}=${val})`
+              },
+              ''
+            )}`
           } else {
-            filter += `(${key}=${filterFields[key].toString()})`
+            specificFilter += `(${key}=${filterFields[key].toString()})`
           }
         })
-      if (filter !== '') filter = `(|${filter})`
+      if (Object.keys(filterFields).length > 1)
+        specificFilter = `(|${specificFilter})`
     }
 
-    return this._get(table, filter, fields, order)
+    const finalFilter = `(&${this.filter}${specificFilter})`
+    return this._get(table, finalFilter, fields, order)
   }
 
-  // eslint-disable-next-line @typescript-eslint/promise-function-async
   match(
     table: string,
     fields: string[],
     searchFields: string[],
     value: string | number
   ): Promise<DbGetResult> {
-    if (typeof searchFields !== 'object') searchFields = [searchFields]
-    let filter = searchFields.reduce((prev, current) => {
+    if (!Array.isArray(searchFields)) searchFields = [searchFields]
+    let specificFilter = searchFields.reduce((prev, current) => {
       return `${prev}(${current}=*${value}*)`
     }, '')
-    if (searchFields.length > 1) filter = `(|${filter})`
-    return this._get(table, filter, fields)
+    if (searchFields.length > 1) specificFilter = `(|${specificFilter})`
+
+    const finalFilter = `(&${this.filter}${specificFilter})`
+    return this._get(table, finalFilter, fields)
   }
 
-  // eslint-disable-next-line @typescript-eslint/promise-function-async
   getAll(
     table: string,
     fields: string[],
     order?: string
   ): Promise<DbGetResult> {
-    return this.get(table, fields, undefined, order)
+    return this._get(table, this.filter, fields, order)
   }
 
   close(): void {}
