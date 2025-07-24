@@ -222,6 +222,31 @@ const _search = async (
             )
             send(res, 200, { matches: [], inactive_matches: [] })
           } else {
+            // Filter rows to ensure each element has a 'uid' property
+            const filteredRows = rows.filter((row) => {
+              const toBeKept =
+                row && typeof row.uid === 'string' && row.uid.length > 0
+              if (!toBeKept)
+                logger.warn(
+                  `[_search] Following element from userDB is invalid: ${JSON.stringify(
+                    row
+                  )}`
+                )
+              return toBeKept
+            })
+            logger.debug(
+              '[_search] Filtered rows to include only elements with a valid UID.',
+              {
+                originalRowCount: rows.length,
+                filteredRowCount: filteredRows.length
+              }
+            )
+            if (rows.length != filteredRows.length)
+              logger.warn(
+                '[_search] Invalid elements found after fetching user registry, PLEASE VERIFY YOUR LDAP_FILTER!'
+              )
+            rows = filteredRows // Reassign rows to the filtered array
+
             const start = data.offset ?? 0
             const end = start + (data.limit ?? 30)
             logger.debug('[_search] Applying pagination to userDB rows.', {
