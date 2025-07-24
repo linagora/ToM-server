@@ -24,7 +24,6 @@ class UserDBLDAP implements UserDBBackend {
         url: conf.ldap_uri != null ? conf.ldap_uri : ''
       })
       return new Promise((resolve, reject) => {
-        /* istanbul ignore if */
         if (
           conf.ldap_user != null &&
           conf.ldap_user.length > 0 &&
@@ -121,7 +120,6 @@ class UserDBLDAP implements UserDBBackend {
               reject(e)
             })
         })
-        /* istanbul ignore next */
         .catch(reject)
     })
   }
@@ -169,6 +167,11 @@ class UserDBLDAP implements UserDBBackend {
     value: string | number
   ): Promise<DbGetResult> {
     if (!Array.isArray(searchFields)) searchFields = [searchFields]
+
+    if (searchFields.length === 0) {
+      return Promise.resolve([])
+    }
+
     let specificFilter = searchFields.reduce((prev, current) => {
       return `${prev}(${current}=*${value}*)`
     }, '')
