@@ -138,14 +138,31 @@ export const epoch = (): number => {
   return Date.now()
 }
 
+// Define a global constant for the localpart validation regex
+// This regex allows one or more characters from the set: lowercase letters (a-z), digits (0-9),
+// and the symbols _, -, ., =, /, +. This aligns with the 'user_id_char' grammar.
+// (See: https://spec.matrix.org/v1.15/appendices/#user-identifiers)
+const VALID_LOCALPART_REGEX = /^[a-z0-9_\-.=/+]+$/
+
+// Define a global constant for the server name validation regex
+// This regex covers three types of hostnames (IPv4, IPv6, DNS name) optionally followed by a port.
+// - IPv4address: (?:(?:\d{1,3}\.){3}\d{1,3}) - Four octets (1-3 digits) separated by dots.
+// - IPv6address: \[[\da-fA-F:.]{2,45}\] - Enclosed in square brackets, 2 to 45 characters
+//   which can be digits, A-F/a-f, colon, or dot.
+// - dns-name: [\da-zA-Z-.]{1,255} - 1 to 255 characters which can be digits, letters, hyphen, or dot.
+// - Port: (?:(?::\d{1,5}))? - Optional colon followed by 1 to 5 digits.
+// (See "Server Name Grammar" note below for detailed rules and https://spec.matrix.org/v1.15/appendices/#server-name)
+const VALID_SERVER_NAME_REGEX =
+  /^(?:(?:\d{1,3}\.){3}\d{1,3}|\[[\da-fA-F:.]{2,45}\]|[\da-zA-Z-.]{1,255})(?:(?::\d{1,5}))?$/
+
 /**
  * Converts a localpart and server name into a Matrix ID.
  *
  * @param localpart - The local part of the Matrix ID (e.g., "user").
- * @param serverName - The server name for the Matrix ID (e.g., "matrix.org").
+ * @param serverName - The server name for the Matrix ID (e.g., "matrix.org" or "192.168.1.1:8080").
  * @returns The full Matrix ID string (e.g., "@user:matrix.org").
- * @throws {TypeError} If localpart or serverName are not strings, are empty.
- * @throws {errMas} If localpart contains invalid character
+ * @throws {TypeError} If `localpart` or `serverName` are not strings, are empty,
+ * or if they contain invalid characters/format according to their respective Matrix grammars.
  */
 export const toMatrixId = (localpart: string, serverName: string): string => {
   if (typeof localpart !== 'string' || localpart.length === 0) {
@@ -156,9 +173,13 @@ export const toMatrixId = (localpart: string, serverName: string): string => {
     throw new TypeError('[_toMatrixId] serverName must be a non-empty string')
   }
 
-  if (!localpart.match(/^[a-z0-9_\-.=/]+$/)) {
-    throw errMsg(
-      'localpart contains invalid characters. Allowed characters are a-z, 0-9, _, -, ., =, /'
+  if (!VALID_LOCALPART_REGEX.test(localpart)) {
+    throw errMsg('invalidUsername')
+  }
+
+  if (!VALID_SERVER_NAME_REGEX.test(serverName)) {
+    throw new TypeError(
+      '[_toMatrixId] serverName contains invalid characters or format according to Matrix specification.'
     )
   }
 
