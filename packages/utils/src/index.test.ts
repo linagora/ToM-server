@@ -174,13 +174,68 @@ describe('Utility Functions', () => {
   })
 
   describe('toMatrixId', () => {
-    it('should return a Matrix ID', () => {
+    it('should return a Matrix ID for valid inputs', () => {
       expect(toMatrixId('localpart', 'server')).toBe('@localpart:server')
+      expect(toMatrixId('user.name-123', 'example.com')).toBe(
+        '@user.name-123:example.com'
+      )
+      expect(toMatrixId('user/id+test', 'matrix.org:8080')).toBe(
+        '@user/id+test:matrix.org:8080'
+      )
+      expect(toMatrixId('alice', '192.168.1.1')).toBe('@alice:192.168.1.1')
+      expect(toMatrixId('localpart', '192.168.1')).toBe('@localpart:192.168.1') // Incomplete IPv4 but DNS-NAME valid
+      expect(toMatrixId('bob', '[2001:0db8::1]')).toBe('@bob:[2001:0db8::1]')
+      expect(
+        toMatrixId('charlie', '[FE80:0000:0000:0000:0202:B3FF:FE1E:8329]:443')
+      ).toBe('@charlie:[FE80:0000:0000:0000:0202:B3FF:FE1E:8329]:443')
     })
-    it('should throw an error for an invalid localpart', () => {
+
+    it('should throw TypeError if localpart is not a string', () => {
+      // @ts-expect-error Testing invalid input type
+      expect(() => toMatrixId(123, 'example.com')).toThrow(TypeError)
+      // @ts-expect-error Testing invalid input type
+      expect(() => toMatrixId(null, 'example.com')).toThrow(TypeError)
+      // @ts-expect-error Testing invalid input type
+      expect(() => toMatrixId(undefined, 'example.com')).toThrow(TypeError)
+    })
+
+    it('should throw TypeError if localpart is an empty string', () => {
+      expect(() => toMatrixId('', 'example.com')).toThrow(TypeError)
+    })
+
+    it('should throw errMsg for an invalid localpart format', () => {
+      // Assuming errMsg is a function that throws an error with a specific message
+      // If errMsg throws a generic Error, you might need to adjust the expectation.
       expect(() =>
-        toMatrixId('invalid localpart', 'example.com')
+        toMatrixId('invalid localpart!', 'example.com')
       ).toThrowError()
+      expect(() => toMatrixId('user@name', 'example.com')).toThrowError()
+      expect(() => toMatrixId('user space', 'example.com')).toThrowError()
+    })
+
+    it('should throw TypeError if serverName is not a string', () => {
+      // @ts-expect-error Testing invalid input type
+      expect(() => toMatrixId('localpart', 123)).toThrow(TypeError)
+      // @ts-expect-error Testing invalid input type
+      expect(() => toMatrixId('localpart', null)).toThrow(TypeError)
+      // @ts-expect-error Testing invalid input type
+      expect(() => toMatrixId('localpart', undefined)).toThrow(TypeError)
+    })
+
+    it('should throw TypeError if serverName is an empty string', () => {
+      expect(() => toMatrixId('localpart', '')).toThrow(TypeError)
+    })
+
+    it('should throw TypeError for an invalid serverName format', () => {
+      expect(() => toMatrixId('localpart', 'invalid server')).toThrow(TypeError)
+      expect(() => toMatrixId('localpart', 'example.com:port')).toThrow(
+        TypeError
+      ) // Invalid port
+      expect(() => toMatrixId('localpart', 'example.com:')).toThrow(TypeError) // Missing port
+      expect(() => toMatrixId('localpart', '[2001:db8::invalid]')).toThrow(
+        TypeError
+      ) // Invalid IPv6
+      expect(() => toMatrixId('localpart', 'example..com')).toThrow(TypeError) // Invalid DNS name
     })
   })
   describe('isValidUrl', () => {
