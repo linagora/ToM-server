@@ -10,6 +10,12 @@ objectClass: top
 objectClass: organizationalUnit
 ou: users
 
+dn: cn=readers,ou=users,dc=docker,dc=localhost
+objectclass: groupOfNames
+member: uid=dwho,ou=users,dc=docker,dc=localhost
+member: uid=rtyler,ou=users,dc=docker,dc=localhost
+cn: readers
+
 dn: uid=dwho,ou=users,dc=docker,dc=localhost
 objectClass: inetOrgPerson
 uid: dwho
