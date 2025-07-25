@@ -35,7 +35,6 @@ export interface MatrixDbRow {
  * Type definition for the main search function.
  */
 export type SearchFunction = (
-  // Added export here
   res: Response | http.ServerResponse,
   data: Query
 ) => Promise<void>
@@ -186,7 +185,10 @@ export const buildContactMap = (
 ): Map<string, MappedContact> => {
   const map = new Map<string, MappedContact>()
   for (const contact of contactsToMap) {
-    const uid = contact.mxid?.replace(/^@(.*?):.*/, '$1')
+    // Corrected UID extraction: only extract if it matches the @user:server format
+    const uidMatch = contact.mxid?.match(/^@(.*?):.*/)
+    const uid = uidMatch ? uidMatch[1] : undefined
+
     if (uid && uid.length > 0) {
       map.set(uid, {
         uid,
