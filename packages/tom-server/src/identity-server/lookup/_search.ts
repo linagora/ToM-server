@@ -9,7 +9,7 @@ import { type Contact } from '../../addressbook-api/types'
 /**
  * Represents a contact mapped for quick lookup.
  */
-interface MappedContact {
+export interface MappedContact {
   uid: string
   cn: string
   address: string
@@ -18,7 +18,7 @@ interface MappedContact {
 /**
  * Represents a row fetched from the user database.
  */
-interface UserDbRow {
+export interface UserDbRow {
   uid: string
   [key: string]: any
 }
@@ -26,7 +26,7 @@ interface UserDbRow {
 /**
  * Represents a row fetched from the Matrix database.
  */
-interface MatrixDbRow {
+export interface MatrixDbRow {
   name: string
   [key: string]: any
 }
@@ -34,7 +34,8 @@ interface MatrixDbRow {
 /**
  * Type definition for the main search function.
  */
-type SearchFunction = (
+export type SearchFunction = (
+  // Added export here
   res: Response | http.ServerResponse,
   data: Query
 ) => Promise<void>
@@ -66,6 +67,319 @@ export const SearchFields = new Set<string>([
 ])
 
 /**
+ * Sends an error response and logs the error.
+ * @param res The Express response object.
+ * @param e The error message or object.
+ * @param context Optional context for the error.
+ * @param logger The TwakeLogger instance for logging messages.
+ */
+export const sendError = (
+  res: Response | http.ServerResponse,
+  e: string | Error,
+  context: string | undefined,
+  logger: TwakeLogger
+): void => {
+  const message = e instanceof Error ? e.message : JSON.stringify(e)
+  logger.error('Autocompletion error', {
+    message,
+    context: context || 'unknown'
+  })
+  send(res, 500, errMsg('unknown', message))
+}
+
+/**
+ * Validates the provided fields and scope against SearchFields.
+ * @param fieldsToValidate The array of fields to validate.
+ * @param scopeToValidate The array of scope values to validate.
+ * @param logger The logger instance for warnings.
+ * @returns True if all fields and scope values are valid, false otherwise.
+ */
+export const validateFieldsAndScope = (
+  fieldsToValidate: string[],
+  scopeToValidate: string[],
+  logger: TwakeLogger
+): boolean => {
+  for (const v of fieldsToValidate) {
+    if (!SearchFields.has(v)) {
+      logger.warn('[_search] Invalid field detected.', { field: v })
+      return false
+    }
+  }
+
+  for (const v of scopeToValidate) {
+    if (!SearchFields.has(v)) {
+      logger.warn('[_search] Invalid scope value detected.', {
+        scopeValue: v
+      })
+      return false
+    }
+  }
+  return true
+}
+
+/**
+ * Filters contacts based on the search value and normalized scope.
+ * @param contactsToFilter The array of contacts to filter.
+ * @param val The search value (lowercase).
+ * @param normalizedScope The normalized scope fields.
+ * @param logger The logger instance for debug and silly logs.
+ * @returns The filtered array of contacts.
+ */
+export const filterContacts = (
+  contactsToFilter: Contact[],
+  val: string,
+  normalizedScope: string[],
+  logger: TwakeLogger
+): Contact[] => {
+  if (val.length === 0) {
+    return contactsToFilter
+  }
+
+  logger.debug('[_search] Filtering contacts based on search value.', {
+    valueToFilter: val
+  })
+  const initialContactCount = contactsToFilter.length
+  const filtered = contactsToFilter.filter((contact) =>
+    normalizedScope.some((field) => {
+      const fieldVal = (() => {
+        switch (field) {
+          case 'uid':
+            return contact.mxid?.replace(/^@(.*?):.*/, '$1')
+          case 'cn':
+          case 'displayName':
+            return contact.display_name
+          case 'mail':
+          case 'mobile':
+            return contact.mxid
+          default:
+            return ''
+        }
+      })()
+      const match = fieldVal?.toLowerCase().includes(val)
+      if (match) {
+        logger.silly('[_search] Contact matched filter criteria.', {
+          contactMxid: contact.mxid,
+          field,
+          fieldVal,
+          val
+        })
+      }
+      return match
+    })
+  )
+  logger.debug('[_search] Contacts filtered.', {
+    initialContactCount,
+    contactsAfterFilter: filtered.length
+  })
+  return filtered
+}
+
+/**
+ * Builds a map of contacts for quick lookup, keyed by UID.
+ * @param contactsToMap The array of contacts to map.
+ * @param logger The logger instance for debug and silly logs.
+ * @returns A Map where keys are UIDs and values are MappedContact objects.
+ */
+export const buildContactMap = (
+  contactsToMap: Contact[],
+  logger: TwakeLogger
+): Map<string, MappedContact> => {
+  const map = new Map<string, MappedContact>()
+  for (const contact of contactsToMap) {
+    const uid = contact.mxid?.replace(/^@(.*?):.*/, '$1')
+    if (uid && uid.length > 0) {
+      map.set(uid, {
+        uid,
+        cn: contact.display_name ?? '',
+        address: contact.mxid ?? ''
+      })
+      logger.silly('[_search] Added contact to map.', {
+        uid,
+        displayName: contact.display_name
+      })
+    } else {
+      logger.warn('[_search] Skipping contact due to invalid UID.', {
+        contactMxid: contact.mxid
+      })
+    }
+  }
+  logger.debug('[_search] Contact map populated.', {
+    contactMapSize: map.size
+  })
+  return map
+}
+
+/**
+ * Processes user database rows, fetches matrix presence, and categorizes matches.
+ * This function interacts with `idServer.userDB` and `idServer.matrixDb`.
+ *
+ * @param userDbRows Rows fetched from the user database.
+ * @param queryData The original query data, used for pagination.
+ * @param initialContactMap The initial map of contacts from the address book. This map will be cloned and mutated internally.
+ * @param idServer The TwakeIdentityServer instance.
+ * @param logger The logger instance.
+ * @returns A Promise that resolves to an object containing active and inactive matches.
+ * @throws {Error} If there's an error during the Matrix DB query.
+ */
+export const processUserAndMatrixDbRows = async (
+  userDbRows: UserDbRow[],
+  queryData: Query,
+  initialContactMap: Map<string, MappedContact>,
+  idServer: TwakeIdentityServer,
+  logger: TwakeLogger
+): Promise<{ matches: any[]; inactive_matches: any[] }> => {
+  logger.debug('[_search] Received rows from userDB.', {
+    numberOfUserRows: userDbRows.length
+  })
+
+  const validRows = userDbRows.filter((row) => {
+    const toBeKept = row && typeof row.uid === 'string' && row.uid.length > 0
+    if (!toBeKept) {
+      logger.warn(
+        `[_search] Following element from userDB is invalid: ${JSON.stringify(
+          row
+        )}`
+      )
+    }
+    return toBeKept
+  })
+  if (userDbRows.length !== validRows.length) {
+    logger.warn(
+      '[_search] Invalid elements found after fetching user registry, PLEASE VERIFY YOUR LDAP_FILTER!'
+    )
+  }
+
+  const start = queryData.offset ?? 0
+  const limit = queryData.limit ?? 30
+  const paginatedRows = validRows.slice(start, start + limit)
+
+  logger.debug('[_search] Applying pagination to userDB rows.', {
+    start,
+    end: start + limit,
+    totalRowsBeforeSlice: validRows.length
+  })
+  logger.debug('[_search] UserDB rows after slicing.', {
+    numberOfUserRowsAfterSlice: paginatedRows.length
+  })
+
+  const mUid = paginatedRows
+    .map((v) => {
+      logger.silly('[_search] Processing UserDB data:', v)
+      try {
+        const mxid = toMatrixId(v.uid as string, idServer.conf.server_name)
+        logger.debug(`[_search] Computed MXID: ${mxid}`)
+        return mxid
+      } catch (error: unknown) {
+        const err: string =
+          error instanceof Error
+            ? `${error.name}: ${error.message}`
+            : typeof error === 'object' &&
+              error &&
+              'errcode' in error &&
+              'error' in error &&
+              typeof (error as { errcode: unknown }).errcode === 'string' &&
+              typeof (error as { error: string }).error === 'string'
+            ? `${(error as { errcode: string }).errcode}: ${
+                (error as { error: string }).error
+              }`
+            : JSON.stringify(error)
+        logger.warn('[_search] toMatrixId transform impossible', err)
+        return null
+      }
+    })
+    .filter((id): id is string => id !== null)
+
+  logger.debug('[_search] Prepared Matrix UIDs for matrixDb query.', {
+    matrixUidsCount: mUid.length
+  })
+
+  logger.info('[_search] Initiating matrixDb query to get user presence.')
+  let matrixRows: MatrixDbRow[] = []
+  try {
+    matrixRows = (await idServer.matrixDb.get('users', ['*'], {
+      name: mUid
+    })) as MatrixDbRow[]
+    logger.debug('[_search] Received rows from matrixDb.', {
+      numberOfMatrixRows: matrixRows.length
+    })
+  } catch (e) {
+    logger.error('[_search] Error during matrixDb query.', { error: e })
+    throw new Error(
+      `matrixDb_query_error: ${
+        e instanceof Error ? e.message : JSON.stringify(e)
+      }`
+    )
+  }
+
+  const mUids = matrixRows.reduce((acc, mrow) => {
+    const uidFromMatrix = (mrow.name as string).replace(/^@(.*?):(?:.*)$/, '$1')
+    acc[uidFromMatrix] = true
+    logger.silly('[_search] Processed Matrix user from matrixDb.', {
+      matrixUid: uidFromMatrix
+    })
+    return acc
+  }, {} as Record<string, true>)
+
+  logger.debug('[_search] Populated Matrix UIDs map for active users.', {
+    activeMatrixUsersCount: Object.keys(mUids).length
+  })
+
+  // Clone the initialContactMap to ensure immutability of the original map passed in
+  const clonedContactMap = new Map(initialContactMap)
+
+  const { matches, inactive_matches } = paginatedRows.reduce(
+    (acc, row) => {
+      // Create a new row object to avoid mutating the original
+      const newRow = { ...row }
+      newRow.address = toMatrixId(
+        newRow.uid as string,
+        idServer.conf.server_name
+      )
+
+      const uid = newRow.uid as string
+
+      // Check and update display name from contact map, then "consume" the contact from the cloned map
+      if (clonedContactMap.has(uid)) {
+        newRow.cn = clonedContactMap.get(uid)?.cn ?? newRow.cn
+        logger.silly(
+          '[_search] Updated display name from contact map for UID.',
+          {
+            uid,
+            newCn: newRow.cn
+          }
+        )
+        clonedContactMap.delete(uid) // Mutates the cloned map
+      }
+
+      // Categorize into matches or inactive_matches
+      if (mUids[uid]) {
+        acc.matches.push(newRow)
+        logger.silly('[_search] Added user to active matches.', { uid })
+      } else {
+        acc.inactive_matches.push(newRow)
+        logger.silly('[_search] Added user to inactive matches.', { uid })
+      }
+      return acc
+    },
+    { matches: [], inactive_matches: [] } as {
+      matches: any[]
+      inactive_matches: any[]
+    }
+  )
+
+  // Merge remaining contacts from the (now potentially modified) clonedContactMap into matches
+  const finalMatches = [...matches, ...Array.from(clonedContactMap.values())]
+  logger.silly('[_search] Merged remaining contacts from map into matches.')
+
+  logger.info('[_search] Final search results compiled.', {
+    activeMatchesCount: finalMatches.length,
+    inactiveMatchesCount: inactive_matches.length
+  })
+
+  return { matches: finalMatches, inactive_matches }
+}
+
+/**
  * Initializes and returns the search function.
  * This function handles incoming search requests, validates parameters,
  * fetches contacts from the address book, and optionally queries user and Matrix databases
@@ -81,322 +395,15 @@ const _search = async (
 ): Promise<SearchFunction> => {
   logger.debug('[_search] Initializing search function factory.')
 
-  /**
-   * Sends an error response and logs the error.
-   * @param res The Express response object.
-   * @param e The error message or object.
-   * @param context Optional context for the error.
-   */
-  const sendError = (
-    res: Response | http.ServerResponse,
-    e: string | Error,
-    context?: string
-  ): void => {
-    const message = e instanceof Error ? e.message : JSON.stringify(e)
-    logger.error('Autocompletion error', {
-      message,
-      context: context || 'unknown'
-    })
-    send(res, 500, errMsg('unknown', message))
-  }
-
-  /**
-   * Validates the provided fields and scope against SearchFields.
-   * @param fieldsToValidate The array of fields to validate.
-   * @param scopeToValidate The array of scope values to validate.
-   * @param logger The logger instance for warnings.
-   * @returns True if all fields and scope values are valid, false otherwise.
-   */
-  const validateFieldsAndScope = (
-    fieldsToValidate: string[],
-    scopeToValidate: string[],
-    logger: TwakeLogger
-  ): boolean => {
-    for (const v of fieldsToValidate) {
-      if (!SearchFields.has(v)) {
-        logger.warn('[_search] Invalid field detected.', { field: v })
-        return false
-      }
-    }
-
-    for (const v of scopeToValidate) {
-      if (!SearchFields.has(v)) {
-        logger.warn('[_search] Invalid scope value detected.', {
-          scopeValue: v
-        })
-        return false
-      }
-    }
-    return true
-  }
-
-  /**
-   * Filters contacts based on the search value and normalized scope.
-   * @param contactsToFilter The array of contacts to filter.
-   * @param val The search value (lowercase).
-   * @param normalizedScope The normalized scope fields.
-   * @param logger The logger instance for debug and silly logs.
-   * @returns The filtered array of contacts.
-   */
-  const filterContacts = (
-    contactsToFilter: Contact[],
-    val: string,
-    normalizedScope: string[],
-    logger: TwakeLogger
-  ): Contact[] => {
-    if (val.length === 0) {
-      return contactsToFilter
-    }
-
-    logger.debug('[_search] Filtering contacts based on search value.', {
-      valueToFilter: val
-    })
-    const initialContactCount = contactsToFilter.length
-    const filtered = contactsToFilter.filter((contact) =>
-      normalizedScope.some((field) => {
-        const fieldVal = (() => {
-          switch (field) {
-            case 'uid':
-              return contact.mxid?.replace(/^@(.*?):.*/, '$1')
-            case 'cn':
-            case 'displayName':
-              return contact.display_name
-            case 'mail':
-            case 'mobile':
-              return contact.mxid
-            default:
-              return ''
-          }
-        })()
-        const match = fieldVal?.toLowerCase().includes(val)
-        if (match) {
-          logger.silly('[_search] Contact matched filter criteria.', {
-            contactMxid: contact.mxid,
-            field,
-            fieldVal,
-            val
-          })
-        }
-        return match
-      })
-    )
-    logger.debug('[_search] Contacts filtered.', {
-      initialContactCount,
-      contactsAfterFilter: filtered.length
-    })
-    return filtered
-  }
-
-  /**
-   * Builds a map of contacts for quick lookup, keyed by UID.
-   * @param contactsToMap The array of contacts to map.
-   * @param logger The logger instance for debug and silly logs.
-   * @returns A Map where keys are UIDs and values are MappedContact objects.
-   */
-  const buildContactMap = (
-    contactsToMap: Contact[],
-    logger: TwakeLogger
-  ): Map<string, MappedContact> => {
-    const map = new Map<string, MappedContact>()
-    for (const contact of contactsToMap) {
-      const uid = contact.mxid?.replace(/^@(.*?):.*/, '$1')
-      if (uid && uid.length > 0) {
-        map.set(uid, {
-          uid,
-          cn: contact.display_name ?? '',
-          address: contact.mxid ?? ''
-        })
-        logger.silly('[_search] Added contact to map.', {
-          uid,
-          displayName: contact.display_name
-        })
-      } else {
-        logger.warn('[_search] Skipping contact due to invalid UID.', {
-          contactMxid: contact.mxid
-        })
-      }
-    }
-    logger.debug('[_search] Contact map populated.', {
-      contactMapSize: map.size
-    })
-    return map
-  }
-
-  /**
-   * Processes user database rows, fetches matrix presence, and categorizes matches.
-   * This function interacts with `idServer.userDB` and `idServer.matrixDb`.
-   *
-   * @param userDbRows Rows fetched from the user database.
-   * @param queryData The original query data, used for pagination.
-   * @param currentContactMap The map of contacts from the address book, used for merging and updating display names.
-   * @param idServer The TwakeIdentityServer instance.
-   * @param logger The logger instance.
-   * @returns A Promise that resolves to an object containing active and inactive matches.
-   * @throws {Error} If there's an error during the Matrix DB query.
-   */
-  const processUserAndMatrixDbRows = async (
-    userDbRows: UserDbRow[],
-    queryData: Query,
-    currentContactMap: Map<string, MappedContact>,
-    idServer: TwakeIdentityServer,
-    logger: TwakeLogger
-  ): Promise<{ matches: any[]; inactive_matches: any[] }> => {
-    logger.debug('[_search] Received rows from userDB.', {
-      numberOfUserRows: userDbRows.length
-    })
-
-    const filteredRows = userDbRows.filter((row) => {
-      const toBeKept = row && typeof row.uid === 'string' && row.uid.length > 0
-      if (!toBeKept) {
-        logger.warn(
-          `[_search] Following element from userDB is invalid: ${JSON.stringify(
-            row
-          )}`
-        )
-      }
-      return toBeKept
-    })
-    logger.debug(
-      '[_search] Filtered rows to include only elements with a valid UID.',
-      {
-        originalRowCount: userDbRows.length,
-        filteredRowCount: filteredRows.length
-      }
-    )
-    if (userDbRows.length !== filteredRows.length) {
-      logger.warn(
-        '[_search] Invalid elements found after fetching user registry, PLEASE VERIFY YOUR LDAP_FILTER!'
-      )
-    }
-    let rows = filteredRows
-
-    const start = queryData.offset ?? 0
-    const end = start + (queryData.limit ?? 30)
-    logger.debug('[_search] Applying pagination to userDB rows.', {
-      start,
-      end,
-      totalRowsBeforeSlice: rows.length
-    })
-    rows = rows.slice(start, end)
-    logger.debug('[_search] UserDB rows after slicing.', {
-      numberOfUserRowsAfterSlice: rows.length
-    })
-
-    const mUid: string[] = []
-    for (const v of rows) {
-      logger.silly('[_search] Processing UserDB data:', v)
-      try {
-        const mxid = toMatrixId(v.uid as string, idServer.conf.server_name)
-        mUid.push(mxid)
-        logger.debug(`[_search] Computed MXID: ${mxid}`)
-      } catch (error: unknown) {
-        const err: string =
-          error instanceof Error
-            ? `${error.name}: ${error.message}`
-            : typeof error === 'object' &&
-              error &&
-              'errcode' in error &&
-              'error' in error &&
-              typeof (error as { errcode: unknown }).errcode === 'string' &&
-              typeof (error as { error: unknown }).error === 'string'
-            ? `${(error as { errcode: string }).errcode}: ${
-                (error as { error: string }).error
-              }`
-            : JSON.stringify(error)
-        logger.warn('[_search] toMatrixId transform impossible', err)
-        continue
-      }
-    }
-    logger.debug('[_search] Prepared Matrix UIDs for matrixDb query.', {
-      matrixUidsCount: mUid.length
-    })
-
-    logger.info('[_search] Initiating matrixDb query to get user presence.')
-    let matrixRows: MatrixDbRow[] = []
-    try {
-      matrixRows = (await idServer.matrixDb.get('users', ['*'], {
-        name: mUid
-      })) as MatrixDbRow[]
-      logger.debug('[_search] Received rows from matrixDb.', {
-        numberOfMatrixRows: matrixRows.length
-      })
-    } catch (e) {
-      logger.error('[_search] Error during matrixDb query.', { error: e })
-      throw new Error(
-        `matrixDb_query_error: ${
-          e instanceof Error ? e.message : JSON.stringify(e)
-        }`
-      )
-    }
-
-    const mUids: Record<string, true> = {}
-    for (const mrow of matrixRows) {
-      const uidFromMatrix = (mrow.name as string).replace(
-        /^@(.*?):(?:.*)$/,
-        '$1'
-      )
-      mUids[uidFromMatrix] = true
-      logger.silly('[_search] Processed Matrix user from matrixDb.', {
-        matrixUid: uidFromMatrix
-      })
-    }
-    logger.debug('[_search] Populated Matrix UIDs map for active users.', {
-      activeMatrixUsersCount: Object.keys(mUids).length
-    })
-
-    const matches: any[] = []
-    const inactive_matches: any[] = []
-
-    for (const row of rows) {
-      row.address = toMatrixId(row.uid as string, idServer.conf.server_name)
-      const uid = row.uid as string
-
-      if (currentContactMap.has(uid)) {
-        row.cn = currentContactMap.get(uid)?.cn ?? row.cn
-        logger.silly(
-          '[_search] Updated display name from contact map for UID.',
-          {
-            uid,
-            newCn: row.cn
-          }
-        )
-        currentContactMap.delete(uid)
-      }
-
-      if (mUids[uid]) {
-        matches.push(row)
-        logger.silly('[_search] Added user to active matches.', { uid })
-      } else {
-        inactive_matches.push(row)
-        logger.silly('[_search] Added user to inactive matches.', { uid })
-      }
-    }
-
-    for (const contact of currentContactMap.values()) {
-      matches.push(contact)
-      logger.silly(
-        '[_search] Merged remaining contact from map into matches.',
-        {
-          contactUid: contact.uid
-        }
-      )
-    }
-
-    logger.info('[_search] Final search results compiled.', {
-      activeMatchesCount: matches.length,
-      inactiveMatchesCount: inactive_matches.length
-    })
-
-    return { matches, inactive_matches }
-  }
-
   return async (res, data) => {
     logger.info('[_search] Incoming search request.', {
       queryData: JSON.stringify(data)
     })
 
-    let fields = data.fields ?? []
-    let scope = Array.isArray(data.scope) ? data.scope : [data.scope as string]
+    const fields = data.fields ?? []
+    const scope = Array.isArray(data.scope)
+      ? data.scope
+      : [data.scope as string]
 
     logger.debug('[_search] Initial fields and scope.', {
       initialFields: fields,
@@ -416,7 +423,7 @@ const _search = async (
 
     logger.debug('[_search] Input fields and scope validated successfully.')
     const owner = data.owner ?? ''
-    let contacts: Contact[] = []
+    let contacts: Contact[] = [] // Initialize as empty array
 
     logger.debug('[_search] Attempting to fetch contacts from address book.', {
       owner: owner || 'no-owner-provided'
@@ -437,7 +444,8 @@ const _search = async (
         sendError(
           res,
           e instanceof Error ? e.message : JSON.stringify(e),
-          'addressbook_fetch_error'
+          'addressbook_fetch_error',
+          logger
         )
         return
       }
@@ -454,8 +462,13 @@ const _search = async (
       searchValue: val
     })
 
-    contacts = filterContacts(contacts, val, normalizedScope, logger)
-    const contactMap = buildContactMap(contacts, logger)
+    const filteredContacts = filterContacts(
+      contacts,
+      val,
+      normalizedScope,
+      logger
+    )
+    const contactMap = buildContactMap(filteredContacts, logger)
 
     if (
       process.env.ADDITIONAL_FEATURES === 'true' ||
@@ -493,10 +506,11 @@ const _search = async (
 
       try {
         const rows = await userDbRequest
+        // Pass a clone of contactMap to processUserAndMatrixDbRows to maintain purity
         const { matches, inactive_matches } = await processUserAndMatrixDbRows(
           rows,
           data,
-          contactMap,
+          new Map(contactMap),
           idServer,
           logger
         )
@@ -511,12 +525,13 @@ const _search = async (
           e instanceof Error &&
           e.message.startsWith('matrixDb_query_error')
         ) {
-          sendError(res, e, 'matrixDb_query_or_processing')
+          sendError(res, e, 'matrixDb_query_or_processing', logger)
         } else {
           sendError(
             res,
             e instanceof Error ? e.message : JSON.stringify(e),
-            'userDb_query_or_initial_processing'
+            'userDb_query_or_initial_processing',
+            logger
           )
         }
         logger.silly(
