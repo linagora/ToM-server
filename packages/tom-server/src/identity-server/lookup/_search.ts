@@ -44,10 +44,9 @@ const _search = async (
 
     const sendError = (e: string, context?: string): void => {
       /* istanbul ignore next */
-      logger.error('Autocompletion error', {
-        message: e,
-        context: context || 'unknown'
-      })
+      logger.error(
+        `Autocompletion error: ${e}, context ${context || 'unknown'}`
+      )
       /* istanbul ignore next */
       send(res, 500, errMsg('unknown', e))
     }
@@ -259,9 +258,33 @@ const _search = async (
               numberOfUserRowsAfterSlice: rows.length
             })
 
-            const mUid = rows.map((v) => {
-              return toMatrixId(v.uid as string, idServer.conf.server_name)
-            })
+            const mUid: string[] = []
+            for (const v of rows) {
+              logger.silly('[_search] Processing UserDB data:', v)
+              let mxid: string = ''
+              try {
+                mxid = toMatrixId(v.uid as string, idServer.conf.server_name)
+              } catch (error: unknown) {
+                const err: string =
+                  error instanceof Error
+                    ? `${error.name}: ${error.message}`
+                    : typeof error === 'object' &&
+                      error &&
+                      'errcode' in error &&
+                      'error' in error &&
+                      typeof (error as { errcode: unknown }).errcode ===
+                        'string' &&
+                      typeof (error as { error: unknown }).error === 'string'
+                    ? `${(error as { errcode: string }).errcode}: ${
+                        (error as { error: string }).error
+                      }`
+                    : JSON.stringify(error)
+                logger.warn('[_search] toMatrixId transform impossible', err)
+                continue
+              }
+              mUid.push(mxid)
+              logger.debug(`[_search] Computed MXID: ${mxid}`)
+            }
             logger.debug('[_search] Prepared Matrix UIDs for matrixDb query.', {
               matrixUidsCount: mUid.length
             })
@@ -346,50 +369,39 @@ const _search = async (
                   inactiveMatchesCount: inactive_matches.length
                 })
 
+                logger.silly(
+                  '[_search] Exiting search request handler (success).'
+                )
                 send(res, 200, {
                   matches,
                   inactive_matches
                 })
-                logger.silly(
-                  '[_search] Exiting search request handler (success).'
-                )
               })
               .catch((e) => {
-                logger.error(
-                  '[_search] Error during matrixDb query or result processing.',
-                  { error: e }
-                )
-                sendError(
-                  e instanceof Error ? e.message : String(e),
-                  'matrixDb_query_or_processing'
-                )
                 logger.silly(
                   '[_search] Exiting search request handler (matrixDb error).'
+                )
+                sendError(
+                  e instanceof Error ? e.message : JSON.stringify(e),
+                  'matrixDb_query_or_processing'
                 )
               })
           }
         })
         .catch((e) => {
-          logger.error(
-            '[_search] Error during userDB query or initial result processing.',
-            { error: e }
-          )
-          sendError(
-            e instanceof Error ? e.message : String(e),
-            'userDb_query_or_initial_processing'
-          )
           logger.silly(
             '[_search] Exiting search request handler (userDb error).'
           )
+          sendError(
+            e instanceof Error ? e.message : JSON.stringify(e),
+            'userDb_query_or_initial_processing'
+          )
         })
     } else {
-      logger.warn(
-        '[_search] Invalid parameters detected. Sending 400 response.'
-      )
-      send(res, 400, errMsg('invalidParam'))
       logger.silly(
         '[_search] Exiting search request handler (invalid parameters).'
       )
+      send(res, 400, errMsg('invalidParam'))
     }
   }
 }
