@@ -259,9 +259,26 @@ const _search = async (
               numberOfUserRowsAfterSlice: rows.length
             })
 
-            const mUid = rows.map((v) => {
-              return toMatrixId(v.uid as string, idServer.conf.server_name)
-            })
+            const mUid = rows
+              .map((v) => {
+                logger.silly('[_search] Processing UserDB data:', v)
+                try {
+                  const mxid = toMatrixId(
+                    v.uid as string,
+                    idServer.conf.server_name
+                  )
+                  logger.debug(`[_search] Computed MXID: ${mxid}`)
+                  return mxid
+                } catch (error: unknown) {
+                  logger.warn(
+                    '[_search] toMatrixId transform impossible',
+                    error
+                  )
+                  return null
+                }
+              })
+              .filter((id): id is string => id !== null)
+
             logger.debug('[_search] Prepared Matrix UIDs for matrixDb query.', {
               matrixUidsCount: mUid.length
             })
