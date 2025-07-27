@@ -325,7 +325,7 @@ const _search = async (
 
                   try {
                     row.address = toMatrixId(
-                      v.uid as string,
+                      row.uid as string,
                       idServer.conf.server_name
                     )
                     logger.debug(`[_search] Computed MXID: ${row.address}`)
