@@ -320,12 +320,22 @@ const _search = async (
                 )
 
                 for (const row of rows) {
-                  row.address = toMatrixId(
-                    row.uid as string,
-                    idServer.conf.server_name
-                  )
-
                   const uid = row.uid as string
+                  logger.debug(`[_search] Trying to match ${uid} entry to Address Book`)
+
+                  try {
+                    row.address = toMatrixId(
+                      v.uid as string,
+                      idServer.conf.server_name
+                    )
+                    logger.debug(`[_search] Computed MXID: ${row.address}`)
+                  } catch (error: unknown) {
+                    logger.warn(
+                      '[_search] toMatrixId transform impossible',
+                      error
+                    )
+                    continue
+                  }
 
                   if (contactMap.has(uid)) {
                     row.cn = contactMap.get(uid).cn // Update display name from addressbook
@@ -362,26 +372,25 @@ const _search = async (
                   activeMatchesCount: matches.length,
                   inactiveMatchesCount: inactive_matches.length
                 })
-
+                logger.silly(
+                  '[_search] Exiting search request handler (success).'
+                )
                 send(res, 200, {
                   matches,
                   inactive_matches
                 })
-                logger.silly(
-                  '[_search] Exiting search request handler (success).'
-                )
               })
               .catch((e) => {
                 logger.error(
                   '[_search] Error during matrixDb query or result processing.',
-                  { error: e }
-                )
-                sendError(
-                  e instanceof Error ? e.message : String(e),
-                  'matrixDb_query_or_processing'
+                  e
                 )
                 logger.silly(
                   '[_search] Exiting search request handler (matrixDb error).'
+                )
+                sendError(
+                  e instanceof Error ? e.message : JSON.stringify(e),
+                  'matrixDb_query_or_processing'
                 )
               })
           }
@@ -389,24 +398,24 @@ const _search = async (
         .catch((e) => {
           logger.error(
             '[_search] Error during userDB query or initial result processing.',
-            { error: e }
-          )
-          sendError(
-            e instanceof Error ? e.message : String(e),
-            'userDb_query_or_initial_processing'
+            e
           )
           logger.silly(
             '[_search] Exiting search request handler (userDb error).'
+          )
+          sendError(
+            e instanceof Error ? e.message : JSON.stringify(e),
+            'userDb_query_or_initial_processing'
           )
         })
     } else {
       logger.warn(
         '[_search] Invalid parameters detected. Sending 400 response.'
       )
-      send(res, 400, errMsg('invalidParam'))
       logger.silly(
         '[_search] Exiting search request handler (invalid parameters).'
       )
+      send(res, 400, errMsg('invalidParam'))
     }
   }
 }
