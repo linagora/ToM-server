@@ -1,9 +1,10 @@
-import { promises as fsPromises } from 'fs'
+import fs from 'fs'
 import {
-  ConfigValueType,
-  ConfigDescription,
-  ConfigurationFile,
-  Configuration
+  type ConfigValueType,
+  type ConfigDescription,
+  type ConfigurationFile,
+  type Configuration,
+  type NewConfigDescription
 } from './types'
 import {
   InvalidNumberFormatError,
@@ -14,6 +15,7 @@ import {
   ConfigCoercionError,
   MissingRequiredConfigError
 } from './errors'
+import { oldParser } from './utils'
 
 /**
  * Coerces a string value to the target type.
@@ -26,13 +28,14 @@ import {
  */
 const coerceValue = (value: string, targetType: ConfigValueType): any => {
   switch (targetType) {
-    case 'number':
+    case 'number': {
       const num = parseFloat(value)
       if (isNaN(num)) {
         throw new InvalidNumberFormatError(value)
       }
       return num
-    case 'boolean':
+    }
+    case 'boolean': {
       const lowerValue = value.toLowerCase().trim()
       if (lowerValue === 'true' || lowerValue === '1') {
         return true
@@ -41,6 +44,7 @@ const coerceValue = (value: string, targetType: ConfigValueType): any => {
         return false
       }
       throw new InvalidBooleanFormatError(value)
+    }
     case 'array':
       return value.split(/[,\s]+/).filter((s) => s.length > 0)
     case 'json':
@@ -63,9 +67,9 @@ const coerceValue = (value: string, targetType: ConfigValueType): any => {
  * @returns {Promise<Configuration>} The parsed configuration object from the file.
  * @throws {FileReadParseError} if the file cannot be read or parsed.
  */
-const loadConfigFromFile = async (filePath: string): Promise<Configuration> => {
+const loadConfigFromFile = (filePath: string): Configuration => {
   try {
-    const fileContent = await fsPromises.readFile(filePath, 'utf8')
+    const fileContent = fs.readFileSync(filePath, 'utf8')
     return JSON.parse(fileContent)
   } catch (e: unknown) {
     const error = e instanceof Error ? e : new Error(String(e))
@@ -82,7 +86,7 @@ const loadConfigFromFile = async (filePath: string): Promise<Configuration> => {
  */
 const applyEnvironmentVariables = (
   config: Configuration,
-  desc: ConfigDescription,
+  desc: NewConfigDescription,
   useEnv: boolean
 ): void => {
   Object.keys(desc).forEach((key: string) => {
@@ -120,7 +124,7 @@ const applyEnvironmentVariables = (
  */
 const applyDefaultValues = (
   config: Configuration,
-  desc: ConfigDescription
+  desc: NewConfigDescription
 ): void => {
   Object.keys(desc).forEach((key: string) => {
     const configProp = desc[key]
@@ -161,7 +165,7 @@ const applyDefaultValues = (
  */
 const validateUnwantedKeys = (
   config: Configuration,
-  desc: ConfigDescription
+  desc: NewConfigDescription
 ): void => {
   Object.keys(config).forEach((key: string) => {
     if (desc[key] === undefined) {
@@ -178,11 +182,11 @@ const validateUnwantedKeys = (
  */
 const validateRequiredKeys = (
   config: Configuration,
-  desc: ConfigDescription
+  desc: NewConfigDescription
 ): void => {
   Object.keys(desc).forEach((key: string) => {
     const configProp = desc[key]
-    if (configProp.required && config[key] === undefined) {
+    if ((configProp.required ?? false) && config[key] === undefined) {
       throw new MissingRequiredConfigError(key)
     }
   })
@@ -201,27 +205,40 @@ const validateRequiredKeys = (
  * @throws {ConfigCoercionError} if type coercion fails for environment variables or default values.
  * @throws {MissingRequiredConfigError} if a required configuration key is missing.
  */
-const twakeConfig = async (
+const twakeConfig = (
   desc: ConfigDescription,
   defaultConfigurationFile?: ConfigurationFile,
-  useEnv: boolean = false
-): Promise<Configuration> => {
+  useEnv: boolean = false,
+  useOldParser: boolean = true
+): Configuration => {
   let config: Configuration = {}
 
   if (defaultConfigurationFile != null) {
     if (typeof defaultConfigurationFile === 'string') {
-      config = await loadConfigFromFile(defaultConfigurationFile)
+      config = loadConfigFromFile(defaultConfigurationFile)
     } else {
       config = JSON.parse(JSON.stringify(defaultConfigurationFile))
     }
   }
 
-  applyEnvironmentVariables(config, desc, useEnv)
-  applyDefaultValues(config, desc)
-  validateUnwantedKeys(config, desc)
-  validateRequiredKeys(config, desc)
+  if (useOldParser && (process.env.TWAKE_CONFIG_PARSER_NEW == null)) {
+    // Use old parser by default unless explicitly opting into the new parser
+    oldParser(desc, config)
+    return config
+  } else {
+    // New parser
+    // Ensure desc is treated as NewConfigDescription
+    const newDesc = desc as NewConfigDescription
+    
+    applyEnvironmentVariables(config, newDesc, useEnv)
+    applyDefaultValues(config, newDesc)
+    validateUnwantedKeys(config, newDesc)
+    validateRequiredKeys(config, newDesc)
+  }
 
   return config
 }
+
+export type { ConfigDescription } from './types';
 
 export default twakeConfig
