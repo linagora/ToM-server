@@ -30,9 +30,29 @@ export interface ConfigProperty {
  * @interface ConfigDescription
  * @property {Object.<string, ConfigProperty>} [key: string] - A mapping of configuration keys to their respective ConfigProperty definitions.
  */
-export interface ConfigDescription {
+export interface NewConfigDescription {
   [key: string]: ConfigProperty
 }
+
+/**
+ * Defines the structure of the old configuration description format.
+ * @interface OldConfigDescription
+ * @property {Object.<string, string|Object|number|boolean|null|undefined>} [key: string] - A mapping of configuration keys to their respective values, which can be of various types.
+ */
+export type OldConfigDescription = Record<
+  string,
+  string | Record<string, any> | number | boolean | null | undefined
+>
+
+/**
+ * Defines the overall structure of the configuration description.
+ * It can be either in the new format (NewConfigDescription) or the old format (OldConfigDescription).
+ * @typedef {NewConfigDescription | OldConfigDescription} ConfigDescription
+ * @see {NewConfigDescription}
+ * @see {OldConfigDescription}
+ */
+export type ConfigDescription = NewConfigDescription | OldConfigDescription
+
 
 /**
  * Defines the possible types for the default configuration file input.
