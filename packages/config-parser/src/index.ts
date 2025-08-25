@@ -199,6 +199,7 @@ const validateRequiredKeys = (
  * @param {ConfigDescription} desc - The ConfigDescription defining expected keys, types, defaults, and required status.
  * @param {ConfigurationFile} [defaultConfigurationFile] - An optional base configuration object or path to a JSON file.
  * @param {boolean} [useEnv=false] - Whether to use environment variables for overrides. Defaults to false.
+ * @param {boolean} [useOldParser=true] - Whether to use the old parser logic. Defaults to true.
  * @returns {Promise<Configuration>} The consolidated configuration object with coerced types.
  * @throws {FileReadParseError} if reading/parsing the configuration file fails.
  * @throws {UnacceptedKeyError} if a key isn't accepted (not defined in ConfigDescription).
@@ -211,17 +212,24 @@ const twakeConfig = (
   useEnv: boolean = false,
   useOldParser: boolean = true
 ): Configuration => {
+  // Determine if we should use the old parser
+  const shouldUseOldParser =
+    useOldParser && process.env.TWAKE_CONFIG_PARSER_NEW == null
+  
+  // Start with an empty config
   let config: Configuration = {}
 
   if (defaultConfigurationFile != null) {
     if (typeof defaultConfigurationFile === 'string') {
       config = loadConfigFromFile(defaultConfigurationFile)
     } else {
-      config = JSON.parse(JSON.stringify(defaultConfigurationFile))
+      config = shouldUseOldParser
+        ? defaultConfigurationFile
+        : JSON.parse(JSON.stringify(defaultConfigurationFile))
     }
   }
 
-  if (useOldParser && (process.env.TWAKE_CONFIG_PARSER_NEW == null)) {
+  if (shouldUseOldParser) {
     // Use old parser by default unless explicitly opting into the new parser
     oldParser(desc, config)
     return config
@@ -229,7 +237,7 @@ const twakeConfig = (
     // New parser
     // Ensure desc is treated as NewConfigDescription
     const newDesc = desc as NewConfigDescription
-    
+
     applyEnvironmentVariables(config, newDesc, useEnv)
     applyDefaultValues(config, newDesc)
     validateUnwantedKeys(config, newDesc)
@@ -239,6 +247,6 @@ const twakeConfig = (
   return config
 }
 
-export type { ConfigDescription } from './types';
+export type { ConfigDescription } from './types'
 
 export default twakeConfig
