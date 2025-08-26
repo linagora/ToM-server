@@ -3,7 +3,7 @@ import configParser, { type ConfigDescription } from '@twake/config-parser'
 import fs from 'fs'
 import path from 'path'
 import { createLogger, type Logger } from 'winston'
-import defaultConfDesc from './config.json'
+import defaultConfDesc from './configDesc.json'
 import { TwakeLoggerOptions } from './logger-options'
 import { type Config, type ILoggerConfig } from './types'
 
@@ -18,7 +18,8 @@ export const getLogger = (
     (confDesc?.logging as ConfigDescription) ??
     confDesc ??
     defaultConfDesc.logging
-  const loggingConf = configParser(confDesc, getConfigurationFile(conf))
+  // Parsing the configuration using the new config parser with using environment variables enabled
+  const loggingConf = configParser(confDesc, getConfigurationFile(conf), true, false)
   return createLogger(
     new TwakeLoggerOptions(loggingConf).convertToWinstonLoggerOptions()
   )

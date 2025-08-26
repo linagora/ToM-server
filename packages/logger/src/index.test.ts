@@ -4,7 +4,7 @@ import winston from 'winston'
 import DailyRotateFile from 'winston-daily-rotate-file'
 import { getLogger, type TwakeLogger } from '.'
 import JEST_PROCESS_ROOT_PATH from '../jest.globals'
-import defaultConfDesc from './config.json'
+import confDesc from './configDesc.json'
 import { ETransportType, type TransportInstance } from './types'
 
 describe('Logger', () => {
@@ -41,7 +41,7 @@ describe('Logger', () => {
           )
           .toString()
       )
-      expect(() => getLogger(conf)).toThrow("Key falsy isn't accepted")
+      expect(() => getLogger(conf)).toThrow("Configuration key 'falsy' isn't accepted as it's not defined in the ConfigDescription.")
     })
 
     it('should throw an error if log_level is not a string', () => {
@@ -1392,8 +1392,11 @@ describe('Logger', () => {
       }
       const defaultConf = {
         logging: {
-          ...defaultConfDesc.logging,
-          log_transports: null
+          ...confDesc.logging,
+          log_transports: {
+            type: "array",
+            required: false,
+          }
         }
       }
 
@@ -1519,9 +1522,15 @@ describe('Logger', () => {
       }
       const defaultConf = {
         logging: {
-          ...defaultConfDesc.logging,
-          rejection_handlers: null,
-          exception_handlers: undefined
+          ...confDesc.logging,
+          rejection_handlers: {
+            type: "array",
+            required: false
+          },
+          exception_handlers: {
+            type: "array",
+            required: false
+          }
         }
       }
 
@@ -1558,9 +1567,15 @@ describe('Logger', () => {
       }
       const defaultConf = {
         logging: {
-          ...defaultConfDesc.logging,
-          rejection_handlers: null,
-          exception_handlers: null
+          ...confDesc.logging,
+          rejection_handlers: {
+            type: "array",
+            required: false
+          },
+          exception_handlers: {
+            type: "array",
+            required: false
+          }
         }
       }
 
