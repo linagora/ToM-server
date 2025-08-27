@@ -85,6 +85,21 @@ services:
         aliases:
           - synapse
       db:
+  
+  rabbitmq:
+    image: rabbitmq:3-management
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    ports:
+      - 5672:5672
+      - 15672:15672
+    networks:
+      frontend:
+        aliases:
+          - rabbitmq
+      to_local:
+      
 
   tom:
     image: tom
@@ -247,3 +262,5 @@ networks:
     name: db
   frontend:
     name: frontend
+  to_local:
+    driver: bridge
