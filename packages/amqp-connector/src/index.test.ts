@@ -1,0 +1,110 @@
+/* eslint-disable @typescript-eslint/promise-function-async */
+import amqplib from 'amqplib'
+import { AMQPConnector } from '.'
+import {
+  QueueNotSpecifiedError,
+  MessageHandlerNotProvidedError
+} from './errors'
+
+jest.mock('amqplib')
+
+describe('AMQPConnector', () => {
+  const mockConsume = jest.fn()
+  const mockAck = jest.fn()
+  const mockAssertQueue = jest.fn(() => Promise.resolve())
+  const mockChannel = {
+    assertQueue: mockAssertQueue,
+    consume: mockConsume,
+    ack: mockAck,
+    close: jest.fn(() => Promise.resolve())
+  }
+
+  const mockCreateChannel = jest.fn(() => Promise.resolve(mockChannel))
+  const mockCloseConnection = jest.fn(() => Promise.resolve())
+  const mockConnect = jest.fn(() =>
+    Promise.resolve({
+      createChannel: mockCreateChannel,
+      close: mockCloseConnection
+    })
+  )
+
+  beforeAll(() => {
+    ;(amqplib.connect as jest.Mock).mockImplementation(mockConnect)
+  })
+
+  beforeEach(() => {
+    jest.clearAllMocks()
+  })
+
+  it('should throw an error if queue is not specified', async () => {
+    await expect(new AMQPConnector().build()).rejects.toThrow(
+      QueueNotSpecifiedError
+    )
+  })
+
+  it('should throw an error if message handler is not provided', async () => {
+    await expect(
+      new AMQPConnector().withQueue('test-queue').build()
+    ).rejects.toThrow(MessageHandlerNotProvidedError)
+  })
+
+  it('should connect, assert queue, and call handler when a message is consumed', async () => {
+    let consumerCallback: any
+    mockConsume.mockImplementation((_queue, cb) => {
+      consumerCallback = cb
+      return Promise.resolve()
+    })
+
+    const handler = jest.fn()
+    const connector = new AMQPConnector()
+      .withUrl('amqp://localhost')
+      .withQueue('test-queue')
+      .onMessage(handler)
+
+    await connector.build() // <-- now async
+
+    const fakeMsg = { content: Buffer.from('hello') }
+    consumerCallback(fakeMsg)
+
+    expect(amqplib.connect).toHaveBeenCalledWith('amqp://localhost')
+    expect(mockCreateChannel).toHaveBeenCalled()
+    expect(mockAssertQueue).toHaveBeenCalledWith('test-queue', {
+      durable: true
+    })
+    expect(handler).toHaveBeenCalledWith(fakeMsg, mockChannel)
+    expect(mockAck).toHaveBeenCalledWith(fakeMsg)
+  })
+
+  it('should ignore null messages without throwing', async () => {
+    let consumerCallback: any
+    mockConsume.mockImplementation((_queue, cb) => {
+      consumerCallback = cb
+      return Promise.resolve()
+    })
+
+    const handler = jest.fn()
+    const connector = new AMQPConnector()
+      .withUrl('amqp://localhost')
+      .withQueue('test-queue')
+      .onMessage(handler)
+
+    await connector.build()
+    consumerCallback(null)
+
+    expect(handler).not.toHaveBeenCalled()
+    expect(mockAck).not.toHaveBeenCalled()
+  })
+
+  it('should close channel and connection on close()', async () => {
+    const connector = new AMQPConnector()
+      .withUrl('amqp://localhost')
+      .withQueue('test-queue')
+      .onMessage(jest.fn())
+
+    await connector.build()
+    await connector.close()
+
+    expect(mockChannel.close).toHaveBeenCalled()
+    expect(mockCloseConnection).toHaveBeenCalled()
+  })
+})
