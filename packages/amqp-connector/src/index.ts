@@ -62,7 +62,12 @@ export class AMQPConnector {
 
     this.connection = await amqplib.connect(this.url)
     this.channel = await this.connection.createChannel()
-    await this.channel.assertQueue(this.queue, this.options)
+    await this.channel.assertExchange("events", "topic", { durable: true });
+    await this.channel.assertQueue(this.queue, {
+      ...this.options,
+      arguments: { 'x-queue-type': 'quorum' }
+    })
+    await this.channel.bindQueue(this.queue, "events", "#");
     await this.channel.consume(
       this.queue,
       (msg) => {
