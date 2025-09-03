@@ -56,6 +56,11 @@ export type Config = MConfig &
       private_channel: PowerLevelEventContent
       public_channel: PowerLevelEventContent
     }
+    synapse_admin_secret: string,
+    common_settings_connector: {
+      amqp_url: string,
+      queue: string
+    }
   }
 
 export interface AuthRequest extends Request {

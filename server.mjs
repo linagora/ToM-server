@@ -3,6 +3,7 @@ import { installGlobals } from '@remix-run/node'
 import AppServer from '@twake/matrix-application-server'
 import TomServer from '@twake/server'
 import MatrixIdentityServer from '@twake/matrix-identity-server'
+import { CommonSettingsService } from '@twake/common-settings-connector'
 import express from 'express'
 import path from 'node:path'
 import { fileURLToPath } from 'url'
@@ -74,6 +75,11 @@ const twakeChatConf = {
     process.env.TCHAT_ENABLE_INVITATIONS,
     false
   )
+}
+
+const commonSettingsConnectorConf = {
+  amqp_url: process.env.COMMON_SETTINGS_AMQP_URL || 'amqp://localhost:5672',
+  queue: process.env.COMMON_SETTINGS_QUEUE || 'common_settings'
 }
 
 let conf = {
@@ -160,7 +166,9 @@ let conf = {
   smtp_sender: process.env.SMTP_SENDER ?? '',
   smtp_server: process.env.SMTP_SERVER || 'localhost',
   smtp_port: process.env.SMTP_PORT || 25,
-  twake_chat: twakeChatConf
+  twake_chat: twakeChatConf,
+  synapse_admin_secret: process.env.SYNAPSE_ADMIN_SECRET,
+  common_settings_connector: commonSettingsConnectorConf
 }
 
 if (process.argv[2] === 'generate') {
@@ -261,7 +269,13 @@ if (process.argv[2] === 'generate') {
 
         const port = process.argv[2] != null ? parseInt(process.argv[2]) : 3000
         console.log(`ToM-Server listening on port: ${port}`)
-        app.listen(port, '0.0.0.0')
+        app.listen(port, '0.0.0.0', async () => {
+          const service = new CommonSettingsService(
+            conf,
+            tomServer.logger
+          )
+          await service.start()
+        })
       })
     })
     .catch((e) => {

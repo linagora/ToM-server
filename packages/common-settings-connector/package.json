@@ -1,16 +1,18 @@
 {
   "type": "module",
-  "name": "@twake/amqp-connector",
+  "name": "@twake/common-settings-connector",
   "version": "0.0.1",
-  "description": "ToM RabbitMQ connector",
+  "description": "ToM common settings connector",
   "main": "dist/index.js",
   "scripts": {
     "build": "rollup -c",
+    "watch": "rollup -c -w",
     "test": "jest"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@twake/server": "^0.0.1",
     "amqplib": "^0.10.9"
   },
   "devDependencies": {

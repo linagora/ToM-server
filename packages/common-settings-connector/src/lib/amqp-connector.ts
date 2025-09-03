@@ -60,20 +60,27 @@ export class AMQPConnector {
     if (this.onMessageHandler == null)
       throw new MessageHandlerNotProvidedError()
 
+    console.log("[🐰] Init... ", this.url);
+    const exchangeName = "settings exchange";
+    const dlxName = `${exchangeName}.dlx`;
+    const dlxRoutingKey = `user.settings.update.dead`;
     this.connection = await amqplib.connect(this.url)
     this.channel = await this.connection.createChannel()
-    await this.channel.assertExchange("events", "topic", { durable: true });
+    await this.channel.assertExchange(exchangeName, "topic", { durable: true });
     await this.channel.assertQueue(this.queue, {
       ...this.options,
-      arguments: { 'x-queue-type': 'quorum' }
+      deadLetterExchange: dlxName,
+      deadLetterRoutingKey: dlxRoutingKey,
     })
-    await this.channel.bindQueue(this.queue, "events", "#");
+    await this.channel.bindQueue(this.queue, exchangeName, "#");
+    console.log("[🐰] Queue binded.");
     await this.channel.consume(
       this.queue,
-      (msg) => {
+      // eslint-disable-next-line @typescript-eslint/no-misused-promises
+      async (msg) => {
         if (msg != null) {
           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          this.onMessageHandler!(msg, this.channel!)
+          await this.onMessageHandler?.(msg, this.channel!)
           this.channel?.ack(msg)
         }
       },
