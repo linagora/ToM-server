@@ -259,6 +259,7 @@
       "creator_becomes": 90
     }
   },
+  "synapse_admin_server": "http://127.0.0.1:3000",
   "synapse_admin_secret": "changeme",
   "common_settings_connector": {
     "amqp_url": "amqp://localhost:5672",

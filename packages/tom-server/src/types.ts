@@ -55,7 +55,8 @@ export type Config = MConfig &
       public_group_chat: PowerLevelEventContent
       private_channel: PowerLevelEventContent
       public_channel: PowerLevelEventContent
-    }
+    },
+    synapse_admin_server: string,
     synapse_admin_secret: string,
     common_settings_connector: {
       amqp_url: string,

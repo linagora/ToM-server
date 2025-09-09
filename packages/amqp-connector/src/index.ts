@@ -1,4 +1,5 @@
 import amqplib, { type Options } from 'amqplib'
+import { type TwakeLogger } from '@twake/logger';
 import { type MessageHandler } from './types'
 import {
   QueueNotSpecifiedError,
@@ -6,12 +7,21 @@ import {
 } from './errors'
 
 export class AMQPConnector {
+  private readonly logger?: TwakeLogger;
   private url: string = ''
   private queue?: string
   private options: Options.AssertQueue = { durable: true }
   private onMessageHandler?: MessageHandler
   private connection?: amqplib.ChannelModel
   private channel?: amqplib.Channel
+
+  /**
+   * Constructor for AMQPConnector
+   * @param logger - Optional TwakeLogger instance for logging
+   */
+  constructor(logger?: TwakeLogger) {
+    this.logger = logger;
+  }
 
   /**
    * Set the AMQP server URL
@@ -60,7 +70,7 @@ export class AMQPConnector {
     if (this.onMessageHandler == null)
       throw new MessageHandlerNotProvidedError()
 
-    console.log("[🐰] Init... ", this.url);
+    this.logger?.info(`[AMQPConnector] Connecting to AMQP server...`);
     const exchangeName = "settings exchange";
     const dlxName = `${exchangeName}.dlx`;
     const dlxRoutingKey = `user.settings.update.dead`;
@@ -73,7 +83,7 @@ export class AMQPConnector {
       deadLetterRoutingKey: dlxRoutingKey,
     })
     await this.channel.bindQueue(this.queue, exchangeName, "#");
-    console.log("[🐰] Queue binded.");
+    this.logger?.info(`[AMQPConnector] Connected and listening on queue: ${this.queue}`);
     await this.channel.consume(
       this.queue,
       // eslint-disable-next-line @typescript-eslint/no-misused-promises
@@ -95,6 +105,7 @@ export class AMQPConnector {
   async close(): Promise<void> {
     await this.channel?.close().catch(() => {})
     await this.connection?.close().catch(() => {})
+    this.logger?.info(`[AMQPConnector] Connection closed.`);
   }
 
   /**

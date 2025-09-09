@@ -27,12 +27,13 @@ export default class AdminSettingsrController
     next: NextFunction
   ): Promise<void> => {
     try {
-      const { userId, displayName } = req.body;
+      const { id: userId } = req.params;
+      const { displayName, avatarUrl } = req.body;
       if ((userId.length === 0) || (displayName.length === 0)) {
         res.status(400).json({ message: 'Missing user ID or display name' })
         return
       }
-      await this.adminService.updateDisplayName(userId, displayName);
+      await this.adminService.updateUserInformation(userId, {displayName, avatarUrl});
       res.status(200).json({ message: 'dwho' })
     } catch (error) {
       this.logger.error(`Failed to handle request`, { error })

@@ -26,7 +26,7 @@ export default (
    * @returns { 200, 400, 401, 403, 500 }
    */
   router.post(
-    `${PATH}/settings/display-name/:id`,
+    `${PATH}/settings/information/:id`,
     middleware.checkAdminSettingsToken,
     // eslint-disable-next-line @typescript-eslint/no-misused-promises
     controller.handle

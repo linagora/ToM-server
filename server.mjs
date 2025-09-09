@@ -3,7 +3,7 @@ import { installGlobals } from '@remix-run/node'
 import AppServer from '@twake/matrix-application-server'
 import TomServer from '@twake/server'
 import MatrixIdentityServer from '@twake/matrix-identity-server'
-import { CommonSettingsService } from '@twake/common-settings-connector'
+import { CommonSettingsService } from '@twake/common-settings'
 import express from 'express'
 import path from 'node:path'
 import { fileURLToPath } from 'url'
@@ -167,6 +167,7 @@ let conf = {
   smtp_server: process.env.SMTP_SERVER || 'localhost',
   smtp_port: process.env.SMTP_PORT || 25,
   twake_chat: twakeChatConf,
+  synapse_admin_server: process.env.ADMIN_API_SETTINGS_SERVER,
   synapse_admin_secret: process.env.SYNAPSE_ADMIN_SECRET,
   common_settings_connector: commonSettingsConnectorConf
 }

@@ -1,3 +1,8 @@
+export interface UserInformationPayload {
+  displayName?: string;
+  avatarUrl?: string;
+}
+
 export interface CommonSettingsMessage {
   source: string
   nickname: string

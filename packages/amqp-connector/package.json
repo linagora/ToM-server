@@ -1,8 +1,8 @@
 {
   "type": "module",
-  "name": "@twake/common-settings-connector",
+  "name": "@twake/amqp-connector",
   "version": "0.0.1",
-  "description": "ToM common settings connector",
+  "description": "ToM AMQP connector",
   "main": "dist/index.js",
   "scripts": {
     "build": "rollup -c",
@@ -12,7 +12,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@twake/server": "^0.0.1",
     "amqplib": "^0.10.9"
   },
   "devDependencies": {
