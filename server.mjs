@@ -271,12 +271,12 @@ if (process.argv[2] === 'generate') {
         const port = process.argv[2] != null ? parseInt(process.argv[2]) : 3000
         console.log(`ToM-Server listening on port: ${port}`)
         app.listen(port, '0.0.0.0', async () => {
-          const service = new CommonSettingsService(
+          const commonSettingsServiceI = new CommonSettingsService(
             conf,
             tomServer.logger,
             tomServer.db
           )
-          await service.start()
+          await commonSettingsServiceI.start()
         })
       })
     })
