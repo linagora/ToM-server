@@ -33,3 +33,27 @@ export class QueueNotProvidedError extends CommonSettingsError {
         this.name = 'QueueNotProvidedError'
     }
 }
+
+/**
+ * Error thrown when User ID is not provided
+ * @class UserIdNotProvidedError
+ * @extends CommonSettingsError
+ */
+export class UserIdNotProvidedError extends CommonSettingsError {
+    constructor() {
+        super('User ID must be provided.')
+        this.name = 'UserIdNotProvidedError'
+    }
+}
+
+/**
+ * Error thrown when User settings are not provided
+ * @class UserSettingsNotProvidedError
+ * @extends CommonSettingsError
+ */
+export class UserSettingsNotProvidedError extends CommonSettingsError {
+    constructor() {
+        super('User settings must be provided.')
+        this.name = 'UserSettingsNotProvidedError'
+    }
+}

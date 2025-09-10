@@ -87,6 +87,7 @@ export type twakeDbCollections =
   | 'invitations'
   | 'addressbooks'
   | 'contacts'
+  | 'usersettings'
 
 export type ApiRequestHandler = (
   req: Request,

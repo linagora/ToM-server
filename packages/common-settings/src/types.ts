@@ -21,3 +21,9 @@ export interface CommonSettingsMessage {
     display_name?: string
   }
 }
+
+export interface UserSettings {
+  matrix_id: string;
+  settings: string;
+  version: number;
+}

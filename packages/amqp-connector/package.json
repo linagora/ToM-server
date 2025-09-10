@@ -12,6 +12,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@twake/logger": "^0.0.1",
     "amqplib": "^0.10.9"
   },
   "devDependencies": {

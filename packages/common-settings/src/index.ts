@@ -1,20 +1,21 @@
 import { type TwakeLogger } from '@twake/logger';
 import { AMQPConnector } from '@twake/amqp-connector';
-import { type UserInformationPayload, type CommonSettingsMessage } from './types';
-import type { Config } from '@twake/server/src/types';
-import { QueueNotProvidedError, UrlNotProvidedError } from './errors';
-
+import { type UserSettings, type UserInformationPayload, type CommonSettingsMessage } from './types';
+import type { Config, TwakeDB } from '@twake/server/src/types';
+import { QueueNotProvidedError, UrlNotProvidedError, UserIdNotProvidedError, UserSettingsNotProvidedError } from './errors';
 
 export class CommonSettingsService {
   private readonly connector: AMQPConnector;
   private readonly config: Partial<Config>;
   private readonly logger: TwakeLogger;
+  private readonly db: TwakeDB;
   private readonly amqpUrl: string;
   private readonly queueName: string;
 
-  constructor(config: Config, logger: TwakeLogger) {
+  constructor(config: Config, logger: TwakeLogger, db: TwakeDB) {
     this.config = config;
     this.logger = logger;
+    this.db = db;
 
     // Parse the AMQP URL and Queue name from config
     this.amqpUrl = this.config.common_settings_connector?.amqp_url ?? '';
@@ -82,7 +83,31 @@ export class CommonSettingsService {
 
     try {
       this.logger.info('[CommonSettingsService] Updating the user information: ', { userId, displayName });
-      await this._updateUserInformationWithRetry(userId, { displayName, avatarUrl });
+      const { userSettings, created } = await this._getOrCreateUserSettings(userId, parsed);
+
+      let updatePayload: Record<string, any> = {};
+
+      // Update display name and avatar if changed or if new record
+      if (created) {
+        updatePayload = { displayName, avatarUrl };
+      } else {
+        const oldConfig = JSON.parse(userSettings.settings);
+
+        if (oldConfig.display_name !== displayName) {
+          updatePayload.displayName = displayName;
+        }
+        if (oldConfig.avatar !== avatarUrl) {
+          updatePayload.avatarUrl = avatarUrl;
+        }
+      }
+
+      // If there are changes, update user information
+      if (Object.keys(updatePayload).length > 0) {
+        this.logger.info('[CommonSettingsService] Detected changes, updating user information', { userId, updatePayload });
+        await this._updateUserInformationWithRetry(userId, updatePayload);
+      }
+      // Update or insert user settings in the database
+      await this._updateUserSettings(userId, parsed);
       this.logger.info('[CommonSettingsService] Successfully updated the user information: ', { userId });
     } catch (err: any) {
       this.logger.error('[CommonSettingsService] Failed to update the user information: ', {
@@ -120,6 +145,7 @@ export class CommonSettingsService {
   private async _updateUserInformationWithRetry(userId: string, payload: UserInformationPayload, retries = 3): Promise<void> {
     for (let attempt = 1; attempt <= retries; attempt++) {
       try {
+        this.logger.info(`[CommonSettingsService] Attempt ${attempt} to update user ${userId}`);
         await this._updateUserInformation(userId, payload); return;
       } catch (err: any) {
         if (attempt === retries) throw err;
@@ -161,5 +187,99 @@ export class CommonSettingsService {
       );
     }
   }
-}
 
+  /**
+ * Get existing user settings or create them if not present.
+ * 
+ * @param userId The ID of the user
+ * @param settings The settings payload to create if not existing
+ * @returns The user settings and a flag indicating if they were created
+ * @throws Errors if database operations fail
+ */
+  private async _getOrCreateUserSettings(
+    userId: string,
+    settings: CommonSettingsMessage
+  ): Promise<{ userSettings: UserSettings; created: boolean }> {
+    try {
+      if (userId.length === 0)
+        throw new Error('UserId is required');
+
+      if (settings?.payload == null)
+        throw new Error('Settings payload is missing');
+
+      const existing = (await this.db.get(
+        'usersettings',
+        ['*'],
+        { matrix_id: userId }
+      )) as unknown as UserSettings[];
+
+      if (Array.isArray(existing) && existing.length > 0) {
+        this.logger?.info('[CommonSettingsService] Found existing user settings', { userId });
+        return { userSettings: existing[0], created: false };
+      }
+
+      const insertPayload = {
+        matrix_id: userId,
+        settings: JSON.stringify(settings.payload),
+        version: settings.version,
+      };
+
+      const insertResult = (await this.db.insert(
+        'usersettings',
+        insertPayload
+      )) as unknown as UserSettings;
+
+      this.logger?.info('[CommonSettingsService] Created new user settings', { userId });
+      return { userSettings: insertResult, created: true };
+    } catch (err: any) {
+      this.logger?.error('[CommonSettingsService] Failed to get or create user settings', {
+        userId,
+        error: err?.message,
+      });
+      throw err;
+    }
+  }
+
+  /**
+   * Update existing user settings.
+   * 
+   * @param userId The ID of the user
+   * @param settings The new settings payload
+   * @returns Promise that resolves when the update is complete
+   * @throws Errors if database operations fail
+   */
+  private async _updateUserSettings(
+    userId: string,
+    settings: CommonSettingsMessage
+  ): Promise<void> {
+    try {
+      if (userId.length === 0)
+        throw new UserIdNotProvidedError();
+
+      if (settings?.payload == null)
+        throw new UserSettingsNotProvidedError();
+
+      const updatePayload = {
+        settings: JSON.stringify(settings.payload),
+        version: settings.version,
+      };
+
+      // Update the user settings in the database
+      await this.db.update(
+        'usersettings',
+        updatePayload,
+        'matrix_id',
+        userId
+      );
+
+      this.logger?.info('[CommonSettingsService] Updated user settings', { userId });
+    } catch (err: any) {
+      this.logger?.error('[CommonSettingsService] Failed to update user settings', {
+        userId,
+        error: err?.message,
+      });
+      throw err;
+    }
+  }
+
+}

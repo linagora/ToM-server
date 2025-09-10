@@ -273,7 +273,8 @@ if (process.argv[2] === 'generate') {
         app.listen(port, '0.0.0.0', async () => {
           const service = new CommonSettingsService(
             conf,
-            tomServer.logger
+            tomServer.logger,
+            tomServer.db
           )
           await service.start()
         })
