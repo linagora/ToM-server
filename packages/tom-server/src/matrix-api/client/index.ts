@@ -7,6 +7,7 @@ import type { AuthenticationFunction, Config } from '../../types'
 import { Router } from 'express'
 import bodyParser from 'body-parser'
 import CreateRoomAPI from './createRoom'
+import DisplayNameAPI from './displayName'
 
 export const PATH = '/_matrix/client/v3'
 
@@ -25,9 +26,11 @@ export default (
   const router = Router()
   const logger = defaultLogger ?? getLogger(config as unknown as LoggerConfig)
   const createRoomAPI = CreateRoomAPI(config, authenticator, logger)
+  const displayNameAPI = DisplayNameAPI(config, authenticator, logger)
 
   router.use(bodyParser.json())
   router.use(`${PATH}/createRoom`, createRoomAPI)
+  router.use(`${PATH}/profile/:userId/displayname`, displayNameAPI)
 
   return router
 }
