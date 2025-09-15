@@ -63,7 +63,17 @@ describe('AMQPConnector', () => {
     })
 
     const connector = new AMQPConnector()
-      .withUrl('amqp://localhost')
+      .withConfig(
+        {
+          host: 'localhost',
+          port: 5672,
+          username: 'guest',
+          password: 'guest',
+          vhost: '/',
+          tls: false
+        }
+      )
+      .withExchange('test-exchange')
       .withQueue('test-queue')
       .onMessage(mockHandler)
 

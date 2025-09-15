@@ -1,6 +1,6 @@
 import amqplib, { type Options } from 'amqplib'
 import { type TwakeLogger } from '@twake/logger';
-import { type MessageHandler } from './types'
+import { type AmqpConfig, type MessageHandler } from './types'
 import {
   QueueNotSpecifiedError,
   MessageHandlerNotProvidedError
@@ -9,8 +9,10 @@ import {
 export class AMQPConnector {
   private readonly logger?: TwakeLogger;
   private url: string = ''
+  private exchange: string = ''
   private queue?: string
-  private options: Options.AssertQueue = { durable: true }
+  private exchangeOptions: Options.AssertExchange = { durable: true }
+  private queueOptions: Options.AssertQueue = { durable: true }
   private onMessageHandler?: MessageHandler
   private connection?: amqplib.ChannelModel
   private channel?: amqplib.Channel
@@ -23,6 +25,18 @@ export class AMQPConnector {
     this.logger = logger;
   }
 
+
+  /**
+   * Set the AMQP server URL using structured configuration
+   * @param conf - AMQP structured configuration
+   * @returns this
+   */
+  withConfig(conf: AmqpConfig): this {
+    const protocol = conf.tls === true ? "amqps" : "amqp";
+    const url = `${protocol}://${encodeURIComponent(conf.username)}:${encodeURIComponent(conf.password)}@${conf.host}:${conf.port}/${conf.vhost}`;
+    return this.withUrl(url);
+  }
+
   /**
    * Set the AMQP server URL
    * @param url - AMQP server URL
@@ -31,6 +45,12 @@ export class AMQPConnector {
   withUrl(url: string): this {
     this.url = url
     return this
+  }
+
+  withExchange(exchange: string, options: Options.AssertExchange = { durable: true }): this {
+    this.exchange = exchange;
+    this.exchangeOptions = options;
+    return this;
   }
 
   /**
@@ -44,7 +64,7 @@ export class AMQPConnector {
     options: Options.AssertQueue = { durable: true }
   ): this {
     this.queue = queue
-    this.options = options
+    this.queueOptions = options
     return this
   }
 
@@ -71,18 +91,11 @@ export class AMQPConnector {
       throw new MessageHandlerNotProvidedError()
 
     this.logger?.info(`[AMQPConnector] Connecting to AMQP server...`);
-    const exchangeName = "settings exchange";
-    const dlxName = `${exchangeName}.dlx`;
-    const dlxRoutingKey = `user.settings.update.dead`;
     this.connection = await amqplib.connect(this.url)
     this.channel = await this.connection.createChannel()
-    await this.channel.assertExchange(exchangeName, "topic", { durable: true });
-    await this.channel.assertQueue(this.queue, {
-      ...this.options,
-      deadLetterExchange: dlxName,
-      deadLetterRoutingKey: dlxRoutingKey,
-    })
-    await this.channel.bindQueue(this.queue, exchangeName, "#");
+    await this.channel.assertExchange(this.exchange, "topic", this.exchangeOptions);
+    await this.channel.assertQueue(this.queue, this.queueOptions)
+    await this.channel.bindQueue(this.queue, this.exchange, "#");
     this.logger?.info(`[AMQPConnector] Connected and listening on queue: ${this.queue}`);
     await this.channel.consume(
       this.queue,
@@ -103,8 +116,8 @@ export class AMQPConnector {
    * @returns Promise that resolves when the connection and channel are closeds
    */
   async close(): Promise<void> {
-    await this.channel?.close().catch(() => {})
-    await this.connection?.close().catch(() => {})
+    await this.channel?.close().catch(() => { })
+    await this.connection?.close().catch(() => { })
     this.logger?.info(`[AMQPConnector] Connection closed.`);
   }
 
