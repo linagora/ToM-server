@@ -1,4 +1,4 @@
-FROM debian:bullseye-slim
+FROM debian:stable-slim
 LABEL maintainer Linagora
 
 ENV DEBIAN_FRONTEND=noninteractive
