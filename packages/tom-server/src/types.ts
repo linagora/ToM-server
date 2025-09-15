@@ -58,9 +58,25 @@ export type Config = MConfig &
     },
     synapse_admin_server: string,
     synapse_admin_secret: string,
-    common_settings_connector: {
-      amqp_url: string,
-      queue: string
+    rabbitmq: {
+      host: string,
+      port: number,
+      vhost: string,
+      username: string,
+      password: string,
+      tls: boolean
+    },
+    features: {
+      common_settings: {
+        enabled: boolean,
+        exchange: string,
+        queue: string,
+        deadLetterExchange: string,
+        deadLetterRoutingKey: string,
+        api_url: string,
+        api_secret: string
+      },
+      matrix_profile_updates_allowed: boolean
     }
   }
 

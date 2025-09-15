@@ -77,9 +77,33 @@ const twakeChatConf = {
   )
 }
 
-const commonSettingsConnectorConf = {
-  amqp_url: process.env.COMMON_SETTINGS_AMQP_URL || 'amqp://localhost:5672',
-  queue: process.env.COMMON_SETTINGS_QUEUE || 'common_settings'
+const rabbitmqConf = {
+  host: process.env.RABBITMQ_HOST || 'localhost',
+  port: process.env.RABBITMQ_PORT || 5672,
+  vhost: process.env.RABBITMQ_VHOST || '/',
+  username: process.env.RABBITMQ_USER || 'guest',
+  password: process.env.RABBITMQ_PASSWORD || 'guest',
+  tls: _parseBooleanEnv(process.env.RABBITMQ_TLS, false) ,
+}
+
+const featuresConf = {
+  common_settings: {
+    enabled: _parseBooleanEnv(process.env.FEATURE_COMMON_SETTINGS_ENABLED, false),
+    queue: process.env.FEATURE_COMMON_SETTINGS_QUEUE || 'settings.queue',
+    exchange: process.env.FEATURE_COMMON_SETTINGS_EXCHANGE || 'settings.exchange',
+    deadLetterExchange:
+      process.env.FEATURE_COMMON_SETTINGS_DEAD_LETTER_EXCHANGE ||
+      'settings.dead.letter.exchange',
+    deadLetterRoutingKey:
+      process.env.FEATURE_COMMON_SETTINGS_DEAD_LETTER_ROUTING_KEY ||
+      'settings.dead.letter.routing.key',
+    api_url: process.env.FEATURE_COMMON_SETTINGS_API_URL || 'http://host.docker.internal:4000',
+    api_secret: process.env.FEATURE_COMMON_SETTINGS_API_SECRET || 'secret',
+  },
+  matrix_profile_updates_allowed: _parseBooleanEnv(
+    process.env.FEATURE_MATRIX_PROFILE_UPDATES_ALLOWED,
+    false
+  )
 }
 
 let conf = {
@@ -169,7 +193,8 @@ let conf = {
   twake_chat: twakeChatConf,
   synapse_admin_server: process.env.ADMIN_API_SETTINGS_SERVER,
   synapse_admin_secret: process.env.SYNAPSE_ADMIN_SECRET,
-  common_settings_connector: commonSettingsConnectorConf
+  rabbitmq: rabbitmqConf,
+  features: featuresConf
 }
 
 if (process.argv[2] === 'generate') {
@@ -271,12 +296,14 @@ if (process.argv[2] === 'generate') {
         const port = process.argv[2] != null ? parseInt(process.argv[2]) : 3000
         console.log(`ToM-Server listening on port: ${port}`)
         app.listen(port, '0.0.0.0', async () => {
-          const commonSettingsServiceI = new CommonSettingsService(
-            conf,
-            tomServer.logger,
-            tomServer.db
-          )
-          await commonSettingsServiceI.start()
+          if (conf.features.common_settings.enabled === true) {
+            const commonSettingsServiceI = new CommonSettingsService(
+              conf,
+              tomServer.logger,
+              tomServer.db
+            )
+            await commonSettingsServiceI.start()
+          }
         })
       })
     })
