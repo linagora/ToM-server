@@ -1,5 +1,5 @@
 # Base for final image
-FROM debian:bookworm-slim as node-minimal
+FROM debian:stable-slim as node-minimal
 
 RUN apt update && \
     apt -y dist-upgrade && \
@@ -9,7 +9,7 @@ RUN apt update && \
     rm -rf /var/lib/apt/lists/*
 
 # Temporary image to build app
-FROM debian:bookworm-slim as builder
+FROM debian:stable-slim as builder
 
 RUN apt update && \
     apt -y dist-upgrade && \
