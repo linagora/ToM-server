@@ -4,22 +4,22 @@
  * @extends Error
  */
 export class CommonSettingsError extends Error {
-    constructor(message: string) {
-        super(message)
-        this.name = 'CommonSettingsError'
-    }
+  constructor(message: string) {
+    super(message)
+    this.name = 'CommonSettingsError'
+  }
 }
 
 /**
- * Error thrown when AMQP URL is not provided
- * @class UrlNotProvidedError
+ * Error thrown when AMQP Config is not provided
+ * @class ConfigNotProvidedError
  * @extends CommonSettingsError
  */
-export class UrlNotProvidedError extends CommonSettingsError {
-    constructor() {
-        super('AMQP URL must be provided')
-        this.name = 'UrlNotProvidedError'
-    }
+export class ConfigNotProvidedError extends CommonSettingsError {
+  constructor() {
+    super('AMQP configuration must be provided')
+    this.name = 'ConfigNotProvidedError'
+  }
 }
 
 /**
@@ -28,10 +28,10 @@ export class UrlNotProvidedError extends CommonSettingsError {
  * @extends CommonSettingsError
  */
 export class ExchangeNotProvidedError extends CommonSettingsError {
-    constructor() {
-        super('Exchange name must be provided')
-        this.name = 'ExchangeNotProvidedError'
-    }
+  constructor() {
+    super('Exchange name must be provided')
+    this.name = 'ExchangeNotProvidedError'
+  }
 }
 
 /**
@@ -40,10 +40,10 @@ export class ExchangeNotProvidedError extends CommonSettingsError {
  * @extends CommonSettingsError
  */
 export class QueueNotProvidedError extends CommonSettingsError {
-    constructor() {
-        super('Queue name must be provided')
-        this.name = 'QueueNotProvidedError'
-    }
+  constructor() {
+    super('Queue name must be provided')
+    this.name = 'QueueNotProvidedError'
+  }
 }
 
 /**
@@ -52,10 +52,10 @@ export class QueueNotProvidedError extends CommonSettingsError {
  * @extends CommonSettingsError
  */
 export class UserIdNotProvidedError extends CommonSettingsError {
-    constructor() {
-        super('User ID must be provided.')
-        this.name = 'UserIdNotProvidedError'
-    }
+  constructor() {
+    super('User ID must be provided.')
+    this.name = 'UserIdNotProvidedError'
+  }
 }
 
 /**
@@ -64,8 +64,8 @@ export class UserIdNotProvidedError extends CommonSettingsError {
  * @extends CommonSettingsError
  */
 export class UserSettingsNotProvidedError extends CommonSettingsError {
-    constructor() {
-        super('User settings must be provided.')
-        this.name = 'UserSettingsNotProvidedError'
-    }
+  constructor() {
+    super('User settings must be provided.')
+    this.name = 'UserSettingsNotProvidedError'
+  }
 }

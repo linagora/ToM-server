@@ -1,6 +1,6 @@
 export interface UserInformationPayload {
-  displayName?: string;
-  avatarUrl?: string;
+  displayName?: string
+  avatarUrl?: string
 }
 
 export interface CommonSettingsMessage {
@@ -23,7 +23,7 @@ export interface CommonSettingsMessage {
 }
 
 export interface UserSettings {
-  matrix_id: string;
-  settings: string;
-  version: number;
+  matrix_id: string
+  settings: string
+  version: number
 }
