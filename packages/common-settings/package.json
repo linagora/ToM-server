@@ -6,8 +6,7 @@
   "main": "dist/index.js",
   "scripts": {
     "build": "rollup -c",
-    "watch": "rollup -c -w",
-    "test": "jest"
+    "watch": "rollup -c -w"
   },
   "author": "",
   "license": "ISC",

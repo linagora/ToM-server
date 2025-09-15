@@ -1,16 +1,20 @@
 import { type TwakeLogger } from '@twake/logger';
 import { AMQPConnector } from '@twake/amqp-connector';
+import { type AmqpConfig } from '@twake/amqp-connector/src/types';
 import { type UserSettings, type UserInformationPayload, type CommonSettingsMessage } from './types';
 import type { Config, TwakeDB } from '@twake/server/src/types';
-import { QueueNotProvidedError, UrlNotProvidedError, UserIdNotProvidedError, UserSettingsNotProvidedError } from './errors';
+import { ExchangeNotProvidedError, QueueNotProvidedError, UserIdNotProvidedError, UserSettingsNotProvidedError } from './errors';
 
 export class CommonSettingsService {
-  private readonly connector: AMQPConnector;
   private readonly config: Partial<Config>;
   private readonly logger: TwakeLogger;
   private readonly db: TwakeDB;
-  private readonly amqpUrl: string;
+
+  private readonly connector: AMQPConnector;
+  private readonly amqpConfig: AmqpConfig;
+  private readonly exchangeName: string;
   private readonly queueName: string;
+  private readonly queueOptions: Record<string, any> = {};
 
   constructor(config: Config, logger: TwakeLogger, db: TwakeDB) {
     this.config = config;
@@ -18,18 +22,33 @@ export class CommonSettingsService {
     this.db = db;
 
     // Parse the AMQP URL and Queue name from config
-    this.amqpUrl = this.config.common_settings_connector?.amqp_url ?? '';
-    this.queueName = this.config.common_settings_connector?.queue ?? '';
+    this.amqpConfig = this.config.rabbitmq ?? {
+      host: '',
+      port: 5672,
+      vhost: '/',
+      username: '',
+      password: '',
+      tls: false
+    };
+    this.exchangeName = this.config.features?.common_settings?.exchange ?? '';
+    this.queueName = this.config.features?.common_settings?.queue ?? '';
+    this.queueOptions = {
+      durable: true,
+      deadLetterExchange: this.config.features?.common_settings?.deadLetterExchange,
+      deadLetterRoutingKey: this.config.features?.common_settings?.deadLetterRoutingKey
+    };
 
     // Validate configuration
-    // Ensure AMQP URL and Queue name are provided
-    if (this.amqpUrl.length === 0) throw new UrlNotProvidedError();
+    // Ensure AMQP URL, Exchnage and Queue name are provided
+    if (this.exchangeName.length === 0) throw new ExchangeNotProvidedError();
     if (this.queueName.length === 0) throw new QueueNotProvidedError();
+    if (this.exchangeName.length === 0) throw new ExchangeNotProvidedError();
 
     // Initialize AMQP Connector
     this.connector = new AMQPConnector(this.logger)
-      .withUrl(this.amqpUrl)
-      .withQueue(this.queueName)
+      .withConfig(this.amqpConfig)
+      .withExchange(this.exchangeName, { durable: true })
+      .withQueue(this.queueName, this.queueOptions)
       .onMessage(this.handleMessage.bind(this));
   }
 
@@ -37,8 +56,12 @@ export class CommonSettingsService {
    * Start listening for settings updates
    */
   async start(): Promise<void> {
+    if (this.config.features?.common_settings?.enabled !== true) {
+      this.logger.info('[CommonSettingsService] Feature is disabled in configuration, skipping service');
+      return;
+    }
     this.logger.info(
-      `[CommonSettingsService] Starting service: url=${this.amqpUrl}, queue=${this.queueName}`,
+      `[CommonSettingsService] Starting service...`,
     );
     await this.connector.build();
     this.logger.info('[CommonSettingsService] Service started and listening for messages');

@@ -23,6 +23,18 @@ export class UrlNotProvidedError extends CommonSettingsError {
 }
 
 /**
+ * Error thrown when Exchange name is not provided
+ * @class ExchangeNotProvidedError
+ * @extends CommonSettingsError
+ */
+export class ExchangeNotProvidedError extends CommonSettingsError {
+    constructor() {
+        super('Exchange name must be provided')
+        this.name = 'ExchangeNotProvidedError'
+    }
+}
+
+/**
  * Error thrown when Queue name is not provided
  * @class QueueNotProvidedError
  * @extends CommonSettingsError
