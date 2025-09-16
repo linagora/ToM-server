@@ -15,6 +15,18 @@ export class AMQPConnectorError extends Error {
  * @class QueueNotSpecifiedError
  * @extends AMQPConnectorError 
  */
+export class ExchangeNotSpecifiedError extends AMQPConnectorError {
+  constructor() {
+    super('Exchange must be specified')
+    this.name = 'ExchangeNotSpecifiedError'
+  }
+}
+
+/**
+ * Error thrown when the queue is not specified.
+ * @class QueueNotSpecifiedError
+ * @extends AMQPConnectorError 
+ */
 export class QueueNotSpecifiedError extends AMQPConnectorError {
   constructor() {
     super('Queue must be specified')

@@ -3,7 +3,8 @@ import amqplib from 'amqplib'
 import { AMQPConnector } from '.'
 import {
   QueueNotSpecifiedError,
-  MessageHandlerNotProvidedError
+  MessageHandlerNotProvidedError,
+  ExchangeNotSpecifiedError
 } from './errors'
 
 jest.mock('amqplib')
@@ -42,15 +43,24 @@ describe('AMQPConnector', () => {
     jest.clearAllMocks()
   })
 
-  it('should throw an error if queue is not specified', async () => {
+  it('should throw an error if exchange is not specified', async () => {
     await expect(new AMQPConnector().build()).rejects.toThrow(
-      QueueNotSpecifiedError
+      ExchangeNotSpecifiedError
     )
+  })
+
+  it('should throw an error if queue is not specified', async () => {
+    await expect(
+      new AMQPConnector().withExchange('test-exchange').build()
+    ).rejects.toThrow(QueueNotSpecifiedError)
   })
 
   it('should throw an error if message handler is not provided', async () => {
     await expect(
-      new AMQPConnector().withQueue('test-queue').build()
+      new AMQPConnector()
+        .withExchange('test-exchange')
+        .withQueue('test-queue')
+        .build()
     ).rejects.toThrow(MessageHandlerNotProvidedError)
   })
 
@@ -96,6 +106,7 @@ describe('AMQPConnector', () => {
     const handler = jest.fn()
     const connector = new AMQPConnector()
       .withUrl('amqp://localhost')
+      .withExchange('test-exchange')
       .withQueue('test-queue')
       .onMessage(handler)
 
@@ -116,6 +127,7 @@ describe('AMQPConnector', () => {
     const handler = jest.fn().mockResolvedValue(undefined)
     const connector = new AMQPConnector()
       .withUrl('amqp://localhost')
+      .withExchange('test-exchange')
       .withQueue('test-queue')
       .onMessage(handler)
 
@@ -139,6 +151,7 @@ describe('AMQPConnector', () => {
     const handler = jest.fn().mockRejectedValue(new Error('Invalid JSON'))
     const connector = new AMQPConnector()
       .withUrl('amqp://localhost')
+      .withExchange('test-exchange')
       .withQueue('test-queue')
       .onMessage(handler)
 
@@ -155,6 +168,7 @@ describe('AMQPConnector', () => {
   it('should close channel and connection on close()', async () => {
     const connector = new AMQPConnector()
       .withUrl('amqp://localhost')
+      .withExchange('test-exchange')
       .withQueue('test-queue')
       .onMessage(jest.fn())
 

@@ -3,13 +3,14 @@ import { type TwakeLogger } from '@twake/logger'
 import { type AmqpConfig, type MessageHandler } from './types'
 import {
   QueueNotSpecifiedError,
-  MessageHandlerNotProvidedError
+  MessageHandlerNotProvidedError,
+  ExchangeNotSpecifiedError
 } from './errors'
 
 export class AMQPConnector {
   private readonly logger?: TwakeLogger
   private url: string = ''
-  private exchange: string = ''
+  private exchange?: string
   private queue?: string
   private exchangeOptions: Options.AssertExchange = { durable: true }
   private queueOptions: Options.AssertQueue = { durable: true }
@@ -91,8 +92,12 @@ export class AMQPConnector {
    * @returns Promise that resolves when the connector is built and started
    */
   async build(): Promise<void> {
+    if (this.exchange == null || this.exchange === undefined)
+      throw new ExchangeNotSpecifiedError()
+
     if (this.queue == null || this.queue === undefined)
       throw new QueueNotSpecifiedError()
+
     if (this.onMessageHandler == null)
       throw new MessageHandlerNotProvidedError()
 
