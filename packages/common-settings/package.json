@@ -9,8 +9,13 @@
     "watch": "rollup -c -w",
     "test": "jest",
   },
-  "author": "",
-  "license": "ISC",
+  "author": [
+    {
+    "name": "Montassar GHANMI",
+    "email": "mghanmi@linagora.com"
+    }
+  ],
+  "license": "AGPL-3.0-or-later",
   "dependencies": {
     "@twake/amqp-connector": "^0.0.1",
     "@twake/server": "^0.0.1",
