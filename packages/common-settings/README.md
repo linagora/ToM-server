@@ -13,28 +13,53 @@ The connector requires a JSON configuration file. Default values can be found in
 
 ```json
 {
-  "synapse_admin_server": "http://127.0.0.1:3000",
-  "synapse_admin_secret": "changeme",
-  "common_settings_connector": {
-    "amqp_url": "amqp://localhost:5672",
-    "queue": "common_settings"
+  "rabbitmq": {
+    "host": "localhost",
+    "port": 5672,
+    "vhost": "/",
+    "username": "guest",
+    "password": "guest",
+    "tls": false
+  },
+  "features": {
+    "common_settings": {
+      "enabled": true,
+      "queue": "settings.queue",
+      "exchange": "exchange.exchange",
+      "deadLetterExchange": "settings.dead.letter.exchange",
+      "deadLetterRoutingKey": "settings.dead.letter.routing.key",
+      "api_url": "http://host.docker.internal:4000",
+      "api_secret": "secret"
+    },
+    "matrix_profile_updates_allowed": false
   }
 }
 ```
 
 ### Field descriptions
 
-* **`synapse_admin_server`**
-  URL of the Synapse Admin API server. Used to apply user profile changes. (For now this is the ToM server)
+#### `rabbitmq`
 
-* **`synapse_admin_secret`**
-  Secret token for authenticating with the Synapse Admin API.
+* **host**: The RabbitMQ server hostname or IP address.
+* **port**: The port on which RabbitMQ is listening (default: `5672`).
+* **vhost**: The virtual host used for isolating environments in RabbitMQ (default: `/`).
+* **username**: Username for authenticating with RabbitMQ.
+* **password**: Password for authenticating with RabbitMQ.
+* **tls**: Whether to use TLS/SSL for the connection (`true` or `false`).
 
-* **`common_settings_connector.amqp_url`**
-  AMQP broker connection string (e.g., RabbitMQ). The connector subscribes to this broker for incoming profile update events.
+#### `features.common_settings`
 
-* **`common_settings_connector.queue`**
-  Name of the queue from which user profile update messages will be consumed.
+* **enabled**: Enables or disables the common settings feature.
+* **queue**: Name of the queue where incoming settings messages will be consumed.
+* **exchange**: Name of the exchange to which settings messages are published.
+* **deadLetterExchange**: Exchange where messages are routed if they cannot be processed.
+* **deadLetterRoutingKey**: Routing key for directing failed messages to the dead-letter exchange.
+* **api_url**: URL of the API used for handling user settings (the backend service for common settings).
+* **api_secret**: Secret key or token used to authenticate API requests.
+
+#### `features.matrix_profile_updates_allowed`
+
+* **matrix_profile_updates_allowed**: Boolean flag indicating whether updates to Matrix user profiles (display name, avatar, etc.) are permitted on ToM.
 
 ---
 
@@ -45,7 +70,7 @@ import { CommonSettingsService } from '@twake/common-settings';
 import { logger } from '@twake/logger';
 import config from './config.json';
 
-const service = new CommonSettingsService(config, logger);
+const service = new CommonSettingsService(config, logger, db); // db is tomserver db instance
 
 await service.start();
 ```

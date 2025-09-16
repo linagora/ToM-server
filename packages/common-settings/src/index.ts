@@ -241,13 +241,13 @@ export class CommonSettingsService {
     payload: UserInformationPayload
   ): Promise<void> {
     if (
-      this.config.synapse_admin_server == null ||
-      this.config.synapse_admin_secret == null
+      this.config.base_url == null ||
+      this.config.admin_access_token == null
     ) {
-      throw new Error('Synapse admin server URL or secret is not configured')
+      throw new Error('The base URL or admin access token is not configured')
     }
     const endpoint = `${
-      this.config.synapse_admin_server
+      this.config.base_url
     }/_twake/v1/admin/settings/information/${encodeURIComponent(userId)}`
 
     const response = await fetch(endpoint, {
@@ -255,7 +255,7 @@ export class CommonSettingsService {
       headers: {
         'Content-Type': 'application/json',
         // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-        Authorization: `Bearer ${this.config.synapse_admin_secret}`
+        Authorization: `Bearer ${this.config.admin_access_token}`
       },
       body: JSON.stringify(payload)
     })

@@ -259,8 +259,6 @@
       "creator_becomes": 90
     }
   },
-  "synapse_admin_server": "http://127.0.0.1:3000",
-  "synapse_admin_secret": "changeme",
   "rabbitmq": {
     "host": "localhost",
     "port": 5672,

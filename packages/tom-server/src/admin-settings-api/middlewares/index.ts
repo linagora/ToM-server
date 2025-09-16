@@ -19,7 +19,7 @@ export default class AdminSettingsMiddleware
      */
     // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
     checkAdminSettingsToken = (req: Request, res: Response, next: NextFunction) => {
-        const token = this.config.synapse_admin_secret;
+        const token = this.config.admin_access_token;
         const authHeader = req.headers.authorization;
 
         if ((authHeader == null) || !authHeader.startsWith('Bearer ')) {

@@ -56,8 +56,6 @@ export type Config = MConfig &
       private_channel: PowerLevelEventContent
       public_channel: PowerLevelEventContent
     },
-    synapse_admin_server: string,
-    synapse_admin_secret: string,
     rabbitmq: {
       host: string,
       port: number,
