@@ -1,5 +1,5 @@
 import amqplib, { type Options } from 'amqplib'
-import { type TwakeLogger } from '@twake/logger';
+import { type TwakeLogger } from '@twake/logger'
 import { type AmqpConfig, type MessageHandler } from './types'
 import {
   QueueNotSpecifiedError,
@@ -7,7 +7,7 @@ import {
 } from './errors'
 
 export class AMQPConnector {
-  private readonly logger?: TwakeLogger;
+  private readonly logger?: TwakeLogger
   private url: string = ''
   private exchange: string = ''
   private queue?: string
@@ -22,9 +22,8 @@ export class AMQPConnector {
    * @param logger - Optional TwakeLogger instance for logging
    */
   constructor(logger?: TwakeLogger) {
-    this.logger = logger;
+    this.logger = logger
   }
-
 
   /**
    * Set the AMQP server URL using structured configuration
@@ -32,9 +31,13 @@ export class AMQPConnector {
    * @returns this
    */
   withConfig(conf: AmqpConfig): this {
-    const protocol = conf.tls === true ? "amqps" : "amqp";
-    const url = `${protocol}://${encodeURIComponent(conf.username)}:${encodeURIComponent(conf.password)}@${conf.host}:${conf.port}/${conf.vhost}`;
-    return this.withUrl(url);
+    const protocol = conf.tls === true ? 'amqps' : 'amqp'
+    const url = `${protocol}://${encodeURIComponent(
+      conf.username
+    )}:${encodeURIComponent(conf.password)}@${conf.host}:${conf.port}/${
+      conf.vhost
+    }`
+    return this.withUrl(url)
   }
 
   /**
@@ -47,10 +50,13 @@ export class AMQPConnector {
     return this
   }
 
-  withExchange(exchange: string, options: Options.AssertExchange = { durable: true }): this {
-    this.exchange = exchange;
-    this.exchangeOptions = options;
-    return this;
+  withExchange(
+    exchange: string,
+    options: Options.AssertExchange = { durable: true }
+  ): this {
+    this.exchange = exchange
+    this.exchangeOptions = options
+    return this
   }
 
   /**
@@ -90,21 +96,36 @@ export class AMQPConnector {
     if (this.onMessageHandler == null)
       throw new MessageHandlerNotProvidedError()
 
-    this.logger?.info(`[AMQPConnector] Connecting to AMQP server...`);
+    this.logger?.info(`[AMQPConnector] Connecting to AMQP server...`)
     this.connection = await amqplib.connect(this.url)
     this.channel = await this.connection.createChannel()
-    await this.channel.assertExchange(this.exchange, "topic", this.exchangeOptions);
+    await this.channel.assertExchange(
+      this.exchange,
+      'topic',
+      this.exchangeOptions
+    )
     await this.channel.assertQueue(this.queue, this.queueOptions)
-    await this.channel.bindQueue(this.queue, this.exchange, "#");
-    this.logger?.info(`[AMQPConnector] Connected and listening on queue: ${this.queue}`);
+    await this.channel.bindQueue(this.queue, this.exchange, '#')
+    this.logger?.info(
+      `[AMQPConnector] Connected and listening on queue: ${this.queue}`
+    )
     await this.channel.consume(
       this.queue,
       // eslint-disable-next-line @typescript-eslint/no-misused-promises
       async (msg) => {
         if (msg != null) {
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          await this.onMessageHandler?.(msg, this.channel!)
-          this.channel?.ack(msg)
+          try {
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            await this.onMessageHandler?.(msg, this.channel!)
+            this.channel?.ack(msg)
+          } catch (error) {
+            this.logger?.error(
+              `[AMQPConnector] Error processing message: ${
+                (error as Error).message
+              }`
+            )
+            this.channel?.nack(msg, false, false) // Discard the message
+          }
         }
       },
       { noAck: false }
@@ -116,9 +137,9 @@ export class AMQPConnector {
    * @returns Promise that resolves when the connection and channel are closeds
    */
   async close(): Promise<void> {
-    await this.channel?.close().catch(() => { })
-    await this.connection?.close().catch(() => { })
-    this.logger?.info(`[AMQPConnector] Connection closed.`);
+    await this.channel?.close().catch(() => {})
+    await this.connection?.close().catch(() => {})
+    this.logger?.info(`[AMQPConnector] Connection closed.`)
   }
 
   /**

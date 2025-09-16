@@ -9,6 +9,7 @@ import {
 import type { Config, TwakeDB } from '@twake/server/src/types'
 import {
   ConfigNotProvidedError,
+  CouldNotParseMessageError,
   ExchangeNotProvidedError,
   QueueNotProvidedError,
   UserIdNotProvidedError,
@@ -106,7 +107,7 @@ export class CommonSettingsService {
 
     // Parse and validate message
     const parsed = this._safeParseMessage(rawContent)
-    if (parsed == null) return
+    if (parsed == null) throw new CouldNotParseMessageError()
 
     const {
       matrix_id: userId,
@@ -121,7 +122,7 @@ export class CommonSettingsService {
         '[CommonSettingsService] Invalid message payload: missing userId',
         { payload: parsed }
       )
-      return
+      throw new UserIdNotProvidedError()
     }
 
     try {
@@ -172,6 +173,7 @@ export class CommonSettingsService {
           error: err?.message
         }
       )
+      throw err
     }
   }
 

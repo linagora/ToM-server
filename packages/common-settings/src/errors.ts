@@ -69,3 +69,15 @@ export class UserSettingsNotProvidedError extends CommonSettingsError {
     this.name = 'UserSettingsNotProvidedError'
   }
 }
+
+/**
+ * Error thrown when message is invalid
+ * @class InvalidMessageError
+ * @extends CommonSettingsError
+ */
+export class CouldNotParseMessageError extends CommonSettingsError {
+  constructor() {
+    super('Could not parse message')
+    this.name = 'CouldNotParseMessageError'
+  }
+}
