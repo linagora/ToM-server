@@ -7,12 +7,12 @@
   "scripts": {
     "build": "rollup -c",
     "watch": "rollup -c -w",
-    "test": "jest",
+    "test": "jest"
   },
   "author": [
     {
-    "name": "Montassar GHANMI",
-    "email": "mghanmi@linagora.com"
+      "name": "Montassar GHANMI",
+      "email": "mghanmi@linagora.com"
     }
   ],
   "license": "AGPL-3.0-or-later",
