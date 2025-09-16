@@ -11,6 +11,7 @@ jest.mock('amqplib')
 describe('AMQPConnector', () => {
   const mockConsume = jest.fn()
   const mockAck = jest.fn()
+  const mockNack = jest.fn()
   const mockAssertExchange = jest.fn(() => Promise.resolve())
   const mockAssertQueue = jest.fn(() => Promise.resolve())
   const mockBindQueue = jest.fn(() => Promise.resolve())
@@ -20,6 +21,7 @@ describe('AMQPConnector', () => {
     bindQueue: mockBindQueue,
     consume: mockConsume,
     ack: mockAck,
+    nack: mockNack,
     close: jest.fn(() => Promise.resolve())
   }
 
@@ -63,16 +65,14 @@ describe('AMQPConnector', () => {
     })
 
     const connector = new AMQPConnector()
-      .withConfig(
-        {
-          host: 'localhost',
-          port: 5672,
-          username: 'guest',
-          password: 'guest',
-          vhost: '/',
-          tls: false
-        }
-      )
+      .withConfig({
+        host: 'localhost',
+        port: 5672,
+        username: 'guest',
+        password: 'guest',
+        vhost: '/',
+        tls: false
+      })
       .withExchange('test-exchange')
       .withQueue('test-queue')
       .onMessage(mockHandler)
@@ -104,6 +104,52 @@ describe('AMQPConnector', () => {
 
     expect(handler).not.toHaveBeenCalled()
     expect(mockAck).not.toHaveBeenCalled()
+  })
+
+  it('should ack the message when handler succeeds', async () => {
+    let consumerCallback: any
+    mockConsume.mockImplementation((_queue, cb) => {
+      consumerCallback = cb
+      return Promise.resolve()
+    })
+
+    const handler = jest.fn().mockResolvedValue(undefined)
+    const connector = new AMQPConnector()
+      .withUrl('amqp://localhost')
+      .withQueue('test-queue')
+      .onMessage(handler)
+
+    await connector.build()
+
+    const fakeMsg = { content: Buffer.from('test') }
+    await consumerCallback(fakeMsg)
+
+    expect(handler).toHaveBeenCalledWith(fakeMsg, expect.anything())
+    expect(mockAck).toHaveBeenCalledWith(fakeMsg)
+    expect(mockNack).not.toHaveBeenCalled()
+  })
+
+  it('should nack the message when handler throws an error', async () => {
+    let consumerCallback: any
+    mockConsume.mockImplementation((_queue, cb) => {
+      consumerCallback = cb
+      return Promise.resolve()
+    })
+
+    const handler = jest.fn().mockRejectedValue(new Error('Invalid JSON'))
+    const connector = new AMQPConnector()
+      .withUrl('amqp://localhost')
+      .withQueue('test-queue')
+      .onMessage(handler)
+
+    await connector.build()
+
+    const fakeMsg = { content: Buffer.from('test') }
+    await consumerCallback(fakeMsg)
+
+    expect(handler).toHaveBeenCalledWith(fakeMsg, expect.anything())
+    expect(mockAck).not.toHaveBeenCalled()
+    expect(mockNack).toHaveBeenCalledWith(fakeMsg, false, false)
   })
 
   it('should close channel and connection on close()', async () => {
