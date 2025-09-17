@@ -37,7 +37,7 @@ export default class AdminSettingsrController
         displayName,
         avatarUrl
       })
-      res.status(200).json({ message: 'dwho' })
+      res.status(200).json({})
     } catch (error) {
       this.logger.error(`Failed to handle request`, { error })
       next(error)

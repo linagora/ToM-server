@@ -1,6 +1,7 @@
 import { type Config, type AuthRequest } from '../../../../types'
 import type { NextFunction, Response } from 'express'
 import DisplayNameService from '../services'
+import { errCodes } from '@twake/utils'
 import { type TwakeLogger } from '@twake/logger'
 
 export default class DisplayNameController {
@@ -31,7 +32,7 @@ export default class DisplayNameController {
 
       if (authorization == null) {
         res.status(400).json({
-          errcode: 'M_MISSING_PARAM',
+          errcode: errCodes.unAuthorized,
           error: 'Authorization header is required'
         })
         return
@@ -39,7 +40,7 @@ export default class DisplayNameController {
 
       if (!this.config.features.matrix_profile_updates_allowed) {
         res.status(403).json({
-          errcode: 'M_FORBIDDEN',
+          errcode: errCodes.forbidden,
           error: 'Profile fields are managed centrally via Common Settings'
         })
         return
@@ -49,7 +50,7 @@ export default class DisplayNameController {
       const paramUserId = req.params.userId
       if (paramUserId !== userId) {
         res.status(403).json({
-          errcode: 'M_FORBIDDEN',
+          errcode: errCodes.forbidden,
           error:
             'You are not allowed to change the display name of another user'
         })
@@ -57,7 +58,7 @@ export default class DisplayNameController {
       }
       if (userId.length === 0) {
         res.status(400).json({
-          errcode: 'M_INVALID_PARAM',
+          errcode: errCodes.invalidParam,
           error: 'Invalid user id'
         })
         return
@@ -66,7 +67,7 @@ export default class DisplayNameController {
       const { displayname } = req.body ?? {}
       if (displayname == null || displayname.length === 0) {
         res.status(400).json({
-          errcode: 'M_MISSING_PARAM',
+          errcode: errCodes.missingParams,
           error: "Missing key 'displayname'"
         })
         return
@@ -84,7 +85,7 @@ export default class DisplayNameController {
           errorText
         )
         res.status(500).json({
-          errcode: 'M_UNKNOWN',
+          errcode: errCodes.unknown,
           error: 'Failed to update display name'
         })
         return
