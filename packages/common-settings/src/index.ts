@@ -61,7 +61,11 @@ export class CommonSettingsService {
     this.connector = new AMQPConnector(this.logger)
       .withConfig(this.amqpConfig)
       .withExchange(this.exchangeName, { durable: true })
-      .withQueue(this.queueName, this.queueOptions)
+      .withQueue(
+        this.queueName,
+        this.queueOptions,
+        this.config.features?.common_settings?.routingKey
+      )
       .onMessage(this.handleMessage.bind(this))
   }
 

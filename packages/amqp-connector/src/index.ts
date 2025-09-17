@@ -12,6 +12,7 @@ export class AMQPConnector {
   private url: string = ''
   private exchange?: string
   private queue?: string
+  private routingKey: string = '#'
   private exchangeOptions: Options.AssertExchange = { durable: true }
   private queueOptions: Options.AssertQueue = { durable: true }
   private onMessageHandler?: MessageHandler
@@ -68,10 +69,12 @@ export class AMQPConnector {
    */
   withQueue(
     queue: string,
-    options: Options.AssertQueue = { durable: true }
+    options: Options.AssertQueue = { durable: true },
+    routingKey?: string
   ): this {
     this.queue = queue
     this.queueOptions = options
+    if (routingKey != null) this.routingKey = routingKey
     return this
   }
 
@@ -110,7 +113,7 @@ export class AMQPConnector {
       this.exchangeOptions
     )
     await this.channel.assertQueue(this.queue, this.queueOptions)
-    await this.channel.bindQueue(this.queue, this.exchange, '#')
+    await this.channel.bindQueue(this.queue, this.exchange, this.routingKey)
     this.logger?.info(
       `[AMQPConnector] Connected and listening on queue: ${this.queue}`
     )
