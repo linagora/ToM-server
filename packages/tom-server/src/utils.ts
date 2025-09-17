@@ -12,7 +12,7 @@ export const tables = {
   addressbooks: 'id varchar(64) PRIMARY KEY, owner varchar(64)',
   contacts:
     'id varchar(64) PRIMARY KEY, addressbook_id varchar(64), mxid varchar(64), display_name varchar(64), active int',
-  usersettings: 'matrix_id varchar(64) PRIMARY KEY, settings text, version int'
+  usersettings: 'matrix_id varchar(64) PRIMARY KEY, settings jsonb, version int'
 }
 
 /**

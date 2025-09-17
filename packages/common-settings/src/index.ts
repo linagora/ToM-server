@@ -145,7 +145,8 @@ export class CommonSettingsService {
       if (created) {
         updatePayload = { displayName, avatarUrl }
       } else {
-        const oldConfig = JSON.parse(userSettings.settings)
+        const { settings: oldConfig, version } = userSettings
+        this.logger.info(`[CommonSettingsService] Comparing with existing version ${version}`, { userId });
 
         if (oldConfig.display_name !== displayName) {
           updatePayload.displayName = displayName
@@ -306,7 +307,7 @@ export class CommonSettingsService {
 
       const insertPayload = {
         matrix_id: userId,
-        settings: JSON.stringify(settings.payload),
+        settings: JSON.stringify(settings.payload), // ORM expects a string
         version: settings.version
       }
 
@@ -349,7 +350,7 @@ export class CommonSettingsService {
       if (settings?.payload == null) throw new UserSettingsNotProvidedError()
 
       const updatePayload = {
-        settings: JSON.stringify(settings.payload),
+        settings: JSON.stringify(settings.payload), // ORM expects a string
         version: settings.version
       }
 
