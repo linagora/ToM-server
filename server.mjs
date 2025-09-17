@@ -90,15 +90,14 @@ const featuresConf = {
   common_settings: {
     enabled: _parseBooleanEnv(process.env.FEATURE_COMMON_SETTINGS_ENABLED, false),
     queue: process.env.FEATURE_COMMON_SETTINGS_QUEUE || 'settings.queue',
+    routingKey: process.env.FEATURE_COMMON_SETTINGS_ROUTING_KEY || 'settings.routing.key',
     exchange: process.env.FEATURE_COMMON_SETTINGS_EXCHANGE || 'settings.exchange',
     deadLetterExchange:
       process.env.FEATURE_COMMON_SETTINGS_DEAD_LETTER_EXCHANGE ||
       'settings.dead.letter.exchange',
     deadLetterRoutingKey:
       process.env.FEATURE_COMMON_SETTINGS_DEAD_LETTER_ROUTING_KEY ||
-      'settings.dead.letter.routing.key',
-    api_url: process.env.FEATURE_COMMON_SETTINGS_API_URL || 'http://host.docker.internal:4000',
-    api_secret: process.env.FEATURE_COMMON_SETTINGS_API_SECRET || 'secret',
+      'settings.dead.letter.routing.key'
   },
   matrix_profile_updates_allowed: _parseBooleanEnv(
     process.env.FEATURE_MATRIX_PROFILE_UPDATES_ALLOWED,

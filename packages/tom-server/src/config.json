@@ -271,11 +271,10 @@
     "common_settings": {
       "enabled": true,
       "queue": "settings.queue",
+      "routingKey": "settings.routing.key",
       "exchange": "exchange.exchange",
       "deadLetterExchange": "settings.dead.letter.exchange",
-      "deadLetterRoutingKey": "settings.dead.letter.routing.key",
-      "api_url": "http://host.docker.internal:4000",
-      "api_secret": "secret"
+      "deadLetterRoutingKey": "settings.dead.letter.routing.key"
     },
     "matrix_profile_updates_allowed": false
   }
