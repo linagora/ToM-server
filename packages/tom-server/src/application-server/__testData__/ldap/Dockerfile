@@ -12,9 +12,9 @@ RUN apt-get update && \
     curl \
     gpg \
     wget && \
-    curl -fsSL https://ltb-project.org/documentation/_static/RPM-GPG-KEY-LTB-project \
-    | gpg --dearmor -o /usr/share/keyrings/ltb-project-openldap-archive-keyring.gpg && \
-    echo "deb [arch=amd64 signed-by=/usr/share/keyrings/ltb-project-openldap-archive-keyring.gpg] \
+    curl -fsSL https://ltb-project.org/documentation/_static/ltb-project-debian-keyring.gpg \
+    | gpg --dearmor -o /usr/share/keyrings/ltb-project-debian-keyring.gpg && \
+    echo "deb [arch=amd64 signed-by=/usr/share/keyrings/ltb-project-debian-keyring.gpg] \
     https://ltb-project.org/debian/openldap25/bullseye bullseye main" \
     > /etc/apt/sources.list.d/ltb-project.list && \
     apt-get update && \
