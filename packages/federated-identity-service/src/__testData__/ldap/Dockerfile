@@ -6,17 +6,20 @@ ENV DEBIAN_FRONTEND=noninteractive
 # Update system and install dependencies 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-        apt-transport-https \
-        ca-certificates \
-        curl \
-        gpg \
-        wget && \
-    curl https://ltb-project.org/documentation/_static/RPM-GPG-KEY-LTB-project | gpg --dearmor > /usr/share/keyrings/ltb-project-openldap-archive-keyring.gpg && \
-    echo "deb [arch=amd64 signed-by=/usr/share/keyrings/ltb-project-openldap-archive-keyring.gpg] https://ltb-project.org/debian/openldap25/bullseye bullseye main" > /etc/apt/sources.list.d/ltb-project.list && \
+    apt-transport-https \
+    ca-certificates \
+    curl \
+    gpg \
+    wget && \
+    curl -fsSL https://ltb-project.org/documentation/_static/ltb-project-debian-keyring.gpg \
+    | gpg --dearmor -o /usr/share/keyrings/ltb-project-debian-keyring.gpg && \
+    echo "deb [arch=amd64 signed-by=/usr/share/keyrings/ltb-project-debian-keyring.gpg] \
+    https://ltb-project.org/debian/openldap25/bullseye bullseye main" \
+    > /etc/apt/sources.list.d/ltb-project.list && \
     apt-get update && \
     apt-get install -y openldap-ltb openldap-ltb-contrib-overlays openldap-ltb-mdb-utils ldap-utils && \
     apt-get clean && \
-    rm -rf /var/lib/apt/lists/* 
+    rm -rf /var/lib/apt/lists/*
 
 # Copy configuration files
 COPY ./ldif/config-20230322180123.ldif /var/backups/openldap/
