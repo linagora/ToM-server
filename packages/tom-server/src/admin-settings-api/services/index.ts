@@ -28,7 +28,7 @@ export default class AdminService implements IAdminSettingsService {
     payload: UserInformationPayload
   ): Promise<void> => {
     const { displayName, avatarUrl } = payload
-    let avatarMxc: string | null = ''
+    let avatarMxc: string | null = null
 
     // If present, upload the avatar image to the media repository
     // and get the mxc URL
