@@ -11,6 +11,8 @@ import {
 const mockBuild = jest.fn().mockResolvedValue(undefined)
 const mockClose = jest.fn().mockResolvedValue(undefined)
 
+jest.mock('node-fetch', () => jest.fn())
+
 jest.mock('@twake/amqp-connector', () => {
   const mockCtor = jest.fn().mockImplementation(() => ({
     withConfig: jest.fn().mockReturnThis(),
@@ -48,6 +50,8 @@ const makeDb = (): MockDb => ({
 
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 const makeConfig = (overrides: Partial<any> = {}) => ({
+  base_url: 'http://localhost:3000',
+  admin_access_token: 'secret',
   rabbitmq: {
     host: 'localhost',
     port: 5672,
@@ -62,8 +66,6 @@ const makeConfig = (overrides: Partial<any> = {}) => ({
       ...overrides
     }
   },
-  synapse_admin_server: 'http://synapse.local',
-  synapse_admin_secret: 'secret',
   ...overrides
 })
 
@@ -139,17 +141,32 @@ describe('should handle errors', () => {
 })
 
 describe('should handle the settings message', () => {
-  let logger: MockLogger
-  let db: MockDb
+  let logger: any
+  let db: any
   let service: CommonSettingsService
 
   beforeEach(() => {
-    logger = makeLogger()
-    db = makeDb()
+    logger = {
+      info: jest.fn(),
+      warn: jest.fn(),
+      error: jest.fn()
+    }
+
+    db = {
+      get: jest.fn(),
+      insert: jest.fn(),
+      update: jest.fn()
+    }
+
     service = new CommonSettingsService(
-      makeConfig() as any,
-      logger as any,
-      db as any
+      {
+        base_url: 'http://localhost',
+        admin_access_token: 'token',
+        rabbitmq: { host: 'localhost' },
+        features: { common_settings: { exchange: 'ex', queue: 'q' } }
+      } as any,
+      logger,
+      db
     )
   })
 
@@ -157,25 +174,25 @@ describe('should handle the settings message', () => {
     {
       created: true,
       oldSettings: null,
-      expectedPayload: { displayName: 'Dwho', avatarUrl: 'avatar.png' },
+      expectedPayload: { displayName: 'Dwho', avatarUrl: 'old.png' },
       description: 'settings just created'
     },
     {
       created: false,
-      oldSettings: { display_name: 'Rtyler', avatar: 'avatar.png' },
+      oldSettings: { display_name: 'Rtyler', avatar: 'old.png' },
       expectedPayload: { displayName: 'Dwho' },
       description: 'old settings with different display name'
     },
     {
       created: false,
-      oldSettings: { display_name: 'Dwho', avatar: 'old.png' },
-      expectedPayload: { avatarUrl: 'avatar.png' },
+      oldSettings: { display_name: 'Dwho', avatar: 'old2.png' },
+      expectedPayload: { avatarUrl: 'old.png' },
       description: 'old settings with different avatar'
     },
     {
       created: false,
-      oldSettings: { display_name: 'Rtyler', avatar: 'old.png' },
-      expectedPayload: { displayName: 'Dwho', avatarUrl: 'avatar.png' },
+      oldSettings: { display_name: 'Rtyler', avatar: 'old2.png' },
+      expectedPayload: { displayName: 'Dwho', avatarUrl: 'old.png' },
       description: 'old settings with both changed'
     }
   ])(
@@ -187,16 +204,16 @@ describe('should handle the settings message', () => {
             payload: {
               matrix_id: 'user123',
               display_name: 'Dwho',
-              avatar: 'avatar.png'
+              avatar: 'old.png'
             },
             version: 1
           })
         )
       }
 
+      // Mock private methods
       jest.spyOn(service as any, '_getOrCreateUserSettings').mockResolvedValue({
-        userSettings:
-          oldSettings != null ? { settings: JSON.stringify(oldSettings) } : {},
+        userSettings: oldSettings != null ? { settings: oldSettings } : {},
         created
       })
 
@@ -214,14 +231,13 @@ describe('should handle the settings message', () => {
         expect.stringContaining('Received message'),
         expect.any(Object)
       )
-
       expect(updateSpy).toHaveBeenCalledWith('user123', expectedPayload)
     }
   )
 
-  it('should skips invalid JSON', async () => {
+  it('should skip invalid JSON', async () => {
     const fakeMsg = { content: Buffer.from('{invalid json}') }
-    await service['handleMessage'](fakeMsg)
+    await expect(service['handleMessage'](fakeMsg)).rejects.toThrow()
     expect(logger.warn).toHaveBeenCalledWith(
       expect.stringContaining('Invalid JSON message received'),
       expect.any(Object),
@@ -229,13 +245,13 @@ describe('should handle the settings message', () => {
     )
   })
 
-  it('should skips messages missing userId', async () => {
+  it('should skip messages missing userId', async () => {
     const fakeMsg = {
       content: Buffer.from(
         JSON.stringify({ payload: { display_name: 'Dwho' }, version: 1 })
       )
     }
-    await service['handleMessage'](fakeMsg)
+    await expect(service['handleMessage'](fakeMsg)).rejects.toThrow()
     expect(logger.warn).toHaveBeenCalledWith(
       expect.stringContaining('Invalid message payload: missing userId'),
       expect.any(Object)
@@ -308,26 +324,26 @@ describe('should handle the user information update', () => {
     db = makeDb()
   })
 
-  it('should throw error if synapse_admin_server missing', async () => {
+  it('should throw error if base URL is missing', async () => {
     const service = new CommonSettingsService(
-      makeConfig({ synapse_admin_server: undefined }) as any,
+      makeConfig({ base_url: undefined }) as any,
       logger as any,
       db as any
     )
     await expect(
       service['_updateUserInformation']('user1', {} as any)
-    ).rejects.toThrow('Synapse admin server URL or secret is not configured')
+    ).rejects.toThrow('The base URL or admin access token is not configured')
   })
 
-  it('should throw error if synapse_admin_secret missing', async () => {
+  it('should throw error if admin_access_token missing', async () => {
     const service = new CommonSettingsService(
-      makeConfig({ synapse_admin_secret: undefined }) as any,
+      makeConfig({ admin_access_token: undefined }) as any,
       logger as any,
       db as any
     )
     await expect(
       service['_updateUserInformation']('user1', {} as any)
-    ).rejects.toThrow('Synapse admin server URL or secret is not configured')
+    ).rejects.toThrow('The base URL or admin access token is not configured')
   })
 
   it('should throw error if response not OK', async () => {
@@ -336,12 +352,14 @@ describe('should handle the user information update', () => {
       logger as any,
       db as any
     )
+    // Mock fetch to return a failing response
     ;(global as any).fetch = jest.fn().mockResolvedValue({
       ok: false,
       status: 500,
       statusText: 'Error',
       text: async () => 'failed'
     })
+
     await expect(
       service['_updateUserInformation']('user1', { displayName: 'Dwho' })
     ).rejects.toThrow('Failed to update display name: 500 Error - failed')
