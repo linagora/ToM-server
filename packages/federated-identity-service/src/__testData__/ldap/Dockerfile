@@ -1,5 +1,4 @@
-FROM debian:stable-slim
-LABEL maintainer Linagora
+FROM debian:bullseye-20241223-slim
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -31,7 +30,7 @@ RUN rm -rf /usr/local/openldap/var/lib/ldap /usr/local/openldap/etc/openldap/sla
     chown -R ldap:ldap /usr/local/openldap/var/lib/ldap && \
     mkdir -p /usr/local/openldap/etc/openldap/slapd.d && \
     chown -R ldap:ldap /usr/local/openldap/etc/openldap/slapd.d && \
-    usr/local/openldap/sbin/slapd-cli restoreconfig -b /var/backups/openldap/config-20230322180123.ldif && \
+    /usr/local/openldap/sbin/slapd-cli restoreconfig -b /var/backups/openldap/config-20230322180123.ldif && \
     mkdir -p /usr/local/openldap/var/lib/ldap/data && \
     chown -R ldap:ldap /usr/local/openldap/var/lib/ldap/data && \
     /usr/local/openldap/sbin/slapadd -F /usr/local/openldap/etc/openldap/slapd.d/ -b "dc=example,dc=com" -l /tmp/base_ldap_users.ldif
