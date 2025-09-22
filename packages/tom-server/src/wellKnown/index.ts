@@ -109,7 +109,7 @@ interface WellKnownType {
     url: string
   }
   'm.federated_identity_services'?: {
-    base_urls: string[]
+    base_urls: string[] | string
   }
   't.server'?: {
     base_url: string
