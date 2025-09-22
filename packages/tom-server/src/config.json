@@ -269,13 +269,13 @@
   },
   "features": {
     "common_settings": {
-      "enabled": true,
+      "enabled": false,
       "queue": "settings.queue",
       "routingKey": "settings.routing.key",
       "exchange": "exchange.exchange",
       "deadLetterExchange": "settings.dead.letter.exchange",
       "deadLetterRoutingKey": "settings.dead.letter.routing.key"
     },
-    "matrix_profile_updates_allowed": false
+    "matrix_profile_updates_allowed": true
   }
 }
