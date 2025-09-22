@@ -218,7 +218,12 @@ class WellKnown {
     return {
       ...config.twake_chat,
       default_homeserver: config.matrix_server,
-      homeserver: `https://${config.matrix_server}/`
+      homeserver: `https://${config.matrix_server}/`,
+      common_settings: {
+        enabled: config.features.common_settings.enabled
+      },
+      matrix_profile_updates_allowed:
+        config.features.matrix_profile_updates_allowed
     }
   }
 }

@@ -38,6 +38,39 @@ const appServerConf = {
   push_ephemeral: process.env.PUSH_EPHEMERAL || true
 }
 
+const rabbitmqConf = {
+  host: process.env.RABBITMQ_HOST || 'localhost',
+  port: process.env.RABBITMQ_PORT || 5672,
+  vhost: process.env.RABBITMQ_VHOST || '/',
+  username: process.env.RABBITMQ_USER || 'guest',
+  password: process.env.RABBITMQ_PASSWORD || 'guest',
+  tls: _parseBooleanEnv(process.env.RABBITMQ_TLS, false)
+}
+
+const featuresConf = {
+  common_settings: {
+    enabled: _parseBooleanEnv(
+      process.env.FEATURE_COMMON_SETTINGS_ENABLED,
+      false
+    ),
+    queue: process.env.FEATURE_COMMON_SETTINGS_QUEUE || 'settings.queue',
+    routingKey:
+      process.env.FEATURE_COMMON_SETTINGS_ROUTING_KEY || 'settings.routing.key',
+    exchange:
+      process.env.FEATURE_COMMON_SETTINGS_EXCHANGE || 'settings.exchange',
+    deadLetterExchange:
+      process.env.FEATURE_COMMON_SETTINGS_DEAD_LETTER_EXCHANGE ||
+      'settings.dead.letter.exchange',
+    deadLetterRoutingKey:
+      process.env.FEATURE_COMMON_SETTINGS_DEAD_LETTER_ROUTING_KEY ||
+      'settings.dead.letter.routing.key'
+  },
+  matrix_profile_updates_allowed: _parseBooleanEnv(
+    process.env.FEATURE_MATRIX_PROFILE_UPDATES_ALLOWED,
+    false
+  )
+}
+
 /**
  * Twake Chat client configuration
  *
@@ -73,34 +106,6 @@ const twakeChatConf = {
   support_url: process.env.TCHAT_SUPPORT_URL,
   enable_invitations: _parseBooleanEnv(
     process.env.TCHAT_ENABLE_INVITATIONS,
-    false
-  )
-}
-
-const rabbitmqConf = {
-  host: process.env.RABBITMQ_HOST || 'localhost',
-  port: process.env.RABBITMQ_PORT || 5672,
-  vhost: process.env.RABBITMQ_VHOST || '/',
-  username: process.env.RABBITMQ_USER || 'guest',
-  password: process.env.RABBITMQ_PASSWORD || 'guest',
-  tls: _parseBooleanEnv(process.env.RABBITMQ_TLS, false) ,
-}
-
-const featuresConf = {
-  common_settings: {
-    enabled: _parseBooleanEnv(process.env.FEATURE_COMMON_SETTINGS_ENABLED, false),
-    queue: process.env.FEATURE_COMMON_SETTINGS_QUEUE || 'settings.queue',
-    routingKey: process.env.FEATURE_COMMON_SETTINGS_ROUTING_KEY || 'settings.routing.key',
-    exchange: process.env.FEATURE_COMMON_SETTINGS_EXCHANGE || 'settings.exchange',
-    deadLetterExchange:
-      process.env.FEATURE_COMMON_SETTINGS_DEAD_LETTER_EXCHANGE ||
-      'settings.dead.letter.exchange',
-    deadLetterRoutingKey:
-      process.env.FEATURE_COMMON_SETTINGS_DEAD_LETTER_ROUTING_KEY ||
-      'settings.dead.letter.routing.key'
-  },
-  matrix_profile_updates_allowed: _parseBooleanEnv(
-    process.env.FEATURE_MATRIX_PROFILE_UPDATES_ALLOWED,
     false
   )
 }
