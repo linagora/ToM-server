@@ -4,6 +4,7 @@ import MatrixDBPg from './sql/pg'
 import MatrixDBSQLite from './sql/sqlite'
 
 export type Collections =
+  | 'profiles'
   | 'users'
   | 'room_memberships'
   | 'room_stats_state'
