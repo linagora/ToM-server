@@ -13,4 +13,23 @@ export interface UserInformation {
   uid: string
   givenName: string
   sn: string
+  mail?: string
+}
+
+export interface SettingsPayload {
+  language?: string
+  timezone?: string
+  avatar?: string
+  last_name?: string
+  first_name?: string
+  email?: string
+  phone?: string
+  matrix_id?: string
+  display_name?: string
+}
+
+export interface UserSettings {
+  matrix_id: string
+  settings: SettingsPayload
+  version: number
 }

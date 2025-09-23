@@ -136,7 +136,12 @@ export default class TwakeServer {
       this.idServer.authenticate,
       this.logger
     )
-    const userInfoApi = userInfoAPIRouter(this.idServer, this.conf, this.logger)
+    const userInfoApi = userInfoAPIRouter(
+      this.idServer,
+      this.conf,
+      this.matrixDb,
+      this.logger
+    )
 
     const smsApi = smsApiRouter(
       this.conf,
