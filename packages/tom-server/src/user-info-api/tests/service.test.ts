@@ -23,7 +23,20 @@ const config = {
 const logger = getLogger()
 
 const twakeDBMock = {
-  get: jest.fn()
+  get: jest.fn().mockImplementation(async (table, _fields, query) => {
+    if (table === 'usersettings' && query.matrix_id != null) {
+      return [
+        {
+          matrix_id: query.matrix_id,
+          settings: {
+            language: 'fr',
+            timezone: 'Europe/Paris'
+          }
+        }
+      ]
+    }
+    return []
+  })
 }
 
 const matrixDBMock: Partial<MatrixDB> = {
@@ -87,12 +100,37 @@ describe('user info service', () => {
     expect(user).toHaveProperty('sn', 'Who')
   })
 
+  it('should return the user info when common settings is enabled', async () => {
+    const configWithCommon = {
+      ...config,
+      features: { common_settings: { enabled: true } }
+    } as unknown as Config
+
+    const userDbWithCommon = new UserDB(configWithCommon, logger)
+    await userDbWithCommon.ready
+
+    const serviceWithCommon = new UserInfoService(
+      userDbWithCommon,
+      twakeDBMock as unknown as TwakeDB,
+      matrixDBMock as unknown as MatrixDB,
+      configWithCommon
+    )
+
+    const user = await serviceWithCommon.get('@dwho:docker.localhost')
+
+    expect(user).not.toBeNull()
+    expect(user).toHaveProperty('display_name', 'Dr Who')
+    expect(user).toHaveProperty('givenName', 'David')
+    expect(user).toHaveProperty('uid', 'dwho')
+    expect(user).toHaveProperty('sn', 'Who')
+  })
+
   it('should return null if matrix id is invalid', async () => {
     const cases = [
-      'dwho',              // no '@' and no ':'
-      '@dwho',             // missing domain
-      'dwho:matrix.org',   // missing '@'
-      '',                  // empty string
+      'dwho', // no '@' and no ':'
+      '@dwho', // missing domain
+      'dwho:matrix.org', // missing '@'
+      '' // empty string
     ]
 
     for (const invalidId of cases) {
