@@ -79,8 +79,8 @@ class UserInfoService implements IUserInfoService {
           const settings = existing[0].settings
           result = {
             ...result,
-            language: settings.language ?? 'en',
-            timezone: settings.timezone ?? 'UTC'
+            language: settings.language ?? '',
+            timezone: settings.timezone ?? ''
           }
         }
       }
