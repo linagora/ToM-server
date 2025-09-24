@@ -87,6 +87,11 @@ class UserInfoService implements IUserInfoService {
         }
       }
 
+      // if only uid is present in the result, return null
+      if (Object.keys(result).length === 1 && (result.uid != null)) {
+        return null
+      }
+
       return result as UserInformation
     } catch (error) {
       throw new Error('Error getting user info', { cause: error })
