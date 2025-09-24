@@ -96,7 +96,7 @@ describe('user info service', () => {
     expect(user).not.toBeNull()
     expect(user).toHaveProperty('display_name', 'Dr Who')
     expect(user).toHaveProperty('givenName', 'David')
-    expect(user).toHaveProperty('uid', 'dwho')
+    expect(user).toHaveProperty('uid', '@dwho:docker.localhost')
     expect(user).toHaveProperty('sn', 'Who')
   })
 
@@ -121,7 +121,7 @@ describe('user info service', () => {
     expect(user).not.toBeNull()
     expect(user).toHaveProperty('display_name', 'Dr Who')
     expect(user).toHaveProperty('givenName', 'David')
-    expect(user).toHaveProperty('uid', 'dwho')
+    expect(user).toHaveProperty('uid', '@dwho:docker.localhost')
     expect(user).toHaveProperty('sn', 'Who')
   })
 
