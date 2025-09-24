@@ -21,7 +21,7 @@ objectClass: inetOrgPerson
 uid: dwho
 cn: Dr Who
 sn: Dwho
-mobile: 33671298765
+mobile: +33671298765
 userPassword:: ZHdobw==
 
 dn: uid=rtyler,ou=users,dc=docker,dc=localhost
@@ -30,7 +30,7 @@ uid: rtyler
 cn: Rose Tyler
 sn: Rtyler
 mail: rtyler@docker.localhost
-mobile: 33671298767
+mobile: +33671298767
 userPassword:: cnR5bGVy
 
 dn: uid=msmith,ou=users,dc=docker,dc=localhost

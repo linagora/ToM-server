@@ -7,4 +7,4 @@
 dn: uid=dwho,ou=users,dc=docker,dc=localhost
 changetype: modify
 replace: mobile
-mobile: 0671298766
+mobile: +3312345678
