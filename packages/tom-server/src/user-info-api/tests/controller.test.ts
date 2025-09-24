@@ -68,7 +68,7 @@ describe('the user info API controller', () => {
         ({
           givenName: 'David',
           sn: 'Who',
-          uid: 'dwho'
+          uid: '@dwho:docker.localhost'
         } satisfies UserInformation)
     )
 
@@ -78,13 +78,13 @@ describe('the user info API controller', () => {
     expect(response.body).toEqual({
       givenName: 'David',
       sn: 'Who',
-      uid: 'dwho'
+      uid: '@dwho:docker.localhost'
     })
   })
 
-  it('should return 403 if user is requesting another user\'s info', async () => {
+  it("should return 403 if user is requesting another user's info", async () => {
     const result = await supertest(app).get(`${PATH}/@other:docker.localhost`)
-    
+
     expect(result.status).toEqual(403)
   })
 
