@@ -13,7 +13,8 @@ export interface UserInformation {
   uid: string
   givenName: string
   sn: string
-  mail?: string
+  mails?: string[]
+  phones?: string[]
 }
 
 export interface SettingsPayload {

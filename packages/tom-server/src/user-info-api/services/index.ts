@@ -47,24 +47,24 @@ class UserInfoService implements IUserInfoService {
       if (!hasMatrix && !additional_features) return null
       if (hasMatrix) {
         result.display_name = matrixUser[0].displayname
-        result.avatar = matrixUser[0].avatar_url
+        if (matrixUser[0].avatar_url) result.avatar = matrixUser[0].avatar_url
       }
 
       // Check if additional features are enabled and fetch more info
       if (additional_features) {
         const userInfo = (await this.userDb.db.get(
           'users',
-          ['uid', 'sn', 'givenname', 'givenName', 'mail', 'telephoneNumber'],
+          ['cn', 'sn', 'givenname', 'givenName', 'mail', 'mobile'],
           { uid: userIdLocalPart }
-        )) as unknown as Array<Record<string, string | number>>
+        )) as unknown as Array<Record<string, string | string[]>>
 
         if (Array.isArray(userInfo) && userInfo.length > 0) {
           const user = userInfo[0]
-          result.uid = user.uid as string
+          if (!result.display_name) result.display_name = user.cn as string
           result.sn = user.sn as string
           result.givenName = (user.givenname ?? user.givenName) as string
-          result.mail = user.mail as string
-          result.phone = user.telephoneNumber as string
+          if (user.mail) result.mails = [user.mail as string]
+          if (user.mobile) result.phones = [user.mobile as string]
         }
       }
 
