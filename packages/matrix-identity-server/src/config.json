@@ -258,5 +258,25 @@
       },
       "creator_becomes": 90
     }
+  },
+  "rabbitmq": {
+    "host": "localhost",
+    "port": 5672,
+    "vhost": "/",
+    "username": "guest",
+    "password": "guest",
+    "tls": false
+  },
+  "features": {
+    "common_settings": {
+      "enabled": true,
+      "queue": "settings.queue",
+      "exchange": "exchange.exchange",
+      "deadLetterExchange": "settings.dead.letter.exchange",
+      "deadLetterRoutingKey": "settings.dead.letter.routing.key",
+      "api_url": "http://host.docker.internal:4000",
+      "api_secret": "secret"
+    },
+    "matrix_profile_updates_allowed": false
   }
 }

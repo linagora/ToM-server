@@ -1,34 +1,93 @@
-import type { UserDB } from '@twake/matrix-identity-server'
-import type { IUserInfoService, UserInformation } from '../types'
+import type { MatrixDB, UserDB } from '@twake/matrix-identity-server'
+import type {
+  IUserInfoService,
+  UserInformation,
+  UserSettings,
+  SettingsPayload
+} from '../types'
+import type { TwakeDB, Config } from '../../types'
+import { getLocalPart } from '@twake/utils'
 
 class UserInfoService implements IUserInfoService {
-  constructor(private readonly userDb: UserDB) {}
+  constructor(
+    private readonly userDb: UserDB,
+    private readonly db: TwakeDB,
+    private readonly matrixDb: MatrixDB,
+    private readonly config: Config
+  ) {}
 
   /**
    * Retrieves the user information from the database
-   *  @
-   * @param {string}  id the user Id
-   * @returns {romise<UserInformation | null>}
+   * @param {string} id the user Id
+   * @returns {Promise<UserInformation | null>}
    */
   get = async (id: string): Promise<UserInformation | null> => {
     try {
-      const userInfo = (await this.userDb.db.get(
-        'users',
-        ['uid', 'sn', 'givenname', 'givenName'],
-        { uid: id }
-      )) as unknown as Array<Record<string, string | number>>
+      // Init the result
+      let result: Partial<UserInformation & SettingsPayload> = { uid: id }
 
-      if (!Array.isArray(userInfo) || userInfo.length === 0) {
+      const userIdLocalPart = getLocalPart(id)
+
+      // If the local part is null, return null (invalid Matrix ID)
+      if (userIdLocalPart == null) {
         return null
       }
 
+      // Query the Matrix DB
+      const matrixUser = (await this.matrixDb.get(
+        'profiles',
+        ['displayname', 'avatar_url'],
+        { user_id: userIdLocalPart }
+      )) as unknown as Array<{ displayname: string; avatar_url?: string }>
+
+      const hasMatrix = Array.isArray(matrixUser) && matrixUser.length
+      const additional_features =
+        this.config.additional_features === true ||
+        process.env.ADDITIONAL_FEATURES === 'true'
+      if (!hasMatrix && !additional_features) return null
+      if (hasMatrix) {
+        result.display_name = matrixUser[0].displayname
+        if (matrixUser[0].avatar_url) result.avatar = matrixUser[0].avatar_url
+      }
+
+      // Check if additional features are enabled and fetch more info
+      if (additional_features) {
+        const userInfo = (await this.userDb.db.get(
+          'users',
+          ['cn', 'sn', 'givenname', 'givenName', 'mail', 'mobile'],
+          { uid: userIdLocalPart }
+        )) as unknown as Array<Record<string, string | string[]>>
+
+        if (Array.isArray(userInfo) && userInfo.length > 0) {
+          const user = userInfo[0]
+          if (!result.display_name) result.display_name = user.cn as string
+          result.sn = user.sn as string
+          result.givenName = (user.givenname ?? user.givenName) as string
+          if (user.mail) result.mails = [user.mail as string]
+          if (user.mobile) result.phones = [user.mobile as string]
+        }
+      }
+
+      // Check if common settings feature is enabled and fetch user settings
       if (
-        userInfo.some((u) => u.givenName === undefined && u.sn === undefined)
+        this.config.features?.common_settings?.enabled === true ||
+        process.env.FEATURE_COMMON_SETTINGS_ENABLED === 'true'
       ) {
-        return null
+        const existing = (await this.db.get('usersettings', ['*'], {
+          matrix_id: id
+        })) as unknown as UserSettings[]
+
+        if (Array.isArray(existing) && existing.length > 0) {
+          const settings = existing[0].settings
+          result = {
+            ...result,
+            language: settings.language ?? '',
+            timezone: settings.timezone ?? ''
+          }
+        }
       }
 
-      return userInfo[0] as unknown as UserInformation
+      return result as UserInformation
     } catch (error) {
       throw new Error('Error getting user info', { cause: error })
     }

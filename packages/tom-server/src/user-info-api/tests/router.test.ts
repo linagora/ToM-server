@@ -15,10 +15,12 @@ jest
   .spyOn(IdentityServerDb.prototype, 'get')
   .mockResolvedValue([{ data: '"test"' }])
 
+const matrixDBMock: Partial<MatrixDB> = {
+  get: jest.fn().mockResolvedValue([{ displayname: "", avatar_url: 'avatar_url' }])
+} as unknown as Partial<MatrixDB>
+
 const idServer = new IdServer(
-  {
-    get: jest.fn()
-  } as unknown as MatrixDB,
+  matrixDBMock as MatrixDB,
   {} as unknown as Config,
   {
     database_engine: 'sqlite',
@@ -58,7 +60,7 @@ describe('the user info API Router', () => {
   beforeAll((done) => {
     idServer.ready
       .then(() => {
-        app.use(router(idServer, {} as unknown as Config))
+        app.use(router(idServer, {} as unknown as Config, matrixDBMock as MatrixDB))
         done()
       })
       .catch((e) => {

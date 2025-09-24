@@ -56,6 +56,25 @@ export type Config = MConfig &
       private_channel: PowerLevelEventContent
       public_channel: PowerLevelEventContent
     }
+    rabbitmq: {
+      host: string
+      port: number
+      vhost: string
+      username: string
+      password: string
+      tls: boolean
+    }
+    features: {
+      common_settings: {
+        enabled: boolean
+        exchange: string
+        queue: string
+        routingKey: string
+        deadLetterExchange: string
+        deadLetterRoutingKey: string
+      }
+      matrix_profile_updates_allowed: boolean
+    }
   }
 
 export interface AuthRequest extends Request {
@@ -81,6 +100,7 @@ export type twakeDbCollections =
   | 'invitations'
   | 'addressbooks'
   | 'contacts'
+  | 'usersettings'
 
 export type ApiRequestHandler = (
   req: Request,
@@ -214,9 +234,23 @@ export interface TwakeChatEnvironmentConfig {
   enable_invitations: boolean
 }
 
+export interface FeatureCommonSettingsConfig {
+  enabled: boolean
+}
+
+export interface CommonSettingsConfig extends FeatureCommonSettingsConfig {
+  queue: string
+  routingKey: string
+  exchange: string
+  deadLetterExchange: string
+  deadLetterRoutingKey: string
+}
+
 export interface TwakeChatConfig extends TwakeChatEnvironmentConfig {
   default_homeserver: string
   homeserver: string
+  common_settings: FeatureCommonSettingsConfig
+  matrix_profile_updates_allowed: boolean
 }
 
 export interface CreateRoomPayload {

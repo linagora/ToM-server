@@ -26,6 +26,7 @@ import MetricsRouter from './metrics-api'
 import Invitation from './invitation-api'
 import AddressBook from './addressbook-api'
 import DeactivateAccount from './deactivate-account-api'
+import AdminSettings from './admin-settings-api'
 import MatrixclientApi from './matrix-api/client'
 
 export default class TwakeServer {
@@ -56,6 +57,7 @@ export default class TwakeServer {
       confDesc,
       this.logger
     )
+    
     this.endpoints = Router()
     this.ready = new Promise<boolean>((resolve, reject) => {
       this._initServer(confDesc)
@@ -134,7 +136,12 @@ export default class TwakeServer {
       this.idServer.authenticate,
       this.logger
     )
-    const userInfoApi = userInfoAPIRouter(this.idServer, this.conf, this.logger)
+    const userInfoApi = userInfoAPIRouter(
+      this.idServer,
+      this.conf,
+      this.matrixDb,
+      this.logger
+    )
 
     const smsApi = smsApiRouter(
       this.conf,
@@ -175,11 +182,17 @@ export default class TwakeServer {
       this.logger
     )
 
+    const adminSettingsApi = AdminSettings(
+      this.conf,
+      this.logger
+    )
+
     const matrixClientApi = MatrixclientApi(
       this.conf,
       this.idServer.authenticate,
       this.logger
     )
+    
 
     this.endpoints.use(privateNoteApi)
     this.endpoints.use(mutualRoolsApi)
@@ -193,6 +206,7 @@ export default class TwakeServer {
     this.endpoints.use(invitationApi)
     this.endpoints.use(addressbookApi)
     this.endpoints.use(deactivateAccountApi)
+    this.endpoints.use(adminSettingsApi)
     this.endpoints.use(matrixClientApi)
 
     if (

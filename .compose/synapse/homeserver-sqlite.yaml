@@ -143,6 +143,11 @@ oidc_providers:
         localpart_template: "{{ user.preferred_username }}"
         display_name_template: "{{ user.name }}"
 
+sso:
+  client_whitelist:
+    - https://chat.docker.localhost
+  update_profile_information: true
+
 # Whether to allow non server admin to create groups on this server
 enable_group_creation: true
 
@@ -175,3 +180,12 @@ templates:
 
 # Used for auto-registrating the admin. NOTE : this string MUST NOT be shared anywhere!
 registration_shared_secret: "bH_8Ot;-4INv:yfXHZ1.ul_XP2KuL5xC-R4x#.9G6.+6J0^-V#"
+
+enable_set_displayname: false
+enable_set_avatar_url: false
+enable_3pid_changes: false
+
+auto_accept_invites:
+  enabled: true
+  only_for_direct_messages: true
+  only_from_local_users: true

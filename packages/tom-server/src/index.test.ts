@@ -120,7 +120,11 @@ describe('Tom-server', () => {
           registration_url: '',
           render_html: false,
           support_url: '',
-          twake_workplace_homeserver: ''
+          twake_workplace_homeserver: '',
+          common_settings: {
+            enabled: true
+          },
+          matrix_profile_updates_allowed: false
         },
         'm.homeserver': { base_url: 'https://localhost/' },
         'm.identity_server': { base_url: 'http://example.com/' },

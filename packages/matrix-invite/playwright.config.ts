@@ -1,6 +1,6 @@
-import { defineConfig, PlaywrightTestConfig } from '@playwright/test'
+import { defineConfig } from '@playwright/test'
 
-const config: PlaywrightTestConfig = defineConfig({
+export default defineConfig({
   use: {
     baseURL: 'http://localhost:4173'
   },
@@ -9,6 +9,4 @@ const config: PlaywrightTestConfig = defineConfig({
     url: 'http://localhost:4173'
   },
   testDir: 'tests'
-})
-
-export default config
+});

@@ -3,6 +3,7 @@ import { installGlobals } from '@remix-run/node'
 import AppServer from '@twake/matrix-application-server'
 import TomServer from '@twake/server'
 import MatrixIdentityServer from '@twake/matrix-identity-server'
+import { CommonSettingsService } from '@twake/common-settings'
 import express from 'express'
 import path from 'node:path'
 import { fileURLToPath } from 'url'
@@ -35,6 +36,39 @@ const appServerConf = {
   registration_file_path: process.env.REGISTRATION_FILE_PATH,
   namespaces: process.env.NAMESPACES,
   push_ephemeral: process.env.PUSH_EPHEMERAL || true
+}
+
+const rabbitmqConf = {
+  host: process.env.RABBITMQ_HOST || 'localhost',
+  port: process.env.RABBITMQ_PORT || 5672,
+  vhost: process.env.RABBITMQ_VHOST || '/',
+  username: process.env.RABBITMQ_USER || 'guest',
+  password: process.env.RABBITMQ_PASSWORD || 'guest',
+  tls: _parseBooleanEnv(process.env.RABBITMQ_TLS, false)
+}
+
+const featuresConf = {
+  common_settings: {
+    enabled: _parseBooleanEnv(
+      process.env.FEATURE_COMMON_SETTINGS_ENABLED,
+      false
+    ),
+    queue: process.env.FEATURE_COMMON_SETTINGS_QUEUE || 'settings.queue',
+    routingKey:
+      process.env.FEATURE_COMMON_SETTINGS_ROUTING_KEY || 'settings.routing.key',
+    exchange:
+      process.env.FEATURE_COMMON_SETTINGS_EXCHANGE || 'settings.exchange',
+    deadLetterExchange:
+      process.env.FEATURE_COMMON_SETTINGS_DEAD_LETTER_EXCHANGE ||
+      'settings.dead.letter.exchange',
+    deadLetterRoutingKey:
+      process.env.FEATURE_COMMON_SETTINGS_DEAD_LETTER_ROUTING_KEY ||
+      'settings.dead.letter.routing.key'
+  },
+  matrix_profile_updates_allowed: _parseBooleanEnv(
+    process.env.FEATURE_MATRIX_PROFILE_UPDATES_ALLOWED,
+    false
+  )
 }
 
 /**
@@ -160,7 +194,9 @@ let conf = {
   smtp_sender: process.env.SMTP_SENDER ?? '',
   smtp_server: process.env.SMTP_SERVER || 'localhost',
   smtp_port: process.env.SMTP_PORT || 25,
-  twake_chat: twakeChatConf
+  twake_chat: twakeChatConf,
+  rabbitmq: rabbitmqConf,
+  features: featuresConf
 }
 
 if (process.argv[2] === 'generate') {
@@ -261,7 +297,16 @@ if (process.argv[2] === 'generate') {
 
         const port = process.argv[2] != null ? parseInt(process.argv[2]) : 3000
         console.log(`ToM-Server listening on port: ${port}`)
-        app.listen(port, '0.0.0.0')
+        app.listen(port, '0.0.0.0', async () => {
+          if (conf.features.common_settings.enabled === true) {
+            const commonSettingsServiceI = new CommonSettingsService(
+              conf,
+              tomServer.logger,
+              tomServer.db
+            )
+            await commonSettingsServiceI.start()
+          }
+        })
       })
     })
     .catch((e) => {
