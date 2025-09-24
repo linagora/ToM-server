@@ -152,7 +152,7 @@ oidc_providers:
 
 sso:
   client_whitelist:
-  - https://chat.docker.localhost
+    - https://chat.docker.localhost
   update_profile_information: true
 
 # Whether to allow non server admin to create groups on this server

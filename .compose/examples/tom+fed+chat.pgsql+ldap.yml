@@ -85,7 +85,7 @@ services:
         aliases:
           - synapse
       db:
-  
+
   rabbitmq:
     image: rabbitmq:3-management
     environment:
@@ -99,7 +99,7 @@ services:
         aliases:
           - rabbitmq
       to_local:
-      
+
 
   tom:
     image: tom
@@ -162,6 +162,9 @@ services:
       - SMS_API_KEY=SOME_SECRET_KEY
       - SMS_API_LOGIN=login@domain.com
       - SMS_API_URL=https://api.octopush.com/v1/public
+
+      - FEATURE_MATRIX_PROFILE_UPDATES_ALLOWED=''
+      - FEATURE_COMMON_SETTINGS_ENABLED=''
 
       - LOG_LEVEL=silly
       - LOG_TRANSPORTS=Console
