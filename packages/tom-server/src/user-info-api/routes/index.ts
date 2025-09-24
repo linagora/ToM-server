@@ -37,23 +37,79 @@ export default (
    *    userId:
    *      in: path
    *      name: userId
-   *      description: the user id
+   *      description: The user‑id used in the request path.
    *      required: true
    *      schema:
    *        type: string
    *  schemas:
    *    UserInfo:
    *      type: object
+   *      description: |
+   *        Representation of a Matrix user enriched with optional data from
+   *        the local user database and common settings.
+   *      required:
+   *        - uid
+   *        - display_name
    *      properties:
    *        uid:
    *          type: string
-   *          description: the user id
-   *        givenName:
+   *          description: |
+   *            The fully‑qualified Matrix user identifier (e.g.
+   *            `@johndoe:matrix.org`). **Always present**.
+   *          example: "@johndoe:matrix.org"
+   *        display_name:
    *          type: string
-   *          description: the user given name
+   *          description: |
+   *            Human‑readable name for the user. **Always present**.
+   *          example: "John Doe"
+   *        avatar_url:
+   *          type: string
+   *          format: uri
+   *          description: |
+   *            URL of the user’s avatar (`mxc://` URI). Present only if the
+   *            Matrix server stores an avatar for the user.
+   *          example: "mxc://synapse/mediaid"
+   *        phones:
+   *          type: array
+   *          description: |
+   *            List of phone numbers associated with the user in the local
+   *            UserDB. Present only when such associations exist.
+   *          items:
+   *            type: string
+   *            example: "+1 234 567 8910"
+   *        mail:
+   *          type: array
+   *          description: |
+   *            List of e‑mail addresses associated with the user in the local
+   *            UserDB. Present only when such associations exist.
+   *          items:
+   *            type: string
+   *            format: email
+   *            example: "j.doe@email.com"
    *        sn:
    *          type: string
-   *          description: the user surname
+   *          description: |
+   *            Surname (family name) from the UserDB. Present only when the
+   *            UserDB contains this attribute.
+   *          example: "Doe"
+   *        givenName:
+   *          type: string
+   *          description: |
+   *            Given name (first name) from the UserDB. Present only when the
+   *            UserDB contains this attribute.
+   *          example: "John"
+   *        language:
+   *          type: string
+   *          description: |
+   *            Preferred language code (e.g. `en`, `fr`). Present only when
+   *            common settings are enabled and a value is stored.
+   *          example: "en"
+   *        timezone:
+   *          type: string
+   *          description: |
+   *            IANA time‑zone identifier (e.g. `Europe/Paris`). Present only
+   *            when common settings are enabled and a value is stored.
+   *          example: "Europe/Paris"
    */
 
   /**
