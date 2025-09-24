@@ -24,9 +24,9 @@ class UserInfoService implements IUserInfoService {
   get = async (id: string): Promise<UserInformation | null> => {
     try {
       // Init the result
-      let result: Partial<UserInformation & SettingsPayload> = {uid: id}
+      let result: Partial<UserInformation & SettingsPayload> = { uid: id }
 
-      const userIdLocalPart = getLocalPart(id);
+      const userIdLocalPart = getLocalPart(id)
 
       // If the local part is null, return null (invalid Matrix ID)
       if (userIdLocalPart == null) {
