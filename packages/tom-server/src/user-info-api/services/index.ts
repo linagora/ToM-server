@@ -40,19 +40,18 @@ class UserInfoService implements IUserInfoService {
         { user_id: userIdLocalPart }
       )) as unknown as Array<{ displayname: string; avatar_url?: string }>
 
-      if (!Array.isArray(matrixUser) || matrixUser.length === 0) {
-        //  Return 404 equivalent if Matrix user not found
-        return null
-      }
-
-      // Merge Matrix fields
-      result.display_name = matrixUser[0].displayname
-      if (matrixUser[0].avatar_url != null) {
+      const hasMatrix = Array.isArray(matrixUser) && matrixUser.length
+      const additional_features =
+        this.config.additional_features === true ||
+        process.env.ADDITIONAL_FEATURES === 'true'
+      if (!hasMatrix && !additional_features) return null
+      if (hasMatrix) {
+        result.display_name = matrixUser[0].displayname
         result.avatar = matrixUser[0].avatar_url
       }
 
       // Check if additional features are enabled and fetch more info
-      if (this.config.additional_features === true) {
+      if (additional_features) {
         const userInfo = (await this.userDb.db.get(
           'users',
           ['uid', 'sn', 'givenname', 'givenName', 'mail', 'telephoneNumber'],
@@ -70,7 +69,10 @@ class UserInfoService implements IUserInfoService {
       }
 
       // Check if common settings feature is enabled and fetch user settings
-      if (this.config.features?.common_settings?.enabled) {
+      if (
+        this.config.features?.common_settings?.enabled === true ||
+        process.env.FEATURE_COMMON_SETTINGS_ENABLED === 'true'
+      ) {
         const existing = (await this.db.get('usersettings', ['*'], {
           matrix_id: id
         })) as unknown as UserSettings[]
