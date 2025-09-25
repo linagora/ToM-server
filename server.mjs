@@ -59,11 +59,9 @@ const featuresConf = {
     exchange:
       process.env.FEATURE_COMMON_SETTINGS_EXCHANGE || 'settings.exchange',
     deadLetterExchange:
-      process.env.FEATURE_COMMON_SETTINGS_DEAD_LETTER_EXCHANGE ||
-      'settings.dead.letter.exchange',
+      process.env.FEATURE_COMMON_SETTINGS_DEAD_LETTER_EXCHANGE,
     deadLetterRoutingKey:
-      process.env.FEATURE_COMMON_SETTINGS_DEAD_LETTER_ROUTING_KEY ||
-      'settings.dead.letter.routing.key'
+      process.env.FEATURE_COMMON_SETTINGS_DEAD_LETTER_ROUTING_KEY
   },
   matrix_profile_updates_allowed: _parseBooleanEnv(
     process.env.FEATURE_MATRIX_PROFILE_UPDATES_ALLOWED,

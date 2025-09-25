@@ -70,8 +70,8 @@ export type Config = MConfig &
         exchange: string
         queue: string
         routingKey: string
-        deadLetterExchange: string
-        deadLetterRoutingKey: string
+        deadLetterExchange?: string
+        deadLetterRoutingKey?: string
       }
       matrix_profile_updates_allowed: boolean
     }
