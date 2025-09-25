@@ -92,6 +92,7 @@ export default class AdminService implements IAdminSettingsService {
       this.logger.info(`Fetching avatar image from ${avatarUrl}`)
       const url = new URL(avatarUrl)
       url.searchParams.set('format', 'png')
+      url.searchParams.set('fallback', 'initials')
       const resp = await fetch(url.toString())
       if (!resp.ok)
         throw new Error(
