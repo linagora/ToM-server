@@ -12,8 +12,10 @@ export default class DisplayNameService {
   public update = async (userId: string, displayName: string): Promise<Response> => {
     this.logger.info(`Updating display name for user ${userId} to ${displayName}`);
     // Here you would add the logic to update the display name in your database or service.
+    // TODO: Implement the actual update logic when allowed.
     // This is a placeholder implementation.
     return {
+      ok: true,
       success: true,
       userId,
       displayName,
