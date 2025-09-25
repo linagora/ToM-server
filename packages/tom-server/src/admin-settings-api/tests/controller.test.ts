@@ -45,7 +45,7 @@ describe('AdminSettingsrController', () => {
     jest.restoreAllMocks()
   })
 
-  it('should return 400 if userId or displayName is missing', async () => {
+  it('should return 400 if userId is missing', async () => {
     req.params.id = ''
     req.body.displayName = ''
 
@@ -53,7 +53,19 @@ describe('AdminSettingsrController', () => {
 
     expect(res.status).toHaveBeenCalledWith(400)
     expect(res.json).toHaveBeenCalledWith({
-      message: 'Missing user ID or display name'
+      message: 'Missing user ID'
+    })
+    expect(updateUserSpy).not.toHaveBeenCalled()
+    expect(next).not.toHaveBeenCalled()
+  })
+
+  it('should return 400 if no fields to update are provided', async () => {
+    req.body = {}
+    
+    await controller.handle(req, res, next)
+    expect(res.status).toHaveBeenCalledWith(400)
+    expect(res.json).toHaveBeenCalledWith({
+      message: 'No valid fields to update'
     })
     expect(updateUserSpy).not.toHaveBeenCalled()
     expect(next).not.toHaveBeenCalled()

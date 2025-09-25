@@ -1,8 +1,12 @@
 import { type TwakeLogger } from '@twake/logger'
 import { type Config, type ITokenService } from '../../types'
 import TokenService from '../../utils/services/token-service'
-import { type UploadUserAvatarResponse, type UserInformationPayload, type IAdminSettingsService } from '../types'
-import { Lru } from 'toad-cache';
+import {
+  type UploadUserAvatarResponse,
+  type UserInformationPayload,
+  type IAdminSettingsService
+} from '../types'
+import { Lru } from 'toad-cache'
 import { buildUrl } from '../../utils'
 export default class AdminService implements IAdminSettingsService {
   private readonly device = 'admin_service'
@@ -37,15 +41,16 @@ export default class AdminService implements IAdminSettingsService {
     }
 
     // Make the profile update request if we have a display name or an avatar or both
-    if (displayName !== null || avatarMxc != null) {
-      const updatePayload: Record<string, string> = {}
-      if (displayName !== null) {
-        updatePayload.displayname = displayName ?? ''
-      }
-      if (avatarMxc != null) {
-        updatePayload.avatar_url = avatarMxc
-      }
+    const updatePayload: Record<string, string> = {}
 
+    if (displayName != null) {
+      updatePayload.displayname = displayName ?? ''
+    }
+    if (avatarMxc != null) {
+      updatePayload.avatar_url = avatarMxc
+    }
+
+    if (Object.keys(updatePayload).length > 0) {
       this.logger.info(`Updating user ${userId} profile with`, updatePayload)
 
       const response = await this.makeRequestWithAdminToken(

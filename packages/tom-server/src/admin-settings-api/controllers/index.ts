@@ -28,15 +28,26 @@ export default class AdminSettingsrController
   ): Promise<void> => {
     try {
       const { id: userId } = req.params
-      const { displayName, avatarUrl } = req.body
-      if (userId.length === 0 || displayName.length === 0) {
-        res.status(400).json({ message: 'Missing user ID or display name' })
+      const updatePayload = req.body
+
+      // Validate that the user ID is present
+      if (userId.length === 0) {
+        res
+          .status(400)
+          .json({ message: 'Missing user ID' })
         return
       }
-      await this.adminService.updateUserInformation(userId, {
-        displayName,
-        avatarUrl
-      })
+
+      // Validate that at least one of the fields to update is present
+      if (
+        updatePayload.displayName === undefined &&
+        updatePayload.avatarUrl === undefined
+      ) {
+        res.status(400).json({ message: 'No valid fields to update' })
+        return
+      }
+
+      await this.adminService.updateUserInformation(userId, updatePayload)
       res.status(200).json({})
     } catch (error) {
       this.logger.error(`Failed to handle request`, { error })
