@@ -67,6 +67,7 @@ export type Config = MConfig &
     features: {
       common_settings: {
         enabled: boolean
+        application_url: string
         exchange: string
         queue: string
         routingKey: string
@@ -236,6 +237,7 @@ export interface TwakeChatEnvironmentConfig {
 
 export interface FeatureCommonSettingsConfig {
   enabled: boolean
+  application_url: string
 }
 
 export interface CommonSettingsConfig extends FeatureCommonSettingsConfig {

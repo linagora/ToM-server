@@ -348,7 +348,8 @@ class WellKnown {
       default_homeserver: config.matrix_server,
       homeserver: `https://${config.matrix_server}/`,
       common_settings: {
-        enabled: config.features.common_settings.enabled
+        enabled: config.features.common_settings.enabled,
+        application_url: config.features.common_settings.application_url
       },
       matrix_profile_updates_allowed:
         config.features.matrix_profile_updates_allowed

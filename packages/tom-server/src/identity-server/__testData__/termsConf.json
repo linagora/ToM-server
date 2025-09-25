@@ -59,6 +59,7 @@
   "features": {
     "common_settings": {
       "enabled": true,
+      "application_url": "https://{username}-settings.localhost",
       "queue": "settings.queue",
       "routingKey": "settings.routing.key",
       "exchange": "exchange.exchange",

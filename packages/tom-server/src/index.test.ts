@@ -122,7 +122,8 @@ describe('Tom-server', () => {
           support_url: '',
           twake_workplace_homeserver: '',
           common_settings: {
-            enabled: true
+            enabled: true,
+            application_url: 'https://{username}-settings.localhost'
           },
           matrix_profile_updates_allowed: false
         },
