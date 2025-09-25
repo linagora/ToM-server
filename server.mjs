@@ -53,6 +53,9 @@ const featuresConf = {
       process.env.FEATURE_COMMON_SETTINGS_ENABLED,
       false
     ),
+    application_url:
+      process.env.FEATURE_COMMON_SETTINGS_APPLICATION_URL ||
+      `https://{username}-settings.${process.env.SERVER_NAME}`,
     queue: process.env.FEATURE_COMMON_SETTINGS_QUEUE || 'settings.queue',
     routingKey:
       process.env.FEATURE_COMMON_SETTINGS_ROUTING_KEY || 'settings.routing.key',
