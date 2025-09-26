@@ -43,6 +43,7 @@
     "@opensearch-project/opensearch": "^2.5.0",
     "@twake/matrix-application-server": "*",
     "@twake/matrix-identity-server": "*",
+    "@twake/url-builder": "0.0.1",
     "@twake/utils": "*",
     "lodash": "^4.17.21",
     "qrcode": "^1.5.4",

@@ -3,6 +3,7 @@ import { type Request, type Response } from 'express'
 import type http from 'http'
 import { type tokenContent } from './account/register'
 import type IdentityServerDb from './db'
+import { buildUrl as builder } from '@twake/url-builder'
 import { errMsg, send } from '@twake/utils'
 
 export type AuthenticationFunction = (
@@ -100,25 +101,26 @@ export const Authenticate = <T extends string = never>(
  * @returns {string} - Combined URL
  */
 export const buildUrl = (base: string, path: string): string => {
-  let formattedUrl = base
+  // let formattedUrl = base
 
-  if (
-    !formattedUrl.startsWith('https://') &&
-    !formattedUrl.startsWith('http://')
-  ) {
-    formattedUrl = `https://${formattedUrl}`
-  }
+  // if (
+  //   !formattedUrl.startsWith('https://') &&
+  //   !formattedUrl.startsWith('http://')
+  // ) {
+  //   formattedUrl = `https://${formattedUrl}`
+  // }
 
-  const baseUrl = new URL(formattedUrl)
+  // const baseUrl = new URL(formattedUrl)
 
-  if (!baseUrl.pathname.endsWith('/')) {
-    baseUrl.pathname += '/'
-  }
+  // if (!baseUrl.pathname.endsWith('/')) {
+  //   baseUrl.pathname += '/'
+  // }
 
-  const processedPath = path.startsWith('/') ? path.slice(1) : path
-  const finalUrl = new URL(processedPath, baseUrl.href)
+  // const processedPath = path.startsWith('/') ? path.slice(1) : path
+  // const finalUrl = new URL(processedPath, baseUrl.href)
 
-  return finalUrl.toString()
+  // return finalUrl.toString()
+  return builder(base, path)
 }
 
 /**

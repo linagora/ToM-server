@@ -1,3 +1,5 @@
+import { buildUrl as builder } from '@twake/url-builder'
+
 export const tables = {
   recoveryWords: 'userId text PRIMARY KEY, words TEXT',
   matrixTokens: 'id varchar(64) PRIMARY KEY, data text',
@@ -30,23 +32,24 @@ export const tables = {
  * @returns {string} - Combined URL
  */
 export const buildUrl = (base: string, path: string): string => {
-  let formattedUrl = base
+  // let formattedUrl = base
 
-  if (
-    !formattedUrl.startsWith('https://') &&
-    !formattedUrl.startsWith('http://')
-  ) {
-    formattedUrl = `https://${formattedUrl}`
-  }
+  // if (
+  //   !formattedUrl.startsWith('https://') &&
+  //   !formattedUrl.startsWith('http://')
+  // ) {
+  //   formattedUrl = `https://${formattedUrl}`
+  // }
 
-  const baseUrl = new URL(formattedUrl)
+  // const baseUrl = new URL(formattedUrl)
 
-  if (!baseUrl.pathname.endsWith('/')) {
-    baseUrl.pathname += '/'
-  }
+  // if (!baseUrl.pathname.endsWith('/')) {
+  //   baseUrl.pathname += '/'
+  // }
 
-  const processedPath = path.startsWith('/') ? path.slice(1) : path
-  const finalUrl = new URL(processedPath, baseUrl.href)
+  // const processedPath = path.startsWith('/') ? path.slice(1) : path
+  // const finalUrl = new URL(processedPath, baseUrl.href)
 
-  return finalUrl.toString()
+  // return finalUrl.toString()
+  return builder(base, path)
 }
