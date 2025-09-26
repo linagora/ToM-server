@@ -1,0 +1,31 @@
+{
+  "type": "module",
+  "name": "@twake/url-builder",
+  "version": "0.0.1",
+  "description": "Twake comprehensive URL Builder Helper",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "rollup -c",
+    "watch": "rollup -c -w",
+    "test": "jest"
+  },
+  "keywords": [
+    "url",
+    "builder",
+    "utility",
+    "url-helper",
+    "twake",
+    "typescript"
+  ],
+  "author":
+    {
+    "name": "Pierre 'McFly' Marty",
+    "email": "pmarty@linagora.com"
+    }
+  ,
+  "license": "AGPL-3.0-or-later",
+  "dependencies": {
+  },
+  "devDependencies": {
+  }
+}
