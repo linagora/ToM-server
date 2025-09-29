@@ -45,7 +45,6 @@
     "@twake/config-parser": "*",
     "@twake/crypto": "*",
     "@twake/logger": "*",
-    "@twake/url-builder": "0.0.1",
     "@twake/utils": "*",
     "express": "^4.19.2",
     "express-rate-limit": "^7.2.0",

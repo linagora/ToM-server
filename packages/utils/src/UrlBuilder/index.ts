@@ -1,8 +1,7 @@
 import {
   InvalidPathError,
   InvalidUrlError,
-  MissingArgumentError,
-  UrlError
+  MissingArgumentError
 } from './errors'
 import { QueryParams, QueryValue, UrlOptions } from './types'
 

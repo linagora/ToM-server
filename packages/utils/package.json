@@ -1,6 +1,6 @@
 {
   "name": "@twake/utils",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Utilitary methods for Twake server",
   "keywords": [
     "matrix",

@@ -30,7 +30,7 @@ buildUrl(
 **Usage:**
 
 ```tsx
-import { buildUrl } from './url_builder';
+import { buildUrl } from '@twake/utils';
 
 // Basic usage with path and query parameters
 const url = buildUrl('example.com', 'api/v1/users', { limit: 10, sort: 'asc' });
@@ -68,7 +68,7 @@ new UrlBuilder(base: string, options?: UrlOptions);
 **Usage:**
 
 ```tsx
-import { UrlBuilder } from './url_builder';
+import { UrlBuilder } from '@twake/utils';
 
 // Create a builder instance and chain methods
 const builder = new UrlBuilder('[api.example.com/v1](https://api.example.com/v1)')
@@ -97,7 +97,7 @@ The library throws specific error types to help you handle different failure sce
 - `InvalidPathError`: Thrown when a path segment contains unsafe characters or patterns.
 
 ```tsx
-import { buildUrl, UrlError, InvalidUrlError, InvalidPathError } from './url_builder';
+import { buildUrl, UrlError, InvalidUrlError, InvalidPathError } from '@twake/utils';
 
 try {
   buildUrl('example.com', '[http://malicious.site](http://malicious.site)');

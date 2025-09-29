@@ -1,4 +1,4 @@
-import { buildUrl as builder } from '@twake/url-builder'
+import { buildUrl as builder } from '@twake/utils'
 
 export const tables = {
   recoveryWords: 'userId text PRIMARY KEY, words TEXT',
@@ -32,14 +32,14 @@ export const tables = {
  * @returns {string} - Combined URL
  */
 export const buildUrl = (base: string, path: string): string => {
-  // let formattedUrl = base
+  let formattedUrl = base
 
-  // if (
-  //   !formattedUrl.startsWith('https://') &&
-  //   !formattedUrl.startsWith('http://')
-  // ) {
-  //   formattedUrl = `https://${formattedUrl}`
-  // }
+  if (
+    !formattedUrl.startsWith('https://') &&
+    !formattedUrl.startsWith('http://')
+  ) {
+    formattedUrl = `https://${formattedUrl}`
+  }
 
   // const baseUrl = new URL(formattedUrl)
 
@@ -51,5 +51,5 @@ export const buildUrl = (base: string, path: string): string => {
   // const finalUrl = new URL(processedPath, baseUrl.href)
 
   // return finalUrl.toString()
-  return builder(base, path)
+  return builder(formattedUrl, path)
 }
