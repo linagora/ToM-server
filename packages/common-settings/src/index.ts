@@ -253,11 +253,14 @@ export class CommonSettingsService {
     ) {
       throw new Error('The base URL or admin access token is not configured')
     }
-    const endpoint = `${
-      this.config.base_url
-    }/_twake/v1/admin/settings/information/${encodeURIComponent(userId)}`
+    
+    const base = new URL(this.config.base_url) // validates
+    const endpoint = new URL(
+      `/_twake/v1/admin/settings/information/${encodeURIComponent(userId)}`,
+      base
+    )
 
-    const response = await fetch(endpoint, {
+    const response = await fetch(endpoint.toString(), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
