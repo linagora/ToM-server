@@ -23,7 +23,7 @@ services:
       - test
 
   synapse-federated-identity-service: &synapse_template
-    image: matrixdotorg/synapse:v1.89.0
+    image: matrixdotorg/synapse:v1.119.0
     container_name: synapse-federated-identity-service
     volumes:
       - ./synapse-data:/data
@@ -31,7 +31,7 @@ services:
       - ./nginx/ssl/9da13359.0:/etc/ssl/certs/9da13359.0
     depends_on:
       - auth
-    environment: 
+    environment:
       - UID=${MYUID}
       - VIRTUAL_PORT=8008
       - VIRTUAL_HOST=matrix.example.com
@@ -47,7 +47,7 @@ services:
   synapse-1:
     <<: *synapse_template
     container_name: synapse-1
-    environment: 
+    environment:
       - UID=${MYUID}
       - VIRTUAL_PORT=8008
       - VIRTUAL_HOST=matrix1.example.com
@@ -56,7 +56,7 @@ services:
   synapse-2:
     <<: *synapse_template
     container_name: synapse-2
-    environment: 
+    environment:
       - UID=${MYUID}
       - VIRTUAL_PORT=8008
       - VIRTUAL_HOST=matrix2.example.com
@@ -65,7 +65,7 @@ services:
   synapse-3:
     <<: *synapse_template
     container_name: synapse-3
-    environment: 
+    environment:
       - UID=${MYUID}
       - VIRTUAL_PORT=8008
       - VIRTUAL_HOST=matrix3.example.com
@@ -157,11 +157,11 @@ services:
     volumes:
       - ./nginx/ssl/ca.pem:/etc/ssl/certs/ca.pem
       - ./identity-server/conf/identity-server-2.conf:/etc/twake/identity-server.conf
-    environment: 
+    environment:
       - NODE_EXTRA_CA_CERTS=/etc/ssl/certs/ca.pem
       - VIRTUAL_PORT=3000
       - VIRTUAL_HOST=identity2.example.com
-  
+
   identity-server-3:
     <<: *identity-server-template
     container_name: identity-server-3

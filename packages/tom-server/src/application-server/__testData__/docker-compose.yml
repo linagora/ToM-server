@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   synapse:
-    image: matrixdotorg/synapse:v1.89.0
+    image: matrixdotorg/synapse:v1.119.0
     container_name: synapse-tom-1
     volumes:
       - ./synapse-data:/data
