@@ -69,6 +69,57 @@ REST API Endpoints documentation is available on https://linagora.github.io/ToM-
 * `npm run test`: test all packages
 * `node ./server.mjs`: run the server
 
+## Development Setup
+
+Follow these steps to start the project in development mode:
+
+### 1. Copy environment file
+
+Create a local `.env` file based on the provided example:
+
+```bash
+cp .env.example .env
+```
+
+You can adjust any variables inside `.env` as needed (e.g., database credentials, API keys, etc.).
+
+### 2. Start required services
+
+Use the provided Docker Compose file to start the local dependencies (PostgreSQL, LDAP, etc.):
+
+```bash
+docker compose -f .compose/examples/dev.pgsql+ldap.yml up -d
+```
+
+This runs all necessary backend services in the background.
+To stop them later:
+
+```bash
+docker compose -f .compose/examples/dev.pgsql+ldap.yml down
+```
+
+### 3. Run the development environment
+
+Start the local dev environment (watchers + server auto-reload):
+
+```bash
+npm run dev
+```
+
+This will:
+
+* Watch and rebuild all packages automatically (`lerna run watch`)
+* Launch the backend server via `nodemon`
+* Load environment variables from `.env` automatically
+
+### 4. Access and debug
+
+Once started:
+
+* The server should be running at the URL printed in the console (e.g. `http://localhost:3000`)
+* Any code changes in `packages/` will trigger automatic rebuilds and server restarts
+
+
 ## Copyright and license
 
 Copyright (c) 2023-present Linagora <https://linagora.com>
