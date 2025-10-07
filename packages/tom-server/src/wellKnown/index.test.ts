@@ -7,7 +7,7 @@
  */
 
 import request from 'supertest'
-import express, { Express } from 'express'
+import express, { type Express } from 'express'
 import WellKnown from '.'
 import { type Config } from '../types'
 import defaultConfig from '../config.json'
@@ -45,6 +45,10 @@ function createApp(conf: WellKnownConfig): Express {
 }
 
 describe('WellKnown class', () => {
+  beforeEach(() => {
+    global.fetch = jest.fn() 
+  })
+
   it('propagates features.common_settings.enabled correctly', async () => {
     const conf = buildConfig({
       features: {
@@ -82,6 +86,34 @@ describe('WellKnown class', () => {
 
     expect(res.body['app.twake.chat']).toMatchObject({
       matrix_profile_updates_allowed: true
+    })
+  })
+
+  it('merges remote matrix config without throwing', async () => {
+    // Simulate a remote config from fetch
+    ;(global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        'm.identity_server': { base_url: 'https://remote.identity.url' }
+      })
+    })
+
+    const conf = buildConfig({
+      features: {
+        common_settings: {
+          ...defaultConfig.features.common_settings,
+          enabled: false
+        },
+        matrix_profile_updates_allowed: false
+      }
+    })
+
+    const app = createApp(conf)
+    const res = await request(app).get('/.well-known/matrix/client')
+
+    expect(res.status).toBe(200)
+    expect(res.body['m.identity_server']).toMatchObject({
+      base_url: 'https://remote.identity.url'
     })
   })
 })
