@@ -224,7 +224,8 @@
  */
 
 import { send } from '@twake/utils'
-import { TwakeChatConfig, type Config, type expressAppHandler } from '../types'
+import type { TwakeChatConfig, Config, expressAppHandler } from '../types'
+import { buildUrl } from '../utils'
 
 interface WellKnownType {
   'm.homeserver': {
@@ -270,7 +271,9 @@ class WellKnown {
   _wellKnownClient: expressAppHandler
 
   constructor(conf: Config) {
-    this._wellKnownClient = (_req, res) => {
+    // eslint-disable-next-line @typescript-eslint/no-misused-promises
+    this._wellKnownClient = async (_req, res) => {
+      const matrixConfig = await this._getConfigFromMatrixServer(conf.matrix_internal_host)
       const wellKnown: WellKnownType = {
         'm.homeserver': {
           base_url: `https://${conf.matrix_server}/`
@@ -292,7 +295,8 @@ class WellKnown {
             useJwt: conf.jitsiUseJwt
           }
         },
-        'app.twake.chat': this._getTwakeChatConfig(conf)
+        'app.twake.chat': this._getTwakeChatConfig(conf),
+        ...matrixConfig
       }
 
       conf.federated_identity_services =
@@ -342,7 +346,7 @@ class WellKnown {
    * @param {Config} config - the application config
    * @returns {TwakeChatConfig} the Twake chat configuration object
    */
-  private _getTwakeChatConfig = (config: Config): TwakeChatConfig => {
+  private readonly _getTwakeChatConfig = (config: Config): TwakeChatConfig => {
     return {
       ...config.twake_chat,
       default_homeserver: config.matrix_server,
@@ -353,6 +357,24 @@ class WellKnown {
       },
       matrix_profile_updates_allowed:
         config.features.matrix_profile_updates_allowed
+    }
+  }
+
+  private readonly _getConfigFromMatrixServer = async (
+    matrixServer: string
+  ) : Promise<any> => {
+    try {
+      const apiUrl = buildUrl(matrixServer, '.well-known/matrix/client')
+      const res = await fetch(apiUrl)
+      if (!res.ok) {
+        throw new Error(
+          `Failed to fetch config from ${matrixServer}: ${res.status}`
+        )
+      }
+      const matrixConfig = await res.json()
+      return matrixConfig
+    } catch (err) {
+      return {}
     }
   }
 }
