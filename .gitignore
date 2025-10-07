@@ -4,6 +4,7 @@
 ### direnv ###
 .direnv
 .envrc
+.env
 
 ### Emacs ###
 # -*- mode: gitignore; -*-
