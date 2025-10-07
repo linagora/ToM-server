@@ -1,0 +1,183 @@
+services:
+  pgsql:
+    image: postgres
+    container_name: pgsql
+    volumes:
+      - ../pgsql/init-llng-db.sh:/docker-entrypoint-initdb.d/init-llng-db.sh
+      - ../pgsql/init-synapse-db.sh:/docker-entrypoint-initdb.d/init-synapse-db.sh
+      - ../pgsql/init-twake-db.sh:/docker-entrypoint-initdb.d/init-twake-db.sh
+      # - ../pgsql/data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_PASSWORD=postgres!!
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    ports:
+      - 5432:5432
+    networks:
+      - db
+
+  ldap:
+    image: ldap
+    build:
+      context: ../ldap
+      dockerfile: ./Dockerfile
+    ports:
+      - 389:389
+    ulimits:
+      nofile:
+        soft: "65536"
+        hard: "65536"
+    networks:
+      - db
+      - to_local
+
+  auth:
+    image: yadd/lemonldap-ng-full
+    volumes:
+      - ../lemon/lmConf-ldap.json:/var/lib/lemonldap-ng/conf/lmConf-1.json
+      - ../lemon/ssl.conf:/etc/nginx/sites-enabled/0000default.conf
+      - ../lemon/root.conf:/etc/nginx/sites-enabled/root.conf
+      - ../lemon/sessions:/var/lib/lemonldap-ng/session
+      - ../synapse/wellknownserver.conf:/var/www/matrix-server.json
+      - ../synapse/wellknownclient.conf:/var/www/matrix-client.json
+      - ../ssl:/etc/nginx/ssl
+    depends_on:
+      pgsql:
+        condition: service_healthy
+      ldap:
+        condition: service_started
+    environment:
+      - SSODOMAIN=docker.localhost
+      - PORTAL=https://auth.docker.localhost
+      - LOGLEVEL=debug
+      - LOGGER=stderr
+      - USERLOGGER=stderr
+    deploy:
+      mode: replicated
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+    networks:
+      frontend:
+        aliases:
+          - auth
+      db:
+
+  synapse:
+    image: matrixdotorg/synapse
+    restart: unless-stopped
+    env_file:
+      - path: ../.env
+        required: true
+    volumes:
+      - ../synapse:/data
+      - ../synapse/homeserver-pgsql.yaml:/data/homeserver.yaml
+      - ../ssl:/etc/ssl/certs
+    depends_on:
+      auth:
+        condition: service_started
+      pgsql:
+        condition: service_healthy
+    networks:
+      frontend:
+        aliases:
+          - synapse
+      db:
+  fed:
+    image: fed
+    build:
+      context: ../..
+      dockerfile: ./packages/federated-identity-service/Dockerfile
+    # ports:
+    #   - 3001:3001
+    #   - 9229:9229
+    networks:
+      frontend:
+        aliases:
+          - fed.server
+      db:
+    depends_on:
+      pgsql:
+        condition: service_healthy
+    environment:
+      # - NODE_OPTIONS="--inspect=0.0.0.0:9229"
+      - NODE_TLS_REJECT_UNAUTHORIZED=0
+
+      - BASE_URL=https://fed.docker.localhost
+      - SERVER_NAME=docker.localhost
+      - TRUSTED_PROXIES=uniquelocal
+      - TRUSTED_SERVERS_ADDRESSES=172.0.0.0/8
+
+      - ADDITIONAL_FEATURES=true
+
+      - CRON_SERVICE=true
+      # - UPDATE_FEDERATED_IDENTITY_HASHES_CRON=0-59/2 * * * *
+      # - UPDATE_USERS_CRON=1-59/2 * * * *
+
+      - DATABASE_ENGINE=pg
+      - DATABASE_HOST=pgsql
+      - DATABASE_NAME=fed
+      - DATABASE_USER=twake
+      - DATABASE_PASSWORD=twake!1
+
+      ## For storing the federated identity raw users
+      # - USERDB_ENGINE=ldap
+      # - LDAP_URI=ldap://ldap
+      # - LDAP_BASE=ou=users,dc=docker,dc=localhost
+      # - LDAP_FILTER=(objectClass=inetOrgPerson)
+      # - LDAP_USER=uid=fed,dc=docker,dc=localhost  ## Local LDAP is fully readable
+      # - LDAP_PASSWORD=F3d_p@Ss                    ## Local LDAP is fully readable
+
+      - LOG_LEVEL=silly
+      - LOG_TRANSPORTS=Console
+
+  chat:
+    image: linagora/twake-web
+    volumes:
+      - ../chat/config.json:/usr/share/nginx/html/web/config.json
+      - ../ssl:/etc/nginx/ssl
+    # ports:
+    #   - 80:80
+    networks:
+      - frontend
+
+  haproxy:
+    image: haproxy:2.6-bookworm
+    ports:
+      - 443:443
+    volumes:
+      # Reverse proxy routing configuration
+      - ../haproxy/haproxy.dev.cfg:/usr/local/etc/haproxy/haproxy.cfg
+      - ../haproxy/cors.lua:/usr/local/etc/haproxy/cors.lua
+      - ../haproxy/lua_endpoint_to_function.map_rewrite.cfg:/usr/local/etc/haproxy/lua_endpoint_to_function.map_rewrite.cfg
+      - ../haproxy/lua_endpoint_to_worker.map_rewrite.lua:/usr/local/etc/haproxy/lua_endpoint_to_worker.map_rewrite.lua
+      - ../haproxy/synapse_worker_endpoint_indexer.lua:/usr/local/etc/haproxy/synapse_worker_endpoint_indexer.lua
+      # HTTPS SSL Certs
+      - ../ssl/both.pem:/etc/ssl/certs/both.pem
+    sysctls:
+      - net.ipv4.ip_unprivileged_port_start=0
+    depends_on:
+      - auth
+      - synapse
+      - fed
+      - chat
+    networks:
+      frontend:
+        aliases:
+          - auth.docker.localhost
+          - chat.docker.localhost
+          - matrix.docker.localhost
+          - tom.docker.localhost
+          - fed.docker.localhost
+          - docker.localhost
+
+networks:
+  db:
+    name: db
+  frontend:
+    name: frontend
+  to_local:
+    driver: bridge
