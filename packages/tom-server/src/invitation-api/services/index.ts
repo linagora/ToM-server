@@ -537,7 +537,8 @@ export default class InvitationService implements IInvitationService {
   ): Promise<void> => {
     try {
       if (medium === 'email') {
-        const emailTemplatePath = `${this.config.template_dir}/emailInvitation.tpl`
+        const lang = 'en'; // TODO: invitee language
+        const emailTemplatePath = `${this.config.template_dir}/emailInvitation_${lang}.tpl`
 
         const text = buildEmailBody(
           emailTemplatePath,
