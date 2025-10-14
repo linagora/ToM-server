@@ -7,6 +7,7 @@ import type { UserInformation } from '../types'
 import type { MatrixDB } from '@twake/matrix-identity-server'
 
 const app = express()
+app.use(express.json())
 
 jest.mock('../middlewares/require-ldap.ts', () => {
   return () =>
@@ -16,11 +17,13 @@ jest.mock('../middlewares/require-ldap.ts', () => {
 })
 
 const getMock = jest.fn()
+const updateVisibilityMock = jest.fn()
 
 jest.mock('../services/index.ts', () => {
   return function () {
     return {
-      get: getMock
+      get: getMock,
+      updateVisibility: updateVisibilityMock
     }
   }
 })
@@ -102,5 +105,38 @@ describe('the user info API controller', () => {
     const result = await supertest(app).get(`${PATH}/@dwho:docker.localhost`)
 
     expect(result.status).toEqual(500)
+  })
+})
+
+describe('the user visibility API controller', () => {
+  it('should update the user profile visibility settings', async () => {
+    updateVisibilityMock.mockImplementation(async (userId, payload) => {
+      return {
+        matrix_id: userId,
+        ...payload
+      }
+    })
+
+    const payload = {
+      visibility: 'contacts',
+      visible_fields: ['email']
+    }
+
+    const userId = '@dwho:docker.localhost'
+
+    const response = await supertest(app)
+      .post(`${PATH}/${encodeURIComponent(userId)}/visibility`)
+      .send(payload)
+      .set('Accept', 'application/json')
+
+    // verify the route worked
+    expect(response.status).toBe(200)
+    expect(response.body).toMatchObject({
+      matrix_id: userId,
+      visibility: 'contacts',
+      visible_fields: ['email']
+    })
+    
+    expect(updateVisibilityMock).toHaveBeenCalledWith(userId, payload)
   })
 })
