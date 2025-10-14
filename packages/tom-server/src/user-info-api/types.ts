@@ -7,6 +7,10 @@ export interface IUserInfoController {
 
 export interface IUserInfoService {
   get: (id: string) => Promise<UserInformation | null>
+  updateVisibility: (
+    id: string,
+    visibilitySettings: UserProfileSettingsT
+  ) => Promise<UserProfileSettingsT | undefined>
 }
 
 export interface UserInformation {
@@ -34,3 +38,23 @@ export interface UserSettings {
   settings: SettingsPayload
   version: number
 }
+
+export enum ProfileField {
+  Phone = 'phone',
+  Email = 'email'
+}
+
+export enum ProfileVisibility {
+  Public = 'public',
+  Contacts = 'contacts',
+  Private = 'private'
+}
+
+export interface UserProfileSettingsPayloadT {
+  visibility: ProfileVisibility
+  visible_fields: ProfileField[]
+}
+
+export type UserProfileSettingsT = {
+  matrix_id: string
+} & UserProfileSettingsPayloadT

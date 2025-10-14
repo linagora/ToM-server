@@ -1,19 +1,25 @@
 import type { MatrixDB, UserDB } from '@twake/matrix-identity-server'
-import type {
-  IUserInfoService,
-  UserInformation,
-  UserSettings,
-  SettingsPayload
+import {
+  type IUserInfoService,
+  type UserInformation,
+  type UserSettings,
+  type SettingsPayload,
+  type UserProfileSettingsT,
+  type UserProfileSettingsPayloadT,
+  ProfileField,
+  ProfileVisibility
 } from '../types'
 import type { TwakeDB, Config } from '../../types'
 import { getLocalPart } from '@twake/utils'
+import type { TwakeLogger } from '@twake/logger'
 
 class UserInfoService implements IUserInfoService {
   constructor(
     private readonly userDb: UserDB,
     private readonly db: TwakeDB,
     private readonly matrixDb: MatrixDB,
-    private readonly config: Config
+    private readonly config: Config,
+    private readonly logger: TwakeLogger
   ) {}
 
   /**
@@ -32,6 +38,15 @@ class UserInfoService implements IUserInfoService {
       if (userIdLocalPart == null) {
         return null
       }
+
+      const defaultProfileVisibilitySettings = {
+        visibility: ProfileVisibility.Private,
+        visible_fields: []
+      }
+      const { visibilitySettings } = await this._getOrCreateUserSettings(
+        id,
+        defaultProfileVisibilitySettings
+      )
 
       // Query the Matrix DB
       const matrixUser = (await this.matrixDb.get(
@@ -63,8 +78,16 @@ class UserInfoService implements IUserInfoService {
           if (!result.display_name) result.display_name = user.cn as string
           result.sn = user.sn as string
           result.givenName = (user.givenname ?? user.givenName) as string
-          if (user.mail) result.mails = [user.mail as string]
-          if (user.mobile) result.phones = [user.mobile as string]
+          if (
+            user.mail &&
+            visibilitySettings.visible_fields.includes(ProfileField.Email)
+          )
+            result.mails = [user.mail as string]
+          if (
+            user.mobile &&
+            visibilitySettings.visible_fields.includes(ProfileField.Phone)
+          )
+            result.phones = [user.mobile as string]
         }
       }
 
@@ -88,13 +111,96 @@ class UserInfoService implements IUserInfoService {
       }
 
       // if only uid is present in the result, return null
-      if (Object.keys(result).length === 1 && (result.uid != null)) {
+      if (Object.keys(result).length === 1 && result.uid != null) {
         return null
       }
 
       return result as UserInformation
     } catch (error) {
-      throw new Error('Error getting user info', { cause: error })
+      throw new Error(
+        `Error getting user info ${JSON.stringify({
+          cause: error
+        })}`
+      )
+    }
+  }
+
+  updateVisibility = async (
+    userId: string,
+    visibilitySettings: UserProfileSettingsPayloadT
+  ): Promise<UserProfileSettingsT | undefined> => {
+    // eslint-disable-next-line no-useless-catch
+    try {
+      const { visibilitySettings: userVisibilitySettings, created } =
+        await this._getOrCreateUserSettings(userId, visibilitySettings)
+      if (created) {
+        return userVisibilitySettings
+      } else {
+        // update the existing user profile settings
+        await this.db.update(
+          'profileSettings',
+          // @ts-expect-error typecast
+          visibilitySettings,
+          'matrix_id',
+          userId
+        )
+      }
+    } catch (error) {
+      throw new Error(
+        `Error updating user visibility settings:  ${JSON.stringify({
+          cause: error
+        })}`
+      )
+    }
+  }
+
+  _getOrCreateUserSettings = async (
+    userId: string,
+    visibilitySettings: UserProfileSettingsPayloadT
+  ): Promise<{
+    visibilitySettings: UserProfileSettingsT
+    created: boolean
+  }> => {
+    try {
+      const existing = (await this.db.get('profileSettings', ['*'], {
+        matrix_id: userId
+      })) as unknown as UserProfileSettingsT[]
+      this.logger.info(`[UserInfoApiService] ${existing.length}`)
+
+      if (Array.isArray(existing) && existing.length > 0) {
+        this.logger.info(
+          '[UserInfoApiService] Found existing user profile settings ',
+          {
+            userId
+          }
+        )
+        return { visibilitySettings: existing[0], created: false }
+      }
+      this.logger.info(`[UserInfoApiService] got nothing`)
+
+      const insertResult = (await this.db.insert(
+        'profileSettings',
+        // @ts-expect-error typecast
+        {
+          matrix_id: userId,
+          ...visibilitySettings
+        } as unknown as UserProfileSettingsT
+      )) as unknown as UserProfileSettingsT
+
+      this.logger.info('[UserInfoApiService] Created new user settings', {
+        userId,
+        insertResult
+      })
+      return { visibilitySettings: insertResult, created: true }
+    } catch (err: any) {
+      this.logger.error(
+        '[UserInfoApiService] Failed to get or create user profile settings ',
+        {
+          userId,
+          error: err?.message
+        }
+      )
+      throw err
     }
   }
 }

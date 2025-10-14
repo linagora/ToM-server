@@ -4,6 +4,7 @@ import { type NextFunction, type Response } from 'express'
 import ldap from 'ldapjs'
 import type { Config, TwakeDB } from '../../types'
 import UserInfoService from '../services'
+import type { UserProfileSettingsPayloadT } from '../types'
 
 const server = ldap.createServer()
 
@@ -36,7 +37,13 @@ const twakeDBMock = {
       ]
     }
     return []
-  })
+  }),
+  insert: jest.fn().mockImplementation(async (table, values) => {
+    if (table === 'profileSettings') {
+      return [{ ...values }]
+    }
+  }),
+  update: jest.fn()
 }
 
 const matrixDBMock: Partial<MatrixDB> = {
@@ -78,7 +85,8 @@ beforeAll((done) => {
       userDb,
       twakeDBMock as unknown as TwakeDB,
       matrixDBMock as unknown as MatrixDB,
-      config as unknown as Config
+      config as unknown as Config,
+      logger
     )
     done()
   })
@@ -113,7 +121,8 @@ describe('user info service', () => {
       userDbWithCommon,
       twakeDBMock as unknown as TwakeDB,
       matrixDBMock as unknown as MatrixDB,
-      configWithCommon
+      configWithCommon,
+      logger
     )
 
     const user = await serviceWithCommon.get('@dwho:docker.localhost')
@@ -144,5 +153,57 @@ describe('user info service', () => {
 
     const user = await service.get('@notfound:docker.localhost')
     expect(user).toBeNull()
+  })
+
+  it('should create new profile visibility settings if none exist', async () => {
+    const userId = '@dwho:matrix.org'
+    twakeDBMock.get.mockResolvedValueOnce([])
+
+    const payload: UserProfileSettingsPayloadT = {
+      visibility: 'contacts',
+      visible_fields: ['email']
+    }
+
+    const result = await service.updateVisibility(userId, payload)
+    expect(result).toBeTruthy()
+    expect(result).toMatchObject([
+      {
+        matrix_id: userId,
+        visibility: 'contacts',
+        visible_fields: ['email']
+      }
+    ])
+    // verify DB insert called with correct full object
+    expect(twakeDBMock.insert).toHaveBeenCalledWith('profileSettings', {
+      matrix_id: userId,
+      ...payload
+    })
+  })
+
+  it('should update existing profile visibility settings if they exist', async () => {
+    const userId = '@dwho:matrix.org'
+
+    twakeDBMock.get.mockResolvedValueOnce([
+      {
+        matrix_id: userId,
+        visibility: 'private',
+        visible_fields: ['phone']
+      }
+    ])
+
+    const payload: UserProfileSettingsPayloadT = {
+      visibility: 'public',
+      visible_fields: ['email', 'phone']
+    }
+
+    const result = await service.updateVisibility(userId, payload)
+
+    expect(result).toBeUndefined()
+    expect(twakeDBMock.update).toHaveBeenCalledWith(
+      'profileSettings',
+      payload,
+      'matrix_id',
+      userId
+    )
   })
 })
