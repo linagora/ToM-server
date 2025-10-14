@@ -4,7 +4,11 @@ import { type NextFunction, type Response } from 'express'
 import ldap from 'ldapjs'
 import type { Config, TwakeDB } from '../../types'
 import UserInfoService from '../services'
-import type { UserProfileSettingsPayloadT } from '../types'
+import {
+  ProfileField,
+  ProfileVisibility,
+  type UserProfileSettingsPayloadT
+} from '../types'
 
 const server = ldap.createServer()
 
@@ -160,8 +164,8 @@ describe('user info service', () => {
     twakeDBMock.get.mockResolvedValueOnce([])
 
     const payload: UserProfileSettingsPayloadT = {
-      visibility: 'contacts',
-      visible_fields: ['email']
+      visibility: ProfileVisibility.Contacts,
+      visible_fields: [ProfileField.Email]
     }
 
     const result = await service.updateVisibility(userId, payload)
@@ -169,8 +173,8 @@ describe('user info service', () => {
     expect(result).toMatchObject([
       {
         matrix_id: userId,
-        visibility: 'contacts',
-        visible_fields: ['email']
+        visibility: ProfileVisibility.Contacts,
+        visible_fields: [ProfileField.Email]
       }
     ])
     // verify DB insert called with correct full object
@@ -186,14 +190,14 @@ describe('user info service', () => {
     twakeDBMock.get.mockResolvedValueOnce([
       {
         matrix_id: userId,
-        visibility: 'private',
-        visible_fields: ['phone']
+        visibility: ProfileVisibility.Private,
+        visible_fields: [ProfileField.Phone]
       }
     ])
 
     const payload: UserProfileSettingsPayloadT = {
-      visibility: 'public',
-      visible_fields: ['email', 'phone']
+      visibility: ProfileVisibility.Public,
+      visible_fields: [ProfileField.Email, ProfileField.Phone]
     }
 
     const result = await service.updateVisibility(userId, payload)
