@@ -65,3 +65,7 @@ export interface GenerateInvitationLinkResponse {
   link: string
   id: string
 }
+
+export enum SMS_FOOTERS {
+  FR = "STOP au 30101",
+};
