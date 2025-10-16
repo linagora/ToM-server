@@ -1,4 +1,3 @@
-import { Config } from '../../types'
 import fs from 'fs'
 import { randomString } from '@twake/crypto'
 
@@ -43,13 +42,15 @@ export const buildEmailBody = (
 export const buildSmsBody = (
   templatePath: string,
   inviter: string,
-  link: string
+  link: string,
+  footer?: string
 ): string | undefined => {
   try {
     const templateContent = fs.readFileSync(templatePath).toString()
     return templateContent
       .replace(/__inviter__/g, inviter)
       .replace(/__invitation_link__/g, link)
+      .replace(/__footer__/g, footer ?? "") // include a footer if present
   } catch (error) {
     console.error('Failed to build sms body', { error })
   }
