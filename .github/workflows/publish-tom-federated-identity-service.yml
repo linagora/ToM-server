@@ -11,9 +11,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: date
-        id: date
-        run: echo "::set-output name=date::$(date +'%Y-%m-%d')"
+      - name: Extract tag name
+        id: tag
+        run: echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
       - name: Get all src files that have changed
         id: changed-files
         uses: tj-actions/changed-files@v46
@@ -44,4 +44,4 @@ jobs:
           push: true
           tags: |
             linagora/tom-federated-identity-service:latest
-            linagora/tom-federated-identity-service:${{ steps.date.outputs.date }}
+            linagora/tom-federated-identity-service:${{ steps.tag.outputs.tag }}
