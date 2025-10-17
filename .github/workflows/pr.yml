@@ -3,7 +3,8 @@ name: pr
 on:
   pull_request:
     branches:
-      - main
+      - dev
+      - hotfixes
       - master
   merge_group:
   workflow_dispatch:
