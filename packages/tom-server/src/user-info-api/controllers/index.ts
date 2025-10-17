@@ -1,8 +1,9 @@
 import type { MatrixDB, UserDB } from '@twake/matrix-identity-server'
-import type {
-  IUserInfoService,
-  IUserInfoController,
-  UserProfileSettingsT
+import {
+  type IUserInfoService,
+  type IUserInfoController,
+  type UserProfileSettingsT,
+  ForbiddenError
 } from '../types'
 import type { Response, NextFunction } from 'express'
 import { type TwakeDB, type AuthRequest, type Config } from '../../types'
@@ -43,12 +44,12 @@ class UserInfoController implements IUserInfoController {
   ): Promise<void> => {
     try {
       const { userId } = req.params
-      if (userId !== req.userId) {
+      if (req.userId == null) {
         res.status(403).json({ error: errCodes.forbidden })
         return
       }
 
-      const info = await this.userInfoService.get(userId)
+      const info = await this.userInfoService.get(userId, req.userId)
 
       if (info === null) {
         res.status(404).json({ error: errCodes.notFound })
@@ -57,6 +58,10 @@ class UserInfoController implements IUserInfoController {
 
       res.status(200).json({ ...info })
     } catch (error) {
+      if (error instanceof ForbiddenError) {
+        res.status(403).json({ error: errCodes.forbidden })
+        return
+      }
       next(error)
     }
   }

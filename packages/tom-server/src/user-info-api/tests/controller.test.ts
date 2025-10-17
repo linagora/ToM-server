@@ -84,13 +84,7 @@ describe('the user info API controller', () => {
       uid: '@dwho:docker.localhost'
     })
   })
-
-  it("should return 403 if user is requesting another user's info", async () => {
-    const result = await supertest(app).get(`${PATH}/@other:docker.localhost`)
-
-    expect(result.status).toEqual(403)
-  })
-
+  
   it('should return 404 if user info cannot be found', async () => {
     getMock.mockImplementation(async () => null)
 
