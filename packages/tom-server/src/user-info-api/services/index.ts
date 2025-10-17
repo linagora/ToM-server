@@ -7,27 +7,36 @@ import {
   type UserProfileSettingsT,
   type UserProfileSettingsPayloadT,
   ProfileField,
-  ProfileVisibility
+  ProfileVisibility,
+  ForbiddenError
 } from '../types'
 import type { TwakeDB, Config } from '../../types'
 import { getLocalPart } from '@twake/utils'
 import type { TwakeLogger } from '@twake/logger'
+import { type IAddressbookService } from '../../addressbook-api/types'
+import { AddressbookService } from '../../addressbook-api/services'
 
 class UserInfoService implements IUserInfoService {
+  private readonly addressBookService: IAddressbookService
   constructor(
     private readonly userDb: UserDB,
     private readonly db: TwakeDB,
     private readonly matrixDb: MatrixDB,
     private readonly config: Config,
     private readonly logger: TwakeLogger
-  ) {}
+  ) {
+    this.addressBookService = new AddressbookService(this.db, this.logger)
+  }
 
   /**
    * Retrieves the user information from the database
    * @param {string} id the user Id
    * @returns {Promise<UserInformation | null>}
    */
-  get = async (id: string): Promise<UserInformation | null> => {
+  get = async (
+    id: string,
+    viewer?: string
+  ): Promise<UserInformation | null> => {
     try {
       // Init the result
       let result: Partial<UserInformation & SettingsPayload> = { uid: id }
@@ -43,10 +52,45 @@ class UserInfoService implements IUserInfoService {
         visibility: ProfileVisibility.Private,
         visible_fields: []
       }
-      const { visibilitySettings } = await this._getOrCreateUserSettings(
-        id,
-        defaultProfileVisibilitySettings
-      )
+
+      // By default all fields are visible (user viewing his own profile)
+      let visibilitySettings = {
+        visibility: ProfileVisibility.Public,
+        visible_fields: [ProfileField.Email]
+      }
+
+      // If it's another user requesting someone else's profile
+      if (id !== viewer) {
+        const { visibilitySettings: userVisibilitySettings } =
+          await this._getOrCreateUserSettings(
+            id,
+            defaultProfileVisibilitySettings
+          )
+        visibilitySettings = userVisibilitySettings
+
+        // if the profile is private then return nothing
+        if (visibilitySettings.visibility === ProfileVisibility.Private) {
+          // 403 forbidden
+          throw new ForbiddenError('This profile is private.')
+        }
+
+        // if the profile is visible to contacts only, check if the viewer is
+        // an existing contact
+        if (visibilitySettings.visibility === ProfileVisibility.Contacts) {
+          const { contacts: userContacts } = await this.addressBookService.list(
+            id
+          )
+          const isContact = userContacts.some(
+            (contact) => contact.id === viewer || contact.mxid === viewer
+          )
+          if (!isContact) {
+            // 403 forbidden
+            throw new ForbiddenError(
+              'This profile is visible to contacts only.'
+            )
+          }
+        }
+      }
 
       // Query the Matrix DB
       const matrixUser = (await this.matrixDb.get(
@@ -75,16 +119,17 @@ class UserInfoService implements IUserInfoService {
 
         if (Array.isArray(userInfo) && userInfo.length > 0) {
           const user = userInfo[0]
-          if (!result.display_name) result.display_name = user.cn as string
+          if (result.display_name == null)
+            result.display_name = user.cn as string
           result.sn = user.sn as string
           result.givenName = (user.givenname ?? user.givenName) as string
           if (
-            user.mail &&
+            user.mail != null &&
             visibilitySettings.visible_fields.includes(ProfileField.Email)
           )
             result.mails = [user.mail as string]
           if (
-            user.mobile &&
+            user.mobile != null &&
             visibilitySettings.visible_fields.includes(ProfileField.Phone)
           )
             result.phones = [user.mobile as string]
@@ -93,7 +138,7 @@ class UserInfoService implements IUserInfoService {
 
       // Check if common settings feature is enabled and fetch user settings
       if (
-        this.config.features?.common_settings?.enabled === true ||
+        this.config.features?.common_settings?.enabled ||
         process.env.FEATURE_COMMON_SETTINGS_ENABLED === 'true'
       ) {
         const existing = (await this.db.get('usersettings', ['*'], {
