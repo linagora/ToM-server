@@ -136,6 +136,8 @@ describe('user info service', () => {
     expect(user).toHaveProperty('givenName', 'David')
     expect(user).toHaveProperty('uid', '@dwho:docker.localhost')
     expect(user).toHaveProperty('sn', 'Who')
+    expect(user).toHaveProperty('language', 'fr')
+    expect(user).toHaveProperty('timezone', 'Europe/Paris')
   })
 
   it('should return null if matrix id is invalid', async () => {
@@ -209,5 +211,80 @@ describe('user info service', () => {
       'matrix_id',
       userId
     )
+  })
+
+  it('returns directory info when matrix profile is missing but additional_features is ON', async () => {
+    ;(matrixDBMock.get as jest.Mock).mockResolvedValueOnce([])
+    const user = await service.get('@dwho:docker.localhost')
+
+    expect(user).not.toBeNull()
+    expect(user).toHaveProperty('display_name', 'David Who')
+    expect(user).toHaveProperty('sn', 'Who')
+    expect(user).toHaveProperty('givenName', 'David')
+    expect(user).toHaveProperty('mails')
+    expect(user?.mails?.[0]).toBe('dwho@example.com')
+  })
+
+  it('returns null when matrix profile missing AND additional_features is OFF', async () => {
+    ;(matrixDBMock.get as jest.Mock).mockResolvedValueOnce([])
+
+    const cfg = {
+      ...config,
+      additional_features: false,
+      features: { common_settings: { enabled: false } }
+    } as unknown as Config
+
+    const svc = new UserInfoService(
+      userDb,
+      twakeDBMock as unknown as TwakeDB,
+      matrixDBMock as unknown as MatrixDB,
+      cfg,
+      logger
+    )
+
+    const user = await svc.get('@dwho:docker.localhost')
+    expect(user).toBeNull()
+  })
+
+  it('does NOT expose language / timezone when common_settings feature flag is OFF', async () => {
+    const cfg = {
+      ...config,
+      additional_features: true,
+      features: { common_settings: { enabled: false } }
+    } as unknown as Config
+
+    const svc = new UserInfoService(
+      userDb,
+      twakeDBMock as unknown as TwakeDB,
+      matrixDBMock as unknown as MatrixDB,
+      cfg,
+      logger
+    )
+
+    const user = await svc.get('@dwho:docker.localhost')
+    expect(user).not.toBeNull()
+    expect(user).not.toHaveProperty('language')
+    expect(user).not.toHaveProperty('timezone')
+  })
+
+  it('still returns language / timezone when common_settings feature flag is ON', async () => {
+    const cfg = {
+      ...config,
+      additional_features: true,
+      features: { common_settings: { enabled: true } }
+    } as unknown as Config
+
+    const svc = new UserInfoService(
+      userDb,
+      twakeDBMock as unknown as TwakeDB,
+      matrixDBMock as unknown as MatrixDB,
+      cfg,
+      logger
+    )
+
+    const user = await svc.get('@dwho:docker.localhost')
+    expect(user).not.toBeNull()
+    expect(user).toHaveProperty('language', 'fr')
+    expect(user).toHaveProperty('timezone', 'Europe/Paris')
   })
 })
