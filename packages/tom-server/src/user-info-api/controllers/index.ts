@@ -45,7 +45,7 @@ class UserInfoController implements IUserInfoController {
     try {
       const { userId } = req.params
       if (req.userId == null) {
-        res.status(403).json({ error: errCodes.forbidden })
+        res.status(400).json({ error: errCodes.missingParams })
         return
       }
 
