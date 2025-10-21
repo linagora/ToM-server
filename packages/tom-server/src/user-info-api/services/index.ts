@@ -18,6 +18,9 @@ import { AddressbookService } from '../../addressbook-api/services'
 
 class UserInfoService implements IUserInfoService {
   private readonly addressBookService: IAddressbookService
+  private readonly enableAdditionalFeatures: boolean
+  private readonly enableCommonSettings: boolean
+
   constructor(
     private readonly userDb: UserDB,
     private readonly db: TwakeDB,
@@ -26,6 +29,14 @@ class UserInfoService implements IUserInfoService {
     private readonly logger: TwakeLogger
   ) {
     this.addressBookService = new AddressbookService(this.db, this.logger)
+
+    this.enableAdditionalFeatures =
+      this.config.additional_features === true ||
+      process.env.ADDITIONAL_FEATURES === 'true'
+
+    this.enableCommonSettings =
+      this.config.features?.common_settings?.enabled ||
+      process.env.FEATURE_COMMON_SETTINGS_ENABLED === 'true'
   }
 
   /**
@@ -42,7 +53,6 @@ class UserInfoService implements IUserInfoService {
       let result: Partial<UserInformation & SettingsPayload> = { uid: id }
 
       const userIdLocalPart = getLocalPart(id)
-
       // If the local part is null, return null (invalid Matrix ID)
       if (userIdLocalPart == null) {
         return null
@@ -59,58 +69,65 @@ class UserInfoService implements IUserInfoService {
         visible_fields: [ProfileField.Email]
       }
 
-      // If it's another user requesting someone else's profile
-      if (id !== viewer) {
-        const { visibilitySettings: userVisibilitySettings } =
-          await this._getOrCreateUserSettings(
-            id,
-            defaultProfileVisibilitySettings
-          )
-        visibilitySettings = userVisibilitySettings
-
-        // if the profile is private then return nothing
-        if (visibilitySettings.visibility === ProfileVisibility.Private) {
-          // 403 forbidden
-          throw new ForbiddenError('This profile is private.')
+      if (viewer) {
+        // ensure viewer is a well‑formed matrix id
+        const viewerLocalPart = getLocalPart(viewer)
+        if (viewerLocalPart == null) {
+          // treat malformed viewer as “not allowed”
+          throw new ForbiddenError('Invalid viewer identifier.')
         }
 
-        // if the profile is visible to contacts only, check if the viewer is
-        // an existing contact
-        if (visibilitySettings.visibility === ProfileVisibility.Contacts) {
-          const { contacts: userContacts } = await this.addressBookService.list(
-            id
-          )
-          const isContact = userContacts.some(
-            (contact) => contact.id === viewer || contact.mxid === viewer
-          )
-          if (!isContact) {
-            // 403 forbidden
-            throw new ForbiddenError(
-              'This profile is visible to contacts only.'
+        // If it's another user requesting someone else's profile
+        if (id !== viewer) {
+          const { visibilitySettings: userVisibilitySettings } =
+            await this._getOrCreateUserSettings(
+              id,
+              defaultProfileVisibilitySettings
             )
+          visibilitySettings = userVisibilitySettings
+
+          // if the profile is private then return nothing
+          if (visibilitySettings.visibility === ProfileVisibility.Private) {
+            // 403 forbidden
+            throw new ForbiddenError('This profile is private.')
+          }
+
+          // if the profile is visible to contacts only, check if the viewer is
+          // an existing contact
+          if (visibilitySettings.visibility === ProfileVisibility.Contacts) {
+            const { contacts: userContacts } =
+              await this.addressBookService.list(id)
+
+            const contactSet = new Set<string>()
+            for (const c of userContacts) {
+              if (c.id) contactSet.add(c.id)
+              if (c.mxid) contactSet.add(c.mxid)
+            }
+
+            const isContact = contactSet.has(viewer)
+            if (!isContact) {
+              // 403 forbidden
+              throw new ForbiddenError(
+                'This profile is visible to contacts only.'
+              )
+            }
           }
         }
       }
 
-      // Query the Matrix DB
       const matrixUser = (await this.matrixDb.get(
         'profiles',
         ['displayname', 'avatar_url'],
         { user_id: userIdLocalPart }
       )) as unknown as Array<{ displayname: string; avatar_url?: string }>
-
       const hasMatrix = Array.isArray(matrixUser) && matrixUser.length
-      const additional_features =
-        this.config.additional_features === true ||
-        process.env.ADDITIONAL_FEATURES === 'true'
-      if (!hasMatrix && !additional_features) return null
+      if (!hasMatrix && !this.enableAdditionalFeatures) return null
       if (hasMatrix) {
         result.display_name = matrixUser[0].displayname
         if (matrixUser[0].avatar_url) result.avatar = matrixUser[0].avatar_url
       }
 
-      // Check if additional features are enabled and fetch more info
-      if (additional_features) {
+      if (this.enableAdditionalFeatures) {
         const userInfo = (await this.userDb.db.get(
           'users',
           ['cn', 'sn', 'givenname', 'givenName', 'mail', 'mobile'],
@@ -119,15 +136,18 @@ class UserInfoService implements IUserInfoService {
 
         if (Array.isArray(userInfo) && userInfo.length > 0) {
           const user = userInfo[0]
+
           if (result.display_name == null)
             result.display_name = user.cn as string
           result.sn = user.sn as string
           result.givenName = (user.givenname ?? user.givenName) as string
+
           if (
             user.mail != null &&
             visibilitySettings.visible_fields.includes(ProfileField.Email)
           )
             result.mails = [user.mail as string]
+
           if (
             user.mobile != null &&
             visibilitySettings.visible_fields.includes(ProfileField.Phone)
@@ -136,22 +156,17 @@ class UserInfoService implements IUserInfoService {
         }
       }
 
-      // Check if common settings feature is enabled and fetch user settings
-      if (
-        this.config.features?.common_settings?.enabled ||
-        process.env.FEATURE_COMMON_SETTINGS_ENABLED === 'true'
-      ) {
+      if (this.enableCommonSettings) {
         const existing = (await this.db.get('usersettings', ['*'], {
           matrix_id: id
         })) as unknown as UserSettings[]
-
         if (Array.isArray(existing) && existing.length > 0) {
           const settings = existing[0].settings
-          result = {
-            ...result,
+          // Use Object.assign to avoid an extra spread allocation
+          Object.assign(result, {
             language: settings.language ?? '',
             timezone: settings.timezone ?? ''
-          }
+          })
         }
       }
 
@@ -159,13 +174,11 @@ class UserInfoService implements IUserInfoService {
       if (Object.keys(result).length === 1 && result.uid != null) {
         return null
       }
-
       return result as UserInformation
     } catch (error) {
       throw new Error(
-        `Error getting user info ${JSON.stringify({
-          cause: error
-        })}`
+        `Error getting user info ${JSON.stringify({ cause: error })}`,
+        { cause: error as Error }
       )
     }
   }
@@ -194,7 +207,8 @@ class UserInfoService implements IUserInfoService {
       throw new Error(
         `Error updating user visibility settings:  ${JSON.stringify({
           cause: error
-        })}`
+        })}`,
+        { cause: error as Error }
       )
     }
   }
@@ -211,7 +225,6 @@ class UserInfoService implements IUserInfoService {
         matrix_id: userId
       })) as unknown as UserProfileSettingsT[]
       this.logger.info(`[UserInfoApiService] ${existing.length}`)
-
       if (Array.isArray(existing) && existing.length > 0) {
         this.logger.info(
           '[UserInfoApiService] Found existing user profile settings ',
@@ -222,7 +235,6 @@ class UserInfoService implements IUserInfoService {
         return { visibilitySettings: existing[0], created: false }
       }
       this.logger.info(`[UserInfoApiService] got nothing`)
-
       const insertResult = (await this.db.insert(
         'profileSettings',
         // @ts-expect-error typecast
@@ -231,7 +243,6 @@ class UserInfoService implements IUserInfoService {
           ...visibilitySettings
         } as unknown as UserProfileSettingsT
       )) as unknown as UserProfileSettingsT
-
       this.logger.info('[UserInfoApiService] Created new user settings', {
         userId,
         insertResult
