@@ -97,7 +97,6 @@ class UserInfoService implements IUserInfoService {
           if (visibilitySettings.visibility === ProfileVisibility.Contacts) {
             const { contacts: userContacts } =
               await this.addressBookService.list(id)
-
             const contactSet = new Set<string>()
             for (const c of userContacts) {
               if (c.id) contactSet.add(c.id)
@@ -115,59 +114,74 @@ class UserInfoService implements IUserInfoService {
         }
       }
 
-      const matrixUser = (await this.matrixDb.get(
-        'profiles',
-        ['displayname', 'avatar_url'],
-        { user_id: userIdLocalPart }
-      )) as unknown as Array<{ displayname: string; avatar_url?: string }>
-      const hasMatrix = Array.isArray(matrixUser) && matrixUser.length
-      if (!hasMatrix && !this.enableAdditionalFeatures) return null
-      if (hasMatrix) {
-        result.display_name = matrixUser[0].displayname
-        if (matrixUser[0].avatar_url) result.avatar = matrixUser[0].avatar_url
-      }
+      const matrixPromise = (async () => {
+        const rows = (await this.matrixDb.get(
+          'profiles',
+          ['displayname', 'avatar_url'],
+          { user_id: userIdLocalPart }
+        )) as unknown as Array<{ displayname: string; avatar_url?: string }>
+        return rows
+      })()
 
-      if (this.enableAdditionalFeatures) {
-        const userInfo = (await this.userDb.db.get(
+      const directoryPromise = (async () => {
+        if (!this.enableAdditionalFeatures) return null
+        const rows = (await this.userDb.db.get(
           'users',
           ['cn', 'sn', 'givenname', 'givenName', 'mail', 'mobile'],
           { uid: userIdLocalPart }
         )) as unknown as Array<Record<string, string | string[]>>
+        return rows?.[0] ?? null
+      })()
 
-        if (Array.isArray(userInfo) && userInfo.length > 0) {
-          const user = userInfo[0]
-
-          if (result.display_name == null)
-            result.display_name = user.cn as string
-          result.sn = user.sn as string
-          result.givenName = (user.givenname ?? user.givenName) as string
-
-          if (
-            user.mail != null &&
-            visibilitySettings.visible_fields.includes(ProfileField.Email)
-          )
-            result.mails = [user.mail as string]
-
-          if (
-            user.mobile != null &&
-            visibilitySettings.visible_fields.includes(ProfileField.Phone)
-          )
-            result.phones = [user.mobile as string]
-        }
-      }
-
-      if (this.enableCommonSettings) {
-        const existing = (await this.db.get('usersettings', ['*'], {
+      const settingsPromise = (async () => {
+        if (!this.enableCommonSettings) return null
+        const rows = (await this.db.get('usersettings', ['*'], {
           matrix_id: id
         })) as unknown as UserSettings[]
-        if (Array.isArray(existing) && existing.length > 0) {
-          const settings = existing[0].settings
-          // Use Object.assign to avoid an extra spread allocation
-          Object.assign(result, {
-            language: settings.language ?? '',
-            timezone: settings.timezone ?? ''
-          })
+        return rows?.[0] ?? null
+      })()
+
+      const [matrixRows, directoryRow, settingsRow] = await Promise.all([
+        matrixPromise,
+        directoryPromise,
+        settingsPromise
+      ])
+
+      const hasMatrix = Array.isArray(matrixRows) && matrixRows.length
+
+      if (!hasMatrix && !this.enableAdditionalFeatures) return null
+
+      if (hasMatrix) {
+        result.display_name = matrixRows[0].displayname
+        if (matrixRows[0].avatar_url) result.avatar = matrixRows[0].avatar_url
+      }
+
+      if (directoryRow) {
+        if (result.display_name == null && directoryRow.cn != null)
+          result.display_name = directoryRow.cn as string
+        if (directoryRow.sn != null) result.sn = directoryRow.sn as string
+        if (directoryRow.givenname != null || directoryRow.givenName != null) {
+          result.givenName = (directoryRow.givenname ??
+            directoryRow.givenName) as string
         }
+        if (
+          directoryRow.mail != null &&
+          visibilitySettings.visible_fields.includes(ProfileField.Email)
+        )
+          result.mails = [directoryRow.mail as string]
+        if (
+          directoryRow.mobile != null &&
+          visibilitySettings.visible_fields.includes(ProfileField.Phone)
+        )
+          result.phones = [directoryRow.mobile as string]
+      }
+
+      if (settingsRow) {
+        // Use Object.assign to avoid an extra spread allocation
+        Object.assign(result, {
+          language: settingsRow.settings.language ?? '',
+          timezone: settingsRow.settings.timezone ?? ''
+        })
       }
 
       // if only uid is present in the result, return null
