@@ -221,8 +221,8 @@ describe('user info service', () => {
     expect(user).toHaveProperty('display_name', 'David Who')
     expect(user).toHaveProperty('sn', 'Who')
     expect(user).toHaveProperty('givenName', 'David')
-    expect(user).toHaveProperty('mails')
-    expect(user?.mails?.[0]).toBe('dwho@example.com')
+    // The LDAP mock does **not** contain a `mail` attribute, therefore the service must not add a `mails` field.
+    expect(user).not.toHaveProperty('mails')
   })
 
   it('returns null when matrix profile missing AND additional_features is OFF', async () => {
