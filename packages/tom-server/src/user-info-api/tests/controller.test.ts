@@ -5,6 +5,8 @@ import type { AuthRequest, Config } from '../../types'
 import router, { PATH } from '../routes'
 import type { UserInformation } from '../types'
 import type { MatrixDB } from '@twake/matrix-identity-server'
+import UserInfoController from '../controllers'
+import { ForbiddenError } from '../types'
 
 const app = express()
 app.use(express.json())
@@ -84,7 +86,7 @@ describe('the user info API controller', () => {
       uid: '@dwho:docker.localhost'
     })
   })
-  
+
   it('should return 404 if user info cannot be found', async () => {
     getMock.mockImplementation(async () => null)
 
@@ -104,12 +106,10 @@ describe('the user info API controller', () => {
 
 describe('the user visibility API controller', () => {
   it('should update the user profile visibility settings', async () => {
-    updateVisibilityMock.mockImplementation(async (userId, payload) => {
-      return {
-        matrix_id: userId,
-        ...payload
-      }
-    })
+    updateVisibilityMock.mockImplementation(async (userId, payload) => ({
+      matrix_id: userId,
+      ...payload
+    }))
 
     const payload = {
       visibility: 'contacts',
@@ -130,7 +130,93 @@ describe('the user visibility API controller', () => {
       visibility: 'contacts',
       visible_fields: ['email']
     })
-    
+
     expect(updateVisibilityMock).toHaveBeenCalledWith(userId, payload)
+  })
+})
+
+describe('UserInfoController – additional branch coverage (unit)', () => {
+  const userdb = {} as any
+  const db = {} as any
+  const matrixDB = {} as any
+  const config = {} as any
+  const logger = {} as any
+
+  const makeRes = () => {
+    const res: any = {
+      status: jest.fn().mockReturnThis(),
+      json: jest.fn()
+    }
+    return res
+  }
+
+  const makeReq = (overrides: Partial<AuthRequest> = {}): AuthRequest => {
+    return {
+      params: {},
+      body: {},
+      userId: '@dwho:docker.localhost',
+      ...overrides
+    } as AuthRequest
+  }
+
+  const next = jest.fn()
+  let controller: UserInfoController
+
+  beforeEach(() => {
+    jest.clearAllMocks()
+    controller = new UserInfoController(userdb, db, matrixDB, config, logger)
+  })
+
+  it('get() → 400 when request has no authenticated userId', async () => {
+    const req = makeReq({
+      userId: undefined,
+      params: { userId: '@foo:example.com' }
+    })
+    const res = makeRes()
+    await controller.get(req, res, next)
+
+    expect(res.status).toHaveBeenCalledWith(400)
+    expect(res.json).toHaveBeenCalledWith({ error: expect.anything() })
+    expect(next).not.toHaveBeenCalled()
+  })
+
+  it('get() → 403 when service throws ForbiddenError', async () => {
+    getMock.mockRejectedValue(new ForbiddenError('nope'))
+
+    const req = makeReq({ params: { userId: '@foo:example.com' } })
+    const res = makeRes()
+    await controller.get(req, res, next)
+
+    expect(res.status).toHaveBeenCalledWith(403)
+    expect(res.json).toHaveBeenCalledWith({ error: expect.anything() })
+    expect(next).not.toHaveBeenCalled()
+  })
+
+  it('updateVisibility() → 403 when path userId differs from auth userId', async () => {
+    const req = makeReq({
+      params: { userId: '@other:user' },
+      body: { visibility: 'public', visible_fields: [] }
+    })
+    const res = makeRes()
+    await controller.updateVisibility(req, res, next)
+
+    expect(res.status).toHaveBeenCalledWith(403)
+    expect(res.json).toHaveBeenCalledWith({ error: expect.anything() })
+    expect(next).not.toHaveBeenCalled()
+  })
+
+  it('updateVisibility() → 500 when service returns undefined', async () => {
+    updateVisibilityMock.mockResolvedValue(undefined)
+
+    const req = makeReq({
+      params: { userId: '@dwho:docker.localhost' },
+      body: { visibility: 'public', visible_fields: [] }
+    })
+    const res = makeRes()
+    await controller.updateVisibility(req, res, next)
+
+    expect(res.status).toHaveBeenCalledWith(500)
+    expect(res.json).toHaveBeenCalledWith({ error: expect.anything() })
+    expect(next).not.toHaveBeenCalled()
   })
 })
