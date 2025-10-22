@@ -53,7 +53,6 @@ class UserInfoService implements IUserInfoService {
       let result: Partial<UserInformation & SettingsPayload> = { uid: id }
 
       const userIdLocalPart = getLocalPart(id)
-      // If the local part is null, return null (invalid Matrix ID)
       if (userIdLocalPart == null) {
         return null
       }
@@ -63,21 +62,17 @@ class UserInfoService implements IUserInfoService {
         visible_fields: []
       }
 
-      // By default all fields are visible (user viewing his own profile)
       let visibilitySettings = {
         visibility: ProfileVisibility.Public,
         visible_fields: [ProfileField.Email]
       }
 
       if (viewer) {
-        // ensure viewer is a well‑formed matrix id
         const viewerLocalPart = getLocalPart(viewer)
         if (viewerLocalPart == null) {
-          // treat malformed viewer as “not allowed”
           throw new ForbiddenError('Invalid viewer identifier.')
         }
 
-        // If it's another user requesting someone else's profile
         if (id !== viewer) {
           const { visibilitySettings: userVisibilitySettings } =
             await this._getOrCreateUserSettings(
@@ -86,14 +81,10 @@ class UserInfoService implements IUserInfoService {
             )
           visibilitySettings = userVisibilitySettings
 
-          // if the profile is private then return nothing
           if (visibilitySettings.visibility === ProfileVisibility.Private) {
-            // 403 forbidden
             throw new ForbiddenError('This profile is private.')
           }
 
-          // if the profile is visible to contacts only, check if the viewer is
-          // an existing contact
           if (visibilitySettings.visibility === ProfileVisibility.Contacts) {
             const { contacts: userContacts } =
               await this.addressBookService.list(id)
@@ -105,7 +96,6 @@ class UserInfoService implements IUserInfoService {
 
             const isContact = contactSet.has(viewer)
             if (!isContact) {
-              // 403 forbidden
               throw new ForbiddenError(
                 'This profile is visible to contacts only.'
               )
@@ -124,7 +114,12 @@ class UserInfoService implements IUserInfoService {
       })()
 
       const directoryPromise = (async () => {
-        if (!this.enableAdditionalFeatures) return null
+        if (
+          !this.enableAdditionalFeatures &&
+          process.env.ADDITIONAL_FEATURES !== 'true'
+        ) {
+          return null
+        }
         const rows = (await this.userDb.db.get(
           'users',
           ['cn', 'sn', 'givenname', 'givenName', 'mail', 'mobile'],
@@ -134,7 +129,12 @@ class UserInfoService implements IUserInfoService {
       })()
 
       const settingsPromise = (async () => {
-        if (!this.enableCommonSettings) return null
+        if (
+          !this.enableCommonSettings &&
+          process.env.FEATURE_COMMON_SETTINGS_ENABLED !== 'true'
+        ) {
+          return null
+        }
         const rows = (await this.db.get('usersettings', ['*'], {
           matrix_id: id
         })) as unknown as UserSettings[]
@@ -177,14 +177,12 @@ class UserInfoService implements IUserInfoService {
       }
 
       if (settingsRow) {
-        // Use Object.assign to avoid an extra spread allocation
         Object.assign(result, {
           language: settingsRow.settings.language ?? '',
           timezone: settingsRow.settings.timezone ?? ''
         })
       }
 
-      // if only uid is present in the result, return null
       if (Object.keys(result).length === 1 && result.uid != null) {
         return null
       }
@@ -201,14 +199,12 @@ class UserInfoService implements IUserInfoService {
     userId: string,
     visibilitySettings: UserProfileSettingsPayloadT
   ): Promise<UserProfileSettingsT | undefined> => {
-    // eslint-disable-next-line no-useless-catch
     try {
       const { visibilitySettings: userVisibilitySettings, created } =
         await this._getOrCreateUserSettings(userId, visibilitySettings)
       if (created) {
         return userVisibilitySettings
       } else {
-        // update the existing user profile settings
         await this.db.update(
           'profileSettings',
           // @ts-expect-error typecast
