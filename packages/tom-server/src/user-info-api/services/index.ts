@@ -114,10 +114,7 @@ class UserInfoService implements IUserInfoService {
       })()
 
       const directoryPromise = (async () => {
-        if (
-          !this.enableAdditionalFeatures &&
-          process.env.ADDITIONAL_FEATURES !== 'true'
-        ) {
+        if (!this.enableAdditionalFeatures) {
           return null
         }
         const rows = (await this.userDb.db.get(
@@ -129,10 +126,7 @@ class UserInfoService implements IUserInfoService {
       })()
 
       const settingsPromise = (async () => {
-        if (
-          !this.enableCommonSettings &&
-          process.env.FEATURE_COMMON_SETTINGS_ENABLED !== 'true'
-        ) {
+        if (!this.enableCommonSettings) {
           return null
         }
         const rows = (await this.db.get('usersettings', ['*'], {
@@ -177,16 +171,20 @@ class UserInfoService implements IUserInfoService {
       }
 
       if (settingsRow) {
-        Object.assign(result, {
-          language: settingsRow.settings.language ?? '',
-          timezone: settingsRow.settings.timezone ?? ''
-        })
+        if (settingsRow.settings.language)
+          result.language = settingsRow.settings.language
+        if (settingsRow.settings.timezone)
+          result.timezone = settingsRow.settings.timezone
       }
 
-      if (Object.keys(result).length === 1 && result.uid != null) {
+      const finalResult = Object.fromEntries(
+        Object.entries(result).filter(([_, v]) => v != null)
+      )
+
+      if (Object.keys(finalResult).length === 1 && finalResult.uid != null) {
         return null
       }
-      return result as UserInformation
+      return finalResult as unknown as UserInformation
     } catch (error) {
       throw new Error(
         `Error getting user info ${JSON.stringify({ cause: error })}`,
