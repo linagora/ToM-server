@@ -288,6 +288,38 @@ describe('user info service', () => {
     expect(user).toHaveProperty('timezone', 'Europe/Paris')
   })
 
+  it('returns user info but without language/timezone if common settings is enabled but common settings service returns no values', async () => {
+    const configWithCommon = {
+      ...config,
+      features: { common_settings: { enabled: true } }
+    } as unknown as Config
+
+    const mockTwakeDBNoSettings = {
+      ...twakeDBMock,
+      get: jest.fn().mockImplementation(async (table, _fields, query) => {
+        if (table === 'usersettings' && query.matrix_id != null) {
+          return []
+        }
+        return []
+      })
+    }
+
+    const svc = new UserInfoService(
+      userDb,
+      mockTwakeDBNoSettings as unknown as TwakeDB,
+      matrixDBMock as unknown as MatrixDB,
+      configWithCommon,
+      logger
+    )
+
+    const user = await svc.get('@dwho:docker.localhost')
+
+    expect(user).not.toBeNull()
+    expect(user).toHaveProperty('display_name', 'Dr Who')
+    expect(user).not.toHaveProperty('language')
+    expect(user).not.toHaveProperty('timezone')
+  })
+
   it('propagates avatar_url as avatar when present', async () => {
     ;(matrixDBMock.get as jest.Mock).mockResolvedValueOnce([
       { displayname: 'Dr Who', avatar_url: 'http://example.com/avatar.png' }
@@ -323,8 +355,8 @@ describe('user info service', () => {
     getSpy.mockRestore()
   })
 
-  it('passes the exact matrix id to the usersettings query', async () => {
-    // Create a service instance with the common‑settings feature turned ON
+  it('passes the exact matrix id to the usersettings query (when common settings enabled)', async () => {
+    // Create a service instance with the common-settings feature turned ON
     const cfg = {
       ...config,
       features: { common_settings: { enabled: true } }
@@ -338,16 +370,16 @@ describe('user info service', () => {
       logger
     )
 
-    // spy on the DB mock (twakeDBMock.get is already a jest.fn)
-    const spy = jest.spyOn(twakeDBMock, 'get')
+    twakeDBMock.get.mockClear()
+
     await svc.get('@dwho:docker.localhost')
-    expect(spy).toHaveBeenCalledWith('usersettings', ['*'], {
+
+    expect(twakeDBMock.get).toHaveBeenCalledWith('usersettings', ['*'], {
       matrix_id: '@dwho:docker.localhost'
     })
-    spy.mockRestore()
   })
 
-  it('re‑throws a wrapped error when an internal query fails', async () => {
+  it('re-throws a wrapped error when an internal query fails', async () => {
     const brokenMatrix = {
       get: jest.fn().mockRejectedValue(new Error('boom'))
     } as unknown as MatrixDB
@@ -365,11 +397,15 @@ describe('user info service', () => {
   })
 
   it('honors the env var FEATURE_COMMON_SETTINGS_ENABLED', async () => {
+    // Set the environment variable BEFORE creating the service instance
     process.env.FEATURE_COMMON_SETTINGS_ENABLED = 'true'
+
     const cfg = {
       ...config,
       features: { common_settings: { enabled: false } } as any
     }
+
+    // New service instance created AFTER env var is set
     const svc = new UserInfoService(
       userDb,
       twakeDBMock as unknown as TwakeDB,
@@ -377,9 +413,13 @@ describe('user info service', () => {
       cfg as unknown as Config,
       logger
     )
+
     const user = await svc.get('@dwho:docker.localhost')
+    expect(user).not.toBeNull()
     expect(user).toHaveProperty('language', 'fr')
     expect(user).toHaveProperty('timezone', 'Europe/Paris')
+
+    // Clean up the environment variable
     delete process.env.FEATURE_COMMON_SETTINGS_ENABLED
   })
 
@@ -418,13 +458,5 @@ describe('user info service', () => {
     const user = await svc.get('@dwho:docker.localhost')
     expect(user?.sn).toBe('One')
     expect(user?.givenName).toBe('Alpha')
-  })
-
-  it('passes the exact matrix id to the usersettings query', async () => {
-    const spy = jest.spyOn(twakeDBMock, 'get')
-    await service.get('@dwho:docker.localhost')
-    expect(spy).toHaveBeenCalledWith('usersettings', ['*'], {
-      matrix_id: '@dwho:docker.localhost'
-    })
   })
 })
