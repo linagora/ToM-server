@@ -314,9 +314,37 @@ describe('user info service', () => {
 
   it('returns null when only uid is present in the result', async () => {
     ;(matrixDBMock.get as jest.Mock).mockResolvedValueOnce([{}])
-    ;(userDb.db.get as jest.Mock).mockResolvedValueOnce([])
+
+    const getSpy = jest.spyOn(userDb.db as any, 'get').mockResolvedValueOnce([])
+
     const user = await service.get('@dwho:docker.localhost')
     expect(user).toBeNull()
+
+    getSpy.mockRestore()
+  })
+
+  it('passes the exact matrix id to the usersettings query', async () => {
+    // Create a service instance with the common‑settings feature turned ON
+    const cfg = {
+      ...config,
+      features: { common_settings: { enabled: true } }
+    } as unknown as Config
+
+    const svc = new UserInfoService(
+      userDb,
+      twakeDBMock as unknown as TwakeDB,
+      matrixDBMock as unknown as MatrixDB,
+      cfg,
+      logger
+    )
+
+    // spy on the DB mock (twakeDBMock.get is already a jest.fn)
+    const spy = jest.spyOn(twakeDBMock, 'get')
+    await svc.get('@dwho:docker.localhost')
+    expect(spy).toHaveBeenCalledWith('usersettings', ['*'], {
+      matrix_id: '@dwho:docker.localhost'
+    })
+    spy.mockRestore()
   })
 
   it('re‑throws a wrapped error when an internal query fails', async () => {
