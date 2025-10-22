@@ -287,4 +287,116 @@ describe('user info service', () => {
     expect(user).toHaveProperty('language', 'fr')
     expect(user).toHaveProperty('timezone', 'Europe/Paris')
   })
+
+  it('propagates avatar_url as avatar when present', async () => {
+    ;(matrixDBMock.get as jest.Mock).mockResolvedValueOnce([
+      { displayname: 'Dr Who', avatar_url: 'http://example.com/avatar.png' }
+    ])
+    const user = await service.get('@dwho:docker.localhost')
+    expect(user).toHaveProperty('avatar', 'http://example.com/avatar.png')
+  })
+
+  it('does not expose avatar when avatar_url is missing', async () => {
+    ;(matrixDBMock.get as jest.Mock).mockResolvedValueOnce([
+      { displayname: 'Dr Who' }
+    ])
+    const user = await service.get('@dwho:docker.localhost')
+    expect(user).not.toHaveProperty('avatar')
+  })
+
+  it('uses LDAP cn as display_name when Matrix displayname is missing', async () => {
+    ;(matrixDBMock.get as jest.Mock).mockResolvedValueOnce([
+      { avatar_url: 'avatar_url' }
+    ])
+    const user = await service.get('@dwho:docker.localhost')
+    expect(user).toHaveProperty('display_name', 'David Who')
+  })
+
+  it('returns null when only uid is present in the result', async () => {
+    ;(matrixDBMock.get as jest.Mock).mockResolvedValueOnce([{}])
+    ;(userDb.db.get as jest.Mock).mockResolvedValueOnce([])
+    const user = await service.get('@dwho:docker.localhost')
+    expect(user).toBeNull()
+  })
+
+  it('re‑throws a wrapped error when an internal query fails', async () => {
+    const brokenMatrix = {
+      get: jest.fn().mockRejectedValue(new Error('boom'))
+    } as unknown as MatrixDB
+    const svc = new UserInfoService(
+      userDb,
+      twakeDBMock as unknown as TwakeDB,
+      brokenMatrix,
+      config as unknown as Config,
+      logger
+    )
+    await expect(svc.get('@dwho:docker.localhost')).rejects.toMatchObject({
+      message: expect.stringContaining('Error getting user info'),
+      cause: expect.any(Error)
+    })
+  })
+
+  it('honors the env var FEATURE_COMMON_SETTINGS_ENABLED', async () => {
+    process.env.FEATURE_COMMON_SETTINGS_ENABLED = 'true'
+    const cfg = {
+      ...config,
+      features: { common_settings: { enabled: false } } as any
+    }
+    const svc = new UserInfoService(
+      userDb,
+      twakeDBMock as unknown as TwakeDB,
+      matrixDBMock as unknown as MatrixDB,
+      cfg as unknown as Config,
+      logger
+    )
+    const user = await svc.get('@dwho:docker.localhost')
+    expect(user).toHaveProperty('language', 'fr')
+    expect(user).toHaveProperty('timezone', 'Europe/Paris')
+    delete process.env.FEATURE_COMMON_SETTINGS_ENABLED
+  })
+
+  it('honors the env var ADDITIONAL_FEATURES', async () => {
+    process.env.ADDITIONAL_FEATURES = 'true'
+    const cfg = { ...config, additional_features: false }
+    const svc = new UserInfoService(
+      userDb,
+      twakeDBMock as unknown as TwakeDB,
+      matrixDBMock as unknown as MatrixDB,
+      cfg as unknown as Config,
+      logger
+    )
+    ;(matrixDBMock.get as jest.Mock).mockResolvedValueOnce([])
+    const user = await svc.get('@dwho:docker.localhost')
+    expect(user).toHaveProperty('sn')
+    delete process.env.ADDITIONAL_FEATURES
+  })
+
+  it('uses the first LDAP entry when multiple rows are returned', async () => {
+    const ldapMock = {
+      db: {
+        get: jest.fn().mockResolvedValueOnce([
+          { cn: 'First', sn: 'One', givenName: 'Alpha' },
+          { cn: 'Second', sn: 'Two', givenName: 'Beta' }
+        ])
+      }
+    }
+    const svc = new UserInfoService(
+      ldapMock as unknown as UserDB,
+      twakeDBMock as unknown as TwakeDB,
+      matrixDBMock as unknown as MatrixDB,
+      config as unknown as Config,
+      logger
+    )
+    const user = await svc.get('@dwho:docker.localhost')
+    expect(user?.sn).toBe('One')
+    expect(user?.givenName).toBe('Alpha')
+  })
+
+  it('passes the exact matrix id to the usersettings query', async () => {
+    const spy = jest.spyOn(twakeDBMock, 'get')
+    await service.get('@dwho:docker.localhost')
+    expect(spy).toHaveBeenCalledWith('usersettings', ['*'], {
+      matrix_id: '@dwho:docker.localhost'
+    })
+  })
 })
