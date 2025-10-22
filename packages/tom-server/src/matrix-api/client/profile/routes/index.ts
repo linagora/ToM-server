@@ -3,13 +3,13 @@ import {
   type TwakeLogger,
   type Config as LoggerConfig
 } from '@twake/logger'
-import type { AuthenticationFunction, Config } from '../../../../types'
+import type { AuthenticationFunction, Config, TwakeDB } from '../../../../types'
 import { Router } from 'express'
 import DisplayNameController from '../controllers'
 import authMiddleware from '../../../../utils/middlewares/auth.middleware'
 
 /**
- * Update display name route
+ * User profile route
  *
  * @param {Config} config
  * @param {TwakeLogger} defaultLogger
@@ -18,15 +18,20 @@ import authMiddleware from '../../../../utils/middlewares/auth.middleware'
 export default (
   config: Config,
   authenticator: AuthenticationFunction,
+  db: TwakeDB,
   defaultLogger?: TwakeLogger
 ): Router => {
   const logger = defaultLogger ?? getLogger(config as unknown as LoggerConfig)
-  const router = Router({mergeParams: true}) // merge params with parent router to get userId
-  const controller = new DisplayNameController(config, logger)
+  const router = Router({ mergeParams: true }) // merge params with parent router to get userId
+  const controller = new DisplayNameController(config, logger, db)
   const authenticate = authMiddleware(authenticator, logger)
 
-  // eslint-disable-next-line @typescript-eslint/no-misused-promises
-  router.put('/', authenticate, controller.updateDisplayName)
+  // get the profile
+  router.get('/', authenticate, controller.get)
+
+  // update the user profile display name
+  router.get('/displayname', authenticate, controller.getDisplayName)
+  router.put('/displayname', authenticate, controller.updateDisplayName)
 
   return router
 }

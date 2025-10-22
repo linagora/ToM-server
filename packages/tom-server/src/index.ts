@@ -190,6 +190,7 @@ export default class TwakeServer {
     const matrixClientApi = MatrixclientApi(
       this.conf,
       this.idServer.authenticate,
+      this.idServer.db,
       this.logger
     )
     

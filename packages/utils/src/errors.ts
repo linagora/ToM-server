@@ -124,7 +124,10 @@ export const errCodes = {
   cannotLeaveServerNoticeRoom: 'M_CANNOT_LEAVE_SERVER_NOTICE_ROOM',
 
   // The registration token has been used too many times and is now invalid.
-  tokenMax: 'TOKEN_USED_TOO_MANY_TIMES'
+  tokenMax: 'TOKEN_USED_TOO_MANY_TIMES',
+
+  // An unexpected internal server error occurred.
+  internalError: 'M_INTERNAL_SERVER_ERROR',
 } as const
 
 export const defaultMsg = (s: string): string => {
