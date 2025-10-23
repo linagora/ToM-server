@@ -49,7 +49,9 @@ class UserInfoService implements IUserInfoService {
     viewer?: string
   ): Promise<UserInformation | null> => {
     try {
-      // Init the result
+      // ------------------------------------------------------------------
+      // 0 - Initialise the result container
+      // ------------------------------------------------------------------
       let result: Partial<UserInformation & SettingsPayload> = { uid: id }
 
       const userIdLocalPart = getLocalPart(id)
@@ -67,6 +69,9 @@ class UserInfoService implements IUserInfoService {
         visible_fields: [ProfileField.Email]
       }
 
+      // ------------------------------------------------------------------
+      // 1 - Visibility checks
+      // ------------------------------------------------------------------
       if (viewer) {
         const viewerLocalPart = getLocalPart(viewer)
         if (viewerLocalPart == null) {
@@ -104,13 +109,16 @@ class UserInfoService implements IUserInfoService {
         }
       }
 
+      // ------------------------------------------------------------------
+      // 2 - Parallel fetches from the **four** sources
+      // ------------------------------------------------------------------
       const matrixPromise = (async () => {
         const rows = (await this.matrixDb.get(
           'profiles',
           ['displayname', 'avatar_url'],
           { user_id: userIdLocalPart }
         )) as unknown as Array<{ displayname: string; avatar_url?: string }>
-        return rows
+        return rows?.[0] ?? null
       })()
 
       const directoryPromise = (async () => {
@@ -135,21 +143,41 @@ class UserInfoService implements IUserInfoService {
         return rows?.[0] ?? null
       })()
 
-      const [matrixRows, directoryRow, settingsRow] = await Promise.all([
-        matrixPromise,
-        directoryPromise,
-        settingsPromise
-      ])
+      const addressbookListPromise = (async () => {
+        if (!viewer) return null
+        try {
+          return await this.addressBookService.list(viewer)
+        } catch (e) {
+          this.logger.warn('Address‑book lookup failed', { error: e })
+          return null
+        }
+      })()
 
-      const hasMatrix = Array.isArray(matrixRows) && matrixRows.length
+      const [matrixRow, directoryRow, settingsRow, addressbookResponse] =
+        await Promise.all([
+          matrixPromise,
+          directoryPromise,
+          settingsPromise,
+          addressbookListPromise
+        ])
 
-      if (!hasMatrix && !this.enableAdditionalFeatures) return null
+      // ------------------------------------------------------------------
+      // 3 - Early‑exit when matrix profile is missing and the flag is off
+      // ------------------------------------------------------------------
+      if (!matrixRow && !this.enableAdditionalFeatures && !addressbookResponse)
+        return null
 
-      if (hasMatrix) {
-        result.display_name = matrixRows[0].displayname
-        if (matrixRows[0].avatar_url) result.avatar = matrixRows[0].avatar_url
+      // ------------------------------------------------------------------
+      // 4 - Matrix profile (highest precedence)
+      // ------------------------------------------------------------------
+      if (matrixRow) {
+        result.display_name = matrixRow.displayname
+        if (matrixRow.avatar_url) result.avatar = matrixRow.avatar_url
       }
 
+      // ------------------------------------------------------------------
+      // 5 - User‑DB (directory) – second precedence
+      // ------------------------------------------------------------------
       if (directoryRow) {
         if (result.display_name == null && directoryRow.cn != null)
           result.display_name = directoryRow.cn as string
@@ -170,6 +198,9 @@ class UserInfoService implements IUserInfoService {
           result.phones = [directoryRow.mobile as string]
       }
 
+      // ------------------------------------------------------------------
+      // 6 - Common settings – third precedence
+      // ------------------------------------------------------------------
       if (settingsRow) {
         if (settingsRow.settings.language)
           result.language = settingsRow.settings.language
@@ -177,13 +208,34 @@ class UserInfoService implements IUserInfoService {
           result.timezone = settingsRow.settings.timezone
       }
 
+      // ------------------------------------------------------------------
+      // 7 - Address‑book (fourth source) – merge only missing fields
+      // ------------------------------------------------------------------
+      if (addressbookResponse) {
+        const contacts = addressbookResponse.contacts ?? []
+        const abContact = contacts.find((c) => c.mxid === id)
+
+        if (abContact) {
+          result.display_name = abContact.display_name
+
+          // The address‑book does **not** provide avatar, email or phone,
+          // so we deliberately do not touch `result.avatar`, `result.mails`,
+          // or `result.phones` here.
+        }
+      }
+
+      // ------------------------------------------------------------------
+      // 8 - Clean‑up – drop undefined / null values
+      // ------------------------------------------------------------------
       const finalResult = Object.fromEntries(
         Object.entries(result).filter(([_, v]) => v != null)
       )
 
+      // If we only have the uid (nothing else useful) we treat it as “no data”.
       if (Object.keys(finalResult).length === 1 && finalResult.uid != null) {
         return null
       }
+
       return finalResult as unknown as UserInformation
     } catch (error) {
       throw new Error(
