@@ -102,6 +102,7 @@ export type twakeDbCollections =
   | 'addressbooks'
   | 'contacts'
   | 'usersettings'
+  | 'profileSettings'
 
 export type ApiRequestHandler = (
   req: Request,

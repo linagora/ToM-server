@@ -108,7 +108,8 @@ const twakeChatConf = {
   enable_invitations: _parseBooleanEnv(
     process.env.TCHAT_ENABLE_INVITATIONS,
     false
-  )
+  ),
+  support_contact: process.env.TCHAT_SUPPORT_CONTACT
 }
 
 let conf = {

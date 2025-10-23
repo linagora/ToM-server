@@ -44,6 +44,10 @@ const controllerGetSpy = jest.fn().mockImplementation((_req, res, _next) => {
   res.status(200).send('OK')
 })
 
+const controllerUpdateVisibilitySpy = jest.fn().mockImplementation((_req, res, _next) => {
+  res.status(200).send('OK')
+})
+
 jest.mock('../middlewares/require-ldap.ts', () => {
   return () => middlewareSpy
 })
@@ -51,7 +55,8 @@ jest.mock('../middlewares/require-ldap.ts', () => {
 jest.mock('../controllers/index.ts', () => {
   return function () {
     return {
-      get: controllerGetSpy
+      get: controllerGetSpy,
+      updateVisibility: controllerUpdateVisibilitySpy
     }
   }
 })

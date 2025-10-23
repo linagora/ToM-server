@@ -2,16 +2,17 @@ import type { SendMailOptions } from 'nodemailer'
 import { v7 as uuidv7 } from 'uuid'
 import type { TwakeLogger } from '@twake/logger'
 import type { Config, INotificationService, TwakeDB } from '../../types'
-import type {
-  Invitation,
-  IInvitationService,
-  InvitationPayload,
-  RoomCreationResponse,
-  RoomCreationPayload,
-  medium,
-  GenerateInvitationLinkResponse,
-  InvitationResponse,
-  GenerateInvitationLinkPayload
+import {
+  type Invitation,
+  type IInvitationService,
+  type InvitationPayload,
+  type RoomCreationResponse,
+  type RoomCreationPayload,
+  type medium,
+  type GenerateInvitationLinkResponse,
+  type InvitationResponse,
+  type GenerateInvitationLinkPayload,
+  SMS_FOOTERS
 } from '../types'
 import { buildUrl } from '../../utils'
 import NotificationService from '../../utils/services/notification-service'
@@ -529,7 +530,7 @@ export default class InvitationService implements IInvitationService {
    * @param {string} link - Invitation link
    * @returns {Promise<void>}
    */
-  private _deliverInvitation = async (
+  private readonly _deliverInvitation = async (
     sender: string,
     to: string,
     medium: medium,
@@ -537,7 +538,8 @@ export default class InvitationService implements IInvitationService {
   ): Promise<void> => {
     try {
       if (medium === 'email') {
-        const emailTemplatePath = `${this.config.template_dir}/emailInvitation.tpl`
+        const lang = 'en'; // TODO: invitee language
+        const emailTemplatePath = `${this.config.template_dir}/emailInvitation_${lang}.tpl`
 
         const text = buildEmailBody(
           emailTemplatePath,
@@ -556,8 +558,12 @@ export default class InvitationService implements IInvitationService {
 
         await this.notificationService.sendEmail(emailOptions)
       } else if (medium === 'phone') {
+        
+        // Specific to french numbers
+        const smsFooter = /^\+33\d{9}$/.test(to) ? SMS_FOOTERS.FR : "";
+
         const smsTemplatePath = `${this.config.template_dir}/3pidSmsInvitation.tpl`
-        const text = buildSmsBody(smsTemplatePath, sender, link)
+        const text = buildSmsBody(smsTemplatePath, sender, link, smsFooter)
 
         if (!text) {
           throw Error('Failed to build SMS body')

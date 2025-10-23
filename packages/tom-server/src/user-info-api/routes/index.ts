@@ -26,7 +26,8 @@ export default (
     idServer.userDB,
     idServer.db,
     matrixDB,
-    config
+    config,
+    logger
   )
   const requireLdap = checkLdapMiddleware(config, logger)
 
@@ -142,6 +143,13 @@ export default (
     requireLdap,
     authenticator,
     userInfoController.get
+  )
+
+  router.post(
+    `${PATH}/:userId/visibility`,
+    requireLdap,
+    authenticator,
+    userInfoController.updateVisibility
   )
 
   return router

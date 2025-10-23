@@ -4,6 +4,11 @@ import { type NextFunction, type Response } from 'express'
 import ldap from 'ldapjs'
 import type { Config, TwakeDB } from '../../types'
 import UserInfoService from '../services'
+import {
+  ProfileField,
+  ProfileVisibility,
+  type UserProfileSettingsPayloadT
+} from '../types'
 
 const server = ldap.createServer()
 
@@ -36,7 +41,13 @@ const twakeDBMock = {
       ]
     }
     return []
-  })
+  }),
+  insert: jest.fn().mockImplementation(async (table, values) => {
+    if (table === 'profileSettings') {
+      return [{ ...values }]
+    }
+  }),
+  update: jest.fn()
 }
 
 const matrixDBMock: Partial<MatrixDB> = {
@@ -78,7 +89,8 @@ beforeAll((done) => {
       userDb,
       twakeDBMock as unknown as TwakeDB,
       matrixDBMock as unknown as MatrixDB,
-      config as unknown as Config
+      config as unknown as Config,
+      logger
     )
     done()
   })
@@ -113,7 +125,8 @@ describe('user info service', () => {
       userDbWithCommon,
       twakeDBMock as unknown as TwakeDB,
       matrixDBMock as unknown as MatrixDB,
-      configWithCommon
+      configWithCommon,
+      logger
     )
 
     const user = await serviceWithCommon.get('@dwho:docker.localhost')
@@ -123,6 +136,8 @@ describe('user info service', () => {
     expect(user).toHaveProperty('givenName', 'David')
     expect(user).toHaveProperty('uid', '@dwho:docker.localhost')
     expect(user).toHaveProperty('sn', 'Who')
+    expect(user).toHaveProperty('language', 'fr')
+    expect(user).toHaveProperty('timezone', 'Europe/Paris')
   })
 
   it('should return null if matrix id is invalid', async () => {
@@ -144,5 +159,346 @@ describe('user info service', () => {
 
     const user = await service.get('@notfound:docker.localhost')
     expect(user).toBeNull()
+  })
+
+  it('should create new profile visibility settings if none exist', async () => {
+    const userId = '@dwho:matrix.org'
+    twakeDBMock.get.mockResolvedValueOnce([])
+
+    const payload: UserProfileSettingsPayloadT = {
+      visibility: ProfileVisibility.Contacts,
+      visible_fields: [ProfileField.Email]
+    }
+
+    const result = await service.updateVisibility(userId, payload)
+    expect(result).toBeTruthy()
+    expect(result).toMatchObject([
+      {
+        matrix_id: userId,
+        visibility: ProfileVisibility.Contacts,
+        visible_fields: [ProfileField.Email]
+      }
+    ])
+    // verify DB insert called with correct full object
+    expect(twakeDBMock.insert).toHaveBeenCalledWith('profileSettings', {
+      matrix_id: userId,
+      ...payload
+    })
+  })
+
+  it('should update existing profile visibility settings if they exist', async () => {
+    const userId = '@dwho:matrix.org'
+
+    twakeDBMock.get.mockResolvedValueOnce([
+      {
+        matrix_id: userId,
+        visibility: ProfileVisibility.Private,
+        visible_fields: [ProfileField.Phone]
+      }
+    ])
+
+    const payload: UserProfileSettingsPayloadT = {
+      visibility: ProfileVisibility.Public,
+      visible_fields: [ProfileField.Email, ProfileField.Phone]
+    }
+
+    const result = await service.updateVisibility(userId, payload)
+
+    expect(result).toBeUndefined()
+    expect(twakeDBMock.update).toHaveBeenCalledWith(
+      'profileSettings',
+      payload,
+      'matrix_id',
+      userId
+    )
+  })
+
+  it('returns directory info when matrix profile is missing but additional_features is ON', async () => {
+    ;(matrixDBMock.get as jest.Mock).mockResolvedValueOnce([])
+    const user = await service.get('@dwho:docker.localhost')
+
+    expect(user).not.toBeNull()
+    expect(user).toHaveProperty('display_name', 'David Who')
+    expect(user).toHaveProperty('sn', 'Who')
+    expect(user).toHaveProperty('givenName', 'David')
+    // The LDAP mock does **not** contain a `mail` attribute, therefore the service must not add a `mails` field.
+    expect(user).not.toHaveProperty('mails')
+  })
+
+  it('returns null when matrix profile missing AND additional_features is OFF', async () => {
+    ;(matrixDBMock.get as jest.Mock).mockResolvedValueOnce([])
+
+    const cfg = {
+      ...config,
+      additional_features: false,
+      features: { common_settings: { enabled: false } }
+    } as unknown as Config
+
+    const svc = new UserInfoService(
+      userDb,
+      twakeDBMock as unknown as TwakeDB,
+      matrixDBMock as unknown as MatrixDB,
+      cfg,
+      logger
+    )
+
+    const user = await svc.get('@dwho:docker.localhost')
+    expect(user).toBeNull()
+  })
+
+  it('does NOT expose language / timezone when common_settings feature flag is OFF', async () => {
+    const cfg = {
+      ...config,
+      additional_features: true,
+      features: { common_settings: { enabled: false } }
+    } as unknown as Config
+
+    const svc = new UserInfoService(
+      userDb,
+      twakeDBMock as unknown as TwakeDB,
+      matrixDBMock as unknown as MatrixDB,
+      cfg,
+      logger
+    )
+
+    const user = await svc.get('@dwho:docker.localhost')
+    expect(user).not.toBeNull()
+    expect(user).not.toHaveProperty('language')
+    expect(user).not.toHaveProperty('timezone')
+  })
+
+  it('still returns language / timezone when common_settings feature flag is ON', async () => {
+    const cfg = {
+      ...config,
+      additional_features: true,
+      features: { common_settings: { enabled: true } }
+    } as unknown as Config
+
+    const svc = new UserInfoService(
+      userDb,
+      twakeDBMock as unknown as TwakeDB,
+      matrixDBMock as unknown as MatrixDB,
+      cfg,
+      logger
+    )
+
+    const user = await svc.get('@dwho:docker.localhost')
+    expect(user).not.toBeNull()
+    expect(user).toHaveProperty('language', 'fr')
+    expect(user).toHaveProperty('timezone', 'Europe/Paris')
+  })
+
+  it('returns user info but without language/timezone if common settings is enabled but common settings service returns no values', async () => {
+    const configWithCommon = {
+      ...config,
+      features: { common_settings: { enabled: true } }
+    } as unknown as Config
+
+    const mockTwakeDBNoSettings = {
+      ...twakeDBMock,
+      get: jest.fn().mockImplementation(async (table, _fields, query) => {
+        if (table === 'usersettings' && query.matrix_id != null) {
+          return []
+        }
+        return []
+      })
+    }
+
+    const svc = new UserInfoService(
+      userDb,
+      mockTwakeDBNoSettings as unknown as TwakeDB,
+      matrixDBMock as unknown as MatrixDB,
+      configWithCommon,
+      logger
+    )
+
+    const user = await svc.get('@dwho:docker.localhost')
+
+    expect(user).not.toBeNull()
+    expect(user).toHaveProperty('display_name', 'Dr Who')
+    expect(user).not.toHaveProperty('language')
+    expect(user).not.toHaveProperty('timezone')
+  })
+
+  it('propagates avatar_url as avatar when present', async () => {
+    ;(matrixDBMock.get as jest.Mock).mockResolvedValueOnce([
+      { displayname: 'Dr Who', avatar_url: 'http://example.com/avatar.png' }
+    ])
+    const user = await service.get('@dwho:docker.localhost')
+    expect(user).toHaveProperty('avatar', 'http://example.com/avatar.png')
+  })
+
+  it('does not expose avatar when avatar_url is missing', async () => {
+    ;(matrixDBMock.get as jest.Mock).mockResolvedValueOnce([
+      { displayname: 'Dr Who' }
+    ])
+    const user = await service.get('@dwho:docker.localhost')
+    expect(user).not.toHaveProperty('avatar')
+  })
+
+  it('uses LDAP cn as display_name when Matrix displayname is missing', async () => {
+    ;(matrixDBMock.get as jest.Mock).mockResolvedValueOnce([
+      { avatar_url: 'avatar_url' }
+    ])
+    const user = await service.get('@dwho:docker.localhost')
+    expect(user).toHaveProperty('display_name', 'David Who')
+  })
+
+  it('returns null when only uid is present in the result', async () => {
+    ;(matrixDBMock.get as jest.Mock).mockResolvedValueOnce([{}])
+
+    const getSpy = jest.spyOn(userDb.db as any, 'get').mockResolvedValueOnce([])
+
+    const user = await service.get('@dwho:docker.localhost')
+    expect(user).toBeNull()
+
+    getSpy.mockRestore()
+  })
+
+  it('passes the exact matrix id to the usersettings query (when common settings enabled)', async () => {
+    // Create a service instance with the common-settings feature turned ON
+    const cfg = {
+      ...config,
+      features: { common_settings: { enabled: true } }
+    } as unknown as Config
+
+    const svc = new UserInfoService(
+      userDb,
+      twakeDBMock as unknown as TwakeDB,
+      matrixDBMock as unknown as MatrixDB,
+      cfg,
+      logger
+    )
+
+    twakeDBMock.get.mockClear()
+
+    await svc.get('@dwho:docker.localhost')
+
+    expect(twakeDBMock.get).toHaveBeenCalledWith('usersettings', ['*'], {
+      matrix_id: '@dwho:docker.localhost'
+    })
+  })
+
+  it('re-throws a wrapped error when an internal query fails', async () => {
+    const brokenMatrix = {
+      get: jest.fn().mockRejectedValue(new Error('boom'))
+    } as unknown as MatrixDB
+    const svc = new UserInfoService(
+      userDb,
+      twakeDBMock as unknown as TwakeDB,
+      brokenMatrix,
+      config as unknown as Config,
+      logger
+    )
+    await expect(svc.get('@dwho:docker.localhost')).rejects.toMatchObject({
+      message: expect.stringContaining('Error getting user info'),
+      cause: expect.any(Error)
+    })
+  })
+
+  it('honors the env var FEATURE_COMMON_SETTINGS_ENABLED', async () => {
+    // Set the environment variable BEFORE creating the service instance
+    process.env.FEATURE_COMMON_SETTINGS_ENABLED = 'true'
+
+    const cfg = {
+      ...config,
+      features: { common_settings: { enabled: false } } as any
+    }
+
+    // New service instance created AFTER env var is set
+    const svc = new UserInfoService(
+      userDb,
+      twakeDBMock as unknown as TwakeDB,
+      matrixDBMock as unknown as MatrixDB,
+      cfg as unknown as Config,
+      logger
+    )
+
+    const user = await svc.get('@dwho:docker.localhost')
+    expect(user).not.toBeNull()
+    expect(user).toHaveProperty('language', 'fr')
+    expect(user).toHaveProperty('timezone', 'Europe/Paris')
+
+    // Clean up the environment variable
+    delete process.env.FEATURE_COMMON_SETTINGS_ENABLED
+  })
+
+  it('honors the env var ADDITIONAL_FEATURES', async () => {
+    process.env.ADDITIONAL_FEATURES = 'true'
+    const cfg = { ...config, additional_features: false }
+    const svc = new UserInfoService(
+      userDb,
+      twakeDBMock as unknown as TwakeDB,
+      matrixDBMock as unknown as MatrixDB,
+      cfg as unknown as Config,
+      logger
+    )
+    ;(matrixDBMock.get as jest.Mock).mockResolvedValueOnce([])
+    const user = await svc.get('@dwho:docker.localhost')
+    expect(user).toHaveProperty('sn')
+    delete process.env.ADDITIONAL_FEATURES
+  })
+
+  it('uses the first LDAP entry when multiple rows are returned', async () => {
+    const ldapMock = {
+      db: {
+        get: jest.fn().mockResolvedValueOnce([
+          { cn: 'First', sn: 'One', givenName: 'Alpha' },
+          { cn: 'Second', sn: 'Two', givenName: 'Beta' }
+        ])
+      }
+    }
+    const svc = new UserInfoService(
+      ldapMock as unknown as UserDB,
+      twakeDBMock as unknown as TwakeDB,
+      matrixDBMock as unknown as MatrixDB,
+      config as unknown as Config,
+      logger
+    )
+    const user = await svc.get('@dwho:docker.localhost')
+    expect(user?.sn).toBe('One')
+    expect(user?.givenName).toBe('Alpha')
+  })
+
+  it('aggregates address‑book display_name when a viewer is supplied', async () => {
+    const mockedAddressBookResponse = {
+      contacts: [
+        {
+          mxid: '@dwho:docker.localhost',
+          display_name: 'AB‑David Who'
+        },
+        {
+          mxid: '@other:example.org',
+          display_name: 'Other Contact'
+        }
+      ]
+    }
+
+    const originalList = (service as any).addressBookService?.list
+
+    ;(service as any).addressBookService = {
+      list: jest.fn().mockResolvedValue(mockedAddressBookResponse)
+    }
+
+    const user = await service.get(
+      '@dwho:docker.localhost',
+      '@viewer:example.com'
+    )
+
+    expect(user).not.toBeNull()
+
+    // The display name must come from the address‑book, not from Matrix.
+    expect(user).toHaveProperty('display_name', 'AB‑David Who')
+
+    // Other fields (sn, givenName) still originate from LDAP/Matrix.
+    expect(user).toHaveProperty('sn', 'Who')
+    expect(user).toHaveProperty('givenName', 'David')
+
+    // Avatar is taken from Matrix (address‑book does not provide one).
+    expect(user).toHaveProperty('avatar', 'avatar_url')
+
+    if (originalList) {
+      ;(service as any).addressBookService.list = originalList
+    }
   })
 })
