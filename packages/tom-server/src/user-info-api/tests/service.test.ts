@@ -459,4 +459,46 @@ describe('user info service', () => {
     expect(user?.sn).toBe('One')
     expect(user?.givenName).toBe('Alpha')
   })
+
+  it('aggregates address‑book display_name when a viewer is supplied', async () => {
+    const mockedAddressBookResponse = {
+      contacts: [
+        {
+          mxid: '@dwho:docker.localhost',
+          display_name: 'AB‑David Who'
+        },
+        {
+          mxid: '@other:example.org',
+          display_name: 'Other Contact'
+        }
+      ]
+    }
+
+    const originalList = (service as any).addressBookService?.list
+
+    ;(service as any).addressBookService = {
+      list: jest.fn().mockResolvedValue(mockedAddressBookResponse)
+    }
+
+    const user = await service.get(
+      '@dwho:docker.localhost',
+      '@viewer:example.com'
+    )
+
+    expect(user).not.toBeNull()
+
+    // The display name must come from the address‑book, not from Matrix.
+    expect(user).toHaveProperty('display_name', 'AB‑David Who')
+
+    // Other fields (sn, givenName) still originate from LDAP/Matrix.
+    expect(user).toHaveProperty('sn', 'Who')
+    expect(user).toHaveProperty('givenName', 'David')
+
+    // Avatar is taken from Matrix (address‑book does not provide one).
+    expect(user).toHaveProperty('avatar', 'avatar_url')
+
+    if (originalList) {
+      ;(service as any).addressBookService.list = originalList
+    }
+  })
 })
