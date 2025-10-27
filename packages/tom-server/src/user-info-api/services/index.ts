@@ -122,9 +122,6 @@ class UserInfoService implements IUserInfoService {
       })()
 
       const directoryPromise = (async () => {
-        if (!this.enableAdditionalFeatures) {
-          return null
-        }
         const rows = (await this.userDb.db.get(
           'users',
           ['cn', 'sn', 'givenname', 'givenName', 'mail', 'mobile'],
