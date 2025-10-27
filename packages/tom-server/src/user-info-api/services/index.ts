@@ -199,6 +199,32 @@ class UserInfoService implements IUserInfoService {
       // 6 - Common settings – third precedence
       // ------------------------------------------------------------------
       if (settingsRow) {
+        if (settingsRow.settings.display_name)
+          result.display_name = settingsRow.settings.display_name
+        if (settingsRow.settings.last_name) {
+          result.last_name = settingsRow.settings.last_name
+          result.sn = settingsRow.settings.last_name
+        }
+        if (settingsRow.settings.first_name) {
+          result.first_name = settingsRow.settings.first_name
+          result.givenName = settingsRow.settings.first_name
+        }
+        if (settingsRow.settings.email)
+          if (
+            result.mails &&
+            Array.isArray(result.mails) &&
+            !result.mails?.includes(settingsRow.settings.email)
+          )
+            result.mails.push(settingsRow.settings.email)
+          else result.mails = [settingsRow.settings.email]
+        if (settingsRow.settings.phone)
+          if (
+            result.phones &&
+            Array.isArray(result.phones) &&
+            !result.phones?.includes(settingsRow.settings.phone)
+          )
+            result.phones.push(settingsRow.settings.phone)
+          else result.phones = [settingsRow.settings.phone]
         if (settingsRow.settings.language)
           result.language = settingsRow.settings.language
         if (settingsRow.settings.timezone)
