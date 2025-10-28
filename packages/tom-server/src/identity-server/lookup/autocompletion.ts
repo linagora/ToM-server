@@ -1,7 +1,8 @@
 import { type TwakeLogger } from '@twake/logger'
 import { jsonContent, validateParameters } from '@twake/utils'
 import { type expressAppHandler } from '../../types'
-import _search, { type Query } from './_search'
+import _search from './_search'
+import type { Query } from './types'
 import type TwakeIdentityServer from '..'
 
 const schema = {
