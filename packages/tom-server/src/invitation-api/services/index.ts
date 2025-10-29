@@ -61,21 +61,37 @@ export default class InvitationService implements IInvitationService {
 
     try {
       const { medium, recipient, sender } = payload
+      this.logger.info(
+        `[InvitationService][invite] sending invitation with: ${JSON.stringify(
+          payload
+        )}`
+      )
 
       token = await this._createInvitation(payload)
       const link = this._getInvitationUrl(token)
+      this.logger.info(
+        `[InvitationService][invite] Generated the invitation token and link ${JSON.stringify(
+          { token: token.slice(10), link: link.slice(10) }
+        )}`
+      )
 
       await this._deliverInvitation(sender, recipient, medium, link)
+      this.logger.info(
+        `[InvitationService][invite] Invitation successfully delivered to ${recipient}`
+      )
 
       return token
     } catch (error) {
-      this.logger.error(`Failed to send invitation`, error)
+      this.logger.error(
+        `[InvitationService][invite] Failed to send invitation`,
+        error
+      )
 
       if (token) {
         await this._removeInvitation(token)
       }
 
-      throw Error('Failed to send invitation')
+      throw Error('[InvitationService][invite] Failed to send invitation')
     }
   }
 
@@ -537,8 +553,11 @@ export default class InvitationService implements IInvitationService {
     link: string
   ): Promise<void> => {
     try {
+      this.logger.info(
+        `[InvitationService][_deliverInvitation] sending invitation by: ${sender} to: ${to}, via ${medium}`
+      )
       if (medium === 'email') {
-        const lang = 'en'; // TODO: invitee language
+        const lang = 'en' // TODO: invitee language
         const emailTemplatePath = `${this.config.template_dir}/emailInvitation_${lang}.tpl`
 
         const text = buildEmailBody(
@@ -549,6 +568,10 @@ export default class InvitationService implements IInvitationService {
           this.notificationService.emailFrom
         )
 
+        this.logger.info(
+          `[InvitationService][_deliverInvitation][EMAIL] invitation text prepared`
+        )
+
         const emailOptions: SendMailOptions = {
           from: this.notificationService.emailFrom,
           to,
@@ -557,19 +580,27 @@ export default class InvitationService implements IInvitationService {
         }
 
         await this.notificationService.sendEmail(emailOptions)
+        this.logger.info(
+          `[InvitationService][_deliverInvitation][EMAIL] invitation sent to ${to} with subject: ${emailOptions.subject}`
+        )
       } else if (medium === 'phone') {
-        
         // Specific to french numbers
-        const smsFooter = /^\+33\d{9}$/.test(to) ? SMS_FOOTERS.FR : "";
+        const smsFooter = /^\+33\d{9}$/.test(to) ? SMS_FOOTERS.FR : ''
 
         const smsTemplatePath = `${this.config.template_dir}/3pidSmsInvitation.tpl`
         const text = buildSmsBody(smsTemplatePath, sender, link, smsFooter)
 
         if (!text) {
+          this.logger.error(
+            `[InvitationService][_deliverInvitation][SMS] failed to build SMS body`
+          )
           throw Error('Failed to build SMS body')
         }
 
         await this.notificationService.sendSMS(to, text)
+        this.logger.info(
+          `[InvitationService][_deliverInvitation][SMS] sent SMS with payload: ${text}`
+        )
       }
     } catch (error) {
       this.logger.error(`Failed to deliver invitation`, error)
