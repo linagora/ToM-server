@@ -1,5 +1,5 @@
 import { type TwakeLogger } from '@twake/logger'
-import { errMsg, send, toMatrixId } from '@twake/utils'
+import { errMsg, getLocalPart, send, toMatrixId } from '@twake/utils'
 import type TwakeIdentityServer from '..'
 import { AddressbookService } from '../../addressbook-api/services'
 import { type Contact } from '../../addressbook-api/types'
@@ -85,8 +85,8 @@ export const _search = async (
 
   const buildContactMap = (contacts: Contact[]) => {
     const map = new Map<string, any>()
-    for (const contact of contacts) {
-      const uid = contact.mxid?.replace(/^@(.*?):.*/, '$1')
+    contacts.forEach((contact) => {
+      const uid = getLocalPart(contact.mxid)
       if (uid) {
         map.set(uid, {
           uid,
@@ -94,12 +94,12 @@ export const _search = async (
           address: contact.mxid
         })
       }
-    }
+    })
     return map
   }
 
   const enrichWithUserInfo = async (rows: any[], viewer: string) => {
-    for (const row of rows) {
+    rows.forEach(async (row) => {
       try {
         const info: UserInformation = (await userInfoService.get(
           row.address,
@@ -114,11 +114,20 @@ export const _search = async (
         row.givenName = info.givenName
         row.sn = info.sn
         row.mails = info.mails
+        if (row.mails && Array.isArray(row.mails) && row.mails.length)
+          row.mail = info.mails
         row.phones = info.phones
+        if (
+          row.phones &&
+          info.phones &&
+          Array.isArray(row.phones) &&
+          row.phones.length
+        )
+          row.phone = info.phones.at(0)
       } catch (err) {
         logger.warn(`[_search] Failed to enrich ${row.uid}`, err)
       }
-    }
+    })
   }
 
   /**
@@ -188,7 +197,7 @@ export const _search = async (
       const matches: any[] = []
       const inactive_matches: any[] = []
 
-      for (const row of paginatedRows) {
+      paginatedRows.forEach((row) => {
         const uid = row.uid as string
         row.address = toMatrixId(uid, conf.server_name)
 
@@ -199,10 +208,10 @@ export const _search = async (
 
         if (activeUids.has(uid)) matches.push(row)
         else inactive_matches.push(row)
-      }
+      })
 
       // Merge leftover contacts as matches
-      for (const contact of contactMap.values()) matches.push(contact)
+      contactMap.forEach((contact) => matches.push(contact))
 
       // Enrich results
       await Promise.all([
