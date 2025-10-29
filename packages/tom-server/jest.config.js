@@ -8,9 +8,5 @@ export default {
     ...jestConfigBase.moduleNameMapper,
     'node-fetch': '<rootDir>/../../node_modules/node-fetch-jest'
   },
-  clearMocks: true,
-  coveragePathIgnorePatterns: [
-    ...(jestConfigBase.coveragePathIgnorePatterns || []),
-    '<rootDir>/src/identity-server/lookup/'
-  ]
+  clearMocks: true
 }
