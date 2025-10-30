@@ -1,5 +1,5 @@
 import { type TwakeLogger } from '@twake/logger'
-import { MatrixDB, UserDB } from '@twake/matrix-identity-server'
+import { DbGetResult, MatrixDB, UserDB } from '@twake/matrix-identity-server'
 import { IAddressbookService } from '../../addressbook-api/types'
 import type { Config, TwakeDB } from '../../types'
 import UserInfoService from '../services'
@@ -7,7 +7,8 @@ import {
   ProfileField,
   ProfileVisibility,
   type UserProfileSettingsPayloadT,
-  type UserInformation
+  type UserInformation,
+  UserProfileSettingsT
 } from '../types'
 
 const BASE_CONFIG = {
@@ -78,7 +79,7 @@ const useProfileTwakeDefaults: useProfileTwake = {
  * Configure Matrix mock response.
  * @param useProfile If true, returns full mock profile. If false, returns empty array.
  */
-const mockTwake = (
+const mockUserDB = (
   useProfile: Partial<useProfileTwake> = useProfileTwakeDefaults
 ) => {
   return ((
@@ -166,26 +167,92 @@ const useProfileCommonSettingsDefaults: useProfileCommonSettings = {
  * Configure TwakeDB mock response for common settings and profile settings.
  * @param enabled If true, returns mock common settings. If false, returns empty array.
  */
-// const mockCommonSettings = (useProfile: Partial<useProfileCommonSettings> = useProfileCommonSettingsDefaults) => {
-//   return ((useProfileDefaults: useProfileCommonSettings = { ...useProfileCommonSettingsDefaults, ...useProfile }) => {
-//     twakeDBMock.get.mockClear()
-//     if (Object.values(useProfileDefaults).every(v => !v)) { twakeDBMock.get.mockResolvedValue([]) }
-//     else {
-//       const { displayName, lastName, firstName, mail, phone, language, timezone } = useProfileDefaults
-//       const profile = {}
-//
-//       if (displayName) Object.defineProperty(profile, 'display_name', { value: MOCK_DATA.COMMON_SETTINGS.display_name, writable: false })
-//       if (lastName) Object.defineProperty(profile, 'last_name', { value: MOCK_DATA.COMMON_SETTINGS.last_name, writable: false })
-//       if (firstName) Object.defineProperty(profile, 'first_name', { value: MOCK_DATA.COMMON_SETTINGS.first_name, writable: false })
-//       if (mail) Object.defineProperty(profile, 'mail', { value: MOCK_DATA.COMMON_SETTINGS.email, writable: false })
-//       if (phone) Object.defineProperty(profile, 'phone', { value: MOCK_DATA.COMMON_SETTINGS.phone, writable: false })
-//       if (language) Object.defineProperty(profile, 'language', { value: MOCK_DATA.COMMON_SETTINGS.language, writable: false })
-//       if (timezone) Object.defineProperty(profile, 'timezone', { value: MOCK_DATA.COMMON_SETTINGS.timezone, writable: false })
-//
-//       twakeDBMock.get.mockResolvedValue([{ settings: { ...profile } }])
-//     }
-//   })()
-// }
+const mockTwakeDB = (
+  useProfile: Partial<useProfileCommonSettings> = useProfileCommonSettingsDefaults,
+  useProfileSettings: UserProfileSettingsT | null = null
+) => {
+  return ((
+    useProfileDefaults: useProfileCommonSettings = {
+      ...useProfileCommonSettingsDefaults,
+      ...useProfile
+    }
+  ) => {
+    const forgeProfile = () => {
+      if (Object.values(useProfileDefaults).every((v) => !v)) {
+        return null
+      } else {
+        const {
+          displayName,
+          lastName,
+          firstName,
+          mail,
+          phone,
+          language,
+          timezone
+        } = useProfileDefaults
+        const profile = {}
+
+        if (displayName)
+          Object.defineProperty(profile, 'display_name', {
+            value: MOCK_DATA.COMMON_SETTINGS.display_name,
+            writable: false
+          })
+        if (lastName)
+          Object.defineProperty(profile, 'last_name', {
+            value: MOCK_DATA.COMMON_SETTINGS.last_name,
+            writable: false
+          })
+        if (firstName)
+          Object.defineProperty(profile, 'first_name', {
+            value: MOCK_DATA.COMMON_SETTINGS.first_name,
+            writable: false
+          })
+        if (mail)
+          Object.defineProperty(profile, 'mail', {
+            value: MOCK_DATA.COMMON_SETTINGS.email,
+            writable: false
+          })
+        if (phone)
+          Object.defineProperty(profile, 'phone', {
+            value: MOCK_DATA.COMMON_SETTINGS.phone,
+            writable: false
+          })
+        if (language)
+          Object.defineProperty(profile, 'language', {
+            value: MOCK_DATA.COMMON_SETTINGS.language,
+            writable: false
+          })
+        if (timezone)
+          Object.defineProperty(profile, 'timezone', {
+            value: MOCK_DATA.COMMON_SETTINGS.timezone,
+            writable: false
+          })
+
+        return profile
+      }
+    }
+
+    twakeDBMock.get.mockClear()
+    const userProfile = forgeProfile()
+
+    twakeDBMock.get.mockImplementation(
+      async (table, fields, filterFields, order?): Promise<DbGetResult> => {
+        let r
+        switch (table) {
+          case 'usersettings':
+            r = userProfile
+            break
+          case 'profileSettings':
+            r = useProfileSettings || null
+            break
+          default:
+            r = null
+        }
+        return r ? [r] : ([] as unknown as DbGetResult)
+      }
+    )
+  })()
+}
 
 type MatrixDBMinimal = Omit<MatrixDB, 'set'>
 const matrixDBMock: jest.Mocked<MatrixDBMinimal> = {
@@ -307,14 +374,15 @@ const createService = (
 beforeEach(() => {
   jest.clearAllMocks()
   mockMatrix()
-  mockTwake()
-  // mockCommonSettings()
+  mockUserDB()
+  mockTwakeDB()
   mockAddressBook()
 })
 
 describe('User Info Service with: No feature flags ON', () => {
   describe('When no viewer is provided', () => {
     afterEach(() => {
+      // When no viewer ToM cannot lookup the address book
       expect(addressBookServiceMock.list).not.toHaveBeenCalled()
     })
 
@@ -326,7 +394,7 @@ describe('User Info Service with: No feature flags ON', () => {
     })
 
     it('Should return null even if UserDB has a record', async () => {
-      mockTwake({ displayName: true })
+      mockUserDB({ displayName: true })
 
       const svc = createService(false, false)
       const user = await svc.get(MATRIX_MXID)
@@ -374,7 +442,7 @@ describe('User Info Service with: No feature flags ON', () => {
 
     it('Should NOT overwrite MatrixDB fields if UserDB has a record too - 1', async () => {
       mockMatrix({ displayName: true })
-      mockTwake({ displayName: true })
+      mockUserDB({ displayName: true })
 
       const svc = createService(false, false)
       const user = await svc.get(MATRIX_MXID)
@@ -394,7 +462,7 @@ describe('User Info Service with: No feature flags ON', () => {
 
     it('Should NOT overwrite MatrixDB fields if UserDB has a record too - 2', async () => {
       mockMatrix({ displayName: true, avatar: true })
-      mockTwake({ displayName: true })
+      mockUserDB({ displayName: true })
 
       const svc = createService(false, false)
       const user = await svc.get(MATRIX_MXID)
@@ -414,7 +482,7 @@ describe('User Info Service with: No feature flags ON', () => {
 
     it('Should add UserDB fields but display name - 1', async () => {
       mockMatrix({ displayName: true, avatar: true })
-      mockTwake({ displayName: true, lastName: true })
+      mockUserDB({ displayName: true, lastName: true })
 
       const svc = createService(false, false)
       const user = await svc.get(MATRIX_MXID)
@@ -434,7 +502,7 @@ describe('User Info Service with: No feature flags ON', () => {
 
     it('Should add UserDB fields but display name - 2', async () => {
       mockMatrix({ displayName: true, avatar: true })
-      mockTwake({ displayName: true, lastName: true, givenName: true })
+      mockUserDB({ displayName: true, lastName: true, givenName: true })
 
       const svc = createService(false, false)
       const user = await svc.get(MATRIX_MXID)
@@ -451,7 +519,80 @@ describe('User Info Service with: No feature flags ON', () => {
       expect(user).not.toHaveProperty('language')
       expect(user).not.toHaveProperty('timezone')
     })
-  })
 
-  // TODO: Describe for avatar left untouched
+    describe('While honoring Profile Visibility: Private', () => {
+      it('Should add UserDB fields but display name - 3', async () => {
+        mockMatrix({ displayName: true, avatar: true })
+        mockUserDB({
+          displayName: true,
+          lastName: true,
+          givenName: true,
+          mail: true
+        })
+        mockTwakeDB(
+          {},
+          {
+            matrix_id: MATRIX_MXID,
+            visibility: ProfileVisibility.Private,
+            visible_fields: []
+          }
+        )
+
+        const svc = createService(false, false)
+        const user = await svc.get(MATRIX_MXID)
+
+        expect(user).not.toBeNull()
+        expect(user).toHaveProperty(
+          'display_name',
+          MOCK_DATA.MATRIX.displayname
+        )
+        expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+        expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
+        expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
+        expect(user).not.toHaveProperty('mails')
+        expect(user).not.toHaveProperty('phones')
+        expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
+        expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
+        expect(user).not.toHaveProperty('language')
+        expect(user).not.toHaveProperty('timezone')
+      })
+
+      it('Should add UserDB fields but display name - 4', async () => {
+        mockMatrix({ displayName: true, avatar: true })
+        mockUserDB({
+          displayName: true,
+          lastName: true,
+          givenName: true,
+          mail: true,
+          phone: true
+        })
+        mockTwakeDB(
+          {},
+          {
+            matrix_id: MATRIX_MXID,
+            visibility: ProfileVisibility.Private,
+            visible_fields: []
+          }
+        )
+
+        const svc = createService(false, false)
+        const user = await svc.get(MATRIX_MXID)
+
+        expect(user).not.toBeNull()
+        expect(user).toHaveProperty(
+          'display_name',
+          MOCK_DATA.MATRIX.displayname
+        )
+        expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+        expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
+        expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
+        expect(user).not.toHaveProperty('mails')
+        expect(user).not.toHaveProperty('phones')
+        expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
+        expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
+        expect(user).not.toHaveProperty('language')
+        expect(user).not.toHaveProperty('timezone')
+      })
+    })
+  })
 })
