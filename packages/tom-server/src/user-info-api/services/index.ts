@@ -72,13 +72,8 @@ class UserInfoService implements IUserInfoService {
         visibility: idProfileVisibility,
         visible_fields: idProfileVisibleFields
       } = idVisibilitySettings
+      const isMyProfile = id === viewer
       const isIdProfileVisibleForViewer = async () => {
-        if (id === viewer) {
-          this.logger.info(
-            '[UserInfoService].get: Visibility check: viewer is targeting themselves'
-          )
-          return true
-        }
         if (idProfileVisibility === ProfileVisibility.Public) {
           this.logger.info(
             '[UserInfoService].get: Visibility check: targeted profile is Public'
@@ -107,7 +102,8 @@ class UserInfoService implements IUserInfoService {
         )
         return contacts.some((c) => c.mxid === viewer)
       }
-      const isIdProfileVisible = await isIdProfileVisibleForViewer()
+      const isIdProfileVisible =
+        isMyProfile || (await isIdProfileVisibleForViewer())
       this.logger.info(
         '[UserInfoService].get: Visibility check:',
         isIdProfileVisible
@@ -148,6 +144,7 @@ class UserInfoService implements IUserInfoService {
 
       const addressbookListPromise = (async () => {
         if (!viewer) return null
+        if (viewer === id) return null // Viewer is not in their ab
         try {
           const { contacts } = await this.addressBookService.list(viewer)
           const matched = contacts.find((c) => c.mxid === id)
@@ -198,14 +195,16 @@ class UserInfoService implements IUserInfoService {
         }
         if (
           directoryRow.mail &&
-          isIdProfileVisible &&
-          idProfileVisibleFields.includes(ProfileField.Email)
+          (isMyProfile ||
+            (isIdProfileVisible &&
+              idProfileVisibleFields.includes(ProfileField.Email)))
         )
           result.mails = [directoryRow.mail as string]
         if (
           directoryRow.mobile &&
-          isIdProfileVisible &&
-          idProfileVisibleFields.includes(ProfileField.Phone)
+          (isMyProfile ||
+            (isIdProfileVisible &&
+              idProfileVisibleFields.includes(ProfileField.Phone)))
         )
           result.phones = [directoryRow.mobile as string]
       }
@@ -225,9 +224,10 @@ class UserInfoService implements IUserInfoService {
           result.givenName = settingsRow.settings.first_name
         }
         if (
-          isIdProfileVisible &&
-          idProfileVisibleFields.includes(ProfileField.Email) &&
-          settingsRow.settings.email
+          settingsRow.settings.email &&
+          (isMyProfile ||
+            (isIdProfileVisible &&
+              idProfileVisibleFields.includes(ProfileField.Email)))
         )
           if (
             result.mails &&
@@ -237,9 +237,10 @@ class UserInfoService implements IUserInfoService {
             result.mails.push(settingsRow.settings.email)
           else result.mails = [settingsRow.settings.email]
         if (
-          isIdProfileVisible &&
-          idProfileVisibleFields.includes(ProfileField.Phone) &&
-          settingsRow.settings.phone
+          settingsRow.settings.phone &&
+          (isMyProfile ||
+            (isIdProfileVisible &&
+              idProfileVisibleFields.includes(ProfileField.Phone)))
         )
           if (
             result.phones &&
