@@ -379,7 +379,7 @@ beforeEach(() => {
   mockAddressBook()
 })
 
-describe('User Info Service with: No feature flags ON', () => {
+describe('User Info Service GET with: No feature flags ON', () => {
   describe('When no viewer is provided', () => {
     afterEach(() => {
       // When no viewer ToM cannot lookup the address book
@@ -1484,6 +1484,1079 @@ describe('User Info Service with: No feature flags ON', () => {
           expect(user).not.toHaveProperty('timezone')
         })
       })
+    })
+
+    it('Should NOT overwrite MatrixDB fields if Common Settings has a record too - 1', async () => {
+      mockMatrix({ displayName: true })
+      mockTwakeDB({ displayName: true })
+
+      const svc = createService(false, false)
+      const user = await svc.get(MATRIX_MXID)
+
+      expect(user).not.toBeNull()
+      expect(user).toHaveProperty('display_name', MOCK_DATA.MATRIX.displayname)
+      expect(user).not.toHaveProperty('avatar')
+      expect(user).not.toHaveProperty('sn')
+      expect(user).not.toHaveProperty('givenName')
+      expect(user).not.toHaveProperty('mails')
+      expect(user).not.toHaveProperty('phones')
+      expect(user).not.toHaveProperty('last_name')
+      expect(user).not.toHaveProperty('first_name')
+      expect(user).not.toHaveProperty('language')
+      expect(user).not.toHaveProperty('timezone')
+    })
+
+    it('Should NOT overwrite MatrixDB fields if Common Settings has a record too - 2', async () => {
+      mockMatrix({ displayName: true, avatar: true })
+      mockTwakeDB({ displayName: true })
+
+      const svc = createService(false, false)
+      const user = await svc.get(MATRIX_MXID)
+
+      expect(user).not.toBeNull()
+      expect(user).toHaveProperty('display_name', MOCK_DATA.MATRIX.displayname)
+      expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+      expect(user).not.toHaveProperty('sn')
+      expect(user).not.toHaveProperty('givenName')
+      expect(user).not.toHaveProperty('mails')
+      expect(user).not.toHaveProperty('phones')
+      expect(user).not.toHaveProperty('last_name')
+      expect(user).not.toHaveProperty('first_name')
+      expect(user).not.toHaveProperty('language')
+      expect(user).not.toHaveProperty('timezone')
+    })
+
+    it('Should NOT add Common Settings fields but display name - 1', async () => {
+      mockMatrix({ displayName: true, avatar: true })
+      mockTwakeDB({ displayName: true, lastName: true })
+
+      const svc = createService(false, false)
+      const user = await svc.get(MATRIX_MXID)
+
+      expect(user).not.toBeNull()
+      expect(user).toHaveProperty('display_name', MOCK_DATA.MATRIX.displayname)
+      expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+      expect(user).not.toHaveProperty('sn')
+      expect(user).not.toHaveProperty('givenName')
+      expect(user).not.toHaveProperty('mails')
+      expect(user).not.toHaveProperty('phones')
+      expect(user).not.toHaveProperty('last_name')
+      expect(user).not.toHaveProperty('first_name')
+      expect(user).not.toHaveProperty('language')
+      expect(user).not.toHaveProperty('timezone')
+    })
+
+    it('Should NOT add Common Settings fields but display name - 2', async () => {
+      mockMatrix({ displayName: true, avatar: true })
+      mockTwakeDB({ displayName: true, lastName: true, firstName: true })
+
+      const svc = createService(false, false)
+      const user = await svc.get(MATRIX_MXID)
+
+      expect(user).not.toBeNull()
+      expect(user).toHaveProperty('display_name', MOCK_DATA.MATRIX.displayname)
+      expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+      expect(user).not.toHaveProperty('sn')
+      expect(user).not.toHaveProperty('givenName')
+      expect(user).not.toHaveProperty('mails')
+      expect(user).not.toHaveProperty('phones')
+      expect(user).not.toHaveProperty('last_name')
+      expect(user).not.toHaveProperty('first_name')
+      expect(user).not.toHaveProperty('language')
+      expect(user).not.toHaveProperty('timezone')
+    })
+
+    describe('While honoring Profile Visibility: Default (Private + No fields)', () => {
+      it('Should NOT add Common Settings fields but display name - 3', async () => {
+        mockMatrix({ displayName: true, avatar: true })
+        mockTwakeDB({
+          displayName: true,
+          lastName: true,
+          firstName: true,
+          mail: true
+        })
+
+        const svc = createService(false, false)
+        const user = await svc.get(MATRIX_MXID)
+
+        expect(user).not.toBeNull()
+        expect(user).toHaveProperty(
+          'display_name',
+          MOCK_DATA.MATRIX.displayname
+        )
+        expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+        expect(user).not.toHaveProperty('sn')
+        expect(user).not.toHaveProperty('givenName')
+        expect(user).not.toHaveProperty('mails')
+        expect(user).not.toHaveProperty('phones')
+        expect(user).not.toHaveProperty('last_name')
+        expect(user).not.toHaveProperty('first_name')
+        expect(user).not.toHaveProperty('language')
+        expect(user).not.toHaveProperty('timezone')
+      })
+
+      it('Should NOT add Common Settings fields but display name - 4', async () => {
+        mockMatrix({ displayName: true, avatar: true })
+        mockTwakeDB({
+          displayName: true,
+          lastName: true,
+          firstName: true,
+          mail: true,
+          phone: true
+        })
+
+        const svc = createService(false, false)
+        const user = await svc.get(MATRIX_MXID)
+
+        expect(user).not.toBeNull()
+        expect(user).toHaveProperty(
+          'display_name',
+          MOCK_DATA.MATRIX.displayname
+        )
+        expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+        expect(user).not.toHaveProperty('sn')
+        expect(user).not.toHaveProperty('givenName')
+        expect(user).not.toHaveProperty('mails')
+        expect(user).not.toHaveProperty('phones')
+        expect(user).not.toHaveProperty('last_name')
+        expect(user).not.toHaveProperty('first_name')
+        expect(user).not.toHaveProperty('language')
+        expect(user).not.toHaveProperty('timezone')
+      })
+    })
+
+    describe('While honoring Profile Visibility: Private', () => {
+      describe('And honoring field visibility: None', () => {
+        it('Should NOT add Common Settings fields but display name - 3', async () => {
+          mockMatrix({ displayName: true, avatar: true })
+          mockTwakeDB(
+            {
+              displayName: true,
+              lastName: true,
+              firstName: true,
+              mail: true
+            },
+            {
+              matrix_id: MATRIX_MXID,
+              visibility: ProfileVisibility.Private,
+              visible_fields: []
+            }
+          )
+
+          const svc = createService(false, false)
+          const user = await svc.get(MATRIX_MXID)
+
+          expect(user).not.toBeNull()
+          expect(user).toHaveProperty(
+            'display_name',
+            MOCK_DATA.MATRIX.displayname
+          )
+          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).not.toHaveProperty('sn')
+          expect(user).not.toHaveProperty('givenName')
+          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('phones')
+          expect(user).not.toHaveProperty('last_name')
+          expect(user).not.toHaveProperty('first_name')
+          expect(user).not.toHaveProperty('language')
+          expect(user).not.toHaveProperty('timezone')
+        })
+
+        it('Should NOT add Common Settings fields but display name - 4', async () => {
+          mockMatrix({ displayName: true, avatar: true })
+          mockTwakeDB(
+            {
+              displayName: true,
+              lastName: true,
+              firstName: true,
+              mail: true,
+              phone: true
+            },
+            {
+              matrix_id: MATRIX_MXID,
+              visibility: ProfileVisibility.Private,
+              visible_fields: []
+            }
+          )
+
+          const svc = createService(false, false)
+          const user = await svc.get(MATRIX_MXID)
+
+          expect(user).not.toBeNull()
+          expect(user).toHaveProperty(
+            'display_name',
+            MOCK_DATA.MATRIX.displayname
+          )
+          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).not.toHaveProperty('sn')
+          expect(user).not.toHaveProperty('givenName')
+          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('phones')
+          expect(user).not.toHaveProperty('last_name')
+          expect(user).not.toHaveProperty('first_name')
+          expect(user).not.toHaveProperty('language')
+          expect(user).not.toHaveProperty('timezone')
+        })
+      })
+
+      describe('And honoring field visibility: Email only', () => {
+        it('Should NOT add Common Settings fields but display name - 3', async () => {
+          mockMatrix({ displayName: true, avatar: true })
+          mockTwakeDB(
+            {
+              displayName: true,
+              lastName: true,
+              firstName: true,
+              mail: true
+            },
+            {
+              matrix_id: MATRIX_MXID,
+              visibility: ProfileVisibility.Private,
+              visible_fields: [ProfileField.Email]
+            }
+          )
+
+          const svc = createService(false, false)
+          const user = await svc.get(MATRIX_MXID)
+
+          expect(user).not.toBeNull()
+          expect(user).toHaveProperty(
+            'display_name',
+            MOCK_DATA.MATRIX.displayname
+          )
+          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).not.toHaveProperty('sn')
+          expect(user).not.toHaveProperty('givenName')
+          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('phones')
+          expect(user).not.toHaveProperty('last_name')
+          expect(user).not.toHaveProperty('first_name')
+          expect(user).not.toHaveProperty('language')
+          expect(user).not.toHaveProperty('timezone')
+        })
+
+        it('Should NOT add Common Settings fields but display name - 4', async () => {
+          mockMatrix({ displayName: true, avatar: true })
+          mockTwakeDB(
+            {
+              displayName: true,
+              lastName: true,
+              firstName: true,
+              mail: true,
+              phone: true
+            },
+            {
+              matrix_id: MATRIX_MXID,
+              visibility: ProfileVisibility.Private,
+              visible_fields: [ProfileField.Email]
+            }
+          )
+
+          const svc = createService(false, false)
+          const user = await svc.get(MATRIX_MXID)
+
+          expect(user).not.toBeNull()
+          expect(user).toHaveProperty(
+            'display_name',
+            MOCK_DATA.MATRIX.displayname
+          )
+          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).not.toHaveProperty('sn')
+          expect(user).not.toHaveProperty('givenName')
+          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('phones')
+          expect(user).not.toHaveProperty('last_name')
+          expect(user).not.toHaveProperty('first_name')
+          expect(user).not.toHaveProperty('language')
+          expect(user).not.toHaveProperty('timezone')
+        })
+      })
+
+      describe('And honoring field visibility: Phone only', () => {
+        it('Should NOT add Common Settings fields but display name - 3', async () => {
+          mockMatrix({ displayName: true, avatar: true })
+          mockTwakeDB(
+            {
+              displayName: true,
+              lastName: true,
+              firstName: true,
+              mail: true
+            },
+            {
+              matrix_id: MATRIX_MXID,
+              visibility: ProfileVisibility.Private,
+              visible_fields: [ProfileField.Phone]
+            }
+          )
+
+          const svc = createService(false, false)
+          const user = await svc.get(MATRIX_MXID)
+
+          expect(user).not.toBeNull()
+          expect(user).toHaveProperty(
+            'display_name',
+            MOCK_DATA.MATRIX.displayname
+          )
+          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).not.toHaveProperty('sn')
+          expect(user).not.toHaveProperty('givenName')
+          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('phones')
+          expect(user).not.toHaveProperty('last_name')
+          expect(user).not.toHaveProperty('first_name')
+          expect(user).not.toHaveProperty('language')
+          expect(user).not.toHaveProperty('timezone')
+        })
+
+        it('Should NOT add Common Settings fields but display name - 4', async () => {
+          mockMatrix({ displayName: true, avatar: true })
+          mockTwakeDB(
+            {
+              displayName: true,
+              lastName: true,
+              firstName: true,
+              mail: true,
+              phone: true
+            },
+            {
+              matrix_id: MATRIX_MXID,
+              visibility: ProfileVisibility.Private,
+              visible_fields: [ProfileField.Phone]
+            }
+          )
+
+          const svc = createService(false, false)
+          const user = await svc.get(MATRIX_MXID)
+
+          expect(user).not.toBeNull()
+          expect(user).toHaveProperty(
+            'display_name',
+            MOCK_DATA.MATRIX.displayname
+          )
+          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).not.toHaveProperty('sn')
+          expect(user).not.toHaveProperty('givenName')
+          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('phones')
+          expect(user).not.toHaveProperty('last_name')
+          expect(user).not.toHaveProperty('first_name')
+          expect(user).not.toHaveProperty('language')
+          expect(user).not.toHaveProperty('timezone')
+        })
+      })
+
+      describe('And honoring field visibility: Both', () => {
+        it('Should NOT add Common Settings fields but display name - 3', async () => {
+          mockMatrix({ displayName: true, avatar: true })
+          mockTwakeDB(
+            {
+              displayName: true,
+              lastName: true,
+              firstName: true,
+              mail: true
+            },
+            {
+              matrix_id: MATRIX_MXID,
+              visibility: ProfileVisibility.Private,
+              visible_fields: [ProfileField.Email, ProfileField.Phone]
+            }
+          )
+
+          const svc = createService(false, false)
+          const user = await svc.get(MATRIX_MXID)
+
+          expect(user).not.toBeNull()
+          expect(user).toHaveProperty(
+            'display_name',
+            MOCK_DATA.MATRIX.displayname
+          )
+          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).not.toHaveProperty('sn')
+          expect(user).not.toHaveProperty('givenName')
+          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('phones')
+          expect(user).not.toHaveProperty('last_name')
+          expect(user).not.toHaveProperty('first_name')
+          expect(user).not.toHaveProperty('language')
+          expect(user).not.toHaveProperty('timezone')
+        })
+
+        it('Should NOT add Common Settings fields but display name - 4', async () => {
+          mockMatrix({ displayName: true, avatar: true })
+          mockTwakeDB(
+            {
+              displayName: true,
+              lastName: true,
+              firstName: true,
+              mail: true,
+              phone: true
+            },
+            {
+              matrix_id: MATRIX_MXID,
+              visibility: ProfileVisibility.Private,
+              visible_fields: [ProfileField.Email, ProfileField.Phone]
+            }
+          )
+
+          const svc = createService(false, false)
+          const user = await svc.get(MATRIX_MXID)
+
+          expect(user).not.toBeNull()
+          expect(user).toHaveProperty(
+            'display_name',
+            MOCK_DATA.MATRIX.displayname
+          )
+          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).not.toHaveProperty('sn')
+          expect(user).not.toHaveProperty('givenName')
+          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('phones')
+          expect(user).not.toHaveProperty('last_name')
+          expect(user).not.toHaveProperty('first_name')
+          expect(user).not.toHaveProperty('language')
+          expect(user).not.toHaveProperty('timezone')
+        })
+      })
+    })
+
+    // Same as Private as viewer is unknown
+    describe('While honoring Profile Visibility: Contacts', () => {
+      describe('And honoring field visibility: None', () => {
+        it('Should NOT add Common Settings fields but display name - 3', async () => {
+          mockMatrix({ displayName: true, avatar: true })
+          mockTwakeDB(
+            {
+              displayName: true,
+              lastName: true,
+              firstName: true,
+              mail: true
+            },
+            {
+              matrix_id: MATRIX_MXID,
+              visibility: ProfileVisibility.Contacts,
+              visible_fields: []
+            }
+          )
+
+          const svc = createService(false, false)
+          const user = await svc.get(MATRIX_MXID)
+
+          expect(user).not.toBeNull()
+          expect(user).toHaveProperty(
+            'display_name',
+            MOCK_DATA.MATRIX.displayname
+          )
+          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).not.toHaveProperty('sn')
+          expect(user).not.toHaveProperty('givenName')
+          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('phones')
+          expect(user).not.toHaveProperty('last_name')
+          expect(user).not.toHaveProperty('first_name')
+          expect(user).not.toHaveProperty('language')
+          expect(user).not.toHaveProperty('timezone')
+        })
+
+        it('Should NOT add Common Settings fields but display name - 4', async () => {
+          mockMatrix({ displayName: true, avatar: true })
+          mockTwakeDB(
+            {
+              displayName: true,
+              lastName: true,
+              firstName: true,
+              mail: true,
+              phone: true
+            },
+            {
+              matrix_id: MATRIX_MXID,
+              visibility: ProfileVisibility.Contacts,
+              visible_fields: []
+            }
+          )
+
+          const svc = createService(false, false)
+          const user = await svc.get(MATRIX_MXID)
+
+          expect(user).not.toBeNull()
+          expect(user).toHaveProperty(
+            'display_name',
+            MOCK_DATA.MATRIX.displayname
+          )
+          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).not.toHaveProperty('sn')
+          expect(user).not.toHaveProperty('givenName')
+          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('phones')
+          expect(user).not.toHaveProperty('last_name')
+          expect(user).not.toHaveProperty('first_name')
+          expect(user).not.toHaveProperty('language')
+          expect(user).not.toHaveProperty('timezone')
+        })
+      })
+
+      describe('And honoring field visibility: Email only', () => {
+        it('Should NOT add Common Settings fields but display name - 3', async () => {
+          mockMatrix({ displayName: true, avatar: true })
+          mockTwakeDB(
+            {
+              displayName: true,
+              lastName: true,
+              firstName: true,
+              mail: true
+            },
+            {
+              matrix_id: MATRIX_MXID,
+              visibility: ProfileVisibility.Contacts,
+              visible_fields: [ProfileField.Email]
+            }
+          )
+
+          const svc = createService(false, false)
+          const user = await svc.get(MATRIX_MXID)
+
+          expect(user).not.toBeNull()
+          expect(user).toHaveProperty(
+            'display_name',
+            MOCK_DATA.MATRIX.displayname
+          )
+          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).not.toHaveProperty('sn')
+          expect(user).not.toHaveProperty('givenName')
+          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('phones')
+          expect(user).not.toHaveProperty('last_name')
+          expect(user).not.toHaveProperty('first_name')
+          expect(user).not.toHaveProperty('language')
+          expect(user).not.toHaveProperty('timezone')
+        })
+
+        it('Should NOT add Common Settings fields but display name - 4', async () => {
+          mockMatrix({ displayName: true, avatar: true })
+          mockTwakeDB(
+            {
+              displayName: true,
+              lastName: true,
+              firstName: true,
+              mail: true,
+              phone: true
+            },
+            {
+              matrix_id: MATRIX_MXID,
+              visibility: ProfileVisibility.Contacts,
+              visible_fields: [ProfileField.Email]
+            }
+          )
+
+          const svc = createService(false, false)
+          const user = await svc.get(MATRIX_MXID)
+
+          expect(user).not.toBeNull()
+          expect(user).toHaveProperty(
+            'display_name',
+            MOCK_DATA.MATRIX.displayname
+          )
+          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).not.toHaveProperty('sn')
+          expect(user).not.toHaveProperty('givenName')
+          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('phones')
+          expect(user).not.toHaveProperty('last_name')
+          expect(user).not.toHaveProperty('first_name')
+          expect(user).not.toHaveProperty('language')
+          expect(user).not.toHaveProperty('timezone')
+        })
+      })
+
+      describe('And honoring field visibility: Phone only', () => {
+        it('Should NOT add Common Settings fields but display name - 3', async () => {
+          mockMatrix({ displayName: true, avatar: true })
+          mockTwakeDB(
+            {
+              displayName: true,
+              lastName: true,
+              firstName: true,
+              mail: true
+            },
+            {
+              matrix_id: MATRIX_MXID,
+              visibility: ProfileVisibility.Contacts,
+              visible_fields: [ProfileField.Phone]
+            }
+          )
+
+          const svc = createService(false, false)
+          const user = await svc.get(MATRIX_MXID)
+
+          expect(user).not.toBeNull()
+          expect(user).toHaveProperty(
+            'display_name',
+            MOCK_DATA.MATRIX.displayname
+          )
+          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).not.toHaveProperty('sn')
+          expect(user).not.toHaveProperty('givenName')
+          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('phones')
+          expect(user).not.toHaveProperty('last_name')
+          expect(user).not.toHaveProperty('first_name')
+          expect(user).not.toHaveProperty('language')
+          expect(user).not.toHaveProperty('timezone')
+        })
+
+        it('Should NOT add Common Settings fields but display name - 4', async () => {
+          mockMatrix({ displayName: true, avatar: true })
+          mockTwakeDB(
+            {
+              displayName: true,
+              lastName: true,
+              firstName: true,
+              mail: true,
+              phone: true
+            },
+            {
+              matrix_id: MATRIX_MXID,
+              visibility: ProfileVisibility.Contacts,
+              visible_fields: [ProfileField.Phone]
+            }
+          )
+
+          const svc = createService(false, false)
+          const user = await svc.get(MATRIX_MXID)
+
+          expect(user).not.toBeNull()
+          expect(user).toHaveProperty(
+            'display_name',
+            MOCK_DATA.MATRIX.displayname
+          )
+          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).not.toHaveProperty('sn')
+          expect(user).not.toHaveProperty('givenName')
+          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('phones')
+          expect(user).not.toHaveProperty('last_name')
+          expect(user).not.toHaveProperty('first_name')
+          expect(user).not.toHaveProperty('language')
+          expect(user).not.toHaveProperty('timezone')
+        })
+      })
+
+      describe('And honoring field visibility: Both', () => {
+        it('Should NOT add Common Settings fields but display name - 3', async () => {
+          mockMatrix({ displayName: true, avatar: true })
+          mockTwakeDB(
+            {
+              displayName: true,
+              lastName: true,
+              firstName: true,
+              mail: true
+            },
+            {
+              matrix_id: MATRIX_MXID,
+              visibility: ProfileVisibility.Contacts,
+              visible_fields: [ProfileField.Email, ProfileField.Phone]
+            }
+          )
+
+          const svc = createService(false, false)
+          const user = await svc.get(MATRIX_MXID)
+
+          expect(user).not.toBeNull()
+          expect(user).toHaveProperty(
+            'display_name',
+            MOCK_DATA.MATRIX.displayname
+          )
+          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).not.toHaveProperty('sn')
+          expect(user).not.toHaveProperty('givenName')
+          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('phones')
+          expect(user).not.toHaveProperty('last_name')
+          expect(user).not.toHaveProperty('first_name')
+          expect(user).not.toHaveProperty('language')
+          expect(user).not.toHaveProperty('timezone')
+        })
+
+        it('Should NOT add Common Settings fields but display name - 4', async () => {
+          mockMatrix({ displayName: true, avatar: true })
+          mockTwakeDB(
+            {
+              displayName: true,
+              lastName: true,
+              firstName: true,
+              mail: true,
+              phone: true
+            },
+            {
+              matrix_id: MATRIX_MXID,
+              visibility: ProfileVisibility.Contacts,
+              visible_fields: [ProfileField.Email, ProfileField.Phone]
+            }
+          )
+
+          const svc = createService(false, false)
+          const user = await svc.get(MATRIX_MXID)
+
+          expect(user).not.toBeNull()
+          expect(user).toHaveProperty(
+            'display_name',
+            MOCK_DATA.MATRIX.displayname
+          )
+          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).not.toHaveProperty('sn')
+          expect(user).not.toHaveProperty('givenName')
+          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('phones')
+          expect(user).not.toHaveProperty('last_name')
+          expect(user).not.toHaveProperty('first_name')
+          expect(user).not.toHaveProperty('language')
+          expect(user).not.toHaveProperty('timezone')
+        })
+      })
+    })
+
+    describe('While honoring Profile Visibility: Public', () => {
+      describe('And honoring field visibility: None', () => {
+        it('Should NOT add Common Settings fields but display name - 3', async () => {
+          mockMatrix({ displayName: true, avatar: true })
+          mockTwakeDB(
+            {
+              displayName: true,
+              lastName: true,
+              firstName: true,
+              mail: true
+            },
+            {
+              matrix_id: MATRIX_MXID,
+              visibility: ProfileVisibility.Public,
+              visible_fields: []
+            }
+          )
+
+          const svc = createService(false, false)
+          const user = await svc.get(MATRIX_MXID)
+
+          expect(user).not.toBeNull()
+          expect(user).toHaveProperty(
+            'display_name',
+            MOCK_DATA.MATRIX.displayname
+          )
+          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).not.toHaveProperty('sn')
+          expect(user).not.toHaveProperty('givenName')
+          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('phones')
+          expect(user).not.toHaveProperty('last_name')
+          expect(user).not.toHaveProperty('first_name')
+          expect(user).not.toHaveProperty('language')
+          expect(user).not.toHaveProperty('timezone')
+        })
+
+        it('Should NOT add Common Settings fields but display name - 4', async () => {
+          mockMatrix({ displayName: true, avatar: true })
+          mockTwakeDB(
+            {
+              displayName: true,
+              lastName: true,
+              firstName: true,
+              mail: true,
+              phone: true
+            },
+            {
+              matrix_id: MATRIX_MXID,
+              visibility: ProfileVisibility.Public,
+              visible_fields: []
+            }
+          )
+
+          const svc = createService(false, false)
+          const user = await svc.get(MATRIX_MXID)
+
+          expect(user).not.toBeNull()
+          expect(user).toHaveProperty(
+            'display_name',
+            MOCK_DATA.MATRIX.displayname
+          )
+          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).not.toHaveProperty('sn')
+          expect(user).not.toHaveProperty('givenName')
+          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('phones')
+          expect(user).not.toHaveProperty('last_name')
+          expect(user).not.toHaveProperty('first_name')
+          expect(user).not.toHaveProperty('language')
+          expect(user).not.toHaveProperty('timezone')
+        })
+      })
+
+      describe('And honoring field visibility: Email only', () => {
+        it('Should NOT add Common Settings fields but display name - 3', async () => {
+          mockMatrix({ displayName: true, avatar: true })
+          mockTwakeDB(
+            {
+              displayName: true,
+              lastName: true,
+              firstName: true,
+              mail: true
+            },
+            {
+              matrix_id: MATRIX_MXID,
+              visibility: ProfileVisibility.Public,
+              visible_fields: [ProfileField.Email]
+            }
+          )
+
+          const svc = createService(false, false)
+          const user = await svc.get(MATRIX_MXID)
+
+          expect(user).not.toBeNull()
+          expect(user).toHaveProperty(
+            'display_name',
+            MOCK_DATA.MATRIX.displayname
+          )
+          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).not.toHaveProperty('sn')
+          expect(user).not.toHaveProperty('givenName')
+          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('phones')
+          expect(user).not.toHaveProperty('last_name')
+          expect(user).not.toHaveProperty('first_name')
+          expect(user).not.toHaveProperty('language')
+          expect(user).not.toHaveProperty('timezone')
+        })
+
+        it('Should NOT add Common Settings fields but display name - 4', async () => {
+          mockMatrix({ displayName: true, avatar: true })
+          mockTwakeDB(
+            {
+              displayName: true,
+              lastName: true,
+              firstName: true,
+              mail: true,
+              phone: true
+            },
+            {
+              matrix_id: MATRIX_MXID,
+              visibility: ProfileVisibility.Public,
+              visible_fields: [ProfileField.Email]
+            }
+          )
+
+          const svc = createService(false, false)
+          const user = await svc.get(MATRIX_MXID)
+
+          expect(user).not.toBeNull()
+          expect(user).toHaveProperty(
+            'display_name',
+            MOCK_DATA.MATRIX.displayname
+          )
+          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).not.toHaveProperty('sn')
+          expect(user).not.toHaveProperty('givenName')
+          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('phones')
+          expect(user).not.toHaveProperty('last_name')
+          expect(user).not.toHaveProperty('first_name')
+          expect(user).not.toHaveProperty('language')
+          expect(user).not.toHaveProperty('timezone')
+        })
+      })
+
+      describe('And honoring field visibility: Phone only', () => {
+        it('Should NOT add Common Settings fields but display name - 3', async () => {
+          mockMatrix({ displayName: true, avatar: true })
+          mockTwakeDB(
+            {
+              displayName: true,
+              lastName: true,
+              firstName: true,
+              mail: true
+            },
+            {
+              matrix_id: MATRIX_MXID,
+              visibility: ProfileVisibility.Public,
+              visible_fields: [ProfileField.Phone]
+            }
+          )
+
+          const svc = createService(false, false)
+          const user = await svc.get(MATRIX_MXID)
+
+          expect(user).not.toBeNull()
+          expect(user).toHaveProperty(
+            'display_name',
+            MOCK_DATA.MATRIX.displayname
+          )
+          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).not.toHaveProperty('sn')
+          expect(user).not.toHaveProperty('givenName')
+          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('phones')
+          expect(user).not.toHaveProperty('last_name')
+          expect(user).not.toHaveProperty('first_name')
+          expect(user).not.toHaveProperty('language')
+          expect(user).not.toHaveProperty('timezone')
+        })
+
+        it('Should NOT add Common Settings fields but display name - 4', async () => {
+          mockMatrix({ displayName: true, avatar: true })
+          mockTwakeDB(
+            {
+              displayName: true,
+              lastName: true,
+              firstName: true,
+              mail: true,
+              phone: true
+            },
+            {
+              matrix_id: MATRIX_MXID,
+              visibility: ProfileVisibility.Public,
+              visible_fields: [ProfileField.Phone]
+            }
+          )
+
+          const svc = createService(false, false)
+          const user = await svc.get(MATRIX_MXID)
+
+          expect(user).not.toBeNull()
+          expect(user).toHaveProperty(
+            'display_name',
+            MOCK_DATA.MATRIX.displayname
+          )
+          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).not.toHaveProperty('sn')
+          expect(user).not.toHaveProperty('givenName')
+          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('phones')
+          expect(user).not.toHaveProperty('last_name')
+          expect(user).not.toHaveProperty('first_name')
+          expect(user).not.toHaveProperty('language')
+          expect(user).not.toHaveProperty('timezone')
+        })
+      })
+
+      describe('And honoring field visibility: Both', () => {
+        it('Should NOT add Common Settings fields but display name - 3', async () => {
+          mockMatrix({ displayName: true, avatar: true })
+          mockTwakeDB(
+            {
+              displayName: true,
+              lastName: true,
+              firstName: true,
+              mail: true
+            },
+            {
+              matrix_id: MATRIX_MXID,
+              visibility: ProfileVisibility.Public,
+              visible_fields: [ProfileField.Email, ProfileField.Phone]
+            }
+          )
+
+          const svc = createService(false, false)
+          const user = await svc.get(MATRIX_MXID)
+
+          expect(user).not.toBeNull()
+          expect(user).toHaveProperty(
+            'display_name',
+            MOCK_DATA.MATRIX.displayname
+          )
+          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).not.toHaveProperty('sn')
+          expect(user).not.toHaveProperty('givenName')
+          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('phones')
+          expect(user).not.toHaveProperty('last_name')
+          expect(user).not.toHaveProperty('first_name')
+          expect(user).not.toHaveProperty('language')
+          expect(user).not.toHaveProperty('timezone')
+        })
+
+        it('Should NOT add Common Settings fields but display name - 4', async () => {
+          mockMatrix({ displayName: true, avatar: true })
+          mockTwakeDB(
+            {
+              displayName: true,
+              lastName: true,
+              firstName: true,
+              mail: true,
+              phone: true
+            },
+            {
+              matrix_id: MATRIX_MXID,
+              visibility: ProfileVisibility.Public,
+              visible_fields: [ProfileField.Email, ProfileField.Phone]
+            }
+          )
+
+          const svc = createService(false, false)
+          const user = await svc.get(MATRIX_MXID)
+
+          expect(user).not.toBeNull()
+          expect(user).toHaveProperty(
+            'display_name',
+            MOCK_DATA.MATRIX.displayname
+          )
+          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).not.toHaveProperty('sn')
+          expect(user).not.toHaveProperty('givenName')
+          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('phones')
+          expect(user).not.toHaveProperty('last_name')
+          expect(user).not.toHaveProperty('first_name')
+          expect(user).not.toHaveProperty('language')
+          expect(user).not.toHaveProperty('timezone')
+        })
+      })
+    })
+
+    it('Should NOT add Common Settings fields but display name - 5', async () => {
+      mockMatrix({ displayName: true, avatar: true })
+      mockTwakeDB({
+        displayName: true,
+        lastName: true,
+        firstName: true,
+        language: true
+      })
+
+      const svc = createService(false, false)
+      const user = await svc.get(MATRIX_MXID)
+
+      expect(user).not.toBeNull()
+      expect(user).toHaveProperty('display_name', MOCK_DATA.MATRIX.displayname)
+      expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+      expect(user).not.toHaveProperty('sn')
+      expect(user).not.toHaveProperty('givenName')
+      expect(user).not.toHaveProperty('mails')
+      expect(user).not.toHaveProperty('phones')
+      expect(user).not.toHaveProperty('last_name')
+      expect(user).not.toHaveProperty('first_name')
+      expect(user).not.toHaveProperty('language')
+      expect(user).not.toHaveProperty('timezone')
+    })
+
+    it('Should NOT add Common Settings fields but display name - 6', async () => {
+      mockMatrix({ displayName: true, avatar: true })
+      mockTwakeDB({
+        displayName: true,
+        lastName: true,
+        firstName: true,
+        language: true,
+        timezone: true
+      })
+
+      const svc = createService(false, false)
+      const user = await svc.get(MATRIX_MXID)
+
+      expect(user).not.toBeNull()
+      expect(user).toHaveProperty('display_name', MOCK_DATA.MATRIX.displayname)
+      expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+      expect(user).not.toHaveProperty('sn')
+      expect(user).not.toHaveProperty('givenName')
+      expect(user).not.toHaveProperty('mails')
+      expect(user).not.toHaveProperty('phones')
+      expect(user).not.toHaveProperty('last_name')
+      expect(user).not.toHaveProperty('first_name')
+      expect(user).not.toHaveProperty('language')
+      expect(user).not.toHaveProperty('timezone')
     })
   })
 })
