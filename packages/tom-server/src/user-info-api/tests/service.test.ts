@@ -520,7 +520,7 @@ describe('User Info Service with: No feature flags ON', () => {
       expect(user).not.toHaveProperty('timezone')
     })
 
-    describe('While honoring Profile Visibility: Private', () => {
+    describe('While honoring Profile Visibility: Default (Private + No fields)', () => {
       it('Should add UserDB fields but display name - 3', async () => {
         mockMatrix({ displayName: true, avatar: true })
         mockUserDB({
@@ -529,14 +529,6 @@ describe('User Info Service with: No feature flags ON', () => {
           givenName: true,
           mail: true
         })
-        mockTwakeDB(
-          {},
-          {
-            matrix_id: MATRIX_MXID,
-            visibility: ProfileVisibility.Private,
-            visible_fields: []
-          }
-        )
 
         const svc = createService(false, false)
         const user = await svc.get(MATRIX_MXID)
@@ -566,14 +558,6 @@ describe('User Info Service with: No feature flags ON', () => {
           mail: true,
           phone: true
         })
-        mockTwakeDB(
-          {},
-          {
-            matrix_id: MATRIX_MXID,
-            visibility: ProfileVisibility.Private,
-            visible_fields: []
-          }
-        )
 
         const svc = createService(false, false)
         const user = await svc.get(MATRIX_MXID)
@@ -592,6 +576,913 @@ describe('User Info Service with: No feature flags ON', () => {
         expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
         expect(user).not.toHaveProperty('language')
         expect(user).not.toHaveProperty('timezone')
+      })
+    })
+
+    describe('While honoring Profile Visibility: Private', () => {
+      describe('And honoring field visibility: None', () => {
+        it('Should add UserDB fields but display name - 3', async () => {
+          mockMatrix({ displayName: true, avatar: true })
+          mockUserDB({
+            displayName: true,
+            lastName: true,
+            givenName: true,
+            mail: true
+          })
+          mockTwakeDB(
+            {},
+            {
+              matrix_id: MATRIX_MXID,
+              visibility: ProfileVisibility.Private,
+              visible_fields: []
+            }
+          )
+
+          const svc = createService(false, false)
+          const user = await svc.get(MATRIX_MXID)
+
+          expect(user).not.toBeNull()
+          expect(user).toHaveProperty(
+            'display_name',
+            MOCK_DATA.MATRIX.displayname
+          )
+          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
+          expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
+          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('phones')
+          expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
+          expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
+          expect(user).not.toHaveProperty('language')
+          expect(user).not.toHaveProperty('timezone')
+        })
+
+        it('Should add UserDB fields but display name - 4', async () => {
+          mockMatrix({ displayName: true, avatar: true })
+          mockUserDB({
+            displayName: true,
+            lastName: true,
+            givenName: true,
+            mail: true,
+            phone: true
+          })
+          mockTwakeDB(
+            {},
+            {
+              matrix_id: MATRIX_MXID,
+              visibility: ProfileVisibility.Private,
+              visible_fields: []
+            }
+          )
+
+          const svc = createService(false, false)
+          const user = await svc.get(MATRIX_MXID)
+
+          expect(user).not.toBeNull()
+          expect(user).toHaveProperty(
+            'display_name',
+            MOCK_DATA.MATRIX.displayname
+          )
+          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
+          expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
+          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('phones')
+          expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
+          expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
+          expect(user).not.toHaveProperty('language')
+          expect(user).not.toHaveProperty('timezone')
+        })
+      })
+
+      describe('And honoring field visibility: Email only', () => {
+        it('Should add UserDB fields but display name - 3', async () => {
+          mockMatrix({ displayName: true, avatar: true })
+          mockUserDB({
+            displayName: true,
+            lastName: true,
+            givenName: true,
+            mail: true
+          })
+          mockTwakeDB(
+            {},
+            {
+              matrix_id: MATRIX_MXID,
+              visibility: ProfileVisibility.Private,
+              visible_fields: [ProfileField.Email]
+            }
+          )
+
+          const svc = createService(false, false)
+          const user = await svc.get(MATRIX_MXID)
+
+          expect(user).not.toBeNull()
+          expect(user).toHaveProperty(
+            'display_name',
+            MOCK_DATA.MATRIX.displayname
+          )
+          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
+          expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
+          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('phones')
+          expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
+          expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
+          expect(user).not.toHaveProperty('language')
+          expect(user).not.toHaveProperty('timezone')
+        })
+
+        it('Should add UserDB fields but display name - 4', async () => {
+          mockMatrix({ displayName: true, avatar: true })
+          mockUserDB({
+            displayName: true,
+            lastName: true,
+            givenName: true,
+            mail: true,
+            phone: true
+          })
+          mockTwakeDB(
+            {},
+            {
+              matrix_id: MATRIX_MXID,
+              visibility: ProfileVisibility.Private,
+              visible_fields: [ProfileField.Email]
+            }
+          )
+
+          const svc = createService(false, false)
+          const user = await svc.get(MATRIX_MXID)
+
+          expect(user).not.toBeNull()
+          expect(user).toHaveProperty(
+            'display_name',
+            MOCK_DATA.MATRIX.displayname
+          )
+          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
+          expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
+          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('phones')
+          expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
+          expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
+          expect(user).not.toHaveProperty('language')
+          expect(user).not.toHaveProperty('timezone')
+        })
+      })
+
+      describe('And honoring field visibility: Phone only', () => {
+        it('Should add UserDB fields but display name - 3', async () => {
+          mockMatrix({ displayName: true, avatar: true })
+          mockUserDB({
+            displayName: true,
+            lastName: true,
+            givenName: true,
+            mail: true
+          })
+          mockTwakeDB(
+            {},
+            {
+              matrix_id: MATRIX_MXID,
+              visibility: ProfileVisibility.Private,
+              visible_fields: [ProfileField.Phone]
+            }
+          )
+
+          const svc = createService(false, false)
+          const user = await svc.get(MATRIX_MXID)
+
+          expect(user).not.toBeNull()
+          expect(user).toHaveProperty(
+            'display_name',
+            MOCK_DATA.MATRIX.displayname
+          )
+          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
+          expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
+          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('phones')
+          expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
+          expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
+          expect(user).not.toHaveProperty('language')
+          expect(user).not.toHaveProperty('timezone')
+        })
+
+        it('Should add UserDB fields but display name - 4', async () => {
+          mockMatrix({ displayName: true, avatar: true })
+          mockUserDB({
+            displayName: true,
+            lastName: true,
+            givenName: true,
+            mail: true,
+            phone: true
+          })
+          mockTwakeDB(
+            {},
+            {
+              matrix_id: MATRIX_MXID,
+              visibility: ProfileVisibility.Private,
+              visible_fields: [ProfileField.Phone]
+            }
+          )
+
+          const svc = createService(false, false)
+          const user = await svc.get(MATRIX_MXID)
+
+          expect(user).not.toBeNull()
+          expect(user).toHaveProperty(
+            'display_name',
+            MOCK_DATA.MATRIX.displayname
+          )
+          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
+          expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
+          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('phones')
+          expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
+          expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
+          expect(user).not.toHaveProperty('language')
+          expect(user).not.toHaveProperty('timezone')
+        })
+      })
+
+      describe('And honoring field visibility: Both', () => {
+        it('Should add UserDB fields but display name - 3', async () => {
+          mockMatrix({ displayName: true, avatar: true })
+          mockUserDB({
+            displayName: true,
+            lastName: true,
+            givenName: true,
+            mail: true
+          })
+          mockTwakeDB(
+            {},
+            {
+              matrix_id: MATRIX_MXID,
+              visibility: ProfileVisibility.Private,
+              visible_fields: [ProfileField.Email, ProfileField.Phone]
+            }
+          )
+
+          const svc = createService(false, false)
+          const user = await svc.get(MATRIX_MXID)
+
+          expect(user).not.toBeNull()
+          expect(user).toHaveProperty(
+            'display_name',
+            MOCK_DATA.MATRIX.displayname
+          )
+          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
+          expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
+          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('phones')
+          expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
+          expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
+          expect(user).not.toHaveProperty('language')
+          expect(user).not.toHaveProperty('timezone')
+        })
+
+        it('Should add UserDB fields but display name - 4', async () => {
+          mockMatrix({ displayName: true, avatar: true })
+          mockUserDB({
+            displayName: true,
+            lastName: true,
+            givenName: true,
+            mail: true,
+            phone: true
+          })
+          mockTwakeDB(
+            {},
+            {
+              matrix_id: MATRIX_MXID,
+              visibility: ProfileVisibility.Private,
+              visible_fields: [ProfileField.Email, ProfileField.Phone]
+            }
+          )
+
+          const svc = createService(false, false)
+          const user = await svc.get(MATRIX_MXID)
+
+          expect(user).not.toBeNull()
+          expect(user).toHaveProperty(
+            'display_name',
+            MOCK_DATA.MATRIX.displayname
+          )
+          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
+          expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
+          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('phones')
+          expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
+          expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
+          expect(user).not.toHaveProperty('language')
+          expect(user).not.toHaveProperty('timezone')
+        })
+      })
+    })
+
+    // Same as Private as viewer is unknown
+    describe('While honoring Profile Visibility: Contacts', () => {
+      describe('And honoring field visibility: None', () => {
+        it('Should add UserDB fields but display name - 3', async () => {
+          mockMatrix({ displayName: true, avatar: true })
+          mockUserDB({
+            displayName: true,
+            lastName: true,
+            givenName: true,
+            mail: true
+          })
+          mockTwakeDB(
+            {},
+            {
+              matrix_id: MATRIX_MXID,
+              visibility: ProfileVisibility.Contacts,
+              visible_fields: []
+            }
+          )
+
+          const svc = createService(false, false)
+          const user = await svc.get(MATRIX_MXID)
+
+          expect(user).not.toBeNull()
+          expect(user).toHaveProperty(
+            'display_name',
+            MOCK_DATA.MATRIX.displayname
+          )
+          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
+          expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
+          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('phones')
+          expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
+          expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
+          expect(user).not.toHaveProperty('language')
+          expect(user).not.toHaveProperty('timezone')
+        })
+
+        it('Should add UserDB fields but display name - 4', async () => {
+          mockMatrix({ displayName: true, avatar: true })
+          mockUserDB({
+            displayName: true,
+            lastName: true,
+            givenName: true,
+            mail: true,
+            phone: true
+          })
+          mockTwakeDB(
+            {},
+            {
+              matrix_id: MATRIX_MXID,
+              visibility: ProfileVisibility.Contacts,
+              visible_fields: []
+            }
+          )
+
+          const svc = createService(false, false)
+          const user = await svc.get(MATRIX_MXID)
+
+          expect(user).not.toBeNull()
+          expect(user).toHaveProperty(
+            'display_name',
+            MOCK_DATA.MATRIX.displayname
+          )
+          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
+          expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
+          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('phones')
+          expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
+          expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
+          expect(user).not.toHaveProperty('language')
+          expect(user).not.toHaveProperty('timezone')
+        })
+      })
+
+      describe('And honoring field visibility: Email only', () => {
+        it('Should add UserDB fields but display name - 3', async () => {
+          mockMatrix({ displayName: true, avatar: true })
+          mockUserDB({
+            displayName: true,
+            lastName: true,
+            givenName: true,
+            mail: true
+          })
+          mockTwakeDB(
+            {},
+            {
+              matrix_id: MATRIX_MXID,
+              visibility: ProfileVisibility.Contacts,
+              visible_fields: [ProfileField.Email]
+            }
+          )
+
+          const svc = createService(false, false)
+          const user = await svc.get(MATRIX_MXID)
+
+          expect(user).not.toBeNull()
+          expect(user).toHaveProperty(
+            'display_name',
+            MOCK_DATA.MATRIX.displayname
+          )
+          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
+          expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
+          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('phones')
+          expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
+          expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
+          expect(user).not.toHaveProperty('language')
+          expect(user).not.toHaveProperty('timezone')
+        })
+
+        it('Should add UserDB fields but display name - 4', async () => {
+          mockMatrix({ displayName: true, avatar: true })
+          mockUserDB({
+            displayName: true,
+            lastName: true,
+            givenName: true,
+            mail: true,
+            phone: true
+          })
+          mockTwakeDB(
+            {},
+            {
+              matrix_id: MATRIX_MXID,
+              visibility: ProfileVisibility.Contacts,
+              visible_fields: [ProfileField.Email]
+            }
+          )
+
+          const svc = createService(false, false)
+          const user = await svc.get(MATRIX_MXID)
+
+          expect(user).not.toBeNull()
+          expect(user).toHaveProperty(
+            'display_name',
+            MOCK_DATA.MATRIX.displayname
+          )
+          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
+          expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
+          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('phones')
+          expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
+          expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
+          expect(user).not.toHaveProperty('language')
+          expect(user).not.toHaveProperty('timezone')
+        })
+      })
+
+      describe('And honoring field visibility: Phone only', () => {
+        it('Should add UserDB fields but display name - 3', async () => {
+          mockMatrix({ displayName: true, avatar: true })
+          mockUserDB({
+            displayName: true,
+            lastName: true,
+            givenName: true,
+            mail: true
+          })
+          mockTwakeDB(
+            {},
+            {
+              matrix_id: MATRIX_MXID,
+              visibility: ProfileVisibility.Contacts,
+              visible_fields: [ProfileField.Phone]
+            }
+          )
+
+          const svc = createService(false, false)
+          const user = await svc.get(MATRIX_MXID)
+
+          expect(user).not.toBeNull()
+          expect(user).toHaveProperty(
+            'display_name',
+            MOCK_DATA.MATRIX.displayname
+          )
+          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
+          expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
+          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('phones')
+          expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
+          expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
+          expect(user).not.toHaveProperty('language')
+          expect(user).not.toHaveProperty('timezone')
+        })
+
+        it('Should add UserDB fields but display name - 4', async () => {
+          mockMatrix({ displayName: true, avatar: true })
+          mockUserDB({
+            displayName: true,
+            lastName: true,
+            givenName: true,
+            mail: true,
+            phone: true
+          })
+          mockTwakeDB(
+            {},
+            {
+              matrix_id: MATRIX_MXID,
+              visibility: ProfileVisibility.Contacts,
+              visible_fields: [ProfileField.Phone]
+            }
+          )
+
+          const svc = createService(false, false)
+          const user = await svc.get(MATRIX_MXID)
+
+          expect(user).not.toBeNull()
+          expect(user).toHaveProperty(
+            'display_name',
+            MOCK_DATA.MATRIX.displayname
+          )
+          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
+          expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
+          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('phones')
+          expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
+          expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
+          expect(user).not.toHaveProperty('language')
+          expect(user).not.toHaveProperty('timezone')
+        })
+      })
+
+      describe('And honoring field visibility: Both', () => {
+        it('Should add UserDB fields but display name - 3', async () => {
+          mockMatrix({ displayName: true, avatar: true })
+          mockUserDB({
+            displayName: true,
+            lastName: true,
+            givenName: true,
+            mail: true
+          })
+          mockTwakeDB(
+            {},
+            {
+              matrix_id: MATRIX_MXID,
+              visibility: ProfileVisibility.Contacts,
+              visible_fields: [ProfileField.Email, ProfileField.Phone]
+            }
+          )
+
+          const svc = createService(false, false)
+          const user = await svc.get(MATRIX_MXID)
+
+          expect(user).not.toBeNull()
+          expect(user).toHaveProperty(
+            'display_name',
+            MOCK_DATA.MATRIX.displayname
+          )
+          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
+          expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
+          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('phones')
+          expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
+          expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
+          expect(user).not.toHaveProperty('language')
+          expect(user).not.toHaveProperty('timezone')
+        })
+
+        it('Should add UserDB fields but display name - 4', async () => {
+          mockMatrix({ displayName: true, avatar: true })
+          mockUserDB({
+            displayName: true,
+            lastName: true,
+            givenName: true,
+            mail: true,
+            phone: true
+          })
+          mockTwakeDB(
+            {},
+            {
+              matrix_id: MATRIX_MXID,
+              visibility: ProfileVisibility.Contacts,
+              visible_fields: [ProfileField.Email, ProfileField.Phone]
+            }
+          )
+
+          const svc = createService(false, false)
+          const user = await svc.get(MATRIX_MXID)
+
+          expect(user).not.toBeNull()
+          expect(user).toHaveProperty(
+            'display_name',
+            MOCK_DATA.MATRIX.displayname
+          )
+          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
+          expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
+          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('phones')
+          expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
+          expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
+          expect(user).not.toHaveProperty('language')
+          expect(user).not.toHaveProperty('timezone')
+        })
+      })
+    })
+
+    describe('While honoring Profile Visibility: Public', () => {
+      describe('And honoring field visibility: None', () => {
+        it('Should add UserDB fields but display name - 3', async () => {
+          mockMatrix({ displayName: true, avatar: true })
+          mockUserDB({
+            displayName: true,
+            lastName: true,
+            givenName: true,
+            mail: true
+          })
+          mockTwakeDB(
+            {},
+            {
+              matrix_id: MATRIX_MXID,
+              visibility: ProfileVisibility.Public,
+              visible_fields: []
+            }
+          )
+
+          const svc = createService(false, false)
+          const user = await svc.get(MATRIX_MXID)
+
+          expect(user).not.toBeNull()
+          expect(user).toHaveProperty(
+            'display_name',
+            MOCK_DATA.MATRIX.displayname
+          )
+          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
+          expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
+          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('phones')
+          expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
+          expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
+          expect(user).not.toHaveProperty('language')
+          expect(user).not.toHaveProperty('timezone')
+        })
+
+        it('Should add UserDB fields but display name - 4', async () => {
+          mockMatrix({ displayName: true, avatar: true })
+          mockUserDB({
+            displayName: true,
+            lastName: true,
+            givenName: true,
+            mail: true,
+            phone: true
+          })
+          mockTwakeDB(
+            {},
+            {
+              matrix_id: MATRIX_MXID,
+              visibility: ProfileVisibility.Public,
+              visible_fields: []
+            }
+          )
+
+          const svc = createService(false, false)
+          const user = await svc.get(MATRIX_MXID)
+
+          expect(user).not.toBeNull()
+          expect(user).toHaveProperty(
+            'display_name',
+            MOCK_DATA.MATRIX.displayname
+          )
+          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
+          expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
+          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('phones')
+          expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
+          expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
+          expect(user).not.toHaveProperty('language')
+          expect(user).not.toHaveProperty('timezone')
+        })
+      })
+
+      describe('And honoring field visibility: Email only', () => {
+        it('Should add UserDB fields but display name - 3', async () => {
+          mockMatrix({ displayName: true, avatar: true })
+          mockUserDB({
+            displayName: true,
+            lastName: true,
+            givenName: true,
+            mail: true
+          })
+          mockTwakeDB(
+            {},
+            {
+              matrix_id: MATRIX_MXID,
+              visibility: ProfileVisibility.Public,
+              visible_fields: [ProfileField.Email]
+            }
+          )
+
+          const svc = createService(false, false)
+          const user = await svc.get(MATRIX_MXID)
+
+          expect(user).not.toBeNull()
+          expect(user).toHaveProperty(
+            'display_name',
+            MOCK_DATA.MATRIX.displayname
+          )
+          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
+          expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
+          expect(user).toHaveProperty('mails', [MOCK_DATA.LDAP.mail])
+          expect(user).not.toHaveProperty('phones')
+          expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
+          expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
+          expect(user).not.toHaveProperty('language')
+          expect(user).not.toHaveProperty('timezone')
+        })
+
+        it('Should add UserDB fields but display name - 4', async () => {
+          mockMatrix({ displayName: true, avatar: true })
+          mockUserDB({
+            displayName: true,
+            lastName: true,
+            givenName: true,
+            mail: true,
+            phone: true
+          })
+          mockTwakeDB(
+            {},
+            {
+              matrix_id: MATRIX_MXID,
+              visibility: ProfileVisibility.Public,
+              visible_fields: [ProfileField.Email]
+            }
+          )
+
+          const svc = createService(false, false)
+          const user = await svc.get(MATRIX_MXID)
+
+          expect(user).not.toBeNull()
+          expect(user).toHaveProperty(
+            'display_name',
+            MOCK_DATA.MATRIX.displayname
+          )
+          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
+          expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
+          expect(user).toHaveProperty('mails', [MOCK_DATA.LDAP.mail])
+          expect(user).not.toHaveProperty('phones')
+          expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
+          expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
+          expect(user).not.toHaveProperty('language')
+          expect(user).not.toHaveProperty('timezone')
+        })
+      })
+
+      describe('And honoring field visibility: Phone only', () => {
+        it('Should add UserDB fields but display name - 3', async () => {
+          mockMatrix({ displayName: true, avatar: true })
+          mockUserDB({
+            displayName: true,
+            lastName: true,
+            givenName: true,
+            mail: true
+          })
+          mockTwakeDB(
+            {},
+            {
+              matrix_id: MATRIX_MXID,
+              visibility: ProfileVisibility.Public,
+              visible_fields: [ProfileField.Phone]
+            }
+          )
+
+          const svc = createService(false, false)
+          const user = await svc.get(MATRIX_MXID)
+
+          expect(user).not.toBeNull()
+          expect(user).toHaveProperty(
+            'display_name',
+            MOCK_DATA.MATRIX.displayname
+          )
+          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
+          expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
+          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('phones')
+          expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
+          expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
+          expect(user).not.toHaveProperty('language')
+          expect(user).not.toHaveProperty('timezone')
+        })
+
+        it('Should add UserDB fields but display name - 4', async () => {
+          mockMatrix({ displayName: true, avatar: true })
+          mockUserDB({
+            displayName: true,
+            lastName: true,
+            givenName: true,
+            mail: true,
+            phone: true
+          })
+          mockTwakeDB(
+            {},
+            {
+              matrix_id: MATRIX_MXID,
+              visibility: ProfileVisibility.Public,
+              visible_fields: [ProfileField.Phone]
+            }
+          )
+
+          const svc = createService(false, false)
+          const user = await svc.get(MATRIX_MXID)
+
+          expect(user).not.toBeNull()
+          expect(user).toHaveProperty(
+            'display_name',
+            MOCK_DATA.MATRIX.displayname
+          )
+          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
+          expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
+          expect(user).not.toHaveProperty('mails')
+          expect(user).toHaveProperty('phones', [MOCK_DATA.LDAP.mobile])
+          expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
+          expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
+          expect(user).not.toHaveProperty('language')
+          expect(user).not.toHaveProperty('timezone')
+        })
+      })
+
+      describe('And honoring field visibility: Both', () => {
+        it('Should add UserDB fields but display name - 3', async () => {
+          mockMatrix({ displayName: true, avatar: true })
+          mockUserDB({
+            displayName: true,
+            lastName: true,
+            givenName: true,
+            mail: true
+          })
+          mockTwakeDB(
+            {},
+            {
+              matrix_id: MATRIX_MXID,
+              visibility: ProfileVisibility.Public,
+              visible_fields: [ProfileField.Email, ProfileField.Phone]
+            }
+          )
+
+          const svc = createService(false, false)
+          const user = await svc.get(MATRIX_MXID)
+
+          expect(user).not.toBeNull()
+          expect(user).toHaveProperty(
+            'display_name',
+            MOCK_DATA.MATRIX.displayname
+          )
+          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
+          expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
+          expect(user).toHaveProperty('mails', [MOCK_DATA.LDAP.mail])
+          expect(user).not.toHaveProperty('phones')
+          expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
+          expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
+          expect(user).not.toHaveProperty('language')
+          expect(user).not.toHaveProperty('timezone')
+        })
+
+        it('Should add UserDB fields but display name - 4', async () => {
+          mockMatrix({ displayName: true, avatar: true })
+          mockUserDB({
+            displayName: true,
+            lastName: true,
+            givenName: true,
+            mail: true,
+            phone: true
+          })
+          mockTwakeDB(
+            {},
+            {
+              matrix_id: MATRIX_MXID,
+              visibility: ProfileVisibility.Public,
+              visible_fields: [ProfileField.Email, ProfileField.Phone]
+            }
+          )
+
+          const svc = createService(false, false)
+          const user = await svc.get(MATRIX_MXID)
+
+          expect(user).not.toBeNull()
+          expect(user).toHaveProperty(
+            'display_name',
+            MOCK_DATA.MATRIX.displayname
+          )
+          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
+          expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
+          expect(user).toHaveProperty('mails', [MOCK_DATA.LDAP.mail])
+          expect(user).toHaveProperty('phones', [MOCK_DATA.LDAP.mobile])
+          expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
+          expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
+          expect(user).not.toHaveProperty('language')
+          expect(user).not.toHaveProperty('timezone')
+        })
       })
     })
   })
