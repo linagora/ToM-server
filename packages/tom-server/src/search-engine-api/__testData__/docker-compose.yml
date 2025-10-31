@@ -1,5 +1,3 @@
-version: '3.8'
-
 networks:
   twake_chat:
 
@@ -16,7 +14,7 @@ services:
     environment:
       - POSTGRES_PASSWORD=synapse!!
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready']
+      test: ["CMD-SHELL", "pg_isready"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -39,14 +37,14 @@ services:
       - VIRTUAL_PORT=8008
       - VIRTUAL_HOST=matrix.example.com
     healthcheck:
-      test: ['CMD', 'curl', '-fSs', 'http://localhost:8008/health']
+      test: ["CMD", "curl", "-fSs", "http://localhost:8008/health"]
       interval: 10s
       timeout: 10s
       retries: 3
     networks:
       - twake_chat
     extra_hosts:
-      - 'host.docker.internal:host-gateway'
+      - "host.docker.internal:host-gateway"
 
   auth:
     image: yadd/lemonldap-ng-portal:2.16.1-bullseye
