@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   postgresql:
     image: postgres:13-bullseye
@@ -13,7 +11,7 @@ services:
     environment:
       - POSTGRES_PASSWORD=synapse!!
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready']
+      test: ["CMD-SHELL", "pg_isready"]
       interval: 10s
       timeout: 5s
       retries: 5

@@ -1,5 +1,3 @@
-version: '3.4'
-
 services:
   synapse:
     image: matrixdotorg/synapse:v1.119.0
