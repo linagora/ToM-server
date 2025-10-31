@@ -5117,3 +5117,364 @@ describe('User Info Service GET with: No feature flags ON', () => {
     })
   })
 })
+
+describe('User Info Service GET with: Additional features ON, Common settings OFF', () => {
+  describe('When no viewer is provided', () => {
+    afterEach(() => {
+      // When no viewer ToM cannot lookup the address book
+      expect(addressBookServiceMock.list).not.toHaveBeenCalled()
+    })
+
+    it('Should return user info even when no Matrix profile exists (additional_features enables directory-only lookup)', async () => {
+      mockUserDB({ displayName: true, lastName: true, givenName: true, mail: true, phone: true })
+
+      const svc = createService(true, false)
+      const user = await svc.get(MATRIX_MXID)
+
+      expect(user).not.toBeNull()
+      expect(user).toHaveProperty('display_name', MOCK_DATA.LDAP.cn)
+      expect(user).not.toHaveProperty('avatar')
+      expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
+      expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
+      expect(user).not.toHaveProperty('mails')
+      expect(user).not.toHaveProperty('phones')
+      expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
+      expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
+      expect(user).not.toHaveProperty('language')
+      expect(user).not.toHaveProperty('timezone')
+    })
+
+    it('Should return null when no records found at all (even with additional_features)', async () => {
+      const svc = createService(true, false)
+      const user = await svc.get(MATRIX_MXID)
+
+      expect(user).toBeNull()
+    })
+
+    it('Should merge Matrix and Directory data when both exist', async () => {
+      mockMatrix({ displayName: true, avatar: true })
+      mockUserDB({ displayName: true, lastName: true, givenName: true, mail: true, phone: true })
+
+      const svc = createService(true, false)
+      const user = await svc.get(MATRIX_MXID)
+
+      expect(user).not.toBeNull()
+      expect(user).toHaveProperty('display_name', MOCK_DATA.MATRIX.displayname)
+      expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+      expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
+      expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
+      expect(user).not.toHaveProperty('mails')
+      expect(user).not.toHaveProperty('phones')
+      expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
+      expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
+      expect(user).not.toHaveProperty('language')
+      expect(user).not.toHaveProperty('timezone')
+    })
+
+    describe('While honoring Profile Visibility: Public with email visible', () => {
+      it('Should show email field when profile is Public', async () => {
+        mockMatrix({ displayName: true, avatar: true })
+        mockUserDB({
+          displayName: true,
+          lastName: true,
+          givenName: true,
+          mail: true,
+          phone: true
+        })
+        mockTwakeDB(
+          {},
+          {
+            matrix_id: MATRIX_MXID,
+            visibility: ProfileVisibility.Public,
+            visible_fields: [ProfileField.Email]
+          }
+        )
+
+        const svc = createService(true, false)
+        const user = await svc.get(MATRIX_MXID)
+
+        expect(user).not.toBeNull()
+        expect(user).toHaveProperty('display_name', MOCK_DATA.MATRIX.displayname)
+        expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+        expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
+        expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
+        expect(user).toHaveProperty('mails', [MOCK_DATA.LDAP.mail])
+        expect(user).not.toHaveProperty('phones')
+        expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
+        expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
+        expect(user).not.toHaveProperty('language')
+        expect(user).not.toHaveProperty('timezone')
+      })
+
+      it('Should show both email and phone fields when profile is Public', async () => {
+        mockMatrix({ displayName: true, avatar: true })
+        mockUserDB({
+          displayName: true,
+          lastName: true,
+          givenName: true,
+          mail: true,
+          phone: true
+        })
+        mockTwakeDB(
+          {},
+          {
+            matrix_id: MATRIX_MXID,
+            visibility: ProfileVisibility.Public,
+            visible_fields: [ProfileField.Email, ProfileField.Phone]
+          }
+        )
+
+        const svc = createService(true, false)
+        const user = await svc.get(MATRIX_MXID)
+
+        expect(user).not.toBeNull()
+        expect(user).toHaveProperty('display_name', MOCK_DATA.MATRIX.displayname)
+        expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+        expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
+        expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
+        expect(user).toHaveProperty('mails', [MOCK_DATA.LDAP.mail])
+        expect(user).toHaveProperty('phones', [MOCK_DATA.LDAP.mobile])
+        expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
+        expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
+        expect(user).not.toHaveProperty('language')
+        expect(user).not.toHaveProperty('timezone')
+      })
+    })
+  })
+
+  describe('When viewer is target (viewing own profile)', () => {
+    afterEach(() => {
+      // When viewer equals target, addressbook is not called
+      expect(addressBookServiceMock.list).not.toHaveBeenCalled()
+    })
+
+    it('Should return user info even when no Matrix profile exists (directory-only)', async () => {
+      mockUserDB({ displayName: true, lastName: true, givenName: true, mail: true, phone: true })
+
+      const svc = createService(true, false)
+      const user = await svc.get(MATRIX_MXID, MATRIX_MXID)
+
+      expect(user).not.toBeNull()
+      expect(user).toHaveProperty('display_name', MOCK_DATA.LDAP.cn)
+      expect(user).not.toHaveProperty('avatar')
+      expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
+      expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
+      expect(user).toHaveProperty('mails', [MOCK_DATA.LDAP.mail])
+      expect(user).toHaveProperty('phones', [MOCK_DATA.LDAP.mobile])
+      expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
+      expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
+      expect(user).not.toHaveProperty('language')
+      expect(user).not.toHaveProperty('timezone')
+    })
+
+    it('Should show all fields when viewing own profile (ignores visibility settings)', async () => {
+      mockMatrix({ displayName: true, avatar: true })
+      mockUserDB({
+        displayName: true,
+        lastName: true,
+        givenName: true,
+        mail: true,
+        phone: true
+      })
+      mockTwakeDB(
+        {},
+        {
+          matrix_id: MATRIX_MXID,
+          visibility: ProfileVisibility.Private,
+          visible_fields: []
+        }
+      )
+
+      const svc = createService(true, false)
+      const user = await svc.get(MATRIX_MXID, MATRIX_MXID)
+
+      expect(user).not.toBeNull()
+      expect(user).toHaveProperty('display_name', MOCK_DATA.MATRIX.displayname)
+      expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+      expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
+      expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
+      expect(user).toHaveProperty('mails', [MOCK_DATA.LDAP.mail])
+      expect(user).toHaveProperty('phones', [MOCK_DATA.LDAP.mobile])
+      expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
+      expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
+      expect(user).not.toHaveProperty('language')
+      expect(user).not.toHaveProperty('timezone')
+    })
+  })
+
+  describe('When viewer has contact relationship with target', () => {
+    const VIEWER_MXID = '@viewer:docker.localhost'
+
+    describe('Profile Visibility: Contacts - Viewer IS in target contacts', () => {
+      beforeEach(() => {
+        // Mock that viewer is in target's contacts
+        addressBookServiceMock.list.mockImplementation(async (userId: string) => {
+          if (userId === MATRIX_MXID) {
+            return {
+              contacts: [{ mxid: VIEWER_MXID, display_name: 'Viewer Name' }]
+            }
+          }
+          return { contacts: [] }
+        })
+      })
+
+      it('Should show visible fields when viewer is in contacts (additional_features enabled)', async () => {
+        mockMatrix({ displayName: true, avatar: true })
+        mockUserDB({
+          displayName: true,
+          lastName: true,
+          givenName: true,
+          mail: true,
+          phone: true
+        })
+        mockTwakeDB(
+          {},
+          {
+            matrix_id: MATRIX_MXID,
+            visibility: ProfileVisibility.Contacts,
+            visible_fields: [ProfileField.Email, ProfileField.Phone]
+          }
+        )
+
+        const svc = createService(true, false)
+        const user = await svc.get(MATRIX_MXID, VIEWER_MXID)
+
+        expect(user).not.toBeNull()
+        expect(user).toHaveProperty('display_name', MOCK_DATA.MATRIX.displayname)
+        expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+        expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
+        expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
+        expect(user).toHaveProperty('mails', [MOCK_DATA.LDAP.mail])
+        expect(user).toHaveProperty('phones', [MOCK_DATA.LDAP.mobile])
+        expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
+        expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
+        expect(user).not.toHaveProperty('language')
+        expect(user).not.toHaveProperty('timezone')
+      })
+
+      it('Should return directory-only profile when no Matrix profile exists but viewer is in contacts', async () => {
+        mockUserDB({
+          displayName: true,
+          lastName: true,
+          givenName: true,
+          mail: true,
+          phone: true
+        })
+        mockTwakeDB(
+          {},
+          {
+            matrix_id: MATRIX_MXID,
+            visibility: ProfileVisibility.Contacts,
+            visible_fields: [ProfileField.Email, ProfileField.Phone]
+          }
+        )
+
+        const svc = createService(true, false)
+        const user = await svc.get(MATRIX_MXID, VIEWER_MXID)
+
+        expect(user).not.toBeNull()
+        expect(user).toHaveProperty('display_name', MOCK_DATA.LDAP.cn)
+        expect(user).not.toHaveProperty('avatar')
+        expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
+        expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
+        expect(user).toHaveProperty('mails', [MOCK_DATA.LDAP.mail])
+        expect(user).toHaveProperty('phones', [MOCK_DATA.LDAP.mobile])
+        expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
+        expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
+        expect(user).not.toHaveProperty('language')
+        expect(user).not.toHaveProperty('timezone')
+      })
+    })
+
+    describe('Profile Visibility: Contacts - Viewer NOT in target contacts', () => {
+      beforeEach(() => {
+        // Mock that viewer is NOT in target's contacts
+        addressBookServiceMock.list.mockImplementation(async (userId: string) => {
+          if (userId === MATRIX_MXID) {
+            return {
+              contacts: [{ mxid: '@someone_else:docker.localhost', display_name: 'Other User' }]
+            }
+          }
+          return { contacts: [] }
+        })
+      })
+
+      it('Should hide contact fields but still return profile when additional_features enabled', async () => {
+        mockMatrix({ displayName: true, avatar: true })
+        mockUserDB({
+          displayName: true,
+          lastName: true,
+          givenName: true,
+          mail: true,
+          phone: true
+        })
+        mockTwakeDB(
+          {},
+          {
+            matrix_id: MATRIX_MXID,
+            visibility: ProfileVisibility.Contacts,
+            visible_fields: [ProfileField.Email, ProfileField.Phone]
+          }
+        )
+
+        const svc = createService(true, false)
+        const user = await svc.get(MATRIX_MXID, VIEWER_MXID)
+
+        expect(user).not.toBeNull()
+        expect(user).toHaveProperty('display_name', MOCK_DATA.MATRIX.displayname)
+        expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+        expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
+        expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
+        expect(user).not.toHaveProperty('mails')
+        expect(user).not.toHaveProperty('phones')
+        expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
+        expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
+        expect(user).not.toHaveProperty('language')
+        expect(user).not.toHaveProperty('timezone')
+      })
+    })
+
+    describe('Profile Visibility: Private - Should always hide contact fields', () => {
+      beforeEach(() => {
+        // Mock that viewer is NOT in target's contacts
+        addressBookServiceMock.list.mockImplementation(async (userId: string) => {
+          return { contacts: [] }
+        })
+      })
+
+      it('Should hide all contact fields even when additional_features enabled', async () => {
+        mockMatrix({ displayName: true, avatar: true })
+        mockUserDB({
+          displayName: true,
+          lastName: true,
+          givenName: true,
+          mail: true,
+          phone: true
+        })
+        mockTwakeDB(
+          {},
+          {
+            matrix_id: MATRIX_MXID,
+            visibility: ProfileVisibility.Private,
+            visible_fields: [ProfileField.Email, ProfileField.Phone]
+          }
+        )
+
+        const svc = createService(true, false)
+        const user = await svc.get(MATRIX_MXID, VIEWER_MXID)
+
+        expect(user).not.toBeNull()
+        expect(user).toHaveProperty('display_name', MOCK_DATA.MATRIX.displayname)
+        expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+        expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
+        expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
+        expect(user).not.toHaveProperty('mails')
+        expect(user).not.toHaveProperty('phones')
+        expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
+        expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
+        expect(user).not.toHaveProperty('language')
+        expect(user).not.toHaveProperty('timezone')
+      })
+    })
+  })
+})
