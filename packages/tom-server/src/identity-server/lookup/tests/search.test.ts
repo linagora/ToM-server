@@ -1,7 +1,7 @@
-import { _search } from './_search'
+import { _search } from '../_search'
 import { send, errMsg, toMatrixId } from '@twake/utils'
-import { AddressbookService } from '../../addressbook-api/services'
-import UserInfoService from '../../user-info-api/services'
+import { AddressbookService } from '../../../addressbook-api/services'
+import UserInfoService from '../../../user-info-api/services'
 
 jest.mock('@twake/utils', () => ({
   send: jest.fn(),
@@ -9,13 +9,13 @@ jest.mock('@twake/utils', () => ({
   toMatrixId: jest.fn((uid, server) => `@${uid}:${server}`)
 }))
 
-jest.mock('../../addressbook-api/services', () => ({
+jest.mock('../../../addressbook-api/services', () => ({
   AddressbookService: jest.fn().mockImplementation(() => ({
     list: jest.fn().mockResolvedValue({ contacts: [] })
   }))
 }))
 
-jest.mock('../../user-info-api/services', () => {
+jest.mock('../../../user-info-api/services', () => {
   return {
     __esModule: true,
     default: jest.fn().mockImplementation(function MockUserInfoService() {
