@@ -96,11 +96,11 @@ class UserInfoService implements IUserInfoService {
         this.logger.debug(
           '[UserInfoService].get: Visibility check: Obtaining targeted profile contacts...'
         )
-        const { contacts } = await this.addressBookService.list(id)
+        const ab = await this.addressBookService.list(id)
         this.logger.debug(
           '[UserInfoService].get: Visibility check: Checking if viewer is in the contact list of target'
         )
-        return contacts.some((c) => c.mxid === viewer)
+        return ab ? ab.contacts.some((c) => c.mxid === viewer) : false
       }
       const isIdProfileVisible =
         isMyProfile || (await isIdProfileVisibleForViewer())
@@ -139,16 +139,20 @@ class UserInfoService implements IUserInfoService {
         const rows = (await this.db.get('usersettings', ['*'], {
           matrix_id: id
         })) as unknown as UserSettings[]
-        return rows?.[0].settings ?? null
+        return rows?.[0]?.settings || null
       })()
 
       const addressbookListPromise = (async () => {
         if (!viewer) return null
         if (viewer === id) return null // Viewer is not in their ab
         try {
-          const { contacts } = await this.addressBookService.list(viewer)
-          const matched = contacts.find((c) => c.mxid === id)
-          return matched
+          const ab = await this.addressBookService.list(viewer)
+          if (!ab) {
+            this.logger.warn('No addressbook found!')
+            return null
+          }
+          const matched = ab.contacts.find((c) => c.mxid === id)
+          return matched || null
         } catch (e) {
           this.logger.warn('Address‑book lookup failed', { error: e })
           return null
