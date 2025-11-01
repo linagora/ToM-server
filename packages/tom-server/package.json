@@ -45,17 +45,17 @@
     "@twake/matrix-application-server": "*",
     "@twake/matrix-identity-server": "*",
     "@twake/utils": "*",
+    "ldapts": "^7.1.0",
     "lodash": "^4.17.21",
+    "pg": "^8.10.0",
     "qrcode": "^1.5.4",
     "redis": "^4.6.6",
+    "sqlite3": "^5.1.6",
     "uuid": "^11.0.3",
     "validator": "^13.11.0"
   },
   "optionalDependencies": {
-    "@crowdsec/express-bouncer": "^0.1.0",
-    "ldapts": "^7.1.0",
-    "pg": "^8.10.0",
-    "sqlite3": "^5.1.6"
+    "@crowdsec/express-bouncer": "^0.1.0"
   },
   "devDependencies": {
     "@types/qrcode": "^1.5.5"
