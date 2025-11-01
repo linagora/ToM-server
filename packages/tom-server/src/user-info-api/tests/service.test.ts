@@ -312,17 +312,13 @@ const mockAddressBook = (
     if (Object.values(useProfileDefaults).every((v) => !v)) {
       addressBookServiceMock.list.mockResolvedValue(null)
     } else {
-      const { displayName } = useProfileDefaults
-      const profile = {}
-
-      if (displayName)
-        Object.defineProperty(profile, 'display_name', {
-          value: MOCK_DATA.ADDRESSBOOK.display_name,
-          writable: false
-        })
-
       addressBookServiceMock.list.mockResolvedValue({
-        contacts: [{ ...profile }]
+        contacts: [
+          {
+            mxid: MATRIX_MXID,
+            display_name: MOCK_DATA.ADDRESSBOOK.display_name
+          }
+        ]
       })
     }
   })()
@@ -5868,6 +5864,479 @@ describe('User Info Service GET with: Additional features OFF, Common settings O
         'givenName',
         MOCK_DATA.COMMON_SETTINGS.first_name
       )
+    })
+  })
+})
+
+describe('User Info Service GET with: Additional features ON, Common settings ON', () => {
+  const svc = createService(true, true)
+
+  describe('When no viewer is provided', () => {
+    afterEach(() => {
+      // When no viewer ToM cannot lookup the address book
+      expect(addressBookServiceMock.list).not.toHaveBeenCalled()
+    })
+
+    it('Should return null when no records found at all', async () => {
+      const user = await svc.get(MATRIX_MXID)
+
+      expect(user).toBeNull()
+    })
+
+    it('Should return user data when only UserDB has a record', async () => {
+      mockUserDB({
+        displayName: true,
+        lastName: true,
+        givenName: true,
+        mail: true,
+        phone: true
+      })
+
+      const user = await svc.get(MATRIX_MXID)
+
+      expect(user).not.toBeNull()
+      expect(user).toHaveProperty('display_name', MOCK_DATA.LDAP.cn)
+      expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
+      expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
+      expect(user).not.toHaveProperty('mails')
+      expect(user).not.toHaveProperty('phones')
+    })
+
+    it('Should return user data when only Common Settings has a record', async () => {
+      mockTwakeDB({
+        displayName: true,
+        lastName: true,
+        firstName: true,
+        mail: true,
+        phone: true,
+        language: true,
+        timezone: true
+      })
+
+      const user = await svc.get(MATRIX_MXID)
+
+      expect(user).not.toBeNull()
+      expect(user).toHaveProperty(
+        'display_name',
+        MOCK_DATA.COMMON_SETTINGS.display_name
+      )
+      expect(user).toHaveProperty(
+        'last_name',
+        MOCK_DATA.COMMON_SETTINGS.last_name
+      )
+      expect(user).toHaveProperty(
+        'first_name',
+        MOCK_DATA.COMMON_SETTINGS.first_name
+      )
+      expect(user).toHaveProperty('sn', MOCK_DATA.COMMON_SETTINGS.last_name)
+      expect(user).toHaveProperty(
+        'givenName',
+        MOCK_DATA.COMMON_SETTINGS.first_name
+      )
+      expect(user).not.toHaveProperty('mails')
+      expect(user).not.toHaveProperty('phones')
+      expect(user).toHaveProperty(
+        'language',
+        MOCK_DATA.COMMON_SETTINGS.language
+      )
+      expect(user).toHaveProperty(
+        'timezone',
+        MOCK_DATA.COMMON_SETTINGS.timezone
+      )
+    })
+
+    it('Should merge data from Matrix, UserDB, and Common Settings', async () => {
+      mockMatrix({ displayName: true, avatar: true })
+      mockUserDB({ lastName: true, givenName: true, mail: true })
+      mockTwakeDB({ phone: true, language: true, timezone: true })
+
+      const user = await svc.get(MATRIX_MXID)
+
+      expect(user).not.toBeNull()
+      expect(user).toHaveProperty('display_name', MOCK_DATA.MATRIX.displayname)
+      expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+      expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
+      expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
+      expect(user).not.toHaveProperty('mails')
+      expect(user).not.toHaveProperty('phones')
+      expect(user).toHaveProperty(
+        'language',
+        MOCK_DATA.COMMON_SETTINGS.language
+      )
+      expect(user).toHaveProperty(
+        'timezone',
+        MOCK_DATA.COMMON_SETTINGS.timezone
+      )
+    })
+  })
+
+  describe('When viewer is provided', () => {
+    const viewer = '@viewer:docker.localhost'
+
+    it('Should return null when no records found at all', async () => {
+      const user = await svc.get(MATRIX_MXID, viewer)
+
+      expect(user).toBeNull()
+    })
+
+    it('Should include addressbook data when available', async () => {
+      mockMatrix({ displayName: true, avatar: true })
+      mockUserDB({ lastName: true, givenName: true, mail: true })
+      mockTwakeDB({ phone: true, language: true, timezone: true })
+      mockAddressBook({ displayName: true })
+
+      const user = await svc.get(MATRIX_MXID, viewer)
+
+      expect(user).not.toBeNull()
+      expect(user).toHaveProperty(
+        'display_name',
+        MOCK_DATA.ADDRESSBOOK.display_name
+      )
+      expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+      expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
+      expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
+      expect(user).not.toHaveProperty('mails')
+      expect(user).not.toHaveProperty('phones')
+      expect(user).toHaveProperty(
+        'language',
+        MOCK_DATA.COMMON_SETTINGS.language
+      )
+      expect(user).toHaveProperty(
+        'timezone',
+        MOCK_DATA.COMMON_SETTINGS.timezone
+      )
+    })
+
+    it('Should prioritize data sources correctly: AddressBook > Matrix > Common Settings > UserDB', async () => {
+      mockMatrix({ displayName: true, avatar: true })
+      mockUserDB({
+        displayName: true,
+        lastName: true,
+        givenName: true,
+        mail: true,
+        phone: true
+      })
+      mockTwakeDB({
+        displayName: true,
+        lastName: true,
+        firstName: true,
+        mail: true,
+        phone: true,
+        language: true,
+        timezone: true
+      })
+      mockAddressBook({ displayName: true })
+
+      const user = await svc.get(MATRIX_MXID, viewer)
+
+      expect(user).not.toBeNull()
+      expect(user).toHaveProperty(
+        'display_name',
+        MOCK_DATA.ADDRESSBOOK.display_name
+      )
+      expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+
+      expect(user).toHaveProperty('sn', MOCK_DATA.COMMON_SETTINGS.last_name)
+      expect(user).toHaveProperty(
+        'givenName',
+        MOCK_DATA.COMMON_SETTINGS.first_name
+      )
+      expect(user).toHaveProperty(
+        'last_name',
+        MOCK_DATA.COMMON_SETTINGS.last_name
+      )
+      expect(user).toHaveProperty(
+        'first_name',
+        MOCK_DATA.COMMON_SETTINGS.first_name
+      )
+
+      expect(user).not.toHaveProperty('mails')
+      expect(user).not.toHaveProperty('phones')
+
+      expect(user).toHaveProperty(
+        'language',
+        MOCK_DATA.COMMON_SETTINGS.language
+      )
+      expect(user).toHaveProperty(
+        'timezone',
+        MOCK_DATA.COMMON_SETTINGS.timezone
+      )
+    })
+
+    it('Should fall back to lower priority sources when higher priority missing data', async () => {
+      mockMatrix({ displayName: true, avatar: true })
+      mockUserDB({ lastName: true, givenName: true, mail: true })
+      mockTwakeDB({ phone: true, language: true, timezone: true })
+      mockAddressBook()
+
+      const user = await svc.get(MATRIX_MXID, viewer)
+
+      expect(user).not.toBeNull()
+      expect(user).toHaveProperty('display_name', MOCK_DATA.MATRIX.displayname)
+      expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+      expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
+      expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
+      expect(user).not.toHaveProperty('mails')
+      expect(user).not.toHaveProperty('phones')
+      expect(user).toHaveProperty(
+        'language',
+        MOCK_DATA.COMMON_SETTINGS.language
+      )
+      expect(user).toHaveProperty(
+        'timezone',
+        MOCK_DATA.COMMON_SETTINGS.timezone
+      )
+    })
+  })
+
+  describe('Data source precedence with both feature flags enabled', () => {
+    it('Should prioritize AddressBook display_name over all other sources', async () => {
+      mockMatrix({ displayName: true, avatar: true })
+      mockUserDB({ displayName: true })
+      mockTwakeDB({ displayName: true })
+      mockAddressBook({ displayName: true })
+
+      const user = await svc.get(MATRIX_MXID, '@viewer:docker.localhost')
+
+      expect(user).not.toBeNull()
+      expect(user).toHaveProperty(
+        'display_name',
+        MOCK_DATA.ADDRESSBOOK.display_name
+      )
+    })
+
+    it('Should use Common Settings display_name when AddressBook missing but others present', async () => {
+      mockMatrix({ displayName: true, avatar: true })
+      mockUserDB({ displayName: true })
+      mockTwakeDB({ displayName: true })
+      mockAddressBook()
+
+      const user = await svc.get(MATRIX_MXID, '@viewer:docker.localhost')
+
+      expect(user).not.toBeNull()
+      expect(user).toHaveProperty(
+        'display_name',
+        MOCK_DATA.COMMON_SETTINGS.display_name
+      )
+    })
+
+    it('Should use Common Settings display_name when Matrix and AddressBook missing', async () => {
+      mockMatrix({ avatar: true })
+      mockUserDB({ displayName: true })
+      mockTwakeDB({ displayName: true })
+      mockAddressBook()
+
+      const user = await svc.get(MATRIX_MXID, '@viewer:docker.localhost')
+
+      expect(user).not.toBeNull()
+      expect(user).toHaveProperty(
+        'display_name',
+        MOCK_DATA.COMMON_SETTINGS.display_name
+      )
+    })
+
+    it('Should use UserDB display_name as last resort', async () => {
+      mockMatrix({ avatar: true })
+      mockUserDB({ displayName: true })
+      mockTwakeDB()
+      mockAddressBook()
+
+      const user = await svc.get(MATRIX_MXID, '@viewer:docker.localhost')
+
+      expect(user).not.toBeNull()
+      expect(user).toHaveProperty('display_name', MOCK_DATA.LDAP.cn)
+    })
+
+    it('Should merge Common Settings email and UserDB email', async () => {
+      mockMatrix({ displayName: true })
+      mockUserDB({ mail: true })
+      mockTwakeDB(
+        { mail: true },
+        {
+          visibility: ProfileVisibility.Public,
+          visible_fields: [ProfileField.Email],
+          matrix_id: MATRIX_MXID
+        }
+      )
+
+      const user = await svc.get(MATRIX_MXID)
+
+      expect(user).not.toBeNull()
+      expect(user).toHaveProperty('mails', [
+        MOCK_DATA.LDAP.mail,
+        MOCK_DATA.COMMON_SETTINGS.email
+      ])
+    })
+
+    it('Should merge Common Settings phone and UserDB phone', async () => {
+      mockMatrix({ displayName: true })
+      mockUserDB({ phone: true })
+      mockTwakeDB(
+        { phone: true },
+        {
+          visibility: ProfileVisibility.Public,
+          visible_fields: [ProfileField.Phone],
+          matrix_id: MATRIX_MXID
+        }
+      )
+
+      const user = await svc.get(MATRIX_MXID)
+
+      expect(user).not.toBeNull()
+      expect(user).toHaveProperty('phones', [
+        MOCK_DATA.LDAP.mobile,
+        MOCK_DATA.COMMON_SETTINGS.phone
+      ])
+    })
+
+    it('Should include all available data from all sources when no conflicts', async () => {
+      mockMatrix({ displayName: true, avatar: true })
+      mockUserDB({ lastName: true, givenName: true, mail: true, phone: true })
+      mockTwakeDB(
+        { language: true, timezone: true },
+        {
+          visibility: ProfileVisibility.Public,
+          visible_fields: [ProfileField.Phone, ProfileField.Email],
+          matrix_id: MATRIX_MXID
+        }
+      )
+
+      const user = await svc.get(MATRIX_MXID)
+
+      expect(user).not.toBeNull()
+      expect(user).toHaveProperty('display_name', MOCK_DATA.MATRIX.displayname)
+      expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+      expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
+      expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
+      expect(user).toHaveProperty('mails', [MOCK_DATA.LDAP.mail])
+      expect(user).toHaveProperty('phones', [MOCK_DATA.LDAP.mobile])
+      expect(user).toHaveProperty(
+        'language',
+        MOCK_DATA.COMMON_SETTINGS.language
+      )
+      expect(user).toHaveProperty(
+        'timezone',
+        MOCK_DATA.COMMON_SETTINGS.timezone
+      )
+    })
+  })
+
+  describe('Edge cases with both feature flags enabled', () => {
+    it('Should handle empty arrays from data sources gracefully', async () => {
+      mockMatrix({ displayName: true })
+      mockUserDB()
+      mockTwakeDB()
+
+      const user = await svc.get(MATRIX_MXID)
+
+      expect(user).not.toBeNull()
+      expect(user).toHaveProperty('display_name', MOCK_DATA.MATRIX.displayname)
+      expect(user).not.toHaveProperty('mails')
+      expect(user).not.toHaveProperty('phones')
+      expect(user).not.toHaveProperty('language')
+      expect(user).not.toHaveProperty('timezone')
+    })
+
+    it('Should return complete user profile when all sources have full data', async () => {
+      mockMatrix({ displayName: true, avatar: true })
+      mockUserDB({
+        displayName: true,
+        lastName: true,
+        givenName: true,
+        mail: true,
+        phone: true
+      })
+      mockTwakeDB(
+        {
+          displayName: true,
+          lastName: true,
+          firstName: true,
+          mail: true,
+          phone: true,
+          language: true,
+          timezone: true
+        },
+        {
+          visibility: ProfileVisibility.Public,
+          visible_fields: [ProfileField.Phone, ProfileField.Email],
+          matrix_id: MATRIX_MXID
+        }
+      )
+      mockAddressBook({ displayName: true })
+
+      const user = await svc.get(MATRIX_MXID, '@viewer:docker.localhost')
+
+      expect(user).not.toBeNull()
+      expect(user).toHaveProperty(
+        'display_name',
+        MOCK_DATA.ADDRESSBOOK.display_name
+      )
+      expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+      expect(user).toHaveProperty('sn', MOCK_DATA.COMMON_SETTINGS.last_name)
+      expect(user).toHaveProperty(
+        'givenName',
+        MOCK_DATA.COMMON_SETTINGS.first_name
+      )
+      expect(user).toHaveProperty(
+        'last_name',
+        MOCK_DATA.COMMON_SETTINGS.last_name
+      )
+      expect(user).toHaveProperty(
+        'first_name',
+        MOCK_DATA.COMMON_SETTINGS.first_name
+      )
+      expect(user).toHaveProperty('mails', [
+        MOCK_DATA.LDAP.mail,
+        MOCK_DATA.COMMON_SETTINGS.email
+      ])
+      expect(user).toHaveProperty('phones', [
+        MOCK_DATA.LDAP.mobile,
+        MOCK_DATA.COMMON_SETTINGS.phone
+      ])
+      expect(user).toHaveProperty(
+        'language',
+        MOCK_DATA.COMMON_SETTINGS.language
+      )
+      expect(user).toHaveProperty(
+        'timezone',
+        MOCK_DATA.COMMON_SETTINGS.timezone
+      )
+    })
+
+    it('Should handle partial data from each source correctly', async () => {
+      mockMatrix({ avatar: true })
+      mockUserDB({ lastName: true, mail: true })
+      mockTwakeDB(
+        { firstName: true, phone: true, language: true },
+        {
+          matrix_id: MATRIX_MXID,
+          visible_fields: [ProfileField.Email, ProfileField.Phone],
+          visibility: ProfileVisibility.Public
+        }
+      )
+
+      const user = await svc.get(MATRIX_MXID)
+
+      expect(user).not.toBeNull()
+      expect(user).not.toHaveProperty('display_name')
+      expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+      expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
+      expect(user).toHaveProperty(
+        'givenName',
+        MOCK_DATA.COMMON_SETTINGS.first_name
+      )
+      expect(user).toHaveProperty(
+        'first_name',
+        MOCK_DATA.COMMON_SETTINGS.first_name
+      )
+      expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
+      expect(user).toHaveProperty('mails', [MOCK_DATA.LDAP.mail])
+      expect(user).toHaveProperty('phones', [MOCK_DATA.COMMON_SETTINGS.phone])
+      expect(user).toHaveProperty(
+        'language',
+        MOCK_DATA.COMMON_SETTINGS.language
+      )
+      expect(user).not.toHaveProperty('timezone')
     })
   })
 })
