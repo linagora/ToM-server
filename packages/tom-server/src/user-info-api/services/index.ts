@@ -139,7 +139,7 @@ class UserInfoService implements IUserInfoService {
         const rows = (await this.db.get('usersettings', ['*'], {
           matrix_id: id
         })) as unknown as UserSettings[]
-        return rows?.[0] ?? null
+        return rows?.[0].settings ?? null
       })()
 
       const addressbookListPromise = (async () => {
@@ -213,18 +213,18 @@ class UserInfoService implements IUserInfoService {
       // 6 - Common settings – third precedence
       // ------------------------------------------------------------------
       if (settingsRow) {
-        if (settingsRow.settings.display_name)
-          result.display_name = settingsRow.settings.display_name
-        if (settingsRow.settings.last_name) {
-          result.last_name = settingsRow.settings.last_name
-          result.sn = settingsRow.settings.last_name
+        if (settingsRow.display_name)
+          result.display_name = settingsRow.display_name
+        if (settingsRow.last_name) {
+          result.last_name = settingsRow.last_name
+          result.sn = settingsRow.last_name
         }
-        if (settingsRow.settings.first_name) {
-          result.first_name = settingsRow.settings.first_name
-          result.givenName = settingsRow.settings.first_name
+        if (settingsRow.first_name) {
+          result.first_name = settingsRow.first_name
+          result.givenName = settingsRow.first_name
         }
         if (
-          settingsRow.settings.email &&
+          settingsRow.email &&
           (isMyProfile ||
             (isIdProfileVisible &&
               idProfileVisibleFields.includes(ProfileField.Email)))
@@ -232,12 +232,12 @@ class UserInfoService implements IUserInfoService {
           if (
             result.mails &&
             Array.isArray(result.mails) &&
-            !result.mails?.includes(settingsRow.settings.email)
+            !result.mails?.includes(settingsRow.email)
           )
-            result.mails.push(settingsRow.settings.email)
-          else result.mails = [settingsRow.settings.email]
+            result.mails.push(settingsRow.email)
+          else result.mails = [settingsRow.email]
         if (
-          settingsRow.settings.phone &&
+          settingsRow.phone &&
           (isMyProfile ||
             (isIdProfileVisible &&
               idProfileVisibleFields.includes(ProfileField.Phone)))
@@ -245,14 +245,12 @@ class UserInfoService implements IUserInfoService {
           if (
             result.phones &&
             Array.isArray(result.phones) &&
-            !result.phones?.includes(settingsRow.settings.phone)
+            !result.phones?.includes(settingsRow.phone)
           )
-            result.phones.push(settingsRow.settings.phone)
-          else result.phones = [settingsRow.settings.phone]
-        if (settingsRow.settings.language)
-          result.language = settingsRow.settings.language
-        if (settingsRow.settings.timezone)
-          result.timezone = settingsRow.settings.timezone
+            result.phones.push(settingsRow.phone)
+          else result.phones = [settingsRow.phone]
+        if (settingsRow.language) result.language = settingsRow.language
+        if (settingsRow.timezone) result.timezone = settingsRow.timezone
       }
 
       // ------------------------------------------------------------------
