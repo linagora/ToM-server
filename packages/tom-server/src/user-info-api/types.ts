@@ -15,10 +15,16 @@ export interface IUserInfoService {
 
 export interface UserInformation {
   uid: string
-  givenName: string
-  sn: string
+  display_name?: string
+  avatar?: string
+  sn?: string
+  last_name?: string
+  givenName?: string
+  first_name?: string
   mails?: string[]
   phones?: string[]
+  language?: string
+  timezone?: string
 }
 
 export interface SettingsPayload {
