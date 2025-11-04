@@ -430,7 +430,8 @@ export default class RoomService {
     try {
       const { preset } = payload
       // A direct chat is typically defined as having exactly one invitee (the other user).
-      const isDirect = payload.invite && payload.invite.length === 1
+      const isDirect =
+        payload.invite && payload.is_direct && payload.invite.length === 1
       this.logger.debug(
         'Checking conditions for default power level content.',
         {
