@@ -99,30 +99,35 @@ export const _search = async (
   }
 
   const enrichWithUserInfo = async (rows: any[], viewer: string) => {
-    rows.forEach(async (row) => {
-      try {
-        const info: UserInformation = (await userInfoService.get(
-          row.address,
-          viewer
-        )) || {
-          uid: row.uid,
-          givenName: '',
-          sn: '',
-          mails: [],
-          phones: []
+    await Promise.all(
+      rows.map(async (row) => {
+        try {
+          const info: UserInformation = (await userInfoService.get(
+            row.address,
+            viewer
+          )) || {
+            uid: row.uid,
+            givenName: '',
+            sn: '',
+            mails: [],
+            phones: []
+          }
+
+          if (info.givenName) row.givenName = info.givenName
+          if (info.sn) row.sn = info.sn
+
+          if (Array.isArray(info.mails) && info.mails.length > 0) {
+            row.email = info.mails[0]
+          }
+
+          if (Array.isArray(info.phones) && info.phones.length > 0) {
+            row.phone = info.phones[0]
+          }
+        } catch (err) {
+          logger.warn(`[_search] Failed to enrich ${row.uid}`, { err })
         }
-        if (info.givenName) row.givenName = info.givenName
-        if (info.sn) row.sn = info.sn
-        if (info.mails) row.mails = info.mails
-        if (info.mails && Array.isArray(info.mails) && info.mails.length)
-          row.mail = info.mails.at(0)
-        if (info.phones) row.phones = info.phones
-        if (info.phones && Array.isArray(info.phones) && info.phones.length)
-          row.phone = info.phones.at(0)
-      } catch (err) {
-        logger.warn(`[_search] Failed to enrich ${row.uid}`, err)
-      }
-    })
+      })
+    )
   }
 
   /**
