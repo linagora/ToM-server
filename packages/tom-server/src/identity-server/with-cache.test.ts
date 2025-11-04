@@ -39,6 +39,31 @@ let app: express.Application
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 let federatedIdentityToken: string
 
+jest.mock('../user-info-api/services', () => {
+  return jest.fn().mockImplementation(() => ({
+    get: jest.fn(async (address: string, viewer: string) => {
+      if (!address || typeof address !== 'string') {
+        throw new Error('Invalid address')
+      }
+
+      const baseUid = address.replace(/^@/, '').split(':')[0]
+      const domain = address.includes(':')
+        ? address.split(':')[1]
+        : 'example.com'
+
+      const givenName =
+        baseUid.charAt(0).toUpperCase() + baseUid.slice(1).toLowerCase()
+
+      return {
+        uid: baseUid,
+        givenName,
+        mails: [`${baseUid}@${domain}`],
+        viewer
+      }
+    })
+  }))
+})
+
 beforeAll(async () => {
   const conf: Config = {
     ...defaultConfig,
@@ -176,7 +201,14 @@ describe('Using Matrix Token', () => {
         })
       expect(response.status).toBe(200)
       expect(response.body).toEqual({
-        matches: [{ uid: 'dwho', address: '@dwho:example.com' }],
+        matches: [
+          {
+            uid: 'dwho',
+            address: '@dwho:example.com',
+            email: 'dwho@example.com',
+            givenName: 'Dwho'
+          }
+        ],
         inactive_matches: []
       })
     })
@@ -193,7 +225,15 @@ describe('Using Matrix Token', () => {
         })
       expect(response.status).toBe(200)
       expect(response.body).toEqual({
-        matches: [{ uid: 'dwho', address: '@dwho:example.com', sn: 'Dwho' }],
+        matches: [
+          {
+            uid: 'dwho',
+            address: '@dwho:example.com',
+            sn: 'Dwho',
+            email: 'dwho@example.com',
+            givenName: 'Dwho'
+          }
+        ],
         inactive_matches: []
       })
     })
@@ -213,10 +253,30 @@ describe('Using Matrix Token', () => {
       expect(response.body).toEqual({
         matches: [],
         inactive_matches: [
-          { uid: 'user00', address: '@user00:example.com' },
-          { uid: 'user01', address: '@user01:example.com' },
-          { uid: 'user02', address: '@user02:example.com' },
-          { uid: 'user03', address: '@user03:example.com' }
+          {
+            uid: 'user00',
+            address: '@user00:example.com',
+            email: 'user00@example.com',
+            givenName: 'User00'
+          },
+          {
+            uid: 'user01',
+            address: '@user01:example.com',
+            email: 'user01@example.com',
+            givenName: 'User01'
+          },
+          {
+            uid: 'user02',
+            address: '@user02:example.com',
+            email: 'user02@example.com',
+            givenName: 'User02'
+          },
+          {
+            uid: 'user03',
+            address: '@user03:example.com',
+            email: 'user03@example.com',
+            givenName: 'User03'
+          }
         ]
       })
     })
@@ -237,10 +297,30 @@ describe('Using Matrix Token', () => {
       expect(response.body).toEqual({
         matches: [],
         inactive_matches: [
-          { uid: 'user03', address: '@user03:example.com' },
-          { uid: 'user04', address: '@user04:example.com' },
-          { uid: 'user05', address: '@user05:example.com' },
-          { uid: 'user06', address: '@user06:example.com' }
+          {
+            uid: 'user03',
+            address: '@user03:example.com',
+            email: 'user03@example.com',
+            givenName: 'User03'
+          },
+          {
+            uid: 'user04',
+            address: '@user04:example.com',
+            email: 'user04@example.com',
+            givenName: 'User04'
+          },
+          {
+            uid: 'user05',
+            address: '@user05:example.com',
+            email: 'user05@example.com',
+            givenName: 'User05'
+          },
+          {
+            uid: 'user06',
+            address: '@user06:example.com',
+            email: 'user06@example.com',
+            givenName: 'User06'
+          }
         ]
       })
     })
