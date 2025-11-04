@@ -62,6 +62,9 @@ export default class InvitationService implements IInvitationService {
     try {
       const { medium, recipient, sender } = payload
       this.logger.info(
+        `[InvitationService][invite] sending invitation to ${recipient}`
+      )
+      this.logger.debug(
         `[InvitationService][invite] sending invitation with: ${JSON.stringify(
           payload
         )}`
@@ -70,15 +73,20 @@ export default class InvitationService implements IInvitationService {
       token = await this._createInvitation(payload)
       const link = this._getInvitationUrl(token)
       this.logger.info(
-        `[InvitationService][invite] Generated the invitation token and link ${JSON.stringify(
-          { token: token.slice(10), link: link.slice(10) }
-        )}`
+        `[InvitationService][invite] Invitation token generated successfully for ${recipient}`
+      )
+      this.logger.debug(
+        `[InvitationService][invite] token: ${token} for ${recipient}`
+      )
+
+      this.logger.info(
+        `[InvitationService][invite] Invitation link generated successfully for ${recipient}`
+      )
+      this.logger.debug(
+        `[InvitationService][invite] link: ${link} for ${recipient}`
       )
 
       await this._deliverInvitation(sender, recipient, medium, link)
-      this.logger.info(
-        `[InvitationService][invite] Invitation successfully delivered to ${recipient}`
-      )
 
       return token
     } catch (error) {
@@ -568,7 +576,7 @@ export default class InvitationService implements IInvitationService {
           this.notificationService.emailFrom
         )
 
-        this.logger.info(
+        this.logger.debug(
           `[InvitationService][_deliverInvitation][EMAIL] invitation text prepared`
         )
 
@@ -599,7 +607,10 @@ export default class InvitationService implements IInvitationService {
 
         await this.notificationService.sendSMS(to, text)
         this.logger.info(
-          `[InvitationService][_deliverInvitation][SMS] sent SMS with payload: ${text}`
+          `[InvitationService][_deliverInvitation][SMS] sent SMS to ${to}`
+        )
+        this.logger.debug(
+          `[InvitationService][_deliverInvitation][SMS] sent SMS with payload: ${text} to ${to}`
         )
       }
     } catch (error) {
