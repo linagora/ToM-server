@@ -171,8 +171,8 @@ describe('_search factory', () => {
     expect(firstMatch.uid).toBe('drwho')
     expect(firstMatch.givenName).toBe('Dr')
     expect(firstMatch.sn).toBe('Who')
-    expect(firstMatch.mails).toContain('drwho@docker.localhost')
-    expect(firstMatch.phones).toContain('1234 567890')
+    expect(firstMatch.email).toBe('drwho@docker.localhost')
+    expect(firstMatch.phone).toBe('1234 567890')
   })
 
   it('should return empty matches if no users or contacts found', async () => {
