@@ -176,7 +176,7 @@ describe('the RoomService', () => {
     const ownerUser = '@user:server.com'
     const ownerUserLevel = 100
     roomService.create(
-      { invite: [`${ownerUser}`] },
+      { invite: [`${ownerUser}`], is_direct: true },
       'Bearer token',
       `${ownerUser}`
     )
@@ -186,6 +186,7 @@ describe('the RoomService', () => {
       {
         body: JSON.stringify({
           invite: ['@user:server.com'],
+          is_direct: true,
           power_level_content_override: {
             ...config,
             users: {
