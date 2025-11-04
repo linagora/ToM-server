@@ -7,8 +7,7 @@ import {
   type UserProfileSettingsT,
   type UserProfileSettingsPayloadT,
   ProfileField,
-  ProfileVisibility,
-  ForbiddenError
+  ProfileVisibility
 } from '../types'
 import type { TwakeDB, Config } from '../../types'
 import { getLocalPart } from '@twake/utils'
@@ -28,8 +27,6 @@ class UserInfoService implements IUserInfoService {
     private readonly config: Config,
     private readonly logger: TwakeLogger
   ) {
-    this.addressBookService = new AddressbookService(this.db, this.logger)
-
     this.enableAdditionalFeatures =
       this.config.additional_features === true ||
       process.env.ADDITIONAL_FEATURES === 'true'
@@ -37,6 +34,8 @@ class UserInfoService implements IUserInfoService {
     this.enableCommonSettings =
       this.config.features?.common_settings?.enabled ||
       process.env.FEATURE_COMMON_SETTINGS_ENABLED === 'true'
+
+    this.addressBookService = new AddressbookService(db, logger)
   }
 
   /**
@@ -48,6 +47,7 @@ class UserInfoService implements IUserInfoService {
     id: string,
     viewer?: string
   ): Promise<UserInformation | null> => {
+    this.logger.debug(`[UserInfoService].get: Gathering information on: ${id}`)
     try {
       // ------------------------------------------------------------------
       // 0 - Initialise the result container
@@ -55,59 +55,61 @@ class UserInfoService implements IUserInfoService {
       let result: Partial<UserInformation & SettingsPayload> = { uid: id }
 
       const userIdLocalPart = getLocalPart(id)
-      if (userIdLocalPart == null) {
+      if (!userIdLocalPart) {
+        this.logger.warn('[UserInfoService].get: Provided id is not valid')
         return null
-      }
-
-      const defaultProfileVisibilitySettings = {
-        visibility: ProfileVisibility.Private,
-        visible_fields: []
-      }
-
-      let visibilitySettings = {
-        visibility: ProfileVisibility.Public,
-        visible_fields: [ProfileField.Email]
       }
 
       // ------------------------------------------------------------------
       // 1 - Visibility checks
       // ------------------------------------------------------------------
-      if (viewer) {
-        const viewerLocalPart = getLocalPart(viewer)
-        if (viewerLocalPart == null) {
-          throw new ForbiddenError('Invalid viewer identifier.')
+      const { visibilitySettings: idVisibilitySettings } =
+        await this._getOrCreateUserSettings(id, {
+          visibility: ProfileVisibility.Private,
+          visible_fields: []
+        })
+      const {
+        visibility: idProfileVisibility,
+        visible_fields: idProfileVisibleFields
+      } = idVisibilitySettings
+      const isMyProfile = id === viewer
+      const isIdProfileVisibleForViewer = async () => {
+        if (idProfileVisibility === ProfileVisibility.Public) {
+          this.logger.info(
+            '[UserInfoService].get: Visibility check: targeted profile is Public'
+          )
+          return true
+        }
+        if (idProfileVisibility === ProfileVisibility.Private) {
+          this.logger.info(
+            '[UserInfoService].get: Visibility check: targeted profile is Private'
+          )
+          return false
+        }
+        if (!viewer) {
+          this.logger.info(
+            '[UserInfoService].get: Visibility check: targeted profile is limited to Contacts but viewer is not set'
+          )
+          return false
         }
 
-        if (id !== viewer) {
-          const { visibilitySettings: userVisibilitySettings } =
-            await this._getOrCreateUserSettings(
-              id,
-              defaultProfileVisibilitySettings
-            )
-          visibilitySettings = userVisibilitySettings
-
-          if (visibilitySettings.visibility === ProfileVisibility.Private) {
-            throw new ForbiddenError('This profile is private.')
-          }
-
-          if (visibilitySettings.visibility === ProfileVisibility.Contacts) {
-            const { contacts: userContacts } =
-              await this.addressBookService.list(id)
-            const contactSet = new Set<string>()
-            for (const c of userContacts) {
-              if (c.id) contactSet.add(c.id)
-              if (c.mxid) contactSet.add(c.mxid)
-            }
-
-            const isContact = contactSet.has(viewer)
-            if (!isContact) {
-              throw new ForbiddenError(
-                'This profile is visible to contacts only.'
-              )
-            }
-          }
-        }
+        this.logger.debug(
+          '[UserInfoService].get: Visibility check: Obtaining targeted profile contacts...'
+        )
+        const ab = await this.addressBookService.list(id)
+        this.logger.debug(
+          '[UserInfoService].get: Visibility check: Checking if viewer is in the contact list of target'
+        )
+        return ab ? ab.contacts.some((c) => c.mxid === viewer) : false
       }
+      const isIdProfileVisible =
+        isMyProfile || (await isIdProfileVisibleForViewer())
+      this.logger.info(
+        '[UserInfoService].get: Visibility check:',
+        isIdProfileVisible
+          ? 'Viewer can inspect targeted profile'
+          : 'Viewer has no rights to inspect targeted profile'
+      )
 
       // ------------------------------------------------------------------
       // 2 - Parallel fetches from the **four** sources
@@ -122,10 +124,7 @@ class UserInfoService implements IUserInfoService {
       })()
 
       const directoryPromise = (async () => {
-        if (!this.enableAdditionalFeatures) {
-          return null
-        }
-        const rows = (await this.userDb.db.get(
+        const rows = (await this.userDb.get(
           'users',
           ['cn', 'sn', 'givenname', 'givenName', 'mail', 'mobile'],
           { uid: userIdLocalPart }
@@ -140,13 +139,20 @@ class UserInfoService implements IUserInfoService {
         const rows = (await this.db.get('usersettings', ['*'], {
           matrix_id: id
         })) as unknown as UserSettings[]
-        return rows?.[0] ?? null
+        return rows?.[0]?.settings || null
       })()
 
       const addressbookListPromise = (async () => {
         if (!viewer) return null
+        if (viewer === id) return null // Viewer is not in their ab
         try {
-          return await this.addressBookService.list(viewer)
+          const ab = await this.addressBookService.list(viewer)
+          if (!ab) {
+            this.logger.warn('No addressbook found!')
+            return null
+          }
+          const matched = ab.contacts.find((c) => c.mxid === id)
+          return matched || null
         } catch (e) {
           this.logger.warn('Address‑book lookup failed', { error: e })
           return null
@@ -179,21 +185,30 @@ class UserInfoService implements IUserInfoService {
       // 5 - User‑DB (directory) – second precedence
       // ------------------------------------------------------------------
       if (directoryRow) {
-        if (result.display_name == null && directoryRow.cn != null)
+        if (!result.display_name && directoryRow.cn)
           result.display_name = directoryRow.cn as string
-        if (directoryRow.sn != null) result.sn = directoryRow.sn as string
+        if (directoryRow.sn) {
+          result.sn = directoryRow.sn as string
+          result.last_name = directoryRow.sn as string
+        }
         if (directoryRow.givenname != null || directoryRow.givenName != null) {
           result.givenName = (directoryRow.givenname ??
             directoryRow.givenName) as string
+          result.first_name = (directoryRow.givenname ??
+            directoryRow.givenName) as string
         }
         if (
-          directoryRow.mail != null &&
-          visibilitySettings.visible_fields.includes(ProfileField.Email)
+          directoryRow.mail &&
+          (isMyProfile ||
+            (isIdProfileVisible &&
+              idProfileVisibleFields.includes(ProfileField.Email)))
         )
           result.mails = [directoryRow.mail as string]
         if (
-          directoryRow.mobile != null &&
-          visibilitySettings.visible_fields.includes(ProfileField.Phone)
+          directoryRow.mobile &&
+          (isMyProfile ||
+            (isIdProfileVisible &&
+              idProfileVisibleFields.includes(ProfileField.Phone)))
         )
           result.phones = [directoryRow.mobile as string]
       }
@@ -202,26 +217,51 @@ class UserInfoService implements IUserInfoService {
       // 6 - Common settings – third precedence
       // ------------------------------------------------------------------
       if (settingsRow) {
-        if (settingsRow.settings.language)
-          result.language = settingsRow.settings.language
-        if (settingsRow.settings.timezone)
-          result.timezone = settingsRow.settings.timezone
+        if (settingsRow.display_name)
+          result.display_name = settingsRow.display_name
+        if (settingsRow.last_name) {
+          result.last_name = settingsRow.last_name
+          result.sn = settingsRow.last_name
+        }
+        if (settingsRow.first_name) {
+          result.first_name = settingsRow.first_name
+          result.givenName = settingsRow.first_name
+        }
+        if (
+          settingsRow.email &&
+          (isMyProfile ||
+            (isIdProfileVisible &&
+              idProfileVisibleFields.includes(ProfileField.Email)))
+        )
+          if (
+            result.mails &&
+            Array.isArray(result.mails) &&
+            !result.mails?.includes(settingsRow.email)
+          )
+            result.mails.push(settingsRow.email)
+          else result.mails = [settingsRow.email]
+        if (
+          settingsRow.phone &&
+          (isMyProfile ||
+            (isIdProfileVisible &&
+              idProfileVisibleFields.includes(ProfileField.Phone)))
+        )
+          if (
+            result.phones &&
+            Array.isArray(result.phones) &&
+            !result.phones?.includes(settingsRow.phone)
+          )
+            result.phones.push(settingsRow.phone)
+          else result.phones = [settingsRow.phone]
+        if (settingsRow.language) result.language = settingsRow.language
+        if (settingsRow.timezone) result.timezone = settingsRow.timezone
       }
 
       // ------------------------------------------------------------------
       // 7 - Address‑book (fourth source) – merge only missing fields
       // ------------------------------------------------------------------
       if (addressbookResponse) {
-        const contacts = addressbookResponse.contacts ?? []
-        const abContact = contacts.find((c) => c.mxid === id)
-
-        if (abContact) {
-          result.display_name = abContact.display_name
-
-          // The address‑book does **not** provide avatar, email or phone,
-          // so we deliberately do not touch `result.avatar`, `result.mails`,
-          // or `result.phones` here.
-        }
+        result.display_name = addressbookResponse.display_name
       }
 
       // ------------------------------------------------------------------
