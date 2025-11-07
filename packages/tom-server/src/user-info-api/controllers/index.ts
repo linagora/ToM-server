@@ -98,6 +98,35 @@ class UserInfoController implements IUserInfoController {
       next(error)
     }
   }
+
+  /**
+   * Gets the visibility settings of the user info
+   *
+   * @param {AuthRequest} req the request object
+   * @param {Response} res the response object
+   * @param {NextFunction} next the next handler
+   */
+  getVisibility = async (
+    req: AuthRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
+    try {
+      const { userId } = req.params
+      const userVisibilitySettings = await this.userInfoService.getVisibility(
+        userId
+      )
+
+      if (userVisibilitySettings === undefined) {
+        res.status(500).json({ error: errCodes.badJson })
+        return
+      }
+
+      res.status(200).json({ ...userVisibilitySettings })
+    } catch (error) {
+      next(error)
+    }
+  }
 }
 
 export default UserInfoController
