@@ -15,6 +15,11 @@ import type { TwakeLogger } from '@twake/logger'
 import { type IAddressbookService } from '../../addressbook-api/types'
 import { AddressbookService } from '../../addressbook-api/services'
 
+const defaultVisibilitySettings: UserProfileSettingsPayloadT = {
+  visibility: ProfileVisibility.Private,
+  visible_fields: []
+}
+
 class UserInfoService implements IUserInfoService {
   private readonly addressBookService: IAddressbookService
   private readonly enableAdditionalFeatures: boolean
@@ -64,10 +69,7 @@ class UserInfoService implements IUserInfoService {
       // 1 - Visibility checks
       // ------------------------------------------------------------------
       const { visibilitySettings: idVisibilitySettings } =
-        await this._getOrCreateUserSettings(id, {
-          visibility: ProfileVisibility.Private,
-          visible_fields: []
-        })
+        await this._getOrCreateUserSettings(id)
       const {
         visibility: idProfileVisibility,
         visible_fields: idProfileVisibleFields
@@ -313,9 +315,25 @@ class UserInfoService implements IUserInfoService {
     }
   }
 
+  getVisibility = async (
+    userId: string
+  ): Promise<UserProfileSettingsT | undefined> => {
+    try {
+      const { visibilitySettings } = await this._getOrCreateUserSettings(userId)
+      return visibilitySettings
+    } catch (error) {
+      throw new Error(
+        `Error updating user visibility settings:  ${JSON.stringify({
+          cause: error
+        })}`,
+        { cause: error as Error }
+      )
+    }
+  }
+
   _getOrCreateUserSettings = async (
     userId: string,
-    visibilitySettings: UserProfileSettingsPayloadT
+    visibilitySettings: UserProfileSettingsPayloadT = defaultVisibilitySettings
   ): Promise<{
     visibilitySettings: UserProfileSettingsT
     created: boolean
