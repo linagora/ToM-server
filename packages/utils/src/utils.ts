@@ -197,12 +197,12 @@ export const isValidUrl = (link: string): boolean => {
 }
 
 /**
- * 
+ *
  * @param id - Matrix ID
  * @returns The local part of the Matrix ID, or null if the ID is not valid or does not start with '@'.
  */
 export const getLocalPart = (id: string): string | null => {
-  if (!id.startsWith('@')) return null
+  if (!id || !id.startsWith('@')) return null
   const parts = id.split(':')
   if (parts.length < 2) return null
   return parts[0].slice(1)
