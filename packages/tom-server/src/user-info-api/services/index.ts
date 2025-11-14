@@ -68,12 +68,10 @@ class UserInfoService implements IUserInfoService {
       // ------------------------------------------------------------------
       // 1 - Visibility checks
       // ------------------------------------------------------------------
-      const { visibilitySettings: idVisibilitySettings } =
-        await this._getOrCreateUserSettings(id)
       const {
         visibility: idProfileVisibility,
         visible_fields: idProfileVisibleFields
-      } = idVisibilitySettings
+      } = await this.getVisibility(id) || defaultVisibilitySettings
       const isMyProfile = id === viewer
       const isIdProfileVisibleForViewer = async () => {
         if (idProfileVisibility === ProfileVisibility.Public) {
