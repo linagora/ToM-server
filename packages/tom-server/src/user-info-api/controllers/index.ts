@@ -117,7 +117,7 @@ class UserInfoController implements IUserInfoController {
         userId
       )
 
-      if (userVisibilitySettings === undefined) {
+      if (userVisibilitySettings === null) {
         res.status(404).json({ error: errCodes.notFound })
         return
       }
