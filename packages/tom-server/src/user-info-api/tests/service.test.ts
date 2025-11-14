@@ -6340,3 +6340,207 @@ describe('User Info Service GET with: Additional features ON, Common settings ON
     })
   })
 })
+
+describe('User Info Service - Get Visibility Settings:', () => {
+  const svc = createService(false, false)
+
+  describe('Should return null user id is malformed:', () => {
+    it('With null userId', async () => {
+      const visibility = await svc.getVisibility(null as unknown as string)
+      expect(visibility).toBeNull()
+    })
+    it('With empty userId', async () => {
+      const visibility = await svc.getVisibility('')
+      expect(visibility).toBeNull()
+    })
+    it('With localpart only userId', async () => {
+      const visibility = await svc.getVisibility('@dwho')
+      expect(visibility).toBeNull()
+    })
+    it('With serverpart only userId', async () => {
+      const visibility = await svc.getVisibility(':domain.example')
+      expect(visibility).toBeNull()
+    })
+    it('With no @ in userId', async () => {
+      const visibility = await svc.getVisibility('dwho:domain.example')
+      expect(visibility).toBeNull()
+    })
+  })
+
+  describe('Should return a consistently formed visibility object:', () => {
+    it('When no settings are found for the user', async () => {
+      const visibility = await svc.getVisibility(MATRIX_MXID)
+
+      expect(visibility).toHaveProperty('visibility', 'private')
+      expect(visibility).toHaveProperty('visible_fields', [])
+    })
+    it('When settings are found for the user - Private', async () => {
+      mockTwakeDB(
+        {},
+        {
+          matrix_id: MATRIX_MXID,
+          visibility: ProfileVisibility.Private,
+          visible_fields: []
+        }
+      )
+      const visibility = await svc.getVisibility(MATRIX_MXID)
+
+      expect(visibility).toHaveProperty('visibility', 'private')
+      expect(visibility).toHaveProperty('visible_fields', [])
+    })
+    it('When settings are found for the user - Private w/ email', async () => {
+      mockTwakeDB(
+        {},
+        {
+          matrix_id: MATRIX_MXID,
+          visibility: ProfileVisibility.Private,
+          visible_fields: [ProfileField.Email]
+        }
+      )
+      const visibility = await svc.getVisibility(MATRIX_MXID)
+
+      expect(visibility).toHaveProperty('visibility', 'private')
+      expect(visibility).toHaveProperty('visible_fields', ['email'])
+    })
+    it('When settings are found for the user - Private w/ phone', async () => {
+      mockTwakeDB(
+        {},
+        {
+          matrix_id: MATRIX_MXID,
+          visibility: ProfileVisibility.Private,
+          visible_fields: [ProfileField.Phone]
+        }
+      )
+      const visibility = await svc.getVisibility(MATRIX_MXID)
+
+      expect(visibility).toHaveProperty('visibility', 'private')
+      expect(visibility).toHaveProperty('visible_fields', ['phone'])
+    })
+    it('When settings are found for the user - Private w/ email & phone', async () => {
+      mockTwakeDB(
+        {},
+        {
+          matrix_id: MATRIX_MXID,
+          visibility: ProfileVisibility.Private,
+          visible_fields: [ProfileField.Email, ProfileField.Phone]
+        }
+      )
+      const visibility = await svc.getVisibility(MATRIX_MXID)
+
+      expect(visibility).toHaveProperty('visibility', 'private')
+      expect(visibility).toHaveProperty('visible_fields', ['email', 'phone'])
+    })
+    it('When settings are found for the user - Public', async () => {
+      mockTwakeDB(
+        {},
+        {
+          matrix_id: MATRIX_MXID,
+          visibility: ProfileVisibility.Public,
+          visible_fields: []
+        }
+      )
+      const visibility = await svc.getVisibility(MATRIX_MXID)
+
+      expect(visibility).toHaveProperty('visibility', 'public')
+      expect(visibility).toHaveProperty('visible_fields', [])
+    })
+    it('When settings are found for the user - Public w/ email', async () => {
+      mockTwakeDB(
+        {},
+        {
+          matrix_id: MATRIX_MXID,
+          visibility: ProfileVisibility.Public,
+          visible_fields: [ProfileField.Email]
+        }
+      )
+      const visibility = await svc.getVisibility(MATRIX_MXID)
+
+      expect(visibility).toHaveProperty('visibility', 'public')
+      expect(visibility).toHaveProperty('visible_fields', ['email'])
+    })
+    it('When settings are found for the user - Public w/ phone', async () => {
+      mockTwakeDB(
+        {},
+        {
+          matrix_id: MATRIX_MXID,
+          visibility: ProfileVisibility.Public,
+          visible_fields: [ProfileField.Phone]
+        }
+      )
+      const visibility = await svc.getVisibility(MATRIX_MXID)
+
+      expect(visibility).toHaveProperty('visibility', 'public')
+      expect(visibility).toHaveProperty('visible_fields', ['phone'])
+    })
+    it('When settings are found for the user - Public w/ email & phone', async () => {
+      mockTwakeDB(
+        {},
+        {
+          matrix_id: MATRIX_MXID,
+          visibility: ProfileVisibility.Public,
+          visible_fields: [ProfileField.Email, ProfileField.Phone]
+        }
+      )
+      const visibility = await svc.getVisibility(MATRIX_MXID)
+
+      expect(visibility).toHaveProperty('visibility', 'public')
+      expect(visibility).toHaveProperty('visible_fields', ['email', 'phone'])
+    })
+    it('When settings are found for the user - Contacts', async () => {
+      mockTwakeDB(
+        {},
+        {
+          matrix_id: MATRIX_MXID,
+          visibility: ProfileVisibility.Contacts,
+          visible_fields: []
+        }
+      )
+      const visibility = await svc.getVisibility(MATRIX_MXID)
+
+      expect(visibility).toHaveProperty('visibility', 'contacts')
+      expect(visibility).toHaveProperty('visible_fields', [])
+    })
+    it('When settings are found for the user - Contacts w/ email', async () => {
+      mockTwakeDB(
+        {},
+        {
+          matrix_id: MATRIX_MXID,
+          visibility: ProfileVisibility.Contacts,
+          visible_fields: [ProfileField.Email]
+        }
+      )
+      const visibility = await svc.getVisibility(MATRIX_MXID)
+
+      expect(visibility).toHaveProperty('visibility', 'contacts')
+      expect(visibility).toHaveProperty('visible_fields', ['email'])
+    })
+    it('When settings are found for the user - Contacts w/ phone', async () => {
+      mockTwakeDB(
+        {},
+        {
+          matrix_id: MATRIX_MXID,
+          visibility: ProfileVisibility.Contacts,
+          visible_fields: [ProfileField.Phone]
+        }
+      )
+      const visibility = await svc.getVisibility(MATRIX_MXID)
+
+      expect(visibility).toHaveProperty('visibility', 'contacts')
+      expect(visibility).toHaveProperty('visible_fields', ['phone'])
+    })
+    it('When settings are found for the user - Contacts w/ email & phone', async () => {
+      mockTwakeDB(
+        {},
+        {
+          matrix_id: MATRIX_MXID,
+          visibility: ProfileVisibility.Contacts,
+          visible_fields: [ProfileField.Email, ProfileField.Phone]
+        }
+      )
+      const visibility = await svc.getVisibility(MATRIX_MXID)
+
+      expect(visibility).toHaveProperty('visibility', 'contacts')
+      expect(visibility).toHaveProperty('visible_fields', ['email', 'phone'])
+    })
+  })
+})
