@@ -15,6 +15,11 @@ import type { TwakeLogger } from '@twake/logger'
 import { type IAddressbookService } from '../../addressbook-api/types'
 import { AddressbookService } from '../../addressbook-api/services'
 
+const defaultVisibilitySettings: UserProfileSettingsPayloadT = {
+  visibility: ProfileVisibility.Private,
+  visible_fields: []
+}
+
 class UserInfoService implements IUserInfoService {
   private readonly addressBookService: IAddressbookService
   private readonly enableAdditionalFeatures: boolean
@@ -63,15 +68,10 @@ class UserInfoService implements IUserInfoService {
       // ------------------------------------------------------------------
       // 1 - Visibility checks
       // ------------------------------------------------------------------
-      const { visibilitySettings: idVisibilitySettings } =
-        await this._getOrCreateUserSettings(id, {
-          visibility: ProfileVisibility.Private,
-          visible_fields: []
-        })
       const {
         visibility: idProfileVisibility,
         visible_fields: idProfileVisibleFields
-      } = idVisibilitySettings
+      } = await this.getVisibility(id) || defaultVisibilitySettings
       const isMyProfile = id === viewer
       const isIdProfileVisibleForViewer = async () => {
         if (idProfileVisibility === ProfileVisibility.Public) {
@@ -313,9 +313,49 @@ class UserInfoService implements IUserInfoService {
     }
   }
 
+  getVisibility = async (
+    userId: string
+  ): Promise<UserProfileSettingsPayloadT | null> => {
+    this.logger.debug(
+      `[UserInfoService].getVisibility: Gathering visibility information about: ${userId}`
+    )
+    try {
+      const userIdLocalPart = getLocalPart(userId)
+      if (!userIdLocalPart) {
+        this.logger.warn(
+          '[UserInfoService].getVisibility: Provided userId is not valid'
+        )
+        this.logger.debug(
+          '[UserInfoService].getVisibility: Returning null value'
+        )
+        return null
+      }
+
+      const { visibilitySettings: idVisibilitySettings } =
+        await this._getOrCreateUserSettings(userId)
+      this.logger.info(
+        '[UserInfoService].getVisibility: stored settings retreived'
+      )
+
+      const { visibility, visible_fields } = idVisibilitySettings
+      this.logger.debug(
+        `[UserInfoService].getVisibility: ${userId} has a visibility set to ${visibility} and visible fields are: [${visible_fields}]`
+      )
+
+      return { visibility, visible_fields }
+    } catch (error) {
+      throw new Error(
+        `Error retreiving user visibility settings: ${JSON.stringify({
+          cause: error
+        })}`,
+        { cause: error as Error }
+      )
+    }
+  }
+
   _getOrCreateUserSettings = async (
     userId: string,
-    visibilitySettings: UserProfileSettingsPayloadT
+    visibilitySettings: UserProfileSettingsPayloadT = defaultVisibilitySettings
   ): Promise<{
     visibilitySettings: UserProfileSettingsT
     created: boolean
@@ -342,12 +382,23 @@ class UserInfoService implements IUserInfoService {
           matrix_id: userId,
           ...visibilitySettings
         } as unknown as UserProfileSettingsT
-      )) as unknown as UserProfileSettingsT
-      this.logger.info('[UserInfoApiService] Created new user settings', {
-        userId,
-        insertResult
-      })
-      return { visibilitySettings: insertResult, created: true }
+      )) as unknown as UserProfileSettingsT[]
+      if (!Array.isArray(insertResult) || insertResult.length <= 0)
+        throw new Error(
+          '[UserInfoApiService] unknown DB behavior when inserting new user visibility settings'
+        )
+
+      const insertedSettings = insertResult.at(0)
+      if (!insertedSettings) throw new Error('[UserInfoApiService] Unknown')
+
+      this.logger.info(
+        `[UserInfoApiService] New user visibility settings created for ${insertedSettings.matrix_id}`
+      )
+      this.logger.debug(
+        `[UserInfoApiService] Set visibility to ${insertedSettings.visibility}, and visible fields to [${insertedSettings.visible_fields}]`
+      )
+
+      return { visibilitySettings: insertedSettings, created: true }
     } catch (err: any) {
       this.logger.error(
         '[UserInfoApiService] Failed to get or create user profile settings ',

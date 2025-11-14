@@ -145,6 +145,57 @@ export default (
     userInfoController.get
   )
 
+  /**
+   * @openapi
+   * /_twake/v1/user_info/{userId}/visibility:
+   *  get:
+   *    tags:
+   *      - User Info
+   *    description: Get user info visibility
+   *    parameters:
+   *      - $ref: '#/components/parameters/userId'
+   *    responses:
+   *      200:
+   *        description: User info visibility settings found
+   *        content:
+   *          application/json:
+   *            schema:
+   *              UserInfoVisibilitySettings:
+   *                type: object
+   *                description: Representation of the User Information Visibility Settings
+   *                required:
+   *                  - visibility
+   *                  - visible_fields
+   *                properties:
+   *                  visibility:
+   *                    type: string
+   *                    description: Defines who can access the selected fields
+   *                    enum:
+   *                      - public
+   *                      - private
+   *                      - contacts
+   *                    example: contacts
+   *                  visible_fields:
+   *                    type: array
+   *                    description: Name of the fields visible according to visibility
+   *                    uniqueItems: true
+   *                    maxItems: 2
+   *                    items:
+   *                      type: string
+   *                      enum:
+   *                        - email
+   *                        - phone
+   *      404:
+   *        description: User info not found
+   *      500:
+   *        description: Internal server error
+   */
+  router.get(
+    `${PATH}/:userId/visibility`,
+    requireLdap,
+    userInfoController.getVisibility
+  )
+
   router.post(
     `${PATH}/:userId/visibility`,
     requireLdap,
