@@ -360,12 +360,23 @@ class UserInfoService implements IUserInfoService {
           matrix_id: userId,
           ...visibilitySettings
         } as unknown as UserProfileSettingsT
-      )) as unknown as UserProfileSettingsT
-      this.logger.info('[UserInfoApiService] Created new user settings', {
-        userId,
-        insertResult
-      })
-      return { visibilitySettings: insertResult, created: true }
+      )) as unknown as UserProfileSettingsT[]
+      if (!Array.isArray(insertResult) || insertResult.length <= 0)
+        throw new Error(
+          '[UserInfoApiService] unknown DB behavior when inserting new user visibility settings'
+        )
+
+      const insertedSettings = insertResult.at(0)
+      if (!insertedSettings) throw new Error('[UserInfoApiService] Unknown')
+
+      this.logger.info(
+        `[UserInfoApiService] New user visibility settings created for ${insertedSettings.matrix_id}`
+      )
+      this.logger.debug(
+        `[UserInfoApiService] Set visibility to ${insertedSettings.visibility}, and visible fields to [${insertedSettings.visible_fields}]`
+      )
+
+      return { visibilitySettings: insertedSettings, created: true }
     } catch (err: any) {
       this.logger.error(
         '[UserInfoApiService] Failed to get or create user profile settings ',
