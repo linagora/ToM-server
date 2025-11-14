@@ -317,13 +317,37 @@ class UserInfoService implements IUserInfoService {
 
   getVisibility = async (
     userId: string
-  ): Promise<UserProfileSettingsT | undefined> => {
+  ): Promise<UserProfileSettingsPayloadT | null> => {
+    this.logger.debug(
+      `[UserInfoService].getVisibility: Gathering visibility information about: ${userId}`
+    )
     try {
-      const { visibilitySettings } = await this._getOrCreateUserSettings(userId)
-      return visibilitySettings
+      const userIdLocalPart = getLocalPart(userId)
+      if (!userIdLocalPart) {
+        this.logger.warn(
+          '[UserInfoService].getVisibility: Provided userId is not valid'
+        )
+        this.logger.debug(
+          '[UserInfoService].getVisibility: Returning null value'
+        )
+        return null
+      }
+
+      const { visibilitySettings: idVisibilitySettings } =
+        await this._getOrCreateUserSettings(userId)
+      this.logger.info(
+        '[UserInfoService].getVisibility: stored settings retreived'
+      )
+
+      const { visibility, visible_fields } = idVisibilitySettings
+      this.logger.debug(
+        `[UserInfoService].getVisibility: ${userId} has a visibility set to ${visibility} and visible fields are: [${visible_fields}]`
+      )
+
+      return { visibility, visible_fields }
     } catch (error) {
       throw new Error(
-        `Error updating user visibility settings:  ${JSON.stringify({
+        `Error retreiving user visibility settings: ${JSON.stringify({
           cause: error
         })}`,
         { cause: error as Error }
