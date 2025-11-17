@@ -9,9 +9,6 @@ import { Router } from 'express'
 import fs from 'fs'
 import defaultConfig from './config.json'
 import IdServer from './identity-server'
-import mutualRoomsAPIRouter from './mutual-rooms-api'
-import privateNoteApiRouter from './private-note-api'
-import roomTagsAPIRouter from './room-tags-api'
 import smsApiRouter from './sms-api'
 import type { Config, ConfigurationFile, TwakeDB } from './types'
 import userInfoAPIRouter from './user-info-api'
@@ -106,25 +103,7 @@ export default class TwakeServer {
 
     const vaultServer = new VaultServer(this.db, this.idServer.authenticate)
     const wellKnown = new WellKnown(this.conf)
-    const privateNoteApi = privateNoteApiRouter(
-      this.db,
-      this.conf,
-      this.idServer.authenticate,
-      this.logger
-    )
-    const mutualRoolsApi = mutualRoomsAPIRouter(
-      this.conf,
-      this.matrixDb.db,
-      this.idServer.authenticate,
-      this.logger
-    )
-    const roomTagsApi = roomTagsAPIRouter(
-      this.db,
-      this.matrixDb.db,
-      this.conf,
-      this.idServer.authenticate,
-      this.logger
-    )
+
     const userInfoApi = userInfoAPIRouter(
       this.idServer,
       this.conf,
@@ -179,10 +158,7 @@ export default class TwakeServer {
       this.logger
     )
 
-    this.endpoints.use(privateNoteApi)
-    this.endpoints.use(mutualRoolsApi)
     this.endpoints.use(vaultServer.endpoints)
-    this.endpoints.use(roomTagsApi)
     this.endpoints.use(userInfoApi)
     this.endpoints.use(smsApi)
     this.endpoints.use(activeContactsApi)
