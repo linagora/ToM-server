@@ -45,7 +45,6 @@
   "template_dir": "./templates",
   "userdb_engine": "sqlite",
   "userdb_host": "./src/identity-server/__testData__/terms.db",
-  "registration_file_path": "registration.yaml",
   "sender_localpart": "twake",
   "rabbitmq": {
     "host": "localhost",

@@ -23,7 +23,6 @@
   "template_dir": "./templates",
   "userdb_engine": "sqlite",
   "userdb_host": "./src/identity-server/__testData__/users.test.db",
-  "registration_file_path": "registration.yaml",
   "sender_localpart": "twake",
   "sms_api_url": "https://sms.example.com",
   "sms_api_key": "1234567890",

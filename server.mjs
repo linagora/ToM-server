@@ -31,10 +31,7 @@ const _parseBooleanEnv = (variable, defaultValue) => {
 
 const appServerConf = {
   base_url: process.env.BASE_URL,
-  sender_localpart: process.env.SENDER_LOCALPART,
-  registration_file_path: process.env.REGISTRATION_FILE_PATH,
-  namespaces: process.env.NAMESPACES,
-  push_ephemeral: process.env.PUSH_EPHEMERAL || true
+  sender_localpart: process.env.SENDER_LOCALPART
 }
 
 const rabbitmqConf = {
