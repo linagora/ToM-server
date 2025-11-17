@@ -189,18 +189,18 @@ const app = express()
 
 // TODO: implement with logger debug/silly level
 //
-//app.use((req, res, next) => {
-//  console.log(req.path)
+// app.use((req, res, next) => {
+//   console.log(req.path)
 //
-//  req.on('error', () => {
-//    console.error('ERROR:', req.path)
-//  })
-//  req.on('end', () => {
-//    console.log('END:', req.path)
-//  })
+//   req.on('error', () => {
+//     console.error('ERROR:', req.path)
+//   })
+//   req.on('end', () => {
+//     console.log('END:', req.path)
+//   })
 //
-//  next()
-//})
+//   next()
+// })
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 

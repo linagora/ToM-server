@@ -17,7 +17,6 @@
       "@twake/logger": ["./packages/logger/src"],
       "@twake/utils": ["./packages/utils/src"],
       "@twake/matrix-identity-server": ["./packages/matrix-identity-server/src"],
-      "@twake/matrix-client-server": ["./packages/matrix-client-server/src"],
       "matrix-resolve": ["./packages/matrix-resolve/src"]
     }
   }
