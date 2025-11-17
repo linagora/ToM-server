@@ -74,8 +74,6 @@
   "userdb_user": "",
   "template_dir": "./templates",
   "sender_localpart": "twake",
-  "registration_file_path": "registration.yaml",
-  "namespaces": { "users": [] },
   "push_ephemeral": true,
   "sms_api_url": "",
   "sms_api_login": "",

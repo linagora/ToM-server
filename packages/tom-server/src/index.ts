@@ -7,7 +7,6 @@ import {
 import { MatrixDB } from '@twake/matrix-identity-server'
 import { Router } from 'express'
 import fs from 'fs'
-import AppServiceAPI from './application-server'
 import defaultConfig from './config.json'
 import IdServer from './identity-server'
 import mutualRoomsAPIRouter from './mutual-rooms-api'
@@ -59,10 +58,6 @@ export default class TwakeServer {
     this.ready = new Promise<boolean>((resolve, reject) => {
       this._initServer(confDesc)
         .then(() => {
-          if (this.conf.additional_features === true) {
-            const appServiceApi = new AppServiceAPI(this, confDesc, this.logger)
-            this.endpoints.use(appServiceApi.router.routes)
-          }
           resolve(true)
         })
         .catch((error) => {
