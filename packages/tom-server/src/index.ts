@@ -13,8 +13,6 @@ import IdServer from './identity-server'
 import mutualRoomsAPIRouter from './mutual-rooms-api'
 import privateNoteApiRouter from './private-note-api'
 import roomTagsAPIRouter from './room-tags-api'
-import TwakeSearchEngine from './search-engine-api'
-import { type IOpenSearchRepository } from './search-engine-api/repositories/interfaces/opensearch-repository.interface'
 import smsApiRouter from './sms-api'
 import type { Config, ConfigurationFile, TwakeDB } from './types'
 import userInfoAPIRouter from './user-info-api'
@@ -35,7 +33,6 @@ export default class TwakeServer {
   endpoints: Router
   db?: TwakeDB
   matrixDb: MatrixDB
-  private _openSearchClient: IOpenSearchRepository | undefined
   ready!: Promise<boolean>
   idServer!: IdServer
 
@@ -57,7 +54,7 @@ export default class TwakeServer {
       confDesc,
       this.logger
     )
-    
+
     this.endpoints = Router()
     this.ready = new Promise<boolean>((resolve, reject) => {
       this._initServer(confDesc)
@@ -80,9 +77,6 @@ export default class TwakeServer {
   cleanJobs(): void {
     this.idServer.cleanJobs()
     this.matrixDb.close()
-    if (this._openSearchClient != null) {
-      this._openSearchClient.close()
-    }
   }
 
   private _getConfigurationFile(
@@ -182,17 +176,13 @@ export default class TwakeServer {
       this.logger
     )
 
-    const adminSettingsApi = AdminSettings(
-      this.conf,
-      this.logger
-    )
+    const adminSettingsApi = AdminSettings(this.conf, this.logger)
 
     const matrixClientApi = MatrixclientApi(
       this.conf,
       this.idServer.authenticate,
       this.logger
     )
-    
 
     this.endpoints.use(privateNoteApi)
     this.endpoints.use(mutualRoolsApi)
@@ -208,25 +198,6 @@ export default class TwakeServer {
     this.endpoints.use(deactivateAccountApi)
     this.endpoints.use(adminSettingsApi)
     this.endpoints.use(matrixClientApi)
-
-    if (
-      this.conf.opensearch_is_activated != null &&
-      this.conf.opensearch_is_activated
-    ) {
-      const searchEngineApi = new TwakeSearchEngine(
-        this.db,
-        this.idServer.userDB,
-        this.idServer.authenticate,
-        this.matrixDb,
-        this.conf,
-        this.logger,
-        confDesc
-      )
-      await searchEngineApi.ready
-      this._openSearchClient = searchEngineApi.openSearchRepository
-      this.endpoints.use(searchEngineApi.router.routes)
-      this.logger.debug('OpenSearch initialized')
-    }
 
     Object.keys(this.idServer.api.get).forEach((k) => {
       this.endpoints.get(k, this.idServer.api.get[k])

@@ -152,18 +152,6 @@ let conf = {
     ? JSON.parse(process.env.MATRIX_DATABASE_SSL)
     : false,
   oidc_issuer: process.env.OIDC_ISSUER,
-  opensearch_ca_cert_path: process.env.OPENSEARCH_CA_CERT_PATH,
-  opensearch_host: process.env.OPENSEARCH_HOST,
-  opensearch_is_activated: process.env.OPENSEARCH_IS_ACTIVATED || false,
-  opensearch_max_retries: +process.env.OPENSEARCH_MAX_RETRIES || null,
-  opensearch_number_of_shards: +process.env.OPENSEARCH_NUMBER_OF_SHARDS || null,
-  opensearch_number_of_replicas:
-    +process.env.OPENSEARCH_NUMBER_OF_REPLICAS || null,
-  opensearch_password: process.env.OPENSEARCH_PASSWORD,
-  opensearch_ssl: process.env.OPENSEARCH_SSL || false,
-  opensearch_user: process.env.OPENSEARCH_USER,
-  opensearch_wait_for_active_shards:
-    process.env.OPENSEARCH_WAIT_FOR_ACTIVE_SHARDS,
   pepperCron: process.env.PEPPER_CRON || '9 1 * * *',
   rate_limiting_window: process.env.RATE_LIMITING_WINDOW || 600000,
   rate_limiting_nb_requests: process.env.RATE_LIMITING_NB_REQUESTS || 100,
