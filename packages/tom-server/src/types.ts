@@ -27,16 +27,6 @@ export type Config = MConfig &
     matrix_internal_host: string
     matrix_database_host: string
     oidc_issuer?: string
-    opensearch_ca_cert_path?: string
-    opensearch_host?: string
-    opensearch_is_activated?: boolean
-    opensearch_max_retries?: number
-    opensearch_number_of_shards?: number
-    opensearch_number_of_replicas?: number
-    opensearch_password?: string
-    opensearch_ssl?: boolean
-    opensearch_user?: string
-    opensearch_wait_for_active_shards?: string
     sms_api_key?: string
     sms_api_login?: string
     sms_api_url?: string
