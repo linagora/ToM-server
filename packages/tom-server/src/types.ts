@@ -83,8 +83,6 @@ export type TwakeDB = IdentityServerDb<twakeDbCollections>
 export type twakeDbCollections =
   | 'recoveryWords'
   | 'matrixTokens'
-  | 'privateNotes'
-  | 'roomTags'
   | 'userQuotas'
   | 'rooms'
   | 'invitations'
