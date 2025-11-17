@@ -1,6 +1,6 @@
 services:
   pgsql:
-    image: postgres
+    image: postgres:16-bookworm
     container_name: pgsql
     volumes:
       - ../pgsql/init-llng-db.sh:/docker-entrypoint-initdb.d/init-llng-db.sh
