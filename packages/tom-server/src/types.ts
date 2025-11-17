@@ -1,4 +1,3 @@
-import { type Config as MASConfig } from '@twake/matrix-application-server'
 import {
   type IdentityServerDb,
   type Config as MConfig,
@@ -15,58 +14,58 @@ import type { SendMailOptions } from 'nodemailer'
 export type expressAppHandler = _expressAppHandler
 export type AuthenticationFunction = MUtils.AuthenticationFunction
 
-export type Config = MConfig &
-  MASConfig & {
-    jitsiBaseUrl: string
-    jitsiJwtAlgorithm: string
-    jitsiJwtIssuer: string
-    jitsiJwtSecret: string
-    jitsiPreferredDomain: string
-    jitsiUseJwt: boolean
-    matrix_server: string
-    matrix_internal_host: string
-    matrix_database_host: string
-    oidc_issuer?: string
-    sms_api_key?: string
-    sms_api_login?: string
-    sms_api_url?: string
-    qr_code_url?: string
-    invitation_redirect_url?: string
-    chat_url?: string
-    auth_url?: string
-    matrix_admin_login: string
-    matrix_admin_password: string
-    admin_access_token: string
-    signup_url: string
-    twake_chat: TwakeChatEnvironmentConfig
-    room_permissions: {
-      direct_chat: PowerLevelEventContent
-      private_group_chat: PowerLevelEventContent
-      public_group_chat: PowerLevelEventContent
-      private_channel: PowerLevelEventContent
-      public_channel: PowerLevelEventContent
-    }
-    rabbitmq: {
-      host: string
-      port: number
-      vhost: string
-      username: string
-      password: string
-      tls: boolean
-    }
-    features: {
-      common_settings: {
-        enabled: boolean
-        application_url: string
-        exchange: string
-        queue: string
-        routingKey: string
-        deadLetterExchange?: string
-        deadLetterRoutingKey?: string
-      }
-      matrix_profile_updates_allowed: boolean
-    }
+export type Config = MConfig & {
+  sender_localpart: string
+  jitsiBaseUrl: string
+  jitsiJwtAlgorithm: string
+  jitsiJwtIssuer: string
+  jitsiJwtSecret: string
+  jitsiPreferredDomain: string
+  jitsiUseJwt: boolean
+  matrix_server: string
+  matrix_internal_host: string
+  matrix_database_host: string
+  oidc_issuer?: string
+  sms_api_key?: string
+  sms_api_login?: string
+  sms_api_url?: string
+  qr_code_url?: string
+  invitation_redirect_url?: string
+  chat_url?: string
+  auth_url?: string
+  matrix_admin_login: string
+  matrix_admin_password: string
+  admin_access_token: string
+  signup_url: string
+  twake_chat: TwakeChatEnvironmentConfig
+  room_permissions: {
+    direct_chat: PowerLevelEventContent
+    private_group_chat: PowerLevelEventContent
+    public_group_chat: PowerLevelEventContent
+    private_channel: PowerLevelEventContent
+    public_channel: PowerLevelEventContent
   }
+  rabbitmq: {
+    host: string
+    port: number
+    vhost: string
+    username: string
+    password: string
+    tls: boolean
+  }
+  features: {
+    common_settings: {
+      enabled: boolean
+      application_url: string
+      exchange: string
+      queue: string
+      routingKey: string
+      deadLetterExchange?: string
+      deadLetterRoutingKey?: string
+    }
+    matrix_profile_updates_allowed: boolean
+  }
+}
 
 export interface AuthRequest extends Request {
   userId?: string
