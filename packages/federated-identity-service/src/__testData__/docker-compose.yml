@@ -117,8 +117,37 @@ services:
     build:
       context: ../../../..
       dockerfile: ./Dockerfile
-    volumes:
-      - ./identity-server/conf/identity-server-1.conf:/etc/twake/identity-server.conf:ro
+    environment:
+      - SERVER_NAME=example.com
+      - BASE_URL=https://identity1.example.com
+      - TRUSTED_PROXIES=uniquelocal
+      - ADDITIONAL_FEATURES=false
+      - FEDERATED_IDENTITY_SERVICES=federated-identity.example.com
+      - CRON_SERVICE=true
+      - UPDATE_FEDERATED_IDENTITY_HASHES_CRON=*/5 * * * * *
+      - UPDATE_USERS_CRON=*/5 * * * * *
+      - PEPPER_CRON=*/5 * * * * *
+      - DATABASE_ENGINE=pg
+      - DATABASE_HOST=postgresql
+      - DATABASE_NAME=identity1
+      - DATABASE_USER=twake
+      - DATABASE_PASSWORD=twake!1
+      - USERDB_ENGINE=ldap
+      - LDAP_URI=ldap://annuaire
+      - LDAP_BASE=dc=example,dc=com
+      - LDAP_FILTER=(objectClass=inetOrgPerson)
+      - MATRIX_INTERNAL_HOST=http://synapse-1:8008
+      - MATRIX_SERVER=matrix1.docker.localhost
+      - MATRIX_DATABASE_ENGINE=pg
+      - MATRIX_DATABASE_HOST=postgresql
+      - MATRIX_DATABASE_NAME=synapse1
+      - MATRIX_DATABASE_USER=synapse
+      - MATRIX_DATABASE_PASSWORD=synapse!1
+      - SMS_API_KEY=SOME_SECRET_KEY
+      - SMS_API_LOGIN=login@domain.com
+      - SMS_API_URL=https://api.octopush.com/v1/public
+      - LOG_LEVEL=silly
+      - LOG_TRANSPORTS=Console
     depends_on:
       annuaire:
         condition: service_started
@@ -130,14 +159,72 @@ services:
   identity-server-2:
     <<: *identity-server-template
     container_name: identity-server-2
-    volumes:
-      - ./identity-server/conf/identity-server-2.conf:/etc/twake/identity-server.conf:ro
+    environment:
+      - SERVER_NAME=example.com
+      - BASE_URL=https://identity2.example.com
+      - TRUSTED_PROXIES=uniquelocal
+      - ADDITIONAL_FEATURES=false
+      - FEDERATED_IDENTITY_SERVICES=federated-identity.example.com
+      - CRON_SERVICE=true
+      - UPDATE_FEDERATED_IDENTITY_HASHES_CRON=*/5 * * * * *
+      - UPDATE_USERS_CRON=*/5 * * * * *
+      - PEPPER_CRON=*/5 * * * * *
+      - DATABASE_ENGINE=pg
+      - DATABASE_HOST=postgresql
+      - DATABASE_NAME=identity2
+      - DATABASE_USER=twake
+      - DATABASE_PASSWORD=twake!1
+      - USERDB_ENGINE=ldap
+      - LDAP_URI=ldap://annuaire
+      - LDAP_BASE=dc=example,dc=com
+      - LDAP_FILTER=(objectClass=inetOrgPerson)
+      - MATRIX_INTERNAL_HOST=http://synapse-2:8008
+      - MATRIX_SERVER=matrix1.docker.localhost
+      - MATRIX_DATABASE_ENGINE=pg
+      - MATRIX_DATABASE_HOST=postgresql
+      - MATRIX_DATABASE_NAME=synapse2
+      - MATRIX_DATABASE_USER=synapse
+      - MATRIX_DATABASE_PASSWORD=synapse!1
+      - SMS_API_KEY=SOME_SECRET_KEY
+      - SMS_API_LOGIN=login@domain.com
+      - SMS_API_URL=https://api.octopush.com/v1/public
+      - LOG_LEVEL=silly
+      - LOG_TRANSPORTS=Console
 
   identity-server-3:
     <<: *identity-server-template
     container_name: identity-server-3
-    volumes:
-      - ./identity-server/conf/identity-server-3.conf:/etc/twake/identity-server.conf:ro
+    environment:
+      - SERVER_NAME=example.com
+      - BASE_URL=https://identity3.example.com
+      - TRUSTED_PROXIES=uniquelocal
+      - ADDITIONAL_FEATURES=false
+      - FEDERATED_IDENTITY_SERVICES=federated-identity.example.com
+      - CRON_SERVICE=true
+      - UPDATE_FEDERATED_IDENTITY_HASHES_CRON=*/5 * * * * *
+      - UPDATE_USERS_CRON=*/5 * * * * *
+      - PEPPER_CRON=*/5 * * * * *
+      - DATABASE_ENGINE=pg
+      - DATABASE_HOST=postgresql
+      - DATABASE_NAME=identity3
+      - DATABASE_USER=twake
+      - DATABASE_PASSWORD=twake!1
+      - USERDB_ENGINE=ldap
+      - LDAP_URI=ldap://annuaire
+      - LDAP_BASE=dc=example,dc=com
+      - LDAP_FILTER=(objectClass=inetOrgPerson)
+      - MATRIX_INTERNAL_HOST=http://synapse-3:8008
+      - MATRIX_SERVER=matrix1.docker.localhost
+      - MATRIX_DATABASE_ENGINE=pg
+      - MATRIX_DATABASE_HOST=postgresql
+      - MATRIX_DATABASE_NAME=synapse3
+      - MATRIX_DATABASE_USER=synapse
+      - MATRIX_DATABASE_PASSWORD=synapse!1
+      - SMS_API_KEY=SOME_SECRET_KEY
+      - SMS_API_LOGIN=login@domain.com
+      - SMS_API_URL=https://api.octopush.com/v1/public
+      - LOG_LEVEL=silly
+      - LOG_TRANSPORTS=Console
 
   haproxy:
     image: haproxy:lts-alpine
