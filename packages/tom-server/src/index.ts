@@ -40,7 +40,14 @@ export default class TwakeServer {
     if (confDesc == null) confDesc = defaultConfig as ConfigDescription
     this.conf = configParser(
       confDesc,
-      this._getConfigurationFile(conf)
+      /* istanbul ignore next */
+      fs.existsSync('/etc/twake/server.conf')
+        ? '/etc/twake/server.conf'
+        : process.env.TWAKE_SERVER_CONF != null
+        ? process.env.TWAKE_SERVER_CONF
+        : conf != null
+        ? conf
+        : undefined
     ) as Config
     this.logger = logger ?? getLogger(this.conf as unknown as LoggerConfig)
     this.matrixDb = new MatrixDB(this.conf, this.logger)
@@ -69,27 +76,6 @@ export default class TwakeServer {
   cleanJobs(): void {
     this.idServer.cleanJobs()
     this.matrixDb.close()
-  }
-
-  private _getConfigurationFile(
-    conf: Partial<Config> | undefined
-  ): ConfigurationFile {
-    if (conf != null) {
-      return conf
-    }
-
-    /* istanbul ignore if */
-    if (process.env.TWAKE_SERVER_CONF != null) {
-      return process.env.TWAKE_SERVER_CONF
-    }
-
-    /* istanbul ignore if */
-    if (fs.existsSync('/etc/twake/server.conf')) {
-      return '/etc/twake/server.conf'
-    }
-
-    /* istanbul ignore next */
-    return undefined
   }
 
   private async _initServer(confDesc?: ConfigDescription): Promise<boolean> {
