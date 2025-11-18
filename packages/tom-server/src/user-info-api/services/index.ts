@@ -57,7 +57,7 @@ class UserInfoService implements IUserInfoService {
       // ------------------------------------------------------------------
       // 0 - Initialise the result container
       // ------------------------------------------------------------------
-      let result: Partial<UserInformation & SettingsPayload> = { uid: id }
+      const result: Partial<UserInformation & SettingsPayload> = { uid: id }
 
       const userIdLocalPart = getLocalPart(id)
       if (!userIdLocalPart) {
@@ -71,7 +71,7 @@ class UserInfoService implements IUserInfoService {
       const {
         visibility: idProfileVisibility,
         visible_fields: idProfileVisibleFields
-      } = await this.getVisibility(id) || defaultVisibilitySettings
+      } = (await this.getVisibility(id)) || defaultVisibilitySettings
       const isMyProfile = id === viewer
       const isIdProfileVisibleForViewer = async () => {
         if (idProfileVisibility === ProfileVisibility.Public) {
@@ -331,18 +331,23 @@ class UserInfoService implements IUserInfoService {
         return null
       }
 
-      const { visibilitySettings: idVisibilitySettings } =
-        await this._getOrCreateUserSettings(userId)
+      const us: UserProfileSettingsT | null = await this._getUserSettings(
+        userId
+      )
+      if (!us) {
+        this.logger.warn(
+          '[UserInfoService].getVisibility: No stored settings found, returning defaults'
+        )
+        return defaultVisibilitySettings
+      }
       this.logger.info(
         '[UserInfoService].getVisibility: stored settings retreived'
       )
-
-      const { visibility, visible_fields } = idVisibilitySettings
       this.logger.debug(
-        `[UserInfoService].getVisibility: ${userId} has a visibility set to ${visibility} and visible fields are: [${visible_fields}]`
+        `[UserInfoService].getVisibility: ${userId} has a visibility set to ${us.visibility} and visible fields are: [${us.visible_fields}]`
       )
 
-      return { visibility, visible_fields }
+      return us
     } catch (error) {
       throw new Error(
         `Error retreiving user visibility settings: ${JSON.stringify({
@@ -353,18 +358,13 @@ class UserInfoService implements IUserInfoService {
     }
   }
 
-  _getOrCreateUserSettings = async (
-    userId: string,
-    visibilitySettings: UserProfileSettingsPayloadT = defaultVisibilitySettings
-  ): Promise<{
-    visibilitySettings: UserProfileSettingsT
-    created: boolean
-  }> => {
+  private _getUserSettings = async (
+    userId: string
+  ): Promise<UserProfileSettingsT | null> => {
     try {
       const existing = (await this.db.get('profileSettings', ['*'], {
         matrix_id: userId
       })) as unknown as UserProfileSettingsT[]
-      this.logger.info(`[UserInfoApiService] ${existing.length}`)
       if (Array.isArray(existing) && existing.length > 0) {
         this.logger.info(
           '[UserInfoApiService] Found existing user profile settings ',
@@ -372,7 +372,33 @@ class UserInfoService implements IUserInfoService {
             userId
           }
         )
-        return { visibilitySettings: existing[0], created: false }
+        return existing[0]
+      }
+      this.logger.info(`[UserInfoApiService] got nothing`)
+      return null
+    } catch (err: any) {
+      this.logger.error(
+        '[UserInfoApiService] Failed to get user profile settings ',
+        {
+          userId,
+          error: err?.message
+        }
+      )
+      throw err
+    }
+  }
+
+  private _getOrCreateUserSettings = async (
+    userId: string,
+    visibilitySettings: UserProfileSettingsPayloadT = defaultVisibilitySettings
+  ): Promise<{
+    visibilitySettings: UserProfileSettingsT
+    created: boolean
+  }> => {
+    try {
+      const existing = await this._getUserSettings(userId)
+      if (existing) {
+        return { visibilitySettings: existing, created: false }
       }
       this.logger.info(`[UserInfoApiService] got nothing`)
       const insertResult = (await this.db.insert(
