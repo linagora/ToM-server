@@ -162,6 +162,8 @@ Also, when running the lightweight environment make sure to initialize the lemon
 # mkcert -install
 # mkcert docker.localhost *.docker.localhost
 # cat docker.localhost+1.pem docker.localhost+1-key.pem > both.pem
+# cp ~/.local/share/mkcert/*.pem .
+# openssl rehash .
 # popd
 
 ## Add your Timezone, UID and GID to the synapse container
