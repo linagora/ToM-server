@@ -77,6 +77,7 @@ ENV BASE_URL= \
     TEMPLATE_DIR=/usr/src/app/packages/tom-server/templates \
     UPDATE_FEDERATED_IDENTITY_HASHES_CRON="3 3 * * *" \
     UPDATE_USERS_CRON="*/15 * * * *" \
+    PEPPER_CRON="9 1 * * *" \
     SMS_API_LOGIN= \
     SMS_API_URL= \
     SMS_API_KEY= \
