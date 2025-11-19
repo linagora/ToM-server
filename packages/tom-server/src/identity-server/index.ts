@@ -103,6 +103,14 @@ export default class TwakeIdentityServer extends MatrixIdentityServer<twakeDbCol
            *                        type: string
            *                        description: Display name of a matching user
            *                        deprecated: true
+           *                      givenName:
+           *                        type: string
+           *                        description: Display name of a matching user
+           *                        deprecated: true
+           *                      givenname:
+           *                        type: string
+           *                        description: Display name of a matching user
+           *                        deprecated: true
            *                      cn:
            *                        type: string
            *                        description: Display name of a matching user
