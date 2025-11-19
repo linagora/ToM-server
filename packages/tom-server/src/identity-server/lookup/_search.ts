@@ -23,6 +23,9 @@ export const _search = async (
   const enableAdditionalFeatures =
     process.env.ADDITIONAL_FEATURES === 'true' ||
     (conf.additional_features as boolean)
+  logger.debug(
+    `[_search] Additional features enabled: ${enableAdditionalFeatures}`
+  )
 
   const addressBookService = new AddressbookService(db, logger)
   const userInfoService = new UserInfoService(
@@ -102,27 +105,23 @@ export const _search = async (
     await Promise.all(
       rows.map(async (row) => {
         try {
-          const info: UserInformation = (await userInfoService.get(
-            row.address,
-            viewer
-          )) || {
-            uid: row.uid,
-            givenName: '',
-            sn: '',
-            mails: [],
-            phones: []
-          }
-
-          if (info.givenName) row.givenName = info.givenName
-          if (info.sn) row.sn = info.sn
-
-          if (Array.isArray(info.mails) && info.mails.length > 0) {
-            row.email = info.mails[0]
-          }
-
-          if (Array.isArray(info.phones) && info.phones.length > 0) {
-            row.phone = info.phones[0]
-          }
+          const info = await userInfoService.get(row.address, viewer)
+          // TODO: row.address is deprecated and row.uid should replace it
+          row.uid = getLocalPart(row.address)
+          row.display_name = info?.display_name || ''
+          row.displayName = info?.display_name || '' // TODO: Deprecated kepping for backward compatibility
+          row.givenName = info?.display_name || '' // TODO: Deprecated kepping for backward compatibility
+          row.givenname = info?.display_name || '' // TODO: Deprecated kepping for backward compatibility
+          row.cn = info?.display_name || '' // TODO: Deprecated kepping for backward compatibility
+          row.avatar_url = info?.avatar_url || ''
+          row.last_name = info?.last_name || ''
+          row.first_name = info?.first_name || ''
+          row.emails = info?.emails || []
+          row.mail = info?.emails?.at(0) || '' // TODO: Deprecated kepping for backward compatibility
+          row.phones = info?.phones || []
+          row.mobile = info?.phones?.at(0) || '' // TODO: Deprecated kepping for backward compatibility
+          row.language = info?.language || ''
+          row.timezone = info?.timezone || ''
         } catch (err) {
           logger.warn(`[_search] Failed to enrich ${row.uid}`, { err })
         }
@@ -185,7 +184,7 @@ export const _search = async (
         .filter(Boolean) as string[]
 
       // Query matrixDb
-      const matrixRows = await matrixDb.get('users', ['*'], {
+      const matrixRows = await matrixDb.get('users', ['name'], {
         name: matrixUids
       })
       const activeUids = new Set(
@@ -211,7 +210,9 @@ export const _search = async (
       })
 
       // Merge leftover contacts as matches
-      contactMap.forEach((contact) => matches.push(contact))
+      contactMap.forEach((contact) => {
+        matches.push(contact)
+      })
 
       // Enrich results
       await Promise.all([
