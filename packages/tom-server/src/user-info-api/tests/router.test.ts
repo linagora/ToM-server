@@ -16,7 +16,9 @@ jest
   .mockResolvedValue([{ data: '"test"' }])
 
 const matrixDBMock: Partial<MatrixDB> = {
-  get: jest.fn().mockResolvedValue([{ displayname: "", avatar_url: 'avatar_url' }])
+  get: jest
+    .fn()
+    .mockResolvedValue([{ displayname: '', avatar_url: 'avatar_url' }])
 } as unknown as Partial<MatrixDB>
 
 const idServer = new IdServer(
@@ -44,9 +46,11 @@ const controllerGetSpy = jest.fn().mockImplementation((_req, res, _next) => {
   res.status(200).send('OK')
 })
 
-const controllerUpdateVisibilitySpy = jest.fn().mockImplementation((_req, res, _next) => {
-  res.status(200).send('OK')
-})
+const controllerUpdateVisibilitySpy = jest
+  .fn()
+  .mockImplementation((_req, res, _next) => {
+    res.status(200).send('OK')
+  })
 
 jest.mock('../middlewares/require-ldap.ts', () => {
   return () => middlewareSpy
@@ -66,7 +70,9 @@ describe('the user info API Router', () => {
   beforeAll((done) => {
     idServer.ready
       .then(() => {
-        app.use(router(idServer, {} as unknown as Config, matrixDBMock as MatrixDB))
+        app.use(
+          router(idServer, {} as unknown as Config, matrixDBMock as MatrixDB)
+        )
         done()
       })
       .catch((e) => {

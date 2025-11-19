@@ -11,12 +11,12 @@ import { type Channel, type ConsumeMessage } from 'amqplib'
  * @returns void
  */
 export interface AmqpConfig {
-  host: string;
-  port: number;
-  vhost: string;
-  username: string;
-  password: string;
-  tls?: boolean;
+  host: string
+  port: number
+  vhost: string
+  username: string
+  password: string
+  tls?: boolean
 }
 
 /**
@@ -25,4 +25,7 @@ export interface AmqpConfig {
  * @param channel - The channel the message was received on
  * @returns void
  */
-export type MessageHandler = (msg: ConsumeMessage, channel: Channel) => Promise<void> | void
+export type MessageHandler = (
+  msg: ConsumeMessage,
+  channel: Channel
+) => Promise<void> | void

@@ -10,10 +10,7 @@ import AdminSettingsMiddleware from '../middlewares'
 
 export const PATH = '/_twake/v1/admin'
 
-export default (
-  config: Config,
-  defaultLogger?: TwakeLogger
-): Router => {
+export default (config: Config, defaultLogger?: TwakeLogger): Router => {
   const logger = defaultLogger ?? getLogger(config as unknown as LoggerConfig)
   const router = Router()
   const controller = new AdminSettingsrController(config, logger)
