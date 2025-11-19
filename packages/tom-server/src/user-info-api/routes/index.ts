@@ -78,7 +78,7 @@ export default (
    *          items:
    *            type: string
    *            example: "+1 234 567 8910"
-   *        mail:
+   *        emails:
    *          type: array
    *          description: |
    *            List of e‑mail addresses associated with the user in the local
@@ -90,10 +90,22 @@ export default (
    *        sn:
    *          type: string
    *          description: |
-   *            Surname (family name) from the UserDB. Present only when the
+   *            *DEPRECATED* Surname (family name) from the UserDB. Present only when the
    *            UserDB contains this attribute.
    *          example: "Doe"
+   *        last_name:
+   *          type: string
+   *          description: |
+   *            Given name (first name) from the UserDB. Present only when the
+   *            UserDB contains this attribute.
+   *          example: "John"
    *        givenName:
+   *          type: string
+   *          description: |
+   *            *DEPRECATED* Surname (family name) from the UserDB. Present only when the
+   *            UserDB contains this attribute.
+   *          example: "Doe"
+   *        first_name:
    *          type: string
    *          description: |
    *            Given name (first name) from the UserDB. Present only when the
