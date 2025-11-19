@@ -17,12 +17,12 @@ export interface IUserInfoService {
 export interface UserInformation {
   uid: string
   display_name?: string
-  avatar?: string
+  avatar_url?: string
   sn?: string
   last_name?: string
   givenName?: string
   first_name?: string
-  mails?: string[]
+  emails?: string[]
   phones?: string[]
   language?: string
   timezone?: string
