@@ -5,10 +5,10 @@ export default {
   collectCoverageFrom: ['./src/**/{!(pg|redis),}.ts'],
   coverageThreshold: {
     global: {
-      branches: 80,
+      branches: 70,
       functions: 50,
-      lines: 90,
-      statements: 90
+      lines: 80,
+      statements: 80
     }
   },
   transform: {

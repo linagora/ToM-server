@@ -56,6 +56,7 @@ jest.mock('../controllers/index.ts', () => {
   return function () {
     return {
       get: controllerGetSpy,
+      getVisibility: controllerGetSpy,
       updateVisibility: controllerUpdateVisibilitySpy
     }
   }

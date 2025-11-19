@@ -1,6 +1,5 @@
 import { createRequestHandler } from '@remix-run/express'
 import { installGlobals } from '@remix-run/node'
-import AppServer from '@twake/matrix-application-server'
 import TomServer from '@twake/server'
 import MatrixIdentityServer from '@twake/matrix-identity-server'
 import { CommonSettingsService } from '@twake/common-settings'
@@ -32,10 +31,7 @@ const _parseBooleanEnv = (variable, defaultValue) => {
 
 const appServerConf = {
   base_url: process.env.BASE_URL,
-  sender_localpart: process.env.SENDER_LOCALPART,
-  registration_file_path: process.env.REGISTRATION_FILE_PATH,
-  namespaces: process.env.NAMESPACES,
-  push_ephemeral: process.env.PUSH_EPHEMERAL || true
+  sender_localpart: process.env.SENDER_LOCALPART
 }
 
 const rabbitmqConf = {
@@ -152,18 +148,6 @@ let conf = {
     ? JSON.parse(process.env.MATRIX_DATABASE_SSL)
     : false,
   oidc_issuer: process.env.OIDC_ISSUER,
-  opensearch_ca_cert_path: process.env.OPENSEARCH_CA_CERT_PATH,
-  opensearch_host: process.env.OPENSEARCH_HOST,
-  opensearch_is_activated: process.env.OPENSEARCH_IS_ACTIVATED || false,
-  opensearch_max_retries: +process.env.OPENSEARCH_MAX_RETRIES || null,
-  opensearch_number_of_shards: +process.env.OPENSEARCH_NUMBER_OF_SHARDS || null,
-  opensearch_number_of_replicas:
-    +process.env.OPENSEARCH_NUMBER_OF_REPLICAS || null,
-  opensearch_password: process.env.OPENSEARCH_PASSWORD,
-  opensearch_ssl: process.env.OPENSEARCH_SSL || false,
-  opensearch_user: process.env.OPENSEARCH_USER,
-  opensearch_wait_for_active_shards:
-    process.env.OPENSEARCH_WAIT_FOR_ACTIVE_SHARDS,
   pepperCron: process.env.PEPPER_CRON || '9 1 * * *',
   rate_limiting_window: process.env.RATE_LIMITING_WINDOW || 600000,
   rate_limiting_nb_requests: process.env.RATE_LIMITING_NB_REQUESTS || 100,
@@ -201,118 +185,113 @@ let conf = {
   features: featuresConf
 }
 
-if (process.argv[2] === 'generate') {
-  // eslint-disable-next-line no-unused-vars
-  const appServer = new AppServer(appServerConf)
-} else {
-  const app = express()
+const app = express()
 
-  // TODO: implement with logger debug/silly level
-  //
-  //app.use((req, res, next) => {
-  //  console.log(req.path)
-  //
-  //  req.on('error', () => {
-  //    console.error('ERROR:', req.path)
-  //  })
-  //  req.on('end', () => {
-  //    console.log('END:', req.path)
-  //  })
-  //
-  //  next()
-  //})
-  app.use(express.json())
-  app.use(express.urlencoded({ extended: true }))
+// TODO: implement with logger debug/silly level
+//
+// app.use((req, res, next) => {
+//   console.log(req.path)
+//
+//   req.on('error', () => {
+//     console.error('ERROR:', req.path)
+//   })
+//   req.on('end', () => {
+//     console.log('END:', req.path)
+//   })
+//
+//   next()
+// })
+app.use(express.json())
+app.use(express.urlencoded({ extended: true }))
 
-  const trustProxy = process.env.TRUSTED_PROXIES
-    ? process.env.TRUSTED_PROXIES.split(/\s+/)
-    : []
-  if (trustProxy.length > 0) {
-    conf.trust_x_forwarded_for = true
-    app.set('trust proxy', ...trustProxy)
-  }
-
-  const tomServer = new TomServer(conf)
-
-  const promises = [tomServer.ready]
-
-  if (process.env.CROWDSEC_URI) {
-    if (!process.env.CROWDSEC_KEY) {
-      throw new Error('Missing CROWDSEC_KEY')
-    }
-    promises.push(
-      new Promise((resolve, reject) => {
-        import('@crowdsec/express-bouncer')
-          .then((m) =>
-            m.default({
-              url: process.env.CROWDSEC_URI,
-              apiKey: process.env.CROWDSEC_KEY
-            })
-          )
-          .then((crowdsecMiddleware) => {
-            app.use(crowdsecMiddleware)
-            resolve()
-          })
-          .catch(reject)
-      })
-    )
-  }
-
-  app.use(
-    '/assets',
-    express.static('./landing/build/client/assets', {
-      immutable: true,
-      maxAge: '1y'
-    })
-  )
-
-  app.use(express.static('./landing/build/client', { maxAge: '1h' }))
-
-  app.get(
-    '/',
-    createRequestHandler({
-      build: await import('./landing/build/server/index.js')
-    })
-  )
-
-  Promise.all(promises)
-    .then(() => {
-      const idServer = new MatrixIdentityServer(
-        conf,
-        undefined,
-        undefined,
-        undefined,
-        tomServer.db,
-        true
-      )
-      return idServer.ready.then(() => {
-        app.use(tomServer.endpoints)
-
-        // TODO: These routes should already be setup by tomServer.endpoints above
-        Object.keys(idServer.api.get).forEach((k) => {
-          app.get(k, idServer.api.get[k])
-        })
-
-        Object.keys(idServer.api.post).forEach((k) => {
-          app.post(k, idServer.api.post[k])
-        })
-
-        const port = process.argv[2] != null ? parseInt(process.argv[2]) : 3000
-        console.log(`ToM-Server listening on port: ${port}`)
-        app.listen(port, '0.0.0.0', async () => {
-          if (conf.features.common_settings.enabled === true) {
-            const commonSettingsServiceI = new CommonSettingsService(
-              conf,
-              tomServer.logger,
-              tomServer.db
-            )
-            await commonSettingsServiceI.start()
-          }
-        })
-      })
-    })
-    .catch((e) => {
-      console.error(e)
-      throw e
-    })
+const trustProxy = process.env.TRUSTED_PROXIES
+  ? process.env.TRUSTED_PROXIES.split(/\s+/)
+  : []
+if (trustProxy.length > 0) {
+  conf.trust_x_forwarded_for = true
+  app.set('trust proxy', ...trustProxy)
 }
+
+const tomServer = new TomServer(conf)
+
+const promises = [tomServer.ready]
+
+if (process.env.CROWDSEC_URI) {
+  if (!process.env.CROWDSEC_KEY) {
+    throw new Error('Missing CROWDSEC_KEY')
+  }
+  promises.push(
+    new Promise((resolve, reject) => {
+      import('@crowdsec/express-bouncer')
+        .then((m) =>
+          m.default({
+            url: process.env.CROWDSEC_URI,
+            apiKey: process.env.CROWDSEC_KEY
+          })
+        )
+        .then((crowdsecMiddleware) => {
+          app.use(crowdsecMiddleware)
+          resolve()
+        })
+        .catch(reject)
+    })
+  )
+}
+
+app.use(
+  '/assets',
+  express.static('./landing/build/client/assets', {
+    immutable: true,
+    maxAge: '1y'
+  })
+)
+
+app.use(express.static('./landing/build/client', { maxAge: '1h' }))
+
+app.get(
+  '/',
+  createRequestHandler({
+    build: await import('./landing/build/server/index.js')
+  })
+)
+
+Promise.all(promises)
+  .then(async () => {
+    const idServer = new MatrixIdentityServer(
+      conf,
+      undefined,
+      undefined,
+      undefined,
+      tomServer.db,
+      true
+    )
+    return idServer.ready.then(() => {
+      app.use(tomServer.endpoints)
+
+      // TODO: These routes should already be setup by tomServer.endpoints above
+      Object.keys(idServer.api.get).forEach((k) => {
+        app.get(k, idServer.api.get[k])
+      })
+
+      Object.keys(idServer.api.post).forEach((k) => {
+        app.post(k, idServer.api.post[k])
+      })
+
+      const port = process.argv[2] != null ? parseInt(process.argv[2]) : 3000
+      console.log(`ToM-Server listening on port: ${port}`)
+      app.listen(port, '0.0.0.0', async () => {
+        if (conf.features.common_settings.enabled === true) {
+          const commonSettingsServiceI = new CommonSettingsService(
+            conf,
+            tomServer.logger,
+            tomServer.db
+          )
+          await commonSettingsServiceI.start()
+        }
+      })
+    })
+  })
+  .catch((e) => {
+    console.error(e)
+    throw e
+  })

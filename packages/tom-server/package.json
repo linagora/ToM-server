@@ -41,8 +41,6 @@
     "test": "LOG_TRANSPORTS=File LOG_FILE=/dev/null jest"
   },
   "dependencies": {
-    "@opensearch-project/opensearch": "^2.5.0",
-    "@twake/matrix-application-server": "*",
     "@twake/matrix-identity-server": "*",
     "@twake/utils": "*",
     "ldapts": "^7.1.0",

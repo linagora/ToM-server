@@ -83,21 +83,6 @@ To secure your installation with [the help of the crowd](https://github.com/crow
 | `CROWDSEC_URI` | API URI to use                    | `none`  | *optional* |
 | `CROWDSEC_KEY` | The secret key for authentication | `none`  | *optional* |
 
-### OpenSearch
-
-| Name                                | Description                                | Default | Status     |
-| ----------------------------------- | ------------------------------------------ | ------- | ---------- |
-| `OPENSEARCH_IS_ACTIVATED`           | Enable or not the OpenSearch integration   | `false` | *optional* |
-| `OPENSEARCH_HOST`                   | URI of the OpenSearch instance             | `none`  | *optional* |
-| `OPENSEARCH_MAX_RETRIES`            |                                            | `none`  | *optional* |
-| `OPENSEARCH_NUMBER_OF_SHARDS`       |                                            | `none`  | *optional* |
-| `OPENSEARCH_NUMBER_OF_REPLICAS`     |                                            | `none`  | *optional* |
-| `OPENSEARCH_USER`                   | The user that connects to OpenSearch       | `none`  | *optional* |
-| `OPENSEARCH_PASSWORD`               |                                            | `none`  | *optional* |
-| `OPENSEARCH_WAIT_FOR_ACTIVE_SHARDS` | Must ToM wait for active shards            | `none`  | *optional* |
-| `OPENSEARCH_SSL`                    | Wether to use SSL to connect to OpenSearch | `false` | *optional* |
-| `OPENSEARCH_CA_CERT_PATH`           | Path of the CA to use for SSL termination  | `none`  | *optional* |
-
 ## Use the ToM Image
 
 The ToM server is made to be configured with environment variables, allowing a
@@ -177,6 +162,8 @@ Also, when running the lightweight environment make sure to initialize the lemon
 # mkcert -install
 # mkcert docker.localhost *.docker.localhost
 # cat docker.localhost+1.pem docker.localhost+1-key.pem > both.pem
+# cp ~/.local/share/mkcert/*.pem .
+# openssl rehash .
 # popd
 
 ## Add your Timezone, UID and GID to the synapse container

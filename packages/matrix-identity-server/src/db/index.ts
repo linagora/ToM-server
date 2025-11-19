@@ -18,8 +18,6 @@ export type Collections =
   | 'keys'
   | 'longTermKeypairs'
   | 'mappings'
-  | 'privateNotes'
-  | 'roomTags'
   | 'shortTermKeypairs'
   | 'userHistory'
   | 'userPolicies'
@@ -44,10 +42,6 @@ const tables: Record<Collections, string> = {
     'name text PRIMARY KEY, keyID varchar(64), public text, private text',
   mappings:
     'client_secret varchar(255) PRIMARY KEY, session_id varchar(12), medium varchar(8), valid integer, address text, submit_time integer, send_attempt integer',
-  privateNotes:
-    'id varchar(64) PRIMARY KEY, authorId varchar(64), content text, targetId varchar(64)',
-  roomTags:
-    'id varchar(64) PRIMARY KEY, authorId varchar(64), content text, roomId varchar(64)',
   shortTermKeypairs:
     'keyID varchar(64) PRIMARY KEY, public text, private text, active integer',
   userHistory: 'address text PRIMARY KEY, active integer, timestamp integer',
