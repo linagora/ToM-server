@@ -390,10 +390,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
 
       expect(user).not.toBeNull()
       expect(user).toHaveProperty('display_name', MOCK_DATA.MATRIX.displayname)
-      expect(user).not.toHaveProperty('avatar')
+      expect(user).not.toHaveProperty('avatar_url')
       expect(user).not.toHaveProperty('sn')
       expect(user).not.toHaveProperty('givenName')
-      expect(user).not.toHaveProperty('mails')
+      expect(user).not.toHaveProperty('emails')
       expect(user).not.toHaveProperty('phones')
       expect(user).not.toHaveProperty('last_name')
       expect(user).not.toHaveProperty('first_name')
@@ -408,10 +408,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
 
       expect(user).not.toBeNull()
       expect(user).toHaveProperty('display_name', MOCK_DATA.MATRIX.displayname)
-      expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+      expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
       expect(user).not.toHaveProperty('sn')
       expect(user).not.toHaveProperty('givenName')
-      expect(user).not.toHaveProperty('mails')
+      expect(user).not.toHaveProperty('emails')
       expect(user).not.toHaveProperty('phones')
       expect(user).not.toHaveProperty('last_name')
       expect(user).not.toHaveProperty('first_name')
@@ -427,10 +427,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
 
       expect(user).not.toBeNull()
       expect(user).toHaveProperty('display_name', MOCK_DATA.MATRIX.displayname)
-      expect(user).not.toHaveProperty('avatar')
+      expect(user).not.toHaveProperty('avatar_url')
       expect(user).not.toHaveProperty('sn')
       expect(user).not.toHaveProperty('givenName')
-      expect(user).not.toHaveProperty('mails')
+      expect(user).not.toHaveProperty('emails')
       expect(user).not.toHaveProperty('phones')
       expect(user).not.toHaveProperty('last_name')
       expect(user).not.toHaveProperty('first_name')
@@ -446,10 +446,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
 
       expect(user).not.toBeNull()
       expect(user).toHaveProperty('display_name', MOCK_DATA.MATRIX.displayname)
-      expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+      expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
       expect(user).not.toHaveProperty('sn')
       expect(user).not.toHaveProperty('givenName')
-      expect(user).not.toHaveProperty('mails')
+      expect(user).not.toHaveProperty('emails')
       expect(user).not.toHaveProperty('phones')
       expect(user).not.toHaveProperty('last_name')
       expect(user).not.toHaveProperty('first_name')
@@ -465,10 +465,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
 
       expect(user).not.toBeNull()
       expect(user).toHaveProperty('display_name', MOCK_DATA.MATRIX.displayname)
-      expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+      expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
       expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
       expect(user).not.toHaveProperty('givenName')
-      expect(user).not.toHaveProperty('mails')
+      expect(user).not.toHaveProperty('emails')
       expect(user).not.toHaveProperty('phones')
       expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
       expect(user).not.toHaveProperty('first_name')
@@ -484,10 +484,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
 
       expect(user).not.toBeNull()
       expect(user).toHaveProperty('display_name', MOCK_DATA.MATRIX.displayname)
-      expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+      expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
       expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
       expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
-      expect(user).not.toHaveProperty('mails')
+      expect(user).not.toHaveProperty('emails')
       expect(user).not.toHaveProperty('phones')
       expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
       expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
@@ -512,10 +512,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
           'display_name',
           MOCK_DATA.MATRIX.displayname
         )
-        expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+        expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
         expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
         expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
-        expect(user).not.toHaveProperty('mails')
+        expect(user).not.toHaveProperty('emails')
         expect(user).not.toHaveProperty('phones')
         expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
         expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
@@ -540,10 +540,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
           'display_name',
           MOCK_DATA.MATRIX.displayname
         )
-        expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+        expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
         expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
         expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
-        expect(user).not.toHaveProperty('mails')
+        expect(user).not.toHaveProperty('emails')
         expect(user).not.toHaveProperty('phones')
         expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
         expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
@@ -578,10 +578,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
-          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('emails')
           expect(user).not.toHaveProperty('phones')
           expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
@@ -614,10 +614,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
-          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('emails')
           expect(user).not.toHaveProperty('phones')
           expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
@@ -651,10 +651,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
-          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('emails')
           expect(user).not.toHaveProperty('phones')
           expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
@@ -687,10 +687,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
-          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('emails')
           expect(user).not.toHaveProperty('phones')
           expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
@@ -724,10 +724,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
-          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('emails')
           expect(user).not.toHaveProperty('phones')
           expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
@@ -760,10 +760,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
-          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('emails')
           expect(user).not.toHaveProperty('phones')
           expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
@@ -797,10 +797,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
-          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('emails')
           expect(user).not.toHaveProperty('phones')
           expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
@@ -833,10 +833,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
-          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('emails')
           expect(user).not.toHaveProperty('phones')
           expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
@@ -873,10 +873,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
-          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('emails')
           expect(user).not.toHaveProperty('phones')
           expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
@@ -909,10 +909,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
-          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('emails')
           expect(user).not.toHaveProperty('phones')
           expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
@@ -946,10 +946,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
-          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('emails')
           expect(user).not.toHaveProperty('phones')
           expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
@@ -982,10 +982,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
-          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('emails')
           expect(user).not.toHaveProperty('phones')
           expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
@@ -1019,10 +1019,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
-          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('emails')
           expect(user).not.toHaveProperty('phones')
           expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
@@ -1055,10 +1055,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
-          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('emails')
           expect(user).not.toHaveProperty('phones')
           expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
@@ -1092,10 +1092,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
-          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('emails')
           expect(user).not.toHaveProperty('phones')
           expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
@@ -1128,10 +1128,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
-          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('emails')
           expect(user).not.toHaveProperty('phones')
           expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
@@ -1167,10 +1167,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
-          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('emails')
           expect(user).not.toHaveProperty('phones')
           expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
@@ -1203,10 +1203,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
-          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('emails')
           expect(user).not.toHaveProperty('phones')
           expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
@@ -1240,10 +1240,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
-          expect(user).toHaveProperty('mails', [MOCK_DATA.LDAP.mail])
+          expect(user).toHaveProperty('emails', [MOCK_DATA.LDAP.mail])
           expect(user).not.toHaveProperty('phones')
           expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
@@ -1276,10 +1276,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
-          expect(user).toHaveProperty('mails', [MOCK_DATA.LDAP.mail])
+          expect(user).toHaveProperty('emails', [MOCK_DATA.LDAP.mail])
           expect(user).not.toHaveProperty('phones')
           expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
@@ -1313,10 +1313,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
-          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('emails')
           expect(user).not.toHaveProperty('phones')
           expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
@@ -1349,10 +1349,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
-          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('emails')
           expect(user).toHaveProperty('phones', [MOCK_DATA.LDAP.mobile])
           expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
@@ -1386,10 +1386,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
-          expect(user).toHaveProperty('mails', [MOCK_DATA.LDAP.mail])
+          expect(user).toHaveProperty('emails', [MOCK_DATA.LDAP.mail])
           expect(user).not.toHaveProperty('phones')
           expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
@@ -1422,10 +1422,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
-          expect(user).toHaveProperty('mails', [MOCK_DATA.LDAP.mail])
+          expect(user).toHaveProperty('emails', [MOCK_DATA.LDAP.mail])
           expect(user).toHaveProperty('phones', [MOCK_DATA.LDAP.mobile])
           expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
@@ -1443,10 +1443,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
 
       expect(user).not.toBeNull()
       expect(user).toHaveProperty('display_name', MOCK_DATA.MATRIX.displayname)
-      expect(user).not.toHaveProperty('avatar')
+      expect(user).not.toHaveProperty('avatar_url')
       expect(user).not.toHaveProperty('sn')
       expect(user).not.toHaveProperty('givenName')
-      expect(user).not.toHaveProperty('mails')
+      expect(user).not.toHaveProperty('emails')
       expect(user).not.toHaveProperty('phones')
       expect(user).not.toHaveProperty('last_name')
       expect(user).not.toHaveProperty('first_name')
@@ -1462,10 +1462,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
 
       expect(user).not.toBeNull()
       expect(user).toHaveProperty('display_name', MOCK_DATA.MATRIX.displayname)
-      expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+      expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
       expect(user).not.toHaveProperty('sn')
       expect(user).not.toHaveProperty('givenName')
-      expect(user).not.toHaveProperty('mails')
+      expect(user).not.toHaveProperty('emails')
       expect(user).not.toHaveProperty('phones')
       expect(user).not.toHaveProperty('last_name')
       expect(user).not.toHaveProperty('first_name')
@@ -1481,10 +1481,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
 
       expect(user).not.toBeNull()
       expect(user).toHaveProperty('display_name', MOCK_DATA.MATRIX.displayname)
-      expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+      expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
       expect(user).not.toHaveProperty('sn')
       expect(user).not.toHaveProperty('givenName')
-      expect(user).not.toHaveProperty('mails')
+      expect(user).not.toHaveProperty('emails')
       expect(user).not.toHaveProperty('phones')
       expect(user).not.toHaveProperty('last_name')
       expect(user).not.toHaveProperty('first_name')
@@ -1500,10 +1500,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
 
       expect(user).not.toBeNull()
       expect(user).toHaveProperty('display_name', MOCK_DATA.MATRIX.displayname)
-      expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+      expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
       expect(user).not.toHaveProperty('sn')
       expect(user).not.toHaveProperty('givenName')
-      expect(user).not.toHaveProperty('mails')
+      expect(user).not.toHaveProperty('emails')
       expect(user).not.toHaveProperty('phones')
       expect(user).not.toHaveProperty('last_name')
       expect(user).not.toHaveProperty('first_name')
@@ -1528,10 +1528,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
           'display_name',
           MOCK_DATA.MATRIX.displayname
         )
-        expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+        expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
         expect(user).not.toHaveProperty('sn')
         expect(user).not.toHaveProperty('givenName')
-        expect(user).not.toHaveProperty('mails')
+        expect(user).not.toHaveProperty('emails')
         expect(user).not.toHaveProperty('phones')
         expect(user).not.toHaveProperty('last_name')
         expect(user).not.toHaveProperty('first_name')
@@ -1556,10 +1556,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
           'display_name',
           MOCK_DATA.MATRIX.displayname
         )
-        expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+        expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
         expect(user).not.toHaveProperty('sn')
         expect(user).not.toHaveProperty('givenName')
-        expect(user).not.toHaveProperty('mails')
+        expect(user).not.toHaveProperty('emails')
         expect(user).not.toHaveProperty('phones')
         expect(user).not.toHaveProperty('last_name')
         expect(user).not.toHaveProperty('first_name')
@@ -1593,10 +1593,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).not.toHaveProperty('sn')
           expect(user).not.toHaveProperty('givenName')
-          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('emails')
           expect(user).not.toHaveProperty('phones')
           expect(user).not.toHaveProperty('last_name')
           expect(user).not.toHaveProperty('first_name')
@@ -1628,10 +1628,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).not.toHaveProperty('sn')
           expect(user).not.toHaveProperty('givenName')
-          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('emails')
           expect(user).not.toHaveProperty('phones')
           expect(user).not.toHaveProperty('last_name')
           expect(user).not.toHaveProperty('first_name')
@@ -1664,10 +1664,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).not.toHaveProperty('sn')
           expect(user).not.toHaveProperty('givenName')
-          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('emails')
           expect(user).not.toHaveProperty('phones')
           expect(user).not.toHaveProperty('last_name')
           expect(user).not.toHaveProperty('first_name')
@@ -1699,10 +1699,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).not.toHaveProperty('sn')
           expect(user).not.toHaveProperty('givenName')
-          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('emails')
           expect(user).not.toHaveProperty('phones')
           expect(user).not.toHaveProperty('last_name')
           expect(user).not.toHaveProperty('first_name')
@@ -1735,10 +1735,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).not.toHaveProperty('sn')
           expect(user).not.toHaveProperty('givenName')
-          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('emails')
           expect(user).not.toHaveProperty('phones')
           expect(user).not.toHaveProperty('last_name')
           expect(user).not.toHaveProperty('first_name')
@@ -1770,10 +1770,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).not.toHaveProperty('sn')
           expect(user).not.toHaveProperty('givenName')
-          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('emails')
           expect(user).not.toHaveProperty('phones')
           expect(user).not.toHaveProperty('last_name')
           expect(user).not.toHaveProperty('first_name')
@@ -1806,10 +1806,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).not.toHaveProperty('sn')
           expect(user).not.toHaveProperty('givenName')
-          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('emails')
           expect(user).not.toHaveProperty('phones')
           expect(user).not.toHaveProperty('last_name')
           expect(user).not.toHaveProperty('first_name')
@@ -1841,10 +1841,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).not.toHaveProperty('sn')
           expect(user).not.toHaveProperty('givenName')
-          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('emails')
           expect(user).not.toHaveProperty('phones')
           expect(user).not.toHaveProperty('last_name')
           expect(user).not.toHaveProperty('first_name')
@@ -1880,10 +1880,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).not.toHaveProperty('sn')
           expect(user).not.toHaveProperty('givenName')
-          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('emails')
           expect(user).not.toHaveProperty('phones')
           expect(user).not.toHaveProperty('last_name')
           expect(user).not.toHaveProperty('first_name')
@@ -1915,10 +1915,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).not.toHaveProperty('sn')
           expect(user).not.toHaveProperty('givenName')
-          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('emails')
           expect(user).not.toHaveProperty('phones')
           expect(user).not.toHaveProperty('last_name')
           expect(user).not.toHaveProperty('first_name')
@@ -1951,10 +1951,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).not.toHaveProperty('sn')
           expect(user).not.toHaveProperty('givenName')
-          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('emails')
           expect(user).not.toHaveProperty('phones')
           expect(user).not.toHaveProperty('last_name')
           expect(user).not.toHaveProperty('first_name')
@@ -1986,10 +1986,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).not.toHaveProperty('sn')
           expect(user).not.toHaveProperty('givenName')
-          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('emails')
           expect(user).not.toHaveProperty('phones')
           expect(user).not.toHaveProperty('last_name')
           expect(user).not.toHaveProperty('first_name')
@@ -2022,10 +2022,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).not.toHaveProperty('sn')
           expect(user).not.toHaveProperty('givenName')
-          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('emails')
           expect(user).not.toHaveProperty('phones')
           expect(user).not.toHaveProperty('last_name')
           expect(user).not.toHaveProperty('first_name')
@@ -2057,10 +2057,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).not.toHaveProperty('sn')
           expect(user).not.toHaveProperty('givenName')
-          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('emails')
           expect(user).not.toHaveProperty('phones')
           expect(user).not.toHaveProperty('last_name')
           expect(user).not.toHaveProperty('first_name')
@@ -2093,10 +2093,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).not.toHaveProperty('sn')
           expect(user).not.toHaveProperty('givenName')
-          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('emails')
           expect(user).not.toHaveProperty('phones')
           expect(user).not.toHaveProperty('last_name')
           expect(user).not.toHaveProperty('first_name')
@@ -2128,10 +2128,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).not.toHaveProperty('sn')
           expect(user).not.toHaveProperty('givenName')
-          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('emails')
           expect(user).not.toHaveProperty('phones')
           expect(user).not.toHaveProperty('last_name')
           expect(user).not.toHaveProperty('first_name')
@@ -2166,10 +2166,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).not.toHaveProperty('sn')
           expect(user).not.toHaveProperty('givenName')
-          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('emails')
           expect(user).not.toHaveProperty('phones')
           expect(user).not.toHaveProperty('last_name')
           expect(user).not.toHaveProperty('first_name')
@@ -2201,10 +2201,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).not.toHaveProperty('sn')
           expect(user).not.toHaveProperty('givenName')
-          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('emails')
           expect(user).not.toHaveProperty('phones')
           expect(user).not.toHaveProperty('last_name')
           expect(user).not.toHaveProperty('first_name')
@@ -2237,10 +2237,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).not.toHaveProperty('sn')
           expect(user).not.toHaveProperty('givenName')
-          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('emails')
           expect(user).not.toHaveProperty('phones')
           expect(user).not.toHaveProperty('last_name')
           expect(user).not.toHaveProperty('first_name')
@@ -2272,10 +2272,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).not.toHaveProperty('sn')
           expect(user).not.toHaveProperty('givenName')
-          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('emails')
           expect(user).not.toHaveProperty('phones')
           expect(user).not.toHaveProperty('last_name')
           expect(user).not.toHaveProperty('first_name')
@@ -2308,10 +2308,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).not.toHaveProperty('sn')
           expect(user).not.toHaveProperty('givenName')
-          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('emails')
           expect(user).not.toHaveProperty('phones')
           expect(user).not.toHaveProperty('last_name')
           expect(user).not.toHaveProperty('first_name')
@@ -2343,10 +2343,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).not.toHaveProperty('sn')
           expect(user).not.toHaveProperty('givenName')
-          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('emails')
           expect(user).not.toHaveProperty('phones')
           expect(user).not.toHaveProperty('last_name')
           expect(user).not.toHaveProperty('first_name')
@@ -2379,10 +2379,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).not.toHaveProperty('sn')
           expect(user).not.toHaveProperty('givenName')
-          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('emails')
           expect(user).not.toHaveProperty('phones')
           expect(user).not.toHaveProperty('last_name')
           expect(user).not.toHaveProperty('first_name')
@@ -2414,10 +2414,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).not.toHaveProperty('sn')
           expect(user).not.toHaveProperty('givenName')
-          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('emails')
           expect(user).not.toHaveProperty('phones')
           expect(user).not.toHaveProperty('last_name')
           expect(user).not.toHaveProperty('first_name')
@@ -2440,10 +2440,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
 
       expect(user).not.toBeNull()
       expect(user).toHaveProperty('display_name', MOCK_DATA.MATRIX.displayname)
-      expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+      expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
       expect(user).not.toHaveProperty('sn')
       expect(user).not.toHaveProperty('givenName')
-      expect(user).not.toHaveProperty('mails')
+      expect(user).not.toHaveProperty('emails')
       expect(user).not.toHaveProperty('phones')
       expect(user).not.toHaveProperty('last_name')
       expect(user).not.toHaveProperty('first_name')
@@ -2465,10 +2465,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
 
       expect(user).not.toBeNull()
       expect(user).toHaveProperty('display_name', MOCK_DATA.MATRIX.displayname)
-      expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+      expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
       expect(user).not.toHaveProperty('sn')
       expect(user).not.toHaveProperty('givenName')
-      expect(user).not.toHaveProperty('mails')
+      expect(user).not.toHaveProperty('emails')
       expect(user).not.toHaveProperty('phones')
       expect(user).not.toHaveProperty('last_name')
       expect(user).not.toHaveProperty('first_name')
@@ -2504,10 +2504,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
 
       expect(user).not.toBeNull()
       expect(user).toHaveProperty('display_name', MOCK_DATA.MATRIX.displayname)
-      expect(user).not.toHaveProperty('avatar')
+      expect(user).not.toHaveProperty('avatar_url')
       expect(user).not.toHaveProperty('sn')
       expect(user).not.toHaveProperty('givenName')
-      expect(user).not.toHaveProperty('mails')
+      expect(user).not.toHaveProperty('emails')
       expect(user).not.toHaveProperty('phones')
       expect(user).not.toHaveProperty('last_name')
       expect(user).not.toHaveProperty('first_name')
@@ -2522,10 +2522,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
 
       expect(user).not.toBeNull()
       expect(user).toHaveProperty('display_name', MOCK_DATA.MATRIX.displayname)
-      expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+      expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
       expect(user).not.toHaveProperty('sn')
       expect(user).not.toHaveProperty('givenName')
-      expect(user).not.toHaveProperty('mails')
+      expect(user).not.toHaveProperty('emails')
       expect(user).not.toHaveProperty('phones')
       expect(user).not.toHaveProperty('last_name')
       expect(user).not.toHaveProperty('first_name')
@@ -2541,10 +2541,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
 
       expect(user).not.toBeNull()
       expect(user).toHaveProperty('display_name', MOCK_DATA.MATRIX.displayname)
-      expect(user).not.toHaveProperty('avatar')
+      expect(user).not.toHaveProperty('avatar_url')
       expect(user).not.toHaveProperty('sn')
       expect(user).not.toHaveProperty('givenName')
-      expect(user).not.toHaveProperty('mails')
+      expect(user).not.toHaveProperty('emails')
       expect(user).not.toHaveProperty('phones')
       expect(user).not.toHaveProperty('last_name')
       expect(user).not.toHaveProperty('first_name')
@@ -2560,10 +2560,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
 
       expect(user).not.toBeNull()
       expect(user).toHaveProperty('display_name', MOCK_DATA.MATRIX.displayname)
-      expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+      expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
       expect(user).not.toHaveProperty('sn')
       expect(user).not.toHaveProperty('givenName')
-      expect(user).not.toHaveProperty('mails')
+      expect(user).not.toHaveProperty('emails')
       expect(user).not.toHaveProperty('phones')
       expect(user).not.toHaveProperty('last_name')
       expect(user).not.toHaveProperty('first_name')
@@ -2579,10 +2579,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
 
       expect(user).not.toBeNull()
       expect(user).toHaveProperty('display_name', MOCK_DATA.MATRIX.displayname)
-      expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+      expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
       expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
       expect(user).not.toHaveProperty('givenName')
-      expect(user).not.toHaveProperty('mails')
+      expect(user).not.toHaveProperty('emails')
       expect(user).not.toHaveProperty('phones')
       expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
       expect(user).not.toHaveProperty('first_name')
@@ -2598,10 +2598,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
 
       expect(user).not.toBeNull()
       expect(user).toHaveProperty('display_name', MOCK_DATA.MATRIX.displayname)
-      expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+      expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
       expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
       expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
-      expect(user).not.toHaveProperty('mails')
+      expect(user).not.toHaveProperty('emails')
       expect(user).not.toHaveProperty('phones')
       expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
       expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
@@ -2626,10 +2626,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
           'display_name',
           MOCK_DATA.MATRIX.displayname
         )
-        expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+        expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
         expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
         expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
-        expect(user).toHaveProperty('mails', [MOCK_DATA.LDAP.mail])
+        expect(user).toHaveProperty('emails', [MOCK_DATA.LDAP.mail])
         expect(user).not.toHaveProperty('phones')
         expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
         expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
@@ -2654,10 +2654,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
           'display_name',
           MOCK_DATA.MATRIX.displayname
         )
-        expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+        expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
         expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
         expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
-        expect(user).toHaveProperty('mails', [MOCK_DATA.LDAP.mail])
+        expect(user).toHaveProperty('emails', [MOCK_DATA.LDAP.mail])
         expect(user).toHaveProperty('phones', [MOCK_DATA.LDAP.mobile])
         expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
         expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
@@ -2692,10 +2692,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
-          expect(user).toHaveProperty('mails', [MOCK_DATA.LDAP.mail])
+          expect(user).toHaveProperty('emails', [MOCK_DATA.LDAP.mail])
           expect(user).not.toHaveProperty('phones')
           expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
@@ -2728,10 +2728,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
-          expect(user).toHaveProperty('mails', [MOCK_DATA.LDAP.mail])
+          expect(user).toHaveProperty('emails', [MOCK_DATA.LDAP.mail])
           expect(user).toHaveProperty('phones', [MOCK_DATA.LDAP.mobile])
           expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
@@ -2765,10 +2765,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
-          expect(user).toHaveProperty('mails', [MOCK_DATA.LDAP.mail])
+          expect(user).toHaveProperty('emails', [MOCK_DATA.LDAP.mail])
           expect(user).not.toHaveProperty('phones')
           expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
@@ -2801,10 +2801,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
-          expect(user).toHaveProperty('mails', [MOCK_DATA.LDAP.mail])
+          expect(user).toHaveProperty('emails', [MOCK_DATA.LDAP.mail])
           expect(user).toHaveProperty('phones', [MOCK_DATA.LDAP.mobile])
           expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
@@ -2838,10 +2838,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
-          expect(user).toHaveProperty('mails', [MOCK_DATA.LDAP.mail])
+          expect(user).toHaveProperty('emails', [MOCK_DATA.LDAP.mail])
           expect(user).not.toHaveProperty('phones')
           expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
@@ -2874,10 +2874,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
-          expect(user).toHaveProperty('mails', [MOCK_DATA.LDAP.mail])
+          expect(user).toHaveProperty('emails', [MOCK_DATA.LDAP.mail])
           expect(user).toHaveProperty('phones', [MOCK_DATA.LDAP.mobile])
           expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
@@ -2911,10 +2911,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
-          expect(user).toHaveProperty('mails', [MOCK_DATA.LDAP.mail])
+          expect(user).toHaveProperty('emails', [MOCK_DATA.LDAP.mail])
           expect(user).not.toHaveProperty('phones')
           expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
@@ -2947,10 +2947,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
-          expect(user).toHaveProperty('mails', [MOCK_DATA.LDAP.mail])
+          expect(user).toHaveProperty('emails', [MOCK_DATA.LDAP.mail])
           expect(user).toHaveProperty('phones', [MOCK_DATA.LDAP.mobile])
           expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
@@ -2987,10 +2987,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
-          expect(user).toHaveProperty('mails', [MOCK_DATA.LDAP.mail])
+          expect(user).toHaveProperty('emails', [MOCK_DATA.LDAP.mail])
           expect(user).not.toHaveProperty('phones')
           expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
@@ -3023,10 +3023,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
-          expect(user).toHaveProperty('mails', [MOCK_DATA.LDAP.mail])
+          expect(user).toHaveProperty('emails', [MOCK_DATA.LDAP.mail])
           expect(user).toHaveProperty('phones', [MOCK_DATA.LDAP.mobile])
           expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
@@ -3060,10 +3060,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
-          expect(user).toHaveProperty('mails', [MOCK_DATA.LDAP.mail])
+          expect(user).toHaveProperty('emails', [MOCK_DATA.LDAP.mail])
           expect(user).not.toHaveProperty('phones')
           expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
@@ -3096,10 +3096,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
-          expect(user).toHaveProperty('mails', [MOCK_DATA.LDAP.mail])
+          expect(user).toHaveProperty('emails', [MOCK_DATA.LDAP.mail])
           expect(user).toHaveProperty('phones', [MOCK_DATA.LDAP.mobile])
           expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
@@ -3133,10 +3133,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
-          expect(user).toHaveProperty('mails', [MOCK_DATA.LDAP.mail])
+          expect(user).toHaveProperty('emails', [MOCK_DATA.LDAP.mail])
           expect(user).not.toHaveProperty('phones')
           expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
@@ -3169,10 +3169,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
-          expect(user).toHaveProperty('mails', [MOCK_DATA.LDAP.mail])
+          expect(user).toHaveProperty('emails', [MOCK_DATA.LDAP.mail])
           expect(user).toHaveProperty('phones', [MOCK_DATA.LDAP.mobile])
           expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
@@ -3206,10 +3206,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
-          expect(user).toHaveProperty('mails', [MOCK_DATA.LDAP.mail])
+          expect(user).toHaveProperty('emails', [MOCK_DATA.LDAP.mail])
           expect(user).not.toHaveProperty('phones')
           expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
@@ -3242,10 +3242,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
-          expect(user).toHaveProperty('mails', [MOCK_DATA.LDAP.mail])
+          expect(user).toHaveProperty('emails', [MOCK_DATA.LDAP.mail])
           expect(user).toHaveProperty('phones', [MOCK_DATA.LDAP.mobile])
           expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
@@ -3281,10 +3281,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
-          expect(user).toHaveProperty('mails', [MOCK_DATA.LDAP.mail])
+          expect(user).toHaveProperty('emails', [MOCK_DATA.LDAP.mail])
           expect(user).not.toHaveProperty('phones')
           expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
@@ -3317,10 +3317,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
-          expect(user).toHaveProperty('mails', [MOCK_DATA.LDAP.mail])
+          expect(user).toHaveProperty('emails', [MOCK_DATA.LDAP.mail])
           expect(user).toHaveProperty('phones', [MOCK_DATA.LDAP.mobile])
           expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
@@ -3354,10 +3354,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
-          expect(user).toHaveProperty('mails', [MOCK_DATA.LDAP.mail])
+          expect(user).toHaveProperty('emails', [MOCK_DATA.LDAP.mail])
           expect(user).not.toHaveProperty('phones')
           expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
@@ -3390,10 +3390,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
-          expect(user).toHaveProperty('mails', [MOCK_DATA.LDAP.mail])
+          expect(user).toHaveProperty('emails', [MOCK_DATA.LDAP.mail])
           expect(user).toHaveProperty('phones', [MOCK_DATA.LDAP.mobile])
           expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
@@ -3427,10 +3427,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
-          expect(user).toHaveProperty('mails', [MOCK_DATA.LDAP.mail])
+          expect(user).toHaveProperty('emails', [MOCK_DATA.LDAP.mail])
           expect(user).not.toHaveProperty('phones')
           expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
@@ -3463,10 +3463,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
-          expect(user).toHaveProperty('mails', [MOCK_DATA.LDAP.mail])
+          expect(user).toHaveProperty('emails', [MOCK_DATA.LDAP.mail])
           expect(user).toHaveProperty('phones', [MOCK_DATA.LDAP.mobile])
           expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
@@ -3500,10 +3500,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
-          expect(user).toHaveProperty('mails', [MOCK_DATA.LDAP.mail])
+          expect(user).toHaveProperty('emails', [MOCK_DATA.LDAP.mail])
           expect(user).not.toHaveProperty('phones')
           expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
@@ -3536,10 +3536,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
-          expect(user).toHaveProperty('mails', [MOCK_DATA.LDAP.mail])
+          expect(user).toHaveProperty('emails', [MOCK_DATA.LDAP.mail])
           expect(user).toHaveProperty('phones', [MOCK_DATA.LDAP.mobile])
           expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
@@ -3557,10 +3557,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
 
       expect(user).not.toBeNull()
       expect(user).toHaveProperty('display_name', MOCK_DATA.MATRIX.displayname)
-      expect(user).not.toHaveProperty('avatar')
+      expect(user).not.toHaveProperty('avatar_url')
       expect(user).not.toHaveProperty('sn')
       expect(user).not.toHaveProperty('givenName')
-      expect(user).not.toHaveProperty('mails')
+      expect(user).not.toHaveProperty('emails')
       expect(user).not.toHaveProperty('phones')
       expect(user).not.toHaveProperty('last_name')
       expect(user).not.toHaveProperty('first_name')
@@ -3576,10 +3576,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
 
       expect(user).not.toBeNull()
       expect(user).toHaveProperty('display_name', MOCK_DATA.MATRIX.displayname)
-      expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+      expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
       expect(user).not.toHaveProperty('sn')
       expect(user).not.toHaveProperty('givenName')
-      expect(user).not.toHaveProperty('mails')
+      expect(user).not.toHaveProperty('emails')
       expect(user).not.toHaveProperty('phones')
       expect(user).not.toHaveProperty('last_name')
       expect(user).not.toHaveProperty('first_name')
@@ -3595,10 +3595,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
 
       expect(user).not.toBeNull()
       expect(user).toHaveProperty('display_name', MOCK_DATA.MATRIX.displayname)
-      expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+      expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
       expect(user).not.toHaveProperty('sn')
       expect(user).not.toHaveProperty('givenName')
-      expect(user).not.toHaveProperty('mails')
+      expect(user).not.toHaveProperty('emails')
       expect(user).not.toHaveProperty('phones')
       expect(user).not.toHaveProperty('last_name')
       expect(user).not.toHaveProperty('first_name')
@@ -3614,10 +3614,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
 
       expect(user).not.toBeNull()
       expect(user).toHaveProperty('display_name', MOCK_DATA.MATRIX.displayname)
-      expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+      expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
       expect(user).not.toHaveProperty('sn')
       expect(user).not.toHaveProperty('givenName')
-      expect(user).not.toHaveProperty('mails')
+      expect(user).not.toHaveProperty('emails')
       expect(user).not.toHaveProperty('phones')
       expect(user).not.toHaveProperty('last_name')
       expect(user).not.toHaveProperty('first_name')
@@ -3642,10 +3642,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
           'display_name',
           MOCK_DATA.MATRIX.displayname
         )
-        expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+        expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
         expect(user).not.toHaveProperty('sn')
         expect(user).not.toHaveProperty('givenName')
-        expect(user).not.toHaveProperty('mails')
+        expect(user).not.toHaveProperty('emails')
         expect(user).not.toHaveProperty('phones')
         expect(user).not.toHaveProperty('last_name')
         expect(user).not.toHaveProperty('first_name')
@@ -3670,10 +3670,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
           'display_name',
           MOCK_DATA.MATRIX.displayname
         )
-        expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+        expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
         expect(user).not.toHaveProperty('sn')
         expect(user).not.toHaveProperty('givenName')
-        expect(user).not.toHaveProperty('mails')
+        expect(user).not.toHaveProperty('emails')
         expect(user).not.toHaveProperty('phones')
         expect(user).not.toHaveProperty('last_name')
         expect(user).not.toHaveProperty('first_name')
@@ -3707,10 +3707,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).not.toHaveProperty('sn')
           expect(user).not.toHaveProperty('givenName')
-          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('emails')
           expect(user).not.toHaveProperty('phones')
           expect(user).not.toHaveProperty('last_name')
           expect(user).not.toHaveProperty('first_name')
@@ -3742,10 +3742,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).not.toHaveProperty('sn')
           expect(user).not.toHaveProperty('givenName')
-          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('emails')
           expect(user).not.toHaveProperty('phones')
           expect(user).not.toHaveProperty('last_name')
           expect(user).not.toHaveProperty('first_name')
@@ -3778,10 +3778,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).not.toHaveProperty('sn')
           expect(user).not.toHaveProperty('givenName')
-          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('emails')
           expect(user).not.toHaveProperty('phones')
           expect(user).not.toHaveProperty('last_name')
           expect(user).not.toHaveProperty('first_name')
@@ -3813,10 +3813,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).not.toHaveProperty('sn')
           expect(user).not.toHaveProperty('givenName')
-          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('emails')
           expect(user).not.toHaveProperty('phones')
           expect(user).not.toHaveProperty('last_name')
           expect(user).not.toHaveProperty('first_name')
@@ -3849,10 +3849,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).not.toHaveProperty('sn')
           expect(user).not.toHaveProperty('givenName')
-          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('emails')
           expect(user).not.toHaveProperty('phones')
           expect(user).not.toHaveProperty('last_name')
           expect(user).not.toHaveProperty('first_name')
@@ -3884,10 +3884,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).not.toHaveProperty('sn')
           expect(user).not.toHaveProperty('givenName')
-          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('emails')
           expect(user).not.toHaveProperty('phones')
           expect(user).not.toHaveProperty('last_name')
           expect(user).not.toHaveProperty('first_name')
@@ -3920,10 +3920,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).not.toHaveProperty('sn')
           expect(user).not.toHaveProperty('givenName')
-          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('emails')
           expect(user).not.toHaveProperty('phones')
           expect(user).not.toHaveProperty('last_name')
           expect(user).not.toHaveProperty('first_name')
@@ -3955,10 +3955,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).not.toHaveProperty('sn')
           expect(user).not.toHaveProperty('givenName')
-          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('emails')
           expect(user).not.toHaveProperty('phones')
           expect(user).not.toHaveProperty('last_name')
           expect(user).not.toHaveProperty('first_name')
@@ -3994,10 +3994,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).not.toHaveProperty('sn')
           expect(user).not.toHaveProperty('givenName')
-          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('emails')
           expect(user).not.toHaveProperty('phones')
           expect(user).not.toHaveProperty('last_name')
           expect(user).not.toHaveProperty('first_name')
@@ -4029,10 +4029,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).not.toHaveProperty('sn')
           expect(user).not.toHaveProperty('givenName')
-          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('emails')
           expect(user).not.toHaveProperty('phones')
           expect(user).not.toHaveProperty('last_name')
           expect(user).not.toHaveProperty('first_name')
@@ -4065,10 +4065,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).not.toHaveProperty('sn')
           expect(user).not.toHaveProperty('givenName')
-          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('emails')
           expect(user).not.toHaveProperty('phones')
           expect(user).not.toHaveProperty('last_name')
           expect(user).not.toHaveProperty('first_name')
@@ -4100,10 +4100,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).not.toHaveProperty('sn')
           expect(user).not.toHaveProperty('givenName')
-          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('emails')
           expect(user).not.toHaveProperty('phones')
           expect(user).not.toHaveProperty('last_name')
           expect(user).not.toHaveProperty('first_name')
@@ -4136,10 +4136,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).not.toHaveProperty('sn')
           expect(user).not.toHaveProperty('givenName')
-          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('emails')
           expect(user).not.toHaveProperty('phones')
           expect(user).not.toHaveProperty('last_name')
           expect(user).not.toHaveProperty('first_name')
@@ -4171,10 +4171,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).not.toHaveProperty('sn')
           expect(user).not.toHaveProperty('givenName')
-          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('emails')
           expect(user).not.toHaveProperty('phones')
           expect(user).not.toHaveProperty('last_name')
           expect(user).not.toHaveProperty('first_name')
@@ -4207,10 +4207,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).not.toHaveProperty('sn')
           expect(user).not.toHaveProperty('givenName')
-          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('emails')
           expect(user).not.toHaveProperty('phones')
           expect(user).not.toHaveProperty('last_name')
           expect(user).not.toHaveProperty('first_name')
@@ -4242,10 +4242,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).not.toHaveProperty('sn')
           expect(user).not.toHaveProperty('givenName')
-          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('emails')
           expect(user).not.toHaveProperty('phones')
           expect(user).not.toHaveProperty('last_name')
           expect(user).not.toHaveProperty('first_name')
@@ -4280,10 +4280,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).not.toHaveProperty('sn')
           expect(user).not.toHaveProperty('givenName')
-          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('emails')
           expect(user).not.toHaveProperty('phones')
           expect(user).not.toHaveProperty('last_name')
           expect(user).not.toHaveProperty('first_name')
@@ -4315,10 +4315,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).not.toHaveProperty('sn')
           expect(user).not.toHaveProperty('givenName')
-          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('emails')
           expect(user).not.toHaveProperty('phones')
           expect(user).not.toHaveProperty('last_name')
           expect(user).not.toHaveProperty('first_name')
@@ -4351,10 +4351,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).not.toHaveProperty('sn')
           expect(user).not.toHaveProperty('givenName')
-          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('emails')
           expect(user).not.toHaveProperty('phones')
           expect(user).not.toHaveProperty('last_name')
           expect(user).not.toHaveProperty('first_name')
@@ -4386,10 +4386,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).not.toHaveProperty('sn')
           expect(user).not.toHaveProperty('givenName')
-          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('emails')
           expect(user).not.toHaveProperty('phones')
           expect(user).not.toHaveProperty('last_name')
           expect(user).not.toHaveProperty('first_name')
@@ -4422,10 +4422,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).not.toHaveProperty('sn')
           expect(user).not.toHaveProperty('givenName')
-          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('emails')
           expect(user).not.toHaveProperty('phones')
           expect(user).not.toHaveProperty('last_name')
           expect(user).not.toHaveProperty('first_name')
@@ -4457,10 +4457,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).not.toHaveProperty('sn')
           expect(user).not.toHaveProperty('givenName')
-          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('emails')
           expect(user).not.toHaveProperty('phones')
           expect(user).not.toHaveProperty('last_name')
           expect(user).not.toHaveProperty('first_name')
@@ -4493,10 +4493,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).not.toHaveProperty('sn')
           expect(user).not.toHaveProperty('givenName')
-          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('emails')
           expect(user).not.toHaveProperty('phones')
           expect(user).not.toHaveProperty('last_name')
           expect(user).not.toHaveProperty('first_name')
@@ -4528,10 +4528,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).not.toHaveProperty('sn')
           expect(user).not.toHaveProperty('givenName')
-          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('emails')
           expect(user).not.toHaveProperty('phones')
           expect(user).not.toHaveProperty('last_name')
           expect(user).not.toHaveProperty('first_name')
@@ -4554,10 +4554,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
 
       expect(user).not.toBeNull()
       expect(user).toHaveProperty('display_name', MOCK_DATA.MATRIX.displayname)
-      expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+      expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
       expect(user).not.toHaveProperty('sn')
       expect(user).not.toHaveProperty('givenName')
-      expect(user).not.toHaveProperty('mails')
+      expect(user).not.toHaveProperty('emails')
       expect(user).not.toHaveProperty('phones')
       expect(user).not.toHaveProperty('last_name')
       expect(user).not.toHaveProperty('first_name')
@@ -4579,10 +4579,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
 
       expect(user).not.toBeNull()
       expect(user).toHaveProperty('display_name', MOCK_DATA.MATRIX.displayname)
-      expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+      expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
       expect(user).not.toHaveProperty('sn')
       expect(user).not.toHaveProperty('givenName')
-      expect(user).not.toHaveProperty('mails')
+      expect(user).not.toHaveProperty('emails')
       expect(user).not.toHaveProperty('phones')
       expect(user).not.toHaveProperty('last_name')
       expect(user).not.toHaveProperty('first_name')
@@ -4642,10 +4642,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
-          expect(user).toHaveProperty('mails', [MOCK_DATA.LDAP.mail])
+          expect(user).toHaveProperty('emails', [MOCK_DATA.LDAP.mail])
           expect(user).not.toHaveProperty('phones')
           expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
@@ -4680,10 +4680,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
-          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('emails')
           expect(user).toHaveProperty('phones', [MOCK_DATA.LDAP.mobile])
           expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
@@ -4718,10 +4718,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
-          expect(user).toHaveProperty('mails', [MOCK_DATA.LDAP.mail])
+          expect(user).toHaveProperty('emails', [MOCK_DATA.LDAP.mail])
           expect(user).toHaveProperty('phones', [MOCK_DATA.LDAP.mobile])
           expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
@@ -4777,10 +4777,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
-          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('emails')
           expect(user).not.toHaveProperty('phones')
           expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
@@ -4815,10 +4815,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
-          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('emails')
           expect(user).not.toHaveProperty('phones')
           expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
@@ -4853,10 +4853,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
             'display_name',
             MOCK_DATA.MATRIX.displayname
           )
-          expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+          expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
           expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
-          expect(user).not.toHaveProperty('mails')
+          expect(user).not.toHaveProperty('emails')
           expect(user).not.toHaveProperty('phones')
           expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
           expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
@@ -4911,10 +4911,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
           'display_name',
           MOCK_DATA.MATRIX.displayname
         )
-        expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+        expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
         expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
         expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
-        expect(user).toHaveProperty('mails', [MOCK_DATA.LDAP.mail])
+        expect(user).toHaveProperty('emails', [MOCK_DATA.LDAP.mail])
         expect(user).not.toHaveProperty('phones')
         expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
         expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
@@ -4947,10 +4947,10 @@ describe('User Info Service GET with: No feature flags ON', () => {
           'display_name',
           MOCK_DATA.MATRIX.displayname
         )
-        expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+        expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
         expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
         expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
-        expect(user).toHaveProperty('mails', [MOCK_DATA.LDAP.mail])
+        expect(user).toHaveProperty('emails', [MOCK_DATA.LDAP.mail])
         expect(user).toHaveProperty('phones', [MOCK_DATA.LDAP.mobile])
         expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
         expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
@@ -4982,10 +4982,10 @@ describe('User Info Service GET with: Additional features ON, Common settings OF
 
       expect(user).not.toBeNull()
       expect(user).toHaveProperty('display_name', MOCK_DATA.LDAP.cn)
-      expect(user).not.toHaveProperty('avatar')
+      expect(user).not.toHaveProperty('avatar_url')
       expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
       expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
-      expect(user).not.toHaveProperty('mails')
+      expect(user).not.toHaveProperty('emails')
       expect(user).not.toHaveProperty('phones')
       expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
       expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
@@ -5013,10 +5013,10 @@ describe('User Info Service GET with: Additional features ON, Common settings OF
 
       expect(user).not.toBeNull()
       expect(user).toHaveProperty('display_name', MOCK_DATA.MATRIX.displayname)
-      expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+      expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
       expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
       expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
-      expect(user).not.toHaveProperty('mails')
+      expect(user).not.toHaveProperty('emails')
       expect(user).not.toHaveProperty('phones')
       expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
       expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
@@ -5050,10 +5050,10 @@ describe('User Info Service GET with: Additional features ON, Common settings OF
           'display_name',
           MOCK_DATA.MATRIX.displayname
         )
-        expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+        expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
         expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
         expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
-        expect(user).toHaveProperty('mails', [MOCK_DATA.LDAP.mail])
+        expect(user).toHaveProperty('emails', [MOCK_DATA.LDAP.mail])
         expect(user).not.toHaveProperty('phones')
         expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
         expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
@@ -5086,10 +5086,10 @@ describe('User Info Service GET with: Additional features ON, Common settings OF
           'display_name',
           MOCK_DATA.MATRIX.displayname
         )
-        expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+        expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
         expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
         expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
-        expect(user).toHaveProperty('mails', [MOCK_DATA.LDAP.mail])
+        expect(user).toHaveProperty('emails', [MOCK_DATA.LDAP.mail])
         expect(user).toHaveProperty('phones', [MOCK_DATA.LDAP.mobile])
         expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
         expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
@@ -5118,10 +5118,10 @@ describe('User Info Service GET with: Additional features ON, Common settings OF
 
       expect(user).not.toBeNull()
       expect(user).toHaveProperty('display_name', MOCK_DATA.LDAP.cn)
-      expect(user).not.toHaveProperty('avatar')
+      expect(user).not.toHaveProperty('avatar_url')
       expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
       expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
-      expect(user).toHaveProperty('mails', [MOCK_DATA.LDAP.mail])
+      expect(user).toHaveProperty('emails', [MOCK_DATA.LDAP.mail])
       expect(user).toHaveProperty('phones', [MOCK_DATA.LDAP.mobile])
       expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
       expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
@@ -5151,10 +5151,10 @@ describe('User Info Service GET with: Additional features ON, Common settings OF
 
       expect(user).not.toBeNull()
       expect(user).toHaveProperty('display_name', MOCK_DATA.MATRIX.displayname)
-      expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+      expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
       expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
       expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
-      expect(user).toHaveProperty('mails', [MOCK_DATA.LDAP.mail])
+      expect(user).toHaveProperty('emails', [MOCK_DATA.LDAP.mail])
       expect(user).toHaveProperty('phones', [MOCK_DATA.LDAP.mobile])
       expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
       expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
@@ -5206,10 +5206,10 @@ describe('User Info Service GET with: Additional features ON, Common settings OF
           'display_name',
           MOCK_DATA.MATRIX.displayname
         )
-        expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+        expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
         expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
         expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
-        expect(user).toHaveProperty('mails', [MOCK_DATA.LDAP.mail])
+        expect(user).toHaveProperty('emails', [MOCK_DATA.LDAP.mail])
         expect(user).toHaveProperty('phones', [MOCK_DATA.LDAP.mobile])
         expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
         expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
@@ -5238,10 +5238,10 @@ describe('User Info Service GET with: Additional features ON, Common settings OF
 
         expect(user).not.toBeNull()
         expect(user).toHaveProperty('display_name', MOCK_DATA.LDAP.cn)
-        expect(user).not.toHaveProperty('avatar')
+        expect(user).not.toHaveProperty('avatar_url')
         expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
         expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
-        expect(user).toHaveProperty('mails', [MOCK_DATA.LDAP.mail])
+        expect(user).toHaveProperty('emails', [MOCK_DATA.LDAP.mail])
         expect(user).toHaveProperty('phones', [MOCK_DATA.LDAP.mobile])
         expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
         expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
@@ -5295,10 +5295,10 @@ describe('User Info Service GET with: Additional features ON, Common settings OF
           'display_name',
           MOCK_DATA.MATRIX.displayname
         )
-        expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+        expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
         expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
         expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
-        expect(user).not.toHaveProperty('mails')
+        expect(user).not.toHaveProperty('emails')
         expect(user).not.toHaveProperty('phones')
         expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
         expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
@@ -5342,10 +5342,10 @@ describe('User Info Service GET with: Additional features ON, Common settings OF
           'display_name',
           MOCK_DATA.MATRIX.displayname
         )
-        expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+        expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
         expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
         expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
-        expect(user).not.toHaveProperty('mails')
+        expect(user).not.toHaveProperty('emails')
         expect(user).not.toHaveProperty('phones')
         expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
         expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
@@ -5399,13 +5399,13 @@ describe('User Info Service GET with: Additional features OFF, Common settings O
         'display_name',
         MOCK_DATA.COMMON_SETTINGS.display_name
       )
-      expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+      expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
       expect(user).toHaveProperty('sn', MOCK_DATA.COMMON_SETTINGS.last_name)
       expect(user).toHaveProperty(
         'givenName',
         MOCK_DATA.COMMON_SETTINGS.first_name
       )
-      expect(user).not.toHaveProperty('mails')
+      expect(user).not.toHaveProperty('emails')
       expect(user).not.toHaveProperty('phones')
       expect(user).toHaveProperty(
         'last_name',
@@ -5436,7 +5436,7 @@ describe('User Info Service GET with: Additional features OFF, Common settings O
         'display_name',
         MOCK_DATA.COMMON_SETTINGS.display_name
       )
-      expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+      expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
       expect(user).toHaveProperty(
         'last_name',
         MOCK_DATA.COMMON_SETTINGS.last_name
@@ -5474,13 +5474,13 @@ describe('User Info Service GET with: Additional features OFF, Common settings O
           'display_name',
           MOCK_DATA.COMMON_SETTINGS.display_name
         )
-        expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+        expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
         expect(user).toHaveProperty('sn', MOCK_DATA.COMMON_SETTINGS.last_name)
         expect(user).toHaveProperty(
           'givenName',
           MOCK_DATA.COMMON_SETTINGS.first_name
         )
-        expect(user).toHaveProperty('mails', [MOCK_DATA.COMMON_SETTINGS.email])
+        expect(user).toHaveProperty('emails', [MOCK_DATA.COMMON_SETTINGS.email])
         expect(user).not.toHaveProperty('phones')
         expect(user).toHaveProperty(
           'last_name',
@@ -5520,13 +5520,13 @@ describe('User Info Service GET with: Additional features OFF, Common settings O
           'display_name',
           MOCK_DATA.COMMON_SETTINGS.display_name
         )
-        expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+        expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
         expect(user).toHaveProperty('sn', MOCK_DATA.COMMON_SETTINGS.last_name)
         expect(user).toHaveProperty(
           'givenName',
           MOCK_DATA.COMMON_SETTINGS.first_name
         )
-        expect(user).toHaveProperty('mails', [MOCK_DATA.COMMON_SETTINGS.email])
+        expect(user).toHaveProperty('emails', [MOCK_DATA.COMMON_SETTINGS.email])
         expect(user).toHaveProperty('phones', [MOCK_DATA.COMMON_SETTINGS.phone])
         expect(user).toHaveProperty(
           'last_name',
@@ -5574,13 +5574,13 @@ describe('User Info Service GET with: Additional features OFF, Common settings O
           'display_name',
           MOCK_DATA.COMMON_SETTINGS.display_name
         )
-        expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+        expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
         expect(user).toHaveProperty('sn', MOCK_DATA.COMMON_SETTINGS.last_name)
         expect(user).toHaveProperty(
           'givenName',
           MOCK_DATA.COMMON_SETTINGS.first_name
         )
-        expect(user).not.toHaveProperty('mails')
+        expect(user).not.toHaveProperty('emails')
         expect(user).not.toHaveProperty('phones')
         expect(user).toHaveProperty(
           'last_name',
@@ -5634,13 +5634,13 @@ describe('User Info Service GET with: Additional features OFF, Common settings O
         'display_name',
         MOCK_DATA.COMMON_SETTINGS.display_name
       )
-      expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+      expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
       expect(user).toHaveProperty('sn', MOCK_DATA.COMMON_SETTINGS.last_name)
       expect(user).toHaveProperty(
         'givenName',
         MOCK_DATA.COMMON_SETTINGS.first_name
       )
-      expect(user).toHaveProperty('mails', [MOCK_DATA.COMMON_SETTINGS.email])
+      expect(user).toHaveProperty('emails', [MOCK_DATA.COMMON_SETTINGS.email])
       expect(user).toHaveProperty('phones', [MOCK_DATA.COMMON_SETTINGS.phone])
       expect(user).toHaveProperty(
         'last_name',
@@ -5722,13 +5722,13 @@ describe('User Info Service GET with: Additional features OFF, Common settings O
           'display_name',
           MOCK_DATA.COMMON_SETTINGS.display_name
         )
-        expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+        expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
         expect(user).toHaveProperty('sn', MOCK_DATA.COMMON_SETTINGS.last_name)
         expect(user).toHaveProperty(
           'givenName',
           MOCK_DATA.COMMON_SETTINGS.first_name
         )
-        expect(user).toHaveProperty('mails', [MOCK_DATA.COMMON_SETTINGS.email])
+        expect(user).toHaveProperty('emails', [MOCK_DATA.COMMON_SETTINGS.email])
         expect(user).toHaveProperty('phones', [MOCK_DATA.COMMON_SETTINGS.phone])
         expect(user).toHaveProperty(
           'last_name',
@@ -5795,13 +5795,13 @@ describe('User Info Service GET with: Additional features OFF, Common settings O
           'display_name',
           MOCK_DATA.COMMON_SETTINGS.display_name
         )
-        expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+        expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
         expect(user).toHaveProperty('sn', MOCK_DATA.COMMON_SETTINGS.last_name)
         expect(user).toHaveProperty(
           'givenName',
           MOCK_DATA.COMMON_SETTINGS.first_name
         )
-        expect(user).not.toHaveProperty('mails')
+        expect(user).not.toHaveProperty('emails')
         expect(user).not.toHaveProperty('phones')
         expect(user).toHaveProperty(
           'last_name',
@@ -5850,7 +5850,7 @@ describe('User Info Service GET with: Additional features OFF, Common settings O
         'display_name',
         MOCK_DATA.COMMON_SETTINGS.display_name
       )
-      expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+      expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
       expect(user).toHaveProperty(
         'last_name',
         MOCK_DATA.COMMON_SETTINGS.last_name
@@ -5898,7 +5898,7 @@ describe('User Info Service GET with: Additional features ON, Common settings ON
       expect(user).toHaveProperty('display_name', MOCK_DATA.LDAP.cn)
       expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
       expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
-      expect(user).not.toHaveProperty('mails')
+      expect(user).not.toHaveProperty('emails')
       expect(user).not.toHaveProperty('phones')
     })
 
@@ -5933,7 +5933,7 @@ describe('User Info Service GET with: Additional features ON, Common settings ON
         'givenName',
         MOCK_DATA.COMMON_SETTINGS.first_name
       )
-      expect(user).not.toHaveProperty('mails')
+      expect(user).not.toHaveProperty('emails')
       expect(user).not.toHaveProperty('phones')
       expect(user).toHaveProperty(
         'language',
@@ -5954,10 +5954,10 @@ describe('User Info Service GET with: Additional features ON, Common settings ON
 
       expect(user).not.toBeNull()
       expect(user).toHaveProperty('display_name', MOCK_DATA.MATRIX.displayname)
-      expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+      expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
       expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
       expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
-      expect(user).not.toHaveProperty('mails')
+      expect(user).not.toHaveProperty('emails')
       expect(user).not.toHaveProperty('phones')
       expect(user).toHaveProperty(
         'language',
@@ -5992,10 +5992,10 @@ describe('User Info Service GET with: Additional features ON, Common settings ON
         'display_name',
         MOCK_DATA.ADDRESSBOOK.display_name
       )
-      expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+      expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
       expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
       expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
-      expect(user).not.toHaveProperty('mails')
+      expect(user).not.toHaveProperty('emails')
       expect(user).not.toHaveProperty('phones')
       expect(user).toHaveProperty(
         'language',
@@ -6034,7 +6034,7 @@ describe('User Info Service GET with: Additional features ON, Common settings ON
         'display_name',
         MOCK_DATA.ADDRESSBOOK.display_name
       )
-      expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+      expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
 
       expect(user).toHaveProperty('sn', MOCK_DATA.COMMON_SETTINGS.last_name)
       expect(user).toHaveProperty(
@@ -6050,7 +6050,7 @@ describe('User Info Service GET with: Additional features ON, Common settings ON
         MOCK_DATA.COMMON_SETTINGS.first_name
       )
 
-      expect(user).not.toHaveProperty('mails')
+      expect(user).not.toHaveProperty('emails')
       expect(user).not.toHaveProperty('phones')
 
       expect(user).toHaveProperty(
@@ -6073,10 +6073,10 @@ describe('User Info Service GET with: Additional features ON, Common settings ON
 
       expect(user).not.toBeNull()
       expect(user).toHaveProperty('display_name', MOCK_DATA.MATRIX.displayname)
-      expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+      expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
       expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
       expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
-      expect(user).not.toHaveProperty('mails')
+      expect(user).not.toHaveProperty('emails')
       expect(user).not.toHaveProperty('phones')
       expect(user).toHaveProperty(
         'language',
@@ -6162,7 +6162,7 @@ describe('User Info Service GET with: Additional features ON, Common settings ON
       const user = await svc.get(MATRIX_MXID)
 
       expect(user).not.toBeNull()
-      expect(user).toHaveProperty('mails', [
+      expect(user).toHaveProperty('emails', [
         MOCK_DATA.LDAP.mail,
         MOCK_DATA.COMMON_SETTINGS.email
       ])
@@ -6205,10 +6205,10 @@ describe('User Info Service GET with: Additional features ON, Common settings ON
 
       expect(user).not.toBeNull()
       expect(user).toHaveProperty('display_name', MOCK_DATA.MATRIX.displayname)
-      expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+      expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
       expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
       expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
-      expect(user).toHaveProperty('mails', [MOCK_DATA.LDAP.mail])
+      expect(user).toHaveProperty('emails', [MOCK_DATA.LDAP.mail])
       expect(user).toHaveProperty('phones', [MOCK_DATA.LDAP.mobile])
       expect(user).toHaveProperty(
         'language',
@@ -6231,7 +6231,7 @@ describe('User Info Service GET with: Additional features ON, Common settings ON
 
       expect(user).not.toBeNull()
       expect(user).toHaveProperty('display_name', MOCK_DATA.MATRIX.displayname)
-      expect(user).not.toHaveProperty('mails')
+      expect(user).not.toHaveProperty('emails')
       expect(user).not.toHaveProperty('phones')
       expect(user).not.toHaveProperty('language')
       expect(user).not.toHaveProperty('timezone')
@@ -6271,7 +6271,7 @@ describe('User Info Service GET with: Additional features ON, Common settings ON
         'display_name',
         MOCK_DATA.ADDRESSBOOK.display_name
       )
-      expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+      expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
       expect(user).toHaveProperty('sn', MOCK_DATA.COMMON_SETTINGS.last_name)
       expect(user).toHaveProperty(
         'givenName',
@@ -6285,7 +6285,7 @@ describe('User Info Service GET with: Additional features ON, Common settings ON
         'first_name',
         MOCK_DATA.COMMON_SETTINGS.first_name
       )
-      expect(user).toHaveProperty('mails', [
+      expect(user).toHaveProperty('emails', [
         MOCK_DATA.LDAP.mail,
         MOCK_DATA.COMMON_SETTINGS.email
       ])
@@ -6319,7 +6319,7 @@ describe('User Info Service GET with: Additional features ON, Common settings ON
 
       expect(user).not.toBeNull()
       expect(user).not.toHaveProperty('display_name')
-      expect(user).toHaveProperty('avatar', MOCK_DATA.MATRIX.avatar_url)
+      expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
       expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
       expect(user).toHaveProperty(
         'givenName',
@@ -6330,7 +6330,7 @@ describe('User Info Service GET with: Additional features ON, Common settings ON
         MOCK_DATA.COMMON_SETTINGS.first_name
       )
       expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
-      expect(user).toHaveProperty('mails', [MOCK_DATA.LDAP.mail])
+      expect(user).toHaveProperty('emails', [MOCK_DATA.LDAP.mail])
       expect(user).toHaveProperty('phones', [MOCK_DATA.COMMON_SETTINGS.phone])
       expect(user).toHaveProperty(
         'language',
