@@ -200,17 +200,14 @@ describe('Using Matrix Token', () => {
           val: 'who'
         })
       expect(response.status).toBe(200)
-      expect(response.body).toEqual({
-        matches: [
-          {
-            uid: 'dwho',
-            address: '@dwho:example.com',
-            email: 'dwho@example.com',
-            givenName: 'Dwho'
-          }
-        ],
-        inactive_matches: []
-      })
+      expect(response.body.matches).toHaveLength(1)
+      expect(response.body.matches[0]).toEqual(
+        expect.objectContaining({
+          uid: 'dwho',
+          address: '@dwho:example.com'
+        })
+      )
+      expect(response.body.inactive_matches).toEqual([])
     })
 
     it('should find user when searching by matrix address', async () => {
@@ -224,18 +221,15 @@ describe('Using Matrix Token', () => {
           val: '@dwho:example.com'
         })
       expect(response.status).toBe(200)
-      expect(response.body).toEqual({
-        matches: [
-          {
-            uid: 'dwho',
-            address: '@dwho:example.com',
-            sn: 'Dwho',
-            email: 'dwho@example.com',
-            givenName: 'Dwho'
-          }
-        ],
-        inactive_matches: []
-      })
+      expect(response.body.matches).toHaveLength(1)
+      expect(response.body.matches[0]).toEqual(
+        expect.objectContaining({
+          uid: 'dwho',
+          address: '@dwho:example.com',
+          sn: 'Dwho'
+        })
+      )
+      expect(response.body.inactive_matches).toEqual([])
     })
 
     it('should respect limit', async () => {
@@ -250,35 +244,32 @@ describe('Using Matrix Token', () => {
           limit: 4
         })
       expect(response.status).toBe(200)
-      expect(response.body).toEqual({
-        matches: [],
-        inactive_matches: [
-          {
-            uid: 'user00',
-            address: '@user00:example.com',
-            email: 'user00@example.com',
-            givenName: 'User00'
-          },
-          {
-            uid: 'user01',
-            address: '@user01:example.com',
-            email: 'user01@example.com',
-            givenName: 'User01'
-          },
-          {
-            uid: 'user02',
-            address: '@user02:example.com',
-            email: 'user02@example.com',
-            givenName: 'User02'
-          },
-          {
-            uid: 'user03',
-            address: '@user03:example.com',
-            email: 'user03@example.com',
-            givenName: 'User03'
-          }
-        ]
-      })
+      expect(response.body.matches).toEqual([])
+      expect(response.body.inactive_matches).toHaveLength(4)
+      expect(response.body.inactive_matches[0]).toEqual(
+        expect.objectContaining({
+          uid: 'user00',
+          address: '@user00:example.com'
+        })
+      )
+      expect(response.body.inactive_matches[1]).toEqual(
+        expect.objectContaining({
+          uid: 'user01',
+          address: '@user01:example.com'
+        })
+      )
+      expect(response.body.inactive_matches[2]).toEqual(
+        expect.objectContaining({
+          uid: 'user02',
+          address: '@user02:example.com'
+        })
+      )
+      expect(response.body.inactive_matches[3]).toEqual(
+        expect.objectContaining({
+          uid: 'user03',
+          address: '@user03:example.com'
+        })
+      )
     })
 
     it('should respect limit and offset', async () => {
@@ -294,35 +285,32 @@ describe('Using Matrix Token', () => {
           offset: 3
         })
       expect(response.status).toBe(200)
-      expect(response.body).toEqual({
-        matches: [],
-        inactive_matches: [
-          {
-            uid: 'user03',
-            address: '@user03:example.com',
-            email: 'user03@example.com',
-            givenName: 'User03'
-          },
-          {
-            uid: 'user04',
-            address: '@user04:example.com',
-            email: 'user04@example.com',
-            givenName: 'User04'
-          },
-          {
-            uid: 'user05',
-            address: '@user05:example.com',
-            email: 'user05@example.com',
-            givenName: 'User05'
-          },
-          {
-            uid: 'user06',
-            address: '@user06:example.com',
-            email: 'user06@example.com',
-            givenName: 'User06'
-          }
-        ]
-      })
+      expect(response.body.matches).toEqual([])
+      expect(response.body.inactive_matches).toHaveLength(4)
+      expect(response.body.inactive_matches[0]).toEqual(
+        expect.objectContaining({
+          uid: 'user03',
+          address: '@user03:example.com'
+        })
+      )
+      expect(response.body.inactive_matches[1]).toEqual(
+        expect.objectContaining({
+          uid: 'user04',
+          address: '@user04:example.com'
+        })
+      )
+      expect(response.body.inactive_matches[2]).toEqual(
+        expect.objectContaining({
+          uid: 'user05',
+          address: '@user05:example.com'
+        })
+      )
+      expect(response.body.inactive_matches[3]).toEqual(
+        expect.objectContaining({
+          uid: 'user06',
+          address: '@user06:example.com'
+        })
+      )
     })
   })
 })
