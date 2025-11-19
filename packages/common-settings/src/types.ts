@@ -5,14 +5,14 @@ export interface UserInformationPayload {
 
 interface SettingsPayload {
   language?: string
-    timezone?: string
-    avatar?: string
-    last_name?: string
-    first_name?: string
-    email?: string
-    phone?: string
-    matrix_id?: string
-    display_name?: string
+  timezone?: string
+  avatar?: string
+  last_name?: string
+  first_name?: string
+  email?: string
+  phone?: string
+  matrix_id?: string
+  display_name?: string
 }
 
 export interface CommonSettingsMessage {

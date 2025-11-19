@@ -145,7 +145,9 @@ class UserDBLDAP implements UserDBBackend {
                         : entry[k]
                     ) as string
                     this.logger.silly(
-                      `[UserDBLDAP][_get] Extracted field [${k}]: ${JSON.stringify(res[k])}`
+                      `[UserDBLDAP][_get] Extracted field [${k}]: ${JSON.stringify(
+                        res[k]
+                      )}`
                     )
                   })
                 } else {
@@ -159,7 +161,9 @@ class UserDBLDAP implements UserDBBackend {
                           : entry[k]
                       ) as string
                       this.logger.silly(
-                        `[UserDBLDAP][_get] Extracted field [${k}]: ${JSON.stringify(res[k])}`
+                        `[UserDBLDAP][_get] Extracted field [${k}]: ${JSON.stringify(
+                          res[k]
+                        )}`
                       )
                     }
                   })

@@ -50,7 +50,7 @@ export const buildSmsBody = (
     return templateContent
       .replace(/__inviter__/g, inviter)
       .replace(/__invitation_link__/g, link)
-      .replace(/__footer__/g, footer ?? "") // include a footer if present
+      .replace(/__footer__/g, footer ?? '') // include a footer if present
   } catch (error) {
     console.error('Failed to build sms body', { error })
   }

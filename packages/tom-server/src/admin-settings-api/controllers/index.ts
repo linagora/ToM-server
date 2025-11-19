@@ -32,9 +32,7 @@ export default class AdminSettingsrController
 
       // Validate that the user ID is present
       if (userId.length === 0) {
-        res
-          .status(400)
-          .json({ message: 'Missing user ID' })
+        res.status(400).json({ message: 'Missing user ID' })
         return
       }
 

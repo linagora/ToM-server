@@ -46,7 +46,7 @@ function createApp(conf: WellKnownConfig): Express {
 
 describe('WellKnown class', () => {
   beforeEach(() => {
-    global.fetch = jest.fn() 
+    global.fetch = jest.fn()
   })
 
   it('propagates features.common_settings.enabled correctly', async () => {

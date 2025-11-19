@@ -146,7 +146,10 @@ export class CommonSettingsService {
         updatePayload = { displayName, avatarUrl }
       } else {
         const { settings: oldConfig, version } = userSettings
-        this.logger.info(`[CommonSettingsService] Comparing with existing version ${version}`, { userId });
+        this.logger.info(
+          `[CommonSettingsService] Comparing with existing version ${version}`,
+          { userId }
+        )
 
         if (oldConfig.display_name !== displayName) {
           updatePayload.displayName = displayName
@@ -253,7 +256,7 @@ export class CommonSettingsService {
     ) {
       throw new Error('The base URL or admin access token is not configured')
     }
-    
+
     const base = new URL(this.config.base_url) // validates
     const endpoint = new URL(
       `/_twake/v1/admin/settings/information/${encodeURIComponent(userId)}`,

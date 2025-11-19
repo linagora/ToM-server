@@ -215,7 +215,7 @@ const twakeConfig = (
   // Determine if we should use the old parser
   const shouldUseOldParser =
     useOldParser && process.env.TWAKE_CONFIG_PARSER_NEW == null
-  
+
   // Start with an empty config
   let config: Configuration = {}
 

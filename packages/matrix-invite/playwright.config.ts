@@ -9,4 +9,4 @@ export default defineConfig({
     url: 'http://localhost:4173'
   },
   testDir: 'tests'
-});
+})

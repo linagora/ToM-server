@@ -628,3 +628,4 @@ packages/matrix-identity-server/matrix-server/synapse-data
 **/*.db-journal
 
 packages/federated-identity-service/src/__testData__/synapse-data/*.signing.key
+**/*.last-run.json
