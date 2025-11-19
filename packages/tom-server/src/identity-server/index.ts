@@ -85,21 +85,77 @@ export default class TwakeIdentityServer extends MatrixIdentityServer<twakeDbCol
            *              properties:
            *                matches:
            *                  type: array
+           *                  description: List of users that match
            *                  items:
            *                    type: object
            *                    properties:
            *                      address:
            *                        type: string
-           *                        description: Matrix address
+           *                        description: Matrix address, will be included in uid
+           *                        deprecated: true
            *                      uid:
            *                        type: string
            *                        description: id of a matching user
+           *                      display_name:
+           *                        type: string
+           *                        description: Display name of a matching user
+           *                      displayName:
+           *                        type: string
+           *                        description: Display name of a matching user
+           *                        deprecated: true
+           *                      cn:
+           *                        type: string
+           *                        description: Display name of a matching user
+           *                        deprecated: true
+           *                      avatar_url:
+           *                        type: string
+           *                        description: |-
+           *                          Avatar URI of a matching user following the mxc format
+           *                          https://spec.matrix.org/v1.10/client-server-api/#matrix-content-mxc-uris
+           *                      last_name:
+           *                        type: string
+           *                        description: Last name of a matching user
+           *                      first_name:
+           *                        type: string
+           *                        description: First name of a matching user
            *                      mail:
            *                        type: string
-           *                        description: email address of a matching user
-           *                  description: List of users that match
+           *                        description: Email address of a matching user
+           *                        deprecated: true
+           *                      emails:
+           *                       type: array
+           *                       items:
+           *                         type: string
+           *                         description: Email addresses of a matching user
+           *                      mobile:
+           *                        type: string
+           *                        description: Mobile phone number of a matching user
+           *                        deprecated: true
+           *                      phones:
+           *                        type: array
+           *                        items:
+           *                          type: string
+           *                          description: Mobile phone numbers of a matching user
+           *                      language:
+           *                        type: string
+           *                        description: Language of a matching user
+           *                      timezone:
+           *                        type: string
+           *                        description: Timezone of a matching user
            *            example:
-           *              matches: [{uid: dwho, mail: dwho@badwolf.com}]
+           *              matches:
+           *                - uid: rtyler
+           *                  display_name: Robert Tyler
+           *                  avatar_url: mxc://matrix.org/SEsfnsuifSDFWefnsdfWefnsd
+           *                  last_name: Tyler
+           *                  first_name: Robert
+           *                  emails:
+           *                    - rtyler@matrix.org
+           *                    - robert.t@personal.tld
+           *                  phones:
+           *                    - '+33612345678'
+           *                  language: en
+           *                  timezone: Europe/Paris
            *      401:
            *        $ref: '#/components/responses/Unauthorized'
            *      400:
