@@ -178,7 +178,7 @@ class UserInfoService implements IUserInfoService {
       // ------------------------------------------------------------------
       if (matrixRow) {
         result.display_name = matrixRow.displayname
-        if (matrixRow.avatar_url) result.avatar = matrixRow.avatar_url
+        if (matrixRow.avatar_url) result.avatar_url = matrixRow.avatar_url
       }
 
       // ------------------------------------------------------------------
@@ -203,7 +203,7 @@ class UserInfoService implements IUserInfoService {
             (isIdProfileVisible &&
               idProfileVisibleFields.includes(ProfileField.Email)))
         )
-          result.mails = [directoryRow.mail as string]
+          result.emails = [directoryRow.mail as string]
         if (
           directoryRow.mobile &&
           (isMyProfile ||
@@ -234,12 +234,12 @@ class UserInfoService implements IUserInfoService {
               idProfileVisibleFields.includes(ProfileField.Email)))
         )
           if (
-            result.mails &&
-            Array.isArray(result.mails) &&
-            !result.mails?.includes(settingsRow.email)
+            result.emails &&
+            Array.isArray(result.emails) &&
+            !result.emails?.includes(settingsRow.email)
           )
-            result.mails.push(settingsRow.email)
-          else result.mails = [settingsRow.email]
+            result.emails.push(settingsRow.email)
+          else result.emails = [settingsRow.email]
         if (
           settingsRow.phone &&
           (isMyProfile ||
