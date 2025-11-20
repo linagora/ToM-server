@@ -566,10 +566,20 @@ export default class InvitationService implements IInvitationService {
       )
       if (medium === 'email') {
         const lang = 'en' // TODO: invitee language
-        const emailTemplatePath = `${this.config.template_dir}/emailInvitation_${lang}.tpl`
+        const emailTemplateDirPath = `${this.config.template_dir}/${lang}/email/invitation`
+        const emailTemplateHTMLPath = `${emailTemplateDirPath}/body.html`
+        const emailTemplateTXTPath = `${emailTemplateDirPath}/body.txt`
 
         const text = buildEmailBody(
-          emailTemplatePath,
+          emailTemplateTXTPath,
+          sender,
+          to,
+          link,
+          this.notificationService.emailFrom
+        )
+
+        const html = buildEmailBody(
+          emailTemplateHTMLPath,
           sender,
           to,
           link,
@@ -584,7 +594,8 @@ export default class InvitationService implements IInvitationService {
           from: this.notificationService.emailFrom,
           to,
           subject: 'Invitation to join Twake Workplace',
-          text
+          text,
+          html
         }
 
         await this.notificationService.sendEmail(emailOptions)
@@ -615,7 +626,6 @@ export default class InvitationService implements IInvitationService {
       }
     } catch (error) {
       this.logger.error(`Failed to deliver invitation`, error)
-
       throw Error('Failed to deliver invitation')
     }
   }
