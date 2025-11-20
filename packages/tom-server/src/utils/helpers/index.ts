@@ -16,19 +16,15 @@ export const buildEmailBody = (
   link: string,
   from: string
 ): string | undefined => {
-  try {
-    const templateContent = fs.readFileSync(templatePath).toString()
-    return templateContent
-      .replace(/__from__/g, from)
-      .replace(/__to__/g, destination)
-      .replace(/__multipart_boundary__/g, randomString(32))
-      .replace(/__inviter_name__/g, inviter)
-      .replace(/__link__/g, link)
-      .replace(/__date__/g, new Date().toUTCString())
-      .replace(/__messageid__/g, randomString(32))
-  } catch (error) {
-    console.error('Failed to build email body', { error })
-  }
+  const templateContent = fs.readFileSync(templatePath).toString()
+  return templateContent
+    .replace(/__from__/g, from)
+    .replace(/__to__/g, destination)
+    .replace(/__multipart_boundary__/g, randomString(32))
+    .replace(/__inviter_name__/g, inviter)
+    .replace(/__link__/g, link)
+    .replace(/__date__/g, new Date().toUTCString())
+    .replace(/__messageid__/g, randomString(32))
 }
 
 /**
