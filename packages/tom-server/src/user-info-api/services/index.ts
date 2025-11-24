@@ -15,15 +15,11 @@ import type { TwakeLogger } from '@twake/logger'
 import { type IAddressbookService } from '../../addressbook-api/types'
 import { AddressbookService } from '../../addressbook-api/services'
 
-const defaultVisibilitySettings: UserProfileSettingsPayloadT = {
-  visibility: ProfileVisibility.Private,
-  visible_fields: []
-}
-
 class UserInfoService implements IUserInfoService {
   private readonly addressBookService: IAddressbookService
   private readonly enableAdditionalFeatures: boolean
   private readonly enableCommonSettings: boolean
+  private readonly defaultVisibilitySettings: UserProfileSettingsPayloadT
 
   constructor(
     private readonly userDb: UserDB,
@@ -41,6 +37,31 @@ class UserInfoService implements IUserInfoService {
       process.env.FEATURE_COMMON_SETTINGS_ENABLED === 'true'
 
     this.addressBookService = new AddressbookService(db, logger)
+
+    this.defaultVisibilitySettings = {
+      visibility:
+        this.config.features.user_profile.default_visibility_settings
+          .visibility === 'public'
+          ? ProfileVisibility.Public
+          : this.config.features.user_profile.default_visibility_settings
+              .visibility === 'contacts'
+          ? ProfileVisibility.Contacts
+          : ProfileVisibility.Private,
+      visible_fields: []
+    }
+
+    if (
+      this.config.features.user_profile.default_visibility_settings.visible_fields.includes(
+        'email'
+      )
+    )
+      this.defaultVisibilitySettings.visible_fields.push(ProfileField.Email)
+    if (
+      this.config.features.user_profile.default_visibility_settings.visible_fields.includes(
+        'phone'
+      )
+    )
+      this.defaultVisibilitySettings.visible_fields.push(ProfileField.Phone)
   }
 
   /**
@@ -71,7 +92,7 @@ class UserInfoService implements IUserInfoService {
       const {
         visibility: idProfileVisibility,
         visible_fields: idProfileVisibleFields
-      } = (await this.getVisibility(id)) || defaultVisibilitySettings
+      } = (await this.getVisibility(id)) || this.defaultVisibilitySettings
       const isMyProfile = id === viewer
       const isIdProfileVisibleForViewer = async () => {
         if (idProfileVisibility === ProfileVisibility.Public) {
@@ -338,7 +359,7 @@ class UserInfoService implements IUserInfoService {
         this.logger.warn(
           '[UserInfoService].getVisibility: No stored settings found, returning defaults'
         )
-        return defaultVisibilitySettings
+        return this.defaultVisibilitySettings
       }
       this.logger.info(
         '[UserInfoService].getVisibility: stored settings retreived'
@@ -390,7 +411,8 @@ class UserInfoService implements IUserInfoService {
 
   private _getOrCreateUserSettings = async (
     userId: string,
-    visibilitySettings: UserProfileSettingsPayloadT = defaultVisibilitySettings
+    visibilitySettings: UserProfileSettingsPayloadT = this
+      .defaultVisibilitySettings
   ): Promise<{
     visibilitySettings: UserProfileSettingsT
     created: boolean

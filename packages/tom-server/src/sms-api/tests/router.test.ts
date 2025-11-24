@@ -47,7 +47,16 @@ const idServer = new IdServer(
     sms_api_login: 'test',
     sms_api_url: 'http://url/',
     template_dir: './templates',
-    userdb_host: './tokens.db'
+    userdb_host: './tokens.db',
+    features: {
+      common_settings: { enabled: false },
+      user_profile: {
+        default_visibility_settings: {
+          visibility: 'private',
+          visible_fields: []
+        }
+      }
+    }
   } as unknown as ConfigDescription,
   mockLogger as TwakeLogger
 )

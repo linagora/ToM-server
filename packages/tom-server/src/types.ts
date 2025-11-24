@@ -10,6 +10,7 @@ import {
 import { type NextFunction, type Request, type Response } from 'express'
 import type { PathOrFileDescriptor } from 'fs'
 import type { SendMailOptions } from 'nodemailer'
+import { UserProfileSettingsPayloadT } from './user-info-api/types'
 
 export type expressAppHandler = _expressAppHandler
 export type AuthenticationFunction = MUtils.AuthenticationFunction
@@ -64,6 +65,12 @@ export type Config = MConfig & {
       deadLetterRoutingKey?: string
     }
     matrix_profile_updates_allowed: boolean
+    user_profile: {
+      default_visibility_settings: {
+        visibility: string
+        visible_fields: string[]
+      }
+    }
   }
 }
 

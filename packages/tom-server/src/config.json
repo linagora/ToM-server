@@ -262,6 +262,12 @@
       "routingKey": "settings.routing.key",
       "exchange": "exchange.exchange"
     },
-    "matrix_profile_updates_allowed": true
+    "matrix_profile_updates_allowed": true,
+    "user_profile": {
+      "default_visibility_settings": {
+        "visibility": "private",
+        "visible_fields": []
+      }
+    }
   }
 }

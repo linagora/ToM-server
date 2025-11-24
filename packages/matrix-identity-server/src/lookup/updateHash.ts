@@ -65,7 +65,6 @@ const updateHash = <T extends string = never>(
             _field = 'msisdn'
             value = value.replace(/\s/g, '').replace(/^\+/, '')
           }
-          // console.debug('pepper + hash', [pepper, hash[method as 'sha256'](`${value} ${field} ${pepper}`)])
           await db.insert('hashes', {
             hash: hash[method as 'sha256'](`${value} ${_field} ${pepper}`),
             pepper,

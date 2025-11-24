@@ -30,7 +30,16 @@ const idServer = new IdServer(
     rate_limiting_window: 5000,
     rate_limiting_nb_requests: 10,
     template_dir: './templates',
-    userdb_host: './tokens.db'
+    userdb_host: './tokens.db',
+    features: {
+      common_settings: { enabled: false },
+      user_profile: {
+        default_visibility_settings: {
+          visibility: 'private',
+          visible_fields: []
+        }
+      }
+    }
   } as unknown as ConfigDescription,
   mockLogger as TwakeLogger
 )

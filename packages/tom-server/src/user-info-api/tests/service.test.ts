@@ -16,7 +16,15 @@ const BASE_CONFIG = {
   ldap_uri: 'ldap://localhost:63389',
   ldap_base: 'ou=users,o=example',
   additional_features: true,
-  features: { common_settings: { enabled: false } } as any
+  features: {
+    common_settings: { enabled: false },
+    user_profile: {
+      default_visibility_settings: {
+        visibility: 'private',
+        visible_fields: []
+      }
+    }
+  }
 }
 
 const MATRIX_MXID: string = '@dwho:docker.localhost'
@@ -336,7 +344,10 @@ const createService = (
   const cfg = {
     ...BASE_CONFIG,
     additional_features: additionalFeatures,
-    features: { common_settings: { enabled: commonSettingsEnabled } }
+    features: {
+      ...BASE_CONFIG.features,
+      common_settings: { enabled: commonSettingsEnabled }
+    }
   } as unknown as Config
 
   const svc = new UserInfoService(
