@@ -37,6 +37,15 @@ const idServer = new IdServer(
     userdb_host: './tokens.db',
     twake_chat: {
       enable_invitations: true
+    },
+    features: {
+      common_settings: { enabled: false },
+      user_profile: {
+        default_visibility_settings: {
+          visibility: 'private',
+          visible_fields: []
+        }
+      }
     }
   } as unknown as ConfigDescription,
   mockLogger as TwakeLogger

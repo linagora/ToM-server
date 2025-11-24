@@ -11,6 +11,7 @@ import express, { type Express } from 'express'
 import WellKnown from '.'
 import { type Config } from '../types'
 import defaultConfig from '../config.json'
+import { ProfileVisibility } from '../user-info-api/types'
 
 type WellKnownConfig = Pick<Config, 'features'>
 
@@ -56,7 +57,13 @@ describe('WellKnown class', () => {
           ...defaultConfig.features.common_settings,
           enabled: true
         },
-        matrix_profile_updates_allowed: false
+        matrix_profile_updates_allowed: false,
+        user_profile: {
+          default_visibility_settings: {
+            visibility: 'private',
+            visible_fields: []
+          }
+        }
       }
     })
     const app = createApp(conf)
@@ -76,7 +83,13 @@ describe('WellKnown class', () => {
           ...defaultConfig.features.common_settings,
           enabled: false
         },
-        matrix_profile_updates_allowed: true
+        matrix_profile_updates_allowed: true,
+        user_profile: {
+          default_visibility_settings: {
+            visibility: 'private',
+            visible_fields: []
+          }
+        }
       }
     })
     const app = createApp(conf)
@@ -104,7 +117,13 @@ describe('WellKnown class', () => {
           ...defaultConfig.features.common_settings,
           enabled: false
         },
-        matrix_profile_updates_allowed: false
+        matrix_profile_updates_allowed: false,
+        user_profile: {
+          default_visibility_settings: {
+            visibility: 'private',
+            visible_fields: []
+          }
+        }
       }
     })
 

@@ -64,6 +64,12 @@
       "deadLetterExchange": "settings.dead.letter.exchange",
       "deadLetterRoutingKey": "settings.dead.letter.routing.key"
     },
-    "matrix_profile_updates_allowed": false
+    "matrix_profile_updates_allowed": false,
+    "user_profile": {
+      "default_visibility_settings": {
+        "visibility": "private",
+        "visible_fields": []
+      }
+    }
   }
 }
