@@ -65,7 +65,18 @@ const featuresConf = {
   matrix_profile_updates_allowed: _parseBooleanEnv(
     process.env.FEATURE_MATRIX_PROFILE_UPDATES_ALLOWED,
     false
-  )
+  ),
+  user_profile: {
+    default_visibility_settings: {
+      visibility:
+        process.env.FEATURE_USER_PROFILE_DEFAULT_VISIBILITY || 'private',
+      visible_fields: process.env.FEATURE_USER_PROFILE_DEFAULT_VISIBLE_FIELDS
+        ? process.env.FEATURE_USER_PROFILE_DEFAULT_VISIBLE_FIELDS.split(',')
+            .map((v) => v.trim())
+            .filter((v) => v && v.length > 0)
+        : []
+    }
+  }
 }
 
 /**
