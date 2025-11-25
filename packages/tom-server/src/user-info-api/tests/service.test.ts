@@ -6555,3 +6555,323 @@ describe('User Info Service - Get Visibility Settings:', () => {
     })
   })
 })
+
+describe('User Info Service - Default Visibility Settings Configuration:', () => {
+  describe('When default_visibility_settings config is set to Private with no fields', () => {
+    const svc = createService(false, false)
+
+    it('Should apply default visibility when user has no explicit profile settings', async () => {
+      mockTwakeDB({}, null) // No explicit profile settings
+
+      const visibility = await svc.getVisibility(MATRIX_MXID)
+
+      expect(visibility).not.toBeNull()
+      expect(visibility).toHaveProperty('visibility', 'private')
+      expect(visibility).toHaveProperty('visible_fields', [])
+    })
+
+    it('Should apply default visibility for GET request when no viewer and no explicit settings', async () => {
+      mockMatrix({ displayName: true, avatar: true })
+      mockUserDB({
+        displayName: true,
+        lastName: true,
+        givenName: true,
+        mail: true,
+        phone: true
+      })
+      mockTwakeDB({}, null) // No explicit profile settings
+
+      const user = await svc.get(MATRIX_MXID)
+
+      expect(user).not.toBeNull()
+      expect(user).toHaveProperty('display_name', MOCK_DATA.MATRIX.displayname)
+      expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
+      expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
+      expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
+      // Email and phone should be hidden due to default private visibility with no visible fields
+      expect(user).not.toHaveProperty('emails')
+      expect(user).not.toHaveProperty('phones')
+    })
+
+    it('Should apply default visibility for GET request when viewer is different user and no explicit settings', async () => {
+      mockMatrix({ displayName: true, avatar: true })
+      mockUserDB({
+        displayName: true,
+        lastName: true,
+        givenName: true,
+        mail: true,
+        phone: true
+      })
+      mockTwakeDB({}, null) // No explicit profile settings
+
+      const user = await svc.get(MATRIX_MXID, '@viewer:example.org')
+
+      expect(user).not.toBeNull()
+      expect(user).toHaveProperty('display_name', MOCK_DATA.MATRIX.displayname)
+      expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
+      // Email and phone should be hidden due to default private visibility
+      expect(user).not.toHaveProperty('emails')
+      expect(user).not.toHaveProperty('phones')
+    })
+
+    it('Should show all fields when viewer is target (viewing own profile) regardless of default settings', async () => {
+      mockMatrix({ displayName: true, avatar: true })
+      mockUserDB({
+        displayName: true,
+        lastName: true,
+        givenName: true,
+        mail: true,
+        phone: true
+      })
+      mockTwakeDB({}, null) // No explicit profile settings
+
+      const user = await svc.get(MATRIX_MXID, MATRIX_MXID)
+
+      expect(user).not.toBeNull()
+      expect(user).toHaveProperty('display_name', MOCK_DATA.MATRIX.displayname)
+      expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
+      expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
+      expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
+      // When viewing own profile, all fields should be visible
+      expect(user).toHaveProperty('emails', [MOCK_DATA.LDAP.mail])
+      expect(user).toHaveProperty('phones', [MOCK_DATA.LDAP.mobile])
+    })
+
+    it('Should override default visibility when user has explicit profile settings', async () => {
+      mockMatrix({ displayName: true, avatar: true })
+      mockUserDB({
+        displayName: true,
+        lastName: true,
+        givenName: true,
+        mail: true,
+        phone: true
+      })
+      // User has explicit public visibility with email field visible
+      mockTwakeDB(
+        {},
+        {
+          matrix_id: MATRIX_MXID,
+          visibility: ProfileVisibility.Public,
+          visible_fields: [ProfileField.Email]
+        }
+      )
+
+      const user = await svc.get(MATRIX_MXID)
+
+      expect(user).not.toBeNull()
+      expect(user).toHaveProperty('display_name', MOCK_DATA.MATRIX.displayname)
+      expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
+      // Email should be visible due to explicit public visibility
+      expect(user).toHaveProperty('emails', [MOCK_DATA.LDAP.mail])
+      // Phone should not be visible (not in visible_fields)
+      expect(user).not.toHaveProperty('phones')
+    })
+  })
+
+  describe('When default_visibility_settings config is set to Public with email visible', () => {
+    const createServiceWithPublicDefault = () => {
+      const cfg = {
+        ...BASE_CONFIG,
+        additional_features: false,
+        features: {
+          ...BASE_CONFIG.features,
+          common_settings: { enabled: false },
+          user_profile: {
+            default_visibility_settings: {
+              visibility: 'public',
+              visible_fields: ['email']
+            }
+          }
+        }
+      } as unknown as Config
+
+      const svc = new UserInfoService(
+        userDBMock as unknown as UserDB,
+        twakeDBMock as unknown as TwakeDB,
+        matrixDBMock as unknown as MatrixDB,
+        cfg,
+        loggerMock as unknown as TwakeLogger
+      )
+
+      ;(svc as any).addressBookService =
+        addressBookServiceMock as unknown as IAddressbookService
+
+      return svc
+    }
+
+    it('Should apply public default visibility with email when user has no explicit settings', async () => {
+      const svc = createServiceWithPublicDefault()
+      mockTwakeDB({}, null) // No explicit profile settings
+
+      const visibility = await svc.getVisibility(MATRIX_MXID)
+
+      expect(visibility).not.toBeNull()
+      expect(visibility).toHaveProperty('visibility', 'public')
+      expect(visibility).toHaveProperty('visible_fields', ['email'])
+    })
+
+    it('Should show email field for GET request when no viewer and public default settings', async () => {
+      const svc = createServiceWithPublicDefault()
+      mockMatrix({ displayName: true, avatar: true })
+      mockUserDB({
+        displayName: true,
+        lastName: true,
+        givenName: true,
+        mail: true,
+        phone: true
+      })
+      mockTwakeDB({}, null) // No explicit profile settings
+
+      const user = await svc.get(MATRIX_MXID)
+
+      expect(user).not.toBeNull()
+      expect(user).toHaveProperty('display_name', MOCK_DATA.MATRIX.displayname)
+      expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
+      // Email should be visible due to default public visibility with email field
+      expect(user).toHaveProperty('emails', [MOCK_DATA.LDAP.mail])
+      // Phone should not be visible (not in default visible_fields)
+      expect(user).not.toHaveProperty('phones')
+    })
+
+    it('Should override default public visibility when user sets explicit private settings', async () => {
+      const svc = createServiceWithPublicDefault()
+      mockMatrix({ displayName: true, avatar: true })
+      mockUserDB({
+        displayName: true,
+        lastName: true,
+        givenName: true,
+        mail: true,
+        phone: true
+      })
+      // User explicitly sets private visibility
+      mockTwakeDB(
+        {},
+        {
+          matrix_id: MATRIX_MXID,
+          visibility: ProfileVisibility.Private,
+          visible_fields: []
+        }
+      )
+
+      const user = await svc.get(MATRIX_MXID)
+
+      expect(user).not.toBeNull()
+      expect(user).toHaveProperty('display_name', MOCK_DATA.MATRIX.displayname)
+      expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
+      // Email and phone should be hidden due to explicit private visibility
+      expect(user).not.toHaveProperty('emails')
+      expect(user).not.toHaveProperty('phones')
+    })
+  })
+
+  describe('When default_visibility_settings config is set to Contacts with both fields visible', () => {
+    const createServiceWithContactsDefault = () => {
+      const cfg = {
+        ...BASE_CONFIG,
+        additional_features: false,
+        features: {
+          ...BASE_CONFIG.features,
+          common_settings: { enabled: false },
+          user_profile: {
+            default_visibility_settings: {
+              visibility: 'contacts',
+              visible_fields: ['email', 'phone']
+            }
+          }
+        }
+      } as unknown as Config
+
+      const svc = new UserInfoService(
+        userDBMock as unknown as UserDB,
+        twakeDBMock as unknown as TwakeDB,
+        matrixDBMock as unknown as MatrixDB,
+        cfg,
+        loggerMock as unknown as TwakeLogger
+      )
+
+      ;(svc as any).addressBookService =
+        addressBookServiceMock as unknown as IAddressbookService
+
+      return svc
+    }
+
+    it('Should apply contacts default visibility with both fields when user has no explicit settings', async () => {
+      const svc = createServiceWithContactsDefault()
+      mockTwakeDB({}, null) // No explicit profile settings
+
+      const visibility = await svc.getVisibility(MATRIX_MXID)
+
+      expect(visibility).not.toBeNull()
+      expect(visibility).toHaveProperty('visibility', 'contacts')
+      expect(visibility).toHaveProperty('visible_fields', ['email', 'phone'])
+    })
+
+    it('Should hide contact fields when viewer is not in contacts (default contacts visibility)', async () => {
+      const svc = createServiceWithContactsDefault()
+      const VIEWER_MXID = '@viewer:example.org'
+
+      mockMatrix({ displayName: true, avatar: true })
+      mockUserDB({
+        displayName: true,
+        lastName: true,
+        givenName: true,
+        mail: true,
+        phone: true
+      })
+      mockTwakeDB({}, null) // No explicit profile settings
+
+      // Mock addressbook - viewer is NOT in target's contacts
+      addressBookServiceMock.list.mockResolvedValue({
+        contacts: [
+          {
+            mxid: '@someone-else:example.org',
+            display_name: 'Someone Else'
+          }
+        ]
+      })
+
+      const user = await svc.get(MATRIX_MXID, VIEWER_MXID)
+
+      expect(user).not.toBeNull()
+      expect(user).toHaveProperty('display_name', MOCK_DATA.MATRIX.displayname)
+      expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
+      // Email and phone should be hidden because viewer is not in contacts
+      expect(user).not.toHaveProperty('emails')
+      expect(user).not.toHaveProperty('phones')
+    })
+
+    it('Should show contact fields when viewer is in contacts (default contacts visibility)', async () => {
+      const svc = createServiceWithContactsDefault()
+      const VIEWER_MXID = '@viewer:example.org'
+
+      mockMatrix({ displayName: true, avatar: true })
+      mockUserDB({
+        displayName: true,
+        lastName: true,
+        givenName: true,
+        mail: true,
+        phone: true
+      })
+      mockTwakeDB({}, null) // No explicit profile settings
+
+      // Mock addressbook - viewer IS in target's contacts
+      addressBookServiceMock.list.mockResolvedValue({
+        contacts: [
+          {
+            mxid: VIEWER_MXID,
+            display_name: 'Viewer Name'
+          }
+        ]
+      })
+
+      const user = await svc.get(MATRIX_MXID, VIEWER_MXID)
+
+      expect(user).not.toBeNull()
+      expect(user).toHaveProperty('display_name', MOCK_DATA.MATRIX.displayname)
+      expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
+      // Email and phone should be visible because viewer is in contacts
+      expect(user).toHaveProperty('emails', [MOCK_DATA.LDAP.mail])
+      expect(user).toHaveProperty('phones', [MOCK_DATA.LDAP.mobile])
+    })
+  })
+})
