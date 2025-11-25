@@ -71,7 +71,9 @@ const featuresConf = {
       visibility:
         process.env.FEATURE_USER_PROFILE_DEFAULT_VISIBILITY || 'private',
       visible_fields: process.env.FEATURE_USER_PROFILE_DEFAULT_VISIBLE_FIELDS
-        ? process.env.FEATURE_USER_PROFILE_DEFAULT_VISIBLE_FIELDS.split(',')
+        ? process.env.FEATURE_USER_PROFILE_DEFAULT_VISIBLE_FIELDS.split(
+            /[,\s]+/
+          )
             .map((v) => v.trim())
             .filter((v) => v && v.length > 0)
         : []
