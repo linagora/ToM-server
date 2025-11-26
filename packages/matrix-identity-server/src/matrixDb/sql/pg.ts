@@ -16,8 +16,16 @@ class MatrixDBPg extends Pg<Collections> implements MatrixDBBackend {
     >,
     logger: TwakeLogger
   ): Promise<void> {
-    if (this.db != null) return Promise.resolve()
+    if (this.db != null) {
+      this.logger.debug(
+        '[MatrixDBPg][createDatabases] Database already initialized'
+      )
+      return Promise.resolve()
+    }
     return new Promise((resolve, reject) => {
+      this.logger.debug(
+        '[MatrixDBPg][createDatabases] Initializing database connection'
+      )
       import('pg')
         .then((pg) => {
           // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
@@ -29,9 +37,19 @@ class MatrixDBPg extends Pg<Collections> implements MatrixDBBackend {
             conf.matrix_database_password == null ||
             conf.matrix_database_name == null
           ) {
-            throw new Error(
+            const error = new Error(
               'database_name, database_user and database_password are required when using Postgres'
             )
+            this.logger.error(
+              '[MatrixDBPg][createDatabases] Configuration incomplete',
+              {
+                hasHost: conf.matrix_database_host != null,
+                hasUser: conf.matrix_database_user != null,
+                hasPassword: conf.matrix_database_password != null,
+                hasName: conf.matrix_database_name != null
+              }
+            )
+            throw error
           }
           const opts: ClientConfig = {
             host: conf.matrix_database_host,
@@ -47,14 +65,32 @@ class MatrixDBPg extends Pg<Collections> implements MatrixDBBackend {
           }
           try {
             this.db = new pg.Pool(opts)
+            this.logger.info(
+              '[MatrixDBPg][createDatabases] Connection established',
+              {
+                host: opts.host,
+                port: opts.port,
+                database: opts.database
+              }
+            )
             resolve()
           } catch (e) {
-            logger.error('Unable to connect to Pg database')
+            this.logger.error(
+              '[MatrixDBPg][createDatabases] Unable to connect',
+              {
+                error: e
+              }
+            )
             reject(e)
           }
         })
         .catch((e) => {
-          logger.error('Unable to load pg module')
+          this.logger.error(
+            '[MatrixDBPg][createDatabases] Unable to load pg module',
+            {
+              error: e
+            }
+          )
           reject(e)
         })
     })
