@@ -370,7 +370,7 @@ class UserDBLDAP implements UserDBBackend {
     }
 
     let specificFilter = searchFields.reduce((prev, current) => {
-      return `${prev}(${current}=*${value}*)`
+      return `${prev}(${current}=${value ? `*${value}*` : '*'})`
     }, '')
 
     if (searchFields.length > 1) {
