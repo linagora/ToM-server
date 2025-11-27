@@ -252,7 +252,7 @@ describe('Using Matrix Token', () => {
       expect(response.body.matches).toHaveLength(1)
       expect(response.body.matches[0]).toEqual(
         expect.objectContaining({
-          uid: 'dwho',
+          uid: '@dwho:example.com',
           address: '@dwho:example.com'
         })
       )
@@ -273,7 +273,7 @@ describe('Using Matrix Token', () => {
       expect(response.body.matches).toHaveLength(1)
       expect(response.body.matches[0]).toEqual(
         expect.objectContaining({
-          uid: 'dwho',
+          uid: '@dwho:example.com',
           address: '@dwho:example.com',
           sn: 'Dwho'
         })
@@ -296,16 +296,16 @@ describe('Using Matrix Token', () => {
       expect(response.body.matches).toEqual([])
       expect(response.body.inactive_matches).toHaveLength(4)
       expect(response.body.inactive_matches[0]).toEqual(
-        expect.objectContaining({ uid: 'user00' })
+        expect.objectContaining({ uid: '@user00:example.com' })
       )
       expect(response.body.inactive_matches[1]).toEqual(
-        expect.objectContaining({ uid: 'user01' })
+        expect.objectContaining({ uid: '@user01:example.com' })
       )
       expect(response.body.inactive_matches[2]).toEqual(
-        expect.objectContaining({ uid: 'user02' })
+        expect.objectContaining({ uid: '@user02:example.com' })
       )
       expect(response.body.inactive_matches[3]).toEqual(
-        expect.objectContaining({ uid: 'user03' })
+        expect.objectContaining({ uid: '@user03:example.com' })
       )
     })
 
@@ -325,20 +325,20 @@ describe('Using Matrix Token', () => {
       expect(response.body.matches).toEqual([])
       expect(response.body.inactive_matches).toHaveLength(4)
       expect(response.body.inactive_matches[0]).toEqual(
-        expect.objectContaining({ uid: 'user03' })
+        expect.objectContaining({ uid: '@user03:example.com' })
       )
       expect(response.body.inactive_matches[1]).toEqual(
-        expect.objectContaining({ uid: 'user04' })
+        expect.objectContaining({ uid: '@user04:example.com' })
       )
       expect(response.body.inactive_matches[2]).toEqual(
         expect.objectContaining({
-          uid: 'user05',
+          uid: '@user05:example.com',
           address: '@user05:example.com'
         })
       )
       expect(response.body.inactive_matches[3]).toEqual(
         expect.objectContaining({
-          uid: 'user06',
+          uid: '@user06:example.com',
           address: '@user06:example.com'
         })
       )
@@ -397,7 +397,12 @@ describe('Using Matrix Token', () => {
                   timestamp
                 )
                 expect(response.body).toEqual({
-                  deleted: [{ uid: 'user04', address: '@user04:example.com' }],
+                  deleted: [
+                    {
+                      uid: 'user04',
+                      address: '@user04:example.com'
+                    }
+                  ],
                   new: [
                     {
                       uid: 'user07',
