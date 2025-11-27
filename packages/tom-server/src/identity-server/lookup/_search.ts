@@ -113,14 +113,33 @@ export const _search = async (
       )
       return []
     }
-    const result = await addressBookService.list(owner)
+    const result = (await addressBookService.list(owner))?.contacts || []
+    logger.debug(
+      `[IndentityServer][_search][addressbookPromise] addressBookService.list returned ${
+        result?.length || 0
+      } results.`
+    )
+    logger.silly(
+      `[IndentityServer][_search][addressbookPromise] Raw result: ${JSON.stringify(
+        result
+      )}`
+    )
     if (!result || !Array.isArray(result) || result.length <= 0) {
       logger.info(
         '[IndentityServer][_search][addressbookPromise] No contacts found in addressBookService.'
       )
       return []
     }
-    const filteredContacts = result.contacts.some(
+    const sanitizedResult = result.filter(
+      (c) => !!c && !!c.mxid && c.mxid.length > 0
+    )
+    if (!predicate || predicate.length <= 0) {
+      logger.info(
+        '[IndentityServer][_search][addressbookPromise] No predicate provided. Returning all contacts from addressBookService.'
+      )
+      return sanitizedResult.map((c) => c.mxid)
+    }
+    const filteredContacts = sanitizedResult.filter(
       (c) => c.mxid?.includes(predicate) || c.display_name?.includes(predicate)
     )
     if (
@@ -133,7 +152,7 @@ export const _search = async (
       )
       return []
     }
-    return filteredContacts
+    return filteredContacts.map((c) => c.mxid)
   }
 
   const matrixDbPromise = async (predicate: string): Promise<Array<string>> => {
@@ -146,6 +165,16 @@ export const _search = async (
       ['user_id', 'displayname'],
       predicate
     )) as unknown as Array<{ user_id: string }>
+    logger.debug(
+      `[IndentityServer][_search][matrixDbPromise] matrixDb.match returned ${
+        rows?.length || 0
+      } rows.`
+    )
+    logger.silly(
+      `[IndentityServer][_search][matrixDbPromise] Raw rows: ${JSON.stringify(
+        rows
+      )}`
+    )
     if (!rows || !Array.isArray(rows) || rows.length <= 0) {
       logger.info(
         '[IndentityServer][_search][matrixDbPromise] No matching users found in matrixDb.'
@@ -154,7 +183,25 @@ export const _search = async (
     }
     return rows
       .filter((i) => !!i?.user_id)
-      .map((i) => i.user_id)
+      .map((i) => {
+        const uid = i.user_id || ''
+        logger.silly(
+          `[IndentityServer][_search][matrixDbPromise] Converting uid to matrixId: ${uid}`
+        )
+        try {
+          const mxid = toMatrixId(uid, conf.server_name)
+          logger.debug(
+            `[IndentityServer][_search][matrixDbPromise] Converted matrixId: ${mxid}`
+          )
+          return mxid
+        } catch (e) {
+          logger.warn(
+            `[IndentityServer][_search][matrixDbPromise] Invalid uid found: ${uid}`,
+            JSON.stringify(e)
+          )
+          return '' // silently ignore invalid uids
+        }
+      })
       .filter((i) => !!i && i.length > 0)
   }
 
@@ -174,6 +221,16 @@ export const _search = async (
       ['cn', 'displayName', 'sn', 'givenName', 'uid', 'mail', 'mobile'],
       predicate
     )) as unknown as Array<{ uid: string }>
+    logger.debug(
+      `[IndentityServer][_search][userDbPromise] userDB.match returned ${
+        rows?.length || 0
+      } rows.`
+    )
+    logger.silly(
+      `[IndentityServer][_search][userDbPromise] Raw rows: ${JSON.stringify(
+        rows
+      )}`
+    )
     if (!rows || !Array.isArray(rows) || rows.length <= 0) {
       logger.info(
         '[IndentityServer][_search][userDbPromise] No matching users found in userDB.'
@@ -209,8 +266,12 @@ export const _search = async (
     const predicate = data.val || ''
 
     logger.info(`[IndentityServer][_search] Searching user registry started`)
-    logger.debug(`[IndentityServer][_search] Search requested by: ${owner}`)
-    logger.debug(`[IndentityServer][_search] Searching for: ${predicate}`)
+    logger.debug(
+      `[IndentityServer][_search] Search requested by: ${owner || 'anonymous'}`
+    )
+    logger.debug(
+      `[IndentityServer][_search] Searching for: ${predicate || 'all'}`
+    )
 
     const [matrixDbResult, addressbookResult, userDbResult] =
       await Promise.allSettled([
@@ -283,24 +344,32 @@ export const _search = async (
     }
     logger.info('[IndentityServer][_search] UserDB search completed.')
 
-    const [matches, inactive_matches] = await Promise.allSettled([
+    const [matchesResult, inactiveMatchesResult] = await Promise.allSettled([
       enrichWithUserInfo(Array.from(activesSet), owner),
       enrichWithUserInfo(Array.from(inactivesSet), owner)
     ])
 
-    if (matches.status === 'rejected') {
+    let matches: EnrichedUser[] = []
+    let inactive_matches: EnrichedUser[] = []
+
+    if (matchesResult.status === 'rejected') {
       logger.error(
         `[IndentityServer][_search] Failed to enrich active matches: ${JSON.stringify(
-          matches.reason
+          matchesResult.reason
         )}`
       )
+    } else {
+      matches = matchesResult.value
     }
-    if (inactive_matches.status === 'rejected') {
+
+    if (inactiveMatchesResult.status === 'rejected') {
       logger.error(
         `[IndentityServer][_search] Failed to enrich inactive matches: ${JSON.stringify(
-          inactive_matches.reason
+          inactiveMatchesResult.reason
         )}`
       )
+    } else {
+      inactive_matches = inactiveMatchesResult.value
     }
 
     logger.info(
