@@ -53,12 +53,20 @@ jest.mock('../user-info-api/services', () => {
 
       const givenName =
         baseUid.charAt(0).toUpperCase() + baseUid.slice(1).toLowerCase()
+      const sn = givenName
 
       return {
         uid: baseUid,
+        display_name: sn,
+        avatar_url: '',
+        sn,
+        last_name: sn,
         givenName,
-        mails: [`${baseUid}@${domain}`],
-        viewer
+        first_name: givenName,
+        emails: [`${baseUid}@${domain}`],
+        phones: [],
+        language: 'en',
+        timezone: 'UTC'
       }
     })
   }))
