@@ -53,11 +53,13 @@ export default class TwakeIdentityServer extends MatrixIdentityServer<twakeDbCol
            *                items:
            *                  type: string
            *                  description: List of fields to search in (uid, mail,...)
+           *                  deprecated: true
            *              fields:
            *                type: array
            *                items:
            *                  type: string
            *                  description: List of fields to return for matching users (uid, mail, mobile, displayName, givenName, cn, sn)
+           *                  deprecated: true
            *              val:
            *                type: string
            *                description: Optional value to search
