@@ -77,25 +77,31 @@ export const _search = async (
         logger.warn(
           `[IndentityServer][_search][enrichWithUserInfo] No user info found for ${mxid}. Skipping enrichment.`
         )
+      } else {
+        enrichedUsers.push({
+          address: mxid, // TODO: address is deprecated and uid should replace it
+          uid: mxid,
+          display_name: userInfo?.display_name || '',
+          displayName: userInfo?.display_name || '', // TODO: Deprecated kepping for backward compatibility
+          cn: userInfo?.display_name || '', // TODO: Deprecated kepping for backward compatibility
+          avatar_url: userInfo?.avatar_url || '',
+          last_name: userInfo?.last_name || '',
+          first_name: userInfo?.first_name || '',
+          givenName: userInfo?.first_name || '', // TODO: Deprecated kepping for backward compatibility
+          givenname: userInfo?.first_name || '', // TODO: Deprecated kepping for backward compatibility
+          emails: userInfo?.emails || [],
+          mail: userInfo?.emails?.at(0) || '', // TODO: Deprecated kepping for backward compatibility
+          phones: userInfo?.phones || [],
+          mobile: userInfo?.phones?.at(0) || '', // TODO: Deprecated kepping for backward compatibility
+          language: userInfo?.language || '',
+          timezone: userInfo?.timezone || ''
+        })
+        logger.silly(
+          `[IndentityServer][_search][enrichWithUserInfo] Enriched user: ${JSON.stringify(
+            userInfo
+          )}`
+        )
       }
-      enrichedUsers.push({
-        address: mxid, // TODO: address is deprecated and uid should replace it
-        uid: mxid,
-        display_name: userInfo?.display_name || '',
-        displayName: userInfo?.display_name || '', // TODO: Deprecated kepping for backward compatibility
-        cn: userInfo?.display_name || '', // TODO: Deprecated kepping for backward compatibility
-        avatar_url: userInfo?.avatar_url || '',
-        last_name: userInfo?.last_name || '',
-        first_name: userInfo?.first_name || '',
-        givenName: userInfo?.first_name || '', // TODO: Deprecated kepping for backward compatibility
-        givenname: userInfo?.first_name || '', // TODO: Deprecated kepping for backward compatibility
-        emails: userInfo?.emails || [],
-        mail: userInfo?.emails?.at(0) || '', // TODO: Deprecated kepping for backward compatibility
-        phones: userInfo?.phones || [],
-        mobile: userInfo?.phones?.at(0) || '', // TODO: Deprecated kepping for backward compatibility
-        language: userInfo?.language || '',
-        timezone: userInfo?.timezone || ''
-      })
     }
     return enrichedUsers
   }
