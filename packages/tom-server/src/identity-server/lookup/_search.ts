@@ -1,5 +1,5 @@
 import type { TwakeLogger } from '@twake/logger'
-import { getLocalPart, send, toMatrixId } from '@twake/utils'
+import { isMatrixId, send, toMatrixId } from '@twake/utils'
 import { AddressbookService } from '../../addressbook-api/services'
 import UserInfoService from '../../user-info-api/services'
 import type { UserInformation } from '../../user-info-api/types'
@@ -131,7 +131,7 @@ export const _search = async (
       return []
     }
     const sanitizedResult = result.filter(
-      (c) => !!c && !!c.mxid && c.mxid.length > 0
+      (c) => !!c && !!c.mxid && c.mxid.length > 0 && isMatrixId(c.mxid)
     )
     if (!predicate || predicate.length <= 0) {
       logger.info(
@@ -185,22 +185,25 @@ export const _search = async (
       .filter((i) => !!i?.user_id)
       .map((i) => {
         const uid = i.user_id || ''
-        logger.silly(
-          `[IndentityServer][_search][matrixDbPromise] Converting uid to matrixId: ${uid}`
-        )
-        try {
-          const mxid = toMatrixId(uid, conf.server_name)
-          logger.debug(
-            `[IndentityServer][_search][matrixDbPromise] Converted matrixId: ${mxid}`
+        if (!isMatrixId(uid)) {
+          logger.silly(
+            `[IndentityServer][_search][matrixDbPromise] Converting uid to matrixId: ${uid}`
           )
-          return mxid
-        } catch (e) {
-          logger.warn(
-            `[IndentityServer][_search][matrixDbPromise] Invalid uid found: ${uid}`,
-            JSON.stringify(e)
-          )
-          return '' // silently ignore invalid uids
+          try {
+            const mxid = toMatrixId(uid, conf.server_name)
+            logger.debug(
+              `[IndentityServer][_search][matrixDbPromise] Converted matrixId: ${mxid}`
+            )
+            return mxid
+          } catch (e) {
+            logger.warn(
+              `[IndentityServer][_search][matrixDbPromise] Invalid uid found: ${uid}`,
+              JSON.stringify(e)
+            )
+            return '' // silently ignore invalid uids
+          }
         }
+        return uid
       })
       .filter((i) => !!i && i.length > 0)
   }
@@ -241,22 +244,25 @@ export const _search = async (
       .filter((i) => !!i?.uid)
       .map((i): string => {
         const uid = i.uid || ''
-        logger.silly(
-          `[IndentityServer][_search][userDbPromise] Converting uid to matrixId: ${uid}`
-        )
-        try {
-          const mxid = toMatrixId(uid, conf.server_name)
-          logger.debug(
-            `[IndentityServer][_search][userDbPromise] Converted matrixId: ${mxid}`
+        if (!isMatrixId(uid)) {
+          logger.silly(
+            `[IndentityServer][_search][userDbPromise] Converting uid to matrixId: ${uid}`
           )
-          return mxid
-        } catch (e) {
-          logger.warn(
-            `[IndentityServer][_search][userDbPromise] Invalid uid found: ${uid}`,
-            JSON.stringify(e)
-          )
-          return '' // silently ignore invalid uids
+          try {
+            const mxid = toMatrixId(uid, conf.server_name)
+            logger.debug(
+              `[IndentityServer][_search][userDbPromise] Converted matrixId: ${mxid}`
+            )
+            return mxid
+          } catch (e) {
+            logger.warn(
+              `[IndentityServer][_search][userDbPromise] Invalid uid found: ${uid}`,
+              JSON.stringify(e)
+            )
+            return '' // silently ignore invalid uids
+          }
         }
+        return uid
       })
       .filter((i) => !!i && i.length > 0)
   }
