@@ -277,6 +277,9 @@ export const _search = async (
     const owner = data.owner || ''
     const predicate = data.val || ''
 
+    const limit = data.limit || 30
+    const offset = data.offset || 0
+
     logger.info(`[IndentityServer][_search] Searching user registry started`)
     logger.debug(
       `[IndentityServer][_search] Search requested by: ${owner || 'anonymous'}`
@@ -356,9 +359,33 @@ export const _search = async (
     }
     logger.info('[IndentityServer][_search] UserDB search completed.')
 
+    // Apply pagination BEFORE enrichment to minimize DB/API calls
+    const allActiveIds = Array.from(activesSet)
+    const allInactiveIds = Array.from(inactivesSet)
+    const totalResults = allActiveIds.length + allInactiveIds.length
+
+    logger.debug(
+      `[IndentityServer][_search] Found ${totalResults} total users before pagination`
+    )
+
+    // Combine active and inactive for pagination
+    const combinedIds = [...allActiveIds, ...allInactiveIds]
+    const paginatedIds = combinedIds.slice(offset, offset + limit)
+
+    // Determine which paginated IDs are active vs inactive
+    const paginatedActiveIds = paginatedIds.filter((id) => activesSet.has(id))
+    const paginatedInactiveIds = paginatedIds.filter((id) =>
+      inactivesSet.has(id)
+    )
+
+    logger.debug(
+      `[IndentityServer][_search] Enriching ${paginatedIds.length} paginated users (${paginatedActiveIds.length} active, ${paginatedInactiveIds.length} inactive)`
+    )
+
+    // Only enrich the paginated subset
     const [matchesResult, inactiveMatchesResult] = await Promise.allSettled([
-      enrichWithUserInfo(Array.from(activesSet), owner),
-      enrichWithUserInfo(Array.from(inactivesSet), owner)
+      enrichWithUserInfo(paginatedActiveIds, owner),
+      enrichWithUserInfo(paginatedInactiveIds, owner)
     ])
 
     let matches: EnrichedUser[] = []
@@ -385,9 +412,9 @@ export const _search = async (
     }
 
     logger.info(
-      `[IndentityServer][_search] Searching user registry completed. Found ${
-        activesSet.size + inactivesSet.size
-      } total users.`
+      `[IndentityServer][_search] Searching user registry completed. Found ${totalResults} total users, returning ${
+        matches.length + inactive_matches.length
+      } paginated results.`
     )
 
     return send(res, 200, { matches, inactive_matches })

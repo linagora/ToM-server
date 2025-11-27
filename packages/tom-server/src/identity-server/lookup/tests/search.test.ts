@@ -609,7 +609,7 @@ describe('_search factory', () => {
       )
     })
 
-    it('should provide empty values when UserInfoService returns null', async () => {
+    it('should skip users when UserInfoService returns null', async () => {
       mockUserInfoGet.mockResolvedValueOnce(null)
 
       const searchFn = await _search(idServerMock as any, logger as any)
@@ -624,11 +624,9 @@ describe('_search factory', () => {
 
       const response = (send as jest.Mock).mock.calls[0][2]
       const allResults = [...response.matches, ...response.inactive_matches]
-      const user = allResults[0]
 
-      expect(user.display_name).toBe('')
-      expect(user.avatar_url).toBe('')
-      expect(user.emails).toEqual([])
+      // Users without user info are skipped from results
+      expect(allResults.length).toBe(0)
     })
 
     it('should handle enrichment errors gracefully', async () => {
@@ -690,6 +688,149 @@ describe('_search factory', () => {
       expect(
         response.matches.length + response.inactive_matches.length
       ).toBeGreaterThan(0)
+    })
+  })
+
+  describe('Pagination', () => {
+    it('should apply offset and limit across all results', async () => {
+      const serverWithManyUsers = {
+        ...idServerMock,
+        matrixDb: {
+          db: {
+            match: jest
+              .fn()
+              .mockResolvedValue([
+                { user_id: '@user1:server' },
+                { user_id: '@user2:server' },
+                { user_id: '@user3:server' }
+              ])
+          }
+        },
+        userDB: {
+          match: jest
+            .fn()
+            .mockResolvedValue([
+              { uid: 'user1' },
+              { uid: 'user2' },
+              { uid: 'user3' },
+              { uid: 'user4' },
+              { uid: 'user5' }
+            ])
+        }
+      }
+
+      const searchFn = await _search(serverWithManyUsers as any, logger as any)
+      const resMock = {} as any
+      const dataMock = {
+        scope: ['uid'],
+        val: 'user',
+        owner: '@admin:server',
+        offset: 1,
+        limit: 2
+      }
+
+      await searchFn(resMock, dataMock)
+
+      const response = (send as jest.Mock).mock.calls[0][2]
+      const totalReturned =
+        response.matches.length + response.inactive_matches.length
+
+      // Should return exactly 2 results (limit)
+      expect(totalReturned).toBe(2)
+    })
+
+    it('should only enrich paginated subset of users', async () => {
+      mockUserInfoGet.mockClear()
+
+      const serverWithManyUsers = {
+        ...idServerMock,
+        matrixDb: {
+          db: {
+            match: jest
+              .fn()
+              .mockResolvedValue([
+                { user_id: '@user1:server' },
+                { user_id: '@user2:server' },
+                { user_id: '@user3:server' },
+                { user_id: '@user4:server' },
+                { user_id: '@user5:server' }
+              ])
+          }
+        },
+        userDB: {
+          match: jest.fn().mockResolvedValue([])
+        }
+      }
+
+      const searchFn = await _search(serverWithManyUsers as any, logger as any)
+      const resMock = {} as any
+      const dataMock = {
+        scope: ['uid'],
+        val: 'user',
+        owner: '@admin:server',
+        offset: 0,
+        limit: 2
+      }
+
+      await searchFn(resMock, dataMock)
+
+      // Should only call UserInfoService for 2 users (the paginated subset)
+      // not all 5 users
+      expect(mockUserInfoGet).toHaveBeenCalledTimes(2)
+    })
+
+    it('should handle offset beyond total results', async () => {
+      const searchFn = await _search(idServerMock as any, logger as any)
+      const resMock = {} as any
+      const dataMock = {
+        scope: ['uid'],
+        val: 'drwho',
+        owner: '@user123:server',
+        offset: 100,
+        limit: 10
+      }
+
+      await searchFn(resMock, dataMock)
+
+      const response = (send as jest.Mock).mock.calls[0][2]
+      expect(response.matches).toEqual([])
+      expect(response.inactive_matches).toEqual([])
+    })
+
+    it('should use default limit when not specified', async () => {
+      const serverWithManyUsers = {
+        ...idServerMock,
+        matrixDb: {
+          db: {
+            match: jest.fn().mockResolvedValue(
+              Array.from({ length: 50 }, (_, i) => ({
+                user_id: `@user${i}:server`
+              }))
+            )
+          }
+        },
+        userDB: {
+          match: jest.fn().mockResolvedValue([])
+        }
+      }
+
+      const searchFn = await _search(serverWithManyUsers as any, logger as any)
+      const resMock = {} as any
+      const dataMock = {
+        scope: ['uid'],
+        val: 'user',
+        owner: '@admin:server'
+        // No limit specified
+      }
+
+      await searchFn(resMock, dataMock)
+
+      const response = (send as jest.Mock).mock.calls[0][2]
+      const totalReturned =
+        response.matches.length + response.inactive_matches.length
+
+      // Should return default limit of 30
+      expect(totalReturned).toBe(30)
     })
   })
 })
