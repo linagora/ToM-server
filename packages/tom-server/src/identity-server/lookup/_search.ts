@@ -43,6 +43,7 @@ export const _search = async (
     display_name: string
     displayName: string
     cn: string
+    sn: string
     avatar_url: string
     last_name: string
     first_name: string
@@ -84,6 +85,7 @@ export const _search = async (
           display_name: userInfo?.display_name || '',
           displayName: userInfo?.display_name || '', // TODO: Deprecated kepping for backward compatibility
           cn: userInfo?.display_name || '', // TODO: Deprecated kepping for backward compatibility
+          sn: userInfo?.sn || '', // TODO: Deprecated kepping for backward compatibility
           avatar_url: userInfo?.avatar_url || '',
           last_name: userInfo?.last_name || '',
           first_name: userInfo?.first_name || '',
@@ -360,8 +362,8 @@ export const _search = async (
     logger.info('[IndentityServer][_search] UserDB search completed.')
 
     // Apply pagination BEFORE enrichment to minimize DB/API calls
-    const allActiveIds = Array.from(activesSet)
-    const allInactiveIds = Array.from(inactivesSet)
+    const allActiveIds = Array.from(activesSet).sort()
+    const allInactiveIds = Array.from(inactivesSet).sort()
     const totalResults = allActiveIds.length + allInactiveIds.length
 
     logger.debug(
