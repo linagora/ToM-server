@@ -7,6 +7,7 @@ import {
   validateParameters,
   epoch,
   toMatrixId,
+  isMatrixId,
   isValidUrl
 } from './index'
 import { type TwakeLogger } from '@twake/logger'
@@ -237,7 +238,176 @@ describe('Utility Functions', () => {
       ) // Invalid IPv6
       expect(() => toMatrixId('localpart', 'example..com')).toThrow(TypeError) // Invalid DNS name
     })
+
+    it('should enforce 255 character limit for Matrix IDs', () => {
+      // Create a localpart that would result in a Matrix ID exceeding 255 characters
+      const longLocalpart = 'a'.repeat(250)
+      expect(() => toMatrixId(longLocalpart, 'example.com')).toThrow(TypeError)
+    })
+
+    it('should validate port numbers correctly', () => {
+      // Valid ports
+      expect(toMatrixId('user', 'example.com:1')).toBe('@user:example.com:1')
+      expect(toMatrixId('user', 'example.com:8448')).toBe(
+        '@user:example.com:8448'
+      )
+      expect(toMatrixId('user', 'example.com:65535')).toBe(
+        '@user:example.com:65535'
+      )
+
+      // Invalid ports
+      expect(() => toMatrixId('user', 'example.com:0')).toThrow(TypeError) // Port 0 invalid
+      expect(() => toMatrixId('user', 'example.com:65536')).toThrow(TypeError) // Port too high
+      expect(() => toMatrixId('user', 'example.com:99999')).toThrow(TypeError) // Port too high
+    })
   })
+
+  describe('isMatrixId', () => {
+    describe('valid Matrix IDs', () => {
+      it('should return true for valid Matrix IDs with DNS names', () => {
+        expect(isMatrixId('@alice:matrix.org')).toBe(true)
+        expect(isMatrixId('@bob:example.com')).toBe(true)
+        expect(isMatrixId('@user:sub.domain.example.com')).toBe(true)
+        expect(isMatrixId('@test123:matrix-server.org')).toBe(true)
+      })
+
+      it('should return true for valid Matrix IDs with ports', () => {
+        expect(isMatrixId('@user:matrix.org:8448')).toBe(true)
+        expect(isMatrixId('@alice:example.com:443')).toBe(true)
+        expect(isMatrixId('@bob:localhost:8008')).toBe(true)
+      })
+
+      it('should return true for valid Matrix IDs with IPv4 addresses', () => {
+        expect(isMatrixId('@user:192.168.1.1')).toBe(true)
+        expect(isMatrixId('@alice:10.0.0.1:8448')).toBe(true)
+        expect(isMatrixId('@test:127.0.0.1')).toBe(true)
+        expect(isMatrixId('@user:255.255.255.255')).toBe(true)
+      })
+
+      it('should return true for valid Matrix IDs with IPv6 addresses', () => {
+        expect(isMatrixId('@user:[::1]')).toBe(true)
+        expect(isMatrixId('@alice:[2001:db8::1]')).toBe(true)
+        expect(isMatrixId('@bob:[fe80::1]')).toBe(true)
+        expect(isMatrixId('@test:[2001:db8::1]:8448')).toBe(true)
+        expect(isMatrixId('@user:[::ffff:192.0.2.1]')).toBe(true) // IPv4-mapped IPv6
+      })
+
+      it('should return true for Matrix IDs with special characters in localpart', () => {
+        expect(isMatrixId('@user.name:matrix.org')).toBe(true)
+        expect(isMatrixId('@user-name:matrix.org')).toBe(true)
+        expect(isMatrixId('@user_name:matrix.org')).toBe(true)
+        expect(isMatrixId('@user=name:matrix.org')).toBe(true)
+        expect(isMatrixId('@user/name:matrix.org')).toBe(true)
+        expect(isMatrixId('@user+name:matrix.org')).toBe(true)
+        expect(
+          isMatrixId('@test.user-123_name=value/path+extra:example.com')
+        ).toBe(true)
+      })
+    })
+
+    describe('invalid Matrix IDs', () => {
+      it('should return false for non-string inputs', () => {
+        // @ts-expect-error Testing invalid input type
+        expect(isMatrixId(123)).toBe(false)
+        // @ts-expect-error Testing invalid input type
+        expect(isMatrixId(null)).toBe(false)
+        // @ts-expect-error Testing invalid input type
+        expect(isMatrixId(undefined)).toBe(false)
+        // @ts-expect-error Testing invalid input type
+        expect(isMatrixId({})).toBe(false)
+      })
+
+      it('should return false for strings missing @ sigil', () => {
+        expect(isMatrixId('alice:matrix.org')).toBe(false)
+        expect(isMatrixId('user:example.com')).toBe(false)
+        expect(isMatrixId(':matrix.org')).toBe(false)
+      })
+
+      it('should return false for Matrix IDs without server name', () => {
+        expect(isMatrixId('@alice')).toBe(false)
+        expect(isMatrixId('@user:')).toBe(false)
+        expect(isMatrixId('@')).toBe(false)
+        expect(isMatrixId('@:')).toBe(false)
+      })
+
+      it('should return false for Matrix IDs without localpart', () => {
+        expect(isMatrixId('@:matrix.org')).toBe(false)
+        expect(isMatrixId('@:example.com:8448')).toBe(false)
+      })
+
+      it('should return false for invalid localpart characters', () => {
+        expect(isMatrixId('@User Name:matrix.org')).toBe(false) // Space
+        expect(isMatrixId('@UPPERCASE:matrix.org')).toBe(false) // Uppercase
+        expect(isMatrixId('@user@name:matrix.org')).toBe(false) // @ symbol
+        expect(isMatrixId('@user#name:matrix.org')).toBe(false) // # symbol
+        expect(isMatrixId('@user!:matrix.org')).toBe(false) // ! symbol
+        expect(isMatrixId('@user*:matrix.org')).toBe(false) // * symbol
+      })
+
+      it('should return false for invalid server names', () => {
+        expect(isMatrixId('@user:invalid..domain')).toBe(false) // Consecutive dots
+        expect(isMatrixId('@user:example.com:')).toBe(false) // Trailing colon
+        expect(isMatrixId('@user:example.com:port')).toBe(false) // Non-numeric port
+        expect(isMatrixId('@user:example.com:0')).toBe(false) // Invalid port 0
+        expect(isMatrixId('@user:example.com:99999')).toBe(false) // Port too high
+        expect(isMatrixId('@user:example com')).toBe(false) // Space in server name
+        expect(isMatrixId('@user:-example.com')).toBe(false) // Starts with hyphen
+      })
+
+      it('should return false for invalid IPv4 addresses', () => {
+        expect(isMatrixId('@user:256.1.1.1')).toBe(false) // Octet > 255
+        expect(isMatrixId('@user:999.999.999.999')).toBe(false) // All octets invalid
+        expect(isMatrixId('@user:192.168.256.1')).toBe(false) // Third octet > 255
+        // Note: '192.168.1' is treated as a valid DNS name (3 labels)
+        // Note: '192.168.1.1.1' is also a valid DNS name (5 labels with numeric parts)
+      })
+
+      it('should return false for invalid IPv6 addresses', () => {
+        expect(isMatrixId('@user:[::1')).toBe(false) // Missing closing bracket
+        expect(isMatrixId('@user:::1]')).toBe(false) // Missing opening bracket
+        expect(isMatrixId('@user:[invalid]')).toBe(false) // Invalid IPv6
+        expect(isMatrixId('@user:[gggg::1]')).toBe(false) // Invalid hex
+      })
+
+      it('should return false for Matrix IDs exceeding 255 characters', () => {
+        const longId = '@' + 'a'.repeat(250) + ':example.com'
+        expect(longId.length).toBeGreaterThan(255)
+        expect(isMatrixId(longId)).toBe(false)
+      })
+
+      it('should return false for empty string', () => {
+        expect(isMatrixId('')).toBe(false)
+      })
+    })
+
+    describe('edge cases', () => {
+      it('should handle Matrix IDs at 255 character limit', () => {
+        // Create a Matrix ID exactly at the limit
+        // @user:example.com has 1(@) + localpart + 1(:) + 11(example.com) = 13 + localpart
+        // So we need localpart of 242 characters to get exactly 255
+        const localpart = 'a'.repeat(242)
+        const matrixId = `@${localpart}:example.com`
+        expect(matrixId.length).toBe(255)
+        expect(isMatrixId(matrixId)).toBe(true)
+      })
+
+      it('should handle single character localparts', () => {
+        expect(isMatrixId('@a:matrix.org')).toBe(true)
+        expect(isMatrixId('@1:matrix.org')).toBe(true)
+      })
+
+      it('should handle minimum valid server names', () => {
+        expect(isMatrixId('@user:a')).toBe(true)
+        expect(isMatrixId('@user:a.b')).toBe(true)
+      })
+
+      it('should correctly parse server names with multiple colons (IPv6 with port)', () => {
+        expect(isMatrixId('@user:[2001:db8::1]:8448')).toBe(true)
+        expect(isMatrixId('@user:[::1]:443')).toBe(true)
+      })
+    })
+  })
+
   describe('isValidUrl', () => {
     it('should return false for a non-string input', () => {
       // @ts-expect-error Testing non-string input
