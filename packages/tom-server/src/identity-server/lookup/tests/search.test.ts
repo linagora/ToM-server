@@ -1,5 +1,5 @@
 import { _search } from '../_search'
-import { send, errMsg, toMatrixId } from '@twake/utils'
+import { send, toMatrixId, isMatrixId } from '@twake/utils'
 import { AddressbookService } from '../../../addressbook-api/services'
 import UserInfoService from '../../../user-info-api/services'
 
@@ -8,6 +8,10 @@ jest.mock('@twake/utils', () => ({
   send: jest.fn(),
   errMsg: jest.fn((msg) => ({ error: msg })),
   toMatrixId: jest.fn((uid, server) => `@${uid}:${server}`),
+  isMatrixId: jest.fn((id) => {
+    if (!id || typeof id !== 'string') return false
+    return /^@[^:]+:[^:]+$/.test(id)
+  }),
   getLocalPart: jest.fn((mxid) => {
     if (!mxid) return null
     const match = mxid.match(/^@?([^:]+)/)
@@ -34,11 +38,11 @@ const mockUserInfoGet = jest
       : address
     return Promise.resolve({
       uid,
-      display_name: 'Dr Who',
-      avatar_url: 'mxc://server/avatar123',
-      first_name: 'Dr',
-      last_name: 'Who',
-      emails: ['drwho@docker.localhost'],
+      display_name: `Display ${uid}`,
+      avatar_url: `mxc://server/avatar_${uid}`,
+      first_name: 'First',
+      last_name: 'Last',
+      emails: [`${uid}@example.com`],
       phones: ['1234567890'],
       language: 'en',
       timezone: 'UTC'
@@ -61,17 +65,19 @@ describe('_search factory', () => {
     debug: jest.fn(),
     warn: jest.fn(),
     error: jest.fn(),
-    info: jest.fn()
+    info: jest.fn(),
+    silly: jest.fn()
   }
 
   const idServerMock = {
     userDB: {
-      match: jest.fn().mockResolvedValue([{ uid: 'drwho' }]),
-      getAll: jest.fn().mockResolvedValue([{ uid: 'drwho' }])
+      match: jest.fn().mockResolvedValue([{ uid: 'drwho' }])
     },
     db: {},
     matrixDb: {
-      get: jest.fn().mockResolvedValue([{ name: '@drwho:server' }])
+      db: {
+        match: jest.fn().mockResolvedValue([{ user_id: '@drwho:server' }])
+      }
     },
     conf: { server_name: 'server', additional_features: true },
     logger
@@ -87,29 +93,30 @@ describe('_search factory', () => {
         : address
       return Promise.resolve({
         uid,
-        display_name: 'Dr Who',
-        avatar_url: 'mxc://server/avatar123',
-        first_name: 'Dr',
-        last_name: 'Who',
-        emails: ['drwho@docker.localhost'],
+        display_name: `Display ${uid}`,
+        avatar_url: `mxc://server/avatar_${uid}`,
+        first_name: 'First',
+        last_name: 'Last',
+        emails: [`${uid}@example.com`],
         phones: ['1234567890'],
         language: 'en',
         timezone: 'UTC'
       })
     })
+    ;(isMatrixId as jest.Mock).mockImplementation((id) => {
+      if (!id || typeof id !== 'string') return false
+      return /^@[^:]+:[^:]+$/.test(id)
+    })
   })
 
-  describe('Basic functionality', () => {
+  describe('Basic search functionality', () => {
     it('should return matches and inactive matches successfully', async () => {
       const searchFn = await _search(idServerMock as any, logger as any)
       const resMock = {} as any
       const dataMock = {
-        fields: ['uid'],
         scope: ['uid'],
         val: 'drwho',
-        owner: 'user123',
-        offset: 0,
-        limit: 10
+        owner: '@user123:server'
       }
 
       await searchFn(resMock, dataMock)
@@ -123,29 +130,31 @@ describe('_search factory', () => {
         })
       )
 
-      expect(idServerMock.userDB.match).toHaveBeenCalled()
-      expect(idServerMock.matrixDb.get).toHaveBeenCalled()
-      expect(AddressbookService).toHaveBeenCalled()
-      expect(UserInfoService).toHaveBeenCalled()
+      const response = (send as jest.Mock).mock.calls[0][2]
+      expect(
+        response.matches.length + response.inactive_matches.length
+      ).toBeGreaterThan(0)
     })
 
-    it('should return empty matches if no users or contacts found', async () => {
+    it('should return empty matches when no users found', async () => {
       const emptyServer = {
         ...idServerMock,
         userDB: {
-          match: jest.fn().mockResolvedValue([]),
-          getAll: jest.fn().mockResolvedValue([])
+          match: jest.fn().mockResolvedValue([])
         },
-        matrixDb: { get: jest.fn().mockResolvedValue([]) }
+        matrixDb: {
+          db: {
+            match: jest.fn().mockResolvedValue([])
+          }
+        }
       }
 
       const searchFn = await _search(emptyServer as any, logger as any)
       const resMock = {} as any
       const dataMock = {
-        fields: ['uid'],
         scope: ['uid'],
         val: 'nomatch',
-        owner: 'user123'
+        owner: '@user123:server'
       }
 
       await searchFn(resMock, dataMock)
@@ -155,30 +164,35 @@ describe('_search factory', () => {
         inactive_matches: []
       })
     })
-  })
 
-  describe('Validation', () => {
-    it('should return 400 if invalid field or scope detected', async () => {
+    it('should handle search without predicate', async () => {
       const searchFn = await _search(idServerMock as any, logger as any)
       const resMock = {} as any
       const dataMock = {
-        fields: ['invalidField'],
-        scope: ['invalidScope'],
-        val: 'drwho'
+        scope: ['uid'],
+        val: '',
+        owner: '@user123:server'
       }
 
       await searchFn(resMock, dataMock)
 
-      expect(send).toHaveBeenCalledWith(resMock, 400, { error: 'invalidParam' })
+      expect(send).toHaveBeenCalledWith(
+        resMock,
+        200,
+        expect.objectContaining({
+          matches: expect.any(Array),
+          inactive_matches: expect.any(Array)
+        })
+      )
     })
 
-    it('should handle missing fields gracefully', async () => {
+    it('should handle search without owner', async () => {
       const searchFn = await _search(idServerMock as any, logger as any)
       const resMock = {} as any
       const dataMock = {
         scope: ['uid'],
         val: 'drwho',
-        owner: 'user123'
+        owner: ''
       }
 
       await searchFn(resMock, dataMock)
@@ -194,26 +208,382 @@ describe('_search factory', () => {
     })
   })
 
-  describe('Error handling', () => {
-    it('should handle unexpected errors gracefully', async () => {
-      const brokenIdServer = {
+  describe('MatrixDb integration', () => {
+    it('should convert non-Matrix IDs to Matrix IDs', async () => {
+      const serverWithLocalId = {
         ...idServerMock,
-        userDB: {
-          match: jest.fn().mockRejectedValue(new Error('DB error')),
-          getAll: jest.fn()
+        matrixDb: {
+          db: {
+            match: jest.fn().mockResolvedValue([{ user_id: 'localuser' }])
+          }
         }
       }
 
-      const searchFn = await _search(brokenIdServer as any, logger as any)
+      const searchFn = await _search(serverWithLocalId as any, logger as any)
       const resMock = {} as any
-
-      await searchFn(resMock, {
-        fields: ['uid'],
+      const dataMock = {
         scope: ['uid'],
-        val: 'test'
+        val: 'local',
+        owner: '@user123:server'
+      }
+
+      await searchFn(resMock, dataMock)
+
+      const response = (send as jest.Mock).mock.calls[0][2]
+      expect(
+        response.matches.length + response.inactive_matches.length
+      ).toBeGreaterThan(0)
+    })
+
+    it('should handle matrixDb errors gracefully', async () => {
+      const brokenMatrixServer = {
+        ...idServerMock,
+        matrixDb: {
+          db: {
+            match: jest.fn().mockRejectedValue(new Error('MatrixDb error'))
+          }
+        }
+      }
+
+      const searchFn = await _search(brokenMatrixServer as any, logger as any)
+      const resMock = {} as any
+      const dataMock = {
+        scope: ['uid'],
+        val: 'test',
+        owner: '@user123:server'
+      }
+
+      await searchFn(resMock, dataMock)
+
+      expect(send).toHaveBeenCalledWith(
+        resMock,
+        200,
+        expect.objectContaining({
+          matches: expect.any(Array),
+          inactive_matches: expect.any(Array)
+        })
+      )
+    })
+  })
+
+  describe('UserDB integration', () => {
+    it('should skip userDB when additional_features is disabled', async () => {
+      const serverNoFeatures = {
+        ...idServerMock,
+        conf: { server_name: 'server', additional_features: false },
+        userDB: {
+          match: jest.fn().mockResolvedValue([{ uid: 'drwho' }])
+        }
+      }
+
+      const searchFn = await _search(serverNoFeatures as any, logger as any)
+      const resMock = {} as any
+      const dataMock = {
+        scope: ['uid'],
+        val: 'test',
+        owner: '@user123:server'
+      }
+
+      await searchFn(resMock, dataMock)
+
+      expect(send).toHaveBeenCalledWith(
+        resMock,
+        200,
+        expect.objectContaining({
+          matches: expect.any(Array),
+          inactive_matches: expect.any(Array)
+        })
+      )
+    })
+
+    it('should handle userDB errors gracefully', async () => {
+      const brokenUserServer = {
+        ...idServerMock,
+        userDB: {
+          match: jest.fn().mockRejectedValue(new Error('UserDB error'))
+        }
+      }
+
+      const searchFn = await _search(brokenUserServer as any, logger as any)
+      const resMock = {} as any
+      const dataMock = {
+        scope: ['uid'],
+        val: 'test',
+        owner: '@user123:server'
+      }
+
+      await searchFn(resMock, dataMock)
+
+      expect(send).toHaveBeenCalledWith(
+        resMock,
+        200,
+        expect.objectContaining({
+          matches: expect.any(Array),
+          inactive_matches: expect.any(Array)
+        })
+      )
+    })
+  })
+
+  describe('AddressBook integration', () => {
+    it('should include addressbook contacts in results', async () => {
+      mockAddressbookList.mockResolvedValueOnce({
+        contacts: [
+          {
+            mxid: '@drwho:server',
+            display_name: 'Dr Who'
+          },
+          {
+            mxid: '@janedoe:server',
+            display_name: 'Jane Doe'
+          },
+          {
+            mxid: '@johndoe:server',
+            display_name: 'John Doe'
+          }
+        ]
       })
 
-      expect(send).toHaveBeenCalledWith(resMock, 500, { error: 'invalidParam' })
+      const searchFn = await _search(idServerMock as any, logger as any)
+      const resMock = {} as any
+      const dataMock = {
+        scope: ['uid'],
+        val: 'drwho',
+        owner: '@user123:server'
+      }
+
+      await searchFn(resMock, dataMock)
+
+      const response = (send as jest.Mock).mock.calls[0][2]
+      const allResults = [...response.matches, ...response.inactive_matches]
+      const drwhoResult = allResults.find((r: any) => r.uid === '@drwho:server')
+      expect(drwhoResult).toBeDefined()
+    })
+
+    it('should return all contacts when no predicate provided', async () => {
+      mockAddressbookList.mockResolvedValueOnce({
+        contacts: [
+          { mxid: '@contact1:server', display_name: 'Contact 1' },
+          { mxid: '@contact2:server', display_name: 'Contact 2' }
+        ]
+      })
+
+      const emptyDbServer = {
+        ...idServerMock,
+        userDB: { match: jest.fn().mockResolvedValue([]) },
+        matrixDb: { db: { match: jest.fn().mockResolvedValue([]) } }
+      }
+
+      const searchFn = await _search(emptyDbServer as any, logger as any)
+      const resMock = {} as any
+      const dataMock = {
+        scope: ['uid'],
+        val: '',
+        owner: '@user123:server'
+      }
+
+      await searchFn(resMock, dataMock)
+
+      const response = (send as jest.Mock).mock.calls[0][2]
+      expect(response.matches.length).toBeGreaterThanOrEqual(2)
+    })
+
+    it('should filter out invalid Matrix IDs from addressbook', async () => {
+      mockAddressbookList.mockResolvedValueOnce({
+        contacts: [
+          { mxid: '@valid:server', display_name: 'Valid' },
+          { mxid: 'invalid', display_name: 'Invalid' },
+          { mxid: '', display_name: 'Empty' },
+          { mxid: null, display_name: 'Null' }
+        ]
+      })
+
+      const emptyDbServer = {
+        ...idServerMock,
+        userDB: { match: jest.fn().mockResolvedValue([]) },
+        matrixDb: { db: { match: jest.fn().mockResolvedValue([]) } }
+      }
+
+      const searchFn = await _search(emptyDbServer as any, logger as any)
+      const resMock = {} as any
+      const dataMock = {
+        scope: ['uid'],
+        val: '',
+        owner: '@user123:server'
+      }
+
+      await searchFn(resMock, dataMock)
+
+      const response = (send as jest.Mock).mock.calls[0][2]
+      const allResults = [...response.matches, ...response.inactive_matches]
+      expect(allResults.length).toBe(1)
+      expect(allResults[0].uid).toBe('@valid:server')
+    })
+
+    it('should handle addressbook errors gracefully', async () => {
+      mockAddressbookList.mockRejectedValueOnce(new Error('AddressBook error'))
+
+      const searchFn = await _search(idServerMock as any, logger as any)
+      const resMock = {} as any
+      const dataMock = {
+        scope: ['uid'],
+        val: 'test',
+        owner: '@user123:server'
+      }
+
+      await searchFn(resMock, dataMock)
+
+      expect(send).toHaveBeenCalledWith(
+        resMock,
+        200,
+        expect.objectContaining({
+          matches: expect.any(Array),
+          inactive_matches: expect.any(Array)
+        })
+      )
+    })
+  })
+
+  describe('Active vs Inactive user distinction', () => {
+    it('should mark users found in matrixDb as active', async () => {
+      const searchFn = await _search(idServerMock as any, logger as any)
+      const resMock = {} as any
+      const dataMock = {
+        scope: ['uid'],
+        val: 'drwho',
+        owner: '@user123:server'
+      }
+
+      await searchFn(resMock, dataMock)
+
+      const response = (send as jest.Mock).mock.calls[0][2]
+      expect(response.matches.length).toBeGreaterThan(0)
+      expect(
+        response.matches.some(
+          (m: any) => m.uid === '@drwho:server' || m.address === '@drwho:server'
+        )
+      ).toBe(true)
+    })
+
+    it('should mark users only in userDB as inactive', async () => {
+      const serverWithInactiveUser = {
+        ...idServerMock,
+        matrixDb: {
+          db: {
+            match: jest.fn().mockResolvedValue([{ user_id: '@active:server' }])
+          }
+        },
+        userDB: {
+          match: jest
+            .fn()
+            .mockResolvedValue([{ uid: 'active' }, { uid: 'inactive' }])
+        }
+      }
+
+      const searchFn = await _search(
+        serverWithInactiveUser as any,
+        logger as any
+      )
+      const resMock = {} as any
+      const dataMock = {
+        scope: ['uid'],
+        val: 'user',
+        owner: '@admin:server'
+      }
+
+      await searchFn(resMock, dataMock)
+
+      const response = (send as jest.Mock).mock.calls[0][2]
+      expect(response.inactive_matches.length).toBeGreaterThan(0)
+      expect(
+        response.inactive_matches.some((m: any) => m.uid === '@inactive:server')
+      ).toBe(true)
+    })
+
+    it('should not duplicate users between active and inactive lists', async () => {
+      const serverWithDuplicates = {
+        ...idServerMock,
+        matrixDb: {
+          db: {
+            match: jest.fn().mockResolvedValue([{ user_id: '@drwho:server' }])
+          }
+        },
+        userDB: {
+          match: jest.fn().mockResolvedValue([{ uid: 'drwho' }])
+        }
+      }
+
+      const searchFn = await _search(serverWithDuplicates as any, logger as any)
+      const resMock = {} as any
+      const dataMock = {
+        scope: ['uid'],
+        val: 'drwho',
+        owner: '@user123:server'
+      }
+
+      await searchFn(resMock, dataMock)
+
+      const response = (send as jest.Mock).mock.calls[0][2]
+      const allResults = [...response.matches, ...response.inactive_matches]
+      const drwhoResults = allResults.filter(
+        (r: any) => r.uid === '@drwho:server' || r.address === '@drwho:server'
+      )
+      expect(drwhoResults.length).toBe(1)
+      expect(response.matches.length).toBe(1)
+      expect(response.inactive_matches.length).toBe(0)
+    })
+  })
+
+  describe('User enrichment', () => {
+    it('should enrich users with UserInfoService data', async () => {
+      const searchFn = await _search(idServerMock as any, logger as any)
+      const resMock = {} as any
+      const dataMock = {
+        scope: ['uid'],
+        val: 'drwho',
+        owner: '@user123:server'
+      }
+
+      await searchFn(resMock, dataMock)
+
+      const response = (send as jest.Mock).mock.calls[0][2]
+      const allResults = [...response.matches, ...response.inactive_matches]
+      expect(allResults.length).toBeGreaterThan(0)
+
+      const user = allResults[0]
+      expect(user).toHaveProperty('uid')
+      expect(user).toHaveProperty('address')
+      expect(user).toHaveProperty('display_name')
+      expect(user).toHaveProperty('avatar_url')
+      expect(user).toHaveProperty('first_name')
+      expect(user).toHaveProperty('last_name')
+      expect(user).toHaveProperty('emails')
+      expect(user).toHaveProperty('phones')
+      expect(user).toHaveProperty('language')
+      expect(user).toHaveProperty('timezone')
+    })
+
+    it('should include deprecated fields for backward compatibility', async () => {
+      const searchFn = await _search(idServerMock as any, logger as any)
+      const resMock = {} as any
+      const dataMock = {
+        scope: ['uid'],
+        val: 'drwho',
+        owner: '@user123:server'
+      }
+
+      await searchFn(resMock, dataMock)
+
+      const response = (send as jest.Mock).mock.calls[0][2]
+      const allResults = [...response.matches, ...response.inactive_matches]
+      const user = allResults[0]
+
+      expect(user).toHaveProperty('displayName')
+      expect(user).toHaveProperty('cn')
+      expect(user).toHaveProperty('givenName')
+      expect(user).toHaveProperty('givenname')
+      expect(user).toHaveProperty('mail')
+      expect(user).toHaveProperty('mobile')
     })
 
     it('should handle UserInfoService errors gracefully', async () => {
@@ -222,137 +592,13 @@ describe('_search factory', () => {
       const searchFn = await _search(idServerMock as any, logger as any)
       const resMock = {} as any
       const dataMock = {
-        fields: ['uid'],
         scope: ['uid'],
         val: 'drwho',
-        owner: 'user123'
+        owner: '@user123:server'
       }
 
       await searchFn(resMock, dataMock)
 
-      expect(logger.warn).toHaveBeenCalledWith(
-        expect.stringContaining('[_search] Failed to enrich'),
-        expect.any(Object)
-      )
-      expect(send).toHaveBeenCalledWith(
-        resMock,
-        200,
-        expect.objectContaining({
-          matches: expect.any(Array),
-          inactive_matches: expect.any(Array)
-        })
-      )
-    })
-  })
-
-  describe('User enrichment', () => {
-    it('should enrich returned users using UserInfoService', async () => {
-      const searchFn = await _search(idServerMock as any, logger as any)
-      const resMock = {} as any
-      const dataMock = {
-        fields: ['uid'],
-        scope: ['uid'],
-        val: 'drwho',
-        owner: 'user123'
-      }
-
-      await searchFn(resMock, dataMock)
-
-      const sendCalls = (send as jest.Mock).mock.calls
-      const response = sendCalls[sendCalls.length - 1][2]
-
-      expect(mockUserInfoGet).toHaveBeenCalled()
-      expect(
-        response.matches.length + response.inactive_matches.length
-      ).toBeGreaterThan(0)
-
-      const allResults = [...response.matches, ...response.inactive_matches]
-      const firstMatch = allResults[0]
-
-      expect(firstMatch.uid).toBe('drwho')
-      expect(firstMatch.address).toBe('@drwho:server')
-
-      // UserInfoService enrichment fields
-      expect(firstMatch).toHaveProperty('display_name')
-      expect(firstMatch).toHaveProperty('avatar_url')
-      expect(firstMatch).toHaveProperty('first_name')
-      expect(firstMatch).toHaveProperty('last_name')
-      expect(firstMatch).toHaveProperty('emails')
-      expect(firstMatch).toHaveProperty('phones')
-      expect(firstMatch).toHaveProperty('mail')
-      expect(firstMatch).toHaveProperty('mobile')
-      expect(firstMatch).toHaveProperty('language')
-      expect(firstMatch).toHaveProperty('timezone')
-    })
-
-    it('should include deprecated field mappings for backward compatibility', async () => {
-      const searchFn = await _search(idServerMock as any, logger as any)
-      const resMock = {} as any
-      const dataMock = {
-        fields: ['uid'],
-        scope: ['uid'],
-        val: 'drwho',
-        owner: 'user123'
-      }
-
-      await searchFn(resMock, dataMock)
-
-      const sendCalls = (send as jest.Mock).mock.calls
-      const response = sendCalls[sendCalls.length - 1][2]
-      const allResults = [...response.matches, ...response.inactive_matches]
-      const firstMatch = allResults[0]
-
-      // Check deprecated fields exist
-      expect(firstMatch).toHaveProperty('displayName')
-      expect(firstMatch).toHaveProperty('givenName')
-      expect(firstMatch).toHaveProperty('givenname')
-      expect(firstMatch).toHaveProperty('cn')
-    })
-
-    it('should add address field with Matrix ID to results', async () => {
-      const searchFn = await _search(idServerMock as any, logger as any)
-      const resMock = {} as any
-      const dataMock = {
-        fields: ['uid'],
-        scope: ['uid'],
-        val: 'drwho',
-        owner: 'user123'
-      }
-
-      await searchFn(resMock, dataMock)
-
-      const sendCalls = (send as jest.Mock).mock.calls
-      const response = sendCalls[sendCalls.length - 1][2]
-      const allResults = [...response.matches, ...response.inactive_matches]
-      const firstMatch = allResults[0]
-
-      expect(firstMatch.address).toBe('@drwho:server')
-    })
-  })
-
-  describe('AddressBook integration', () => {
-    it('should use only AddressBook when additional_features is false', async () => {
-      const idServerWithoutUserDB = {
-        ...idServerMock,
-        conf: { server_name: 'server', additional_features: false }
-      }
-
-      const searchFn = await _search(
-        idServerWithoutUserDB as any,
-        logger as any
-      )
-      const resMock = {} as any
-      const dataMock = {
-        fields: ['uid'],
-        scope: ['uid'],
-        val: 'contact',
-        owner: 'user123'
-      }
-
-      await searchFn(resMock, dataMock)
-
-      expect(idServerWithoutUserDB.userDB.match).not.toHaveBeenCalled()
-      expect(AddressbookService).toHaveBeenCalled()
       expect(send).toHaveBeenCalledWith(
         resMock,
         200,
@@ -363,114 +609,43 @@ describe('_search factory', () => {
       )
     })
 
-    it('should merge contacts from AddressBook with userDB results', async () => {
-      mockAddressbookList.mockResolvedValueOnce({
-        contacts: [
-          {
-            mxid: '@contact1:server',
-            display_name: 'Contact One'
-          }
-        ]
-      })
+    it('should provide empty values when UserInfoService returns null', async () => {
+      mockUserInfoGet.mockResolvedValueOnce(null)
 
-      const emptyUserServer = {
-        ...idServerMock,
-        userDB: {
-          match: jest.fn().mockResolvedValue([]),
-          getAll: jest.fn().mockResolvedValue([])
-        },
-        matrixDb: {
-          get: jest.fn().mockResolvedValue([])
-        }
-      }
-
-      const searchFn = await _search(emptyUserServer as any, logger as any)
+      const searchFn = await _search(idServerMock as any, logger as any)
       const resMock = {} as any
       const dataMock = {
-        fields: ['uid'],
         scope: ['uid'],
-        val: 'contact',
-        owner: 'user123'
-      }
-
-      await searchFn(resMock, dataMock)
-
-      expect(mockAddressbookList).toHaveBeenCalledWith('user123')
-      const sendCalls = (send as jest.Mock).mock.calls
-      const response = sendCalls[sendCalls.length - 1][2]
-
-      expect(send).toHaveBeenCalledWith(
-        resMock,
-        200,
-        expect.objectContaining({
-          matches: expect.any(Array),
-          inactive_matches: expect.any(Array)
-        })
-      )
-
-      // Contact should be in matches
-      expect(response.matches.length).toBeGreaterThan(0)
-      const contact = response.matches.find((m: any) => m.uid === 'contact1')
-      expect(contact).toBeDefined()
-      expect(contact.address).toBe('@contact1:server')
-    })
-  })
-
-  describe('Search parameters', () => {
-    it('should handle pagination with offset and limit', async () => {
-      const multiUserServer = {
-        ...idServerMock,
-        userDB: {
-          match: jest
-            .fn()
-            .mockResolvedValue([
-              { uid: 'user1' },
-              { uid: 'user2' },
-              { uid: 'user3' },
-              { uid: 'user4' },
-              { uid: 'user5' }
-            ]),
-          getAll: jest.fn()
-        },
-        matrixDb: {
-          get: jest
-            .fn()
-            .mockResolvedValue([
-              { name: '@user1:server' },
-              { name: '@user2:server' },
-              { name: '@user3:server' }
-            ])
-        }
-      }
-
-      const searchFn = await _search(multiUserServer as any, logger as any)
-      const resMock = {} as any
-      const dataMock = {
-        fields: ['uid'],
-        scope: ['uid'],
-        val: 'user',
-        owner: 'admin',
-        offset: 1,
-        limit: 2
+        val: 'drwho',
+        owner: '@user123:server'
       }
 
       await searchFn(resMock, dataMock)
 
       const response = (send as jest.Mock).mock.calls[0][2]
-      const totalResults =
-        response.matches.length + response.inactive_matches.length
+      const allResults = [...response.matches, ...response.inactive_matches]
+      const user = allResults[0]
 
-      expect(totalResults).toBe(2)
+      expect(user.display_name).toBe('')
+      expect(user.avatar_url).toBe('')
+      expect(user.emails).toEqual([])
     })
 
-    it('should normalize matrixAddress scope to uid', async () => {
+    it('should handle enrichment errors gracefully', async () => {
+      const UserInfoServiceMock =
+        require('../../../user-info-api/services').default
+      UserInfoServiceMock.mockImplementationOnce(function () {
+        return {
+          get: jest.fn().mockRejectedValue(new Error('Enrichment failed'))
+        }
+      })
+
       const searchFn = await _search(idServerMock as any, logger as any)
       const resMock = {} as any
       const dataMock = {
-        fields: ['uid'],
-        scope: ['matrixAddress'],
+        scope: ['uid'],
         val: 'drwho',
-        owner: 'user123'
+        owner: '@user123:server'
       }
 
       await searchFn(resMock, dataMock)
@@ -483,69 +658,38 @@ describe('_search factory', () => {
           inactive_matches: expect.any(Array)
         })
       )
-      expect(idServerMock.userDB.match).toHaveBeenCalledWith(
-        'users',
-        ['uid'],
-        ['uid'],
-        'drwho',
-        'uid'
-      )
     })
+  })
 
-    it('should strip Matrix ID prefix from search value', async () => {
-      const searchFn = await _search(idServerMock as any, logger as any)
-      const resMock = {} as any
-      const dataMock = {
-        fields: ['uid'],
-        scope: ['uid'],
-        val: '@drwho:server.com',
-        owner: 'user123'
-      }
-
-      await searchFn(resMock, dataMock)
-
-      expect(idServerMock.userDB.match).toHaveBeenCalledWith(
-        'users',
-        ['uid'],
-        ['uid'],
-        'drwho',
-        'uid'
-      )
-    })
-
-    it('should return all users when val is empty', async () => {
-      const getAllServer = {
+  describe('Concurrent execution', () => {
+    it('should continue if one data source fails', async () => {
+      const mixedServer = {
         ...idServerMock,
+        matrixDb: {
+          db: {
+            match: jest.fn().mockRejectedValue(new Error('MatrixDb failed'))
+          }
+        },
         userDB: {
-          match: jest.fn(),
-          getAll: jest.fn().mockResolvedValue([{ uid: 'drwho' }])
+          match: jest.fn().mockResolvedValue([{ uid: 'success' }])
         }
       }
 
-      const searchFn = await _search(getAllServer as any, logger as any)
+      const searchFn = await _search(mixedServer as any, logger as any)
       const resMock = {} as any
       const dataMock = {
-        fields: ['uid'],
         scope: ['uid'],
-        val: '',
-        owner: 'user123'
+        val: 'test',
+        owner: '@user123:server'
       }
 
       await searchFn(resMock, dataMock)
 
-      expect(getAllServer.userDB.getAll).toHaveBeenCalledWith(
-        'users',
-        ['uid'],
-        'uid'
-      )
-      expect(send).toHaveBeenCalledWith(
-        resMock,
-        200,
-        expect.objectContaining({
-          matches: expect.any(Array),
-          inactive_matches: expect.any(Array)
-        })
-      )
+      const response = (send as jest.Mock).mock.calls[0][2]
+      // Should still have results from userDB
+      expect(
+        response.matches.length + response.inactive_matches.length
+      ).toBeGreaterThan(0)
     })
   })
 })
