@@ -119,6 +119,8 @@ export default class TwakeServer {
     const invitationApi = Invitation(
       this.conf,
       this.idServer.db,
+      this.idServer.userDB,
+      this.matrixDb,
       this.idServer.authenticate,
       this.logger
     )

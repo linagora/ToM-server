@@ -17,6 +17,8 @@ import {
 import { buildUrl } from '../../utils'
 import NotificationService from '../../utils/services/notification-service'
 import { buildEmailBody, buildSmsBody } from '../../utils/helpers'
+import UserInfoService from '../../user-info-api/services'
+import type { MatrixDB, UserDB } from '@twake/matrix-identity-server'
 
 export default class InvitationService implements IInvitationService {
   private readonly INVITATION_TABLE = 'invitations'
@@ -25,13 +27,23 @@ export default class InvitationService implements IInvitationService {
   private readonly MATRIX_USER_PATH = '/_matrix/client/v3/user'
 
   private notificationService: INotificationService
+  private readonly userInfoService: UserInfoService
 
   constructor(
+    userdb: UserDB,
     private readonly db: TwakeDB,
+    matrixdb: MatrixDB,
     private readonly logger: TwakeLogger,
     private readonly config: Config
   ) {
     this.notificationService = new NotificationService(config, logger)
+    this.userInfoService = new UserInfoService(
+      userdb,
+      db,
+      matrixdb,
+      config,
+      logger
+    )
   }
 
   /**
@@ -572,6 +584,24 @@ export default class InvitationService implements IInvitationService {
         this.logger.debug(
           `[InvitationService][_deliverInvitation] Using language: ${lang}`
         )
+
+        let senderName = sender
+        try {
+          this.logger.silly(
+            `[InvitationService][_deliverInvitation] Fetching sender user info for: ${sender}`
+          )
+          const senderUserInfo = await this.userInfoService.get(sender)
+          senderName = senderUserInfo?.display_name || sender
+          this.logger.debug(
+            `[InvitationService][_deliverInvitation] Resolved sender name: ${senderName}`
+          )
+        } catch (error) {
+          this.logger.warn(
+            `[InvitationService][_deliverInvitation] Failed to get sender info for ${sender}, using sender ID`,
+            error
+          )
+        }
+
         const emailTemplateDirPath = `${this.config.template_dir}/${lang}/email/invitation`
         this.logger.silly(
           `[InvitationService][_deliverInvitation] Template directory: ${emailTemplateDirPath}`
@@ -596,7 +626,7 @@ export default class InvitationService implements IInvitationService {
         )
         const text = buildEmailBody(
           emailTemplateTXTPath,
-          sender,
+          senderName,
           to,
           link,
           this.notificationService.emailFrom
@@ -607,7 +637,7 @@ export default class InvitationService implements IInvitationService {
         )
         const html = buildEmailBody(
           emailTemplateHTMLPath,
-          sender,
+          senderName,
           to,
           link,
           this.notificationService.emailFrom
