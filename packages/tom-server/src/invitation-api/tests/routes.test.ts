@@ -103,6 +103,8 @@ describe('the Invitation API router', () => {
           router(
             idServer.conf,
             idServer.db,
+            idServer.userDB,
+            idServer.matrixDb,
             idServer.authenticate,
             idServer.logger
           )
