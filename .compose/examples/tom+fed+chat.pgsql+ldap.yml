@@ -65,6 +65,13 @@ services:
           - auth
       db:
 
+  smtp:
+    image: changemakerstudiosus/papercut-smtp:latest
+    networks:
+      frontend:
+        aliases:
+          - smtp
+
   synapse:
     image: matrixdotorg/synapse:v1.119.0
     restart: unless-stopped
@@ -114,6 +121,8 @@ services:
         condition: service_healthy
       ldap:
         condition: service_started
+      smtp:
+        condition: service_started
     # ports:
     #   - 3000:3000
     #   - 9229:9229
@@ -162,6 +171,11 @@ services:
       - SMS_API_KEY=SOME_SECRET_KEY
       - SMS_API_LOGIN=login@domain.com
       - SMS_API_URL=https://api.octopush.com/v1/public
+
+      - TCHAT_ENABLE_INVITATIONS=true
+      - SMTP_SERVER=smtp
+      - SMTP_PORT=2525
+      - SMTP_SENDER=no-reply@docker.localhost
 
       - FEATURE_MATRIX_PROFILE_UPDATES_ALLOWED=''
       - FEATURE_COMMON_SETTINGS_ENABLED=''
@@ -240,9 +254,6 @@ services:
       # Reverse proxy routing configuration
       - ../haproxy/haproxy.tom+fed+chat.cfg:/usr/local/etc/haproxy/haproxy.cfg
       - ../haproxy/cors.lua:/usr/local/etc/haproxy/cors.lua
-      - ../haproxy/lua_endpoint_to_function.map_rewrite.cfg:/usr/local/etc/haproxy/lua_endpoint_to_function.map_rewrite.cfg
-      - ../haproxy/lua_endpoint_to_worker.map_rewrite.lua:/usr/local/etc/haproxy/lua_endpoint_to_worker.map_rewrite.lua
-      - ../haproxy/synapse_worker_endpoint_indexer.lua:/usr/local/etc/haproxy/synapse_worker_endpoint_indexer.lua
       # HTTPS SSL Certs
       - ../ssl/both.pem:/etc/ssl/certs/both.pem
     sysctls:
@@ -253,6 +264,7 @@ services:
       - tom
       - fed
       - chat
+      - smtp
     networks:
       frontend:
         aliases:
@@ -261,6 +273,7 @@ services:
           - matrix.docker.localhost
           - tom.docker.localhost
           - fed.docker.localhost
+          - smtp.docker.localhost
           - docker.localhost
 
 networks:
