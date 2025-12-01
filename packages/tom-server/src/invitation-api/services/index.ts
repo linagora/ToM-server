@@ -567,7 +567,19 @@ export default class InvitationService implements IInvitationService {
       if (medium === 'email') {
         const lang = 'en' // TODO: invitee language
         const emailTemplateDirPath = `${this.config.template_dir}/${lang}/email/invitation`
+        const emailTemplateAssetsDirPath = `${emailTemplateDirPath}/assets`
         const emailTemplateHTMLPath = `${emailTemplateDirPath}/body.html`
+        const emailTemplateHeroJPGFilename = `hero.jpg`
+        const emailTemplateIconJPGFilename = `icon.jpg`
+        const emailTemplateHeroJPGPath = `${emailTemplateAssetsDirPath}/${emailTemplateHeroJPGFilename}`
+        const emailTemplateIconJPGPath = `${emailTemplateAssetsDirPath}/${emailTemplateIconJPGFilename}`
+        const emailTemplateCidCommonPart = 'invite.twake.app'
+        const emailTemplateHeroJPGCid = `${emailTemplateHeroJPGFilename
+          .split('.')
+          .at(0)}@${emailTemplateCidCommonPart}`
+        const emailTemplateIconJPGCid = `${emailTemplateIconJPGFilename
+          .split('.')
+          .at(0)}@${emailTemplateCidCommonPart}`
         const emailTemplateTXTPath = `${emailTemplateDirPath}/body.txt`
 
         const text = buildEmailBody(
@@ -595,7 +607,19 @@ export default class InvitationService implements IInvitationService {
           to,
           subject: 'Invitation to join Twake Workplace',
           text,
-          html
+          html,
+          attachments: [
+            {
+              filename: emailTemplateHeroJPGFilename,
+              path: emailTemplateHeroJPGPath,
+              cid: emailTemplateHeroJPGCid
+            },
+            {
+              filename: emailTemplateIconJPGFilename,
+              path: emailTemplateIconJPGPath,
+              cid: emailTemplateIconJPGCid
+            }
+          ]
         }
 
         await this.notificationService.sendEmail(emailOptions)
