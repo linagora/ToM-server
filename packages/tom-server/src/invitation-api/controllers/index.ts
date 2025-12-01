@@ -7,16 +7,25 @@ import type {
   InvitationRequestPayload
 } from '../types'
 import InvitationService from '../services'
+import type { MatrixDB, UserDB } from '@twake/matrix-identity-server'
 
 export default class InvitationApiController {
   private readonly invitationService: IInvitationService
 
   constructor(
     db: TwakeDB,
+    userdb: UserDB,
+    matrixdb: MatrixDB,
     private readonly logger: TwakeLogger,
     config: Config
   ) {
-    this.invitationService = new InvitationService(db, logger, config)
+    this.invitationService = new InvitationService(
+      userdb,
+      db,
+      matrixdb,
+      logger,
+      config
+    )
   }
 
   /**
