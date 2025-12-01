@@ -577,7 +577,7 @@ export default class InvitationService implements IInvitationService {
           `[InvitationService][_deliverInvitation] Template directory: ${emailTemplateDirPath}`
         )
         const emailTemplateAssetsDirPath = `${emailTemplateDirPath}/assets`
-        const emailTemplateHTMLPath = `${emailTemplateDirPath}/body.html`
+        const emailTemplateHTMLPath = `${emailTemplateDirPath}/body.min.html`
         const emailTemplateHeroJPGFilename = `hero.jpg`
         const emailTemplateIconJPGFilename = `icon.jpg`
         const emailTemplateHeroJPGPath = `${emailTemplateAssetsDirPath}/${emailTemplateHeroJPGFilename}`
