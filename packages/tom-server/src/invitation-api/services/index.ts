@@ -562,11 +562,20 @@ export default class InvitationService implements IInvitationService {
   ): Promise<void> => {
     try {
       this.logger.info(
-        `[InvitationService][_deliverInvitation] sending invitation by: ${sender} to: ${to}, via ${medium}`
+        `[InvitationService][_deliverInvitation] Sending invitation to ${to} via ${medium}`
+      )
+      this.logger.silly(
+        `[InvitationService][_deliverInvitation] Invitation link: ${link}`
       )
       if (medium === 'email') {
         const lang = 'en' // TODO: invitee language
+        this.logger.debug(
+          `[InvitationService][_deliverInvitation] Using language: ${lang}`
+        )
         const emailTemplateDirPath = `${this.config.template_dir}/${lang}/email/invitation`
+        this.logger.silly(
+          `[InvitationService][_deliverInvitation] Template directory: ${emailTemplateDirPath}`
+        )
         const emailTemplateAssetsDirPath = `${emailTemplateDirPath}/assets`
         const emailTemplateHTMLPath = `${emailTemplateDirPath}/body.html`
         const emailTemplateHeroJPGFilename = `hero.jpg`
@@ -582,6 +591,9 @@ export default class InvitationService implements IInvitationService {
           .at(0)}@${emailTemplateCidCommonPart}`
         const emailTemplateTXTPath = `${emailTemplateDirPath}/body.txt`
 
+        this.logger.silly(
+          `[InvitationService][_deliverInvitation] Building text body from: ${emailTemplateTXTPath}`
+        )
         const text = buildEmailBody(
           emailTemplateTXTPath,
           sender,
@@ -590,6 +602,9 @@ export default class InvitationService implements IInvitationService {
           this.notificationService.emailFrom
         )
 
+        this.logger.silly(
+          `[InvitationService][_deliverInvitation] Building HTML body from: ${emailTemplateHTMLPath}`
+        )
         const html = buildEmailBody(
           emailTemplateHTMLPath,
           sender,
@@ -599,9 +614,12 @@ export default class InvitationService implements IInvitationService {
         )
 
         this.logger.debug(
-          `[InvitationService][_deliverInvitation][EMAIL] invitation text prepared`
+          `[InvitationService][_deliverInvitation][EMAIL] Email content prepared (text + HTML)`
         )
 
+        this.logger.silly(
+          `[InvitationService][_deliverInvitation] Preparing email with ${2} attachments (${emailTemplateHeroJPGCid}, ${emailTemplateIconJPGCid})`
+        )
         const emailOptions: SendMailOptions = {
           from: this.notificationService.emailFrom,
           to,
@@ -622,9 +640,12 @@ export default class InvitationService implements IInvitationService {
           ]
         }
 
+        this.logger.debug(
+          `[InvitationService][_deliverInvitation] Sending email to ${to} with subject: "${emailOptions.subject}"`
+        )
         await this.notificationService.sendEmail(emailOptions)
         this.logger.info(
-          `[InvitationService][_deliverInvitation][EMAIL] invitation sent to ${to} with subject: ${emailOptions.subject}`
+          `[InvitationService][_deliverInvitation][EMAIL] Successfully sent invitation to ${to}`
         )
       } else if (medium === 'phone') {
         // Specific to french numbers
