@@ -83,6 +83,31 @@ To secure your installation with [the help of the crowd](https://github.com/crow
 | `CROWDSEC_URI` | API URI to use                    | `none`  | *optional* |
 | `CROWDSEC_KEY` | The secret key for authentication | `none`  | *optional* |
 
+### SMTP for invitations
+
+| Name               | Description                          | Default | Status     |
+| ------------------ | ------------------------------------ | ------- | ---------- |
+| `TCHAT_ENABLE_INVITATIONS` | Allows ToM server to send email invitations if `true` | `false` | *optional* |
+| `SMTP_SERVER` | IP or URL of the SMTP server | `localhost` | *optional* |
+| `SMTP_PORT` | Port of the SMTP server | `25` | *optional* |
+| `SMTP_SENDER` | Email address used as sender | `empty` | *optional* |
+
+#### Sending invitations
+
+With `TCHAT_ENABLE_INVITATIONS` set to `true`, ToM will be able to send email invitations to users.
+One can then use the following API endpoint to send invitations:
+
+```shell
+curl --insecure \
+  'https://tom.docker.localhost/_twake/v1/invite' \
+  -H 'Cache-Control: no-cache' \
+  -H 'Connection: keep-alive' \
+  -H 'accept: application/json' \
+  -H 'authorization: Bearer syt_ZHdobw_CFFsEBwiACFmIvRkPbyh_12x4ts' \
+  -H 'content-type: application/json' \
+  --data-raw '{"contact":"invitee@example.com","medium":"email"}'
+```
+
 ## Use the ToM Image
 
 The ToM server is made to be configured with environment variables, allowing a
@@ -145,6 +170,7 @@ accordingly.
 ```conf
 127.0.0.1 docker.localhost        # base domain
 127.0.0.1 auth.docker.localhost   # SSO
+127.0.0.1 smtp.docker.localhost   # SMTP server
 127.0.0.1 matrix.docker.localhost # matrix server
 127.0.0.1 tom.docker.localhost    # tom server
 127.0.0.1 fed.docker.localhost    # local federation server
