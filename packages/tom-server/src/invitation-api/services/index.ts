@@ -561,6 +561,7 @@ export default class InvitationService implements IInvitationService {
   /**
    * Delivers an invitation to the threepid
    *
+   * @param {string} sender - Sender user ID
    * @param {string} to - User address
    * @param {string} medium - Invitation medium
    * @param {string} link - Invitation link
@@ -572,137 +573,244 @@ export default class InvitationService implements IInvitationService {
     medium: medium,
     link: string
   ): Promise<void> => {
-    try {
-      this.logger.info(
-        `[InvitationService][_deliverInvitation] Sending invitation to ${to} via ${medium}`
+    this.logger.info(
+      `[InvitationService][_deliverInvitation] Sending invitation to ${to} via ${medium}`
+    )
+    this.logger.silly(
+      `[InvitationService][_deliverInvitation] Invitation link: ${link}`
+    )
+
+    const senderName = await this._resolveSenderName(sender)
+
+    if (medium === 'email') {
+      await this._sendEmailInvitation(senderName, to, link)
+    } else if (medium === 'phone') {
+      await this._sendSmsInvitation(senderName, to, link)
+    } else {
+      this.logger.error(
+        `[InvitationService][_deliverInvitation] Unsupported medium: ${medium}`,
+        { sender, to, medium, link }
       )
-      this.logger.silly(
-        `[InvitationService][_deliverInvitation] Invitation link: ${link}`
-      )
-      if (medium === 'email') {
-        const lang = 'en' // TODO: invitee language
-        this.logger.debug(
-          `[InvitationService][_deliverInvitation] Using language: ${lang}`
-        )
-
-        let senderName = sender
-        try {
-          this.logger.silly(
-            `[InvitationService][_deliverInvitation] Fetching sender user info for: ${sender}`
-          )
-          const senderUserInfo = await this.userInfoService.get(sender)
-          senderName = senderUserInfo?.display_name || sender
-          this.logger.debug(
-            `[InvitationService][_deliverInvitation] Resolved sender name: ${senderName}`
-          )
-        } catch (error) {
-          this.logger.warn(
-            `[InvitationService][_deliverInvitation] Failed to get sender info for ${sender}, using sender ID`,
-            error
-          )
-        }
-
-        const emailTemplateDirPath = `${this.config.template_dir}/${lang}/email/invitation`
-        this.logger.silly(
-          `[InvitationService][_deliverInvitation] Template directory: ${emailTemplateDirPath}`
-        )
-        const emailTemplateAssetsDirPath = `${emailTemplateDirPath}/assets`
-        const emailTemplateHTMLPath = `${emailTemplateDirPath}/body.min.html`
-        const emailTemplateHeroJPGFilename = `hero.jpg`
-        const emailTemplateIconJPGFilename = `icon.jpg`
-        const emailTemplateHeroJPGPath = `${emailTemplateAssetsDirPath}/${emailTemplateHeroJPGFilename}`
-        const emailTemplateIconJPGPath = `${emailTemplateAssetsDirPath}/${emailTemplateIconJPGFilename}`
-        const emailTemplateCidCommonPart = 'invite.twake.app'
-        const emailTemplateHeroJPGCid = `${emailTemplateHeroJPGFilename
-          .split('.')
-          .at(0)}@${emailTemplateCidCommonPart}`
-        const emailTemplateIconJPGCid = `${emailTemplateIconJPGFilename
-          .split('.')
-          .at(0)}@${emailTemplateCidCommonPart}`
-        const emailTemplateTXTPath = `${emailTemplateDirPath}/body.txt`
-
-        this.logger.silly(
-          `[InvitationService][_deliverInvitation] Building text body from: ${emailTemplateTXTPath}`
-        )
-        const text = buildEmailBody(
-          emailTemplateTXTPath,
-          senderName,
-          to,
-          link,
-          this.notificationService.emailFrom
-        )
-
-        this.logger.silly(
-          `[InvitationService][_deliverInvitation] Building HTML body from: ${emailTemplateHTMLPath}`
-        )
-        const html = buildEmailBody(
-          emailTemplateHTMLPath,
-          senderName,
-          to,
-          link,
-          this.notificationService.emailFrom
-        )
-
-        this.logger.debug(
-          `[InvitationService][_deliverInvitation][EMAIL] Email content prepared (text + HTML)`
-        )
-
-        this.logger.silly(
-          `[InvitationService][_deliverInvitation] Preparing email with ${2} attachments (${emailTemplateHeroJPGCid}, ${emailTemplateIconJPGCid})`
-        )
-        const emailOptions: SendMailOptions = {
-          from: this.notificationService.emailFrom,
-          to,
-          subject: 'Invitation to join Twake Workplace',
-          text,
-          html,
-          attachments: [
-            {
-              filename: emailTemplateHeroJPGFilename,
-              path: emailTemplateHeroJPGPath,
-              cid: emailTemplateHeroJPGCid
-            },
-            {
-              filename: emailTemplateIconJPGFilename,
-              path: emailTemplateIconJPGPath,
-              cid: emailTemplateIconJPGCid
-            }
-          ]
-        }
-
-        this.logger.debug(
-          `[InvitationService][_deliverInvitation] Sending email to ${to} with subject: "${emailOptions.subject}"`
-        )
-        await this.notificationService.sendEmail(emailOptions)
-        this.logger.info(
-          `[InvitationService][_deliverInvitation][EMAIL] Successfully sent invitation to ${to}`
-        )
-      } else if (medium === 'phone') {
-        // Specific to french numbers
-        const smsFooter = /^\+33\d{9}$/.test(to) ? SMS_FOOTERS.FR : ''
-
-        const smsTemplatePath = `${this.config.template_dir}/3pidSmsInvitation.tpl`
-        const text = buildSmsBody(smsTemplatePath, sender, link, smsFooter)
-
-        if (!text) {
-          this.logger.error(
-            `[InvitationService][_deliverInvitation][SMS] failed to build SMS body`
-          )
-          throw Error('Failed to build SMS body')
-        }
-
-        await this.notificationService.sendSMS(to, text)
-        this.logger.info(
-          `[InvitationService][_deliverInvitation][SMS] sent SMS to ${to}`
-        )
-        this.logger.debug(
-          `[InvitationService][_deliverInvitation][SMS] sent SMS with payload: ${text} to ${to}`
-        )
-      }
-    } catch (error) {
-      this.logger.error(`Failed to deliver invitation`, error)
-      throw Error('Failed to deliver invitation')
+      throw new Error(`Unsupported medium: ${medium}`)
     }
+
+    this.logger.info(
+      `[InvitationService][_deliverInvitation] Successfully sent invitation to ${to} via ${medium}`
+    )
+  }
+
+  /**
+   * Resolves sender display name from user ID
+   *
+   * @param {string} sender - Sender user ID
+   * @returns {Promise<string>} - Sender display name or user ID fallback
+   */
+  private readonly _resolveSenderName = async (
+    sender: string
+  ): Promise<string> => {
+    try {
+      this.logger.silly(
+        `[InvitationService][_resolveSenderName] Fetching sender info for: ${sender}`
+      )
+      const senderUserInfo = await this.userInfoService.get(sender)
+      const senderName = senderUserInfo?.display_name || sender
+
+      this.logger.debug(
+        `[InvitationService][_resolveSenderName] Resolved sender name: ${senderName}`
+      )
+      return senderName
+    } catch (error) {
+      this.logger.warn(
+        `[InvitationService][_resolveSenderName] Failed to get sender info for ${sender}, using sender ID`,
+        { error, sender }
+      )
+      return sender
+    }
+  }
+
+  /**
+   * Builds email template configuration
+   *
+   * @param {string} lang - Language code
+   * @returns {object} - Email template configuration
+   */
+  private readonly _buildEmailTemplateConfig = (lang: string) => {
+    const templateDir = `${this.config.template_dir}/${lang}/email/invitation`
+    const assetsDir = `${templateDir}/assets`
+    const cidDomain = 'invite.twake.app'
+
+    this.logger.silly(
+      `[InvitationService][_buildEmailTemplateConfig] Template directory: ${templateDir}`
+    )
+
+    return {
+      htmlPath: `${templateDir}/body.min.html`,
+      textPath: `${templateDir}/body.txt`,
+      attachments: [
+        {
+          filename: 'hero.jpg',
+          path: `${assetsDir}/hero.jpg`,
+          cid: `hero@${cidDomain}`
+        },
+        {
+          filename: 'icon.jpg',
+          path: `${assetsDir}/icon.jpg`,
+          cid: `icon@${cidDomain}`
+        }
+      ]
+    }
+  }
+
+  /**
+   * Builds email content (text and HTML)
+   *
+   * @param {object} templateConfig - Email template configuration
+   * @param {string} senderName - Sender display name
+   * @param {string} to - Recipient email
+   * @param {string} link - Invitation link
+   * @returns {object} - Email content with text and html
+   */
+  private readonly _buildEmailContent = (
+    templateConfig: ReturnType<typeof this._buildEmailTemplateConfig>,
+    senderName: string,
+    to: string,
+    link: string
+  ) => {
+    this.logger.silly(
+      `[InvitationService][_buildEmailContent] Building text body from: ${templateConfig.textPath}`
+    )
+    const text = buildEmailBody(
+      templateConfig.textPath,
+      senderName,
+      to,
+      link,
+      this.notificationService.emailFrom
+    )
+
+    this.logger.silly(
+      `[InvitationService][_buildEmailContent] Building HTML body from: ${templateConfig.htmlPath}`
+    )
+    const html = buildEmailBody(
+      templateConfig.htmlPath,
+      senderName,
+      to,
+      link,
+      this.notificationService.emailFrom
+    )
+
+    if (!text || !html) {
+      throw new Error('Failed to build email content: text or html is empty')
+    }
+
+    this.logger.debug(
+      `[InvitationService][_buildEmailContent] Email content prepared successfully`
+    )
+
+    return { text, html }
+  }
+
+  /**
+   * Sends email invitation
+   *
+   * @param {string} senderName - Sender display name
+   * @param {string} to - Recipient email
+   * @param {string} link - Invitation link
+   * @returns {Promise<void>}
+   */
+  private readonly _sendEmailInvitation = async (
+    senderName: string,
+    to: string,
+    link: string
+  ): Promise<void> => {
+    const lang = 'en' // TODO: invitee language
+    this.logger.debug(
+      `[InvitationService][_sendEmailInvitation] Using language: ${lang} for ${to}`
+    )
+
+    const templateConfig = this._buildEmailTemplateConfig(lang)
+    const { text, html } = this._buildEmailContent(
+      templateConfig,
+      senderName,
+      to,
+      link
+    )
+
+    const emailOptions: SendMailOptions = {
+      from: this.notificationService.emailFrom,
+      to,
+      subject: 'Invitation to join Twake Workplace',
+      text,
+      html,
+      attachments: templateConfig.attachments
+    }
+
+    this.logger.debug(
+      `[InvitationService][_sendEmailInvitation] Sending email to ${to} from "${senderName}" with ${templateConfig.attachments.length} attachments`
+    )
+
+    await this.notificationService.sendEmail(emailOptions)
+    this.logger.info(
+      `[InvitationService][_sendEmailInvitation] Successfully sent email invitation to ${to}`
+    )
+  }
+
+  /**
+   * Determines SMS footer based on recipient phone number
+   *
+   * @param {string} phoneNumber - Recipient phone number
+   * @returns {string} - SMS footer
+   */
+  private readonly _getSmsFooter = (phoneNumber: string): string => {
+    const isFrenchNumber = /^\+33\d{9}$/.test(phoneNumber)
+    const footer = isFrenchNumber ? SMS_FOOTERS.FR : ''
+
+    this.logger.silly(
+      `[InvitationService][_getSmsFooter] Phone ${phoneNumber} is ${
+        isFrenchNumber ? '' : 'not '
+      }French, footer: "${footer}"`
+    )
+
+    return footer
+  }
+
+  /**
+   * Sends SMS invitation
+   *
+   * @param {string} senderName - Sender display name
+   * @param {string} to - Recipient phone number
+   * @param {string} link - Invitation link
+   * @returns {Promise<void>}
+   */
+  private readonly _sendSmsInvitation = async (
+    senderName: string,
+    to: string,
+    link: string
+  ): Promise<void> => {
+    const smsFooter = this._getSmsFooter(to)
+    const smsTemplatePath = `${this.config.template_dir}/3pidSmsInvitation.tpl`
+
+    this.logger.silly(
+      `[InvitationService][_sendSmsInvitation] Building SMS body from: ${smsTemplatePath}`
+    )
+
+    const text = buildSmsBody(smsTemplatePath, senderName, link, smsFooter)
+
+    if (!text) {
+      this.logger.error(
+        `[InvitationService][_sendSmsInvitation] SMS body is empty after building from template`,
+        { senderName, to, link, smsTemplatePath }
+      )
+      throw new Error('SMS body is empty after building from template')
+    }
+
+    this.logger.debug(
+      `[InvitationService][_sendSmsInvitation] Sending SMS to ${to} from "${senderName}"`
+    )
+
+    await this.notificationService.sendSMS(to, text)
+    this.logger.info(
+      `[InvitationService][_sendSmsInvitation] Successfully sent SMS invitation to ${to}`
+    )
   }
 
   /**
