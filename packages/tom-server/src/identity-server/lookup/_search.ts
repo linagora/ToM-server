@@ -119,6 +119,12 @@ export const _search = async (
     logger.silly(
       '[IndentityServer][_search][addressbookPromise] Searching addressBookService...'
     )
+    if (!predicate || predicate.length <= 0) {
+      logger.info(
+        '[IndentityServer][_search][addressbookPromise] No predicate provided. Skipping address book search.'
+      )
+      return []
+    }
     if (!owner) {
       logger.info(
         '[IndentityServer][_search][addressbookPromise] No owner provided. Skipping address book search.'
@@ -142,17 +148,13 @@ export const _search = async (
       )
       return []
     }
-    const sanitizedResult = result.filter(
-      (c) => !!c && !!c.mxid && c.mxid.length > 0 && isMatrixId(c.mxid)
-    )
-    if (!predicate || predicate.length <= 0) {
-      logger.info(
-        '[IndentityServer][_search][addressbookPromise] No predicate provided. Returning all contacts from addressBookService.'
-      )
-      return sanitizedResult.map((c) => c.mxid)
-    }
-    const filteredContacts = sanitizedResult.filter(
-      (c) => c.mxid?.includes(predicate) || c.display_name?.includes(predicate)
+    const filteredContacts = result.filter(
+      (c) =>
+        !!c &&
+        !!c.mxid &&
+        c.mxid.length > 0 &&
+        isMatrixId(c.mxid) &&
+        (c.mxid.includes(predicate) || c.display_name.includes(predicate))
     )
     if (
       !filteredContacts ||
@@ -174,6 +176,12 @@ export const _search = async (
     if (!enableUserDirectory) {
       logger.info(
         '[IndentityServer][_search][matrixDbPromise] User directory is disabled. Skipping matrixDb search.'
+      )
+      return []
+    }
+    if (!predicate || predicate.length <= 0) {
+      logger.info(
+        '[IndentityServer][_search][matrixDbPromise] No predicate provided. Skipping matrixDb search.'
       )
       return []
     }
@@ -233,6 +241,12 @@ export const _search = async (
     if (!enableAdditionalFeatures) {
       logger.info(
         '[IndentityServer][_search][userDbPromise] Additional features are disabled. Skipping userDB search.'
+      )
+      return []
+    }
+    if (!predicate || predicate.length <= 0) {
+      logger.info(
+        '[IndentityServer][_search][userDbPromise] No predicate provided. Skipping userDB search.'
       )
       return []
     }
@@ -297,8 +311,18 @@ export const _search = async (
       `[IndentityServer][_search] Search requested by: ${owner || 'anonymous'}`
     )
     logger.debug(
-      `[IndentityServer][_search] Searching for: ${predicate || 'all'}`
+      `[IndentityServer][_search] Searching for: ${predicate || 'nothing'}`
     )
+    logger.debug(
+      `[IndentityServer][_search] Pagination - limit: ${limit}, offset: ${offset}`
+    )
+
+    if (!predicate) {
+      logger.info(
+        `[IndentityServer][_search] No predicate provided. Returning empty results.`
+      )
+      return send(res, 200, { matches: [], inactive_matches: [] })
+    }
 
     const [matrixDbResult, addressbookResult, userDbResult] =
       await Promise.allSettled([

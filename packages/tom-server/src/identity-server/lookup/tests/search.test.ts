@@ -516,13 +516,9 @@ describe('_search factory', () => {
       expect(drwhoResult).toBeDefined()
     })
 
-    it('should return all contacts when no predicate provided', async () => {
-      mockAddressbookList.mockResolvedValueOnce({
-        contacts: [
-          { mxid: '@contact1:server', display_name: 'Contact 1' },
-          { mxid: '@contact2:server', display_name: 'Contact 2' }
-        ]
-      })
+    it('should return nothing when no predicate provided', async () => {
+      // Note: This mock won't be consumed because empty predicate returns early
+      // We keep it here for clarity but it doesn't affect the test
 
       const emptyDbServer = {
         ...idServerMock,
@@ -541,7 +537,8 @@ describe('_search factory', () => {
       await searchFn(resMock, dataMock)
 
       const response = (send as jest.Mock).mock.calls[0][2]
-      expect(response.matches.length).toBeGreaterThanOrEqual(2)
+      expect(response.matches.length).toBe(0)
+      expect(response.inactive_matches.length).toBe(0)
     })
 
     it('should filter out invalid Matrix IDs from addressbook', async () => {
@@ -564,7 +561,7 @@ describe('_search factory', () => {
       const resMock = {} as any
       const dataMock = {
         scope: ['uid'],
-        val: '',
+        val: 'al',
         owner: '@user123:server'
       }
 
