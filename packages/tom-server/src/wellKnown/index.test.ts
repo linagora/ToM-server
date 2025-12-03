@@ -63,7 +63,8 @@ describe('WellKnown class', () => {
             visibility: 'private',
             visible_fields: []
           }
-        }
+        },
+        user_directory: { enabled: true }
       }
     })
     const app = createApp(conf)
@@ -89,7 +90,8 @@ describe('WellKnown class', () => {
             visibility: 'private',
             visible_fields: []
           }
-        }
+        },
+        user_directory: { enabled: true }
       }
     })
     const app = createApp(conf)
@@ -123,7 +125,8 @@ describe('WellKnown class', () => {
             visibility: 'private',
             visible_fields: []
           }
-        }
+        },
+        user_directory: { enabled: true }
       }
     })
 

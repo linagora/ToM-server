@@ -71,6 +71,9 @@ export type Config = MConfig & {
         visible_fields: string[]
       }
     }
+    user_directory: {
+      enabled: boolean
+    }
   }
 }
 

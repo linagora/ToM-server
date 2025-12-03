@@ -76,7 +76,8 @@ const idServer = new IdServer(
           visibility: 'private',
           visible_fields: []
         }
-      }
+      },
+      user_directory: { enabled: true }
     }
   } as unknown as ConfigDescription,
   mockLogger as TwakeLogger
