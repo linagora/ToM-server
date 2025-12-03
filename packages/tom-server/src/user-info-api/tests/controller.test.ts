@@ -219,4 +219,58 @@ describe('UserInfoController – additional branch coverage (unit)', () => {
     expect(res.json).toHaveBeenCalledWith({ error: expect.anything() })
     expect(next).not.toHaveBeenCalled()
   })
+
+  it('updateVisibility() → passes error to next() when service throws database error', async () => {
+    const dbError = new Error(
+      'Failed to retrieve visibility settings for user @dwho:docker.localhost'
+    )
+    updateVisibilityMock.mockRejectedValue(dbError)
+
+    const req = makeReq({
+      params: { userId: '@dwho:docker.localhost' },
+      body: { visibility: 'public', visible_fields: [] }
+    })
+    const res = makeRes()
+    await controller.updateVisibility(req, res, next)
+
+    expect(next).toHaveBeenCalledWith(dbError)
+    expect(res.status).not.toHaveBeenCalled()
+    expect(res.json).not.toHaveBeenCalled()
+  })
+
+  it('updateVisibility() → passes error to next() when service throws insert error', async () => {
+    const dbError = new Error(
+      'Failed to create visibility settings for user @dwho:docker.localhost'
+    )
+    updateVisibilityMock.mockRejectedValue(dbError)
+
+    const req = makeReq({
+      params: { userId: '@dwho:docker.localhost' },
+      body: { visibility: 'contacts', visible_fields: ['email'] }
+    })
+    const res = makeRes()
+    await controller.updateVisibility(req, res, next)
+
+    expect(next).toHaveBeenCalledWith(dbError)
+    expect(res.status).not.toHaveBeenCalled()
+    expect(res.json).not.toHaveBeenCalled()
+  })
+
+  it('updateVisibility() → passes error to next() when service throws update error', async () => {
+    const dbError = new Error(
+      'Failed to update visibility settings for user @dwho:docker.localhost'
+    )
+    updateVisibilityMock.mockRejectedValue(dbError)
+
+    const req = makeReq({
+      params: { userId: '@dwho:docker.localhost' },
+      body: { visibility: 'private', visible_fields: [] }
+    })
+    const res = makeRes()
+    await controller.updateVisibility(req, res, next)
+
+    expect(next).toHaveBeenCalledWith(dbError)
+    expect(res.status).not.toHaveBeenCalled()
+    expect(res.json).not.toHaveBeenCalled()
+  })
 })
