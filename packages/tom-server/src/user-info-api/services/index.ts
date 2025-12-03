@@ -309,26 +309,138 @@ class UserInfoService implements IUserInfoService {
   updateVisibility = async (
     userId: string,
     visibilitySettings: UserProfileSettingsPayloadT
-  ): Promise<UserProfileSettingsT | undefined> => {
+  ): Promise<UserProfileSettingsT> => {
+    this.logger.debug(
+      `[UserInfoService].updateVisibility: Updating visibility settings for user: ${userId}`
+    )
+
+    let existingSettings: UserProfileSettingsT | null
     try {
-      const { visibilitySettings: userVisibilitySettings, created } =
-        await this._getOrCreateUserSettings(userId, visibilitySettings)
-      if (created) {
-        return userVisibilitySettings
-      } else {
-        await this.db.update(
-          'profileSettings',
-          // @ts-expect-error typecast
-          visibilitySettings,
-          'matrix_id',
-          userId
-        )
-      }
+      existingSettings = await this._getUserSettings(userId)
     } catch (error) {
       throw new Error(
-        `Error updating user visibility settings:  ${JSON.stringify({
-          cause: error
-        })}`,
+        `Failed to retrieve visibility settings for user ${userId}`,
+        { cause: error as Error }
+      )
+    }
+
+    return existingSettings === null
+      ? await this._createVisibilitySettings(userId, visibilitySettings)
+      : await this._updateVisibilitySettings(userId, visibilitySettings)
+  }
+
+  private _createVisibilitySettings = async (
+    userId: string,
+    visibilitySettings: UserProfileSettingsPayloadT
+  ): Promise<UserProfileSettingsT> => {
+    this.logger.debug(
+      '[UserInfoService]._createVisibilitySettings: Creating new visibility settings',
+      { userId, visibilitySettings }
+    )
+
+    try {
+      const r = (await this.db.insert('profileSettings', {
+        matrix_id: userId,
+        ...visibilitySettings
+      } as unknown as Record<string, string | number>)) as unknown as UserProfileSettingsT[]
+
+      if (!Array.isArray(r) || r.length === 0) {
+        this.logger.error(
+          '[UserInfoService]._createVisibilitySettings: Database insert returned unexpected result',
+          { userId }
+        )
+        throw new Error(
+          `Database insert failed to return settings for user ${userId}`
+        )
+      }
+
+      const insertedSettings = r[0]
+      this.logger.info(
+        '[UserInfoService]._createVisibilitySettings: Successfully created visibility settings',
+        {
+          userId,
+          visibility: insertedSettings.visibility,
+          visible_fields: insertedSettings.visible_fields
+        }
+      )
+      return insertedSettings
+    } catch (error) {
+      if (
+        error instanceof Error &&
+        error.message.includes('Database insert failed to return settings')
+      ) {
+        throw error
+      }
+
+      this.logger.error(
+        '[UserInfoService]._createVisibilitySettings: Failed to insert new visibility settings',
+        {
+          userId,
+          error: error instanceof Error ? error.message : String(error)
+        }
+      )
+      throw new Error(
+        `Failed to create visibility settings for user ${userId}`,
+        { cause: error as Error }
+      )
+    }
+  }
+
+  private _updateVisibilitySettings = async (
+    userId: string,
+    visibilitySettings: UserProfileSettingsPayloadT
+  ): Promise<UserProfileSettingsT> => {
+    this.logger.debug(
+      '[UserInfoService]._updateVisibilitySettings: Updating existing visibility settings',
+      { userId, visibilitySettings }
+    )
+
+    try {
+      const updateResult = (await this.db.update(
+        'profileSettings',
+        visibilitySettings as unknown as Record<string, string | number>,
+        'matrix_id',
+        userId
+      )) as unknown as UserProfileSettingsT[]
+
+      if (!Array.isArray(updateResult) || updateResult.length === 0) {
+        this.logger.error(
+          '[UserInfoService]._updateVisibilitySettings: Database update returned unexpected result',
+          { userId }
+        )
+        throw new Error(
+          `Database update failed to return settings for user ${userId}`
+        )
+      }
+
+      const updatedSettings = updateResult[0]
+      this.logger.info(
+        '[UserInfoService]._updateVisibilitySettings: Successfully updated visibility settings',
+        {
+          userId,
+          visibility: updatedSettings.visibility,
+          visible_fields: updatedSettings.visible_fields
+        }
+      )
+
+      return updatedSettings
+    } catch (error) {
+      if (
+        error instanceof Error &&
+        error.message.includes('Database update failed to return settings')
+      ) {
+        throw error
+      }
+
+      this.logger.error(
+        '[UserInfoService]._updateVisibilitySettings: Failed to update visibility settings',
+        {
+          userId,
+          error: error instanceof Error ? error.message : String(error)
+        }
+      )
+      throw new Error(
+        `Failed to update visibility settings for user ${userId}`,
         { cause: error as Error }
       )
     }
@@ -400,56 +512,6 @@ class UserInfoService implements IUserInfoService {
     } catch (err: any) {
       this.logger.error(
         '[UserInfoApiService] Failed to get user profile settings ',
-        {
-          userId,
-          error: err?.message
-        }
-      )
-      throw err
-    }
-  }
-
-  private _getOrCreateUserSettings = async (
-    userId: string,
-    visibilitySettings: UserProfileSettingsPayloadT = this
-      .defaultVisibilitySettings
-  ): Promise<{
-    visibilitySettings: UserProfileSettingsT
-    created: boolean
-  }> => {
-    try {
-      const existing = await this._getUserSettings(userId)
-      if (existing) {
-        return { visibilitySettings: existing, created: false }
-      }
-      this.logger.info(`[UserInfoApiService] got nothing`)
-      const insertResult = (await this.db.insert(
-        'profileSettings',
-        // @ts-expect-error typecast
-        {
-          matrix_id: userId,
-          ...visibilitySettings
-        } as unknown as UserProfileSettingsT
-      )) as unknown as UserProfileSettingsT[]
-      if (!Array.isArray(insertResult) || insertResult.length <= 0)
-        throw new Error(
-          '[UserInfoApiService] unknown DB behavior when inserting new user visibility settings'
-        )
-
-      const insertedSettings = insertResult.at(0)
-      if (!insertedSettings) throw new Error('[UserInfoApiService] Unknown')
-
-      this.logger.info(
-        `[UserInfoApiService] New user visibility settings created for ${insertedSettings.matrix_id}`
-      )
-      this.logger.debug(
-        `[UserInfoApiService] Set visibility to ${insertedSettings.visibility}, and visible fields to [${insertedSettings.visible_fields}]`
-      )
-
-      return { visibilitySettings: insertedSettings, created: true }
-    } catch (err: any) {
-      this.logger.error(
-        '[UserInfoApiService] Failed to get or create user profile settings ',
         {
           userId,
           error: err?.message
