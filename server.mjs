@@ -78,6 +78,9 @@ const featuresConf = {
             .filter((v) => v && v.length > 0)
         : []
     }
+  },
+  user_directory: {
+    enabled: _parseBooleanEnv(process.env.FEATURE_USER_DIRECTORY_ENABLED, false)
   }
 }
 

@@ -268,6 +268,9 @@
         "visibility": "private",
         "visible_fields": []
       }
+    },
+    "user_directory": {
+      "enabled": false
     }
   }
 }

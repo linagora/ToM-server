@@ -1,7 +1,5 @@
 import { _search } from '../_search'
-import { send, toMatrixId, isMatrixId } from '@twake/utils'
-import { AddressbookService } from '../../../addressbook-api/services'
-import UserInfoService from '../../../user-info-api/services'
+import { send, isMatrixId } from '@twake/utils'
 
 // Mock @twake/utils
 jest.mock('@twake/utils', () => ({
@@ -79,7 +77,11 @@ describe('_search factory', () => {
         match: jest.fn().mockResolvedValue([{ user_id: '@drwho:server' }])
       }
     },
-    conf: { server_name: 'server', additional_features: true },
+    conf: {
+      server_name: 'server',
+      additional_features: true,
+      features: { user_directory: { enabled: true } }
+    },
     logger
   }
 
@@ -235,6 +237,156 @@ describe('_search factory', () => {
       ).toBeGreaterThan(0)
     })
 
+    it('should skip matrixDb when user_directory is disabled', async () => {
+      const serverNoFeatures = {
+        ...idServerMock,
+        conf: {
+          server_name: 'server',
+          additional_features: false,
+          features: { user_directory: { enabled: false } }
+        },
+        userDB: {
+          match: jest.fn().mockResolvedValue([])
+        },
+        matrixDb: {
+          db: {
+            match: jest.fn().mockResolvedValue([{ user_id: '@drwho:server' }])
+          }
+        }
+      }
+
+      const searchFn = await _search(serverNoFeatures as any, logger as any)
+      const resMock = {} as any
+      const dataMock = {
+        scope: ['uid'],
+        val: 'test',
+        owner: '@user123:server'
+      }
+
+      await searchFn(resMock, dataMock)
+
+      // matrixDb.match should not have been called
+      expect(serverNoFeatures.matrixDb.db.match).not.toHaveBeenCalled()
+
+      expect(send).toHaveBeenCalledWith(
+        resMock,
+        200,
+        expect.objectContaining({
+          matches: expect.any(Array),
+          inactive_matches: expect.any(Array)
+        })
+      )
+    })
+
+    it('should skip matrixDb when user_directory is disabled via env', async () => {
+      const originalEnv = process.env.ADDITIONAL_FEATURES
+      process.env.ADDITIONAL_FEATURES = 'false'
+
+      const serverNoEnvFeatures = {
+        ...idServerMock,
+        conf: {
+          server_name: 'server',
+          additional_features: false,
+          features: { user_directory: { enabled: false } }
+        },
+        userDB: {
+          match: jest.fn().mockResolvedValue([])
+        },
+        matrixDb: {
+          db: {
+            match: jest.fn().mockResolvedValue([{ user_id: '@drwho:server' }])
+          }
+        }
+      }
+
+      const searchFn = await _search(serverNoEnvFeatures as any, logger as any)
+      const resMock = {} as any
+      const dataMock = {
+        scope: ['uid'],
+        val: 'test',
+        owner: '@user123:server'
+      }
+
+      await searchFn(resMock, dataMock)
+
+      // matrixDb.match should not have been called
+      expect(serverNoEnvFeatures.matrixDb.db.match).not.toHaveBeenCalled()
+
+      // Restore original env
+      if (originalEnv !== undefined) {
+        process.env.ADDITIONAL_FEATURES = originalEnv
+      } else {
+        delete process.env.ADDITIONAL_FEATURES
+      }
+    })
+
+    it('should query matrixDb when user_directory is enabled', async () => {
+      const serverWithFeatures = {
+        ...idServerMock,
+        conf: {
+          server_name: 'server',
+          additional_features: false,
+          features: { user_directory: { enabled: true } }
+        },
+        userDB: {
+          match: jest.fn().mockResolvedValue([])
+        },
+        matrixDb: {
+          db: {
+            match: jest.fn().mockResolvedValue([{ user_id: '@drwho:server' }])
+          }
+        }
+      }
+
+      const searchFn = await _search(serverWithFeatures as any, logger as any)
+      const resMock = {} as any
+      const dataMock = {
+        scope: ['uid'],
+        val: 'drwho',
+        owner: '@user123:server'
+      }
+
+      await searchFn(resMock, dataMock)
+
+      // matrixDb.match should have been called
+      expect(serverWithFeatures.matrixDb.db.match).toHaveBeenCalled()
+    })
+
+    it('should query matrixDb when user_directory is enabled via config', async () => {
+      const serverWithEnvFeatures = {
+        ...idServerMock,
+        conf: {
+          server_name: 'server',
+          additional_features: false,
+          features: { user_directory: { enabled: true } }
+        },
+        userDB: {
+          match: jest.fn().mockResolvedValue([])
+        },
+        matrixDb: {
+          db: {
+            match: jest.fn().mockResolvedValue([{ user_id: '@drwho:server' }])
+          }
+        }
+      }
+
+      const searchFn = await _search(
+        serverWithEnvFeatures as any,
+        logger as any
+      )
+      const resMock = {} as any
+      const dataMock = {
+        scope: ['uid'],
+        val: 'drwho',
+        owner: '@user123:server'
+      }
+
+      await searchFn(resMock, dataMock)
+
+      // matrixDb.match should have been called
+      expect(serverWithEnvFeatures.matrixDb.db.match).toHaveBeenCalled()
+    })
+
     it('should handle matrixDb errors gracefully', async () => {
       const brokenMatrixServer = {
         ...idServerMock,
@@ -270,7 +422,11 @@ describe('_search factory', () => {
     it('should skip userDB when additional_features is disabled', async () => {
       const serverNoFeatures = {
         ...idServerMock,
-        conf: { server_name: 'server', additional_features: false },
+        conf: {
+          server_name: 'server',
+          additional_features: false,
+          features: { user_directory: { enabled: false } }
+        },
         userDB: {
           match: jest.fn().mockResolvedValue([{ uid: 'drwho' }])
         }
