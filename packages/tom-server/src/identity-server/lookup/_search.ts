@@ -24,8 +24,12 @@ export const _search = async (
   const enableAdditionalFeatures =
     process.env.ADDITIONAL_FEATURES === 'true' ||
     (conf.additional_features as boolean)
+  const enableUserDirectory = conf.features.user_directory.enabled
   logger.debug(
     `[IndentityServer][_search] Additional features enabled: ${enableAdditionalFeatures}`
+  )
+  logger.debug(
+    `[IndentityServer][_search] User directory enabled: ${enableUserDirectory}`
   )
 
   const addressBookService = new AddressbookService(db, logger)
@@ -167,6 +171,12 @@ export const _search = async (
     logger.silly(
       '[IndentityServer][_search][matrixDbPromise] Searching matrixDb...'
     )
+    if (!enableUserDirectory) {
+      logger.info(
+        '[IndentityServer][_search][matrixDbPromise] User directory is disabled. Skipping matrixDb search.'
+      )
+      return []
+    }
     const rows = (await matrixDb.db.match(
       'profiles',
       ['user_id'],
@@ -222,7 +232,7 @@ export const _search = async (
     )
     if (!enableAdditionalFeatures) {
       logger.info(
-        '[IndentityServer][_search][userDbPromise] Additional features are disabled. Skipping sserDB search.'
+        '[IndentityServer][_search][userDbPromise] Additional features are disabled. Skipping userDB search.'
       )
       return []
     }
