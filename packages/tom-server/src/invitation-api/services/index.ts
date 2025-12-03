@@ -635,17 +635,23 @@ export default class InvitationService implements IInvitationService {
    * @returns {object} - Email template configuration
    */
   private readonly _buildEmailTemplateConfig = (lang: string) => {
-    const templateDir = `${this.config.template_dir}/${lang}/email/invitation`
-    const assetsDir = `${templateDir}/assets`
+    const templateDir = `${this.config.template_dir}/invitation/email`
+    const assetsDir = `${this.config.template_dir}/assets`
     const cidDomain = 'invite.twake.app'
 
-    this.logger.silly(
-      `[InvitationService][_buildEmailTemplateConfig] Template directory: ${templateDir}`
+    this.logger.debug(
+      `[InvitationService][_buildEmailTemplateConfig] Template directory: ${this.config.template_dir}`
+    )
+    this.logger.debug(
+      `[InvitationService][_buildEmailTemplateConfig] Content directory: ${templateDir}`
+    )
+    this.logger.debug(
+      `[InvitationService][_buildEmailTemplateConfig] Assets directory: ${assetsDir}`
     )
 
     return {
-      htmlPath: `${templateDir}/body.min.html`,
-      textPath: `${templateDir}/body.txt`,
+      htmlPath: `${templateDir}/${lang}.min.html`,
+      textPath: `${templateDir}/${lang}.txt`,
       attachments: [
         {
           filename: 'hero.jpg',
