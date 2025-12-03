@@ -89,7 +89,7 @@ class UserInfoController implements IUserInfoController {
         await this.userInfoService.updateVisibility(userId, updatedSettings)
 
       if (userVisibilitySettings === undefined) {
-        res.status(500).json({ error: errCodes.badJson })
+        res.status(500).json({ error: errCodes.unknown })
         return
       }
 
