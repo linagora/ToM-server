@@ -6875,3 +6875,315 @@ describe('User Info Service - Default Visibility Settings Configuration:', () =>
     })
   })
 })
+
+describe('User Info Service updateVisibility', () => {
+  const svc = createService(false, false)
+
+  describe('When no existing settings exist', () => {
+    beforeEach(() => {
+      // Mock no existing settings
+      twakeDBMock.get.mockResolvedValue([])
+      // Mock successful insert
+      twakeDBMock.insert.mockResolvedValue([
+        {
+          matrix_id: MATRIX_MXID,
+          visibility: ProfileVisibility.Public,
+          visible_fields: [ProfileField.Email]
+        }
+      ])
+    })
+
+    it('Should create new visibility settings with provided values', async () => {
+      const payload: UserProfileSettingsPayloadT = {
+        visibility: ProfileVisibility.Public,
+        visible_fields: [ProfileField.Email]
+      }
+
+      const result = await svc.updateVisibility(MATRIX_MXID, payload)
+
+      expect(result).toBeDefined()
+      expect(result.matrix_id).toBe(MATRIX_MXID)
+      expect(result.visibility).toBe(ProfileVisibility.Public)
+      expect(result.visible_fields).toEqual([ProfileField.Email])
+    })
+
+    it('Should create settings with private visibility and no fields', async () => {
+      twakeDBMock.insert.mockResolvedValue([
+        {
+          matrix_id: MATRIX_MXID,
+          visibility: ProfileVisibility.Private,
+          visible_fields: []
+        }
+      ])
+
+      const payload: UserProfileSettingsPayloadT = {
+        visibility: ProfileVisibility.Private,
+        visible_fields: []
+      }
+
+      const result = await svc.updateVisibility(MATRIX_MXID, payload)
+
+      expect(result).toBeDefined()
+      expect(result.visibility).toBe(ProfileVisibility.Private)
+      expect(result.visible_fields).toEqual([])
+    })
+
+    it('Should create settings with contacts visibility and both fields', async () => {
+      twakeDBMock.insert.mockResolvedValue([
+        {
+          matrix_id: MATRIX_MXID,
+          visibility: ProfileVisibility.Contacts,
+          visible_fields: [ProfileField.Email, ProfileField.Phone]
+        }
+      ])
+
+      const payload: UserProfileSettingsPayloadT = {
+        visibility: ProfileVisibility.Contacts,
+        visible_fields: [ProfileField.Email, ProfileField.Phone]
+      }
+
+      const result = await svc.updateVisibility(MATRIX_MXID, payload)
+
+      expect(result).toBeDefined()
+      expect(result.visibility).toBe(ProfileVisibility.Contacts)
+      expect(result.visible_fields).toEqual([
+        ProfileField.Email,
+        ProfileField.Phone
+      ])
+    })
+
+    it('Should throw error when DB get operation fails', async () => {
+      twakeDBMock.get.mockRejectedValue(new Error('Database connection lost'))
+
+      const payload: UserProfileSettingsPayloadT = {
+        visibility: ProfileVisibility.Public,
+        visible_fields: []
+      }
+
+      await expect(svc.updateVisibility(MATRIX_MXID, payload)).rejects.toThrow(
+        'Failed to retrieve visibility settings for user'
+      )
+    })
+
+    it('Should throw error when DB insert returns empty array', async () => {
+      twakeDBMock.insert.mockResolvedValue([])
+
+      const payload: UserProfileSettingsPayloadT = {
+        visibility: ProfileVisibility.Public,
+        visible_fields: []
+      }
+
+      await expect(svc.updateVisibility(MATRIX_MXID, payload)).rejects.toThrow(
+        'Database insert failed to return settings for user'
+      )
+    })
+
+    it('Should throw error when DB insert operation fails', async () => {
+      twakeDBMock.insert.mockRejectedValue(new Error('Constraint violation'))
+
+      const payload: UserProfileSettingsPayloadT = {
+        visibility: ProfileVisibility.Public,
+        visible_fields: []
+      }
+
+      await expect(svc.updateVisibility(MATRIX_MXID, payload)).rejects.toThrow(
+        'Failed to create visibility settings for user'
+      )
+    })
+  })
+
+  describe('When existing settings exist', () => {
+    beforeEach(() => {
+      // Mock existing settings
+      twakeDBMock.get.mockResolvedValue([
+        {
+          matrix_id: MATRIX_MXID,
+          visibility: ProfileVisibility.Private,
+          visible_fields: []
+        }
+      ])
+      // Mock successful update - return empty by default, will be overridden per test
+      twakeDBMock.update.mockResolvedValue([] as DbGetResult)
+    })
+
+    it('Should update existing visibility from private to public', async () => {
+      const payload: UserProfileSettingsPayloadT = {
+        visibility: ProfileVisibility.Public,
+        visible_fields: [ProfileField.Email]
+      }
+
+      // Mock update to return the updated settings
+      twakeDBMock.update.mockResolvedValue([
+        {
+          matrix_id: MATRIX_MXID,
+          visibility: ProfileVisibility.Public,
+          visible_fields: [ProfileField.Email]
+        }
+      ] as DbGetResult)
+
+      const result = await svc.updateVisibility(MATRIX_MXID, payload)
+
+      expect(result).toBeDefined()
+      expect(result.matrix_id).toBe(MATRIX_MXID)
+      expect(result.visibility).toBe(ProfileVisibility.Public)
+      expect(result.visible_fields).toEqual([ProfileField.Email])
+    })
+
+    it('Should update existing visibility from public to contacts', async () => {
+      twakeDBMock.get.mockResolvedValue([
+        {
+          matrix_id: MATRIX_MXID,
+          visibility: ProfileVisibility.Public,
+          visible_fields: [ProfileField.Email, ProfileField.Phone]
+        }
+      ])
+
+      const payload: UserProfileSettingsPayloadT = {
+        visibility: ProfileVisibility.Contacts,
+        visible_fields: [ProfileField.Phone]
+      }
+
+      twakeDBMock.update.mockResolvedValue([
+        {
+          matrix_id: MATRIX_MXID,
+          visibility: ProfileVisibility.Contacts,
+          visible_fields: [ProfileField.Phone]
+        }
+      ] as DbGetResult)
+
+      const result = await svc.updateVisibility(MATRIX_MXID, payload)
+
+      expect(result).toBeDefined()
+      expect(result.visibility).toBe(ProfileVisibility.Contacts)
+      expect(result.visible_fields).toEqual([ProfileField.Phone])
+    })
+
+    it('Should update only visible fields while keeping same visibility', async () => {
+      twakeDBMock.get.mockResolvedValue([
+        {
+          matrix_id: MATRIX_MXID,
+          visibility: ProfileVisibility.Public,
+          visible_fields: [ProfileField.Email]
+        }
+      ])
+
+      const payload: UserProfileSettingsPayloadT = {
+        visibility: ProfileVisibility.Public,
+        visible_fields: [ProfileField.Email, ProfileField.Phone]
+      }
+
+      twakeDBMock.update.mockResolvedValue([
+        {
+          matrix_id: MATRIX_MXID,
+          visibility: ProfileVisibility.Public,
+          visible_fields: [ProfileField.Email, ProfileField.Phone]
+        }
+      ] as DbGetResult)
+
+      const result = await svc.updateVisibility(MATRIX_MXID, payload)
+
+      expect(result).toBeDefined()
+      expect(result.visibility).toBe(ProfileVisibility.Public)
+      expect(result.visible_fields).toEqual([
+        ProfileField.Email,
+        ProfileField.Phone
+      ])
+    })
+
+    it('Should clear visible fields when updating to empty array', async () => {
+      twakeDBMock.get.mockResolvedValue([
+        {
+          matrix_id: MATRIX_MXID,
+          visibility: ProfileVisibility.Public,
+          visible_fields: [ProfileField.Email, ProfileField.Phone]
+        }
+      ])
+
+      const payload: UserProfileSettingsPayloadT = {
+        visibility: ProfileVisibility.Private,
+        visible_fields: []
+      }
+
+      twakeDBMock.update.mockResolvedValue([
+        {
+          matrix_id: MATRIX_MXID,
+          visibility: ProfileVisibility.Private,
+          visible_fields: []
+        }
+      ] as DbGetResult)
+
+      const result = await svc.updateVisibility(MATRIX_MXID, payload)
+
+      expect(result).toBeDefined()
+      expect(result.visibility).toBe(ProfileVisibility.Private)
+      expect(result.visible_fields).toEqual([])
+    })
+
+    it('Should throw error when DB update operation fails', async () => {
+      twakeDBMock.update.mockRejectedValue(new Error('Database write error'))
+
+      const payload: UserProfileSettingsPayloadT = {
+        visibility: ProfileVisibility.Public,
+        visible_fields: []
+      }
+
+      await expect(svc.updateVisibility(MATRIX_MXID, payload)).rejects.toThrow(
+        'Failed to update visibility settings for user'
+      )
+    })
+  })
+
+  describe('Return value validation', () => {
+    it('Should return applied settings when creating new record', async () => {
+      twakeDBMock.get.mockResolvedValue([])
+      twakeDBMock.insert.mockResolvedValue([
+        {
+          matrix_id: MATRIX_MXID,
+          visibility: ProfileVisibility.Contacts,
+          visible_fields: [ProfileField.Email]
+        }
+      ])
+
+      const payload: UserProfileSettingsPayloadT = {
+        visibility: ProfileVisibility.Contacts,
+        visible_fields: [ProfileField.Email]
+      }
+
+      const result = await svc.updateVisibility(MATRIX_MXID, payload)
+
+      // Should return exactly what was applied in DB
+      expect(result).toMatchObject(payload)
+      expect(result.matrix_id).toBe(MATRIX_MXID)
+    })
+
+    it('Should return merged settings when updating existing record', async () => {
+      const existingSettings = {
+        matrix_id: MATRIX_MXID,
+        visibility: ProfileVisibility.Private,
+        visible_fields: []
+      }
+
+      twakeDBMock.get.mockResolvedValue([existingSettings])
+
+      const payload: UserProfileSettingsPayloadT = {
+        visibility: ProfileVisibility.Public,
+        visible_fields: [ProfileField.Email, ProfileField.Phone]
+      }
+
+      twakeDBMock.update.mockResolvedValue([
+        {
+          matrix_id: MATRIX_MXID,
+          visibility: ProfileVisibility.Public,
+          visible_fields: [ProfileField.Email, ProfileField.Phone]
+        }
+      ] as DbGetResult)
+
+      const result = await svc.updateVisibility(MATRIX_MXID, payload)
+
+      // Should return the updated result from DB
+      expect(result.matrix_id).toBe(MATRIX_MXID)
+      expect(result.visibility).toBe(payload.visibility)
+      expect(result.visible_fields).toEqual(payload.visible_fields)
+    })
+  })
+})
