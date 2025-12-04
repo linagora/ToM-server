@@ -536,16 +536,6 @@ export const getLocalPart = (id: string): string | null => {
   return parts[0].slice(1)
 }
 
-export const isValidUrl = (link: string): boolean => {
-  try {
-    // eslint-disable-next-line no-new
-    new URL(link)
-    return true
-  } catch {
-    return false
-  }
-}
-
 export const getAccessToken = (
   req: Request | http.IncomingMessage
 ): string | null => {

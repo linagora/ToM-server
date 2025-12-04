@@ -1435,14 +1435,14 @@ describe('Use configuration file', () => {
           .set('Authorization', `Bearer ${validToken}`)
           .set('Accept', 'application/json')
           .send({
-            phone: '33612345678',
+            phone: '33612345679',
             medium: 'msisdn',
             room_id: '!room:matrix.org',
             sender: '@dwho:matrix.org',
             invitation_link: 'https://example.com'
           })
 
-        expect(mockSend).toHaveBeenCalledWith('33612345678', expect.anything())
+        expect(mockSend).toHaveBeenCalledWith('33612345679', expect.anything())
       })
     })
 

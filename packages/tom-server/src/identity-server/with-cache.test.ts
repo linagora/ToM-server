@@ -154,8 +154,7 @@ describe('Using Matrix Token', () => {
       json: () =>
         Promise.resolve({
           user_id: 'dwho'
-        }
-      }
+        })
     }))
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     let pepper = ''
@@ -331,11 +330,10 @@ describe('/_matrix/identity/v2/account/register', () => {
       ok: true,
       status: 200,
       // eslint-disable-next-line @typescript-eslint/promise-function-async
-      json: () => 
+      json: () =>
         Promise.resolve({
           sub: '@dwho:example.com'
-})
-      
+        })
     })
     // @ts-expect-error mock is unknown
     fetch.mockImplementation(async () => await mockResponse)

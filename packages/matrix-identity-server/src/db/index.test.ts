@@ -206,17 +206,21 @@ describe('Id Server DB', () => {
     idDb.ready
       .then(() => {
         idDb
-          .insert('roomTags', { id: 1, roomId: 1, authorId: 1, content: '' })
+          .insert('userPolicies', {
+            user_id: 'user1',
+            policy_name: 'policy1',
+            accepted: 1
+          })
           .then(() => {
             idDb
               .updateAnd(
-                'roomTags',
-                { id: 2 },
-                { field: 'id', value: 1 },
-                { field: 'roomId', value: 1 }
+                'userPolicies',
+                { accepted: 2 },
+                { field: 'user_id', value: 'user1' },
+                { field: 'policy_name', value: 'policy1' }
               )
               .then((rows) => {
-                expect(rows[0].id).toEqual('2')
+                expect(rows[0].accepted).toEqual(2)
                 clearTimeout(idDb.cleanJob)
                 idDb.close()
                 done()
@@ -233,18 +237,22 @@ describe('Id Server DB', () => {
     idDb.ready
       .then(() => {
         idDb
-          .insert('roomTags', { id: 3, roomId: 1, authorId: 1, content: '' })
+          .insert('userPolicies', {
+            user_id: 'user2',
+            policy_name: 'policy2',
+            accepted: 3
+          })
           .then(() => {
             idDb
               .updateAnd(
-                'roomTags',
-                { id: 4 },
-                { field: 'id', value: 3 },
-                { field: 'roomId', value: 1 }
+                'userPolicies',
+                { accepted: 4 },
+                { field: 'user_id', value: 'user2' },
+                { field: 'policy_name', value: 'policy2' }
               )
               .then((rows) => {
                 expect(rows.length).toBe(1)
-                expect(rows[0].id).toEqual('4')
+                expect(rows[0].accepted).toEqual(4)
                 clearTimeout(idDb.cleanJob)
                 idDb.close()
                 done()
@@ -261,20 +269,24 @@ describe('Id Server DB', () => {
     idDb.ready
       .then(() => {
         idDb
-          .insert('roomTags', { id: 4, roomId: 1, authorId: 1, content: '' })
+          .insert('userPolicies', {
+            user_id: 'user3',
+            policy_name: 'policy3',
+            accepted: 1
+          })
           .then(() => {
             idDb
               .updateAnd(
-                'roomTags',
-                { authorId: 2 },
-                { field: 'id', value: 4 },
-                { field: 'roomId', value: 100 }
+                'userPolicies',
+                { accepted: 2 },
+                { field: 'user_id', value: 'user3' },
+                { field: 'policy_name', value: 'nonexistent' }
               )
               .then(() => {
                 idDb
-                  .get('roomTags', ['*'], { id: 4 })
+                  .get('userPolicies', ['*'], { user_id: 'user3' })
                   .then((rows) => {
-                    expect(rows[0].authorId).toEqual('1')
+                    expect(rows[0].accepted).toEqual(1)
                     clearTimeout(idDb.cleanJob)
                     idDb.close()
                     done()

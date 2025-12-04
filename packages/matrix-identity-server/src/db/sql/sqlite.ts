@@ -278,41 +278,6 @@ class SQLite<T extends string> extends SQL<T> implements IdDbBackend<T> {
 
   // TODO : Merge update and updateAnd into one function that takes an array of conditions as argument
   // Done in Client server - go see updateWithConditions
-  updateAnd(
-    table: T,
-    values: Record<string, string | number>,
-    condition1: { field: string; value: string | number },
-    condition2: { field: string; value: string | number }
-  ): Promise<DbGetResult> {
-    return new Promise((resolve, reject) => {
-      /* istanbul ignore if */
-      if (this.db == null) {
-        throw new Error('Wait for database to be ready')
-      }
-      const names = Object.keys(values)
-      const vals = Object.values(values)
-      vals.push(condition1.value, condition2.value)
-
-      const setClause = names.map((name) => `${name} = ?`).join(', ')
-      const stmt = this.db.prepare(
-        `UPDATE ${table} SET ${setClause} WHERE ${condition1.field} = ? AND ${condition2.field} = ? RETURNING *;`
-      )
-
-      stmt.all(
-        vals,
-        (err: string, rows: Array<Record<string, string | number>>) => {
-          /* istanbul ignore if */
-          if (err != null) {
-            reject(err)
-          } else {
-            resolve(rows)
-          }
-        }
-      )
-
-      stmt.finalize(reject)
-    })
-  }
 
   _get(
     tables: T[],
@@ -505,29 +470,6 @@ class SQLite<T extends string> extends SQL<T> implements IdDbBackend<T> {
 
   getJoin(
     tables: T[],
-    fields?: string[],
-    filterFields?: Record<string, string | number | Array<string | number>>,
-    joinFields?: Record<string, string>,
-    order?: string
-  ): Promise<DbGetResult> {
-    return this._get(
-      tables,
-      fields,
-      '=',
-      filterFields,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      joinFields,
-      order
-    )
-  }
-
-  getJoin(
-    tables: Array<T>,
     fields?: string[],
     filterFields?: Record<string, string | number | Array<string | number>>,
     joinFields?: Record<string, string>,
@@ -1033,40 +975,6 @@ class SQLite<T extends string> extends SQL<T> implements IdDbBackend<T> {
             )
             reject(err)
           }
-        })
-      }
-    })
-  }
-
-  deleteEqualAnd(
-    table: T,
-    condition1: {
-      field: string
-      value: string | number | Array<string | number>
-    },
-    condition2: {
-      field: string
-      value: string | number | Array<string | number>
-    }
-  ): Promise<void> {
-    return new Promise((resolve, reject) => {
-      /* istanbul ignore if */
-      if (this.db == null) {
-        reject(new Error('Wait for database to be ready'))
-      } else {
-        const stmt = this.db.prepare(
-          `DELETE FROM ${table} WHERE ${condition1.field}=? AND ${condition2.field}=?`
-        )
-        stmt.all([condition1.value, condition2.value], (err, rows) => {
-          /* istanbul ignore if */
-          if (err != null) {
-            reject(err)
-          } else {
-            resolve()
-          }
-        })
-        stmt.finalize((err) => {
-          reject(err)
         })
       }
     })

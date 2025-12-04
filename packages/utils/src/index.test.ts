@@ -5,6 +5,8 @@ import {
   send,
   jsonContent,
   validateParameters,
+  validateParametersAndValues,
+  getAccessToken,
   epoch,
   toMatrixId,
   isMatrixId,
