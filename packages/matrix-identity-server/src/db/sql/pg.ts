@@ -324,8 +324,9 @@ class Pg<T extends string> extends SQL<T> implements IdDbBackend<T> {
           Object.keys(filterFields)
             .filter(
               (key) =>
-                filterFields[key] != null &&
-                filterFields[key].toString() !== [].toString()
+                joinFields != null &&
+                joinFields[key] != null &&
+                joinFields[key].toString() !== [].toString()
             )
             .forEach((key) => {
               localCondition += localCondition !== '' ? ' AND ' : ''
@@ -711,7 +712,7 @@ class Pg<T extends string> extends SQL<T> implements IdDbBackend<T> {
   getMaxWhereEqualAndLower(
     table: T,
     targetField: string,
-    fields?: string[],
+    fields: string[],
     filterFields1?: Record<string, string | number | Array<string | number>>,
     filterFields2?: Record<string, string | number | Array<string | number>>,
     order?: string
