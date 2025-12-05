@@ -5,6 +5,8 @@ import {
   send,
   jsonContent,
   validateParameters,
+  validateParametersAndValues,
+  getAccessToken,
   epoch,
   toMatrixId,
   isMatrixId,
@@ -26,7 +28,9 @@ describe('Utility Functions', () => {
     mockLogger = {
       error: jest.fn(),
       warn: jest.fn(),
-      log: jest.fn()
+      log: jest.fn(),
+      info: jest.fn(),
+      debug: jest.fn()
     } as unknown as TwakeLogger
   })
 
@@ -46,6 +50,22 @@ describe('Utility Functions', () => {
         JSON.stringify({ message: 'ok' })
       )
       expect(mockResponse.end).toHaveBeenCalled()
+    })
+
+    it('should log the response status with info if status code in 200-299', () => {
+      send(mockResponse as Response, 200, { message: 'ok' }, mockLogger)
+
+      expect(mockLogger.debug).toHaveBeenCalledWith(
+        'Sending status 200 with content {"message":"ok"}'
+      )
+    })
+
+    it('should log the response status with error if status code not in 200-299', () => {
+      send(mockResponse as Response, 400, { message: 'error' }, mockLogger)
+
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        'Sending status 400 with content {"message":"error"}'
+      )
     })
   })
 
@@ -104,6 +124,7 @@ describe('Utility Functions', () => {
         headers: { 'content-type': 'application/json' },
         on: (event: string, callback: any) => {
           if (event === 'data') {
+            // eslint-disable-next-line n/no-callback-literal
             callback('invalid json')
           }
           if (event === 'end') {
@@ -149,6 +170,91 @@ describe('Utility Functions', () => {
       validateParameters(
         mockResponse as Response,
         desc,
+        content,
+        mockLogger,
+        () => {
+          // No-op
+        }
+      )
+
+      expect(mockResponse.writeHead).toHaveBeenCalledWith(
+        400,
+        expect.any(Object)
+      )
+      expect(mockResponse.write).toHaveBeenCalled()
+      expect(mockResponse.end).toHaveBeenCalled()
+    })
+
+    it('should log a warning for additional parameters', () => {
+      const desc = { key: true }
+      const content = { key: 'value', extra: 'extra' }
+
+      validateParameters(
+        mockResponse as Response,
+        desc,
+        content,
+        mockLogger,
+        () => {
+          // No-op
+        }
+      )
+
+      expect(mockLogger.warn).toHaveBeenCalled()
+      expect(mockResponse.writeHead).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('validateParametersAndValues', () => {
+    it('should validate required parameters and values', () => {
+      const desc = { key: true }
+      const content = { key: 'value' }
+      const valuechecks = { key: (value: string) => value === 'value' }
+
+      validateParametersAndValues(
+        mockResponse as Response,
+        desc,
+        valuechecks,
+        content,
+        mockLogger,
+        (obj) => {
+          expect(obj).toEqual(content)
+        }
+      )
+
+      expect(mockResponse.writeHead).not.toHaveBeenCalled()
+    })
+    it('should return an error for missing parameters', () => {
+      const desc = { key: true, missing: true }
+      const content = { key: 'value' }
+      const valuechecks = { key: (value: string) => value === 'value' }
+
+      validateParametersAndValues(
+        mockResponse as Response,
+        desc,
+        valuechecks,
+        content,
+        mockLogger,
+        () => {
+          // No-op
+        }
+      )
+
+      expect(mockResponse.writeHead).toHaveBeenCalledWith(
+        400,
+        expect.any(Object)
+      )
+      expect(mockResponse.write).toHaveBeenCalled()
+      expect(mockResponse.end).toHaveBeenCalled()
+    })
+    it('should return an error for invalid values', () => {
+      const desc = { key: true }
+      const content = { key: 'invalid' }
+      const valuechecks = { key: (value: string) => value === 'value' }
+
+      validateParametersAndValues(
+        mockResponse as Response,
+        desc,
+        valuechecks,
         content,
         mockLogger,
         () => {
@@ -437,6 +543,87 @@ describe('Utility Functions', () => {
 
     it('should return false for an invalid URL missing domain', () => {
       expect(isValidUrl('http://')).toBe(false)
+    })
+
+    it('should throw an error for a localpart longer than 512 characters', () => {
+      const longLocalpart = 'a'.repeat(513)
+      expect(() => toMatrixId(longLocalpart, 'example.com')).toThrowError()
+    })
+  })
+  describe('isValidUrl', () => {
+    it('should return false for a non-string input', () => {
+      // @ts-expect-error Testing non-string input
+      expect(isValidUrl(12345)).toBe(false)
+      // @ts-expect-error Testing non-string input
+      expect(isValidUrl(null)).toBe(false)
+      // @ts-expect-error Testing non-string input
+      expect(isValidUrl(undefined)).toBe(false)
+    })
+    it('should return false for an empty string', () => {
+      expect(isValidUrl('')).toBe(false)
+    })
+    it('should return false for an invalid URL with invalid characters', () => {
+      expect(isValidUrl('https://exam ple.com')).toBe(false)
+    })
+    it('should return true for a valid URL with query parameters', () => {
+      expect(isValidUrl('https://example.com/path?name=value')).toBe(true)
+    })
+
+    it('should return true for a valid URL with a port number', () => {
+      expect(isValidUrl('https://example.com:8080')).toBe(true)
+    })
+
+    it('should return false for an invalid URL missing scheme', () => {
+      expect(isValidUrl('example.com')).toBe(false)
+    })
+
+    it('should return false for an invalid URL missing domain', () => {
+      expect(isValidUrl('http://')).toBe(false)
+    })
+  })
+  describe('getAccessToken', () => {
+    it('should return the access token from the Authorization header', () => {
+      const req = {
+        headers: {
+          authorization: 'Bearer some-token'
+        },
+        query: {}
+      } as unknown as Request
+
+      const token = getAccessToken(req)
+      expect(token).toBe('some-token')
+    })
+
+    it('should return null if there is no authorization header', () => {
+      const req = {
+        headers: {},
+        query: {}
+      } as unknown as Request
+
+      const token = getAccessToken(req)
+      expect(token).toBeNull()
+    })
+
+    it('should return the access token from the query parameters', () => {
+      const req = {
+        headers: {},
+        query: {
+          access_token: 'some-token'
+        }
+      } as unknown as Request
+
+      const token = getAccessToken(req)
+      expect(token).toBe('some-token')
+    })
+
+    it('should return null if there is no token in headers or query', () => {
+      const req = {
+        headers: {},
+        query: {}
+      } as unknown as Request
+
+      const token = getAccessToken(req)
+      expect(token).toBeNull()
     })
   })
 })
