@@ -1,7 +1,7 @@
 import { type TwakeLogger } from '@twake/logger'
 import { type tokenContent } from '@twake/matrix-identity-server'
 import { Authenticate as RemoteAuthenticate } from '@twake/matrix-identity-server'
-import { epoch, errMsg, send } from '@twake/utils'
+import { epoch, errMsg, getAccessToken, send } from '@twake/utils'
 import fetch from 'node-fetch'
 import type { AuthenticationFunction, Config, TwakeDB } from '../../types'
 
@@ -19,17 +19,7 @@ const Authenticate = (
   const tokenRe = /^Bearer (\S+)$/
   const remoteAuth = RemoteAuthenticate(db, logger)
   return (req, res, callback) => {
-    let token: string | null = null
-    if (req.headers?.authorization != null) {
-      const re = req.headers.authorization.match(tokenRe)
-      if (re != null) {
-        token = re[1]
-      }
-      // @ts-expect-error req.query exists
-    } else if (req.query && Object.keys(req.query).length > 0) {
-      // @ts-expect-error req.query.access_token may be null
-      token = req.query.access_token
-    }
+    const token = getAccessToken(req)
     if (token != null) {
       db.get('matrixTokens', ['data'], { id: token })
         .then((rows) => {
