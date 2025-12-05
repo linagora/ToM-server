@@ -3,7 +3,7 @@ import { type Request, type Response } from 'express'
 import type http from 'http'
 import { type tokenContent } from './account/register'
 import type IdentityServerDb from './db'
-import { errMsg, send } from '@twake/utils'
+import { errMsg, getAccessToken, send } from '@twake/utils'
 
 export type AuthenticationFunction = (
   req: Request | http.IncomingMessage,
@@ -16,28 +16,17 @@ export const Authenticate = <T extends string = never>(
   db: IdentityServerDb<T>,
   logger: TwakeLogger
 ): AuthenticationFunction => {
-  const tokenRe = /^Bearer (\S+)$/
   return (req, res, callback, requiresTerms = true) => {
-    let token: string | null = null
-    if (req.headers.authorization != null) {
-      const re = req.headers.authorization.match(tokenRe)
-      if (re != null) {
-        token = re[1]
-      }
-      // @ts-expect-error req.query exists
-    } else if (req.query && Object.keys(req.query).length > 0) {
-      // @ts-expect-error req.query.access_token may be null
-      token = req.query.access_token
-    }
+    const token = getAccessToken(req)
     if (token != null) {
       db.get('accessTokens', ['data'], { id: token })
         .then((rows) => {
           // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
           if (!rows || rows.length === 0) {
             logger.error(
-              `${req.socket.remoteAddress as string} sent an inexistent token ${
-                token as string
-              }`
+              `${
+                req.socket.remoteAddress as string
+              } sent an inexistent token ${token}`
             )
             send(res, 401, errMsg('unAuthorized'))
           } else {
@@ -65,11 +54,13 @@ export const Authenticate = <T extends string = never>(
                   }
                 })
                 .catch((e) => {
+                  /* istanbul ignore next */
                   logger.error(
-                    `Please accept our updated terms of service before continuing.`,
+                    'Error while trying to get the terms from the database',
                     e
                   )
-                  send(res, 403, errMsg('termsNotSigned'))
+                  /* istanbul ignore next */
+                  send(res, 500, errMsg('unknown'))
                 })
             } else {
               callback(JSON.parse(rows[0].data as string), token)
@@ -77,11 +68,13 @@ export const Authenticate = <T extends string = never>(
           }
         })
         .catch((e) => {
+          /* istanbul ignore next */
           logger.error(
-            `${req.socket.remoteAddress as string} sent an invalid token`,
+            'Error while trying to get the token from the database',
             e
           )
-          send(res, 401, errMsg('unAuthorized'))
+          /* istanbul ignore next */
+          send(res, 500, errMsg('unknown'))
         })
     } else {
       logger.error(
