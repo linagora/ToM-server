@@ -26,6 +26,7 @@ export interface UserInformation {
   phones?: string[]
   language?: string
   timezone?: string
+  workplaceFqdn?: string
 }
 
 export interface SettingsPayload {
