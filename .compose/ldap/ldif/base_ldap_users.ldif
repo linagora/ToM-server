@@ -22,6 +22,7 @@ uid: dwho
 cn: Dr Who
 sn: Dwho
 mobile: +33671298765
+workplaceFqdn: tardis.docker.localhost
 userPassword:: ZHdobw==
 
 dn: uid=rtyler,ou=users,dc=docker,dc=localhost
@@ -31,6 +32,7 @@ cn: Rose Tyler
 sn: Rtyler
 mail: rtyler@docker.localhost
 mobile: +33671298767
+workplaceFqdn: badwolf.docker.localhost
 userPassword:: cnR5bGVy
 
 dn: uid=msmith,ou=users,dc=docker,dc=localhost
@@ -47,6 +49,7 @@ uid: okenobi
 cn: Obi-Wan Kenobi
 sn: Okenobi
 mail: okenobi@docker.localhost
+workplaceFqdn: jedi-temple.docker.localhost
 userPassword:: c3RhcndhcnM=
 
 dn: uid=qjinn,ou=users,dc=docker,dc=localhost
@@ -143,6 +146,7 @@ uid: lskywalker
 cn: Luc Skywalker
 sn: Lskywalker
 mail: lskywalker@docker.localhost
+workplaceFqdn: rebel-alliance.docker.localhost
 userPassword:: c3RhcndhcnM=
 
 dn: uid=myoda,ou=users,dc=docker,dc=localhost
@@ -151,6 +155,7 @@ uid: myoda
 cn: Master Yoda
 sn: Myoda
 mail: myoda@docker.localhost
+workplaceFqdn: jedi-council.docker.localhost
 userPassword:: c3RhcndhcnM=
 
 dn: uid=hsolo,ou=users,dc=docker,dc=localhost
@@ -192,6 +197,7 @@ cn: Anna Smith
 mail: annasmith@docker.localhost
 givenName: Anna
 sn: Smith
+workplaceFqdn: acme-corp.docker.localhost
 userPassword:: c3RhcndhcnM=
 
 dn: uid=johnjohnson,dc=docker,dc=localhost
@@ -201,6 +207,7 @@ cn: John Johnson
 mail: johnjohnson@docker.localhost
 givenName: John
 sn: Johnson
+workplaceFqdn: techcorp.docker.localhost
 userPassword:: c3RhcndhcnM=
 
 dn: uid=emilybrown,dc=docker,dc=localhost

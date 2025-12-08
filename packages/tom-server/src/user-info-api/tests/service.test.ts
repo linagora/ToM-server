@@ -39,7 +39,8 @@ const MOCK_DATA = {
     sn: 'LDAP Last Name',
     givenName: 'LDAP First Name',
     mail: 'ldap@example.org',
-    mobile: '+1 555 123 4567'
+    mobile: '+1 555 123 4567',
+    workplaceFqdn: 'workplace.example.com'
   },
   COMMON_SETTINGS: {
     display_name: 'CS Display Name',
@@ -75,13 +76,15 @@ type useProfileTwake = {
   givenName: boolean
   mail: boolean
   phone: boolean
+  workplaceFqdn: boolean
 }
 const useProfileTwakeDefaults: useProfileTwake = {
   displayName: false,
   lastName: false,
   givenName: false,
   mail: false,
-  phone: false
+  phone: false,
+  workplaceFqdn: false
 }
 /**
  * Configure Matrix mock response.
@@ -100,7 +103,7 @@ const mockUserDB = (
     if (Object.values(useProfileDefaults).every((v) => !v)) {
       userDBMock.get.mockResolvedValue([])
     } else {
-      const { displayName, lastName, givenName, mail, phone } =
+      const { displayName, lastName, givenName, mail, phone, workplaceFqdn } =
         useProfileDefaults
       const profile = {}
 
@@ -130,6 +133,11 @@ const mockUserDB = (
       if (phone)
         Object.defineProperty(profile, 'mobile', {
           value: MOCK_DATA.LDAP.mobile,
+          writable: false
+        })
+      if (workplaceFqdn)
+        Object.defineProperty(profile, 'workplaceFqdn', {
+          value: MOCK_DATA.LDAP.workplaceFqdn,
           writable: false
         })
 
@@ -502,6 +510,56 @@ describe('User Info Service GET with: No feature flags ON', () => {
       expect(user).not.toHaveProperty('phones')
       expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
       expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
+      expect(user).not.toHaveProperty('language')
+      expect(user).not.toHaveProperty('timezone')
+    })
+
+    it('Should add workplaceFqdn from UserDB when available', async () => {
+      mockMatrix({ displayName: true, avatar: true })
+      mockUserDB({
+        displayName: true,
+        lastName: true,
+        givenName: true,
+        workplaceFqdn: true
+      })
+
+      const user = await svc.get(MATRIX_MXID)
+
+      expect(user).not.toBeNull()
+      expect(user).toHaveProperty('display_name', MOCK_DATA.MATRIX.displayname)
+      expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
+      expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
+      expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
+      expect(user).toHaveProperty('workplaceFqdn', MOCK_DATA.LDAP.workplaceFqdn)
+      expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
+      expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
+      expect(user).not.toHaveProperty('emails')
+      expect(user).not.toHaveProperty('phones')
+      expect(user).not.toHaveProperty('language')
+      expect(user).not.toHaveProperty('timezone')
+    })
+
+    it('Should not add workplaceFqdn when not available in UserDB', async () => {
+      mockMatrix({ displayName: true, avatar: true })
+      mockUserDB({
+        displayName: true,
+        lastName: true,
+        givenName: true,
+        workplaceFqdn: false
+      })
+
+      const user = await svc.get(MATRIX_MXID)
+
+      expect(user).not.toBeNull()
+      expect(user).toHaveProperty('display_name', MOCK_DATA.MATRIX.displayname)
+      expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
+      expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
+      expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
+      expect(user).not.toHaveProperty('workplaceFqdn')
+      expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
+      expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
+      expect(user).not.toHaveProperty('emails')
+      expect(user).not.toHaveProperty('phones')
       expect(user).not.toHaveProperty('language')
       expect(user).not.toHaveProperty('timezone')
     })

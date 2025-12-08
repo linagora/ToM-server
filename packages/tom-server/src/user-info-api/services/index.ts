@@ -76,7 +76,7 @@ class UserInfoService implements IUserInfoService {
     this.logger.debug(`[UserInfoService].get: Gathering information on: ${id}`)
     try {
       // ------------------------------------------------------------------
-      // 0 - Initialise the result container
+      // 0 - Initialize the result container
       // ------------------------------------------------------------------
       const result: Partial<UserInformation & SettingsPayload> = { uid: id }
 
@@ -147,7 +147,15 @@ class UserInfoService implements IUserInfoService {
       const directoryPromise = (async () => {
         const rows = (await this.userDb.get(
           'users',
-          ['cn', 'sn', 'givenname', 'givenName', 'mail', 'mobile'],
+          [
+            'cn',
+            'sn',
+            'givenname',
+            'givenName',
+            'mail',
+            'mobile',
+            'workplaceFqdn'
+          ],
           { uid: userIdLocalPart }
         )) as unknown as Array<Record<string, string | string[]>>
         return rows?.[0] ?? null
@@ -232,6 +240,8 @@ class UserInfoService implements IUserInfoService {
               idProfileVisibleFields.includes(ProfileField.Phone)))
         )
           result.phones = [directoryRow.mobile as string]
+        if (directoryRow.workplaceFqdn)
+          result.workplaceFqdn = directoryRow.workplaceFqdn as string
       }
 
       // ------------------------------------------------------------------
