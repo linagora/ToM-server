@@ -239,6 +239,19 @@ entryCSN: 20221013213337.593234Z#000000#000#000000
 modifiersName: cn=config
 modifyTimestamp: 20221013213337Z
 
+dn: cn={4}custom,cn=schema,cn=config
+objectClass: olcSchemaConfig
+cn: {4}custom
+olcAttributeTypes: {0}( 1.3.6.1.4.1.99999.1.1.1 NAME 'workplaceFqdn' DESC 'Fully Qualified Domain Name of workplace' EQUALITY caseIgnoreIA5Match SUBSTR caseIgnoreIA5SubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+olcObjectClasses: {0}( 1.3.6.1.4.1.99999.2.1.1 NAME 'workplaceUser' DESC 'User with workplace information' SUP top AUXILIARY MAY ( workplaceFqdn ) )
+structuralObjectClass: olcSchemaConfig
+entryUUID: 713cd51d-df8a-103c-9775-230a0a7123cd
+creatorsName: cn=config
+createTimestamp: 20221013213337Z
+entryCSN: 20221013213337.593235Z#000000#000#000000
+modifiersName: cn=config
+modifyTimestamp: 20221013213337Z
+
 dn: olcDatabase=config,cn=config
 objectClass: olcDatabaseConfig
 olcDatabase: config
