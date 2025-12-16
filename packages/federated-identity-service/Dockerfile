@@ -1,22 +1,8 @@
 # Base for final image
-FROM debian:stable-slim as node-minimal
-
-RUN apt update && \
-    apt -y dist-upgrade && \
-    apt -y install nodejs && \
-    apt autoremove -y && \
-    apt clean && \
-    rm -rf /var/lib/apt/lists/*
+FROM node:18.20.8-alpine AS node-minimal
 
 # Temporary image to build app
-FROM debian:stable-slim as builder
-
-RUN apt update && \
-    apt -y dist-upgrade && \
-    apt -y install nodejs npm && \
-    apt autoremove -y && \
-    apt clean && \
-    rm -rf /var/lib/apt/lists/*
+FROM node:18.20.8-alpine AS builder
 
 WORKDIR /usr/src/app
 
@@ -39,7 +25,7 @@ RUN npm install && npm run build && \
     npm install --production && \
     npm cache clean --force
 
-FROM node-minimal as federation-server
+FROM node-minimal AS federation-server
 
 ENV BASE_URL= \
     CRON_SERVICE= \
@@ -65,7 +51,7 @@ ENV BASE_URL= \
     TRUST_X_FORWARDED_FOR= \
     TRUSTED_SERVERS_ADDRESSES=
 
-COPY --from=1 /usr/src/app /usr/src/app/
+COPY --from=builder /usr/src/app /usr/src/app/
 
 WORKDIR /usr/src/app
 

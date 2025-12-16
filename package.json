@@ -107,5 +107,13 @@
   "optionalDependencies": {
     "@nx/nx-darwin-arm64": "^19.4.0",
     "@nx/nx-linux-x64-gnu": "^19.4.0"
+  },
+  "engines": {
+    "node": "18.20.8",
+    "npm": "10.8.2"
+  },
+  "volta": {
+    "node": "18.20.8",
+    "npm": "10.8.2"
   }
 }

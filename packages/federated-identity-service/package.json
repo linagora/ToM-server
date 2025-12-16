@@ -52,5 +52,13 @@
   },
   "optionalDependencies": {
     "@crowdsec/express-bouncer": "^0.1.0"
+  },
+  "engines": {
+    "node": "18.20.8",
+    "npm": "10.8.2"
+  },
+  "volta": {
+    "node": "18.20.8",
+    "npm": "10.8.2"
   }
 }

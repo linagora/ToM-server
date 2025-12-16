@@ -1,22 +1,8 @@
 # Base for final image
-FROM debian:stable-slim AS node-minimal
-
-RUN apt update && \
-    apt -y dist-upgrade && \
-    apt -y install nodejs && \
-    apt autoremove -y && \
-    apt clean && \
-    rm -rf /var/lib/apt/lists/*
+FROM node:18.20.8-alpine AS node-minimal
 
 # Temporary image to build app
-FROM debian:stable-slim AS builder
-
-RUN apt update && \
-    apt -y dist-upgrade && \
-    apt -y install nodejs npm && \
-    apt autoremove -y && \
-    apt clean && \
-    rm -rf /var/lib/apt/lists/*
+FROM node:18.20.8-alpine AS builder
 
 WORKDIR /usr/src/app
 
@@ -108,7 +94,7 @@ ENV BASE_URL= \
     FEATURE_USER_PROFILE_DEFAULT_VISIBLE_FIELDS= \
     FEATURE_USER_DIRECTORY_ENABLED=
 
-COPY --from=1 /usr/src/app /usr/src/app/
+COPY --from=builder /usr/src/app /usr/src/app/
 
 WORKDIR /usr/src/app
 
