@@ -1,4 +1,4 @@
-image: node:lts-slim
+image: node:18.20.8-slim
 
 stages:
   - build
