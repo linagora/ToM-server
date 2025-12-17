@@ -6,11 +6,9 @@
   }
 
   let { domain }: Props = $props();
-  let existingDomains: string[];
-
-  preferredDomains.subscribe(domains => {
-    existingDomains = domains;
-  })
+  
+  // Use Svelte's automatic subscription syntax (fixes memory leak and initialization)
+  $: existingDomains = $preferredDomains;
 
   const trustDomain = () => {
     preferredDomains.set([...existingDomains, domain]);
