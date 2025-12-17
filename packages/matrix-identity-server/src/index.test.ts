@@ -1821,7 +1821,7 @@ describe('_matrix/identity/v2/terms', () => {
 
     idServer2.logger.info('Adding the policies for the user in the db')
     try {
-      fillPoliciesDB(userId, idServer2, 0)
+      await fillPoliciesDB(userId, idServer2, 0)
       idServer2.logger.info('Successfully added policies for the user')
     } catch (e) {
       idServer2.logger.error('Error while setting up policies for the user', e)
@@ -1856,7 +1856,7 @@ describe('_matrix/identity/v2/terms', () => {
     beforeAll(async () => {
       idServer2.logger.info('Accepting the policies for the user in the db')
       try {
-        fillPoliciesDB(userId, idServer2, 1)
+        await fillPoliciesDB(userId, idServer2, 1)
         idServer2.logger.info('Successfully accepted policies for the user')
       } catch (e) {
         idServer2.logger.error('Error while accepting policies for the user', e)
