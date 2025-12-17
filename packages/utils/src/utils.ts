@@ -200,9 +200,10 @@ export const extractQueryParameters = (
 ): Record<string, string> => {
   let queryParams: Record<string, string> = {}
 
-  if (req instanceof Request) {
+  // Use property-based check instead of instanceof (interfaces don't exist at runtime)
+  if ('query' in req && typeof req.query === 'object' && req.query !== null) {
     queryParams = Object.fromEntries(
-      Object.entries((req as Request).query).filter(
+      Object.entries(req.query).filter(
         ([_, value]) => typeof value === 'string'
       )
     ) as Record<string, string>
