@@ -14,6 +14,23 @@ import {
 } from './index'
 import { type TwakeLogger } from '@twake/logger'
 
+// Test helper functions
+const expectErrorResponse = (
+  mockResponse: Partial<Response>,
+  statusCode: number = 400
+): void => {
+  expect(mockResponse.writeHead).toHaveBeenCalledWith(
+    statusCode,
+    expect.any(Object)
+  )
+  expect(mockResponse.write).toHaveBeenCalled()
+  expect(mockResponse.end).toHaveBeenCalled()
+}
+
+const expectNoResponse = (mockResponse: Partial<Response>): void => {
+  expect(mockResponse.writeHead).not.toHaveBeenCalled()
+}
+
 describe('Utility Functions', () => {
   let mockResponse: Partial<Response & http.ServerResponse>
   let mockLogger: TwakeLogger
@@ -160,7 +177,7 @@ describe('Utility Functions', () => {
         }
       )
 
-      expect(mockResponse.writeHead).not.toHaveBeenCalled()
+      expectNoResponse(mockResponse)
     })
 
     it('should return an error for missing parameters', () => {
@@ -177,12 +194,7 @@ describe('Utility Functions', () => {
         }
       )
 
-      expect(mockResponse.writeHead).toHaveBeenCalledWith(
-        400,
-        expect.any(Object)
-      )
-      expect(mockResponse.write).toHaveBeenCalled()
-      expect(mockResponse.end).toHaveBeenCalled()
+      expectErrorResponse(mockResponse)
     })
 
     it('should log a warning for additional parameters', () => {
@@ -200,7 +212,7 @@ describe('Utility Functions', () => {
       )
 
       expect(mockLogger.warn).toHaveBeenCalled()
-      expect(mockResponse.writeHead).not.toHaveBeenCalled()
+      expectNoResponse(mockResponse)
     })
   })
 
@@ -221,7 +233,7 @@ describe('Utility Functions', () => {
         }
       )
 
-      expect(mockResponse.writeHead).not.toHaveBeenCalled()
+      expectNoResponse(mockResponse)
     })
     it('should return an error for missing parameters', () => {
       const desc = { key: true, missing: true }
@@ -239,12 +251,7 @@ describe('Utility Functions', () => {
         }
       )
 
-      expect(mockResponse.writeHead).toHaveBeenCalledWith(
-        400,
-        expect.any(Object)
-      )
-      expect(mockResponse.write).toHaveBeenCalled()
-      expect(mockResponse.end).toHaveBeenCalled()
+      expectErrorResponse(mockResponse)
     })
     it('should return an error for invalid values', () => {
       const desc = { key: true }
@@ -262,12 +269,7 @@ describe('Utility Functions', () => {
         }
       )
 
-      expect(mockResponse.writeHead).toHaveBeenCalledWith(
-        400,
-        expect.any(Object)
-      )
-      expect(mockResponse.write).toHaveBeenCalled()
-      expect(mockResponse.end).toHaveBeenCalled()
+      expectErrorResponse(mockResponse)
     })
   })
 
