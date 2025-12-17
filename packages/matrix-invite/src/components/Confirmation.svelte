@@ -6,9 +6,9 @@
   }
 
   let { domain }: Props = $props();
-  
-  // Use Svelte's automatic subscription syntax (fixes memory leak and initialization)
-  $: existingDomains = $preferredDomains;
+
+  // Use Svelte 5 derived state (fixes memory leak and initialization)
+  let existingDomains = $derived($preferredDomains);
 
   const trustDomain = () => {
     preferredDomains.set([...existingDomains, domain]);
