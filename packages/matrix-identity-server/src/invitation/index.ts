@@ -1,6 +1,5 @@
-import { randomString } from '@twake/crypto'
+import { Hash, randomString } from '@twake/crypto'
 import fs from 'fs'
-import fetch from 'node-fetch'
 import type MatrixIdentityServer from '../index'
 import { type Config } from '../types'
 import {
@@ -12,8 +11,8 @@ import {
 } from '@twake/utils'
 import Mailer from '../utils/mailer'
 import validator from 'validator'
-import { buildUrl } from '../utils'
 import { SmsService } from '../utils/sms-service'
+import { lookup3pid } from '../lookup'
 
 interface storeInvitationArgs {
   address: string
@@ -136,6 +135,7 @@ const validMediums: string[] = ['email', 'msisdn']
 
 // Regular expressions for different mediums
 const validEmailRe = /^\w[+.-\w]*\w@\w[.-\w]*\w\.\w{2,6}$/
+const validPhoneRe = /^\d{4,16}$/
 
 const redactAddress = (medium: string, address: string): string => {
   switch (medium) {
@@ -186,6 +186,7 @@ const StoreInvit = <T extends string = never>(
   return (req, res) => {
     idServer.authenticate(req, res, (_data, _id) => {
       jsonContent(req, res, idServer.logger, (obj) => {
+        // eslint-disable-next-line @typescript-eslint/no-misused-promises
         validateParameters(res, schema, obj, idServer.logger, async (obj) => {
           try {
             const medium = (obj as storeInvitationArgs).medium
@@ -228,8 +229,6 @@ const StoreInvit = <T extends string = never>(
             }
             // Call to the lookup API to check for any existing third-party identifiers
             try {
-              const authHeader = req.headers.authorization as string
-              const validToken = authHeader.split(' ')[1]
               const papperQuery = (await idServer.db.get('keys', ['data'], {
                 name: 'pepper'
               })) as unknown as Record<'data', string>[]
@@ -241,39 +240,30 @@ const StoreInvit = <T extends string = never>(
 
               const _pepper = papperQuery[0].data
 
-              const response = await fetch(
-                buildUrl(idServer.conf.base_url, '/_matrix/identity/v2/lookup'),
-                {
-                  method: 'POST',
-                  headers: {
-                    Authorization: `Bearer ${validToken}`,
-                    Accept: 'application/json',
-                    'Content-Type': 'application/json'
-                  },
-                  body: JSON.stringify({
-                    addresses: [mediumAddress],
-                    algorithm: 'sha256',
-                    pepper: _pepper
-                  })
-                }
+              // Hash the address for lookup
+              // Note: for hashing, 'email' medium uses 'mail' field name
+              const hashField = medium === 'email' ? 'mail' : medium
+              const hash = new Hash()
+              await hash.ready
+              const hashedAddress = hash.sha256(
+                `${mediumAddress} ${hashField} ${_pepper}`
               )
 
-              const result = (await response.json()) as {
-                mappings: Record<string, string>
-              }
-              const foundMappings =
-                result &&
-                result.mappings &&
-                Object.keys(result.mappings).length > 0
+              // Use the lookup function directly instead of making an HTTP call
+              const [mappings] = await lookup3pid(idServer, {
+                addresses: [hashedAddress]
+              })
 
-              if (response.status === 200 && foundMappings) {
+              const foundMappings = Object.keys(mappings).length > 0
+
+              if (foundMappings) {
                 send(res, 400, {
                   errcode: 'M_THREEPID_IN_USE',
                   error:
                     'The third party identifier is already in use by another user.',
                   mxid: (obj as storeInvitationArgs).sender
                 })
-              } else if (response.status === 200 && !foundMappings) {
+              } else {
                 // Create invitation token
                 const ephemeralKey = await idServer.db.createKeypair(
                   'longTerm',
@@ -362,31 +352,14 @@ const StoreInvit = <T extends string = never>(
                     /* istanbul ignore next */
                     send(res, 500, errMsg('unknown', err))
                   })
-              } else {
-                console.error('unexpected response status', {
-                  status: response.status,
-                  result
-                })
-                /* istanbul ignore next */
-                idServer.logger.error(
-                  'Unexpected response statusCode from the /_matrix/identity/v2/lookup API'
-                )
-                send(
-                  res,
-                  500,
-                  errMsg(
-                    'unknown',
-                    'Unexpected response statusCode from the /_matrix/identity/v2/lookup API'
-                  )
-                )
               }
             } catch (err) {
-              console.error('error while making a call to the lookup API', {
+              console.error('error while checking for existing 3pid', {
                 err
               })
               /* istanbul ignore next */
               idServer.logger.error(
-                'Error while making a call to the lookup API (/_matrix/identity/v2/lookup)',
+                'Error while checking for existing third-party identifiers',
                 err
               )
               /* istanbul ignore next */

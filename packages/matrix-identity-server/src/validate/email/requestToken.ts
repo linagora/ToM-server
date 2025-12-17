@@ -29,6 +29,50 @@ const schema = {
 
 const clientSecretRe = /^[0-9a-zA-Z.=_-]{6,255}$/
 const validEmailRe = /^\w[+.-\w]*\w@\w[.-\w]*\w\.\w{2,6}$/
+const maxAttempts = 1000000000
+
+interface ValidationError {
+  statusCode: number
+  error: any
+}
+
+const validateRequestTokenArgs = (
+  args: RequestTokenArgs
+): ValidationError | null => {
+  const { client_secret, email, next_link, send_attempt } = args
+
+  if (!clientSecretRe.test(client_secret)) {
+    return {
+      statusCode: 400,
+      error: errMsg('invalidParam', 'invalid client_secret')
+    }
+  }
+
+  if (!validEmailRe.test(email)) {
+    return { statusCode: 400, error: errMsg('invalidEmail') }
+  }
+
+  // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+  if (next_link && !isValidUrl(next_link)) {
+    return {
+      statusCode: 400,
+      error: errMsg('invalidParam', 'invalid next_link')
+    }
+  }
+
+  if (
+    typeof send_attempt !== 'number' ||
+    send_attempt < 1 ||
+    send_attempt > maxAttempts
+  ) {
+    return {
+      statusCode: 400,
+      error: errMsg('invalidParam', 'Invalid send attempt')
+    }
+  }
+
+  return null
+}
 
 const preConfigureTemplate = (
   template: string,
@@ -80,7 +124,7 @@ const mailBody = (
   )
 }
 
-const fillTable = <T extends string = never>(
+const fillTableAndSend = <T extends string = never>(
   idServer: MatrixIdentityServer<T>,
   dst: string,
   clientSecret: string,
@@ -123,14 +167,14 @@ const fillTable = <T extends string = never>(
           // istanbul ignore next
           idServer.logger.error('Insertion error', err)
           // istanbul ignore next
-          send(res, 400, errMsg('unknown', err))
+          send(res, 400, errMsg('unknown'))
         })
     })
     .catch((err) => {
       /* istanbul ignore next */
       idServer.logger.error('Token error', err)
       /* istanbul ignore next */
-      send(res, 400, errMsg('unknown', err))
+      send(res, 400, errMsg('unknown'))
     })
 }
 
@@ -149,76 +193,75 @@ const RequestToken = <T extends string = never>(
     idServer.authenticate(req, res, (idToken: tokenContent) => {
       jsonContent(req, res, idServer.logger, (obj) => {
         validateParameters(res, schema, obj, idServer.logger, (obj) => {
-          const clientSecret = (obj as RequestTokenArgs).client_secret
-          const sendAttempt = (obj as RequestTokenArgs).send_attempt
-          const dst = (obj as RequestTokenArgs).email
-          const nextLink = (obj as RequestTokenArgs).next_link
-          if (!clientSecretRe.test(clientSecret)) {
-            send(res, 400, errMsg('invalidParam', 'invalid client_secret'))
-          } else if (!validEmailRe.test(dst)) {
-            send(res, 400, errMsg('invalidEmail'))
+          const args = obj as RequestTokenArgs
+          const validationError = validateRequestTokenArgs(args)
+
+          if (validationError !== null) {
+            send(res, validationError.statusCode, validationError.error)
+            return
           }
-          // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
-          else if (nextLink && !isValidUrl(nextLink)) {
-            send(res, 400, errMsg('invalidParam', 'invalid next_link'))
-          } else {
-            idServer.db
-              .get('mappings', ['send_attempt', 'session_id'], {
-                client_secret: clientSecret,
-                address: dst
-              })
-              .then((rows) => {
-                if (rows.length > 0) {
-                  if (sendAttempt === rows[0].send_attempt) {
-                    send(res, 200, { sid: rows[0].session_id })
-                  } else {
-                    idServer.db
-                      .deleteEqualAnd(
-                        'mappings',
-                        { field: 'client_secret', value: clientSecret },
-                        { field: 'session_id', value: rows[0].session_id }
-                      )
-                      .then(() => {
-                        fillTable(
-                          // The calls to send are made in this function
-                          idServer,
-                          dst,
-                          clientSecret,
-                          sendAttempt,
-                          verificationTemplate,
-                          transport,
-                          res,
-                          nextLink
-                        )
-                      })
-                      .catch((err) => {
-                        // istanbul ignore next
-                        idServer.logger.error('Deletion error', err)
-                        // istanbul ignore next
-                        send(res, 400, errMsg('unknown', err))
-                      })
-                  }
+
+          const clientSecret = args.client_secret
+          const sendAttempt = args.send_attempt
+          const dst = args.email
+          const nextLink = args.next_link
+
+          idServer.db
+            .get('mappings', ['send_attempt', 'session_id'], {
+              client_secret: clientSecret,
+              address: dst
+            })
+            .then((rows) => {
+              if (rows.length > 0) {
+                if (sendAttempt === rows[0].send_attempt) {
+                  send(res, 200, { sid: rows[0].session_id })
                 } else {
-                  fillTable(
-                    // The calls to send are made in this function
-                    idServer,
-                    dst,
-                    clientSecret,
-                    sendAttempt,
-                    verificationTemplate,
-                    transport,
-                    res,
-                    nextLink
-                  )
+                  idServer.db
+                    .deleteEqualAnd(
+                      'mappings',
+                      { field: 'client_secret', value: clientSecret },
+                      { field: 'session_id', value: rows[0].session_id }
+                    )
+                    .then(() => {
+                      fillTableAndSend(
+                        // The calls to send are made in this function
+                        idServer,
+                        dst,
+                        clientSecret,
+                        sendAttempt,
+                        verificationTemplate,
+                        transport,
+                        res,
+                        nextLink
+                      )
+                    })
+                    .catch((err) => {
+                      // istanbul ignore next
+                      idServer.logger.error('Deletion error', err)
+                      // istanbul ignore next
+                      send(res, 400, errMsg('unknown'))
+                    })
                 }
-              })
-              .catch((err) => {
-                /* istanbul ignore next */
-                idServer.logger.error('Send_attempt error', err)
-                /* istanbul ignore next */
-                send(res, 400, errMsg('unknown', err))
-              })
-          }
+              } else {
+                fillTableAndSend(
+                  // The calls to send are made in this function
+                  idServer,
+                  dst,
+                  clientSecret,
+                  sendAttempt,
+                  verificationTemplate,
+                  transport,
+                  res,
+                  nextLink
+                )
+              }
+            })
+            .catch((err) => {
+              /* istanbul ignore next */
+              idServer.logger.error('Send_attempt error', err)
+              /* istanbul ignore next */
+              send(res, 400, errMsg('unknown'))
+            })
         })
       })
     })

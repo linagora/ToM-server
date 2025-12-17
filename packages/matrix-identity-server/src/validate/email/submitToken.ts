@@ -68,9 +68,19 @@ const SubmitToken = <T extends string = never>(
                       }
                       send(res, 200, { success: true })
                     })
-                    .catch((e) => {})
+                    .catch((e) => {
+                      // istanbul ignore next
+                      idServer.logger.error('Error while updating token', e)
+                      // istanbul ignore next
+                      send(res, 500, errMsg('unknown'))
+                    })
                 })
-                .catch((e) => {})
+                .catch((e) => {
+                  // istanbul ignore next
+                  idServer.logger.error('Error while deleting token', e)
+                  // istanbul ignore next
+                  send(res, 500, errMsg('unknown'))
+                })
             } else {
               /* istanbul ignore next */
               send(res, 400, errMsg('invalidParam', 'sid or secret mismatch'))

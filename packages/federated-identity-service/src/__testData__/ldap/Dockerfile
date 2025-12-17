@@ -2,7 +2,7 @@ FROM debian:bullseye-20241223-slim
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Update system and install dependencies 
+# Update system and install dependencies
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     apt-transport-https \
