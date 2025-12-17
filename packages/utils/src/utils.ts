@@ -226,6 +226,20 @@ export type queryParametersType = Record<
   'string' | 'number' | 'boolean'
 >
 
+/* istanbul ignore next */
+const validateNumberParam = (key: string, value: string): void => {
+  if (isNaN(parseInt(value, 10))) {
+    throw new Error(`Invalid number for query parameter: ${key}`)
+  }
+}
+
+/* istanbul ignore next */
+const validateBooleanParam = (key: string, value: string): void => {
+  if (value !== 'true' && value !== 'false') {
+    throw new Error(`Invalid boolean for query parameter: ${key}`)
+  }
+}
+
 /* istanbul ignore next */ // Used in the draft version of the /sync API
 export const checkTypes = (
   queryParams: Record<string, string>,
@@ -241,13 +255,9 @@ export const checkTypes = (
     }
 
     if (type === 'number') {
-      if (isNaN(parseInt(value, 10))) {
-        throw new Error(`Invalid number for query parameter: ${key}`)
-      }
+      validateNumberParam(key, value)
     } else if (type === 'boolean') {
-      if (value !== 'true' && value !== 'false') {
-        throw new Error(`Invalid boolean for query parameter: ${key}`)
-      }
+      validateBooleanParam(key, value)
     }
     // 'string' type doesn't need to be checked
   })
