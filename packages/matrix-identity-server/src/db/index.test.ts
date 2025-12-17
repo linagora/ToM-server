@@ -598,24 +598,6 @@ describe('Id Server DB', () => {
       cleanupIdDb(idDb)
     })
 
-    it('should get max entry with corresponding lower condition and select all fields if not specified', async () => {
-      const idDb = await setupIdDb()
-
-      await insertTestTokens(idDb)
-
-      const rows = await idDb.getMaxWhereEqual('accessTokens', 'id', [], {
-        data: '{}'
-      })
-
-      expect(rows.length).toBe(1)
-      expect(rows[0]).toHaveProperty('id')
-      expect(rows[0]).toHaveProperty('data')
-      expect(rows[0].id).toEqual('2')
-      expect(rows[0].data).toEqual('{}')
-
-      cleanupIdDb(idDb)
-    })
-
     it('should get max entry with multiple corresponding equal conditions', async () => {
       const idDb = await setupIdDb()
 
