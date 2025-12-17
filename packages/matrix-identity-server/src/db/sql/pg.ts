@@ -324,9 +324,8 @@ class Pg<T extends string> extends SQL<T> implements IdDbBackend<T> {
           Object.keys(filterFields)
             .filter(
               (key) =>
-                joinFields != null &&
-                joinFields[key] != null &&
-                joinFields[key].toString() !== [].toString()
+                filterFields[key] != null &&
+                filterFields[key].toString() !== [].toString()
             )
             .forEach((key) => {
               localCondition += localCondition !== '' ? ' AND ' : ''
