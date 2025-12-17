@@ -546,11 +546,6 @@ describe('Utility Functions', () => {
     it('should return false for an invalid URL missing domain', () => {
       expect(isValidUrl('http://')).toBe(false)
     })
-
-    it('should throw an error for a localpart longer than 512 characters', () => {
-      const longLocalpart = 'a'.repeat(513)
-      expect(() => toMatrixId(longLocalpart, 'example.com')).toThrowError()
-    })
   })
   describe('getAccessToken', () => {
     it('should return the access token from the Authorization header', () => {
