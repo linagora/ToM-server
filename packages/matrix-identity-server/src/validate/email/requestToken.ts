@@ -124,14 +124,14 @@ const fillTableAndSend = <T extends string = never>(
           // istanbul ignore next
           idServer.logger.error('Insertion error', err)
           // istanbul ignore next
-          send(res, 400, errMsg('unknown', err.toString()))
+          send(res, 400, errMsg('unknown'))
         })
     })
     .catch((err) => {
       /* istanbul ignore next */
       idServer.logger.error('Token error', err)
       /* istanbul ignore next */
-      send(res, 400, errMsg('unknown', err.toString()))
+      send(res, 400, errMsg('unknown'))
     })
 }
 
@@ -201,7 +201,7 @@ const RequestToken = <T extends string = never>(
                         // istanbul ignore next
                         idServer.logger.error('Deletion error', err)
                         // istanbul ignore next
-                        send(res, 400, errMsg('unknown', err.toString()))
+                        send(res, 400, errMsg('unknown'))
                       })
                   }
                 } else {
@@ -222,7 +222,7 @@ const RequestToken = <T extends string = never>(
                 /* istanbul ignore next */
                 idServer.logger.error('Send_attempt error', err)
                 /* istanbul ignore next */
-                send(res, 400, errMsg('unknown', err.toString()))
+                send(res, 400, errMsg('unknown'))
               })
           }
         })
