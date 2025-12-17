@@ -123,23 +123,25 @@ const PostTerms = <T extends string = never>(
                 })
               })
               if (done.length > 0) {
-                done.forEach((policyName) => {
-                  idServer.db
-                    .updateAnd(
+                Promise.all(
+                  done.map((policyName) =>
+                    idServer.db.updateAnd(
                       'userPolicies',
                       { accepted: 1 },
                       { field: 'user_id', value: userId },
                       { field: 'policy_name', value: policyName }
                     )
-                    .then(() => {})
-                    .catch((e) => {
-                      // istanbul ignore next
-                      idServer.logger.error('Error updating user policies', e)
-                      // istanbul ignore next
-                      send(res, 500, errMsg('unknown'))
-                    })
-                })
-                send(res, 200, {})
+                  )
+                )
+                  .then(() => {
+                    send(res, 200, {})
+                  })
+                  .catch((e) => {
+                    // istanbul ignore next
+                    idServer.logger.error('Error updating user policies', e)
+                    // istanbul ignore next
+                    send(res, 500, errMsg('unknown'))
+                  })
               } else {
                 send(res, 400, errMsg('unrecognized', 'Unknown policy'))
               }
