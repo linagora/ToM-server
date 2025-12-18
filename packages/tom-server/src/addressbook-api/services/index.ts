@@ -725,10 +725,14 @@ export class AddressbookService implements IAddressbookService {
       for (let attempt = 0; attempt < maxRetries; attempt++) {
         try {
           this.logger.info(
-            '[AddressbookService._getOrCreateUserAddressBook] Creating addressbook (attempt ' + (attempt + 1) + '/' + maxRetries + ')'
+            '[AddressbookService._getOrCreateUserAddressBook] Creating addressbook (attempt ' +
+              (attempt + 1) +
+              '/' +
+              maxRetries +
+              ')'
           )
           userAddressbook = await this._createUserAddressBook(owner)
-          
+
           if (userAddressbook != null) {
             this.logger.info(
               '[AddressbookService._getOrCreateUserAddressBook] Successfully created new addressbook.',
@@ -740,10 +744,12 @@ export class AddressbookService implements IAddressbookService {
           // If creation failed due to duplicate key constraint, try fetching again
           if (this._isDuplicateKeyError(error)) {
             this.logger.warn(
-              '[AddressbookService._getOrCreateUserAddressBook] Duplicate key error on attempt ' + (attempt + 1) + ', fetching existing addressbook.',
+              '[AddressbookService._getOrCreateUserAddressBook] Duplicate key error on attempt ' +
+                (attempt + 1) +
+                ', fetching existing addressbook.',
               { owner, error: error.message }
             )
-            
+
             try {
               userAddressbook = await this._getUserAddressBook(owner)
               if (userAddressbook) {
@@ -759,14 +765,16 @@ export class AddressbookService implements IAddressbookService {
                 { owner, error: fetchError.message }
               )
             }
-            
+
             // Wait before retry (exponential backoff: 100ms, 200ms, 400ms)
             if (attempt < maxRetries - 1) {
               const delayMs = Math.pow(2, attempt) * 100
               this.logger.debug(
-                '[AddressbookService._getOrCreateUserAddressBook] Waiting ' + delayMs + 'ms before retry'
+                '[AddressbookService._getOrCreateUserAddressBook] Waiting ' +
+                  delayMs +
+                  'ms before retry'
               )
-              await new Promise(resolve => setTimeout(resolve, delayMs))
+              await new Promise((resolve) => setTimeout(resolve, delayMs))
             }
           } else {
             // For non-duplicate errors, rethrow immediately
@@ -781,7 +789,7 @@ export class AddressbookService implements IAddressbookService {
           }
         }
       }
-      
+
       // Throw an error if we couldn't get or create an addressbook after all retries
       if (userAddressbook == null) {
         this.logger.error(
@@ -790,7 +798,9 @@ export class AddressbookService implements IAddressbookService {
         this.logger.silly(
           '[AddressbookService._getOrCreateUserAddressBook] Exiting method (error after retries).'
         )
-        throw new Error('Failed to get or create addressbook after multiple attempts')
+        throw new Error(
+          'Failed to get or create addressbook after multiple attempts'
+        )
       }
     }
 
@@ -808,22 +818,24 @@ export class AddressbookService implements IAddressbookService {
    */
   private _isDuplicateKeyError(error: any): boolean {
     if (!error) return false
-    
+
     const message = error.message?.toLowerCase() || ''
-    
+
     // SQLite duplicate key errors
-    if (message.includes('unique constraint') || message.includes('sqlite_constraint')) {
+    if (
+      message.includes('unique constraint') ||
+      message.includes('sqlite_constraint')
+    ) {
       return true
     }
-    
+
     // PostgreSQL duplicate key errors
     if (message.includes('duplicate key') || error.code === '23505') {
       return true
     }
-    
+
     return false
   }
-
 
   /**
    * Fetches the user addressbook
