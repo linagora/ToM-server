@@ -410,61 +410,207 @@ export default class RoomService {
   }
 
   /**
-   * Determines the default power level content based on the room creation payload's preset
-   * or whether it's a direct chat.
+   * Normalizes the room creation payload by applying defaults and enforcing business rules.
    *
-   * @param payload - The room creation payload.
-   * @returns The appropriate PowerLevelEventContent object from the configuration,
-   * or `undefined` if an error occurs during determination.
+   * Default application logic:
+   * - No preset, no visibility → preset: private_chat, visibility: private
+   * - Only visibility → derive preset from visibility
+   * - Only preset → derive visibility from preset
+   *
+   * Business rules:
+   * - is_direct defaults to false when not provided
+   * - Channel presets (private_channel, public_channel) force is_direct to false
+   * - Unknown preset values are treated as if no preset was given
+   *
+   * @param payload - The original room creation payload
+   * @returns Normalized payload with preset, visibility, and is_direct set
+   * @private
+   */
+  private _normalizePayload = (
+    payload: Partial<CreateRoomPayload>
+  ): Partial<CreateRoomPayload> & {
+    preset: string
+    visibility: 'public' | 'private'
+    is_direct: boolean
+  } => {
+    this.logger.silly('Entering _normalizePayload method.', {
+      originalPreset: payload.preset,
+      originalVisibility: payload.visibility,
+      originalIsDirect: payload.is_direct
+    })
+
+    let preset = payload.preset
+    let visibility = payload.visibility
+    let is_direct = payload.is_direct
+
+    // Treat unknown preset values as if no preset was given
+    const validPresets = [
+      'private_chat',
+      'public_chat',
+      'trusted_private_chat',
+      'private_channel',
+      'public_channel'
+    ]
+    if (preset && !validPresets.includes(preset)) {
+      this.logger.warn(
+        'Unknown preset value, treating as if no preset was provided.',
+        { preset }
+      )
+      preset = undefined
+    }
+
+    // Step 1: Apply defaults based on what's missing
+    if (!visibility && !preset) {
+      this.logger.debug(
+        'No preset or visibility provided, applying defaults: preset=private_chat, visibility=private'
+      )
+      preset = 'private_chat'
+      visibility = 'private'
+    } else if (!visibility && preset) {
+      this.logger.debug(
+        'Only preset provided, deriving visibility from preset.'
+      )
+      visibility = this._getVisibilityFromPreset(preset)
+    } else if (visibility && !preset) {
+      this.logger.debug(
+        'Only visibility provided, deriving preset from visibility.'
+      )
+      preset = this._getPresetFromVisibility(visibility)
+    } else {
+      this.logger.debug('Both preset and visibility provided, using as-is.')
+    }
+
+    // Step 2: Validate and enforce is_direct restrictions
+    const isChannelPreset =
+      preset === 'private_channel' || preset === 'public_channel'
+
+    if (isChannelPreset && is_direct === true) {
+      this.logger.warn(
+        'is_direct=true not allowed for channel presets, forcing to false.',
+        {
+          preset,
+          originalIsDirect: is_direct
+        }
+      )
+      is_direct = false
+    } else if (is_direct === undefined) {
+      this.logger.debug('is_direct not provided, defaulting to false.')
+      is_direct = false
+    }
+
+    this.logger.info('Payload normalized successfully.', {
+      preset,
+      visibility,
+      is_direct
+    })
+
+    return {
+      ...payload,
+      preset,
+      visibility,
+      is_direct
+    }
+  }
+
+  /**
+   * Determines the appropriate power level configuration based on the room preset and is_direct flag.
+   *
+   * Logic:
+   * 1. Select base preset configuration from config
+   * 2. If is_direct=true and preset allows it, apply is_direct overrides
+   * 3. Channel presets use their specific configurations
+   *
+   * @param payload - The normalized room creation payload
+   * @returns The appropriate PowerLevelEventContent, or undefined on error
    * @private
    */
   private _getDefaultPowerLevelContent = (
     payload: Partial<CreateRoomPayload>
   ): PowerLevelEventContent | undefined => {
     this.logger.silly('Entering _getDefaultPowerLevelContent method.', {
-      payloadKeys: Object.keys(payload || {}),
-      inviteLength: payload.invite?.length || 0,
-      preset: payload.preset
+      preset: payload.preset,
+      is_direct: payload.is_direct
     })
 
     try {
-      const { preset } = payload
-      // A direct chat is typically defined as having exactly one invitee (the other user).
-      const isDirect = payload.invite && payload.invite.length === 1
-      this.logger.debug(
-        'Checking conditions for default power level content.',
-        {
-          preset,
-          isDirect
-        }
-      )
+      const { preset, is_direct } = payload
 
-      if (isDirect) {
-        this.logger.silly('Returning direct_chat permissions from config.')
-        return this.config.room_permissions.direct_chat
-      } else if (preset === 'public_chat') {
-        this.logger.silly(
-          'Returning public_group_chat permissions from config.'
-        )
-        return this.config.room_permissions.public_group_chat
+      // Step 1: Select base preset configuration
+      let basePowerLevels: PowerLevelEventContent | undefined
+
+      switch (preset) {
+        case 'trusted_private_chat':
+          this.logger.debug(
+            'Using trusted_private_chat (private_group_chat) permissions.'
+          )
+          basePowerLevels = this.config.room_permissions.private_group_chat
+          break
+
+        case 'private_chat':
+          this.logger.debug(
+            'Using private_chat (private_group_chat) permissions.'
+          )
+          basePowerLevels = this.config.room_permissions.private_group_chat
+          break
+
+        case 'public_chat':
+          this.logger.debug(
+            'Using public_chat (public_group_chat) permissions.'
+          )
+          basePowerLevels = this.config.room_permissions.public_group_chat
+          break
+
+        case 'private_channel':
+          this.logger.debug('Using private_channel permissions.')
+          basePowerLevels = this.config.room_permissions.private_channel
+          break
+
+        case 'public_channel':
+          this.logger.debug('Using public_channel permissions.')
+          basePowerLevels = this.config.room_permissions.public_channel
+          break
+
+        default:
+          this.logger.warn(
+            'Unknown preset, falling back to private_group_chat.',
+            { preset }
+          )
+          basePowerLevels = this.config.room_permissions.private_group_chat
       }
 
-      // Default to private_group_chat permissions if no other conditions are met.
-      this.logger.silly(
-        'Returning private_group_chat permissions (default) from config.'
+      if (!basePowerLevels) {
+        this.logger.error(
+          'Failed to retrieve base power levels from configuration.',
+          { preset }
+        )
+        return undefined
+      }
+
+      // Step 2: Apply is_direct overrides if applicable
+      const isChannelPreset =
+        preset === 'private_channel' || preset === 'public_channel'
+
+      if (is_direct === true && !isChannelPreset) {
+        this.logger.info('Applying is_direct power level overrides.', {
+          preset
+        })
+        return this._applyDirectChatOverrides(basePowerLevels)
+      }
+
+      this.logger.debug(
+        'Returning base preset power levels without is_direct overrides.'
       )
-      return this.config.room_permissions.private_group_chat
+      return basePowerLevels
     } catch (error: any) {
       this.logger.error(
-        'Failed to get default power level content due to an exception.',
+        'Exception occurred while determining power level content.',
         {
           message: error.message,
           stack: error.stack,
-          errorName: error.name
+          errorName: error.name,
+          preset: payload.preset
         }
       )
-      // Returning undefined allows the calling function to proceed without a power level override,
-      // relying on Matrix server defaults.
       return undefined
     }
   }
