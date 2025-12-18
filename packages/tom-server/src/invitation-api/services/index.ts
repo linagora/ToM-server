@@ -34,16 +34,13 @@ export default class InvitationService implements IInvitationService {
     private readonly db: TwakeDB,
     matrixdb: MatrixDB,
     private readonly logger: TwakeLogger,
-    private readonly config: Config
+    private readonly config: Config,
+    userInfoService?: UserInfoService
   ) {
     this.notificationService = new NotificationService(config, logger)
-    this.userInfoService = new UserInfoService(
-      userdb,
-      db,
-      matrixdb,
-      config,
-      logger
-    )
+    this.userInfoService =
+      userInfoService ??
+      new UserInfoService(userdb, db, matrixdb, config, logger)
   }
 
   /**
