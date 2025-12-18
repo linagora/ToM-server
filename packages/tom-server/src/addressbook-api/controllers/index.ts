@@ -9,8 +9,12 @@ export default class AddressbookApiController
 {
   private readonly service: IAddressbookService
 
-  constructor(db: TwakeDB, private readonly logger: TwakeLogger) {
-    this.service = new AddressbookService(db, logger)
+  constructor(
+    db: TwakeDB,
+    private readonly logger: TwakeLogger,
+    addressbookService?: IAddressbookService
+  ) {
+    this.service = addressbookService ?? new AddressbookService(db, logger)
   }
 
   /**
