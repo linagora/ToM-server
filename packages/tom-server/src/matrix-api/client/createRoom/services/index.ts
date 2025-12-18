@@ -175,8 +175,8 @@ export default class RoomService {
 
   /**
    * Prepares the request body for room creation, including initial power level overrides.
-   * This function calculates initial power levels for invited users and the room owner,
-   * and determines the owner's demotion level after room creation.
+   * This function normalizes the payload, calculates initial power levels for invited users
+   * and the room owner, and determines the owner's demotion level after room creation.
    *
    * @param payload - The initial room creation payload.
    * @param roomOwner - The ID of the room owner.
@@ -194,19 +194,43 @@ export default class RoomService {
       roomOwner
     })
 
-    // Start with a deep clone of the original payload to avoid modifying the input object.
-    let body: Partial<CreateRoomPayload> = deepClone(payload)
+    // STEP 1: Normalize the payload (apply defaults, enforce rules)
+    const normalizedPayload = this._normalizePayload(payload)
+
+    this.logger.debug('Payload normalized.', {
+      originalPreset: payload.preset,
+      normalizedPreset: normalizedPayload.preset,
+      normalizedVisibility: normalizedPayload.visibility,
+      normalizedIsDirect: normalizedPayload.is_direct
+    })
+
+    // STEP 2: Map preset for Matrix server (channels → standard presets)
+    const matrixPreset = this._mapPresetForMatrix(normalizedPayload.preset)
+
+    if (matrixPreset !== normalizedPayload.preset) {
+      this.logger.info('Preset mapped for Matrix server compatibility.', {
+        originalPreset: normalizedPayload.preset,
+        mappedPreset: matrixPreset
+      })
+    }
+
+    // STEP 3: Build initial body with mapped preset for Matrix server
+    let body: Partial<CreateRoomPayload> = {
+      ...normalizedPayload,
+      preset: matrixPreset as any // Use mapped preset
+    }
+
     let ownerDemotionLevel: number | undefined
 
-    // Determine the base power level content based on room preset or direct chat status.
-    const defaultPowerLevelContent = this._getDefaultPowerLevelContent(payload)
+    // STEP 4: Determine power level content using ORIGINAL preset (before mapping)
+    const defaultPowerLevelContent =
+      this._getDefaultPowerLevelContent(normalizedPayload)
     this.logger.debug(
       'Determined default power level content for room creation.',
       {
-        preset: payload.preset,
-        content: defaultPowerLevelContent
-          ? JSON.stringify(defaultPowerLevelContent)
-          : 'undefined'
+        preset: normalizedPayload.preset,
+        is_direct: normalizedPayload.is_direct,
+        contentDefined: !!defaultPowerLevelContent
       }
     )
 
@@ -218,22 +242,20 @@ export default class RoomService {
       // Extract the 'creator_becomes' level and remove it from the content,
       // as it's a custom field not part of the standard Matrix power_levels event.
       ownerDemotionLevel = this._extractCreatorBecomes(currentPowerLevelContent)
-      this.logger.debug(
-        'Extracted owner demotion level from power level content.',
-        { level: ownerDemotionLevel }
-      )
+      this.logger.debug('Extracted owner demotion level.', {
+        ownerDemotionLevel: ownerDemotionLevel ?? 'N/A'
+      })
 
       // Identify invited users from the payload.
       const invitedUsers = Array.isArray(payload.invite) ? payload.invite : []
-      this.logger.debug(
-        'Identified invited users for initial power level assignment.',
-        { count: invitedUsers.length }
-      )
+      this.logger.debug('Processing invited users for initial power levels.', {
+        inviteCount: invitedUsers.length
+      })
 
       // Get the initial users defined in the power level content (if any).
       const initialUsers = currentPowerLevelContent.users || {}
       this.logger.silly('Initial explicit users in power level content.', {
-        users: JSON.stringify(initialUsers)
+        userCount: Object.keys(initialUsers).length
       })
 
       // Calculate the updated user power levels for the initial room state.
@@ -246,40 +268,39 @@ export default class RoomService {
             const level =
               invitedUser === roomOwner
                 ? 100
-                : currentPowerLevelContent.users_default ?? 0 // Use users_default or 0 if not defined
+                : currentPowerLevelContent.users_default ?? 0
             this.logger.silly(
               'Assigning initial power level to invited user.',
-              { invitedUser, level }
+              {
+                invitedUser,
+                level
+              }
             )
             return { ...usersMap, [invitedUser]: level }
           },
           { ...initialUsers, [roomOwner]: 100 }
-        ) // Ensure room owner is explicitly set to 100
+        )
 
       // Apply the calculated updated user power levels to the content.
       currentPowerLevelContent.users = updatedUsers
       this.logger.debug(
         'Updated power level content with initial user levels.',
         {
-          updatedUsers: JSON.stringify(updatedUsers)
+          totalUsers: Object.keys(updatedUsers).length
         }
       )
 
       // Update the main request body with the prepared power level content override.
-      // The original code used `power_level_content_override` directly on the payload.
       body = {
         ...body,
         power_level_content_override: currentPowerLevelContent
       }
-      this.logger.debug(
-        'Final request body updated with power_level_content_override.',
-        {
-          powerLevelContent: JSON.stringify(currentPowerLevelContent)
-        }
+      this.logger.info(
+        'Final request body prepared with power level overrides.'
       )
     } else {
       this.logger.warn(
-        'No default power level content determined. Room will be created without explicit power level overrides from preset.'
+        'No default power level content determined. Room will use Matrix server defaults.'
       )
     }
 
