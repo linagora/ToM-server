@@ -79,6 +79,377 @@ describe('the addressbooK API service', () => {
         ]
       })
     })
+
+    it('should deduplicate contacts with the same mxid, keeping the earliest created', async () => {
+      dbMock.get.mockImplementation((table) => {
+        if (table === 'addressbooks') {
+          return [
+            {
+              id: 'addressbook-id',
+              owner: 'user-id'
+            }
+          ]
+        }
+
+        if (table === 'contacts') {
+          return [
+            {
+              id: '018d1234-2222-7abc-def0-123456789abc',
+              addressbook_id: 'addressbook-id',
+              display_name: 'Updated Name',
+              mxid: '@user:server.com',
+              active: 1
+            },
+            {
+              id: '018d1234-1111-7abc-def0-123456789abc',
+              addressbook_id: 'addressbook-id',
+              display_name: 'Original Name',
+              mxid: '@user:server.com',
+              active: 0
+            }
+          ]
+        }
+      })
+
+      const addressbook = await service.list('user-id')
+
+      expect(addressbook.contacts).toHaveLength(1)
+      expect(addressbook.contacts[0]).toEqual({
+        id: '018d1234-1111-7abc-def0-123456789abc',
+        addressbook_id: 'addressbook-id',
+        display_name: 'Original Name',
+        mxid: '@user:server.com',
+        active: false
+      })
+    })
+
+    it('should sort contacts alphabetically by display_name', async () => {
+      dbMock.get.mockImplementation((table) => {
+        if (table === 'addressbooks') {
+          return [
+            {
+              id: 'addressbook-id',
+              owner: 'user-id'
+            }
+          ]
+        }
+
+        if (table === 'contacts') {
+          return [
+            {
+              id: 'contact-id-3',
+              addressbook_id: 'addressbook-id',
+              display_name: 'Zoe',
+              mxid: '@zoe:server.com',
+              active: 1
+            },
+            {
+              id: 'contact-id-1',
+              addressbook_id: 'addressbook-id',
+              display_name: 'Alice',
+              mxid: '@alice:server.com',
+              active: 1
+            },
+            {
+              id: 'contact-id-2',
+              addressbook_id: 'addressbook-id',
+              display_name: 'Bob',
+              mxid: '@bob:server.com',
+              active: 1
+            }
+          ]
+        }
+      })
+
+      const addressbook = await service.list('user-id')
+
+      expect(addressbook.contacts).toHaveLength(3)
+      expect(addressbook.contacts[0].display_name).toBe('Alice')
+      expect(addressbook.contacts[1].display_name).toBe('Bob')
+      expect(addressbook.contacts[2].display_name).toBe('Zoe')
+    })
+
+    it('should filter out contacts with invalid or missing id', async () => {
+      dbMock.get.mockImplementation((table) => {
+        if (table === 'addressbooks') {
+          return [
+            {
+              id: 'addressbook-id',
+              owner: 'user-id'
+            }
+          ]
+        }
+
+        if (table === 'contacts') {
+          return [
+            {
+              id: 'valid-contact-id',
+              addressbook_id: 'addressbook-id',
+              display_name: 'Valid Contact',
+              mxid: '@valid:server.com',
+              active: 1
+            },
+            {
+              id: null,
+              addressbook_id: 'addressbook-id',
+              display_name: 'Invalid Contact',
+              mxid: '@invalid:server.com',
+              active: 1
+            },
+            {
+              addressbook_id: 'addressbook-id',
+              display_name: 'Missing ID',
+              mxid: '@missing:server.com',
+              active: 1
+            }
+          ]
+        }
+      })
+
+      const addressbook = await service.list('user-id')
+
+      expect(addressbook.contacts).toHaveLength(1)
+      expect(addressbook.contacts[0].id).toBe('valid-contact-id')
+    })
+
+    it('should filter out contacts with invalid or missing mxid', async () => {
+      dbMock.get.mockImplementation((table) => {
+        if (table === 'addressbooks') {
+          return [
+            {
+              id: 'addressbook-id',
+              owner: 'user-id'
+            }
+          ]
+        }
+
+        if (table === 'contacts') {
+          return [
+            {
+              id: 'valid-contact-id',
+              addressbook_id: 'addressbook-id',
+              display_name: 'Valid Contact',
+              mxid: '@valid:server.com',
+              active: 1
+            },
+            {
+              id: 'invalid-contact-id-1',
+              addressbook_id: 'addressbook-id',
+              display_name: 'Invalid Contact',
+              mxid: null,
+              active: 1
+            },
+            {
+              id: 'invalid-contact-id-2',
+              addressbook_id: 'addressbook-id',
+              display_name: 'Missing MXID',
+              active: 1
+            }
+          ]
+        }
+      })
+
+      const addressbook = await service.list('user-id')
+
+      expect(addressbook.contacts).toHaveLength(1)
+      expect(addressbook.contacts[0].mxid).toBe('@valid:server.com')
+    })
+
+    it('should convert active field to boolean', async () => {
+      dbMock.get.mockImplementation((table) => {
+        if (table === 'addressbooks') {
+          return [
+            {
+              id: 'addressbook-id',
+              owner: 'user-id'
+            }
+          ]
+        }
+
+        if (table === 'contacts') {
+          return [
+            {
+              id: 'contact-id-1',
+              addressbook_id: 'addressbook-id',
+              display_name: 'Active Contact',
+              mxid: '@active:server.com',
+              active: 1
+            },
+            {
+              id: 'contact-id-2',
+              addressbook_id: 'addressbook-id',
+              display_name: 'Inactive Contact',
+              mxid: '@inactive:server.com',
+              active: 0
+            }
+          ]
+        }
+      })
+
+      const addressbook = await service.list('user-id')
+
+      expect(addressbook.contacts[0].active).toBe(true)
+      expect(addressbook.contacts[1].active).toBe(false)
+    })
+
+    it('should place contacts with empty display_name at the end', async () => {
+      dbMock.get.mockImplementation((table) => {
+        if (table === 'addressbooks') {
+          return [
+            {
+              id: 'addressbook-id',
+              owner: 'user-id'
+            }
+          ]
+        }
+
+        if (table === 'contacts') {
+          return [
+            {
+              id: 'contact-id-1',
+              addressbook_id: 'addressbook-id',
+              display_name: '',
+              mxid: '@nodisplay1:server.com',
+              active: 1
+            },
+            {
+              id: 'contact-id-2',
+              addressbook_id: 'addressbook-id',
+              display_name: 'Alice',
+              mxid: '@alice:server.com',
+              active: 1
+            },
+            {
+              id: 'contact-id-3',
+              addressbook_id: 'addressbook-id',
+              display_name: null,
+              mxid: '@nodisplay2:server.com',
+              active: 1
+            }
+          ]
+        }
+      })
+
+      const addressbook = await service.list('user-id')
+
+      expect(addressbook.contacts).toHaveLength(3)
+      expect(addressbook.contacts[0].display_name).toBe('Alice')
+      expect(addressbook.contacts[1].display_name).toBe('')
+      expect(addressbook.contacts[2].display_name).toBeNull()
+    })
+
+    it('should handle complex deduplication scenario with multiple duplicates', async () => {
+      dbMock.get.mockImplementation((table) => {
+        if (table === 'addressbooks') {
+          return [
+            {
+              id: 'addressbook-id',
+              owner: 'user-id'
+            }
+          ]
+        }
+
+        if (table === 'contacts') {
+          return [
+            {
+              id: '018d1234-3333-7abc-def0-123456789abc',
+              addressbook_id: 'addressbook-id',
+              display_name: 'User Three',
+              mxid: '@user:server.com',
+              active: 1
+            },
+            {
+              id: '018d1234-1111-7abc-def0-123456789abc',
+              addressbook_id: 'addressbook-id',
+              display_name: 'User One',
+              mxid: '@user:server.com',
+              active: 1
+            },
+            {
+              id: '018d1234-2222-7abc-def0-123456789abc',
+              addressbook_id: 'addressbook-id',
+              display_name: 'User Two',
+              mxid: '@user:server.com',
+              active: 0
+            },
+            {
+              id: '018d5678-1111-7abc-def0-123456789abc',
+              addressbook_id: 'addressbook-id',
+              display_name: 'Another User',
+              mxid: '@another:server.com',
+              active: 1
+            }
+          ]
+        }
+      })
+
+      const addressbook = await service.list('user-id')
+
+      expect(addressbook.contacts).toHaveLength(2)
+      expect(addressbook.contacts[0].mxid).toBe('@another:server.com')
+      expect(addressbook.contacts[1].mxid).toBe('@user:server.com')
+      expect(addressbook.contacts[1].id).toBe(
+        '018d1234-1111-7abc-def0-123456789abc'
+      )
+      expect(addressbook.contacts[1].display_name).toBe('User One')
+    })
+
+    it('should return empty contacts array when database returns non-array', async () => {
+      dbMock.get.mockImplementation((table) => {
+        if (table === 'addressbooks') {
+          return [
+            {
+              id: 'addressbook-id',
+              owner: 'user-id'
+            }
+          ]
+        }
+
+        if (table === 'contacts') {
+          return null
+        }
+      })
+
+      const addressbook = await service.list('user-id')
+
+      expect(addressbook.contacts).toEqual([])
+    })
+
+    it('should return empty contacts array when all contacts are invalid', async () => {
+      dbMock.get.mockImplementation((table) => {
+        if (table === 'addressbooks') {
+          return [
+            {
+              id: 'addressbook-id',
+              owner: 'user-id'
+            }
+          ]
+        }
+
+        if (table === 'contacts') {
+          return [
+            {
+              id: null,
+              addressbook_id: 'addressbook-id',
+              display_name: 'No ID',
+              mxid: '@noid:server.com',
+              active: 1
+            },
+            {
+              id: 'contact-id',
+              addressbook_id: 'addressbook-id',
+              display_name: 'No MXID',
+              mxid: null,
+              active: 1
+            }
+          ]
+        }
+      })
+
+      const addressbook = await service.list('user-id')
+
+      expect(addressbook.contacts).toEqual([])
+    })
   })
 
   describe('the delete method', () => {
