@@ -21,6 +21,8 @@ import AddressBook from './addressbook-api'
 import DeactivateAccount from './deactivate-account-api'
 import AdminSettings from './admin-settings-api'
 import MatrixclientApi from './matrix-api/client'
+import { AddressbookService } from './addressbook-api/services'
+import UserInfoService from './user-info-api/services'
 
 export default class TwakeServer {
   conf: Config
@@ -30,6 +32,8 @@ export default class TwakeServer {
   matrixDb: MatrixDB
   ready!: Promise<boolean>
   idServer!: IdServer
+  private addressbookService!: AddressbookService
+  private userInfoService!: UserInfoService
 
   constructor(
     conf?: Partial<Config>,
@@ -86,6 +90,18 @@ export default class TwakeServer {
     this.logger.debug('Connected to Matrix DB')
     this.logger.debug('Main database initialized')
 
+    // Create singleton service instances
+    this.addressbookService = new AddressbookService(this.db, this.logger)
+    this.userInfoService = new UserInfoService(
+      this.idServer.userDB,
+      this.db,
+      this.matrixDb,
+      this.conf,
+      this.logger,
+      this.addressbookService
+    )
+    this.logger.debug('Singleton services initialized')
+
     const vaultServer = new VaultServer(this.db, this.idServer.authenticate)
     const wellKnown = new WellKnown(this.conf)
 
@@ -93,7 +109,8 @@ export default class TwakeServer {
       this.idServer,
       this.conf,
       this.matrixDb,
-      this.logger
+      this.logger,
+      this.userInfoService
     )
 
     const smsApi = smsApiRouter(
@@ -115,14 +132,16 @@ export default class TwakeServer {
       this.idServer.userDB,
       this.matrixDb,
       this.idServer.authenticate,
-      this.logger
+      this.logger,
+      this.userInfoService
     )
 
     const addressbookApi = AddressBook(
       this.conf,
       this.idServer.db,
       this.idServer.authenticate,
-      this.logger
+      this.logger,
+      this.addressbookService
     )
 
     const deactivateAccountApi = DeactivateAccount(
