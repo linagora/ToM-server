@@ -158,7 +158,7 @@ export class AddressbookService implements IAddressbookService {
         throw new Error('Contact not found')
       }
 
-      const contact = { ...queryResult[0], active: !!queryResult[0].active }
+      const contact = this._normalizeContact(queryResult[0])
       this.logger.info('[AddressbookService.getContact] Contact found.', {
         contactId,
         contactMxid: contact.mxid
@@ -332,10 +332,7 @@ export class AddressbookService implements IAddressbookService {
         throw new Error('Contact not found or failed to update')
       }
 
-      const resultContact = {
-        ...updatedContact[0],
-        active: !!updatedContact[0].active
-      }
+      const resultContact = this._normalizeContact(updatedContact[0])
       this.logger.info(
         '[AddressbookService.updateContact] Contact updated successfully.',
         {
@@ -452,7 +449,7 @@ export class AddressbookService implements IAddressbookService {
         throw new Error('Failed to insert contact: no data returned')
       }
 
-      const resultContact = { ...created[0], active: !!created[0].active }
+      const resultContact = this._normalizeContact(created[0])
       this.logger.info(
         '[AddressbookService._insertContact] Contact inserted successfully.',
         { contactId: resultContact.id, contactMxid: resultContact.mxid }
@@ -492,138 +489,213 @@ export class AddressbookService implements IAddressbookService {
    */
   private _listAddressbookContacts = async (id: string): Promise<Contact[]> => {
     this.logger.silly(
-      '[AddressbookService._listAddressbookContacts] Entering method.',
-      {
-        addressbookId: id
-      }
+      '[AddressbookService._listAddressbookContacts] Entering.',
+      { addressbookId: id }
     )
+
+    // Fetch from DB with localized error handling
+    let rawContacts: Contact[]
     try {
-      this.logger.debug(
-        '[AddressbookService._listAddressbookContacts] Querying database for contacts.',
-        { addressbookId: id }
-      )
-      const contacts = (await this.db.get('contacts', ['*'], {
-        addressbook_id: id
-      })) as unknown as Contact[]
-
-      if (!Array.isArray(contacts)) {
-        this.logger.error(
-          '[AddressbookService._listAddressbookContacts] Database returned invalid data type (expected array).',
-          { addressbookId: id, receivedType: typeof contacts }
-        )
-        throw new Error('Invalid database response: expected array of contacts')
-      }
-
-      this.logger.debug(
-        '[AddressbookService._listAddressbookContacts] Starting contact sanitization.',
-        { addressbookId: id, rawContactCount: contacts.length }
-      )
-
-      let invalidIdCount = 0
-      let invalidMxidCount = 0
-
-      const sortedByCreation = contacts.sort((a, b) => {
-        const isAValid = a?.id && typeof a.id === 'string'
-        const isBValid = b?.id && typeof b.id === 'string'
-
-        if (!isAValid) {
-          invalidIdCount++
-          return 1
-        }
-        if (!isBValid) {
-          invalidIdCount++
-          return -1
-        }
-        return a.id.localeCompare(b.id)
-      })
-
-      const deduplicatedMap = sortedByCreation.reduce<Record<string, Contact>>(
-        (acc, contact) => {
-          if (!contact?.mxid || typeof contact.mxid !== 'string') {
-            invalidMxidCount++
-            return acc
-          }
-
-          if (!(contact.mxid in acc)) {
-            acc[contact.mxid] = {
-              ...contact,
-              active: !!contact.active
-            }
-          }
-
-          return acc
-        },
-        {}
-      )
-
-      const duplicateCount =
-        contacts.length - invalidMxidCount - Object.keys(deduplicatedMap).length
-
-      if (invalidIdCount > 0) {
-        this.logger.warn(
-          '[AddressbookService._listAddressbookContacts] Found contacts with invalid or missing id.',
-          { addressbookId: id, invalidIdCount }
-        )
-      }
-      if (invalidMxidCount > 0) {
-        this.logger.warn(
-          '[AddressbookService._listAddressbookContacts] Skipped contacts with invalid or missing mxid.',
-          { addressbookId: id, invalidMxidCount }
-        )
-      }
-      if (duplicateCount > 0) {
-        this.logger.info(
-          '[AddressbookService._listAddressbookContacts] Removed duplicate contacts.',
-          { addressbookId: id, duplicatesRemoved: duplicateCount }
-        )
-      }
-
-      const sanitizedContacts = Object.values(deduplicatedMap).sort((a, b) => {
-        const nameA = a?.display_name ?? ''
-        const nameB = b?.display_name ?? ''
-
-        if (!nameA && !nameB) return 0
-        if (!nameA) return 1
-        if (!nameB) return -1
-
-        return nameA.localeCompare(nameB)
-      })
-
-      this.logger.info(
-        '[AddressbookService._listAddressbookContacts] Contacts listed and sanitized successfully.',
-        {
-          addressbookId: id,
-          rawCount: contacts.length,
-          uniqueCount: sanitizedContacts.length,
-          duplicatesRemoved: duplicateCount,
-          invalidIds: invalidIdCount,
-          invalidMxids: invalidMxidCount
-        }
-      )
-      this.logger.silly(
-        `[AddressbookService._listAddressbookContacts] Sanitized contacts: ${JSON.stringify(
-          sanitizedContacts
-        )}`
-      )
-      this.logger.silly(
-        '[AddressbookService._listAddressbookContacts] Exiting method (success).'
-      )
-      return sanitizedContacts
+      rawContacts = await this._fetchContactsFromDb(id)
     } catch (error: any) {
       this.logger.error(
-        '[AddressbookService._listAddressbookContacts] Failed to list addressbook contacts.',
+        '[AddressbookService._listAddressbookContacts] DB fetch failed.',
         {
           addressbookId: id,
-          message: error.message,
-          stack: error.stack,
-          errorName: error.name
+          message: error.message
         }
-      )
-      this.logger.silly(
-        '[AddressbookService._listAddressbookContacts] Exiting method (error).'
       )
       return []
     }
+
+    // Filter valid contacts (filters both invalid IDs and mxids)
+    const validContacts = rawContacts.filter((c) =>
+      this._validateContactData(c)
+    )
+    const invalidCount = rawContacts.length - validContacts.length
+
+    // Early return if no valid contacts
+    if (validContacts.length === 0) {
+      this._logContactSanitizationMetrics(
+        id,
+        rawContacts.length,
+        0,
+        invalidCount,
+        0
+      )
+      this.logger.silly(
+        '[AddressbookService._listAddressbookContacts] Exiting (no valid contacts).',
+        { addressbookId: id }
+      )
+      return []
+    }
+
+    // Normalize and process
+    const normalized = validContacts.map((c) => this._normalizeContact(c))
+
+    // Sort by ID (UUID v7 timestamp) to keep earliest created contacts during deduplication
+    const sortedById = this._sortByStringField(normalized, 'id', true)
+
+    // Deduplicate by mxid (keep first occurrence = earliest created)
+    const deduplicated = this._deduplicateByMxid(sortedById)
+    const duplicateCount = normalized.length - deduplicated.length
+
+    // Sort by display name for final output
+    const result = this._sortByStringField(deduplicated, 'display_name', true)
+
+    // Log metrics
+    this._logContactSanitizationMetrics(
+      id,
+      rawContacts.length,
+      result.length,
+      invalidCount,
+      duplicateCount
+    )
+
+    this.logger.silly(
+      '[AddressbookService._listAddressbookContacts] Exiting.',
+      { addressbookId: id }
+    )
+    return result
+  }
+
+  /**
+   * Validates that a contact has all required fields with correct types.
+   *
+   * @param {Contact} contact - The contact to validate
+   * @returns {boolean} True if contact has valid id and mxid, false otherwise
+   */
+  private _validateContactData(contact: Contact): boolean {
+    return !!(
+      contact?.id &&
+      typeof contact.id === 'string' &&
+      contact?.mxid &&
+      typeof contact.mxid === 'string'
+    )
+  }
+
+  /**
+   * Normalizes contact data by converting active field to boolean.
+   *
+   * @param {Contact} contact - The contact to normalize
+   * @returns {Contact} Normalized contact with active as boolean
+   */
+  private _normalizeContact(contact: Contact): Contact {
+    return {
+      ...contact,
+      active: !!contact.active
+    }
+  }
+
+  /**
+   * Generic string field sorter with null/empty handling.
+   * Sorts contacts by a specified string field, with configurable handling of empty values.
+   *
+   * @param {Contact[]} contacts - Array of contacts to sort
+   * @param {keyof Contact} field - Field name to sort by
+   * @param {boolean} emptyLast - If true, empty values sorted to end; if false, to beginning
+   * @returns {Contact[]} New sorted array (does not mutate original)
+   */
+  private _sortByStringField(
+    contacts: Contact[],
+    field: keyof Contact,
+    emptyLast: boolean = true
+  ): Contact[] {
+    return [...contacts].sort((a, b) => {
+      const valueA = a?.[field] as string | null | undefined
+      const valueB = b?.[field] as string | null | undefined
+
+      const strA = valueA ?? ''
+      const strB = valueB ?? ''
+
+      // Handle empty values
+      if (!strA && !strB) return 0
+      if (!strA) return emptyLast ? 1 : -1
+      if (!strB) return emptyLast ? -1 : 1
+
+      return strA.localeCompare(strB)
+    })
+  }
+
+  /**
+   * Removes duplicate contacts based on mxid, keeping the first occurrence.
+   * Assumes contacts are already sorted by creation time (UUID v7 timestamp).
+   *
+   * @param {Contact[]} contacts - Array of contacts (should be sorted by id first)
+   * @returns {Contact[]} Deduplicated array keeping earliest created contact per mxid
+   */
+  private _deduplicateByMxid(contacts: Contact[]): Contact[] {
+    const seen = new Set<string>()
+
+    return contacts.filter((contact) => {
+      if (seen.has(contact.mxid)) return false
+      seen.add(contact.mxid)
+      return true
+    })
+  }
+
+  /**
+   * Fetches contacts from database and validates response type.
+   *
+   * @param {string} addressbookId - The addressbook ID to fetch contacts for
+   * @returns {Promise<Contact[]>} Array of contacts from database
+   * @throws {Error} If database returns non-array value
+   */
+  private async _fetchContactsFromDb(
+    addressbookId: string
+  ): Promise<Contact[]> {
+    const contacts = (await this.db.get('contacts', ['*'], {
+      addressbook_id: addressbookId
+    })) as unknown as Contact[]
+
+    if (!Array.isArray(contacts)) {
+      this.logger.error(
+        '[AddressbookService._fetchContactsFromDb] Database returned invalid data type.',
+        { addressbookId, receivedType: typeof contacts }
+      )
+      throw new Error('Invalid database response: expected array of contacts')
+    }
+
+    return contacts
+  }
+
+  /**
+   * Logs contact sanitization metrics with appropriate log levels.
+   *
+   * @param {string} addressbookId - The addressbook ID
+   * @param {number} rawCount - Original number of contacts from database
+   * @param {number} validCount - Final number of valid contacts after processing
+   * @param {number} invalidCount - Number of contacts filtered out due to invalid data
+   * @param {number} duplicateCount - Number of duplicate contacts removed
+   */
+  private _logContactSanitizationMetrics(
+    addressbookId: string,
+    rawCount: number,
+    validCount: number,
+    invalidCount: number,
+    duplicateCount: number
+  ): void {
+    if (invalidCount > 0) {
+      this.logger.warn('[AddressbookService] Filtered out invalid contacts.', {
+        addressbookId,
+        invalidCount
+      })
+    }
+
+    if (duplicateCount > 0) {
+      this.logger.info('[AddressbookService] Removed duplicate contacts.', {
+        addressbookId,
+        duplicatesRemoved: duplicateCount
+      })
+    }
+
+    this.logger.info('[AddressbookService] Contacts sanitized successfully.', {
+      addressbookId,
+      rawCount,
+      validCount,
+      invalidCount,
+      duplicateCount
+    })
   }
 
   /**
