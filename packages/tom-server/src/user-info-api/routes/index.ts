@@ -11,13 +11,15 @@ import authMiddleware from '../../utils/middlewares/auth.middleware'
 import UserInfoController from '../controllers'
 import checkLdapMiddleware from '../middlewares/require-ldap'
 import { type MatrixDB } from '@twake/matrix-identity-server'
+import type { IUserInfoService } from '../types'
 export const PATH = '/_twake/v1/user_info'
 
 export default (
   idServer: IdServer,
   config: Config,
   matrixDB: MatrixDB,
-  defaultLogger?: TwakeLogger
+  defaultLogger?: TwakeLogger,
+  userInfoService?: IUserInfoService
 ): Router => {
   const logger = defaultLogger ?? getLogger(config as unknown as LoggerConfig)
   const router = Router()
@@ -27,7 +29,8 @@ export default (
     idServer.db,
     matrixDB,
     config,
-    logger
+    logger,
+    userInfoService
   )
   const requireLdap = checkLdapMiddleware(config, logger)
 
