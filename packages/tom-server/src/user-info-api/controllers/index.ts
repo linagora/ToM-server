@@ -19,15 +19,12 @@ class UserInfoController implements IUserInfoController {
     private readonly db: TwakeDB,
     private readonly matrixDB: MatrixDB,
     private readonly config: Config,
-    private readonly logger: TwakeLogger
+    private readonly logger: TwakeLogger,
+    userInfoService?: IUserInfoService
   ) {
-    this.userInfoService = new UserInfoService(
-      userdb,
-      db,
-      matrixDB,
-      config,
-      logger
-    )
+    this.userInfoService =
+      userInfoService ??
+      new UserInfoService(userdb, db, matrixDB, config, logger)
   }
 
   /**
