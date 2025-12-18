@@ -22,7 +22,8 @@ export default (
   userdb: UserDB,
   matrixdb: MatrixDB,
   authenticator: AuthenticationFunction,
-  defaultLogger?: TwakeLogger
+  defaultLogger?: TwakeLogger,
+  userInfoService?: UserInfoService
 ): Router => {
   const logger = defaultLogger ?? getLogger(config as unknown as LoggerConfig)
   const router = Router()
@@ -32,7 +33,8 @@ export default (
     userdb,
     matrixdb,
     logger,
-    config
+    config,
+    userInfoService
   )
   const middleware = new invitationApiMiddleware(db, logger, config)
   const cookieAuthMiddleware = new CookieAuthenticator(config, logger)
