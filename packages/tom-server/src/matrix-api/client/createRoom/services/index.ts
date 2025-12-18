@@ -496,4 +496,109 @@ export default class RoomService {
     this.logger.silly('Exiting _extractCreatorBecomes method.')
     return level
   }
+
+  /**
+   * Derives the visibility setting from a given preset.
+   *
+   * @param preset - The room preset
+   * @returns The corresponding visibility ('public' or 'private')
+   * @private
+   */
+  private _getVisibilityFromPreset = (preset: string): 'public' | 'private' => {
+    this.logger.silly('Deriving visibility from preset.', { preset })
+
+    switch (preset) {
+      case 'public_chat':
+      case 'public_channel':
+        return 'public'
+      case 'private_chat':
+      case 'trusted_private_chat':
+      case 'private_channel':
+      default:
+        return 'private'
+    }
+  }
+
+  /**
+   * Derives the preset from a given visibility setting.
+   *
+   * @param visibility - The room visibility
+   * @returns The corresponding preset
+   * @private
+   */
+  private _getPresetFromVisibility = (
+    visibility: 'public' | 'private'
+  ): string => {
+    this.logger.silly('Deriving preset from visibility.', { visibility })
+
+    return visibility === 'public' ? 'public_chat' : 'private_chat'
+  }
+
+  /**
+   * Maps ToM Server custom presets to Matrix-compatible presets.
+   * Channel presets are not native to Matrix, so they are mapped to standard presets.
+   *
+   * @param preset - The ToM Server preset
+   * @returns The Matrix-compatible preset
+   * @private
+   */
+  private _mapPresetForMatrix = (preset: string): string => {
+    this.logger.silly('Mapping preset for Matrix server.', { preset })
+
+    switch (preset) {
+      case 'private_channel':
+        return 'private_chat'
+      case 'public_channel':
+        return 'public_chat'
+      default:
+        return preset
+    }
+  }
+
+  /**
+   * Applies is_direct power level overrides to the base preset configuration.
+   * When is_direct is true, certain power levels are overridden to create a
+   * more restrictive direct messaging environment.
+   *
+   * @param basePowerLevels - The base power levels from the preset configuration
+   * @returns Power levels with is_direct overrides applied
+   * @private
+   */
+  private _applyDirectChatOverrides = (
+    basePowerLevels: PowerLevelEventContent
+  ): PowerLevelEventContent => {
+    this.logger.silly('Applying is_direct power level overrides.')
+
+    // Deep clone to avoid mutating the config
+    const overriddenLevels = deepClone(basePowerLevels)
+
+    // Apply overrides from the is_direct specification
+    overriddenLevels.ban = 100
+    overriddenLevels.invite = 100
+    overriddenLevels.kick = 100
+    overriddenLevels.redact = 100
+    overriddenLevels.state_default = 10
+    overriddenLevels.users_default = 10
+
+    // Override specific events
+    overriddenLevels.events = {
+      ...overriddenLevels.events,
+      'm.room.avatar': 10,
+      'm.room.encryption': 10,
+      'm.room.name': 100,
+      'm.room.server_acl': 100,
+      'm.room.tombstone': 10,
+      'm.room.topic': 100
+    }
+
+    // Override creator_becomes (for demotion)
+    overriddenLevels.creator_becomes = 10
+
+    this.logger.debug('is_direct overrides applied successfully.', {
+      originalUsersDefault: basePowerLevels.users_default,
+      newUsersDefault: overriddenLevels.users_default
+    })
+
+    return overriddenLevels
+  }
 }
