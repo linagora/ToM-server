@@ -506,23 +506,109 @@ export class AddressbookService implements IAddressbookService {
         addressbook_id: id
       })) as unknown as Contact[]
 
-      const mappedContacts = contacts.map((contact: Contact) => ({
-        ...contact,
-        active: !!contact.active
-      }))
+      if (!Array.isArray(contacts)) {
+        this.logger.error(
+          '[AddressbookService._listAddressbookContacts] Database returned invalid data type (expected array).',
+          { addressbookId: id, receivedType: typeof contacts }
+        )
+        throw new Error('Invalid database response: expected array of contacts')
+      }
+
+      this.logger.debug(
+        '[AddressbookService._listAddressbookContacts] Starting contact sanitization.',
+        { addressbookId: id, rawContactCount: contacts.length }
+      )
+
+      let invalidIdCount = 0
+      let invalidMxidCount = 0
+
+      const sortedByCreation = contacts.sort((a, b) => {
+        const isAValid = a?.id && typeof a.id === 'string'
+        const isBValid = b?.id && typeof b.id === 'string'
+
+        if (!isAValid) {
+          invalidIdCount++
+          return 1
+        }
+        if (!isBValid) {
+          invalidIdCount++
+          return -1
+        }
+        return a.id.localeCompare(b.id)
+      })
+
+      const deduplicatedMap = sortedByCreation.reduce<Record<string, Contact>>(
+        (acc, contact) => {
+          if (!contact?.mxid || typeof contact.mxid !== 'string') {
+            invalidMxidCount++
+            return acc
+          }
+
+          if (!(contact.mxid in acc)) {
+            acc[contact.mxid] = {
+              ...contact,
+              active: !!contact.active
+            }
+          }
+
+          return acc
+        },
+        {}
+      )
+
+      const duplicateCount =
+        contacts.length - invalidMxidCount - Object.keys(deduplicatedMap).length
+
+      if (invalidIdCount > 0) {
+        this.logger.warn(
+          '[AddressbookService._listAddressbookContacts] Found contacts with invalid or missing id.',
+          { addressbookId: id, invalidIdCount }
+        )
+      }
+      if (invalidMxidCount > 0) {
+        this.logger.warn(
+          '[AddressbookService._listAddressbookContacts] Skipped contacts with invalid or missing mxid.',
+          { addressbookId: id, invalidMxidCount }
+        )
+      }
+      if (duplicateCount > 0) {
+        this.logger.info(
+          '[AddressbookService._listAddressbookContacts] Removed duplicate contacts.',
+          { addressbookId: id, duplicatesRemoved: duplicateCount }
+        )
+      }
+
+      const sanitizedContacts = Object.values(deduplicatedMap).sort((a, b) => {
+        const nameA = a?.display_name ?? ''
+        const nameB = b?.display_name ?? ''
+
+        if (!nameA && !nameB) return 0
+        if (!nameA) return 1
+        if (!nameB) return -1
+
+        return nameA.localeCompare(nameB)
+      })
+
       this.logger.info(
-        '[AddressbookService._listAddressbookContacts] Contacts retrieved and mapped.',
-        { addressbookId: id, contactsCount: mappedContacts.length }
+        '[AddressbookService._listAddressbookContacts] Contacts listed and sanitized successfully.',
+        {
+          addressbookId: id,
+          rawCount: contacts.length,
+          uniqueCount: sanitizedContacts.length,
+          duplicatesRemoved: duplicateCount,
+          invalidIds: invalidIdCount,
+          invalidMxids: invalidMxidCount
+        }
       )
       this.logger.silly(
-        `[AddressbookService._listAddressbookContacts] Mapped contacts: ${JSON.stringify(
-          mappedContacts
+        `[AddressbookService._listAddressbookContacts] Sanitized contacts: ${JSON.stringify(
+          sanitizedContacts
         )}`
       )
       this.logger.silly(
         '[AddressbookService._listAddressbookContacts] Exiting method (success).'
       )
-      return mappedContacts
+      return sanitizedContacts
     } catch (error: any) {
       this.logger.error(
         '[AddressbookService._listAddressbookContacts] Failed to list addressbook contacts.',
