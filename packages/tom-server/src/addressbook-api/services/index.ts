@@ -514,14 +514,18 @@ export class AddressbookService implements IAddressbookService {
     )
     const invalidCount = rawContacts.length - validContacts.length
 
+    if (invalidCount > 0) {
+      this.logger.warn(
+        '[AddressbookService._listAddressbookContacts] Filtered out invalid contacts.',
+        { addressbookId: id, invalidCount, totalContacts: rawContacts.length }
+      )
+    }
+
     // Early return if no valid contacts
     if (validContacts.length === 0) {
-      this._logContactSanitizationMetrics(
-        id,
-        rawContacts.length,
-        0,
-        invalidCount,
-        0
+      this.logger.info(
+        '[AddressbookService._listAddressbookContacts] No valid contacts found.',
+        { addressbookId: id, rawCount: rawContacts.length }
       )
       this.logger.silly(
         '[AddressbookService._listAddressbookContacts] Exiting (no valid contacts).',
@@ -540,16 +544,25 @@ export class AddressbookService implements IAddressbookService {
     const deduplicated = this._deduplicateByMxid(sortedById)
     const duplicateCount = normalized.length - deduplicated.length
 
+    if (duplicateCount > 0) {
+      this.logger.info(
+        '[AddressbookService._listAddressbookContacts] Removed duplicate contacts.',
+        { addressbookId: id, duplicatesRemoved: duplicateCount }
+      )
+    }
+
     // Sort by display name for final output
     const result = this._sortByStringField(deduplicated, 'display_name', true)
 
-    // Log metrics
-    this._logContactSanitizationMetrics(
-      id,
-      rawContacts.length,
-      result.length,
-      invalidCount,
-      duplicateCount
+    this.logger.info(
+      '[AddressbookService._listAddressbookContacts] Contacts retrieved and sanitized.',
+      {
+        addressbookId: id,
+        rawCount: rawContacts.length,
+        validCount: result.length,
+        invalidFiltered: invalidCount,
+        duplicatesRemoved: duplicateCount
+      }
     )
 
     this.logger.silly(
@@ -657,45 +670,6 @@ export class AddressbookService implements IAddressbookService {
     }
 
     return contacts
-  }
-
-  /**
-   * Logs contact sanitization metrics with appropriate log levels.
-   *
-   * @param {string} addressbookId - The addressbook ID
-   * @param {number} rawCount - Original number of contacts from database
-   * @param {number} validCount - Final number of valid contacts after processing
-   * @param {number} invalidCount - Number of contacts filtered out due to invalid data
-   * @param {number} duplicateCount - Number of duplicate contacts removed
-   */
-  private _logContactSanitizationMetrics(
-    addressbookId: string,
-    rawCount: number,
-    validCount: number,
-    invalidCount: number,
-    duplicateCount: number
-  ): void {
-    if (invalidCount > 0) {
-      this.logger.warn('[AddressbookService] Filtered out invalid contacts.', {
-        addressbookId,
-        invalidCount
-      })
-    }
-
-    if (duplicateCount > 0) {
-      this.logger.info('[AddressbookService] Removed duplicate contacts.', {
-        addressbookId,
-        duplicatesRemoved: duplicateCount
-      })
-    }
-
-    this.logger.info('[AddressbookService] Contacts sanitized successfully.', {
-      addressbookId,
-      rawCount,
-      validCount,
-      invalidCount,
-      duplicateCount
-    })
   }
 
   /**
