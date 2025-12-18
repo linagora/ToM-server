@@ -2,7 +2,10 @@ import { TwakeLogger } from '@twake/logger'
 import type { NextFunction, Request, Response } from 'express'
 import validator from 'validator'
 export default class CreateRoomMiddleware {
-  constructor(private readonly logger: TwakeLogger) {}
+  constructor(
+    private readonly logger: TwakeLogger,
+    private readonly validPresets: string[]
+  ) {}
 
   /**
    * Validates that the preset value (if provided) is one of the allowed presets.
@@ -14,15 +17,7 @@ export default class CreateRoomMiddleware {
       return true // Preset is optional
     }
 
-    const validPresets = [
-      'private_chat',
-      'public_chat',
-      'trusted_private_chat',
-      'private_channel',
-      'public_channel'
-    ]
-
-    return typeof preset === 'string' && validPresets.includes(preset)
+    return typeof preset === 'string' && this.validPresets.includes(preset)
   }
 
   public checkPayload = (
@@ -52,13 +47,7 @@ export default class CreateRoomMiddleware {
     if (!this.validatePreset(body.preset)) {
       this.logger.error('Invalid preset value provided', {
         preset: body.preset,
-        validPresets: [
-          'private_chat',
-          'public_chat',
-          'trusted_private_chat',
-          'private_channel',
-          'public_channel'
-        ]
+        validPresets: this.validPresets
       })
       res.status(400).send('Invalid preset value')
       return
