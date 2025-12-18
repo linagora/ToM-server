@@ -311,6 +311,8 @@ export interface PowerLevelEventContent {
     'm.room.history_visibility': number
     'm.room.power_levels': number
     'm.room.encryption': number
+    'm.room.server_acl'?: number
+    'm.room.tombstone'?: number
   }
   users?: Record<string, number>
   creator_becomes?: number

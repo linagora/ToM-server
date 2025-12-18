@@ -450,7 +450,12 @@ export default class RoomService {
   private _normalizePayload = (
     payload: Partial<CreateRoomPayload>
   ): Partial<CreateRoomPayload> & {
-    preset: string
+    preset:
+      | 'private_chat'
+      | 'public_chat'
+      | 'trusted_private_chat'
+      | 'private_channel'
+      | 'public_channel'
     visibility: 'public' | 'private'
     is_direct: boolean
   } => {
@@ -527,8 +532,8 @@ export default class RoomService {
 
     return {
       ...payload,
-      preset,
-      visibility,
+      preset: preset!,
+      visibility: visibility!,
       is_direct
     }
   }
@@ -695,7 +700,7 @@ export default class RoomService {
    */
   private _getPresetFromVisibility = (
     visibility: 'public' | 'private'
-  ): string => {
+  ): 'public_chat' | 'private_chat' => {
     this.logger.silly('Deriving preset from visibility.', { visibility })
 
     return visibility === 'public' ? 'public_chat' : 'private_chat'
