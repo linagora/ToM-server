@@ -118,11 +118,11 @@ describe('the addressbook API router', () => {
           router(
             idServer.conf,
             idServer.db,
-            idServer.authenticate,
-            idServer.logger,
-            undefined,
             userDBMock as unknown as UserDB,
-            userInfoServiceMock as unknown as IUserInfoService
+            idServer.authenticate,
+            userInfoServiceMock as unknown as IUserInfoService,
+            undefined,
+            idServer.logger
           )
         )
 

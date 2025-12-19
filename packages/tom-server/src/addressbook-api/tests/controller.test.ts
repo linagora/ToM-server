@@ -77,11 +77,11 @@ app.use(
       base_url: 'http://localhost'
     } as unknown as Config,
     dbMock as unknown as TwakeDB,
-    authenticatorMock,
-    loggerMock as unknown as TwakeLogger,
-    undefined,
     userDBMock as unknown as UserDB,
-    userInfoServiceMock as unknown as IUserInfoService
+    authenticatorMock,
+    userInfoServiceMock as unknown as IUserInfoService,
+    undefined,
+    loggerMock as unknown as TwakeLogger
   )
 )
 
