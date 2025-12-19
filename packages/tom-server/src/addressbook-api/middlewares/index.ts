@@ -348,7 +348,6 @@ export default class AddressBookApiMiddleware
 
   /**
    * Enriches addressbook contacts with user information from userinfo service
-   * Only enriches contacts from the local server (config.server_name)
    *
    * @param {EnrichedAuthRequest} req - the request
    * @param {Response} res - the response
