@@ -297,10 +297,28 @@ class UserInfoService implements IUserInfoService {
       // ------------------------------------------------------------------
       if (addressbookResponse) {
         result.display_name = addressbookResponse.display_name
+        // If addressbook has an active field, use it (takes precedence)
+        if (addressbookResponse.active !== undefined) {
+          result.active = addressbookResponse.active
+        }
       }
 
       // ------------------------------------------------------------------
-      // 8 - Clean‑up – drop undefined / null values
+      // 8 - Active status - true if user has Matrix profile, false otherwise
+      // ------------------------------------------------------------------
+      // Only set active based on Matrix profile if not already set from addressbook
+      // AND if we have meaningful data (not just uid)
+      // A user is considered "active" if they have a Matrix profile (matrixRow exists)
+      // This matches the logic in _search.ts where active users have profiles
+      if (
+        result.active === undefined &&
+        (matrixRow || directoryRow || settingsRow || addressbookResponse)
+      ) {
+        result.active = !!matrixRow
+      }
+
+      // ------------------------------------------------------------------
+      // 9 - Clean‑up – drop undefined / null values
       // ------------------------------------------------------------------
       const finalResult = Object.fromEntries(
         Object.entries(result).filter(([_, v]) => v != null)
