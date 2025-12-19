@@ -385,3 +385,20 @@ export const getLocalPart = (id: string): string | null => {
   if (parts.length < 2) return null
   return parts[0].slice(1)
 }
+
+/**
+ * Extracts the server name from a Matrix ID.
+ *
+ * @param mxid - The Matrix ID (e.g., "@alice:matrix.org")
+ * @returns The server name portion (e.g., "matrix.org")
+ *
+ * @example
+ * ```typescript
+ * getServerNameFromMatrixId('@alice:matrix.org')           // 'matrix.org'
+ * getServerNameFromMatrixId('@bob:example.com:8448')       // 'example.com:8448'
+ * getServerNameFromMatrixId('@user:[::1]:8008')            // '[::1]:8008'
+ * ```
+ */
+export const getServerNameFromMatrixId = (mxid: string): string => {
+  return mxid.split(':').slice(1).join(':')
+}
