@@ -4,6 +4,8 @@ import bodyParser from 'body-parser'
 import router, { PATH } from '../routes'
 import { TwakeLogger } from '@twake/logger'
 import supertest from 'supertest'
+import type { UserDB } from '@twake/matrix-identity-server'
+import type { IUserInfoService } from '../../user-info-api/types'
 
 const app = express()
 
@@ -30,6 +32,21 @@ const authenticatorMock = jest
     callbackMethod({ sub: 'test' }, 'test')
   })
 
+const userDBMock = {
+  get: jest.fn(),
+  getAll: jest.fn(),
+  match: jest.fn(),
+  close: jest.fn(),
+  ready: Promise.resolve()
+}
+
+const userInfoServiceMock = {
+  get: jest.fn(),
+  getMany: jest.fn(),
+  getVisibility: jest.fn(),
+  updateVisibility: jest.fn()
+}
+
 jest.mock('../middlewares/index.ts', () => {
   const passiveMiddlewareMock = (
     _req: AuthRequest,
@@ -45,7 +62,8 @@ jest.mock('../middlewares/index.ts', () => {
       checkContactOwnership: passiveMiddlewareMock,
       validateContactUpdate: passiveMiddlewareMock,
       validateContactsCreation: passiveMiddlewareMock,
-      enrichWithUserDBContacts: passiveMiddlewareMock
+      enrichWithUserDBContacts: passiveMiddlewareMock,
+      enrichWithUserInfo: passiveMiddlewareMock
     }
   }
 })
@@ -60,7 +78,10 @@ app.use(
     } as unknown as Config,
     dbMock as unknown as TwakeDB,
     authenticatorMock,
-    loggerMock as unknown as TwakeLogger
+    loggerMock as unknown as TwakeLogger,
+    undefined,
+    userDBMock as unknown as UserDB,
+    userInfoServiceMock as unknown as IUserInfoService
   )
 )
 
