@@ -83,7 +83,7 @@ class UserInfoController implements IUserInfoController {
       }
 
       if (!uids || !Array.isArray(uids)) {
-        res.status(400).json({ error: 'uids must be an array' })
+        res.status(400).json({ error: errCodes.invalidParam })
         return
       }
 
