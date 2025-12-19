@@ -20,8 +20,8 @@ export default (
   authenticator: AuthenticationFunction,
   defaultLogger?: TwakeLogger,
   addressbookService?: IAddressbookService,
-  userDB?: UserDB,
-  userInfoService?: IUserInfoService
+  userDB: UserDB,
+  userInfoService: IUserInfoService
 ): Router => {
   const logger = defaultLogger ?? getLogger(config as unknown as LoggerConfig)
   const router = Router()
@@ -34,9 +34,9 @@ export default (
   const middleware = new AddressBookApiMiddleware(
     db,
     logger,
-    userDB!,
+    userDB,
     config,
-    userInfoService!
+    userInfoService
   )
 
   /**
