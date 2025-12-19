@@ -10,7 +10,6 @@ export type SupportedDatabases = 'sqlite' | 'pg'
 
 export type Collections =
   | 'accessTokens'
-  | 'activeContacts'
   | 'attempts'
   | 'oneTimeTokens'
   | 'hashes'
@@ -22,7 +21,6 @@ export type Collections =
   | 'userHistory'
   | 'userPolicies'
   | 'userQuotas'
-  | 'activeContacts'
   | 'invitations'
   | 'addressbooks'
   | 'contacts'
@@ -31,7 +29,6 @@ const cleanByExpires: Collections[] = ['oneTimeTokens', 'attempts']
 
 const tables: Record<Collections, string> = {
   accessTokens: 'id varchar(64) PRIMARY KEY, data text',
-  activeContacts: 'userId text PRIMARY KEY, contacts text',
   attempts: 'email text PRIMARY KEY, expires int, attempt int',
   oneTimeTokens: 'id varchar(64) PRIMARY KEY, expires int, data text',
   hashes:
