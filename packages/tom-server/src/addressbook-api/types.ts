@@ -1,4 +1,6 @@
 import type { NextFunction, Response, Request } from 'express'
+import type { UserDB } from '@twake/matrix-identity-server'
+import type { AuthRequest } from '../types'
 
 export interface Contact {
   id: string
@@ -6,6 +8,20 @@ export interface Contact {
   display_name: string
   active: boolean
   addressbook_id: string
+}
+
+// Extend AuthRequest to include enrichment function
+export interface EnrichedAuthRequest extends AuthRequest {
+  enrichContacts?: (
+    addressbookId: string,
+    contacts: Contact[]
+  ) => Promise<Contact[]>
+}
+
+// Type for userDB row
+export interface UserDBRow {
+  uid: string
+  cn: string
 }
 
 export interface AddressBook {

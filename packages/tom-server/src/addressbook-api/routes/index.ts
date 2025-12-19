@@ -4,6 +4,7 @@ import {
   type TwakeLogger
 } from '@twake/logger'
 import type { AuthenticationFunction, Config, TwakeDB } from '../../types'
+import type { UserDB } from '@twake/matrix-identity-server'
 import { Router } from 'express'
 import authMiddleware from '../../utils/middlewares/auth.middleware'
 import AddressbookApiController from '../controllers'
@@ -17,7 +18,8 @@ export default (
   db: TwakeDB,
   authenticator: AuthenticationFunction,
   defaultLogger?: TwakeLogger,
-  addressbookService?: IAddressbookService
+  addressbookService?: IAddressbookService,
+  userDB?: UserDB
 ): Router => {
   const logger = defaultLogger ?? getLogger(config as unknown as LoggerConfig)
   const router = Router()
@@ -27,7 +29,7 @@ export default (
     logger,
     addressbookService
   )
-  const middleware = new AddressBookApiMiddleware(db, logger)
+  const middleware = new AddressBookApiMiddleware(db, logger, userDB!, config)
 
   /**
    * @openapi
@@ -97,7 +99,12 @@ export default (
    *    500:
    *      description: Internal server error
    */
-  router.get(PATH, authenticate, controller.listAddressbook)
+  router.get(
+    PATH,
+    authenticate,
+    middleware.enrichWithUserDBContacts,
+    controller.listAddressbook
+  )
 
   /**
    * @openapi

@@ -1,6 +1,10 @@
 import { TwakeLogger } from '@twake/logger'
 import { AuthRequest, TwakeDB } from '../../types'
-import type { IAddressbookApiController, IAddressbookService } from '../types'
+import type {
+  IAddressbookApiController,
+  IAddressbookService,
+  EnrichedAuthRequest
+} from '../types'
 import { AddressbookService } from '../services'
 import type { NextFunction, Response } from 'express'
 
@@ -20,13 +24,13 @@ export default class AddressbookApiController
   /**
    * Lists connected user addressbook
    *
-   * @param {AuthRequest} req - The request object
+   * @param {EnrichedAuthRequest} req - The request object
    * @param {Response} res - The response object
    * @param {NextFunction} next - The next function
    * @returns {Promise<void>}
    */
   public listAddressbook = async (
-    req: AuthRequest,
+    req: EnrichedAuthRequest,
     res: Response,
     next: NextFunction
   ): Promise<void> => {
@@ -38,7 +42,20 @@ export default class AddressbookApiController
         throw new Error('Missing owner')
       }
 
-      const addressbook = await this.service.list(owner)
+      let addressbook = await this.service.list(owner)
+
+      // Apply enrichment if middleware injected the function
+      if (req.enrichContacts && typeof req.enrichContacts === 'function') {
+        this.logger.debug('[listAddressbook] Applying contact enrichment')
+        const enrichedContacts = await req.enrichContacts(
+          addressbook.id,
+          addressbook.contacts
+        )
+        addressbook = {
+          ...addressbook,
+          contacts: enrichedContacts
+        }
+      }
 
       res.status(200).json(addressbook)
     } catch (error) {
