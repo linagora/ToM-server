@@ -27,6 +27,7 @@ export interface UserInformation {
   language?: string
   timezone?: string
   workplaceFqdn?: string
+  active?: boolean
 }
 
 export interface SettingsPayload {
