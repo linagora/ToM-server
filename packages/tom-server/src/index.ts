@@ -100,7 +100,12 @@ export default class TwakeServer {
       this.logger,
       this.addressbookService
     )
-    this.logger.debug('Singleton services initialized')
+
+    // Setup identity server lookup routes with singleton services
+    await this.idServer.setupLookupRoutes(
+      this.addressbookService,
+      this.userInfoService
+    )
 
     const vaultServer = new VaultServer(this.db, this.idServer.authenticate)
     const wellKnown = new WellKnown(this.conf)
