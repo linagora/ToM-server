@@ -12,7 +12,6 @@ export default class AddressbookApiController
   implements IAddressbookApiController
 {
   private readonly service: IAddressbookService
-
   constructor(
     db: TwakeDB,
     private readonly logger: TwakeLogger,

@@ -144,11 +144,11 @@ export default class TwakeServer {
     const addressbookApi = AddressBook(
       this.conf,
       this.idServer.db,
-      this.idServer.authenticate,
-      this.logger,
-      this.addressbookService,
       this.idServer.userDB,
-      this.userInfoService
+      this.idServer.authenticate,
+      this.userInfoService,
+      this.addressbookService,
+      this.logger
     )
 
     const deactivateAccountApi = DeactivateAccount(

@@ -17,11 +17,11 @@ export const PATH = '/_twake/addressbook'
 export default (
   config: Config,
   db: TwakeDB,
-  authenticator: AuthenticationFunction,
-  defaultLogger?: TwakeLogger,
-  addressbookService?: IAddressbookService,
   userDB: UserDB,
-  userInfoService: IUserInfoService
+  authenticator: AuthenticationFunction,
+  userInfoService: IUserInfoService,
+  addressbookService?: IAddressbookService,
+  defaultLogger?: TwakeLogger
 ): Router => {
   const logger = defaultLogger ?? getLogger(config as unknown as LoggerConfig)
   const router = Router()
