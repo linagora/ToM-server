@@ -3,10 +3,19 @@ import type { AuthRequest } from '../types'
 
 export interface IUserInfoController {
   get: (req: AuthRequest, res: Response, next: NextFunction) => Promise<void>
+  getMany: (
+    req: AuthRequest,
+    res: Response,
+    next: NextFunction
+  ) => Promise<void>
 }
 
 export interface IUserInfoService {
   get: (id: string, viewer?: string) => Promise<UserInformation | null>
+  getMany: (
+    ids: string[],
+    viewer?: string
+  ) => Promise<Map<string, UserInformation | null>>
   getVisibility: (id: string) => Promise<UserProfileSettingsPayloadT | null>
   updateVisibility: (
     id: string,

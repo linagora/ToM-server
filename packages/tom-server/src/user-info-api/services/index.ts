@@ -338,6 +338,42 @@ class UserInfoService implements IUserInfoService {
     }
   }
 
+  /**
+   * Retrieves user information for multiple users in batch
+   * @param {string[]} ids Array of user IDs
+   * @param {string} viewer Optional viewer ID for visibility checks
+   * @returns {Promise<Map<string, UserInformation | null>>} Map of user IDs to their information
+   */
+  getMany = async (
+    ids: string[],
+    viewer?: string
+  ): Promise<Map<string, UserInformation | null>> => {
+    this.logger.debug(
+      `[UserInfoService].getMany: Gathering information for ${ids.length} users`
+    )
+    const results = new Map<string, UserInformation | null>()
+
+    if (!ids || ids.length === 0) {
+      return results
+    }
+
+    try {
+      // For now, use individual get() calls
+      // TODO: Optimize with batch queries in future
+      for (const id of ids) {
+        const userInfo = await this.get(id, viewer)
+        results.set(id, userInfo)
+      }
+
+      return results
+    } catch (error) {
+      throw new Error(
+        `Error getting batch user info ${JSON.stringify({ cause: error })}`,
+        { cause: error as Error }
+      )
+    }
+  }
+
   updateVisibility = async (
     userId: string,
     visibilitySettings: UserProfileSettingsPayloadT
