@@ -59,7 +59,8 @@ jest.mock('../middlewares', () => {
     return {
       validateContactsCreation: middlewareSpy,
       validateContactUpdate: middlewareSpy,
-      checkContactOwnership: middlewareSpy
+      checkContactOwnership: middlewareSpy,
+      enrichWithUserDBContacts: middlewareSpy
     }
   }
 })

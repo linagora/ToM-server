@@ -146,7 +146,8 @@ export default class TwakeServer {
       this.idServer.db,
       this.idServer.authenticate,
       this.logger,
-      this.addressbookService
+      this.addressbookService,
+      this.idServer.userDB
     )
 
     const deactivateAccountApi = DeactivateAccount(

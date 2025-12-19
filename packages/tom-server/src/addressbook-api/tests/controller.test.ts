@@ -44,7 +44,8 @@ jest.mock('../middlewares/index.ts', () => {
     return {
       checkContactOwnership: passiveMiddlewareMock,
       validateContactUpdate: passiveMiddlewareMock,
-      validateContactsCreation: passiveMiddlewareMock
+      validateContactsCreation: passiveMiddlewareMock,
+      enrichWithUserDBContacts: passiveMiddlewareMock
     }
   }
 })
