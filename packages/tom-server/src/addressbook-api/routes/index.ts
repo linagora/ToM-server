@@ -90,10 +90,16 @@ export default (
    *  get:
    *   tags:
    *   - Addressbook
-   *   description: List all contacts in the addressbook
+   *   summary: List all contacts in the addressbook
+   *   description: |
+   *     Returns all contacts with enriched user information.
+   *     - Contacts from local server are enriched with userinfo service data
+   *     - Display names and active status updated from Matrix profiles
+   *     - Remote server contacts returned as-is
+   *     - When additional features are enabled, contacts from UserDB are included
    *   responses:
    *    200:
-   *      description: List of contacts
+   *      description: List of contacts with enriched data
    *      content:
    *        application/json:
    *          schema:

@@ -371,53 +371,60 @@ export default class AddressBookApiMiddleware
             '[enrichWithUserInfo] Starting userinfo enrichment for contacts'
           )
 
-          const enrichedContacts = await Promise.all(
-            contacts.map(async (contact) => {
-              try {
-                // Only enrich local server MXIDs
-                const serverName = getServerNameFromMatrixId(contact.mxid)
-                if (serverName !== this.config.server_name) {
-                  this.logger.silly(
-                    `[enrichWithUserInfo] Skipping non-local contact: ${contact.mxid}`
-                  )
-                  return contact
-                }
+          // Filter to local server contacts only
+          const localContacts = contacts.filter((contact) => {
+            const serverName = getServerNameFromMatrixId(contact.mxid)
+            return serverName === this.config.server_name
+          })
 
-                // Fetch userinfo
-                const userInfo = await this.userInfoService.get(
-                  contact.mxid,
-                  viewer
-                )
-                if (!userInfo) {
-                  this.logger.silly(
-                    `[enrichWithUserInfo] No userinfo found for: ${contact.mxid}`
-                  )
-                  return contact
-                }
+          if (localContacts.length === 0) {
+            this.logger.debug(
+              '[enrichWithUserInfo] No local contacts to enrich'
+            )
+            return contacts
+          }
 
-                // Merge userinfo into contact
-                const enriched = {
-                  ...contact,
-                  display_name: userInfo.display_name ?? contact.display_name,
-                  active: userInfo.active ?? contact.active
-                }
-
-                this.logger.silly(
-                  `[enrichWithUserInfo] Enriched contact: ${contact.mxid}`
-                )
-                return enriched
-              } catch (e: any) {
-                this.logger.warn(
-                  `[enrichWithUserInfo] Failed to enrich contact ${contact.mxid}`,
-                  { error: e.message }
-                )
-                return contact
-              }
-            })
+          // Batch fetch userinfo for all local contacts
+          const mxids = localContacts.map((c) => c.mxid)
+          this.logger.debug(
+            `[enrichWithUserInfo] Batch fetching userinfo for ${mxids.length} local contacts`
           )
 
+          const userInfoMap = await this.userInfoService.getMany(mxids, viewer)
+
+          // Map results back to contacts
+          const enrichedContacts = contacts.map((contact) => {
+            const serverName = getServerNameFromMatrixId(contact.mxid)
+            if (serverName !== this.config.server_name) {
+              this.logger.silly(
+                `[enrichWithUserInfo] Skipping non-local contact: ${contact.mxid}`
+              )
+              return contact
+            }
+
+            const userInfo = userInfoMap.get(contact.mxid)
+            if (!userInfo) {
+              this.logger.silly(
+                `[enrichWithUserInfo] No userinfo found for: ${contact.mxid}`
+              )
+              return contact
+            }
+
+            // Merge userinfo into contact
+            const enriched = {
+              ...contact,
+              display_name: userInfo.display_name ?? contact.display_name,
+              active: userInfo.active ?? contact.active
+            }
+
+            this.logger.silly(
+              `[enrichWithUserInfo] Enriched contact: ${contact.mxid}`
+            )
+            return enriched
+          })
+
           this.logger.info(
-            `[enrichWithUserInfo] Enriched ${enrichedContacts.length} contacts with userinfo`
+            `[enrichWithUserInfo] Enriched ${localContacts.length} contacts with userinfo`
           )
           return enrichedContacts
         } catch (error: any) {

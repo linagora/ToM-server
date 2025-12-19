@@ -64,6 +64,41 @@ class UserInfoController implements IUserInfoController {
   }
 
   /**
+   * Fetches user info for multiple user ids in batch
+   *
+   * @param {AuthRequest} req the request object
+   * @param {Response} res the response object
+   * @param {NextFunction} next the next handler
+   */
+  getMany = async (
+    req: AuthRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
+    try {
+      const { uids } = req.body
+      if (req.userId == null) {
+        res.status(400).json({ error: errCodes.missingParams })
+        return
+      }
+
+      if (!uids || !Array.isArray(uids)) {
+        res.status(400).json({ error: 'uids must be an array' })
+        return
+      }
+
+      const userInfoMap = await this.userInfoService.getMany(uids, req.userId)
+
+      // Convert Map to plain object for JSON response
+      const result = Object.fromEntries(userInfoMap)
+
+      res.status(200).json(result)
+    } catch (error) {
+      next(error)
+    }
+  }
+
+  /**
    * Sets the visibility settings for the user info
    *
    * @param {AuthRequest} req the request object
