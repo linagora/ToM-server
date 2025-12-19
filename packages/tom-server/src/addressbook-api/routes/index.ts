@@ -10,6 +10,7 @@ import authMiddleware from '../../utils/middlewares/auth.middleware'
 import AddressbookApiController from '../controllers'
 import AddressBookApiMiddleware from '../middlewares'
 import type { IAddressbookService } from '../types'
+import type { IUserInfoService } from '../../user-info-api/types'
 
 export const PATH = '/_twake/addressbook'
 
@@ -19,7 +20,8 @@ export default (
   authenticator: AuthenticationFunction,
   defaultLogger?: TwakeLogger,
   addressbookService?: IAddressbookService,
-  userDB?: UserDB
+  userDB?: UserDB,
+  userInfoService?: IUserInfoService
 ): Router => {
   const logger = defaultLogger ?? getLogger(config as unknown as LoggerConfig)
   const router = Router()
@@ -29,7 +31,13 @@ export default (
     logger,
     addressbookService
   )
-  const middleware = new AddressBookApiMiddleware(db, logger, userDB!, config)
+  const middleware = new AddressBookApiMiddleware(
+    db,
+    logger,
+    userDB!,
+    config,
+    userInfoService!
+  )
 
   /**
    * @openapi
@@ -103,6 +111,7 @@ export default (
     PATH,
     authenticate,
     middleware.enrichWithUserDBContacts,
+    middleware.enrichWithUserInfo,
     controller.listAddressbook
   )
 

@@ -1,7 +1,7 @@
 import type { TwakeLogger } from '@twake/logger'
 import type { AuthRequest, TwakeDB, Config } from '../../types'
 import type { UserDB } from '@twake/matrix-identity-server'
-import { toMatrixId, isMatrixId } from '@twake/utils'
+import { toMatrixId, isMatrixId, getServerNameFromMatrixId } from '@twake/utils'
 import type {
   AddressBook,
   Contact,
@@ -11,6 +11,7 @@ import type {
   EnrichedAuthRequest,
   UserDBRow
 } from '../types'
+import type { IUserInfoService } from '../../user-info-api/types'
 import type { NextFunction, Response } from 'express'
 
 export default class AddressBookApiMiddleware
@@ -20,7 +21,8 @@ export default class AddressBookApiMiddleware
     private readonly db: TwakeDB,
     private readonly logger: TwakeLogger,
     private readonly userDB: UserDB,
-    private readonly config: Config
+    private readonly config: Config,
+    private readonly userInfoService: IUserInfoService
   ) {}
 
   /**
@@ -335,6 +337,95 @@ export default class AddressBookApiMiddleware
           )
           // Return original contacts on error
           return existingContacts
+        }
+      }
+
+      next()
+    } catch (error) {
+      next(error)
+    }
+  }
+
+  /**
+   * Enriches addressbook contacts with user information from userinfo service
+   * Only enriches contacts from the local server (config.server_name)
+   *
+   * @param {EnrichedAuthRequest} req - the request
+   * @param {Response} res - the response
+   * @param {NextFunction} next - the next function
+   * @returns {Promise<void>}
+   */
+  public enrichWithUserInfo = async (
+    req: EnrichedAuthRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
+    try {
+      // Inject enrichment function into request
+      req.enrichWithUserInfo = async (
+        contacts: Contact[],
+        viewer?: string
+      ): Promise<Contact[]> => {
+        try {
+          this.logger.debug(
+            '[enrichWithUserInfo] Starting userinfo enrichment for contacts'
+          )
+
+          const enrichedContacts = await Promise.all(
+            contacts.map(async (contact) => {
+              try {
+                // Only enrich local server MXIDs
+                const serverName = getServerNameFromMatrixId(contact.mxid)
+                if (serverName !== this.config.server_name) {
+                  this.logger.silly(
+                    `[enrichWithUserInfo] Skipping non-local contact: ${contact.mxid}`
+                  )
+                  return contact
+                }
+
+                // Fetch userinfo
+                const userInfo = await this.userInfoService.get(
+                  contact.mxid,
+                  viewer
+                )
+                if (!userInfo) {
+                  this.logger.silly(
+                    `[enrichWithUserInfo] No userinfo found for: ${contact.mxid}`
+                  )
+                  return contact
+                }
+
+                // Merge userinfo into contact
+                const enriched = {
+                  ...contact,
+                  display_name: userInfo.display_name ?? contact.display_name,
+                  active: userInfo.active ?? contact.active
+                }
+
+                this.logger.silly(
+                  `[enrichWithUserInfo] Enriched contact: ${contact.mxid}`
+                )
+                return enriched
+              } catch (e: any) {
+                this.logger.warn(
+                  `[enrichWithUserInfo] Failed to enrich contact ${contact.mxid}`,
+                  { error: e.message }
+                )
+                return contact
+              }
+            })
+          )
+
+          this.logger.info(
+            `[enrichWithUserInfo] Enriched ${enrichedContacts.length} contacts with userinfo`
+          )
+          return enrichedContacts
+        } catch (error: any) {
+          this.logger.error('[enrichWithUserInfo] Failed to enrich contacts', {
+            error: error.message,
+            stack: error.stack
+          })
+          return contacts // Return original on error
         }
       }
 
