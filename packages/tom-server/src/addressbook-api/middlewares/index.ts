@@ -371,60 +371,38 @@ export default class AddressBookApiMiddleware
             '[enrichWithUserInfo] Starting userinfo enrichment for contacts'
           )
 
-          // Filter to local server contacts only
-          const localContacts = contacts.filter((contact) => {
-            const serverName = getServerNameFromMatrixId(contact.mxid)
-            return serverName === this.config.server_name
-          })
-
-          if (localContacts.length === 0) {
-            this.logger.debug(
-              '[enrichWithUserInfo] No local contacts to enrich'
-            )
-            return contacts
-          }
-
-          // Batch fetch userinfo for all local contacts
-          const mxids = localContacts.map((c) => c.mxid)
-          this.logger.debug(
-            `[enrichWithUserInfo] Batch fetching userinfo for ${mxids.length} local contacts`
+          const userInfoMap = await this.userInfoService.getMany(
+            contacts.map((c) => c.mxid),
+            viewer
           )
+          const enrichedContacts =
+            userInfoMap.size > 0
+              ? contacts.map((contact) => {
+                  const userInfo = userInfoMap.get(contact.mxid)
+                  if (!userInfo) {
+                    this.logger.silly(
+                      `[enrichWithUserInfo] No userinfo found for: ${contact.mxid}`
+                    )
+                    return contact
+                  }
 
-          const userInfoMap = await this.userInfoService.getMany(mxids, viewer)
+                  // Merge userinfo into contact
+                  const enriched = {
+                    ...contact,
+                    ...userInfo,
+                    mail: userInfo?.emails?.at(0) || '', // TODO: Deprecated kepping for backward compatibility
+                    mobile: userInfo?.phones?.at(0) || '' // TODO: Deprecated kepping for backward compatibility
+                  }
 
-          // Map results back to contacts
-          const enrichedContacts = contacts.map((contact) => {
-            const serverName = getServerNameFromMatrixId(contact.mxid)
-            if (serverName !== this.config.server_name) {
-              this.logger.silly(
-                `[enrichWithUserInfo] Skipping non-local contact: ${contact.mxid}`
-              )
-              return contact
-            }
-
-            const userInfo = userInfoMap.get(contact.mxid)
-            if (!userInfo) {
-              this.logger.silly(
-                `[enrichWithUserInfo] No userinfo found for: ${contact.mxid}`
-              )
-              return contact
-            }
-
-            // Merge userinfo into contact
-            const enriched = {
-              ...contact,
-              display_name: userInfo.display_name ?? contact.display_name,
-              active: userInfo.active ?? contact.active
-            }
-
-            this.logger.silly(
-              `[enrichWithUserInfo] Enriched contact: ${contact.mxid}`
-            )
-            return enriched
-          })
+                  this.logger.silly(
+                    `[enrichWithUserInfo] Enriched contact: ${contact.mxid}`
+                  )
+                  return enriched
+                })
+              : contacts
 
           this.logger.info(
-            `[enrichWithUserInfo] Enriched ${localContacts.length} contacts with userinfo`
+            `[enrichWithUserInfo] Enriched ${enrichedContacts.length} contacts with userinfo`
           )
           return enrichedContacts
         } catch (error: any) {
