@@ -3,6 +3,7 @@ import type { UserDB } from '@twake/matrix-identity-server'
 import type { Response, NextFunction } from 'express'
 import Middleware from '../middlewares'
 import { type TwakeLogger } from '@twake/logger'
+import type { IUserInfoService } from '../../user-info-api/types'
 
 let mockRequest: Partial<AuthRequest>
 let mockResponse: Partial<Response>
@@ -37,12 +38,20 @@ const loggerMock = {
   silly: jest.fn()
 }
 
+const userInfoServiceMock = {
+  get: jest.fn(),
+  getMany: jest.fn(),
+  getVisibility: jest.fn(),
+  updateVisibility: jest.fn()
+}
+
 const nextFunction: NextFunction = jest.fn()
 const addressbookApiMiddleware = new Middleware(
   dbMock as unknown as TwakeDB,
   loggerMock as unknown as TwakeLogger,
   userDBMock as unknown as UserDB,
-  configMock as unknown as Config
+  configMock as unknown as Config,
+  userInfoServiceMock as unknown as IUserInfoService
 )
 
 beforeEach(() => {
