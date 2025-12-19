@@ -57,6 +57,22 @@ export default class AddressbookApiController
         }
       }
 
+      // Apply userinfo enrichment if middleware injected the function
+      if (
+        req.enrichWithUserInfo &&
+        typeof req.enrichWithUserInfo === 'function'
+      ) {
+        this.logger.debug('[listAddressbook] Applying userinfo enrichment')
+        const enrichedContacts = await req.enrichWithUserInfo(
+          addressbook.contacts,
+          owner
+        )
+        addressbook = {
+          ...addressbook,
+          contacts: enrichedContacts
+        }
+      }
+
       res.status(200).json(addressbook)
     } catch (error) {
       next(error)

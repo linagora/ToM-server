@@ -16,6 +16,10 @@ export interface EnrichedAuthRequest extends AuthRequest {
     addressbookId: string,
     contacts: Contact[]
   ) => Promise<Contact[]>
+  enrichWithUserInfo?: (
+    contacts: Contact[],
+    viewer?: string
+  ) => Promise<Contact[]>
 }
 
 // Type for userDB row
