@@ -906,20 +906,18 @@ describe('_search factory', () => {
     })
 
     it('should handle enrichment errors gracefully', async () => {
-      const UserInfoServiceMock =
-        require('../../../user-info-api/services').default
-      UserInfoServiceMock.mockImplementationOnce(function () {
-        return {
-          get: jest.fn().mockRejectedValue(new Error('Enrichment failed'))
-        }
-      })
+      const { addressbookService } = createMockServices()
 
-      const { addressbookService, userInfoService } = createMockServices()
+      // Create a userInfoService that rejects with an error
+      const failingUserInfoService = {
+        get: jest.fn().mockRejectedValue(new Error('Enrichment failed'))
+      } as any
+
       const searchFn = await _search(
         idServerMock as any,
         logger as any,
         addressbookService,
-        userInfoService
+        failingUserInfoService
       )
       const resMock = {} as any
       const dataMock = {
