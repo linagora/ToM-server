@@ -912,65 +912,49 @@ export class AddressbookService implements IAddressbookService {
    */
   private _createUserAddressBook = async (
     owner: string
-  ): Promise<AddressBook | undefined> => {
+  ): Promise<AddressBook> => {
     this.logger.silly(
       '[AddressbookService._createUserAddressBook] Entering method.',
       {
         owner
       }
     )
-    try {
-      const id = uuidv7()
-      this.logger.debug(
-        '[AddressbookService._createUserAddressBook] Generated new UUID for addressbook.',
-        { addressbookId: id }
-      )
-      this.logger.debug(
-        '[AddressbookService._createUserAddressBook] Inserting new addressbook into database.',
+    const id = uuidv7()
+    this.logger.debug(
+      '[AddressbookService._createUserAddressBook] Generated new UUID for addressbook.',
+      { addressbookId: id }
+    )
+    this.logger.debug(
+      '[AddressbookService._createUserAddressBook] Inserting new addressbook into database.',
+      { owner, addressbookId: id }
+    )
+    const addressbook = (await this.db.insert('addressbooks', {
+      owner,
+      id
+    })) as unknown as AddressBook[]
+
+    if (!addressbook || !addressbook.length) {
+      this.logger.error(
+        '[AddressbookService._createUserAddressBook] Database insert returned no created addressbook.',
         { owner, addressbookId: id }
       )
-      const addressbook = (await this.db.insert('addressbooks', {
-        owner,
-        id
-      })) as unknown as AddressBook[]
-
-      if (!addressbook || !addressbook.length) {
-        this.logger.error(
-          '[AddressbookService._createUserAddressBook] Database insert returned no created addressbook.',
-          { owner, addressbookId: id }
-        )
-        throw new Error('Failed to create addressbook: no data returned')
-      }
-
-      const result = addressbook[0]
-      this.logger.info(
-        '[AddressbookService._createUserAddressBook] Addressbook created successfully.',
-        { addressbookId: result.id, owner }
-      )
-      this.logger.silly(
-        `[AddressbookService._createUserAddressBook] Created addressbook details: ${JSON.stringify(
-          result
-        )}`
-      )
-      this.logger.silly(
-        '[AddressbookService._createUserAddressBook] Exiting method (success).'
-      )
-      return result
-    } catch (error: any) {
-      this.logger.error(
-        '[AddressbookService._createUserAddressBook] Failed to create user addressbook.',
-        {
-          owner,
-          message: error.message,
-          stack: error.stack,
-          errorName: error.name
-        }
-      )
-      this.logger.silly(
-        '[AddressbookService._createUserAddressBook] Exiting method (error).'
-      )
-      return undefined
+      throw new Error('Failed to create addressbook: no data returned')
     }
+
+    const result = addressbook[0]
+    this.logger.info(
+      '[AddressbookService._createUserAddressBook] Addressbook created successfully.',
+      { addressbookId: result.id, owner }
+    )
+    this.logger.silly(
+      `[AddressbookService._createUserAddressBook] Created addressbook details: ${JSON.stringify(
+        result
+      )}`
+    )
+    this.logger.silly(
+      '[AddressbookService._createUserAddressBook] Exiting method (success).'
+    )
+    return result
   }
 
   /**
