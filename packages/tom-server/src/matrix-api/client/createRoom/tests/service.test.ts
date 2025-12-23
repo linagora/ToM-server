@@ -172,7 +172,7 @@ describe('the RoomService', () => {
       })
     ) as jest.Mock
 
-    const { creator_becomes, ...config } = direct_chat
+    const { creator_becomes, ...config } = private_group_chat // Changed from direct_chat to private_group_chat (default for no preset)
     const ownerUser = '@user:server.com'
     const ownerUserLevel = 100
     roomService.create(
@@ -186,6 +186,9 @@ describe('the RoomService', () => {
       {
         body: JSON.stringify({
           invite: ['@user:server.com'],
+          preset: 'private_chat', // Added: normalized preset
+          visibility: 'private', // Added: normalized visibility
+          is_direct: false, // Added: normalized is_direct
           power_level_content_override: {
             ...config,
             users: {
@@ -229,6 +232,8 @@ describe('the RoomService', () => {
         body: JSON.stringify({
           invite: ['@user:server.com', '@user2:server.com'],
           preset: 'public_chat',
+          visibility: 'public', // Added: normalized visibility
+          is_direct: false, // Added: normalized is_direct
           power_level_content_override: {
             ...config,
             users: {
