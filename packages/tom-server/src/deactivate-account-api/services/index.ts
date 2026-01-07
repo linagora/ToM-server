@@ -4,16 +4,18 @@ import { Config, ITokenService } from '../../types'
 import TokenService from '../../utils/services/token-service'
 import { buildUrl } from '../../utils'
 
-export default class AdminService implements IAdminService {
-  private readonly device = 'admin service'
+export default class DeactivateAccountService implements IAdminService {
+  private readonly device = 'deactivate_service'
   private readonly tokenService: ITokenService
 
   constructor(
     private readonly config: Config,
-    private readonly logger: TwakeLogger
+    private readonly logger: TwakeLogger,
+    tokenService?: ITokenService
   ) {
-    this.tokenService = new TokenService(this.config, this.logger, this.device)
-    this.logger.info('[AdminService] Initialized.', {})
+    this.tokenService =
+      tokenService ?? new TokenService(this.config, this.logger, this.device)
+    this.logger.info('[DeactivateAccountService] Initialized.')
   }
 
   /**
