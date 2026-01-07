@@ -17,8 +17,7 @@
   "author": "Yadd <yadd@debian.org>",
   "type": "module",
   "workspaces": [
-    "packages/*",
-    "landing"
+    "packages/*"
   ],
   "scripts": {
     "build": "npm run softClean && lerna run build",
@@ -41,7 +40,6 @@
     "dev": "concurrently -k \"npm run watch\" \"npm run serve\""
   },
   "dependencies": {
-    "@remix-run/express": "^1.16.0",
     "@twake/amqp-connector": "^0.0.1",
     "@twake/common-settings": "^0.0.1",
     "@twake/logger": "^0.0.1",

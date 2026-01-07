@@ -1,13 +1,9 @@
-import { createRequestHandler } from '@remix-run/express'
-import { installGlobals } from '@remix-run/node'
 import TomServer from '@twake/server'
 import MatrixIdentityServer from '@twake/matrix-identity-server'
 import { CommonSettingsService } from '@twake/common-settings'
 import express from 'express'
 import path from 'node:path'
 import { fileURLToPath } from 'url'
-
-installGlobals()
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -254,22 +250,11 @@ if (process.env.CROWDSEC_URI) {
   )
 }
 
-app.use(
-  '/assets',
-  express.static('./landing/build/client/assets', {
-    immutable: true,
-    maxAge: '1y'
-  })
-)
-
-app.use(express.static('./landing/build/client', { maxAge: '1h' }))
-
-app.get(
-  '/',
-  createRequestHandler({
-    build: await import('./landing/build/server/index.js')
-  })
-)
+app.get('/', (req, res) => {
+  res.sendFile(
+    path.join(__dirname, 'packages', 'tom-server', 'static', 'landing.html')
+  )
+})
 
 Promise.all(promises)
   .then(async () => {

@@ -15,7 +15,6 @@ COPY .njsscan *.js *.json *.mjs LICENSE ./
 
 # 2. Directories
 COPY packages ./packages/
-COPY landing /usr/src/app/landing
 
 # Build and clean
 RUN npm install && \
