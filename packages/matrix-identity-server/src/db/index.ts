@@ -266,7 +266,7 @@ class IdentityServerDb<T extends string = never>
         .catch((e) => {
           /* istanbul ignore next */
           console.error({ e })
-          this.logger.error('Database initialization failed')
+          this.logger.error('[IdentityServerDb] Database initialization failed')
           /* istanbul ignore next */
           reject(e)
         })
