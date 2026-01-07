@@ -11,12 +11,15 @@ export default class CookieAuthenticator {
    *
    * @param {Config} config - the configuration object.
    * @param {TwakeLogger} logger - the logger object.
+   * @param {ITokenService} tokenService - optional tokenService singleton.
    */
   constructor(
     private readonly config: Config,
-    private readonly logger: TwakeLogger
+    private readonly logger: TwakeLogger,
+    tokenService?: ITokenService
   ) {
-    this.tokenService = new TokenService(this.config, this.logger, 'middleware')
+    this.tokenService =
+      tokenService ?? new TokenService(this.config, this.logger, 'middleware')
   }
 
   /**

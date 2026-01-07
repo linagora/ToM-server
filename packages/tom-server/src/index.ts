@@ -23,6 +23,8 @@ import AdminSettings from './admin-settings-api'
 import MatrixclientApi from './matrix-api/client'
 import { AddressbookService } from './addressbook-api/services'
 import UserInfoService from './user-info-api/services'
+import TokenService from './utils/services/token-service'
+import SmsService from './sms-api/services'
 
 export default class TwakeServer {
   conf: Config
@@ -34,6 +36,8 @@ export default class TwakeServer {
   idServer!: IdServer
   private addressbookService!: AddressbookService
   private userInfoService!: UserInfoService
+  private tokenService!: TokenService
+  private smsService!: SmsService
 
   constructor(
     conf?: Partial<Config>,
@@ -100,6 +104,8 @@ export default class TwakeServer {
       this.logger,
       this.addressbookService
     )
+    this.tokenService = new TokenService(this.conf, this.logger, 'tom-server')
+    this.smsService = new SmsService(this.conf, this.logger)
 
     // Setup identity server lookup routes with singleton services
     await this.idServer.setupLookupRoutes(
@@ -121,10 +127,16 @@ export default class TwakeServer {
     const smsApi = smsApiRouter(
       this.conf,
       this.idServer.authenticate,
-      this.logger
+      this.logger,
+      this.smsService
     )
 
-    const qrCodeApi = QRCode(this.idServer, this.conf, this.logger)
+    const qrCodeApi = QRCode(
+      this.idServer,
+      this.conf,
+      this.logger,
+      this.tokenService
+    )
     const metricsApi = MetricsRouter(
       this.conf,
       this.matrixDb.db,
@@ -138,7 +150,8 @@ export default class TwakeServer {
       this.matrixDb,
       this.idServer.authenticate,
       this.logger,
-      this.userInfoService
+      this.userInfoService,
+      this.tokenService
     )
 
     const addressbookApi = AddressBook(
@@ -152,10 +165,15 @@ export default class TwakeServer {
     const deactivateAccountApi = DeactivateAccount(
       this.conf,
       this.matrixDb.db,
-      this.logger
+      this.logger,
+      this.tokenService
     )
 
-    const adminSettingsApi = AdminSettings(this.conf, this.logger)
+    const adminSettingsApi = AdminSettings(
+      this.conf,
+      this.logger,
+      this.tokenService
+    )
 
     const matrixClientApi = MatrixclientApi(
       this.conf,
