@@ -1,8 +1,0 @@
-services:
-  invitation:
-    container_name: invitation
-    build: .
-    ports:
-      - 8080:3000
-    environment:
-      PORT: "3000"

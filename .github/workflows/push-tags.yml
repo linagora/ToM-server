@@ -19,8 +19,3 @@ jobs:
     uses: ./.github/workflows/publish-tom-server.yml
     needs: [test]
     secrets: inherit
-  publish-matrix-invite:
-    name: Publish Matrix Invite
-    uses: ./.github/workflows/publish-matrix-invite.yml
-    needs: [test]
-    secrets: inherit
