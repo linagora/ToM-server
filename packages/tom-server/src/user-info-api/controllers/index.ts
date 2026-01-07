@@ -10,6 +10,7 @@ import { type TwakeDB, type AuthRequest, type Config } from '../../types'
 import UserInfoService from '../services'
 import { errCodes } from '@twake/utils'
 import type { TwakeLogger } from '@twake/logger'
+import type { IAddressbookService } from '../../addressbook-api/types'
 
 class UserInfoController implements IUserInfoController {
   private readonly userInfoService: IUserInfoService
@@ -20,11 +21,19 @@ class UserInfoController implements IUserInfoController {
     private readonly matrixDB: MatrixDB,
     private readonly config: Config,
     private readonly logger: TwakeLogger,
-    userInfoService?: IUserInfoService
+    userInfoService?: IUserInfoService,
+    addressbookService?: IAddressbookService
   ) {
     this.userInfoService =
       userInfoService ??
-      new UserInfoService(userdb, db, matrixDB, config, logger)
+      new UserInfoService(
+        userdb,
+        db,
+        matrixDB,
+        config,
+        logger,
+        addressbookService
+      )
   }
 
   /**
