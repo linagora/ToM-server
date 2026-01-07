@@ -19,6 +19,7 @@ export default class AdminService implements IAdminSettingsService {
     private readonly logger: TwakeLogger
   ) {
     this.tokenService = new TokenService(this.config, this.logger, this.device)
+    this.logger.info('[AdminService] Initialized.', {})
   }
 
   /**

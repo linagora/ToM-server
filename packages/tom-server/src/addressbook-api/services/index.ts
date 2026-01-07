@@ -15,7 +15,7 @@ export class AddressbookService implements IAddressbookService {
     private readonly db: TwakeDB,
     private readonly logger: TwakeLogger
   ) {
-    this.logger.debug('[AddressbookService] Initialized.', {})
+    this.logger.info('[AddressbookService] Initialized.', {})
   }
 
   /**

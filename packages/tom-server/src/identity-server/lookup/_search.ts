@@ -22,7 +22,7 @@ export const _search = async (
   addressbookService: IAddressbookService,
   userInfoService: IUserInfoService
 ): Promise<SearchFunction> => {
-  logger.debug(
+  logger.info(
     '[IndentityServer][_search] Initializing search function factory.'
   )
 

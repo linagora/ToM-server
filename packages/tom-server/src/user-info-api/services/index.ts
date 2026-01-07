@@ -65,7 +65,7 @@ class UserInfoService implements IUserInfoService {
     )
       this.defaultVisibilitySettings.visible_fields.push(ProfileField.Phone)
 
-    this.logger.debug('[UserInfoService] Initialized.', {})
+    this.logger.info('[UserInfoService] Initialized.', {})
   }
 
   /**
