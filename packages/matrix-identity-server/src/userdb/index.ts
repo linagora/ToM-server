@@ -83,6 +83,7 @@ class UserDB implements UserDBBackend {
     this.ready = new Promise((resolve, reject) => {
       this.db.ready
         .then(() => {
+          this.logger.info('[UserDB] initialized.')
           resolve()
         })
         /* istanbul ignore next */

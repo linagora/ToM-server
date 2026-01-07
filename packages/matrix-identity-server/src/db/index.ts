@@ -259,6 +259,7 @@ class IdentityServerDb<T extends string = never>
     this.ready = new Promise((resolve, reject) => {
       this.db.ready
         .then(() => {
+          this.logger.info('[IdentityServerDb] initialized.')
           this.dbMaintenance(conf.database_vacuum_delay)
           resolve()
         })
