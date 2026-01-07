@@ -92,7 +92,6 @@ export default class TwakeServer {
     this.logger.debug('idServer initialized')
     await this.matrixDb.ready
     this.logger.debug('Connected to Matrix DB')
-    this.logger.debug('Main database initialized')
 
     // Create singleton service instances
     this.addressbookService = new AddressbookService(this.db, this.logger)
