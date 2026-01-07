@@ -9,9 +9,10 @@ export default class SmsApiController implements ISmsApiController {
 
   constructor(
     private readonly config: Config,
-    private readonly logger: TwakeLogger
+    private readonly logger: TwakeLogger,
+    smsService?: ISmsService
   ) {
-    this.smsService = new SmsService(this.config, this.logger)
+    this.smsService = smsService ?? new SmsService(this.config, this.logger)
   }
 
   /**
