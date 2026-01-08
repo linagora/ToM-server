@@ -1,7 +1,25 @@
 {
-  "extends": "../../tsconfig-build.json",
-  "compilerOptions": {
-    "outDir": "dist"
-  },
-  "include": ["src/**/*", "test/**/*"]
+  "extends": "../../tsconfig.base.json",
+  "files": [],
+  "include": [],
+  "references": [
+    {
+      "path": "../config-parser"
+    },
+    {
+      "path": "../logger"
+    },
+    {
+      "path": "../utils"
+    },
+    {
+      "path": "../crypto"
+    },
+    {
+      "path": "./tsconfig.app.json"
+    },
+    {
+      "path": "./tsconfig.spec.json"
+    }
+  ]
 }
