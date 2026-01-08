@@ -35,7 +35,10 @@ export default class DeactivateAccountService implements IAdminService {
       await this.deleteUserMedia(userId, token)
       await this.disableUserAccount(userId, token)
     } catch (error) {
-      this.logger.error(`[AdminService] Failed to deactivate user`, { error })
+      this.logger.error(
+        `[DeactivateAccountService] Failed to deactivate user`,
+        { error }
+      )
 
       throw error
     }
@@ -73,10 +76,13 @@ export default class DeactivateAccountService implements IAdminService {
       }
 
       this.logger.info(
-        `[AdminService] Deleted ${data.total} media files for user ${userId}`
+        `[DeactivateAccountService] Deleted ${data.total} media files for user ${userId}`
       )
     } catch (error) {
-      this.logger.error(`[AdminService] Failed to delete user media`, { error })
+      this.logger.error(
+        `[DeactivateAccountService] Failed to delete user media`,
+        { error }
+      )
     }
   }
 
@@ -109,11 +115,16 @@ export default class DeactivateAccountService implements IAdminService {
         }
       )
 
-      this.logger.info(`[AdminService] Disabled user account ${userId}`)
+      this.logger.info(
+        `[DeactivateAccountService] Disabled user account ${userId}`
+      )
     } catch (error) {
-      this.logger.error(`[AdminService] Failed to disable user account`, {
-        error
-      })
+      this.logger.error(
+        `[DeactivateAccountService] Failed to disable user account`,
+        {
+          error
+        }
+      )
 
       throw new Error('Failed to deactivate user', { cause: error })
     }
@@ -137,7 +148,10 @@ export default class DeactivateAccountService implements IAdminService {
 
       return accessToken
     } catch (error) {
-      this.logger.error(`[AdminService] Failed to get access token`, { error })
+      this.logger.error(
+        `[DeactivateAccountService] Failed to get access token`,
+        { error }
+      )
 
       throw error
     }
