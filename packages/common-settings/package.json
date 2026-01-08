@@ -1,26 +1,32 @@
 {
-  "type": "module",
   "name": "@twake/common-settings",
-  "version": "0.0.1",
   "description": "ToM common settings",
-  "main": "dist/index.js",
-  "scripts": {
-    "build": "rollup -c",
-    "watch": "rollup -c -w",
-    "test": "jest"
-  },
+  "version": "0.0.1",
+  "license": "AGPL-3.0-or-later",
   "author": {
     "name": "Montassar GHANMI",
     "email": "mghanmi@linagora.com"
   },
-  "license": "AGPL-3.0-or-later",
-  "dependencies": {
-    "@twake/amqp-connector": "^0.0.1",
-    "@twake/server": "^0.0.1",
-    "amqplib": "^0.10.9"
+  "private": true,
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    "./package.json": "./package.json",
+    ".": {
+      "development": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
   },
-  "devDependencies": {
-    "@types/amqplib": "^0.10.7"
+  "scripts": {
+    "clean": "node ../../scripts/clean.cjs dist coverage"
+  },
+  "dependencies": {
+    "tslib": "^2.3.0",
+    "@twake/logger": "0.0.1",
+    "@twake/amqp-connector": "0.0.1"
   },
   "engines": {
     "node": "18.20.8",

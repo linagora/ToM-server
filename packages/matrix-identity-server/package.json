@@ -15,53 +15,78 @@
     "url": "https://ci.linagora.com/publicgroup/oss/twake/tom-server.git"
   },
   "license": "AGPL-3.0-or-later",
-  "author": [
-    {
-      "name": "Xavier Guimard",
-      "email": "yadd@debian.org"
+  "author": {
+    "name": "Xavier Guimard",
+    "email": "yadd@debian.org"
+  },
+  "private": true,
+  "nx": {
+    "targets": {
+      "build": {
+        "executor": "@nx/esbuild:esbuild",
+        "outputs": [
+          "{options.outputPath}"
+        ],
+        "defaultConfiguration": "production",
+        "options": {
+          "platform": "node",
+          "outputPath": "packages/matrix-identity-server/dist",
+          "format": [
+            "cjs"
+          ],
+          "bundle": false,
+          "main": "packages/matrix-identity-server/src/main.ts",
+          "tsConfig": "packages/matrix-identity-server/tsconfig.app.json",
+          "assets": [
+            "packages/matrix-identity-server/src/assets"
+          ],
+          "esbuildOptions": {
+            "sourcemap": true,
+            "outExtension": {
+              ".js": ".js"
+            }
+          }
+        },
+        "configurations": {
+          "development": {},
+          "production": {
+            "esbuildOptions": {
+              "sourcemap": false,
+              "outExtension": {
+                ".js": ".js"
+              }
+            }
+          }
+        }
+      },
+      "serve": {
+        "executor": "@nx/js:node",
+        "defaultConfiguration": "development",
+        "dependsOn": [
+          "build"
+        ],
+        "options": {
+          "buildTarget": "@twake/matrix-identity-server:build",
+          "runBuildTargetDependencies": false
+        },
+        "configurations": {
+          "development": {
+            "buildTarget": "@twake/matrix-identity-server:build:development"
+          },
+          "production": {
+            "buildTarget": "@twake/matrix-identity-server:build:production"
+          }
+        }
+      },
+      "test": {
+        "options": {
+          "passWithNoTests": true
+        }
+      }
     }
-  ],
-  "type": "module",
-  "exports": {
-    "import": "./dist/index.js"
   },
-  "main": "dist/index.js",
-  "types": "./dist/index.d.ts",
-  "files": [
-    "package.json",
-    "dist",
-    "example/identity-server.js",
-    "templates",
-    "*.md"
-  ],
   "scripts": {
-    "build": "npm run build:lib && npm run build:example",
-    "build:example": "rollup -p @rollup/plugin-typescript -e express,@twake/matrix-identity-server -m -o example/identity-server.js example/identity-server.ts",
-    "build:lib": "rollup -c",
-    "start": "node example/identity-server.js",
-    "test": "LOG_TRANSPORTS=File LOG_FILE=/dev/null jest"
-  },
-  "dependencies": {
-    "@twake/config-parser": "*",
-    "@twake/crypto": "*",
-    "@twake/logger": "*",
-    "@twake/utils": "*",
-    "express": "^4.19.2",
-    "express-rate-limit": "^7.2.0",
-    "generic-pool": "^3.9.0",
-    "jest": "^29.7.0",
-    "matrix-resolve": "^1.0.1",
-    "node-cron": "^3.0.2",
-    "node-fetch": "^3.3.0",
-    "nodemailer": "^6.9.1",
-    "toad-cache": "^3.7.0"
-  },
-  "optionalDependencies": {
-    "ldapts": "^7.1.0",
-    "node-cache": "^5.1.2",
-    "pg": "^8.10.0",
-    "redis": "^4.6.6",
-    "sqlite3": "^5.1.6"
+    "clean": "node ../../scripts/clean.cjs dist coverage"
   },
   "engines": {
     "node": "18.20.8",

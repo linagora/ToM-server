@@ -1,5 +1,5 @@
 {
-  "name": "@twake/server",
+  "name": "@twake/tom-server",
   "version": "0.0.1",
   "description": "This is the Twake on Matrix server",
   "keywords": [
@@ -20,43 +20,74 @@
     "name": "Jordy Cabannes",
     "email": "jcabannes@linagora.com"
   },
-  "type": "module",
-  "exports": {
-    "import": "./dist/index.js"
+  "private": true,
+  "nx": {
+    "targets": {
+      "build": {
+        "executor": "@nx/esbuild:esbuild",
+        "outputs": [
+          "{options.outputPath}"
+        ],
+        "defaultConfiguration": "production",
+        "options": {
+          "platform": "node",
+          "outputPath": "packages/tom-server/dist",
+          "format": [
+            "cjs"
+          ],
+          "bundle": false,
+          "main": "packages/tom-server/src/main.ts",
+          "tsConfig": "packages/tom-server/tsconfig.app.json",
+          "assets": [
+            "packages/tom-server/src/assets"
+          ],
+          "esbuildOptions": {
+            "sourcemap": true,
+            "outExtension": {
+              ".js": ".js"
+            }
+          }
+        },
+        "configurations": {
+          "development": {},
+          "production": {
+            "esbuildOptions": {
+              "sourcemap": false,
+              "outExtension": {
+                ".js": ".js"
+              }
+            }
+          }
+        }
+      },
+      "serve": {
+        "executor": "@nx/js:node",
+        "defaultConfiguration": "development",
+        "dependsOn": [
+          "build"
+        ],
+        "options": {
+          "buildTarget": "@twake/tom-server:build",
+          "runBuildTargetDependencies": false
+        },
+        "configurations": {
+          "development": {
+            "buildTarget": "@twake/tom-server:build:development"
+          },
+          "production": {
+            "buildTarget": "@twake/tom-server:build:production"
+          }
+        }
+      },
+      "test": {
+        "options": {
+          "passWithNoTests": true
+        }
+      }
+    }
   },
-  "main": "dist/index.js",
-  "types": "./dist/index.d.ts",
-  "files": [
-    "package.json",
-    "dist",
-    "templates",
-    "*.md"
-  ],
   "scripts": {
-    "build": "npm run build:lib && npm run build:example",
-    "build:example": "rollup -p @rollup/plugin-typescript -e express,@twake/server -m -o example/tom-server.js example/tom-server.ts",
-    "build:lib": "rollup -c",
-    "watch": "rollup -c -w",
-    "start": "node example/tom-server.js",
-    "test": "LOG_TRANSPORTS=File LOG_FILE=/dev/null jest"
-  },
-  "dependencies": {
-    "@twake/matrix-identity-server": "*",
-    "@twake/utils": "*",
-    "ldapts": "^7.1.0",
-    "lodash": "^4.17.21",
-    "pg": "^8.10.0",
-    "qrcode": "^1.5.4",
-    "redis": "^4.6.6",
-    "sqlite3": "^5.1.6",
-    "uuid": "^11.0.3",
-    "validator": "^13.11.0"
-  },
-  "optionalDependencies": {
-    "@crowdsec/express-bouncer": "^0.1.0"
-  },
-  "devDependencies": {
-    "@types/qrcode": "^1.5.5"
+    "clean": "node ../../scripts/clean.cjs dist coverage"
   },
   "engines": {
     "node": "18.20.8",

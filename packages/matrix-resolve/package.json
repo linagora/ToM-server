@@ -1,6 +1,6 @@
 {
-  "name": "matrix-resolve",
-  "version": "1.0.1",
+  "name": "@twake/matrix-resolve",
+  "version": "0.0.1",
   "description": "Find matrix server with a domain name",
   "keywords": [
     "matrix",
@@ -15,32 +15,28 @@
     "url": "https://ci.linagora.com/publicgroup/oss/twake/tom-server.git"
   },
   "license": "AGPL-3.0-or-later",
-  "author": [
-    {
-      "name": "Xavier Guimard",
-      "email": "yadd@debian.org"
-    }
-  ],
-  "type": "module",
-  "exports": {
-    "import": "./dist/index.js"
+  "author": {
+    "name": "Xavier Guimard",
+    "email": "yadd@debian.org"
   },
-  "main": "dist/index.js",
+  "private": true,
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "files": [
-    "package.json",
-    "dist",
-    "*.md"
-  ],
-  "scripts": {
-    "build": "rollup -c",
-    "test": "jest"
+  "exports": {
+    "./package.json": "./package.json",
+    ".": {
+      "development": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
   },
   "dependencies": {
-    "node-fetch": "^3.3.0"
+    "tslib": "^2.3.0"
   },
-  "optionalDependencies": {
-    "toad-cache": "^3.3.0"
+  "scripts": {
+    "clean": "node ../../scripts/clean.cjs dist coverage"
   },
   "engines": {
     "node": "18.20.8",

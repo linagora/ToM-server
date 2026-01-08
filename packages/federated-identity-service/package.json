@@ -21,37 +21,74 @@
     "name": "Jordy Cabannes",
     "email": "jcabannes@linagora.com"
   },
-  "type": "module",
-  "exports": {
-    "import": "./dist/index.js"
+  "private": true,
+  "nx": {
+    "targets": {
+      "build": {
+        "executor": "@nx/esbuild:esbuild",
+        "outputs": [
+          "{options.outputPath}"
+        ],
+        "defaultConfiguration": "production",
+        "options": {
+          "platform": "node",
+          "outputPath": "packages/federated-identity-service/dist",
+          "format": [
+            "cjs"
+          ],
+          "bundle": false,
+          "main": "packages/federated-identity-service/src/main.ts",
+          "tsConfig": "packages/federated-identity-service/tsconfig.app.json",
+          "assets": [
+            "packages/federated-identity-service/src/assets"
+          ],
+          "esbuildOptions": {
+            "sourcemap": true,
+            "outExtension": {
+              ".js": ".js"
+            }
+          }
+        },
+        "configurations": {
+          "development": {},
+          "production": {
+            "esbuildOptions": {
+              "sourcemap": false,
+              "outExtension": {
+                ".js": ".js"
+              }
+            }
+          }
+        }
+      },
+      "serve": {
+        "executor": "@nx/js:node",
+        "defaultConfiguration": "development",
+        "dependsOn": [
+          "build"
+        ],
+        "options": {
+          "buildTarget": "@twake/federated-identity-service:build",
+          "runBuildTargetDependencies": false
+        },
+        "configurations": {
+          "development": {
+            "buildTarget": "@twake/federated-identity-service:build:development"
+          },
+          "production": {
+            "buildTarget": "@twake/federated-identity-service:build:production"
+          }
+        }
+      },
+      "test": {
+        "options": {
+          "passWithNoTests": true
+        }
+      }
+    }
   },
-  "main": "dist/index.js",
-  "types": "./dist/index.d.ts",
-  "files": [
-    "package.json",
-    "dist",
-    "*.md"
-  ],
   "scripts": {
-    "build": "npm run build:lib && npm run build:example",
-    "build:example": "rollup -p @rollup/plugin-typescript -e express,@twake/federated-identity-service -m -o example/federated-identity-service.js example/federated-identity-service.ts",
-    "build:lib": "rollup -c",
-    "start": "node example/federated-identity-service.js",
-    "test": "LOG_TRANSPORTS=File LOG_FILE=/dev/null jest"
-  },
-  "dependencies": {
-    "@twake/config-parser": "*",
-    "@twake/crypto": "*",
-    "@twake/logger": "*",
-    "@twake/matrix-identity-server": "*",
-    "@twake/utils": "*",
-    "express-validator": "^7.0.1",
-    "ip-address": "^9.0.5",
-    "lodash": "^4.17.21",
-    "validator": "^13.15.0"
-  },
-  "optionalDependencies": {
-    "@crowdsec/express-bouncer": "^0.1.0"
+    "clean": "node ../../scripts/clean.cjs dist coverage"
   },
   "engines": {
     "node": "18.20.8",
