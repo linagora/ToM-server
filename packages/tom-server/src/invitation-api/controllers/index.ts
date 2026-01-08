@@ -8,6 +8,8 @@ import type {
 } from '../types'
 import InvitationService from '../services'
 import type { MatrixDB, UserDB } from '@twake/matrix-identity-server'
+import UserInfoService from '../../user-info-api/services'
+import type { IAddressbookService } from '../../addressbook-api/types'
 
 export default class InvitationApiController {
   private readonly invitationService: IInvitationService
@@ -17,14 +19,25 @@ export default class InvitationApiController {
     userdb: UserDB,
     matrixdb: MatrixDB,
     private readonly logger: TwakeLogger,
-    config: Config
+    config: Config,
+    userInfoService?: UserInfoService,
+    addressbookService?: IAddressbookService
   ) {
     this.invitationService = new InvitationService(
       userdb,
       db,
       matrixdb,
       logger,
-      config
+      config,
+      userInfoService ??
+        new UserInfoService(
+          userdb,
+          db,
+          matrixdb,
+          config,
+          logger,
+          addressbookService
+        )
     )
   }
 

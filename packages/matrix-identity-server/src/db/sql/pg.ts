@@ -62,6 +62,7 @@ class Pg<T extends string> extends SQL<T> implements IdDbBackend<T> {
             }
             try {
               this.db = new pg.Pool(opts)
+              logger.info('[IdentityServerDb:Pg] connected.')
               createTables(
                 this,
                 tables,

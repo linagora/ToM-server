@@ -34,16 +34,14 @@ export default class InvitationService implements IInvitationService {
     private readonly db: TwakeDB,
     matrixdb: MatrixDB,
     private readonly logger: TwakeLogger,
-    private readonly config: Config
+    private readonly config: Config,
+    userInfoService?: UserInfoService
   ) {
     this.notificationService = new NotificationService(config, logger)
-    this.userInfoService = new UserInfoService(
-      userdb,
-      db,
-      matrixdb,
-      config,
-      logger
-    )
+    this.userInfoService =
+      userInfoService ??
+      new UserInfoService(userdb, db, matrixdb, config, logger)
+    this.logger.info('[InvitationService] Initialized.', {})
   }
 
   /**
@@ -56,7 +54,10 @@ export default class InvitationService implements IInvitationService {
     try {
       return this._getUserInvitations(userId)
     } catch (error) {
-      this.logger.error(`Failed to list invitations`, error)
+      this.logger.error(
+        `[InvitationService][list] Failed to list invitations`,
+        error
+      )
 
       throw Error('Failed to list invitations')
     }
@@ -147,7 +148,10 @@ export default class InvitationService implements IInvitationService {
         await this._processInvitation(invitation, userId, authorization)
       }
     } catch (error) {
-      this.logger.error(`Failed to accept invitation`, error)
+      this.logger.error(
+        `[InvitationService][accept] Failed to accept invitation`,
+        error
+      )
 
       throw Error('Failed to accept invitation')
     }
@@ -169,7 +173,10 @@ export default class InvitationService implements IInvitationService {
 
       return { link: this._getInvitationUrl(invite.id), id: invite.id }
     } catch (error) {
-      this.logger.error(`Failed to generate invitation link`, error)
+      this.logger.error(
+        `[InvitationService][generateLink] Failed to generate invitation link`,
+        error
+      )
 
       throw Error('Failed to generate invitation link')
     }
@@ -185,7 +192,10 @@ export default class InvitationService implements IInvitationService {
     try {
       return this._getInvitationById(token)
     } catch (error) {
-      this.logger.error(`Failed to get invitation status`, error)
+      this.logger.error(
+        `[InvitationService][getInvitationStatus] Failed to get invitation status`,
+        error
+      )
 
       throw error
     }
@@ -201,7 +211,10 @@ export default class InvitationService implements IInvitationService {
     try {
       await this.db.deleteEqual(this.INVITATION_TABLE, 'id', token)
     } catch (error) {
-      this.logger.error(`Failed to remove invitation`, error)
+      this.logger.error(
+        `[InvitationService][removeInvitation] Failed to remove invitation`,
+        error
+      )
 
       throw new Error('Failed to remove invitation', { cause: error })
     }
@@ -228,7 +241,10 @@ export default class InvitationService implements IInvitationService {
 
       return token
     } catch (error) {
-      this.logger.error(`Failed to create invitation`, error)
+      this.logger.error(
+        `[InvitationService][_createInvitation] Failed to create invitation`,
+        error
+      )
 
       throw Error('Failed to create invitation')
     }
@@ -265,7 +281,10 @@ export default class InvitationService implements IInvitationService {
       if (response.status !== 200) {
         const resp = await response.json()
 
-        this.logger.error('Failed to create room', resp)
+        this.logger.error(
+          '[InvitationService][_createPrivateChat] Failed to create room',
+          resp
+        )
 
         throw Error('Failed to create room')
       }
@@ -274,7 +293,10 @@ export default class InvitationService implements IInvitationService {
 
       return room_id
     } catch (error) {
-      this.logger.error(`Failed to create room`, error)
+      this.logger.error(
+        `[InvitationService][_createPrivateChat] Failed to create room`,
+        error
+      )
 
       throw Error('Failed to create room')
     }
@@ -315,12 +337,18 @@ export default class InvitationService implements IInvitationService {
       if (response.status !== 200) {
         const resp = await response.json()
 
-        this.logger.error('Failed to mark room as direct message', resp)
+        this.logger.error(
+          '[InvitationService][_markPrivateChatAsDirectMessage] Failed to mark room as direct message',
+          resp
+        )
 
         throw Error('Failed to mark room as DM')
       }
     } catch (error) {
-      this.logger.error(`Failed to mark room as direct message`, error)
+      this.logger.error(
+        `[InvitationService][_markPrivateChatAsDirectMessage]Failed to mark room as direct message`,
+        error
+      )
 
       throw Error('Failed to mark room as direct message')
     }
@@ -353,7 +381,10 @@ export default class InvitationService implements IInvitationService {
         ...(invitation.matrix_id ? { matrix_id: invitation.matrix_id } : {})
       }
     } catch (error) {
-      this.logger.error(`Failed to get invitation`, error)
+      this.logger.error(
+        `[InvitationService][_getInvitationById] Failed to get invitation`,
+        error
+      )
 
       throw Error('Failed to get invitation')
     }
@@ -380,7 +411,10 @@ export default class InvitationService implements IInvitationService {
         ...(invitation.matrix_id ? { matrix_id: invitation.matrix_id } : {})
       }))
     } catch (error) {
-      this.logger.error(`Failed to list invitations`, error)
+      this.logger.error(
+        `[InvitationService][_getUserInvitations]Failed to list invitations`,
+        error
+      )
 
       throw Error('Failed to list invitations')
     }
@@ -406,11 +440,16 @@ export default class InvitationService implements IInvitationService {
         try {
           this._processInvitation(invitation, userId, authorization)
         } catch (error) {
-          this.logger.error(`Failed to process invitation`)
+          this.logger.error(
+            `[InvitationService][_processInvitationsToAddress] Failed to process invitation`
+          )
         }
       }
     } catch (error) {
-      this.logger.error(`Failed to process invitations`, error)
+      this.logger.error(
+        `[InvitationService][_processInvitationsToAddress] Failed to process invitations`,
+        error
+      )
 
       throw Error('Failed to process invitations')
     }
@@ -460,7 +499,10 @@ export default class InvitationService implements IInvitationService {
         id
       )
     } catch (error) {
-      this.logger.error(`Failed to process invitation: ${id}`, error)
+      this.logger.error(
+        `[InvitationService][_processInvitation] Failed to process invitation: ${id}`,
+        error
+      )
     }
   }
 
@@ -486,7 +528,10 @@ export default class InvitationService implements IInvitationService {
           expiration: parseInt(expiration)
         }))
     } catch (error) {
-      this.logger.error(`Failed to list invitations`, error)
+      this.logger.error(
+        `[InvitationService][_listPendingInvitationsToAddress] Failed to list invitations`,
+        error
+      )
 
       throw Error('Failed to list invitations')
     }
@@ -519,7 +564,10 @@ export default class InvitationService implements IInvitationService {
 
       return null
     } catch (error) {
-      this.logger.error(`Failed to list user invitations to address`, error)
+      this.logger.error(
+        `[InvitationService][_getPendingUserInvitesToAddress] Failed to list user invitations to address`,
+        error
+      )
 
       return null
     }
@@ -550,7 +598,7 @@ export default class InvitationService implements IInvitationService {
       return null
     } catch (error) {
       this.logger.error(
-        `Failed to list generated user invitations to address`,
+        `[InvitationService][_getPreviouslyGeneratedInviteToAddress] Failed to list generated user invitations to address`,
         error
       )
 
@@ -836,7 +884,10 @@ export default class InvitationService implements IInvitationService {
     try {
       await this.db.deleteEqual(this.INVITATION_TABLE, 'id', token)
     } catch (error) {
-      this.logger.error(`Failed to remove invitation`, error)
+      this.logger.error(
+        `[InvitationService][_removeInvitation] Failed to remove invitation`,
+        error
+      )
     }
   }
 }

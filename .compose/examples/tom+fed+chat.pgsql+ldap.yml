@@ -141,11 +141,11 @@ services:
       - TRUSTED_PROXIES=uniquelocal
 
       - ADDITIONAL_FEATURES=true
-      - FEDERATED_IDENTITY_SERVICES=fed.docker.localhost
+      # - FEDERATED_IDENTITY_SERVICES=fed.docker.localhost
 
-      - CRON_SERVICE=true
-      - UPDATE_FEDERATED_IDENTITY_HASHES_CRON=0-59/2 * * * *
-      - UPDATE_USERS_CRON=1-59/2 * * * *
+      # - CRON_SERVICE=true
+      # - UPDATE_FEDERATED_IDENTITY_HASHES_CRON=0-59/2 * * * *
+      # - UPDATE_USERS_CRON=1-59/2 * * * *
 
       - DATABASE_ENGINE=pg
       - DATABASE_HOST=pgsql
@@ -185,7 +185,7 @@ services:
       - FEATURE_USER_PROFILE_DEFAULT_VISIBILITY=public
       - FEATURE_USER_PROFILE_DEFAULT_VISIBLE_FIELDS=email,phone
 
-      - LOG_LEVEL=silly
+      - LOG_LEVEL=info
       - LOG_TRANSPORTS=Console
 
   fed:

@@ -8,6 +8,7 @@ import { Router } from 'express'
 import authMiddleware from '../../utils/middlewares/auth.middleware'
 import AddressbookApiController from '../controllers'
 import AddressBookApiMiddleware from '../middlewares'
+import type { IAddressbookService } from '../types'
 
 export const PATH = '/_twake/addressbook'
 
@@ -15,12 +16,17 @@ export default (
   config: Config,
   db: TwakeDB,
   authenticator: AuthenticationFunction,
-  defaultLogger?: TwakeLogger
+  defaultLogger?: TwakeLogger,
+  addressbookService?: IAddressbookService
 ): Router => {
   const logger = defaultLogger ?? getLogger(config as unknown as LoggerConfig)
   const router = Router()
   const authenticate = authMiddleware(authenticator, logger)
-  const controller = new AddressbookApiController(db, logger)
+  const controller = new AddressbookApiController(
+    db,
+    logger,
+    addressbookService
+  )
   const middleware = new AddressBookApiMiddleware(db, logger)
 
   /**

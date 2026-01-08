@@ -1,5 +1,4 @@
 import TomServer from '@twake/server'
-import MatrixIdentityServer from '@twake/matrix-identity-server'
 import { CommonSettingsService } from '@twake/common-settings'
 import express from 'express'
 import path from 'node:path'
@@ -258,14 +257,8 @@ app.get('/', (req, res) => {
 
 Promise.all(promises)
   .then(async () => {
-    const idServer = new MatrixIdentityServer(
-      conf,
-      undefined,
-      undefined,
-      undefined,
-      tomServer.db,
-      true
-    )
+    // Reuse the existing idServer from tomServer to avoid duplicate UserDB initialization
+    const idServer = tomServer.idServer
     return idServer.ready.then(() => {
       app.use(tomServer.endpoints)
 

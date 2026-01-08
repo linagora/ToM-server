@@ -26,7 +26,8 @@ class UserInfoService implements IUserInfoService {
     private readonly db: TwakeDB,
     private readonly matrixDb: MatrixDB,
     private readonly config: Config,
-    private readonly logger: TwakeLogger
+    private readonly logger: TwakeLogger,
+    addressbookService?: IAddressbookService
   ) {
     this.enableAdditionalFeatures =
       this.config.additional_features === true ||
@@ -36,7 +37,8 @@ class UserInfoService implements IUserInfoService {
       this.config.features?.common_settings?.enabled ||
       process.env.FEATURE_COMMON_SETTINGS_ENABLED === 'true'
 
-    this.addressBookService = new AddressbookService(db, logger)
+    this.addressBookService =
+      addressbookService ?? new AddressbookService(db, logger)
 
     this.defaultVisibilitySettings = {
       visibility:
@@ -62,6 +64,8 @@ class UserInfoService implements IUserInfoService {
       )
     )
       this.defaultVisibilitySettings.visible_fields.push(ProfileField.Phone)
+
+    this.logger.info('[UserInfoService] Initialized.', {})
   }
 
   /**

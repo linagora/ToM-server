@@ -17,16 +17,8 @@ jest.mock('@twake/utils', () => ({
   })
 }))
 
-// Mock AddressbookService
+// Mock service functions
 const mockAddressbookList = jest.fn().mockResolvedValue({ contacts: [] })
-
-jest.mock('../../../addressbook-api/services', () => ({
-  AddressbookService: jest.fn().mockImplementation(() => ({
-    list: mockAddressbookList
-  }))
-}))
-
-// Mock UserInfoService
 const mockUserInfoGet = jest
   .fn()
   .mockImplementation((address: string, viewer?: string) => {
@@ -47,15 +39,14 @@ const mockUserInfoGet = jest
     })
   })
 
-jest.mock('../../../user-info-api/services', () => {
-  return {
-    __esModule: true,
-    default: jest.fn().mockImplementation(function MockUserInfoService() {
-      return {
-        get: mockUserInfoGet
-      }
-    })
-  }
+// Create mock service instances
+const createMockServices = () => ({
+  addressbookService: {
+    list: mockAddressbookList
+  } as any,
+  userInfoService: {
+    get: mockUserInfoGet
+  } as any
 })
 
 describe('_search factory', () => {
@@ -113,7 +104,13 @@ describe('_search factory', () => {
 
   describe('Basic search functionality', () => {
     it('should return matches and inactive matches successfully', async () => {
-      const searchFn = await _search(idServerMock as any, logger as any)
+      const { addressbookService, userInfoService } = createMockServices()
+      const searchFn = await _search(
+        idServerMock as any,
+        logger as any,
+        addressbookService,
+        userInfoService
+      )
       const resMock = {} as any
       const dataMock = {
         scope: ['uid'],
@@ -151,7 +148,13 @@ describe('_search factory', () => {
         }
       }
 
-      const searchFn = await _search(emptyServer as any, logger as any)
+      const { addressbookService, userInfoService } = createMockServices()
+      const searchFn = await _search(
+        emptyServer as any,
+        logger as any,
+        addressbookService,
+        userInfoService
+      )
       const resMock = {} as any
       const dataMock = {
         scope: ['uid'],
@@ -168,7 +171,13 @@ describe('_search factory', () => {
     })
 
     it('should handle search without predicate', async () => {
-      const searchFn = await _search(idServerMock as any, logger as any)
+      const { addressbookService, userInfoService } = createMockServices()
+      const searchFn = await _search(
+        idServerMock as any,
+        logger as any,
+        addressbookService,
+        userInfoService
+      )
       const resMock = {} as any
       const dataMock = {
         scope: ['uid'],
@@ -189,7 +198,13 @@ describe('_search factory', () => {
     })
 
     it('should handle search without owner', async () => {
-      const searchFn = await _search(idServerMock as any, logger as any)
+      const { addressbookService, userInfoService } = createMockServices()
+      const searchFn = await _search(
+        idServerMock as any,
+        logger as any,
+        addressbookService,
+        userInfoService
+      )
       const resMock = {} as any
       const dataMock = {
         scope: ['uid'],
@@ -221,7 +236,13 @@ describe('_search factory', () => {
         }
       }
 
-      const searchFn = await _search(serverWithLocalId as any, logger as any)
+      const { addressbookService, userInfoService } = createMockServices()
+      const searchFn = await _search(
+        serverWithLocalId as any,
+        logger as any,
+        addressbookService,
+        userInfoService
+      )
       const resMock = {} as any
       const dataMock = {
         scope: ['uid'],
@@ -255,7 +276,13 @@ describe('_search factory', () => {
         }
       }
 
-      const searchFn = await _search(serverNoFeatures as any, logger as any)
+      const { addressbookService, userInfoService } = createMockServices()
+      const searchFn = await _search(
+        serverNoFeatures as any,
+        logger as any,
+        addressbookService,
+        userInfoService
+      )
       const resMock = {} as any
       const dataMock = {
         scope: ['uid'],
@@ -299,7 +326,13 @@ describe('_search factory', () => {
         }
       }
 
-      const searchFn = await _search(serverNoEnvFeatures as any, logger as any)
+      const { addressbookService, userInfoService } = createMockServices()
+      const searchFn = await _search(
+        serverNoEnvFeatures as any,
+        logger as any,
+        addressbookService,
+        userInfoService
+      )
       const resMock = {} as any
       const dataMock = {
         scope: ['uid'],
@@ -338,7 +371,13 @@ describe('_search factory', () => {
         }
       }
 
-      const searchFn = await _search(serverWithFeatures as any, logger as any)
+      const { addressbookService, userInfoService } = createMockServices()
+      const searchFn = await _search(
+        serverWithFeatures as any,
+        logger as any,
+        addressbookService,
+        userInfoService
+      )
       const resMock = {} as any
       const dataMock = {
         scope: ['uid'],
@@ -370,9 +409,12 @@ describe('_search factory', () => {
         }
       }
 
+      const { addressbookService, userInfoService } = createMockServices()
       const searchFn = await _search(
         serverWithEnvFeatures as any,
-        logger as any
+        logger as any,
+        addressbookService,
+        userInfoService
       )
       const resMock = {} as any
       const dataMock = {
@@ -397,7 +439,13 @@ describe('_search factory', () => {
         }
       }
 
-      const searchFn = await _search(brokenMatrixServer as any, logger as any)
+      const { addressbookService, userInfoService } = createMockServices()
+      const searchFn = await _search(
+        brokenMatrixServer as any,
+        logger as any,
+        addressbookService,
+        userInfoService
+      )
       const resMock = {} as any
       const dataMock = {
         scope: ['uid'],
@@ -432,7 +480,13 @@ describe('_search factory', () => {
         }
       }
 
-      const searchFn = await _search(serverNoFeatures as any, logger as any)
+      const { addressbookService, userInfoService } = createMockServices()
+      const searchFn = await _search(
+        serverNoFeatures as any,
+        logger as any,
+        addressbookService,
+        userInfoService
+      )
       const resMock = {} as any
       const dataMock = {
         scope: ['uid'],
@@ -460,7 +514,13 @@ describe('_search factory', () => {
         }
       }
 
-      const searchFn = await _search(brokenUserServer as any, logger as any)
+      const { addressbookService, userInfoService } = createMockServices()
+      const searchFn = await _search(
+        brokenUserServer as any,
+        logger as any,
+        addressbookService,
+        userInfoService
+      )
       const resMock = {} as any
       const dataMock = {
         scope: ['uid'],
@@ -500,7 +560,13 @@ describe('_search factory', () => {
         ]
       })
 
-      const searchFn = await _search(idServerMock as any, logger as any)
+      const { addressbookService, userInfoService } = createMockServices()
+      const searchFn = await _search(
+        idServerMock as any,
+        logger as any,
+        addressbookService,
+        userInfoService
+      )
       const resMock = {} as any
       const dataMock = {
         scope: ['uid'],
@@ -526,7 +592,13 @@ describe('_search factory', () => {
         matrixDb: { db: { match: jest.fn().mockResolvedValue([]) } }
       }
 
-      const searchFn = await _search(emptyDbServer as any, logger as any)
+      const { addressbookService, userInfoService } = createMockServices()
+      const searchFn = await _search(
+        emptyDbServer as any,
+        logger as any,
+        addressbookService,
+        userInfoService
+      )
       const resMock = {} as any
       const dataMock = {
         scope: ['uid'],
@@ -557,7 +629,13 @@ describe('_search factory', () => {
         matrixDb: { db: { match: jest.fn().mockResolvedValue([]) } }
       }
 
-      const searchFn = await _search(emptyDbServer as any, logger as any)
+      const { addressbookService, userInfoService } = createMockServices()
+      const searchFn = await _search(
+        emptyDbServer as any,
+        logger as any,
+        addressbookService,
+        userInfoService
+      )
       const resMock = {} as any
       const dataMock = {
         scope: ['uid'],
@@ -576,7 +654,13 @@ describe('_search factory', () => {
     it('should handle addressbook errors gracefully', async () => {
       mockAddressbookList.mockRejectedValueOnce(new Error('AddressBook error'))
 
-      const searchFn = await _search(idServerMock as any, logger as any)
+      const { addressbookService, userInfoService } = createMockServices()
+      const searchFn = await _search(
+        idServerMock as any,
+        logger as any,
+        addressbookService,
+        userInfoService
+      )
       const resMock = {} as any
       const dataMock = {
         scope: ['uid'],
@@ -599,7 +683,13 @@ describe('_search factory', () => {
 
   describe('Active vs Inactive user distinction', () => {
     it('should mark users found in matrixDb as active', async () => {
-      const searchFn = await _search(idServerMock as any, logger as any)
+      const { addressbookService, userInfoService } = createMockServices()
+      const searchFn = await _search(
+        idServerMock as any,
+        logger as any,
+        addressbookService,
+        userInfoService
+      )
       const resMock = {} as any
       const dataMock = {
         scope: ['uid'],
@@ -633,9 +723,12 @@ describe('_search factory', () => {
         }
       }
 
+      const { addressbookService, userInfoService } = createMockServices()
       const searchFn = await _search(
         serverWithInactiveUser as any,
-        logger as any
+        logger as any,
+        addressbookService,
+        userInfoService
       )
       const resMock = {} as any
       const dataMock = {
@@ -666,7 +759,13 @@ describe('_search factory', () => {
         }
       }
 
-      const searchFn = await _search(serverWithDuplicates as any, logger as any)
+      const { addressbookService, userInfoService } = createMockServices()
+      const searchFn = await _search(
+        serverWithDuplicates as any,
+        logger as any,
+        addressbookService,
+        userInfoService
+      )
       const resMock = {} as any
       const dataMock = {
         scope: ['uid'],
@@ -689,7 +788,13 @@ describe('_search factory', () => {
 
   describe('User enrichment', () => {
     it('should enrich users with UserInfoService data', async () => {
-      const searchFn = await _search(idServerMock as any, logger as any)
+      const { addressbookService, userInfoService } = createMockServices()
+      const searchFn = await _search(
+        idServerMock as any,
+        logger as any,
+        addressbookService,
+        userInfoService
+      )
       const resMock = {} as any
       const dataMock = {
         scope: ['uid'],
@@ -717,7 +822,13 @@ describe('_search factory', () => {
     })
 
     it('should include deprecated fields for backward compatibility', async () => {
-      const searchFn = await _search(idServerMock as any, logger as any)
+      const { addressbookService, userInfoService } = createMockServices()
+      const searchFn = await _search(
+        idServerMock as any,
+        logger as any,
+        addressbookService,
+        userInfoService
+      )
       const resMock = {} as any
       const dataMock = {
         scope: ['uid'],
@@ -742,7 +853,13 @@ describe('_search factory', () => {
     it('should handle UserInfoService errors gracefully', async () => {
       mockUserInfoGet.mockRejectedValueOnce(new Error('UserInfo fetch failed'))
 
-      const searchFn = await _search(idServerMock as any, logger as any)
+      const { addressbookService, userInfoService } = createMockServices()
+      const searchFn = await _search(
+        idServerMock as any,
+        logger as any,
+        addressbookService,
+        userInfoService
+      )
       const resMock = {} as any
       const dataMock = {
         scope: ['uid'],
@@ -765,7 +882,13 @@ describe('_search factory', () => {
     it('should skip users when UserInfoService returns null', async () => {
       mockUserInfoGet.mockResolvedValueOnce(null)
 
-      const searchFn = await _search(idServerMock as any, logger as any)
+      const { addressbookService, userInfoService } = createMockServices()
+      const searchFn = await _search(
+        idServerMock as any,
+        logger as any,
+        addressbookService,
+        userInfoService
+      )
       const resMock = {} as any
       const dataMock = {
         scope: ['uid'],
@@ -783,15 +906,19 @@ describe('_search factory', () => {
     })
 
     it('should handle enrichment errors gracefully', async () => {
-      const UserInfoServiceMock =
-        require('../../../user-info-api/services').default
-      UserInfoServiceMock.mockImplementationOnce(function () {
-        return {
-          get: jest.fn().mockRejectedValue(new Error('Enrichment failed'))
-        }
-      })
+      const { addressbookService } = createMockServices()
 
-      const searchFn = await _search(idServerMock as any, logger as any)
+      // Create a userInfoService that rejects with an error
+      const failingUserInfoService = {
+        get: jest.fn().mockRejectedValue(new Error('Enrichment failed'))
+      } as any
+
+      const searchFn = await _search(
+        idServerMock as any,
+        logger as any,
+        addressbookService,
+        failingUserInfoService
+      )
       const resMock = {} as any
       const dataMock = {
         scope: ['uid'],
@@ -826,7 +953,13 @@ describe('_search factory', () => {
         }
       }
 
-      const searchFn = await _search(mixedServer as any, logger as any)
+      const { addressbookService, userInfoService } = createMockServices()
+      const searchFn = await _search(
+        mixedServer as any,
+        logger as any,
+        addressbookService,
+        userInfoService
+      )
       const resMock = {} as any
       const dataMock = {
         scope: ['uid'],
@@ -872,7 +1005,13 @@ describe('_search factory', () => {
         }
       }
 
-      const searchFn = await _search(serverWithManyUsers as any, logger as any)
+      const { addressbookService, userInfoService } = createMockServices()
+      const searchFn = await _search(
+        serverWithManyUsers as any,
+        logger as any,
+        addressbookService,
+        userInfoService
+      )
       const resMock = {} as any
       const dataMock = {
         scope: ['uid'],
@@ -915,7 +1054,13 @@ describe('_search factory', () => {
         }
       }
 
-      const searchFn = await _search(serverWithManyUsers as any, logger as any)
+      const { addressbookService, userInfoService } = createMockServices()
+      const searchFn = await _search(
+        serverWithManyUsers as any,
+        logger as any,
+        addressbookService,
+        userInfoService
+      )
       const resMock = {} as any
       const dataMock = {
         scope: ['uid'],
@@ -933,7 +1078,13 @@ describe('_search factory', () => {
     })
 
     it('should handle offset beyond total results', async () => {
-      const searchFn = await _search(idServerMock as any, logger as any)
+      const { addressbookService, userInfoService } = createMockServices()
+      const searchFn = await _search(
+        idServerMock as any,
+        logger as any,
+        addressbookService,
+        userInfoService
+      )
       const resMock = {} as any
       const dataMock = {
         scope: ['uid'],
@@ -967,7 +1118,13 @@ describe('_search factory', () => {
         }
       }
 
-      const searchFn = await _search(serverWithManyUsers as any, logger as any)
+      const { addressbookService, userInfoService } = createMockServices()
+      const searchFn = await _search(
+        serverWithManyUsers as any,
+        logger as any,
+        addressbookService,
+        userInfoService
+      )
       const resMock = {} as any
       const dataMock = {
         scope: ['uid'],
