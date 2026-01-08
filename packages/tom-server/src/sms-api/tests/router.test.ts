@@ -20,6 +20,7 @@ const mockLogger: Partial<TwakeLogger> = {
   debug: jest.fn(),
   error: jest.fn(),
   warn: jest.fn(),
+  info: jest.fn(),
   close: jest.fn()
 }
 
@@ -65,16 +66,7 @@ app.use(bodyParser.urlencoded({ extended: true }))
 
 describe('SMS API Router', () => {
   beforeAll((done) => {
-    // Clean up database files before starting to avoid "table already exists" errors
-    const pathFilesToDelete = [
-      path.join(JEST_PROCESS_ROOT_PATH, 'test.db'),
-      path.join(JEST_PROCESS_ROOT_PATH, 'tokens.db')
-    ]
-    pathFilesToDelete.forEach((filePath) => {
-      if (fs.existsSync(filePath)) fs.unlinkSync(filePath)
-    })
-
-    // Create IdServer after cleaning up database files
+    // Use in-memory databases to avoid conflicts between parallel test workers
     idServer = new IdServer(
       {
         get: jest.fn()
@@ -82,14 +74,14 @@ describe('SMS API Router', () => {
       {} as unknown as Config,
       {
         database_engine: 'sqlite',
-        database_host: 'test.db',
+        database_host: ':memory:',
         rate_limiting_window: 10000,
         rate_limiting_nb_requests: 100,
         sms_api_key: 'test',
         sms_api_login: 'test',
         sms_api_url: 'http://url/',
         template_dir: './templates',
-        userdb_host: './tokens.db',
+        userdb_host: ':memory:',
         features: {
           common_settings: { enabled: false },
           user_profile: {
@@ -117,13 +109,6 @@ describe('SMS API Router', () => {
 
   afterAll(() => {
     idServer.cleanJobs()
-    const pathFilesToDelete = [
-      path.join(JEST_PROCESS_ROOT_PATH, 'test.db'),
-      path.join(JEST_PROCESS_ROOT_PATH, 'tokens.db')
-    ]
-    pathFilesToDelete.forEach((path) => {
-      if (fs.existsSync(path)) fs.unlinkSync(path)
-    })
   })
 
   it('should reject if more than 100 requests are done in less than 10 seconds', async () => {
