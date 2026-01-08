@@ -1,9 +1,9 @@
-# @twake/common-settings
+# common-settings
 
 The **Common Settings** module provides an integration layer between Twake Common Settings and ToM.  
-It listens for user profile updates (e.g., display name, avatar) published to an AMQP queue and propagates these changes to Synapse using the **Admin Settings API**.  
+It listens for user profile updates (e.g., display name, avatar) published to an AMQP queue and propagates these changes to Synapse using the **Admin Settings API**.
 
-This ensures that updates to user information are automatically synchronized with the chat service.  
+This ensures that updates to user information are automatically synchronized with the chat service.
 
 ## Configuration
 
@@ -40,26 +40,26 @@ The connector requires a JSON configuration file. Default values can be found in
 
 #### `rabbitmq`
 
-* **host**: The RabbitMQ server hostname or IP address.
-* **port**: The port on which RabbitMQ is listening (default: `5672`).
-* **vhost**: The virtual host used for isolating environments in RabbitMQ (default: `/`).
-* **username**: Username for authenticating with RabbitMQ.
-* **password**: Password for authenticating with RabbitMQ.
-* **tls**: Whether to use TLS/SSL for the connection (`true` or `false`).
+- **host**: The RabbitMQ server hostname or IP address.
+- **port**: The port on which RabbitMQ is listening (default: `5672`).
+- **vhost**: The virtual host used for isolating environments in RabbitMQ (default: `/`).
+- **username**: Username for authenticating with RabbitMQ.
+- **password**: Password for authenticating with RabbitMQ.
+- **tls**: Whether to use TLS/SSL for the connection (`true` or `false`).
 
 #### `features.common_settings`
 
-* **enabled**: Enables or disables the common settings feature.
-* **queue**: Name of the queue where incoming settings messages will be consumed.
-* **exchange**: Name of the exchange to which settings messages are published.
-* **deadLetterExchange**: Exchange where messages are routed if they cannot be processed.
-* **deadLetterRoutingKey**: Routing key for directing failed messages to the dead-letter exchange.
-* **api_url**: URL of the API used for handling user settings (the backend service for common settings).
-* **api_secret**: Secret key or token used to authenticate API requests.
+- **enabled**: Enables or disables the common settings feature.
+- **queue**: Name of the queue where incoming settings messages will be consumed.
+- **exchange**: Name of the exchange to which settings messages are published.
+- **deadLetterExchange**: Exchange where messages are routed if they cannot be processed.
+- **deadLetterRoutingKey**: Routing key for directing failed messages to the dead-letter exchange.
+- **api_url**: URL of the API used for handling user settings (the backend service for common settings).
+- **api_secret**: Secret key or token used to authenticate API requests.
 
 #### `features.matrix_profile_updates_allowed`
 
-* **matrix_profile_updates_allowed**: Boolean flag indicating whether updates to Matrix user profiles (display name, avatar, etc.) are permitted on ToM.
+- **matrix_profile_updates_allowed**: Boolean flag indicating whether updates to Matrix user profiles (display name, avatar, etc.) are permitted on ToM.
 
 ---
 
@@ -81,4 +81,10 @@ To stop the service gracefully:
 await service.stop();
 ```
 
----
+## Building
+
+Run `nx build common-settings` to build the library.
+
+## Running unit tests
+
+Run `nx test common-settings` to execute the unit tests via [Jest](https://jestjs.io).

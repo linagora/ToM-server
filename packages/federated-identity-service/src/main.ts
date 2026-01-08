@@ -1,10 +1,10 @@
-import FederatedIdentityService from '@twake/federated-identity-service'
-import express from 'express'
-import path from 'node:path'
-import { fileURLToPath } from 'url'
+import FederatedIdentityService from './index';
+import express from 'express';
+import path from 'node:path';
+import { fileURLToPath } from 'url';
 
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const conf = {
   additional_features: process.env.ADDITIONAL_FEATURES || false,
@@ -42,7 +42,7 @@ const conf = {
       'node_modules',
       '@twake',
       'matrix-identity-server',
-      'templates'
+      'templates',
     ),
   update_users_cron: process.env.UPDATE_USERS_CRON || '*/10 * * * *',
   userdb_engine: process.env.USERDB_ENGINE || '',
@@ -63,27 +63,27 @@ const conf = {
   matrix_admin_login: process.env.MATRIX_ADMIN_LOGIN ?? 'admin',
   matrix_admin_password: process.env.MATRIX_ADMIN_PASSWORD ?? 'change-me',
   admin_access_token: process.env.ADMIN_ACCESS_TOKEN ?? 'secret',
-  signup_url: process.env.SIGNUP_URL ?? 'https://sign-up.twake.app/?app=chat'
-}
+  signup_url: process.env.SIGNUP_URL ?? 'https://sign-up.twake.app/?app=chat',
+};
 
-const app = express()
+const app = express();
 
 const trustProxy = process.env.TRUSTED_PROXIES
   ? process.env.TRUSTED_PROXIES.split(/\s+/)
-  : []
+  : [];
 if (trustProxy.length > 0) {
-  conf.trust_x_forwarded_for = true
-  app.set('trust proxy', ...trustProxy)
+  conf.trust_x_forwarded_for = true;
+  app.set('trust proxy', ...trustProxy);
 } else {
-  app.set('trust proxy', conf.trust_x_forwarded_for)
+  app.set('trust proxy', conf.trust_x_forwarded_for);
 }
 
-const federatedIdentityService = new FederatedIdentityService(conf)
-const promises = [federatedIdentityService.ready]
+const federatedIdentityService = new FederatedIdentityService(conf);
+const promises = [federatedIdentityService.ready];
 
 if (process.env.CROWDSEC_URI) {
   if (!process.env.CROWDSEC_KEY) {
-    throw new Error('Missing CROWDSEC_KEY')
+    throw new Error('Missing CROWDSEC_KEY');
   }
   promises.push(
     new Promise((resolve, reject) => {
@@ -91,26 +91,26 @@ if (process.env.CROWDSEC_URI) {
         .then((m) =>
           m.default({
             url: process.env.CROWDSEC_URI,
-            apiKey: process.env.CROWDSEC_KEY
-          })
+            apiKey: process.env.CROWDSEC_KEY,
+          }),
         )
         .then((crowdsecMiddleware) => {
-          app.use(crowdsecMiddleware)
-          resolve()
+          app.use(crowdsecMiddleware);
+          resolve();
         })
-        .catch(reject)
-    })
-  )
+        .catch(reject);
+    }),
+  );
 }
 
 Promise.all(promises)
   .then(() => {
-    app.use(federatedIdentityService.routes)
-    const port = process.argv[2] != null ? parseInt(process.argv[2]) : 3000
-    console.log(`Federated Identity Server listening on port: ${port}`)
-    app.listen(port, '0.0.0.0')
+    app.use(federatedIdentityService.routes);
+    const port = process.argv[2] != null ? parseInt(process.argv[2]) : 3000;
+    console.log(`Federated Identity Server listening on port: ${port}`);
+    app.listen(port, '0.0.0.0');
   })
   .catch((e) => {
-    console.error(e)
-    throw e
-  })
+    console.error(e);
+    throw e;
+  });

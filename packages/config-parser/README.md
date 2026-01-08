@@ -1,4 +1,4 @@
-# @twake/config-parser
+# config-parser
 
 Simple module to load and consolidate application configuration.
 
@@ -14,7 +14,7 @@ const appConfigDescription: ConfigDescription = {
   PORT: { type: 'number', default: 3000 }, // Number with a default
   ENABLE_FEATURE_X: { type: 'boolean', default: false }, // Boolean with a default
   API_KEYS: { type: 'json', default: {} }, // JSON object with a default empty object
-  ALLOWED_ORIGINS: { type: 'array', default: ['http://localhost:8080'] } // Array with default items
+  ALLOWED_ORIGINS: { type: 'array', default: ['http://localhost:8080'] }, // Array with default items
 };
 
 // Path to an optional JSON configuration file
@@ -38,7 +38,6 @@ async function loadConfiguration() {
     // Example 3: Explicitly setting an environment variable to an empty string (will throw an error)
     // process.env.DATABASE_URL = ""; // Simulate setting an empty env var
     // await twakeConfig(appConfigDescription, undefined, true); // This line would throw ConfigCoercionError
-
   } catch (error) {
     console.error('Configuration loading error:', error.message);
     // You can catch specific errors:
@@ -54,20 +53,20 @@ loadConfiguration();
 
 `twakeConfig()` is an asynchronous function that loads and consolidates application configuration from multiple sources, applying a clear priority order:
 
-1. **Optional Configuration File**: If a path to a JSON file (*or a plain object*) is provided as `defaultConfigurationFile`, its values are loaded first. These values serve as the base configuration. If the file is not found, cannot be read, or contains invalid JSON, a `FileReadParseError` will be thrown.
-2. **Environment Variables**: If the `useEnv` parameter is set to `true`, environment variables are checked. For each key defined in your `ConfigDescription`, `twakeConfig()` looks for an environment variable with the key's name converted to uppercase (*e.g., `myKey` maps to `MYKEY`*). If found, this environment variable's value will override any corresponding value from the configuration file or `ConfigDescription` default. **Important**: Empty string environment variables (*e.g., `export MY_KEY=""`*) are explicitly not allowed and will cause a `ConfigCoercionError` to be thrown, as they are considered invalid inputs.
-3. **ConfigDescription Defaults**: Finally, for any configuration keys that were not set by the configuration file or environment variables, their default values (*if defined*) from the `ConfigDescription` will be applied.
+1. **Optional Configuration File**: If a path to a JSON file (_or a plain object_) is provided as `defaultConfigurationFile`, its values are loaded first. These values serve as the base configuration. If the file is not found, cannot be read, or contains invalid JSON, a `FileReadParseError` will be thrown.
+2. **Environment Variables**: If the `useEnv` parameter is set to `true`, environment variables are checked. For each key defined in your `ConfigDescription`, `twakeConfig()` looks for an environment variable with the key's name converted to uppercase (_e.g., `myKey` maps to `MYKEY`_). If found, this environment variable's value will override any corresponding value from the configuration file or `ConfigDescription` default. **Important**: Empty string environment variables (_e.g., `export MY_KEY=""`_) are explicitly not allowed and will cause a `ConfigCoercionError` to be thrown, as they are considered invalid inputs.
+3. **ConfigDescription Defaults**: Finally, for any configuration keys that were not set by the configuration file or environment variables, their default values (_if defined_) from the `ConfigDescription` will be applied.
 
 All values, whether from environment variables or `ConfigDescription` defaults, are automatically type-coerced to the type specified in the `ConfigDescription`. This includes:
 
-- Strings to number (*e.g., `"123"` -> `123`*)
-- Strings to boolean (*e.g., `"true"`, `"1"` -> `true`; `"false"`, `"0"` -> `false`*)
-- Comma or space-separated strings to array (*e.g., `"item1, item2"` -> `['item1', 'item2']`*)
-- JSON strings to object or json types (*e.g., `'{"key": "value"}'` -> `{ key: 'value' }`*)
+- Strings to number (_e.g., `"123"` -> `123`_)
+- Strings to boolean (_e.g., `"true"`, `"1"` -> `true`; `"false"`, `"0"` -> `false`_)
+- Comma or space-separated strings to array (_e.g., `"item1, item2"` -> `['item1', 'item2']`_)
+- JSON strings to object or json types (_e.g., `'{"key": "value"}'` -> `{ key: 'value' }`_)
 
 The module also includes robust validation and throws specific errors for various issues:
 
-- `UnacceptedKeyError`: Thrown if a key is found in the provided `defaultConfigurationFile` (*`object` or JSON file*) that is not defined in the `ConfigDescription`.
+- `UnacceptedKeyError`: Thrown if a key is found in the provided `defaultConfigurationFile` (_`object` or JSON file_) that is not defined in the `ConfigDescription`.
 - `ConfigCoercionError`: Thrown if a value from an environment variable or a default value cannot be successfully coerced to its specified type. This also applies to empty string environment variables.
 - `MissingRequiredConfigError`: Thrown if a configuration key marked as required: true in your ConfigDescription is not provided by any of the configuration sources (file, environment, or default).
 
@@ -75,4 +74,10 @@ The module also includes robust validation and throws specific errors for variou
 
 Copyright (c) 2023-present Linagora <https://linagora.com>
 
-License: [GNU AFFERO GENERAL PUBLIC LICENSE](https://ci.linagora.com/publicgroup/oss/twake/tom-server/-/blob/master/LICENSE)
+## Building
+
+Run `nx build config-parser` to build the library.
+
+## Running unit tests
+
+Run `nx test config-parser` to execute the unit tests via [Jest](https://jestjs.io).

@@ -1,10 +1,10 @@
-import MatrixIdentityServer from '@twake/matrix-identity-server'
-import express from 'express'
-import path from 'node:path'
-import { fileURLToPath } from 'url'
+import MatrixIdentityServer from './index';
+import express from 'express';
+import path from 'node:path';
+import { fileURLToPath } from 'url';
 
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const conf = {
   base_url: process.env.BASE_URL,
@@ -71,23 +71,23 @@ const conf = {
   matrix_admin_login: process.env.MATRIX_ADMIN_LOGIN ?? 'admin',
   matrix_admin_password: process.env.MATRIX_ADMIN_PASSWORD ?? 'change-me',
   admin_access_token: process.env.ADMIN_ACCESS_TOKEN ?? 'secret',
-  signup_url: process.env.SIGNUP_URL ?? 'https://sign-up.twake.app/?app=chat'
-}
+  signup_url: process.env.SIGNUP_URL ?? 'https://sign-up.twake.app/?app=chat',
+};
 
-const app = express()
+const app = express();
 const trustProxy = process.env.TRUSTED_PROXIES
   ? process.env.TRUSTED_PROXIES.split(/\s+/)
-  : []
+  : [];
 if (trustProxy.length > 0) {
-  conf.trust_x_forwarded_for = true
-  app.set('trust proxy', ...trustProxy)
+  conf.trust_x_forwarded_for = true;
+  app.set('trust proxy', ...trustProxy);
 }
-const matrixIdServer = new MatrixIdentityServer(conf)
-const promises = [matrixIdServer.ready]
+const matrixIdServer = new MatrixIdentityServer(conf);
+const promises = [matrixIdServer.ready];
 
 if (process.env.CROWDSEC_URI) {
   if (!process.env.CROWDSEC_KEY) {
-    throw new Error('Missing CROWDSEC_KEY')
+    throw new Error('Missing CROWDSEC_KEY');
   }
   promises.push(
     new Promise((resolve, reject) => {
@@ -95,30 +95,30 @@ if (process.env.CROWDSEC_URI) {
         .then((m) =>
           m.default({
             url: process.env.CROWDSEC_URI,
-            apiKey: process.env.CROWDSEC_KEY
-          })
+            apiKey: process.env.CROWDSEC_KEY,
+          }),
         )
         .then((crowdsecMiddleware) => {
-          app.use(crowdsecMiddleware)
-          resolve()
+          app.use(crowdsecMiddleware);
+          resolve();
         })
-        .catch(reject)
-    })
-  )
+        .catch(reject);
+    }),
+  );
 }
 
 Promise.all(promises)
   .then(() => {
     Object.keys(matrixIdServer.api.get).forEach((k) => {
-      app.get(k, matrixIdServer.api.get[k])
-    })
+      app.get(k, matrixIdServer.api.get[k]);
+    });
     Object.keys(matrixIdServer.api.post).forEach((k) => {
-      app.post(k, matrixIdServer.api.post[k])
-    })
-    const port = process.argv[2] != null ? parseInt(process.argv[2]) : 3000
-    console.log(`Identity Server listening on port: ${port}`)
-    app.listen(port)
+      app.post(k, matrixIdServer.api.post[k]);
+    });
+    const port = process.argv[2] != null ? parseInt(process.argv[2]) : 3000;
+    console.log(`Identity Server listening on port: ${port}`);
+    app.listen(port);
   })
   .catch((e) => {
-    throw new Error(e)
-  })
+    throw new Error(e);
+  });
