@@ -11,6 +11,16 @@ jest.mock('@twake/utils', () => ({
 
 jest.mock('../_search', () => jest.fn(() => jest.fn()))
 
+// Mock service instances
+const createMockServices = () => ({
+  addressbookService: {
+    list: jest.fn().mockResolvedValue({ contacts: [] })
+  } as any,
+  userInfoService: {
+    get: jest.fn().mockResolvedValue(null)
+  } as any
+})
+
 describe('autocompletion handler', () => {
   const logger = {
     debug: jest.fn(),
@@ -34,7 +44,13 @@ describe('autocompletion handler', () => {
     const mockSearch = jest.fn()
     ;(_search as jest.Mock).mockResolvedValue(mockSearch)
 
-    const handler = await autocompletion(idServer as any, logger as any)
+    const { addressbookService, userInfoService } = createMockServices()
+    const handler = await autocompletion(
+      idServer as any,
+      logger as any,
+      addressbookService,
+      userInfoService
+    )
 
     idServer.authenticate.mockImplementation((req, res, cb) => {
       cb({ sub: '@drwho:server' }, 'id')
@@ -61,7 +77,13 @@ describe('autocompletion handler', () => {
     const mockSearch = jest.fn()
     ;(_search as jest.Mock).mockResolvedValue(mockSearch)
 
-    const handler = await autocompletion(idServer as any, logger as any)
+    const { addressbookService, userInfoService } = createMockServices()
+    const handler = await autocompletion(
+      idServer as any,
+      logger as any,
+      addressbookService,
+      userInfoService
+    )
 
     idServer.authenticate.mockImplementation((req, res, cb) => {
       cb({}, 'id') // no sub

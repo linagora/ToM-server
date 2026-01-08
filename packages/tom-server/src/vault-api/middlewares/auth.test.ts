@@ -24,6 +24,7 @@ const mockLogger: Partial<TwakeLogger> = {
   debug: jest.fn(),
   error: jest.fn(),
   warn: jest.fn(),
+  info: jest.fn(),
   close: jest.fn()
 }
 
@@ -45,7 +46,8 @@ const matrixServerResponseBody = {
 
 const mockRequestDefaultProperties: Partial<Request> = {
   app: { get: jest.fn().mockReturnValue(false) } as unknown as Application,
-  ip: '192.168.1.1'
+  ip: '192.168.1.1',
+  socket: { remoteAddress: '192.168.1.1' } as any
 }
 
 jest
@@ -56,6 +58,7 @@ jest
   .spyOn(IdentityServerDb.prototype, 'insert')
   .mockResolvedValue([{ id: token.value, data: JSON.stringify(token.content) }])
 
+// Use in-memory databases to avoid conflicts between parallel test workers
 const idServer = new IdServer(
   {
     get: jest.fn()
@@ -63,11 +66,11 @@ const idServer = new IdServer(
   {} as unknown as Config,
   {
     database_engine: 'sqlite',
-    database_host: 'test.db',
+    database_host: ':memory:',
     rate_limiting_window: 10000,
     rate_limiting_nb_requests: 100,
     template_dir: './templates',
-    userdb_host: './tokens.db',
+    userdb_host: ':memory:',
     matrix_server: 'localhost',
     features: {
       common_settings: { enabled: false },
@@ -125,13 +128,6 @@ describe('Auth middleware', () => {
 
   afterAll(() => {
     idServer.cleanJobs()
-    const pathFilesToDelete = [
-      path.join(JEST_PROCESS_ROOT_PATH, 'test.db'),
-      path.join(JEST_PROCESS_ROOT_PATH, 'tokens.db')
-    ]
-    pathFilesToDelete.forEach((path) => {
-      if (fs.existsSync(path)) fs.unlinkSync(path)
-    })
   })
 
   it('should retrieve token from authorization header and store token data in req object', async () => {

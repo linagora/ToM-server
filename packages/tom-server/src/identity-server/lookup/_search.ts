@@ -1,8 +1,10 @@
 import type { TwakeLogger } from '@twake/logger'
 import { isMatrixId, send, toMatrixId } from '@twake/utils'
-import { AddressbookService } from '../../addressbook-api/services'
-import UserInfoService from '../../user-info-api/services'
-import type { UserInformation } from '../../user-info-api/types'
+import type { IAddressbookService } from '../../addressbook-api/types'
+import type {
+  IUserInfoService,
+  UserInformation
+} from '../../user-info-api/types'
 import type TwakeIdentityServer from '..'
 import type { SearchFunction } from './types'
 
@@ -10,13 +12,17 @@ import type { SearchFunction } from './types'
  * Factory function that creates a search handler for the Twake Identity Server.
  * @param {TwakeIdentityServer} idServer
  * @param {TwakeLogger} logger
+ * @param {IAddressbookService} addressbookService
+ * @param {IUserInfoService} userInfoService
  * @returns {Promise<SearchFunction>}
  */
 export const _search = async (
   idServer: TwakeIdentityServer,
-  logger: TwakeLogger
+  logger: TwakeLogger,
+  addressbookService: IAddressbookService,
+  userInfoService: IUserInfoService
 ): Promise<SearchFunction> => {
-  logger.debug(
+  logger.info(
     '[IndentityServer][_search] Initializing search function factory.'
   )
 
@@ -30,15 +36,6 @@ export const _search = async (
   )
   logger.debug(
     `[IndentityServer][_search] User directory enabled: ${enableUserDirectory}`
-  )
-
-  const addressBookService = new AddressbookService(db, logger)
-  const userInfoService = new UserInfoService(
-    userDB,
-    db,
-    matrixDb,
-    conf,
-    logger
   )
 
   type EnrichedUser = {
@@ -131,7 +128,7 @@ export const _search = async (
       )
       return []
     }
-    const result = (await addressBookService.list(owner))?.contacts || []
+    const result = (await addressbookService.list(owner))?.contacts || []
     logger.debug(
       `[IndentityServer][_search][addressbookPromise] addressBookService.list returned ${
         result?.length || 0

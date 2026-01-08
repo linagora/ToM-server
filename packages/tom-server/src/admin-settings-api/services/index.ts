@@ -8,7 +8,7 @@ import {
 } from '../types'
 import { Lru } from 'toad-cache'
 import { buildUrl } from '../../utils'
-export default class AdminService implements IAdminSettingsService {
+export default class AdminSettingsService implements IAdminSettingsService {
   private readonly device = 'admin_service'
   private readonly tokenService: ITokenService
   private readonly cache = new Lru<string>(1, 0)
@@ -16,9 +16,12 @@ export default class AdminService implements IAdminSettingsService {
 
   constructor(
     private readonly config: Config,
-    private readonly logger: TwakeLogger
+    private readonly logger: TwakeLogger,
+    tokenService?: ITokenService
   ) {
-    this.tokenService = new TokenService(this.config, this.logger, this.device)
+    this.tokenService =
+      tokenService ?? new TokenService(this.config, this.logger, this.device)
+    this.logger.info('[AdminSettingsService] Initialized.')
   }
 
   /**

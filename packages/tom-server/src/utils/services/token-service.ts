@@ -29,11 +29,12 @@ export default class TokenService implements ITokenService {
 
     if (!this.config.auth_url) {
       this.logger.warn(
-        'No auth_url provided in the configuration, using default value'
+        '[TokenService] No auth_url provided in the configuration, using default value'
       )
     }
 
     this.authProviderUrl = this.config.auth_url as string
+    this.logger.info('[TokenService] Initialized.', {})
   }
 
   /**
@@ -78,7 +79,9 @@ export default class TokenService implements ITokenService {
 
       return accessToken
     } catch (error) {
-      this.logger.error('Failed to fetch access_token', { error })
+      this.logger.error('[TokenService] Failed to fetch access_token', {
+        error
+      })
       return null
     }
   }

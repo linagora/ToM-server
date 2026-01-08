@@ -17,7 +17,9 @@ class MetricsService implements IMetricsService {
   constructor(
     private readonly matrixDb: MatrixDBBackend,
     private readonly logger: TwakeLogger
-  ) {}
+  ) {
+    this.logger.info('[MetricsService] initialized.')
+  }
 
   /**
    * Fetches the user activity stats.

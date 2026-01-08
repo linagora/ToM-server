@@ -6,6 +6,8 @@ import { type TwakeLogger } from '@twake/logger'
 import MatrixIdentityServer, {
   type MatrixDB
 } from '@twake/matrix-identity-server'
+import type { IAddressbookService } from '../addressbook-api/types'
+import type { IUserInfoService } from '../user-info-api/types'
 import defaultConfig from '../config.json'
 import type { Config, TwakeDB, twakeDbCollections } from '../types'
 import { tables } from '../utils'
@@ -231,18 +233,34 @@ export default class TwakeIdentityServer extends MatrixIdentityServer<twakeDbCol
            *            example:
            *              matches: [{uid: dwho, mail: dwho@badwolf.com}]
            */
-          this.api.post['/_twake/identity/v1/lookup/match'] =
-            await autocompletion(this, this.logger)
-          if (this.conf.additional_features === true) {
-            this.api.post['/_twake/identity/v1/lookup/diff'] = diff(
-              this,
-              this.logger
-            )
-          }
           resolve(true)
         })
         /* istanbul ignore next */
         .catch(reject)
     })
+  }
+
+  /**
+   * Sets up the lookup routes with singleton services
+   * Must be called after singleton services are created
+   * @param {IAddressbookService} addressbookService - The singleton addressbook service
+   * @param {IUserInfoService} userInfoService - The singleton user info service
+   * @returns {Promise<void>} Resolves when routes are set up
+   */
+  public async setupLookupRoutes(
+    addressbookService: IAddressbookService,
+    userInfoService: IUserInfoService
+  ): Promise<void> {
+    await this.ready
+    this.api.post['/_twake/identity/v1/lookup/match'] = await autocompletion(
+      this,
+      this.logger,
+      addressbookService,
+      userInfoService
+    )
+
+    if (this.conf.additional_features === true) {
+      this.api.post['/_twake/identity/v1/lookup/diff'] = diff(this, this.logger)
+    }
   }
 }

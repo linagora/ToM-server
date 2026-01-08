@@ -259,13 +259,14 @@ class IdentityServerDb<T extends string = never>
     this.ready = new Promise((resolve, reject) => {
       this.db.ready
         .then(() => {
+          this.logger.info('[IdentityServerDb] initialized.')
           this.dbMaintenance(conf.database_vacuum_delay)
           resolve()
         })
         .catch((e) => {
           /* istanbul ignore next */
           console.error({ e })
-          this.logger.error('Database initialization failed')
+          this.logger.error('[IdentityServerDb] Database initialization failed')
           /* istanbul ignore next */
           reject(e)
         })

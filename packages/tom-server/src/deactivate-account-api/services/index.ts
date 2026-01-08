@@ -4,15 +4,18 @@ import { Config, ITokenService } from '../../types'
 import TokenService from '../../utils/services/token-service'
 import { buildUrl } from '../../utils'
 
-export default class AdminService implements IAdminService {
-  private readonly device = 'admin service'
+export default class DeactivateAccountService implements IAdminService {
+  private readonly device = 'deactivate_service'
   private readonly tokenService: ITokenService
 
   constructor(
     private readonly config: Config,
-    private readonly logger: TwakeLogger
+    private readonly logger: TwakeLogger,
+    tokenService?: ITokenService
   ) {
-    this.tokenService = new TokenService(this.config, this.logger, this.device)
+    this.tokenService =
+      tokenService ?? new TokenService(this.config, this.logger, this.device)
+    this.logger.info('[DeactivateAccountService] Initialized.')
   }
 
   /**
@@ -32,7 +35,10 @@ export default class AdminService implements IAdminService {
       await this.deleteUserMedia(userId, token)
       await this.disableUserAccount(userId, token)
     } catch (error) {
-      this.logger.error(`Failed to deactivate user`, { error })
+      this.logger.error(
+        `[DeactivateAccountService] Failed to deactivate user`,
+        { error }
+      )
 
       throw error
     }
@@ -69,9 +75,14 @@ export default class AdminService implements IAdminService {
         throw new Error()
       }
 
-      this.logger.info(`Deleted ${data.total} media files for user ${userId}`)
+      this.logger.info(
+        `[DeactivateAccountService] Deleted ${data.total} media files for user ${userId}`
+      )
     } catch (error) {
-      this.logger.error(`Failed to delete user media`, { error })
+      this.logger.error(
+        `[DeactivateAccountService] Failed to delete user media`,
+        { error }
+      )
     }
   }
 
@@ -104,9 +115,16 @@ export default class AdminService implements IAdminService {
         }
       )
 
-      this.logger.info(`Disabled user account ${userId}`)
+      this.logger.info(
+        `[DeactivateAccountService] Disabled user account ${userId}`
+      )
     } catch (error) {
-      this.logger.error(`Failed to disable user account`, { error })
+      this.logger.error(
+        `[DeactivateAccountService] Failed to disable user account`,
+        {
+          error
+        }
+      )
 
       throw new Error('Failed to deactivate user', { cause: error })
     }
@@ -130,7 +148,10 @@ export default class AdminService implements IAdminService {
 
       return accessToken
     } catch (error) {
-      this.logger.error(`Failed to get access token`, { error })
+      this.logger.error(
+        `[DeactivateAccountService] Failed to get access token`,
+        { error }
+      )
 
       throw error
     }
