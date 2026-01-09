@@ -52,7 +52,6 @@ REST API Endpoints documentation is available on https://linagora.github.io/ToM-
 * [@twake/utils](.packages/utils): utilitary methods for Twake Chat
 * [matrix-resolve](./packages/matrix-resolve): resolve a Matrix "server name" into base URL following
   [Matrix specification](https://spec.matrix.org/latest/server-server-api/#server-discovery)
-* [@twake/retry-promise](packages/retry-promise): simple module extending javascript Promise with retry strategy
 
 ## Requirements
 
