@@ -51,6 +51,7 @@
   },
   "devDependencies": {
     "@crowdsec/express-bouncer": "^0.1.0",
+    "@nx/workspace": "^20.6.4",
     "@rollup/plugin-commonjs": "^25.0.7",
     "@rollup/plugin-json": "^6.0.1",
     "@rollup/plugin-node-resolve": "^15.2.3",
