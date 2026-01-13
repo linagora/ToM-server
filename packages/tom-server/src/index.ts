@@ -13,6 +13,8 @@ import smsApiRouter from './sms-api/index.ts'
 // TODO: investigate unused ConfigurationFile
 // import type { Config, ConfigurationFile, TwakeDB } from './types.ts'
 import type { Config, TwakeDB } from './types.ts'
+
+export type { Config, TwakeDB } from './types.ts'
 import userInfoAPIRouter from './user-info-api/index.ts'
 import VaultServer from './vault-api/index.ts'
 import WellKnown from './wellKnown/index.ts'
