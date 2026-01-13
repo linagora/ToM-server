@@ -2,8 +2,8 @@ import { type TwakeLogger } from '@twake-chat/logger'
 import { errMsg, send } from '@twake-chat/utils'
 import { Utils, type tokenContent } from '@twake-chat/matrix-identity-server'
 import { type NextFunction, type Response } from 'express'
-import { type AuthRequest, type FdServerDb } from '../types'
-import { convertToIPv6 } from '../utils/ip-address'
+import { type AuthRequest, type FdServerDb } from '../types.ts'
+import { convertToIPv6 } from '../utils/ip-address.ts'
 
 const tokenTrustedServer = 'TOKEN_TRUSTED_SERVER'
 

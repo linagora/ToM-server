@@ -14,12 +14,12 @@ import {
   type StartedDockerComposeEnvironment,
   type StartedTestContainer
 } from 'testcontainers'
-import FederatedIdentityService from '.'
+import FederatedIdentityService from './index.ts'
 import JEST_PROCESS_ROOT_PATH from '../jest.globals'
-import { buildMatrixDb, buildUserDB } from './__testData__/build-userdb'
-import defaultConfig from './__testData__/config.json'
-import { hashByServer } from './controllers/controllers'
-import { type Config } from './types'
+import { buildMatrixDb, buildUserDB } from './__testData__/build-userdb.ts'
+import defaultConfig from './__testData__/config.json' with { type: "json" }
+import { hashByServer } from './controllers/controllers.ts'
+import { type Config } from './types.ts'
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const syswideCas = require('@small-tech/syswide-cas')

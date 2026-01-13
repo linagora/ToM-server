@@ -1,6 +1,6 @@
 import { errCodes } from '@twake-chat/utils'
-import { type expressAppHandler } from '../types'
-import { FederatedIdentityServiceError } from './errors'
+import { type expressAppHandler } from '../types.ts'
+import { FederatedIdentityServiceError } from './errors.ts'
 
 export const allowCors: expressAppHandler = (req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', '*')

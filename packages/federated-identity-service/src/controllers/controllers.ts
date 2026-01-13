@@ -6,8 +6,8 @@ import lodash from 'lodash'
 import {
   FederatedIdentityServiceError,
   validationErrorHandler
-} from '../middlewares/errors'
-import { type Config, type FdServerDb, type expressAppHandler } from '../types'
+} from '../middlewares/errors.ts'
+import { type Config, type FdServerDb, type expressAppHandler } from '../types.ts'
 const { groupBy, mapValues } = lodash
 
 export const hashByServer = 'hashByServer'

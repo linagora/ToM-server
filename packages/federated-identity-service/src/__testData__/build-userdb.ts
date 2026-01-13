@@ -2,7 +2,7 @@
 import { getLogger, type TwakeLogger } from '@twake-chat/logger'
 import { UserDB } from '@twake-chat/matrix-identity-server'
 import sqlite3, { type Database } from 'sqlite3'
-import { type Config } from '../types'
+import { type Config } from '../types.ts'
 
 let created = false
 let matrixDbCreated = false

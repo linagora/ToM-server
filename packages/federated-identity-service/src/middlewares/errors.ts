@@ -5,7 +5,7 @@ import {
   type ErrorResponseBody,
   type expressAppHandlerError,
   type federatedIdentityServiceErrorCode
-} from '../types'
+} from '../types.ts'
 
 export const defaultErrorMsg = 'Internal server error'
 
