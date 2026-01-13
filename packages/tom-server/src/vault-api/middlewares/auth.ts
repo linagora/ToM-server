@@ -1,7 +1,7 @@
 import { type tokenContent } from '@twake-chat/matrix-identity-server'
 import { type NextFunction, type Request, type Response } from 'express'
-import { type AuthenticationFunction } from '../../types'
-import { VaultAPIError, type expressAppHandler } from '../utils'
+import { type AuthenticationFunction } from '../../types.ts'
+import { VaultAPIError, type expressAppHandler } from '../utils.ts'
 
 export interface tokenDetail {
   value: string

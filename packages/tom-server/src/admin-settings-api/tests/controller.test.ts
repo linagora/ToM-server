@@ -1,5 +1,5 @@
-import AdminSettingsrController from '../controllers'
-import conf from '../../config.json'
+import AdminSettingsrController from '../controllers/index.ts'
+import conf from '../../config.json' with { type: "json" }
 
 interface MockLogger {
   info: jest.Mock

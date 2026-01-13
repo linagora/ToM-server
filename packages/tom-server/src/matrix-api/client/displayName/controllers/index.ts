@@ -1,6 +1,6 @@
-import { type Config, type AuthRequest } from '../../../../types'
+import { type Config, type AuthRequest } from '../../../../types.ts'
 import type { NextFunction, Response } from 'express'
-import DisplayNameService from '../services'
+import DisplayNameService from '../services/index.ts'
 import { errCodes } from '@twake-chat/utils'
 import { type TwakeLogger } from '@twake-chat/logger'
 
@@ -12,7 +12,9 @@ export default class DisplayNameController {
   constructor(config: Config, logger: TwakeLogger) {
     this.config = config
     this.logger = logger
-    this.displayNameService = new DisplayNameService(config, logger)
+    // TODO: investigate unused config
+    // this.displayNameService = new DisplayNameService(config, logger)
+    this.displayNameService = new DisplayNameService(logger)
   }
 
   /**

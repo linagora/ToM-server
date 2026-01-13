@@ -1,12 +1,12 @@
 import express, { type NextFunction, type Response } from 'express'
 import supertest from 'supertest'
-import type TwakeIdentityServer from '../../identity-server'
-import type { AuthRequest, Config } from '../../types'
-import router, { PATH } from '../routes'
-import type { UserInformation } from '../types'
+import type TwakeIdentityServer from '../../identity-server/index.ts'
+import type { AuthRequest, Config } from '../../types.ts'
+import router, { PATH } from '../routes/index.ts'
+import type { UserInformation } from '../types.ts'
 import type { MatrixDB } from '@twake-chat/matrix-identity-server'
-import UserInfoController from '../controllers'
-import { ForbiddenError } from '../types'
+import UserInfoController from '../controllers/index.ts'
+import { ForbiddenError } from '../types.ts'
 
 const app = express()
 app.use(express.json())

@@ -1,7 +1,7 @@
 import express, { NextFunction } from 'express'
-import type { AuthRequest, Config, TwakeDB } from '../../types'
+import type { AuthRequest, Config, TwakeDB } from '../../types.ts'
 import bodyParser from 'body-parser'
-import router, { PATH } from '../routes'
+import router, { PATH } from '../routes/index.ts'
 import { TwakeLogger } from '@twake-chat/logger'
 import supertest from 'supertest'
 

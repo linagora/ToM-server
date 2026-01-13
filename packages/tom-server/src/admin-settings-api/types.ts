@@ -1,4 +1,4 @@
-import type { ApiRequestHandler } from '../types'
+import type { ApiRequestHandler } from '../types.ts'
 
 export interface IAdminSettingsService {
   updateUserInformation: (

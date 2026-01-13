@@ -1,5 +1,5 @@
-import { Config } from '../../types'
-import EmailService from './email-service'
+import { Config } from '../../types.ts'
+import EmailService from './email-service.ts'
 
 const sendMailMock = jest.fn()
 jest.mock('nodemailer', () => ({

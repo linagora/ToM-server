@@ -4,9 +4,9 @@ import type {
   IEmailService,
   INotificationService,
   ISMSService
-} from '../../types'
-import EmailService from './email-service'
-import SmsService from './sms-service'
+} from '../../types.ts'
+import EmailService from './email-service.ts'
+import SmsService from './sms-service.ts'
 import type { SendMailOptions } from 'nodemailer'
 
 export default class NotificationService implements INotificationService {

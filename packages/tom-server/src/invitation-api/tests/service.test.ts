@@ -1,6 +1,6 @@
 import { type TwakeLogger } from '@twake-chat/logger'
-import Service from '../services'
-import { Config, TwakeDB } from '../../types'
+import Service from '../services/index.ts'
+import { Config, TwakeDB } from '../../types.ts'
 
 const dbMock = {
   get: jest.fn(),

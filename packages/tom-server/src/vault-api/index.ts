@@ -1,6 +1,6 @@
 import { Router } from 'express'
-import defaultConfDesc from '../config.json'
-import type { AuthenticationFunction, TwakeDB } from '../types'
+import defaultConfDesc from '../config.json' with { type: "json" }
+import type { AuthenticationFunction, TwakeDB } from '../types.ts'
 import {
   deleteRecoveryWords,
   getRecoveryWords,
@@ -8,15 +8,15 @@ import {
   saveRecoveryWords,
   updateRecoveryWords,
   type VaultController
-} from './controllers/vault'
-import isAuth, { type tokenDetail } from './middlewares/auth'
-import parser from './middlewares/parser'
+} from './controllers/vault.ts'
+import isAuth, { type tokenDetail } from './middlewares/auth.ts'
+import parser from './middlewares/parser.ts'
 import {
   allowCors,
   errorMiddleware,
   type expressAppHandler,
   type expressAppHandlerError
-} from './utils'
+} from './utils.ts'
 
 declare module 'express-serve-static-core' {
   interface Request {

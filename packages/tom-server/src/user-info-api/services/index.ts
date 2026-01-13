@@ -8,12 +8,12 @@ import {
   type UserProfileSettingsPayloadT,
   ProfileField,
   ProfileVisibility
-} from '../types'
-import type { TwakeDB, Config } from '../../types'
+} from '../types.ts'
+import type { TwakeDB, Config } from '../../types.ts'
 import { getLocalPart } from '@twake-chat/utils'
 import type { TwakeLogger } from '@twake-chat/logger'
-import { type IAddressbookService } from '../../addressbook-api/types'
-import { AddressbookService } from '../../addressbook-api/services'
+import { type IAddressbookService } from '../../addressbook-api/types.ts'
+import { AddressbookService } from '../../addressbook-api/services/index.ts'
 
 class UserInfoService implements IUserInfoService {
   private readonly addressBookService: IAddressbookService

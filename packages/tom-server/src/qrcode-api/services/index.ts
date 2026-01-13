@@ -1,7 +1,7 @@
 import QRCode from 'qrcode'
-import type { IQRCodeService } from '../types'
+import type { IQRCodeService } from '../types.ts'
 import type { TwakeLogger } from '@twake-chat/logger'
-import type { Config } from '../../types'
+import type { Config } from '../../types.ts'
 
 export default class QRCodeService implements IQRCodeService {
   constructor(

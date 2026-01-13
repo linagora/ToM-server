@@ -1,7 +1,7 @@
 import { TwakeLogger } from '@twake-chat/logger'
-import type { AuthRequest, Config, TwakeDB } from '../../types'
+import type { AuthRequest, Config, TwakeDB } from '../../types.ts'
 import type { NextFunction, Request, Response } from 'express'
-import type { Invitation, InvitationRequestPayload } from '../types'
+import type { Invitation, InvitationRequestPayload } from '../types.ts'
 import validator from 'validator'
 
 export default class invitationApiMiddleware {

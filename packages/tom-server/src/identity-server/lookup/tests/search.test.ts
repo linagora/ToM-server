@@ -1,4 +1,4 @@
-import { _search } from '../_search'
+import { _search } from '../_search.ts'
 import { send, isMatrixId } from '@twake-chat/utils'
 
 // Mock @twake-chat/utils

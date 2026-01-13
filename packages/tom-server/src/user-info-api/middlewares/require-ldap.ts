@@ -1,5 +1,5 @@
 import type { NextFunction, Request, RequestHandler, Response } from 'express'
-import type { Config } from '../../types'
+import type { Config } from '../../types.ts'
 import { type TwakeLogger } from '@twake-chat/logger'
 
 /**

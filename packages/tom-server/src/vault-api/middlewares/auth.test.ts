@@ -11,10 +11,10 @@ import fs from 'fs'
 import fetch from 'node-fetch'
 import path from 'path'
 import JEST_PROCESS_ROOT_PATH from '../../../jest.globals'
-import IdServer from '../../identity-server'
-import { type Config } from '../../types'
-import { type expressAppHandler } from '../utils'
-import isAuth, { type tokenDetail } from './auth'
+import IdServer from '../../identity-server/index.ts'
+import { type Config } from '../../types.ts'
+import { type expressAppHandler } from '../utils.ts'
+import isAuth, { type tokenDetail } from './auth.ts'
 
 interface ITestRequest extends Partial<Request> {
   token?: tokenDetail

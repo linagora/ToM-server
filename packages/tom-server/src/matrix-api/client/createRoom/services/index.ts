@@ -1,10 +1,11 @@
+import fetch, { Response } from 'node-fetch'
 import type { TwakeLogger } from '@twake-chat/logger'
-import type { Config } from '../../../../types'
+import type { Config } from '../../../../types.ts'
 import type {
   CreateRoomPayload,
   PowerLevelEventContent
-} from '../../../../types'
-import { buildUrl } from '../../../../utils'
+} from '../../../../types.ts'
+import { buildUrl } from '../../../../utils.ts'
 
 /**
  * Helper function to create a deep copy of an object.

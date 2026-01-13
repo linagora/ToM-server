@@ -1,7 +1,7 @@
 import { TwakeLogger } from '@twake-chat/logger'
-import { AuthRequest, Config } from '../../../../types'
+import { AuthRequest, Config } from '../../../../types.ts'
 import type { NextFunction, Response } from 'express'
-import RoomService from '../services'
+import RoomService from '../services/index.ts'
 
 export default class CreateRoomController {
   private roomService

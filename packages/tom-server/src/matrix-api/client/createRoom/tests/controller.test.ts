@@ -6,8 +6,8 @@ import type {
   AuthRequest,
   Config,
   CreateRoomPayload
-} from '../../../../types'
-import router from '../routes'
+} from '../../../../types.ts'
+import router from '../routes/index.ts'
 import supertest from 'supertest'
 
 const loggerMock = {

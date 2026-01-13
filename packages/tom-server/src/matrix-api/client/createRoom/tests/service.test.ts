@@ -1,6 +1,6 @@
-import Service from '../services'
+import Service from '../services/index.ts'
 import { type TwakeLogger } from '@twake-chat/logger'
-import { type Config } from '../../../../types'
+import { type Config } from '../../../../types.ts'
 
 const direct_chat = {
   users_default: 10,

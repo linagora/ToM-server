@@ -7,11 +7,11 @@ import fetch from 'node-fetch'
 import path from 'path'
 import sqlite3, { type Database } from 'sqlite3'
 import request from 'supertest'
-import TwakeServer from '..'
+import TwakeServer from '../index.ts'
 import JEST_PROCESS_ROOT_PATH from '../../jest.globals'
-import { type Config } from '../types'
-import buildUserDB from './__testData__/buildUserDB'
-import defaultConfig from './__testData__/registerConf.json'
+import { type Config } from '../types.ts'
+import buildUserDB from './__testData__/buildUserDB.ts'
+import defaultConfig from './__testData__/registerConf.json' with { type: "json" }
 
 const timestamp = epoch()
 

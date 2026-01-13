@@ -4,23 +4,23 @@ import {
   type IUserInfoController,
   type UserProfileSettingsT,
   ForbiddenError
-} from '../types'
+} from '../types.ts'
 import type { Response, NextFunction } from 'express'
-import { type TwakeDB, type AuthRequest, type Config } from '../../types'
-import UserInfoService from '../services'
+import { type TwakeDB, type AuthRequest, type Config } from '../../types.ts'
+import UserInfoService from '../services/index.ts'
 import { errCodes } from '@twake-chat/utils'
 import type { TwakeLogger } from '@twake-chat/logger'
-import type { IAddressbookService } from '../../addressbook-api/types'
+import type { IAddressbookService } from '../../addressbook-api/types.ts'
 
 class UserInfoController implements IUserInfoController {
   private readonly userInfoService: IUserInfoService
 
   constructor(
-    private readonly userdb: UserDB,
-    private readonly db: TwakeDB,
-    private readonly matrixDB: MatrixDB,
-    private readonly config: Config,
-    private readonly logger: TwakeLogger,
+    userdb: UserDB,
+    db: TwakeDB,
+    matrixDB: MatrixDB,
+    config: Config,
+    logger: TwakeLogger,
     userInfoService?: IUserInfoService,
     addressbookService?: IAddressbookService
   ) {

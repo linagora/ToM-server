@@ -1,8 +1,9 @@
+import fetch from 'node-fetch'
 import { TwakeLogger } from '@twake-chat/logger'
-import { DeleteUserMediaResponse, IAdminService } from '../types'
-import { Config, ITokenService } from '../../types'
-import TokenService from '../../utils/services/token-service'
-import { buildUrl } from '../../utils'
+import { DeleteUserMediaResponse, IAdminService } from '../types.ts'
+import { Config, ITokenService } from '../../types.ts'
+import TokenService from '../../utils/services/token-service.ts'
+import { buildUrl } from '../../utils.ts'
 
 export default class DeactivateAccountService implements IAdminService {
   private readonly device = 'deactivate_service'

@@ -5,9 +5,9 @@ import {
   type Config as LoggerConfig,
   type TwakeLogger
 } from '@twake-chat/logger'
-import type { Config, ITokenService } from '../../types'
-import DeactivateUserController from '../controllers'
-import DeactivateUserMiddleware from '../middlewares'
+import type { Config, ITokenService } from '../../types.ts'
+import DeactivateUserController from '../controllers/index.ts'
+import DeactivateUserMiddleware from '../middlewares/index.ts'
 
 export const PATH = '/_twake/admin/deactivate-user'
 

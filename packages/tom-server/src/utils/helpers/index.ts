@@ -49,5 +49,6 @@ export const buildSmsBody = (
       .replace(/__footer__/g, footer ?? '') // include a footer if present
   } catch (error) {
     console.error('Failed to build sms body', { error })
+    return undefined
   }
 }

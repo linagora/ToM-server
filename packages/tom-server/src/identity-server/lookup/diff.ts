@@ -6,8 +6,8 @@ import {
   validateParameters,
   send
 } from '@twake-chat/utils'
-import type TwakeIdentityServer from '..'
-import { type expressAppHandler } from '../../types'
+import type TwakeIdentityServer from '../index.ts'
+import { type expressAppHandler } from '../../types.ts'
 
 const schema = {
   since: true,

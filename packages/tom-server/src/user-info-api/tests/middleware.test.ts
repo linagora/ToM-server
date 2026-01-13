@@ -1,7 +1,7 @@
 import { type TwakeLogger } from '@twake-chat/logger'
 import type { NextFunction, Request, Response } from 'express'
-import type { Config } from '../../types'
-import requireLdapMiddleware from '../middlewares/require-ldap'
+import type { Config } from '../../types.ts'
+import requireLdapMiddleware from '../middlewares/require-ldap.ts'
 
 let mockRequest: Partial<Request>
 let mockResponse: Partial<Response>

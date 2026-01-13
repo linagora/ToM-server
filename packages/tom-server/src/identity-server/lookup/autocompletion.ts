@@ -1,11 +1,11 @@
 import { type TwakeLogger } from '@twake-chat/logger'
 import { jsonContent, validateParameters } from '@twake-chat/utils'
-import type { IAddressbookService } from '../../addressbook-api/types'
-import type { IUserInfoService } from '../../user-info-api/types'
-import { type expressAppHandler } from '../../types'
-import _search from './_search'
-import type { Query } from './types'
-import type TwakeIdentityServer from '..'
+import type { IAddressbookService } from '../../addressbook-api/types.ts'
+import type { IUserInfoService } from '../../user-info-api/types.ts'
+import { type expressAppHandler } from '../../types.ts'
+import _search from './_search.ts'
+import type { Query } from './types.ts'
+import type TwakeIdentityServer from '../index.ts'
 
 const schema = {
   scope: true,

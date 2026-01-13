@@ -11,10 +11,10 @@ import fs from 'fs'
 import path from 'path'
 import supertest, { type Response } from 'supertest'
 import JEST_PROCESS_ROOT_PATH from '../../../jest.globals'
-import IdServer from '../../identity-server'
-import type { AuthRequest, Config } from '../../types'
-import errorMiddleware from '../../utils/middlewares/error.middleware'
-import router, { PATH } from '../routes'
+import IdServer from '../../identity-server/index.ts'
+import type { AuthRequest, Config } from '../../types.ts'
+import errorMiddleware from '../../utils/middlewares/error.middleware.ts'
+import router, { PATH } from '../routes/index.ts'
 
 const mockLogger: Partial<TwakeLogger> = {
   debug: jest.fn(),

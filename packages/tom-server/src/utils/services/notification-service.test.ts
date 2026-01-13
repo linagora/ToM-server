@@ -1,6 +1,6 @@
 import { TwakeLogger } from '@twake-chat/logger'
-import { Config } from '../../types'
-import NotificationService from './notification-service'
+import { Config } from '../../types.ts'
+import NotificationService from './notification-service.ts'
 
 const sendSMSMock = jest.fn()
 const sendEmailMock = jest.fn()

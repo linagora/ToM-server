@@ -1,7 +1,7 @@
 import type { TwakeLogger } from '@twake-chat/logger'
 import type { Request, Response, NextFunction } from 'express'
-import TokenService from '../services/token-service'
-import { Config, ITokenService } from '../../types'
+import TokenService from '../services/token-service.ts'
+import { Config, ITokenService } from '../../types.ts'
 
 export default class CookieAuthenticator {
   private tokenService: ITokenService

@@ -1,14 +1,16 @@
-import type { IAdminSettingsMiddleware } from '../types'
+import type { IAdminSettingsMiddleware } from '../types.ts'
 import type { Request, Response, NextFunction } from 'express'
-import type { Config } from '@twake-chat/server/src/types'
-import type { TwakeLogger } from '@twake-chat/logger'
+import type { Config } from '../../types.ts'
+// TODO: investigate unused
+// import type { TwakeLogger } from '@twake-chat/logger'
 
 export default class AdminSettingsMiddleware
   implements IAdminSettingsMiddleware
 {
   constructor(
     private readonly config: Config,
-    private readonly logger: TwakeLogger
+    // TODO: investigate unused
+    // private readonly logger: TwakeLogger
   ) {}
 
   /**
@@ -18,24 +20,25 @@ export default class AdminSettingsMiddleware
    * @param {Response} res - the response
    * @param {NextFunction} next - the next function
    */
-  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
   checkAdminSettingsToken = (
     req: Request,
     res: Response,
     next: NextFunction
-  ) => {
+  ): void => {
     const token = this.config.admin_access_token
     const authHeader = req.headers.authorization
 
     if (authHeader == null || !authHeader.startsWith('Bearer ')) {
-      return res
+      res
         .status(401)
         .json({ error: 'Missing or invalid Authorization header' })
+      return
     }
 
     const receivedToken = authHeader.slice(7) // remove "Bearer "
     if (receivedToken !== token) {
-      return res.status(403).json({ error: 'Forbidden: invalid token' })
+      res.status(403).json({ error: 'Forbidden: invalid token' })
+      return
     }
 
     next()

@@ -1,5 +1,5 @@
-import AdminSettingsMiddleware from '../middlewares'
-import conf from '../../config.json'
+import AdminSettingsMiddleware from '../middlewares/index.ts'
+import conf from '../../config.json' with { type: "json" }
 
 interface MockLogger {
   info: jest.Mock

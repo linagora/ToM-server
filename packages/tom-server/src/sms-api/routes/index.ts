@@ -5,11 +5,11 @@ import {
   type TwakeLogger
 } from '@twake-chat/logger'
 import { Router } from 'express'
-import { type AuthenticationFunction, type Config } from '../../types'
-import authMiddleware from '../../utils/middlewares/auth.middleware'
-import SmsApiController from '../controllers'
-import SmsApiMiddleware from '../middlewares'
-import { type ISmsService } from '../types'
+import { type AuthenticationFunction, type Config } from '../../types.ts'
+import authMiddleware from '../../utils/middlewares/auth.middleware.ts'
+import SmsApiController from '../controllers/index.ts'
+import SmsApiMiddleware from '../middlewares/index.ts'
+import { type ISmsService } from '../types.ts'
 
 export const PATH = '/_twake/sms'
 

@@ -1,15 +1,15 @@
 import type { TwakeLogger } from '@twake-chat/logger'
-import type { AuthRequest, Config, TwakeDB } from '../../types'
+import type { AuthRequest, Config, TwakeDB } from '../../types.ts'
 import type { NextFunction, Request, Response } from 'express'
 import type {
   GenerateInvitationLinkRequestPayload,
   IInvitationService,
   InvitationRequestPayload
-} from '../types'
-import InvitationService from '../services'
+} from '../types.ts'
+import InvitationService from '../services/index.ts'
 import type { MatrixDB, UserDB } from '@twake-chat/matrix-identity-server'
-import UserInfoService from '../../user-info-api/services'
-import type { IAddressbookService } from '../../addressbook-api/types'
+import UserInfoService from '../../user-info-api/services/index.ts'
+import type { IAddressbookService } from '../../addressbook-api/types.ts'
 
 export default class InvitationApiController {
   private readonly invitationService: IInvitationService

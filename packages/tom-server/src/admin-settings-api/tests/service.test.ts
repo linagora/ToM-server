@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unnecessary-type-assertion */
 /* eslint-disable @typescript-eslint/dot-notation */
-import AdminService from '../services'
-import conf from '../../config.json'
+import AdminService from '../services/index.ts'
+import conf from '../../config.json' with { type: "json" }
 
 interface MockLogger {
   info: jest.Mock

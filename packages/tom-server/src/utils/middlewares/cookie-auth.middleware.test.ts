@@ -1,6 +1,6 @@
 import type { NextFunction, Response } from 'express'
-import type { AuthRequest, Config } from '../../types'
-import CookieAuthMiddleware from './cookie-auth.middleware'
+import type { AuthRequest, Config } from '../../types.ts'
+import CookieAuthMiddleware from './cookie-auth.middleware.ts'
 import { TwakeLogger } from '@twake-chat/logger'
 
 const loggerMock = {

@@ -1,7 +1,7 @@
 import { type TwakeLogger } from '@twake-chat/logger'
-import Service from '../services'
-import type { Config } from '../../types'
-import { IAdminService } from '../types'
+import Service from '../services/index.ts'
+import type { Config } from '../../types.ts'
+import { IAdminService } from '../types.ts'
 
 const loggerMock = {
   info: jest.fn(),

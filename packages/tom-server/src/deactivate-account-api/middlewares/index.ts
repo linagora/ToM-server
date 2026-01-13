@@ -1,7 +1,7 @@
 import type { MatrixDBBackend } from '@twake-chat/matrix-identity-server'
-import type { IdeactivateUserMiddleware } from '../types'
+import type { IdeactivateUserMiddleware } from '../types.ts'
 import type { Request, Response, NextFunction } from 'express'
-import type { Config } from '../../types'
+import type { Config } from '../../types.ts'
 import type { TwakeLogger } from '@twake-chat/logger'
 
 export default class DeactivateUserMiddleware

@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/promise-function-async */
 import amqplib from 'amqplib'
-import { AMQPConnector, ConnectionState } from '.'
+import { AMQPConnector, ConnectionState } from './index.ts'
 import {
   QueueNotSpecifiedError,
   MessageHandlerNotProvidedError,

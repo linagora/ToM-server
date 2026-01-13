@@ -5,13 +5,13 @@ import {
   type TwakeLogger
 } from '@twake-chat/logger'
 import { Router } from 'express'
-import type IdServer from '../../identity-server'
-import type { Config } from '../../types'
-import authMiddleware from '../../utils/middlewares/auth.middleware'
-import UserInfoController from '../controllers'
-import checkLdapMiddleware from '../middlewares/require-ldap'
+import type IdServer from '../../identity-server/index.ts'
+import type { Config } from '../../types.ts'
+import authMiddleware from '../../utils/middlewares/auth.middleware.ts'
+import UserInfoController from '../controllers/index.ts'
+import checkLdapMiddleware from '../middlewares/require-ldap.ts'
 import { type MatrixDB } from '@twake-chat/matrix-identity-server'
-import type { IUserInfoService } from '../types'
+import type { IUserInfoService } from '../types.ts'
 export const PATH = '/_twake/v1/user_info'
 
 export default (

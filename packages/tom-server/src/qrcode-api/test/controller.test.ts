@@ -1,8 +1,8 @@
 import express, { type Response } from 'express'
 import supertest from 'supertest'
-import type { Config } from '../../types'
-import type TwakeIdentityServer from '../../identity-server'
-import router, { PATH } from '../routes'
+import type { Config } from '../../types.ts'
+import type TwakeIdentityServer from '../../identity-server/index.ts'
+import router, { PATH } from '../routes/index.ts'
 import { type TwakeLogger } from '@twake-chat/logger'
 
 const app = express()

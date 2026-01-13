@@ -1,8 +1,8 @@
 import { TwakeLogger } from '@twake-chat/logger'
 import bodyParser from 'body-parser'
 import express, { NextFunction } from 'express'
-import router, { PATH } from '../routes'
-import type { AuthRequest, Config, TwakeDB } from '../../types'
+import router, { PATH } from '../routes/index.ts'
+import type { AuthRequest, Config, TwakeDB } from '../../types.ts'
 import supertest from 'supertest'
 import { MatrixDBBackend } from '@twake-chat/matrix-identity-server'
 

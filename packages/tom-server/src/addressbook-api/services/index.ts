@@ -10,7 +10,7 @@ import type {
   ContactCreationPayload,
   ContactUpdatePayload,
   IAddressbookService
-} from '../types'
+} from '../types.ts'
 
 export class AddressbookService implements IAddressbookService {
   private readonly enableAdditionalFeatures: boolean

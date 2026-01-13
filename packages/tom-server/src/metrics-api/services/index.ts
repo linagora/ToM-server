@@ -6,7 +6,7 @@ import type {
   UserActivityStats,
   UserMessageCount,
   UserMessageEvent
-} from '../types'
+} from '../types.ts'
 import type { TwakeLogger } from '@twake-chat/logger'
 
 class MetricsService implements IMetricsService {

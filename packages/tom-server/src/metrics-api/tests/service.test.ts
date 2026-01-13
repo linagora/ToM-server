@@ -1,5 +1,5 @@
 import { type TwakeLogger } from '@twake-chat/logger'
-import Service from '../services'
+import Service from '../services/index.ts'
 import { type MatrixDBBackend } from '@twake-chat/matrix-identity-server'
 
 const dbMock = {

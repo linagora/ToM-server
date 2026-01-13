@@ -1,13 +1,14 @@
+import fetch, { type Response, RequestInit } from 'node-fetch'
 import { type TwakeLogger } from '@twake-chat/logger'
-import { type Config, type ITokenService } from '../../types'
-import TokenService from '../../utils/services/token-service'
+import { type Config, type ITokenService } from '../../types.ts'
+import TokenService from '../../utils/services/token-service.ts'
 import {
   type UploadUserAvatarResponse,
   type UserInformationPayload,
   type IAdminSettingsService
-} from '../types'
+} from '../types.ts'
 import { Lru } from 'toad-cache'
-import { buildUrl } from '../../utils'
+import { buildUrl } from '../../utils.ts'
 export default class AdminSettingsService implements IAdminSettingsService {
   private readonly device = 'admin_service'
   private readonly tokenService: ITokenService

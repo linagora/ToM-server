@@ -1,14 +1,14 @@
 import type { TwakeLogger } from '@twake-chat/logger'
 import type { MatrixDB, UserDB } from '@twake-chat/matrix-identity-server'
 import type { Response, NextFunction } from 'express'
-import InvitationApiController from '../controllers'
-import type { AuthRequest, Config, TwakeDB } from '../../types'
+import InvitationApiController from '../controllers/index.ts'
+import type { AuthRequest, Config, TwakeDB } from '../../types.ts'
 import type {
   InvitationRequestPayload,
   GenerateInvitationLinkRequestPayload,
   IInvitationService,
   InvitationResponse
-} from '../types'
+} from '../types.ts'
 
 const mockInvitationService: jest.Mocked<IInvitationService> = {
   invite: jest.fn(),
