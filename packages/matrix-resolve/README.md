@@ -1,4 +1,4 @@
-# @twake-chat/@twake-chat/matrix-resolve
+# @twake-chat/matrix-resolve
 
 Find matrix server with a domain name
 

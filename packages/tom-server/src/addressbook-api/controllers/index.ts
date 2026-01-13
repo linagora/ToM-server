@@ -1,4 +1,4 @@
-import { TwakeLogger } from '@twake/logger'
+import { TwakeLogger } from '@twake-chat/logger'
 import { AuthRequest, TwakeDB } from '../../types'
 import type {
   EnrichedContact,

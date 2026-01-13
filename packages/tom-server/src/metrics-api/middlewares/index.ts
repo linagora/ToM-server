@@ -1,7 +1,7 @@
-import { type MatrixDBBackend } from '@twake/matrix-identity-server'
+import { type MatrixDBBackend } from '@twake-chat/matrix-identity-server'
 import { type AuthRequest } from '../../types'
 import { type NextFunction, type Response } from 'express'
-import { type TwakeLogger } from '@twake/logger'
+import { type TwakeLogger } from '@twake-chat/logger'
 
 export default class MetricsApiMiddleware {
   constructor(

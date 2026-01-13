@@ -4,6 +4,9 @@
   "include": [],
   "references": [
     {
+      "path": "../../packages/federated-identity-service"
+    },
+    {
       "path": "./tsconfig.app.json"
     },
     {

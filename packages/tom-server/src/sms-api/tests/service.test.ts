@@ -1,4 +1,4 @@
-import { getLogger } from '@twake/logger'
+import { getLogger } from '@twake-chat/logger'
 import fetch, { type Response } from 'node-fetch'
 import { type Config } from '../../types'
 import SmsService from '../services'

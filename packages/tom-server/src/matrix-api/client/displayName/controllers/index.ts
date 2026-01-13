@@ -1,8 +1,8 @@
 import { type Config, type AuthRequest } from '../../../../types'
 import type { NextFunction, Response } from 'express'
 import DisplayNameService from '../services'
-import { errCodes } from '@twake/utils'
-import { type TwakeLogger } from '@twake/logger'
+import { errCodes } from '@twake-chat/utils'
+import { type TwakeLogger } from '@twake-chat/logger'
 
 export default class DisplayNameController {
   private readonly displayNameService

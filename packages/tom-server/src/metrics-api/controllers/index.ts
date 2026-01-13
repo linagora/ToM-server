@@ -1,5 +1,5 @@
-import { type TwakeLogger } from '@twake/logger'
-import { type MatrixDBBackend } from '@twake/matrix-identity-server'
+import { type TwakeLogger } from '@twake-chat/logger'
+import { type MatrixDBBackend } from '@twake-chat/matrix-identity-server'
 import { type NextFunction, type Request, type Response } from 'express'
 import { type IMetricsService } from '../types'
 import MetricsService from '../services'

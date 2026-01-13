@@ -3,7 +3,7 @@ import {
   getLogger,
   type TwakeLogger,
   type Config as LoggerConfig
-} from '@twake/logger'
+} from '@twake-chat/logger'
 import type IdServer from '../../identity-server'
 import { type Config, type ITokenService } from '../../types'
 import { Router } from 'express'

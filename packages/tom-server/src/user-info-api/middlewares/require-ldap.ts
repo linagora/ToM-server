@@ -1,6 +1,6 @@
 import type { NextFunction, Request, RequestHandler, Response } from 'express'
 import type { Config } from '../../types'
-import { type TwakeLogger } from '@twake/logger'
+import { type TwakeLogger } from '@twake-chat/logger'
 
 /**
  * a Middleware to check if LDAP userdb is enabled.

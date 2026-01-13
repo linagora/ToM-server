@@ -1,4 +1,4 @@
-import type { TwakeLogger } from '@twake/logger'
+import type { TwakeLogger } from '@twake-chat/logger'
 import type { IAdminSettingsController, IAdminSettingsService } from '../types'
 import type { Config, ITokenService } from '../../types'
 import type { NextFunction, Response, Request } from 'express'

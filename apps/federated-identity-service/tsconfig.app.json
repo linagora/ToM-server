@@ -16,5 +16,10 @@
     "eslint.config.js",
     "eslint.config.cjs",
     "eslint.config.mjs"
+  ],
+  "references": [
+    {
+      "path": "../../packages/federated-identity-service/tsconfig.lib.json"
+    }
   ]
 }

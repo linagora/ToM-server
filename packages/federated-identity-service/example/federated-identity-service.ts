@@ -1,6 +1,6 @@
 import express from 'express'
 
-import FederatedIdentityService from '@twake/federated-identity-service'
+import FederatedIdentityService from '@twake-chat/federated-identity-service'
 
 const federatedIdentityService = new FederatedIdentityService({
   database_host: ':memory:'

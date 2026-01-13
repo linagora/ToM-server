@@ -1,5 +1,5 @@
-import { getLogger, type TwakeLogger } from '@twake/logger'
-import { generateKeyPair } from '@twake/crypto'
+import { getLogger, type TwakeLogger } from '@twake-chat/logger'
+import { generateKeyPair } from '@twake-chat/crypto'
 import fs from 'fs'
 import defaultConfig from '../config.json'
 import IdentityServerDB from '../db'

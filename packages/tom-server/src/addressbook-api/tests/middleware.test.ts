@@ -1,7 +1,7 @@
 import type { AuthRequest, TwakeDB } from '../../types'
 import type { Response, NextFunction } from 'express'
 import Middleware from '../middlewares'
-import { type TwakeLogger } from '@twake/logger'
+import { type TwakeLogger } from '@twake-chat/logger'
 
 let mockRequest: Partial<AuthRequest>
 let mockResponse: Partial<Response>

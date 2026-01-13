@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/restrict-template-expressions */
-import configParser, { type ConfigDescription } from '@twake/config-parser'
+import configParser, { type ConfigDescription } from '@twake-chat/config-parser'
 import fs from 'fs'
 import path from 'path'
 import { createLogger, type Logger } from 'winston'

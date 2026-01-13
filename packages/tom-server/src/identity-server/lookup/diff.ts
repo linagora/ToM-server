@@ -1,11 +1,11 @@
-import { type TwakeLogger } from '@twake/logger'
+import { type TwakeLogger } from '@twake-chat/logger'
 import {
   epoch,
   errMsg,
   jsonContent,
   validateParameters,
   send
-} from '@twake/utils'
+} from '@twake-chat/utils'
 import type TwakeIdentityServer from '..'
 import { type expressAppHandler } from '../../types'
 

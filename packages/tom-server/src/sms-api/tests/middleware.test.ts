@@ -1,7 +1,7 @@
 import SmsApiMiddleware from '../middlewares'
 import type { Response, NextFunction } from 'express'
 import type { AuthRequest } from '../../types'
-import { getLogger } from '@twake/logger'
+import { getLogger } from '@twake-chat/logger'
 
 describe('the SMS API middleware', () => {
   let mockRequest: Partial<AuthRequest>

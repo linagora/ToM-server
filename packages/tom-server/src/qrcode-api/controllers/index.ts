@@ -1,4 +1,4 @@
-import { type TwakeLogger } from '@twake/logger'
+import { type TwakeLogger } from '@twake-chat/logger'
 import { type IQRCodeApiController, type IQRCodeService } from '../types'
 import { type Response, type NextFunction } from 'express'
 import type { Config, AuthRequest, ITokenService } from '../../types'

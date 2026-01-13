@@ -1,4 +1,4 @@
-import { TwakeLogger } from '@twake/logger'
+import { TwakeLogger } from '@twake-chat/logger'
 import type { Config } from '../../types'
 import SmsService from './sms-service'
 

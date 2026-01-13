@@ -1,5 +1,5 @@
 import fs from 'fs'
-import { randomString } from '@twake/crypto'
+import { randomString } from '@twake-chat/crypto'
 
 /**
  * builds the email body from a template

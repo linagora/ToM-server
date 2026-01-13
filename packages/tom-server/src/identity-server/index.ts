@@ -1,11 +1,11 @@
 // import MatrixIdentityServer, {
 // defaultConfig as MdefaultConfig
-// } from '@twake/matrix-identity-server'
-import { type ConfigDescription } from '@twake/config-parser'
-import { type TwakeLogger } from '@twake/logger'
+// } from '@twake-chat/matrix-identity-server'
+import { type ConfigDescription } from '@twake-chat/config-parser'
+import { type TwakeLogger } from '@twake-chat/logger'
 import MatrixIdentityServer, {
   type MatrixDB
-} from '@twake/matrix-identity-server'
+} from '@twake-chat/matrix-identity-server'
 import type { IAddressbookService } from '../addressbook-api/types'
 import type { IUserInfoService } from '../user-info-api/types'
 import defaultConfig from '../config.json'

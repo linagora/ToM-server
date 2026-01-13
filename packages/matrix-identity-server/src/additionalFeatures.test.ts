@@ -1,4 +1,4 @@
-import { Hash, supportedHashes } from '@twake/crypto'
+import { Hash, supportedHashes } from '@twake-chat/crypto'
 import express from 'express'
 import fs from 'fs'
 import fetch from 'node-fetch'

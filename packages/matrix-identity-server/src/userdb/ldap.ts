@@ -1,5 +1,5 @@
 /* istanbul ignore file */
-import { type TwakeLogger } from '@twake/logger'
+import { type TwakeLogger } from '@twake-chat/logger'
 import { type Client, type SearchOptions } from 'ldapts'
 import * as ldapts from 'ldapts'
 import { type Config, type DbGetResult } from '../types'

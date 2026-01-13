@@ -1,4 +1,4 @@
-import TomServer from '@twake-chat/server'
+import TomServer from '@twake-chat/tom-server'
 import { CommonSettingsService } from '@twake-chat/common-settings'
 import express from 'express'
 import path from 'node:path'

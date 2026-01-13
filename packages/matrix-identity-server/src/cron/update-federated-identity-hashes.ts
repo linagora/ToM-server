@@ -1,5 +1,5 @@
-import { Hash } from '@twake/crypto'
-import { type TwakeLogger } from '@twake/logger'
+import { Hash } from '@twake-chat/crypto'
+import { type TwakeLogger } from '@twake-chat/logger'
 import fetch, { type Response } from 'node-fetch'
 import {
   fieldsToHash,
@@ -9,7 +9,7 @@ import {
 import { type Config } from '../types'
 import type UserDB from '../userdb'
 import { dbFieldsToHash, filter } from './changePepper'
-import { toMatrixId } from '@twake/utils'
+import { toMatrixId } from '@twake-chat/utils'
 
 interface HashDetails {
   algorithms: string[]

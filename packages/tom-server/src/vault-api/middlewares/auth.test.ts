@@ -1,6 +1,6 @@
-import { type ConfigDescription } from '@twake/config-parser'
-import { type TwakeLogger } from '@twake/logger'
-import { IdentityServerDb, type MatrixDB } from '@twake/matrix-identity-server'
+import { type ConfigDescription } from '@twake-chat/config-parser'
+import { type TwakeLogger } from '@twake-chat/logger'
+import { IdentityServerDb, type MatrixDB } from '@twake-chat/matrix-identity-server'
 import {
   type Application,
   type NextFunction,

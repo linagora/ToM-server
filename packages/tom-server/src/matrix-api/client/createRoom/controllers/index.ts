@@ -1,4 +1,4 @@
-import { TwakeLogger } from '@twake/logger'
+import { TwakeLogger } from '@twake-chat/logger'
 import { AuthRequest, Config } from '../../../../types'
 import type { NextFunction, Response } from 'express'
 import RoomService from '../services'

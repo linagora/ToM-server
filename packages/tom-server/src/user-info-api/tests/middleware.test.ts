@@ -1,4 +1,4 @@
-import { type TwakeLogger } from '@twake/logger'
+import { type TwakeLogger } from '@twake-chat/logger'
 import type { NextFunction, Request, Response } from 'express'
 import type { Config } from '../../types'
 import requireLdapMiddleware from '../middlewares/require-ldap'

@@ -2,7 +2,7 @@ import {
   getLogger,
   type TwakeLogger,
   type Config as LoggerConfig
-} from '@twake/logger'
+} from '@twake-chat/logger'
 import type {
   AuthenticationFunction,
   Config,
@@ -16,7 +16,7 @@ import invitationApiMiddleware from '../middlewares'
 import authMiddleware from '../../utils/middlewares/auth.middleware'
 import CookieAuthenticator from '../../utils/middlewares/cookie-auth.middleware'
 import errorMiddleware from '../../utils/middlewares/error.middleware'
-import { MatrixDB, UserDB } from '@twake/matrix-identity-server'
+import { MatrixDB, UserDB } from '@twake-chat/matrix-identity-server'
 import UserInfoService from '../../user-info-api/services'
 
 export const PATH = '/_twake/v1/invite'

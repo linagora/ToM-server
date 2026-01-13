@@ -1,10 +1,10 @@
-import configParser, { type ConfigDescription } from '@twake/config-parser'
+import configParser, { type ConfigDescription } from '@twake-chat/config-parser'
 import {
   getLogger,
   type Config as LoggerConfig,
   type TwakeLogger
-} from '@twake/logger'
-import { MatrixDB } from '@twake/matrix-identity-server'
+} from '@twake-chat/logger'
+import { MatrixDB } from '@twake-chat/matrix-identity-server'
 import { Router } from 'express'
 import fs from 'fs'
 import defaultConfig from './config.json'

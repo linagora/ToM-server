@@ -1,4 +1,4 @@
-import { type TwakeLogger } from '@twake/logger'
+import { type TwakeLogger } from '@twake-chat/logger'
 import { type Config } from '../../types'
 import TokenService from './token-service'
 import type { LoginFlow } from '../../types'

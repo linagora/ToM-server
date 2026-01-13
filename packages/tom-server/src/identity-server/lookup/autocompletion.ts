@@ -1,5 +1,5 @@
-import { type TwakeLogger } from '@twake/logger'
-import { jsonContent, validateParameters } from '@twake/utils'
+import { type TwakeLogger } from '@twake-chat/logger'
+import { jsonContent, validateParameters } from '@twake-chat/utils'
 import type { IAddressbookService } from '../../addressbook-api/types'
 import type { IUserInfoService } from '../../user-info-api/types'
 import { type expressAppHandler } from '../../types'

@@ -1,5 +1,5 @@
-import type { TwakeLogger } from '@twake/logger'
-import { isMatrixId, send, toMatrixId } from '@twake/utils'
+import type { TwakeLogger } from '@twake-chat/logger'
+import { isMatrixId, send, toMatrixId } from '@twake-chat/utils'
 import type { IAddressbookService } from '../../addressbook-api/types'
 import type {
   IUserInfoService,

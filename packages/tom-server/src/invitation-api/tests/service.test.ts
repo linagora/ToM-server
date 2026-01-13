@@ -1,4 +1,4 @@
-import { type TwakeLogger } from '@twake/logger'
+import { type TwakeLogger } from '@twake-chat/logger'
 import Service from '../services'
 import { Config, TwakeDB } from '../../types'
 

@@ -1,5 +1,5 @@
 {
-  "name": "@twake-chat/server",
+  "name": "@twake-chat/tom-server",
   "version": "0.0.1",
   "description": "This is the Twake on Matrix server",
   "keywords": [

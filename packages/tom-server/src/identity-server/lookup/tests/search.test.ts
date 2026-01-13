@@ -1,8 +1,8 @@
 import { _search } from '../_search'
-import { send, isMatrixId } from '@twake/utils'
+import { send, isMatrixId } from '@twake-chat/utils'
 
-// Mock @twake/utils
-jest.mock('@twake/utils', () => ({
+// Mock @twake-chat/utils
+jest.mock('@twake-chat/utils', () => ({
   send: jest.fn(),
   errMsg: jest.fn((msg) => ({ error: msg })),
   toMatrixId: jest.fn((uid, server) => `@${uid}:${server}`),

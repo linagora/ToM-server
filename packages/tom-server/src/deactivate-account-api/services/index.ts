@@ -1,4 +1,4 @@
-import { TwakeLogger } from '@twake/logger'
+import { TwakeLogger } from '@twake-chat/logger'
 import { DeleteUserMediaResponse, IAdminService } from '../types'
 import { Config, ITokenService } from '../../types'
 import TokenService from '../../utils/services/token-service'

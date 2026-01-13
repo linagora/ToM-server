@@ -2,7 +2,7 @@
  * Scheduler
  */
 
-import { type TwakeLogger } from '@twake/logger'
+import { type TwakeLogger } from '@twake-chat/logger'
 import cron, { type ScheduledTask } from 'node-cron'
 import type IdentityServerDb from '../db'
 import { type Config } from '../types'

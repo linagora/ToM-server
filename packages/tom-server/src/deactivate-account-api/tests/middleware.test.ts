@@ -1,8 +1,8 @@
 import type { AuthRequest, Config } from '../../types'
 import type { Response, NextFunction } from 'express'
 import Middleware from '../middlewares'
-import { type MatrixDBBackend } from '@twake/matrix-identity-server'
-import { type TwakeLogger } from '@twake/logger'
+import { type MatrixDBBackend } from '@twake-chat/matrix-identity-server'
+import { type TwakeLogger } from '@twake-chat/logger'
 
 let mockRequest: Partial<AuthRequest>
 let mockResponse: Partial<Response>

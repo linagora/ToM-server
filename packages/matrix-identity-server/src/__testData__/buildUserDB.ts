@@ -1,5 +1,5 @@
 /* istanbul ignore file */
-import { getLogger, type TwakeLogger } from '@twake/logger'
+import { getLogger, type TwakeLogger } from '@twake-chat/logger'
 import sqlite3 from 'sqlite3'
 import { type Config } from '../types'
 import UserDB from '../userdb'

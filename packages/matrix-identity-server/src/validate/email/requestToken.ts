@@ -1,4 +1,4 @@
-import { randomString } from '@twake/crypto'
+import { randomString } from '@twake-chat/crypto'
 import fs from 'fs'
 import { type tokenContent } from '../../account/register'
 import type MatrixIdentityServer from '../../index'
@@ -10,7 +10,7 @@ import {
   send,
   validateParameters,
   type expressAppHandler
-} from '@twake/utils'
+} from '@twake-chat/utils'
 import Mailer from '../../utils/mailer'
 
 interface RequestTokenArgs {

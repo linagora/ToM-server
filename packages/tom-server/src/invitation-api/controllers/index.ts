@@ -1,4 +1,4 @@
-import type { TwakeLogger } from '@twake/logger'
+import type { TwakeLogger } from '@twake-chat/logger'
 import type { AuthRequest, Config, TwakeDB } from '../../types'
 import type { NextFunction, Request, Response } from 'express'
 import type {
@@ -7,7 +7,7 @@ import type {
   InvitationRequestPayload
 } from '../types'
 import InvitationService from '../services'
-import type { MatrixDB, UserDB } from '@twake/matrix-identity-server'
+import type { MatrixDB, UserDB } from '@twake-chat/matrix-identity-server'
 import UserInfoService from '../../user-info-api/services'
 import type { IAddressbookService } from '../../addressbook-api/types'
 

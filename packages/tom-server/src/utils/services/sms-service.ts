@@ -1,4 +1,4 @@
-import type { TwakeLogger } from '@twake/logger'
+import type { TwakeLogger } from '@twake-chat/logger'
 import type { Config, ISMSService, SendSmsPayload } from '../../types'
 import { buildUrl } from '../../utils'
 

@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/promise-function-async */
-import { type TwakeLogger } from '@twake/logger'
+import { type TwakeLogger } from '@twake-chat/logger'
 import { type Database, type Statement } from 'sqlite3'
 import { type Config, type DbGetResult } from '../../types'
 import { type IdDbBackend } from '../index'

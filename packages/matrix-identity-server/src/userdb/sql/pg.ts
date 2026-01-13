@@ -1,4 +1,4 @@
-import { type TwakeLogger } from '@twake/logger'
+import { type TwakeLogger } from '@twake-chat/logger'
 import { type ClientConfig } from 'pg'
 import { type Collections, type UserDBBackend } from '..'
 import Pg from '../../db/sql/pg'

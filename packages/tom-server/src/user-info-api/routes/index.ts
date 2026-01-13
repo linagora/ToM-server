@@ -3,14 +3,14 @@ import {
   getLogger,
   type Config as LoggerConfig,
   type TwakeLogger
-} from '@twake/logger'
+} from '@twake-chat/logger'
 import { Router } from 'express'
 import type IdServer from '../../identity-server'
 import type { Config } from '../../types'
 import authMiddleware from '../../utils/middlewares/auth.middleware'
 import UserInfoController from '../controllers'
 import checkLdapMiddleware from '../middlewares/require-ldap'
-import { type MatrixDB } from '@twake/matrix-identity-server'
+import { type MatrixDB } from '@twake-chat/matrix-identity-server'
 import type { IUserInfoService } from '../types'
 export const PATH = '/_twake/v1/user_info'
 

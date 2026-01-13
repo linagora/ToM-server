@@ -4,7 +4,7 @@ import type TwakeIdentityServer from '../../identity-server'
 import type { AuthRequest, Config } from '../../types'
 import router, { PATH } from '../routes'
 import type { UserInformation } from '../types'
-import type { MatrixDB } from '@twake/matrix-identity-server'
+import type { MatrixDB } from '@twake-chat/matrix-identity-server'
 import UserInfoController from '../controllers'
 import { ForbiddenError } from '../types'
 

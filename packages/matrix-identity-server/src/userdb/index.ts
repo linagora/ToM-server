@@ -1,4 +1,4 @@
-import { type TwakeLogger } from '@twake/logger'
+import { type TwakeLogger } from '@twake-chat/logger'
 import type Cache from '../cache'
 import { type Config, type DbGetResult } from '../types'
 import UserDBEmpty from './empty'

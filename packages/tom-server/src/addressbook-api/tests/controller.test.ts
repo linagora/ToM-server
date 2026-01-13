@@ -2,7 +2,7 @@ import express, { NextFunction } from 'express'
 import type { AuthRequest, Config, TwakeDB } from '../../types'
 import bodyParser from 'body-parser'
 import router, { PATH } from '../routes'
-import { TwakeLogger } from '@twake/logger'
+import { TwakeLogger } from '@twake-chat/logger'
 import supertest from 'supertest'
 
 const app = express()

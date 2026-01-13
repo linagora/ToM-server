@@ -1,6 +1,6 @@
 import express, { type NextFunction } from 'express'
 import bodyParser from 'body-parser'
-import { TwakeLogger } from '@twake/logger'
+import { TwakeLogger } from '@twake-chat/logger'
 import type {
   AuthenticationFunction,
   AuthRequest,

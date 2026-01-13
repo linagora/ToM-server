@@ -1,4 +1,4 @@
-import { EFormatType, ETransportType, getLogger } from '@twake/logger'
+import { EFormatType, ETransportType, getLogger } from '@twake-chat/logger'
 
 const logger = getLogger({
   logging: {

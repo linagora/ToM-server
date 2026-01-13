@@ -1,4 +1,4 @@
-import { getLogger, type TwakeLogger } from '@twake/logger'
+import { getLogger, type TwakeLogger } from '@twake-chat/logger'
 import defaultConfig from '../config.json'
 import UserDBEmpty from './empty'
 

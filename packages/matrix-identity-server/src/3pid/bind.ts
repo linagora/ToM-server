@@ -1,4 +1,4 @@
-import { Hash, signJson } from '@twake/crypto'
+import { Hash, signJson } from '@twake-chat/crypto'
 import type MatrixIdentityServer from '..'
 import {
   errMsg,
@@ -6,7 +6,7 @@ import {
   send,
   validateParameters,
   type expressAppHandler
-} from '@twake/utils'
+} from '@twake-chat/utils'
 import { buildUrl, getServerNameFromMatrixId } from '../utils'
 import type { onBindRequestPayload } from '../types'
 

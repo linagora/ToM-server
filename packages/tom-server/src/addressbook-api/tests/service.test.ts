@@ -1,6 +1,6 @@
 import { TwakeDB } from '../../types'
 import { AddressbookService } from '../services'
-import { type TwakeLogger } from '@twake/logger'
+import { type TwakeLogger } from '@twake-chat/logger'
 import { Contact } from '../types'
 
 const dbMock = {

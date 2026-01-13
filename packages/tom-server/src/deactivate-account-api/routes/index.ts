@@ -1,10 +1,10 @@
 import { Router } from 'express'
-import type { MatrixDBBackend } from '@twake/matrix-identity-server'
+import type { MatrixDBBackend } from '@twake-chat/matrix-identity-server'
 import {
   getLogger,
   type Config as LoggerConfig,
   type TwakeLogger
-} from '@twake/logger'
+} from '@twake-chat/logger'
 import type { Config, ITokenService } from '../../types'
 import DeactivateUserController from '../controllers'
 import DeactivateUserMiddleware from '../middlewares'

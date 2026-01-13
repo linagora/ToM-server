@@ -1,4 +1,4 @@
-import { Hash } from '@twake/crypto'
+import { Hash } from '@twake-chat/crypto'
 import express from 'express'
 import fs from 'fs'
 import type * as http from 'http'

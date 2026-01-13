@@ -1,4 +1,4 @@
-import { type tokenContent } from '@twake/matrix-identity-server'
+import { type tokenContent } from '@twake-chat/matrix-identity-server'
 import { type NextFunction, type Request, type Response } from 'express'
 import { type AuthenticationFunction } from '../../types'
 import { VaultAPIError, type expressAppHandler } from '../utils'

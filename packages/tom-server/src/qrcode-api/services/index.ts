@@ -1,6 +1,6 @@
 import QRCode from 'qrcode'
 import type { IQRCodeService } from '../types'
-import type { TwakeLogger } from '@twake/logger'
+import type { TwakeLogger } from '@twake-chat/logger'
 import type { Config } from '../../types'
 
 export default class QRCodeService implements IQRCodeService {

@@ -16,5 +16,13 @@
     "eslint.config.js",
     "eslint.config.cjs",
     "eslint.config.mjs"
+  ],
+  "references": [
+    {
+      "path": "../../packages/common-settings/tsconfig.lib.json"
+    },
+    {
+      "path": "../../packages/tom-server/tsconfig.lib.json"
+    }
   ]
 }

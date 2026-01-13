@@ -1,4 +1,4 @@
-import { randomString, signJson, toBase64Url } from '@twake/crypto'
+import { randomString, signJson, toBase64Url } from '@twake-chat/crypto'
 import nacl from 'tweetnacl'
 import * as naclUtil from 'tweetnacl-util'
 import type MatrixIdentityServer from '..'
@@ -8,7 +8,7 @@ import {
   send,
   validateParameters,
   type expressAppHandler
-} from '@twake/utils'
+} from '@twake-chat/utils'
 
 const mxidRe = /^@[0-9a-zA-Z._=-]+:[0-9a-zA-Z.-]+$/
 const tokenRe = /^[0-9a-zA-Z.=_-]{1,255}$/

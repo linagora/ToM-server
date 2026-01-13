@@ -1,4 +1,4 @@
-import type { MatrixDB, UserDB } from '@twake/matrix-identity-server'
+import type { MatrixDB, UserDB } from '@twake-chat/matrix-identity-server'
 import {
   type IUserInfoService,
   type IUserInfoController,
@@ -8,8 +8,8 @@ import {
 import type { Response, NextFunction } from 'express'
 import { type TwakeDB, type AuthRequest, type Config } from '../../types'
 import UserInfoService from '../services'
-import { errCodes } from '@twake/utils'
-import type { TwakeLogger } from '@twake/logger'
+import { errCodes } from '@twake-chat/utils'
+import type { TwakeLogger } from '@twake-chat/logger'
 import type { IAddressbookService } from '../../addressbook-api/types'
 
 class UserInfoController implements IUserInfoController {

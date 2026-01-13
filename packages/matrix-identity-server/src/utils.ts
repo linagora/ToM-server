@@ -1,9 +1,9 @@
-import { type TwakeLogger } from '@twake/logger'
+import { type TwakeLogger } from '@twake-chat/logger'
 import { type Request, type Response } from 'express'
 import type http from 'http'
 import { type tokenContent } from './account/register'
 import type IdentityServerDb from './db'
-import { errMsg, send } from '@twake/utils'
+import { errMsg, send } from '@twake-chat/utils'
 
 export type AuthenticationFunction = (
   req: Request | http.IncomingMessage,

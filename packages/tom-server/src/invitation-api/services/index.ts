@@ -1,6 +1,6 @@
 import type { SendMailOptions } from 'nodemailer'
 import { v7 as uuidv7 } from 'uuid'
-import type { TwakeLogger } from '@twake/logger'
+import type { TwakeLogger } from '@twake-chat/logger'
 import type { Config, INotificationService, TwakeDB } from '../../types'
 import {
   type Invitation,
@@ -18,7 +18,7 @@ import { buildUrl } from '../../utils'
 import NotificationService from '../../utils/services/notification-service'
 import { buildEmailBody, buildSmsBody } from '../../utils/helpers'
 import UserInfoService from '../../user-info-api/services'
-import type { MatrixDB, UserDB } from '@twake/matrix-identity-server'
+import type { MatrixDB, UserDB } from '@twake-chat/matrix-identity-server'
 
 export default class InvitationService implements IInvitationService {
   private readonly INVITATION_TABLE = 'invitations'

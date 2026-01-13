@@ -32,7 +32,7 @@ Set of variables used to configure ToM features and behavior.
 | `LDAP_USER`                             | full LDAP `dn` used to connect                                                        | `none`                                 | recommended  |
 | `LDAP_PASSWORD`                         | Password corresponding to the `dn`                                                    | `none`                                 | recommended  |
 | `LDAP_URI`                              | URL of the LDAP directory, e.g. `ldaps://ldap.company.com`                            | `none`                                 | recommended  |
-| `TEMPLATE_DIR`                          | Path to folder containing mail templates                                              | `node_modules/@twake/server/templates` | recommended  |
+| `TEMPLATE_DIR`                          | Path to folder containing mail templates                                              | `node_modules/@twake-chat/server/templates` | recommended  |
 | `RATE_LIMITING_WINDOW`                  | How long to remember requests for, in milliseconds.                                   | `600000`                               | recommended  |
 | `RATE_LIMITING_NB_REQUESTS`             | How many requests to allow.                                                           | `100`                                  | recommended  |
 | `ADDITIONAL_FEATURES`                   | Set true to have all search features                                                  | `false`                                | recommended  |

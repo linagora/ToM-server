@@ -4,6 +4,21 @@
   "include": [],
   "references": [
     {
+      "path": "../matrix-resolve"
+    },
+    {
+      "path": "../config-parser"
+    },
+    {
+      "path": "../logger"
+    },
+    {
+      "path": "../utils"
+    },
+    {
+      "path": "../crypto"
+    },
+    {
       "path": "./tsconfig.lib.json"
     },
     {

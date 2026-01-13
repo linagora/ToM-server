@@ -1,7 +1,7 @@
 import { v7 as uuidv7 } from 'uuid'
-import { TwakeLogger } from '@twake/logger'
-import type { UserDB } from '@twake/matrix-identity-server'
-import { toMatrixId } from '@twake/utils'
+import { TwakeLogger } from '@twake-chat/logger'
+import type { UserDB } from '@twake-chat/matrix-identity-server'
+import { toMatrixId } from '@twake-chat/utils'
 import type { Config, TwakeDB } from '../../types'
 import type {
   AddressBook,

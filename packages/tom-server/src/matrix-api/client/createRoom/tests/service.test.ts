@@ -1,5 +1,5 @@
 import Service from '../services'
-import { type TwakeLogger } from '@twake/logger'
+import { type TwakeLogger } from '@twake-chat/logger'
 import { type Config } from '../../../../types'
 
 const direct_chat = {

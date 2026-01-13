@@ -1,6 +1,6 @@
 import express from 'express'
 
-import TwakeServer from '@twake/server'
+import TwakeServer from '@twake-chat/server'
 
 const twakeServer = new TwakeServer({
   database_host: ':memory:'

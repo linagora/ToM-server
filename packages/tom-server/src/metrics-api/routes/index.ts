@@ -3,9 +3,9 @@ import {
   getLogger,
   type Config as LoggerConfig,
   type TwakeLogger
-} from '@twake/logger'
+} from '@twake-chat/logger'
 import { type AuthenticationFunction, type Config } from '../../types'
-import { type MatrixDBBackend } from '@twake/matrix-identity-server'
+import { type MatrixDBBackend } from '@twake-chat/matrix-identity-server'
 import { Router } from 'express'
 import authMiddleware from '../../utils/middlewares/auth.middleware'
 import MetricsApiController from '../controllers'

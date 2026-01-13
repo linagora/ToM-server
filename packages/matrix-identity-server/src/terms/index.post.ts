@@ -7,7 +7,7 @@ import {
   send,
   validateParameters,
   type expressAppHandler
-} from '@twake/utils'
+} from '@twake-chat/utils'
 import computePolicy from './_computePolicies'
 
 type UrlsFromPolicies = Record<string, string[]>

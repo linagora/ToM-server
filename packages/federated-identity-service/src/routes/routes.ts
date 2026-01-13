@@ -1,5 +1,5 @@
-import { type TwakeLogger } from '@twake/logger'
-import { type IdServerAPI, type Utils } from '@twake/matrix-identity-server'
+import { type TwakeLogger } from '@twake-chat/logger'
+import { type IdServerAPI, type Utils } from '@twake-chat/matrix-identity-server'
 import { Router, json, urlencoded } from 'express'
 import { hashDetails, lookup, lookups } from '../controllers/controllers'
 import { auth } from '../middlewares/auth'

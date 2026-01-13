@@ -3,7 +3,7 @@ import {
   getLogger,
   type Config as LoggerConfig,
   type TwakeLogger
-} from '@twake/logger'
+} from '@twake-chat/logger'
 import { Router } from 'express'
 import { type AuthenticationFunction, type Config } from '../../types'
 import authMiddleware from '../../utils/middlewares/auth.middleware'

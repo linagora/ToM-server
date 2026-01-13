@@ -1,5 +1,5 @@
 import Middleware from '../middlewares'
-import type { TwakeLogger } from '@twake/logger'
+import type { TwakeLogger } from '@twake-chat/logger'
 import type { NextFunction, Response } from 'express'
 import type { AuthRequest } from '../../../../types'
 

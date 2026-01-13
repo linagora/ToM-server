@@ -1,6 +1,6 @@
 import DisplayNameController from '../controllers'
 import type DisplayNameService from '../services'
-import { errCodes } from '@twake/utils'
+import { errCodes } from '@twake-chat/utils'
 
 describe('DisplayNameController', () => {
   let controller: DisplayNameController

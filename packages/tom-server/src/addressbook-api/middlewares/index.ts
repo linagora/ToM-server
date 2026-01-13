@@ -1,4 +1,4 @@
-import type { TwakeLogger } from '@twake/logger'
+import type { TwakeLogger } from '@twake-chat/logger'
 import type { AuthRequest, TwakeDB } from '../../types'
 import type {
   AddressBook,

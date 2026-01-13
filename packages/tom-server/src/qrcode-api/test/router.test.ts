@@ -1,5 +1,5 @@
-import { type ConfigDescription } from '@twake/config-parser'
-import { IdentityServerDb, type MatrixDB } from '@twake/matrix-identity-server'
+import { type ConfigDescription } from '@twake-chat/config-parser'
+import { IdentityServerDb, type MatrixDB } from '@twake-chat/matrix-identity-server'
 import express from 'express'
 import fs from 'fs'
 import path from 'path'

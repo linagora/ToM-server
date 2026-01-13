@@ -1,5 +1,5 @@
-import type { TwakeLogger } from '@twake/logger'
-import type { MatrixDB, UserDB } from '@twake/matrix-identity-server'
+import type { TwakeLogger } from '@twake-chat/logger'
+import type { MatrixDB, UserDB } from '@twake-chat/matrix-identity-server'
 import type { Response, NextFunction } from 'express'
 import InvitationApiController from '../controllers'
 import type { AuthRequest, Config, TwakeDB } from '../../types'

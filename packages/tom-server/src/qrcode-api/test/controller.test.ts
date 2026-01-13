@@ -3,7 +3,7 @@ import supertest from 'supertest'
 import type { Config } from '../../types'
 import type TwakeIdentityServer from '../../identity-server'
 import router, { PATH } from '../routes'
-import { type TwakeLogger } from '@twake/logger'
+import { type TwakeLogger } from '@twake-chat/logger'
 
 const app = express()
 const getAccessTokenMock = jest.fn()

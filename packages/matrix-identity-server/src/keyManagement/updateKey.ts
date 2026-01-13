@@ -6,8 +6,8 @@
  * Change long-term key
  */
 
-import { generateKeyPair } from '@twake/crypto'
-import { type TwakeLogger } from '@twake/logger'
+import { generateKeyPair } from '@twake-chat/crypto'
+import { type TwakeLogger } from '@twake-chat/logger'
 import type IdentityServerDb from '../db'
 
 const updateKey = async (

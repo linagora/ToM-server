@@ -1,4 +1,4 @@
-import { getLogger } from '@twake/logger'
+import { getLogger } from '@twake-chat/logger'
 import express from 'express'
 import request from 'supertest'
 import DefaultConfig from '../config.json'

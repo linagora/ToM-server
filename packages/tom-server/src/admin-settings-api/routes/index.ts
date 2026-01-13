@@ -3,7 +3,7 @@ import {
   getLogger,
   type Config as LoggerConfig,
   type TwakeLogger
-} from '@twake/logger'
+} from '@twake-chat/logger'
 import type { Config, ITokenService } from '../../types'
 import AdminSettingsrController from '../controllers'
 import AdminSettingsMiddleware from '../middlewares'

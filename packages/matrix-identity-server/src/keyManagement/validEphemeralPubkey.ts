@@ -1,6 +1,6 @@
 import { type Request } from 'express'
 import type IdentityServerDB from '../db'
-import { errMsg, send, type expressAppHandler } from '@twake/utils'
+import { errMsg, send, type expressAppHandler } from '@twake-chat/utils'
 
 const isEphemeralPubkeyValid = <T extends string = never>(
   idServer: IdentityServerDB<T>

@@ -13,7 +13,7 @@ const mockClose = jest.fn().mockResolvedValue(undefined)
 
 jest.mock('node-fetch', () => jest.fn())
 
-jest.mock('@twake/amqp-connector', () => {
+jest.mock('@twake-chat/amqp-connector', () => {
   const mockCtor = jest.fn().mockImplementation(() => ({
     withConfig: jest.fn().mockReturnThis(),
     withExchange: jest.fn().mockReturnThis(),

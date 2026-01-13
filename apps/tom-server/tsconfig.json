@@ -4,6 +4,12 @@
   "include": [],
   "references": [
     {
+      "path": "../../packages/common-settings"
+    },
+    {
+      "path": "../../packages/tom-server"
+    },
+    {
       "path": "./tsconfig.app.json"
     },
     {

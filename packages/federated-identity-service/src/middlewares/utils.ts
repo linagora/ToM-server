@@ -1,4 +1,4 @@
-import { errCodes } from '@twake/utils'
+import { errCodes } from '@twake-chat/utils'
 import { type expressAppHandler } from '../types'
 import { FederatedIdentityServiceError } from './errors'
 

@@ -1,12 +1,12 @@
-import { type TwakeLogger } from '@twake/logger'
-import { AMQPConnector } from '@twake/amqp-connector'
-import { type AmqpConfig } from '@twake/amqp-connector/src/types'
+import { type TwakeLogger } from '@twake-chat/logger'
+import { AMQPConnector } from '@twake-chat/amqp-connector'
+import { type AmqpConfig } from '@twake-chat/amqp-connector/src/types'
 import {
   type UserSettings,
   type UserInformationPayload,
   type CommonSettingsMessage
 } from './types'
-import type { Config, TwakeDB } from '@twake/server/src/types'
+import type { Config, TwakeDB } from '@twake-chat/server/src/types'
 import {
   ConfigNotProvidedError,
   CouldNotParseMessageError,

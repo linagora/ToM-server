@@ -1,4 +1,4 @@
-# @twake/matrix-identity-server
+# @twake-chat/matrix-identity-server
 
 What we have to store:
 

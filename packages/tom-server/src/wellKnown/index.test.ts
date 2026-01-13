@@ -15,7 +15,7 @@ import { ProfileVisibility } from '../user-info-api/types'
 
 type WellKnownConfig = Pick<Config, 'features'>
 
-jest.mock('@twake/utils', () => ({
+jest.mock('@twake-chat/utils', () => ({
   send: (res: any, code: number, payload: any) => {
     res.status(code).json(payload)
   }

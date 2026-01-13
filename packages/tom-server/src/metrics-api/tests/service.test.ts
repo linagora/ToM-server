@@ -1,6 +1,6 @@
-import { type TwakeLogger } from '@twake/logger'
+import { type TwakeLogger } from '@twake-chat/logger'
 import Service from '../services'
-import { type MatrixDBBackend } from '@twake/matrix-identity-server'
+import { type MatrixDBBackend } from '@twake-chat/matrix-identity-server'
 
 const dbMock = {
   get: jest.fn(),

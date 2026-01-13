@@ -1,6 +1,6 @@
 /* istanbul ignore file */
-import { getLogger, type TwakeLogger } from '@twake/logger'
-import { UserDB } from '@twake/matrix-identity-server'
+import { getLogger, type TwakeLogger } from '@twake-chat/logger'
+import { UserDB } from '@twake-chat/matrix-identity-server'
 import sqlite3, { type Database } from 'sqlite3'
 import { type Config } from '../types'
 

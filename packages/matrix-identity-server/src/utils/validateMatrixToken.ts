@@ -1,6 +1,6 @@
 /* eslint-disable prefer-promise-reject-errors */
-import { type TwakeLogger } from '@twake/logger'
-import { MatrixResolve } from 'matrix-resolve'
+import { type TwakeLogger } from '@twake-chat/logger'
+import { MatrixResolve } from '@twake-chat/matrix-resolve'
 import fetch from 'node-fetch'
 
 const hostnameRe =

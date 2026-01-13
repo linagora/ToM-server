@@ -4,6 +4,9 @@
   "include": [],
   "references": [
     {
+      "path": "../../packages/matrix-identity-server"
+    },
+    {
       "path": "./tsconfig.app.json"
     },
     {

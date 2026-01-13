@@ -1,5 +1,5 @@
-import { type TwakeLogger } from '@twake/logger'
-import { DbGetResult, MatrixDB, UserDB } from '@twake/matrix-identity-server'
+import { type TwakeLogger } from '@twake-chat/logger'
+import { DbGetResult, MatrixDB, UserDB } from '@twake-chat/matrix-identity-server'
 import { IAddressbookService } from '../../addressbook-api/types'
 import type { Config, TwakeDB } from '../../types'
 import UserInfoService from '../services'

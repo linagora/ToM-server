@@ -5,7 +5,7 @@ import {
   send,
   validateParameters,
   type expressAppHandler
-} from '@twake/utils'
+} from '@twake-chat/utils'
 
 const schema = {
   addresses: true,

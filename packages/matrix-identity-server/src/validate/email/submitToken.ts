@@ -5,7 +5,7 @@ import {
   jsonContent,
   send,
   type expressAppHandler
-} from '@twake/utils'
+} from '@twake-chat/utils'
 
 interface parameters {
   client_secret?: string

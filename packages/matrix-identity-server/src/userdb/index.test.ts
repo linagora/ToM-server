@@ -1,4 +1,4 @@
-import { getLogger, type TwakeLogger } from '@twake/logger'
+import { getLogger, type TwakeLogger } from '@twake-chat/logger'
 import fs from 'fs'
 import sqlite3 from 'sqlite3'
 import Cache from '../cache'

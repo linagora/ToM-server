@@ -1,4 +1,4 @@
-import { type TwakeLogger } from '@twake/logger'
+import { type TwakeLogger } from '@twake-chat/logger'
 import { type NextFunction, type Request, type Response } from 'express'
 import errorMiddleware from './error.middleware'
 

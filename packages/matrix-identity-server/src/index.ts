@@ -1,4 +1,4 @@
-import configParser, { type ConfigDescription } from '@twake/config-parser'
+import configParser, { type ConfigDescription } from '@twake-chat/config-parser'
 import fs from 'fs'
 
 // Internal libraries
@@ -9,7 +9,7 @@ import {
   hostnameRe,
   send,
   type expressAppHandler
-} from '@twake/utils'
+} from '@twake-chat/utils'
 import {
   Authenticate as utilsAuthenticate,
   type AuthenticationFunction
@@ -21,7 +21,7 @@ import {
   getLogger,
   type Config as LoggerConfig,
   type TwakeLogger
-} from '@twake/logger'
+} from '@twake-chat/logger'
 import { type Request, type Response } from 'express'
 import rateLimit, { type RateLimitRequestHandler } from 'express-rate-limit'
 import GetValidated3pid from './3pid'

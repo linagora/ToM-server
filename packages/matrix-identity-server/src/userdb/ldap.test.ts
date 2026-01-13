@@ -1,4 +1,4 @@
-import { getLogger, type TwakeLogger } from '@twake/logger'
+import { getLogger, type TwakeLogger } from '@twake-chat/logger'
 import ldapjs, { type Server } from 'ldapjs'
 import defaultConfig from '../config.json'
 import UserDBLDAP from './ldap'

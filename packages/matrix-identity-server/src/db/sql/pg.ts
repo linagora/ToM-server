@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/strict-boolean-expressions */
 /* eslint-disable @typescript-eslint/promise-function-async */
 /* istanbul ignore file */
-import { type TwakeLogger } from '@twake/logger'
+import { type TwakeLogger } from '@twake-chat/logger'
 import { type ClientConfig, type Pool as PgPool } from 'pg'
 import { type IdDbBackend } from '..'
 import { type Config, type DbGetResult } from '../../types'

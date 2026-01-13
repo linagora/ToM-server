@@ -2,7 +2,7 @@ import { type Response, type NextFunction } from 'express'
 import { type Config, type AuthRequest } from '../../types'
 import { type ISmsService, type ISmsApiController } from '../types'
 import SmsService from '../services'
-import { type TwakeLogger } from '@twake/logger'
+import { type TwakeLogger } from '@twake-chat/logger'
 
 export default class SmsApiController implements ISmsApiController {
   smsService: ISmsService

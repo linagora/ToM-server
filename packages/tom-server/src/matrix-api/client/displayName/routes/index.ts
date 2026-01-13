@@ -2,7 +2,7 @@ import {
   getLogger,
   type TwakeLogger,
   type Config as LoggerConfig
-} from '@twake/logger'
+} from '@twake-chat/logger'
 import type { AuthenticationFunction, Config } from '../../../../types'
 import { Router } from 'express'
 import DisplayNameController from '../controllers'

@@ -1,10 +1,10 @@
-import { type TwakeLogger } from '@twake/logger'
+import { type TwakeLogger } from '@twake-chat/logger'
 import type IdentityServerDb from '../db'
 import updateHash, { type UpdatableFields } from '../lookup/updateHash'
 import MatrixDB from '../matrixDb'
 import { type Config, type DbGetResult } from '../types'
 import type UserDB from '../userdb'
-import { epoch, toMatrixId } from '@twake/utils'
+import { epoch, toMatrixId } from '@twake-chat/utils'
 
 /**
  * updateUsers is a cron task that reads users from UserDB and find which of

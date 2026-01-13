@@ -51,7 +51,7 @@ REST API Endpoints documentation is available on https://linagora.github.io/ToM-
 - [@twake-chat/crypto](./packages/crypto): cryptographic methods for Twake Chat
 - [@twake-chat/logger](./packages/logger): logger for Twake
 - [@twake-chat/utils](.packages/utils): utilitary methods for Twake Chat
-- [matrix-resolve](./packages/matrix-resolve): resolve a Matrix "server name" into base URL following
+- [@twake-chat/matrix-resolve](./packages/matrix-resolve): resolve a Matrix "server name" into base URL following
   [Matrix specification](https://spec.matrix.org/latest/server-server-api/#server-discovery)
 
 ## Requirements

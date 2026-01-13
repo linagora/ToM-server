@@ -1,7 +1,7 @@
 import type { IAdminSettingsMiddleware } from '../types'
 import type { Request, Response, NextFunction } from 'express'
-import type { Config } from '@twake/server/src/types'
-import type { TwakeLogger } from '@twake/logger'
+import type { Config } from '@twake-chat/server/src/types'
+import type { TwakeLogger } from '@twake-chat/logger'
 
 export default class AdminSettingsMiddleware
   implements IAdminSettingsMiddleware

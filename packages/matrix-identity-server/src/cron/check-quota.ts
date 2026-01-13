@@ -1,4 +1,4 @@
-import { type TwakeLogger } from '@twake/logger'
+import { type TwakeLogger } from '@twake-chat/logger'
 import type IdentityServerDb from '../db'
 import MatrixDB, { type MatrixDBBackend } from '../matrixDb'
 import type {

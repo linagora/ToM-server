@@ -1,4 +1,4 @@
-import { getLogger, type TwakeLogger } from '@twake/logger'
+import { getLogger, type TwakeLogger } from '@twake-chat/logger'
 import fs from 'fs'
 import defaultConfig from '../config.json'
 import IdentityServerDB from '../db'

@@ -1,4 +1,4 @@
-import { type TwakeLogger } from '@twake/logger'
+import { type TwakeLogger } from '@twake-chat/logger'
 import { type Config } from '../../types'
 import { type ISmsService, type SMS, type SendSmsPayload } from '../types'
 import fetch from 'node-fetch'
