@@ -8,7 +8,7 @@
     "emitDeclarationOnly": false,
     "types": ["node"]
   },
-  "include": ["src/**/*.ts"],
+  "include": ["src/**/*.ts", "src/config.json"],
   "references": [
     {
       "path": "../matrix-resolve/tsconfig.lib.json"
