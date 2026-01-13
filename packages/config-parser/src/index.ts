@@ -5,7 +5,7 @@ import {
   type ConfigurationFile,
   type Configuration,
   type NewConfigDescription
-} from './types'
+} from './types.ts'
 import {
   InvalidNumberFormatError,
   InvalidBooleanFormatError,
@@ -14,8 +14,8 @@ import {
   UnacceptedKeyError,
   ConfigCoercionError,
   MissingRequiredConfigError
-} from './errors'
-import { oldParser } from './utils'
+} from './errors.ts'
+import { oldParser } from './utils.ts'
 
 /**
  * Coerces a string value to the target type.
@@ -247,6 +247,6 @@ const twakeConfig = (
   return config
 }
 
-export type { ConfigDescription } from './types'
+export type { ConfigDescription } from './types.ts'
 
 export default twakeConfig

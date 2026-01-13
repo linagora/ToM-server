@@ -1,4 +1,4 @@
-import { type ConfigDescription, type Configuration } from './types'
+import { type ConfigDescription, type Configuration } from './types.ts'
 
 /**
  * Parses the configuration using the old parser strategy.
