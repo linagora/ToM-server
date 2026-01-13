@@ -1,7 +1,8 @@
 import fetch from 'node-fetch'
 import dns from 'node:dns'
-import { type SrvRecord } from 'node:dns'
 import { type ToadCache } from 'toad-cache'
+// TODO: inspect unused definition
+// import { type SrvRecord } from 'node:dns'
 
 // Imported form Perl modules (Regex::Common::*)
 const ipv4 =
@@ -157,10 +158,11 @@ const dnsResolve = (
 }
 
 const dnsSrvResolve = (name: string): Promise<string | string[]> => {
-  const prioritySort = (a: SrvRecord, b: SrvRecord) => {
-    // istanbul ignore next
-    return b.priority - a.priority
-  }
+  // TODO: inspect unused definition
+  // const prioritySort = (a: SrvRecord, b: SrvRecord) => {
+  //   // istanbul ignore next
+  //   return b.priority - a.priority
+  // }
   return new Promise((resolve, reject) => {
     dns.resolve(name, 'SRV', (err, records) => {
       if (err == null && records.length > 0) {
