@@ -13,7 +13,7 @@ import {
   ExchangeNotSpecifiedError
 } from './errors.ts'
 
-export { ConnectionState, type ReconnectionConfig } from './types'
+export { ConnectionState, type ReconnectionConfig } from './types.ts'
 
 export class AMQPConnector {
   private readonly logger?: TwakeLogger
