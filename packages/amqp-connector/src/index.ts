@@ -11,7 +11,7 @@ import {
   QueueNotSpecifiedError,
   MessageHandlerNotProvidedError,
   ExchangeNotSpecifiedError
-} from './errors'
+} from './errors.ts'
 
 export { ConnectionState, type ReconnectionConfig } from './types'
 

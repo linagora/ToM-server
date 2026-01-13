@@ -5,7 +5,7 @@ import {
   QueueNotSpecifiedError,
   MessageHandlerNotProvidedError,
   ExchangeNotSpecifiedError
-} from './errors'
+} from './errors.ts'
 
 jest.mock('amqplib')
 
