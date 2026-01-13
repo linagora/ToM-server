@@ -1,10 +1,10 @@
 import { type TwakeLogger } from '@twake-chat/logger'
-import type Cache from '../cache'
-import { type Config, type DbGetResult } from '../types'
-import UserDBEmpty from './empty'
-import UserDBLDAP from './ldap'
-import UserDBPg from './sql/pg'
-import UserDBSQLite from './sql/sqlite'
+import type Cache from '../cache/index.ts'
+import { type Config, type DbGetResult } from '../types.ts'
+import UserDBEmpty from './empty.ts'
+import UserDBLDAP from './ldap.ts'
+import UserDBPg from './sql/pg.ts'
+import UserDBSQLite from './sql/sqlite.ts'
 
 export type SupportedUserDatabases =
   | 'sqlite'

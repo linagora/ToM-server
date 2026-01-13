@@ -2,8 +2,8 @@ import configParser, { type ConfigDescription } from '@twake-chat/config-parser'
 import fs from 'fs'
 
 // Internal libraries
-import defaultConfDesc from './config.json'
-import CronTasks from './cron'
+import defaultConfDesc from './config.json' with { type: "json" }
+import CronTasks from './cron/index.ts'
 import {
   errMsg as _errMsg,
   hostnameRe,
@@ -13,8 +13,8 @@ import {
 import {
   Authenticate as utilsAuthenticate,
   type AuthenticationFunction
-} from './utils'
-import versions from './versions'
+} from './utils.ts'
+import versions from './versions.ts'
 
 // Endpoints
 import {
@@ -24,45 +24,45 @@ import {
 } from '@twake-chat/logger'
 import { type Request, type Response } from 'express'
 import rateLimit, { type RateLimitRequestHandler } from 'express-rate-limit'
-import GetValidated3pid from './3pid'
-import bind from './3pid/bind'
-import unbind from './3pid/unbind'
-import account from './account'
-import logout from './account/logout'
-import register from './account/register'
-import Cache from './cache'
-import IdentityServerDb from './db'
-import SignEd25519 from './ephemeral_signing'
-import StoreInvit from './invitation'
-import getPubkey from './keyManagement/getPubkey'
-import isEphemeralPubkeyValid from './keyManagement/validEphemeralPubkey'
-import isPubkeyValid from './keyManagement/validPubkey'
-import lookup from './lookup'
-import hashDetails from './lookup/hash_details'
-import updateHash from './lookup/updateHash'
-import status from './status'
-import Terms from './terms'
-import PostTerms from './terms/index.post'
-import { type Config } from './types'
-import UserDB from './userdb'
-import _validateMatrixToken from './utils/validateMatrixToken'
-import RequestToken from './validate/email/requestToken'
-import SubmitToken from './validate/email/submitToken'
-export { type tokenContent } from './account/register'
-export { default as updateUsers } from './cron/updateUsers'
-export { default as IdentityServerDb } from './db'
-export { default as createTables } from './db/sql/_createTables'
-export { default as Pg } from './db/sql/pg'
-export { default as SQLite } from './db/sql/sqlite'
-export { default as MatrixDB, type MatrixDBBackend } from './matrixDb'
-export * from './types'
+import GetValidated3pid from './3pid/index.ts'
+import bind from './3pid/bind.ts'
+import unbind from './3pid/unbind.ts'
+import account from './account/index.ts'
+import logout from './account/logout.ts'
+import register from './account/register.ts'
+import Cache from './cache/index.ts'
+import IdentityServerDb from './db/index.ts'
+import SignEd25519 from './ephemeral_signing/index.ts'
+import StoreInvit from './invitation/index.ts'
+import getPubkey from './keyManagement/getPubkey.ts'
+import isEphemeralPubkeyValid from './keyManagement/validEphemeralPubkey.ts'
+import isPubkeyValid from './keyManagement/validPubkey.ts'
+import lookup from './lookup/index.ts'
+import hashDetails from './lookup/hash_details.ts'
+import updateHash from './lookup/updateHash.ts'
+import status from './status.ts'
+import Terms from './terms/index.ts'
+import PostTerms from './terms/index.post.ts'
+import { type Config } from './types.ts'
+import UserDB from './userdb/index.ts'
+import _validateMatrixToken from './utils/validateMatrixToken.ts'
+import RequestToken from './validate/email/requestToken.ts'
+import SubmitToken from './validate/email/submitToken.ts'
+export { type tokenContent } from './account/register.ts'
+export { default as updateUsers } from './cron/updateUsers.ts'
+export { default as IdentityServerDb } from './db/index.ts'
+export { default as createTables } from './db/sql/_createTables.ts'
+export { default as Pg } from './db/sql/pg.ts'
+export { default as SQLite } from './db/sql/sqlite.ts'
+export { default as MatrixDB, type MatrixDBBackend } from './matrixDb/index.ts'
+export * from './types.ts'
 export {
   default as UserDB,
   type Collections as userDbCollections
-} from './userdb'
-export * as Utils from './utils'
-export { default as UserDBPg } from './userdb/sql/pg'
-export { default as UserDBSQLite } from './userdb/sql/sqlite'
+} from './userdb/index.ts'
+export * as Utils from './utils.ts'
+export { default as UserDBPg } from './userdb/sql/pg.ts'
+export { default as UserDBSQLite } from './userdb/sql/sqlite.ts'
 export const validateMatrixToken = _validateMatrixToken
 export const defaultConfig = defaultConfDesc
 export const Authenticate = utilsAuthenticate

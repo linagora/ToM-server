@@ -4,12 +4,12 @@ import fs from 'fs'
 import fetch from 'node-fetch'
 import sqlite3 from 'sqlite3'
 import request from 'supertest'
-import buildUserDB, { buildMatrixDb } from './__testData__/buildUserDB'
-import defaultConfig from './__testData__/registerConf.json'
-import updateUsers from './cron/updateUsers'
-import IdServer from './index'
-import { type Config } from './types'
-import type UserDBSQLite from './userdb/sql/sqlite'
+import buildUserDB, { buildMatrixDb } from './__testData__/buildUserDB.ts'
+import defaultConfig from './__testData__/registerConf.json' with { type: "json" }
+import updateUsers from './cron/updateUsers.ts'
+import IdServer from './index.ts'
+import { type Config } from './types.ts'
+import type UserDBSQLite from './userdb/sql/sqlite.ts'
 
 jest.mock('node-fetch', () => jest.fn())
 const sendMailMock = jest.fn()

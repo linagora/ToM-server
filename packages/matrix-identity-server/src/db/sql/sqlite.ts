@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/promise-function-async */
 import { type TwakeLogger } from '@twake-chat/logger'
 import { type Database, type Statement } from 'sqlite3'
-import { type Config, type DbGetResult } from '../../types'
-import { type IdDbBackend } from '../index'
-import createTables from './_createTables'
-import SQL, { type ISQLCondition } from './sql'
+import { type Config, type DbGetResult } from '../../types.ts'
+import { type IdDbBackend } from '../index.ts'
+import createTables from './_createTables.ts'
+import SQL, { type ISQLCondition } from './sql.ts'
 
 export type SQLiteDatabase = Database
 

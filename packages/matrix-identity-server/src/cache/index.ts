@@ -1,6 +1,6 @@
-import { type DbGetResult, type Config } from '../types'
-import MemoryCache from './memory'
-import RedisCache from './redis'
+import { type DbGetResult, type Config } from '../types.ts'
+import MemoryCache from './memory.ts'
+import RedisCache from './redis.ts'
 
 export interface CacheType {
   ready: Promise<void>

@@ -1,7 +1,7 @@
 import { randomString, signJson, toBase64Url } from '@twake-chat/crypto'
 import nacl from 'tweetnacl'
 import * as naclUtil from 'tweetnacl-util'
-import type MatrixIdentityServer from '..'
+import type MatrixIdentityServer from '../index.ts'
 import {
   errMsg,
   jsonContent,

@@ -1,7 +1,7 @@
-import { type SupportedDatabases } from './db'
+import { type SupportedDatabases } from './db/index.ts'
 import { type ConnectionOptions } from 'tls'
-import { type Policies } from './terms'
-import { type SupportedUserDatabases } from './userdb'
+import { type Policies } from './terms/index.ts'
+import { type SupportedUserDatabases } from './userdb/index.ts'
 
 export interface Config {
   additional_features?: boolean

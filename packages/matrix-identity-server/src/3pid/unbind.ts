@@ -1,4 +1,4 @@
-import type MatrixIdentityServer from '..'
+import type MatrixIdentityServer from '../index.ts'
 import {
   errMsg,
   jsonContent,

@@ -1,6 +1,6 @@
 import { type TwakeLogger } from '@twake-chat/logger'
-import type Pg from './pg'
-import type SQLite from './sqlite'
+import type Pg from './pg.ts'
+import type SQLite from './sqlite.ts'
 
 function createTables<T extends string>(
   db: SQLite<T> | Pg<T>,

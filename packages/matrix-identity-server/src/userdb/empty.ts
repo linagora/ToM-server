@@ -1,6 +1,6 @@
 import { type TwakeLogger } from '@twake-chat/logger'
-import { type Config, type DbGetResult } from '../types'
-import { type UserDBBackend } from './index'
+import { type Config, type DbGetResult } from '../types.ts'
+import { type UserDBBackend } from './index.ts'
 
 class UserDBEmpty implements UserDBBackend {
   ready: Promise<void>

@@ -1,12 +1,14 @@
+import fetch from 'node-fetch'
 import type { TwakeLogger } from '@twake-chat/logger'
-import { Config, ISMSService, SendSmsPayload } from '../types'
-import { buildUrl } from '../utils'
+import { Config, ISMSService, SendSmsPayload } from '../types.ts'
+import { buildUrl } from '../utils.ts'
 
 export class SmsService implements ISMSService {
   private API_ENDPOINT: string
   private HEADERS: Record<string, string>
-  private readonly sender: string = 'Twake Chat'
   private readonly SEND_ENDPOINT = '/sms-campaign/send'
+  // TODO: investigate unused
+  // private readonly sender: string = 'Twake Chat'
 
   constructor(
     private readonly config: Config,

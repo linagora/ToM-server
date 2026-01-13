@@ -1,8 +1,8 @@
 import { type TwakeLogger } from '@twake-chat/logger'
-import { type Collections } from '..'
-import { type Config, type DbGetResult } from '../../types'
-import { type PgDatabase } from './pg'
-import { type SQLiteDatabase } from './sqlite'
+import { type Collections } from '../index.ts'
+import { type Config, type DbGetResult } from '../../types.ts'
+import { type PgDatabase } from './pg.ts'
+import { type SQLiteDatabase } from './sqlite.ts'
 
 export type CreateDbMethod = (
   conf: Config,

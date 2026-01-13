@@ -1,5 +1,5 @@
 import { supportedHashes } from '@twake-chat/crypto'
-import type MatrixIdentityServer from '..'
+import type MatrixIdentityServer from '../index.ts'
 import { errMsg, send, type expressAppHandler } from '@twake-chat/utils'
 
 const hashDetails = <T extends string = never>(

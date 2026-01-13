@@ -1,7 +1,7 @@
 import { type TwakeLogger } from '@twake-chat/logger'
 import fs from 'fs'
-import { type Policies } from '.'
-import { type Config } from '../types'
+import { type Policies } from './index.ts'
+import { type Config } from '../types.ts'
 
 let policies: Policies = {}
 

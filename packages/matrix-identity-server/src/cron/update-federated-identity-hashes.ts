@@ -5,10 +5,10 @@ import {
   fieldsToHash,
   type UpdatableFields,
   type ValueField
-} from '../lookup/updateHash'
-import { type Config } from '../types'
-import type UserDB from '../userdb'
-import { dbFieldsToHash, filter } from './changePepper'
+} from '../lookup/updateHash.ts'
+import { type Config } from '../types.ts'
+import type UserDB from '../userdb/index.ts'
+import { dbFieldsToHash, filter } from './changePepper.ts'
 import { toMatrixId } from '@twake-chat/utils'
 
 interface HashDetails {

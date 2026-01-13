@@ -1,10 +1,10 @@
 import { getLogger, type TwakeLogger } from '@twake-chat/logger'
 import fs from 'fs'
 import sqlite3 from 'sqlite3'
-import Cache from '../cache'
-import defaultConfig from '../config.json'
-import { type Config } from '../types'
-import UserDB from './index'
+import Cache from '../cache/index.ts'
+import defaultConfig from '../config.json' with { type: "json" }
+import { type Config } from '../types.ts'
+import UserDB from './index.ts'
 
 const dbName = './testldap.db'
 

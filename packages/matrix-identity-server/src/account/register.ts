@@ -1,6 +1,6 @@
 import { randomString } from '@twake-chat/crypto'
 import { type TwakeLogger } from '@twake-chat/logger'
-import type IdentityServerDb from '../db'
+import type IdentityServerDb from '../db/index.ts'
 import {
   epoch,
   errMsg,
@@ -9,7 +9,7 @@ import {
   validateParameters,
   type expressAppHandler
 } from '@twake-chat/utils'
-import validateMatrixToken from '../utils/validateMatrixToken'
+import validateMatrixToken from '../utils/validateMatrixToken.ts'
 
 const schema = {
   access_token: true,

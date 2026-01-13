@@ -1,10 +1,10 @@
-import { type Collections, type MatrixDBBackend } from '../'
-import SQLite from '../../db/sql/sqlite'
-import { type Config } from '../../types'
+import { type Collections, type MatrixDBBackend } from '../index.ts'
+import SQLite from '../../db/sql/sqlite.ts'
+import { type Config } from '../../types.ts'
 
 class MatrixDBSQLite extends SQLite<Collections> implements MatrixDBBackend {
   // eslint-disable-next-line @typescript-eslint/promise-function-async
-  createDatabases(
+  override createDatabases(
     conf: Config,
     tables: Record<Collections, string>,
     indexes: Partial<Record<Collections, string[]>>,

@@ -1,6 +1,6 @@
 /* istanbul ignore file */
-import { type Policies } from '.'
-import type MatrixIdentityServer from '..'
+import { type Policies } from './index.ts'
+import type MatrixIdentityServer from '../index.ts'
 import {
   errMsg,
   jsonContent,
@@ -8,7 +8,7 @@ import {
   validateParameters,
   type expressAppHandler
 } from '@twake-chat/utils'
-import computePolicy from './_computePolicies'
+import computePolicy from './_computePolicies.ts'
 
 type UrlsFromPolicies = Record<string, string[]>
 

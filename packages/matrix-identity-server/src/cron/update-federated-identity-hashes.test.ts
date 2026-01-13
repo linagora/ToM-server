@@ -2,11 +2,11 @@ import { Hash } from '@twake-chat/crypto'
 import { getLogger, type TwakeLogger } from '@twake-chat/logger'
 import fs from 'fs'
 import fetch from 'node-fetch'
-import defaultConfig from '../config.json'
-import { type Config } from '../types'
-import UserDB from '../userdb'
+import defaultConfig from '../config.json' with { type: "json" }
+import { type Config } from '../types.ts'
+import UserDB from '../userdb/index.ts'
 import { errCodes } from '@twake-chat/utils'
-import updateFederatedIdentityHashes from './update-federated-identity-hashes'
+import updateFederatedIdentityHashes from './update-federated-identity-hashes.ts'
 
 jest.mock('node-fetch', () => {
   return {

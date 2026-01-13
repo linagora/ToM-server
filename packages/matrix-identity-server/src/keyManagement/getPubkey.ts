@@ -1,5 +1,5 @@
 import { type Request } from 'express'
-import type IdentityServerDB from '../db'
+import type IdentityServerDB from '../db/index.ts'
 import { errMsg, send, type expressAppHandler } from '@twake-chat/utils'
 
 const getPubkey = <T extends string = never>(
@@ -13,7 +13,7 @@ const getPubkey = <T extends string = never>(
       // eslint-disable-next-line @typescript-eslint/promise-function-async
       .then((rows) => {
         if (rows.length === 1) {
-          send(res, 200, { public_key: rows[0].public })
+          return send(res, 200, { public_key: rows[0].public })
         } else {
           return idServer.db
             .get('longTermKeypairs', ['public'], { keyID: _keyID })

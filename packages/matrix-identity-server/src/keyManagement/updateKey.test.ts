@@ -1,10 +1,10 @@
 import { getLogger, type TwakeLogger } from '@twake-chat/logger'
 import { generateKeyPair } from '@twake-chat/crypto'
 import fs from 'fs'
-import defaultConfig from '../config.json'
-import IdentityServerDB from '../db'
-import { type Config } from '../types'
-import updateKey from './updateKey'
+import defaultConfig from '../config.json' with { type: "json" }
+import IdentityServerDB from '../db/index.ts'
+import { type Config } from '../types.ts'
+import updateKey from './updateKey.ts'
 
 const conf: Config = {
   ...defaultConfig,

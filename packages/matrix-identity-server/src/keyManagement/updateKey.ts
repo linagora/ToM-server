@@ -8,7 +8,7 @@
 
 import { generateKeyPair } from '@twake-chat/crypto'
 import { type TwakeLogger } from '@twake-chat/logger'
-import type IdentityServerDb from '../db'
+import type IdentityServerDb from '../db/index.ts'
 
 const updateKey = async (
   db: IdentityServerDb,

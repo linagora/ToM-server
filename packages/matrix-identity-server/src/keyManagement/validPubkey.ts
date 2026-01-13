@@ -1,5 +1,5 @@
 import { type Request } from 'express'
-import type IdentityServerDB from '../db'
+import type IdentityServerDB from '../db/index.ts'
 import { errMsg, send, type expressAppHandler } from '@twake-chat/utils'
 
 const isPubkeyValid = <T extends string = never>(

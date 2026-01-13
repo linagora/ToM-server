@@ -1,7 +1,7 @@
 import { type TwakeLogger } from '@twake-chat/logger'
-import { type Config, type DbGetResult } from '../types'
-import MatrixDBPg from './sql/pg'
-import MatrixDBSQLite from './sql/sqlite'
+import { type Config, type DbGetResult } from '../types.ts'
+import MatrixDBPg from './sql/pg.ts'
+import MatrixDBSQLite from './sql/sqlite.ts'
 
 export type Collections =
   | 'profiles'

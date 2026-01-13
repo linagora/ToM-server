@@ -1,8 +1,8 @@
 import { randomString } from '@twake-chat/crypto'
 import fs from 'fs'
-import { type tokenContent } from '../../account/register'
-import type MatrixIdentityServer from '../../index'
-import { type Config } from '../../types'
+import { type tokenContent } from '../../account/register.ts'
+import type MatrixIdentityServer from '../../index.ts'
+import { type Config } from '../../types.ts'
 import {
   errMsg,
   isValidUrl,
@@ -11,7 +11,7 @@ import {
   validateParameters,
   type expressAppHandler
 } from '@twake-chat/utils'
-import Mailer from '../../utils/mailer'
+import Mailer from '../../utils/mailer.ts'
 
 interface RequestTokenArgs {
   client_secret: string

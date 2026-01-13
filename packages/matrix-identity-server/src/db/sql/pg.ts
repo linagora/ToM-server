@@ -3,10 +3,10 @@
 /* istanbul ignore file */
 import { type TwakeLogger } from '@twake-chat/logger'
 import { type ClientConfig, type Pool as PgPool } from 'pg'
-import { type IdDbBackend } from '..'
-import { type Config, type DbGetResult } from '../../types'
-import createTables from './_createTables'
-import SQL, { type ISQLCondition } from './sql'
+import { type IdDbBackend } from '../index.ts'
+import { type Config, type DbGetResult } from '../../types.ts'
+import createTables from './_createTables.ts'
+import SQL, { type ISQLCondition } from './sql.ts'
 
 export type PgDatabase = PgPool
 
