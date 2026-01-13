@@ -68,7 +68,7 @@ The service can be instantiated and started programmatically:
 ```ts
 import { CommonSettingsService } from '@twake-chat/common-settings';
 import { logger } from '@twake-chat/logger';
-import config from './config.json';
+import config from './config.json' with { type: "json" };
 
 const service = new CommonSettingsService(config, logger, db); // db is tomserver db instance
 

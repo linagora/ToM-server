@@ -1,12 +1,12 @@
 /* eslint-disable @typescript-eslint/dot-notation */
-import { CommonSettingsService } from '.'
+import { CommonSettingsService } from './index.ts'
 import {
   QueueNotProvidedError,
   UserIdNotProvidedError,
   UserSettingsNotProvidedError,
   ConfigNotProvidedError,
   ExchangeNotProvidedError
-} from './errors'
+} from './errors.ts'
 
 const mockBuild = jest.fn().mockResolvedValue(undefined)
 const mockClose = jest.fn().mockResolvedValue(undefined)
