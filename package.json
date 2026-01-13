@@ -30,6 +30,8 @@
   "dependencies": {
     "express": "^4.21.2",
     "js-nacl": "^1.4.0",
+    "node-fetch": "^3.3.2",
+    "toad-cache": "^3.7.0",
     "tweetnacl": "^1.0.3",
     "tweetnacl-util": "^0.15.1"
   },
