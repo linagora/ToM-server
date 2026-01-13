@@ -1,5 +1,5 @@
 {
-  "name": "@twake/crypto",
+  "name": "@twake-chat/crypto",
   "version": "0.0.1",
   "description": "Cryptographic function for Twake server",
   "keywords": [
@@ -15,30 +15,24 @@
     "url": "https://ci.linagora.com/publicgroup/oss/twake/tom-server.git"
   },
   "license": "AGPL-3.0-or-later",
-  "author": [
-    {
-      "name": "Xavier Guimard",
-      "email": "yadd@debian.org"
-    }
-  ],
+  "author": {
+    "name": "Xavier Guimard",
+    "email": "yadd@debian.org"
+  },
   "type": "module",
-  "exports": {
-    "import": "./dist/index.js"
-  },
-  "main": "dist/index.js",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "files": [
-    "package.json",
-    "dist",
-    "*.md"
-  ],
-  "scripts": {
-    "build": "rollup -c",
-    "test": "jest"
+  "exports": {
+    "./package.json": "./package.json",
+    ".": {
+      "development": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
   },
-  "dependencies": {
-    "js-nacl": "^1.4.0"
-  },
+  "scripts": {},
   "engines": {
     "node": "18.20.8",
     "npm": "10.8.2"

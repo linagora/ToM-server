@@ -11,8 +11,5 @@
     "Kyle Shockey <kyleshockey1@gmail.com>",
     "Robert Barnwell <robert@robertismy.name>",
     "Sahar Jafari <shr.jafari@gmail.com>"
-  ],
-  "license": "Apache-2.0",
-  "dependencies": {},
-  "devDependencies": {}
+  ]
 }

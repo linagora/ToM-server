@@ -1,28 +1,26 @@
 {
   "type": "module",
-  "name": "@twake/amqp-connector",
+  "name": "@twake-chat/amqp-connector",
   "version": "0.0.1",
   "description": "ToM AMQP connector",
-  "main": "dist/index.js",
-  "scripts": {
-    "build": "rollup -c",
-    "watch": "rollup -c -w",
-    "test": "jest"
-  },
-  "author": [
-    {
-      "name": "Montassar GHANMI",
-      "email": "mghanmi@linagora.com"
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    "./package.json": "./package.json",
+    ".": {
+      "development": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
     }
-  ],
+  },
+  "scripts": {},
+  "author": {
+    "name": "Montassar GHANMI",
+    "email": "mghanmi@linagora.com"
+  },
   "license": "AGPL-3.0-or-later",
-  "dependencies": {
-    "@twake/logger": "^0.0.1",
-    "amqplib": "^0.10.9"
-  },
-  "devDependencies": {
-    "@types/amqplib": "^0.10.7"
-  },
   "engines": {
     "node": "18.20.8",
     "npm": "10.8.2"

@@ -2,4 +2,10 @@ ignore-paths:
   - docs
   - node_modules
   - .test.ts
+  - .spec.ts
+  - example
+  - examples
   - __testData__
+  - .compose
+  - .nx
+  - .vscode

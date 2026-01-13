@@ -1,33 +1,33 @@
-# matrix-resolve
+# @twake-chat/@twake-chat/matrix-resolve
 
 Find matrix server with a domain name
 
 # Synopsis
 
 ```js
-import { matrixResolve } from 'matrix-resolve'
+import { matrixResolve } from '@twake-chat/matrix-resolve';
 
-const baseUrl = await matrixResolve('mydomain.com')
+const baseUrl = await matrixResolve('mydomain.com');
 ```
 
 or using Object interface:
 
 ```js
-import { MatrixResolve } from 'matrix-resolve'
+import { MatrixResolve } from '@twake-chat/matrix-resolve';
 
 const matrixResolve = new MatrixResolve({
   // optional cache
   cache: 'toad-cache',
   cacheSize: 100,
   cacheTtl: 300,
-})
+});
 
-const baseUrl = await matrixResolve.resolve('mydomain.com')
+const baseUrl = await matrixResolve.resolve('mydomain.com');
 ```
 
 # Description
 
-**matrix-resolve** permits to find the base URL of a [Matrix](https://matrix.org)
+**@twake-chat/matrix-resolve** permits to find the base URL of a [Matrix](https://matrix.org)
 "**server name**". Following the specification it tries to resolve the url in
 the following order:
 
@@ -63,9 +63,19 @@ is supported for now)_.
 
 The constructor take an optional object argument. Constructor argument keys:
 
-* **cache**: cache type. For now, only **toad-cache** is accepted
-* **cacheSize**: the max number of responses to store. Default: **500**
-* **cacheTtl**: the time-to-live in seconds. Default: **600**
+- **cache**: cache type. For now, only **toad-cache** is accepted
+- **cacheSize**: the max number of responses to store. Default: **500**
+- **cacheTtl**: the time-to-live in seconds. Default: **600**
+
+This library was generated with [Nx](https://nx.dev).
+
+## Building
+
+Run `nx build @twake-chat/matrix-resolve` to build the library.
+
+## Running unit tests
+
+Run `nx test @twake-chat/matrix-resolve` to execute the unit tests via [Jest](https://jestjs.io).
 
 ## Copyright and license
 

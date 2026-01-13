@@ -1,5 +1,5 @@
 {
-  "name": "@twake/utils",
+  "name": "@twake-chat/utils",
   "version": "0.0.1",
   "description": "Utilitary methods for Twake server",
   "keywords": [
@@ -34,23 +34,19 @@
     }
   ],
   "type": "module",
-  "exports": {
-    "import": "./dist/index.js"
-  },
-  "main": "dist/index.js",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "files": [
-    "package.json",
-    "dist",
-    "*.md"
-  ],
-  "scripts": {
-    "build": "rollup -c",
-    "test": "jest"
+  "exports": {
+    "./package.json": "./package.json",
+    ".": {
+      "development": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
   },
-  "dependencies": {
-    "@twake/logger": "*"
-  },
+  "scripts": {},
   "engines": {
     "node": "18.20.8",
     "npm": "10.8.2"

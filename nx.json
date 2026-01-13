@@ -1,72 +1,63 @@
 {
-  "defaultBase": "master",
   "$schema": "./node_modules/nx/schemas/nx-schema.json",
+  "defaultBase": "master",
   "namedInputs": {
-    "default": [
-      "{projectRoot}/**/*",
-      "sharedGlobals"
-    ],
-    "sharedGlobals": [],
+    "default": ["{projectRoot}/**/*", "sharedGlobals"],
     "production": [
-      "default"
-    ]
+      "default",
+      "!{projectRoot}/.eslintrc.json",
+      "!{projectRoot}/eslint.config.mjs",
+      "!{projectRoot}/**/?(*.)+(spec|test).[jt]s?(x)?(.snap)",
+      "!{projectRoot}/tsconfig.spec.json",
+      "!{projectRoot}/jest.config.[jt]s",
+      "!{projectRoot}/src/test-setup.[jt]s",
+      "!{projectRoot}/test-setup.[jt]s"
+    ],
+    "sharedGlobals": ["{workspaceRoot}/.github/workflows/ci.yml"]
   },
   "nxCloudAccessToken": "MDE1ZWJkYTktMzFhMi00NGZiLWFhMGMtZTM0NDU5ZWI3MGY2fHJlYWQtd3JpdGU=",
+  "plugins": [
+    {
+      "plugin": "@nx/js/typescript",
+      "options": {
+        "typecheck": {
+          "targetName": "typecheck"
+        },
+        "build": {
+          "targetName": "build",
+          "configName": "tsconfig.lib.json",
+          "buildDepsName": "build-deps",
+          "watchDepsName": "watch-deps"
+        }
+      }
+    },
+    {
+      "plugin": "@nx/eslint/plugin",
+      "options": {
+        "targetName": "lint"
+      }
+    },
+    {
+      "plugin": "@nx/jest/plugin",
+      "options": {
+        "targetName": "test"
+      },
+      "exclude": []
+    }
+  ],
   "targetDefaults": {
-    "build": {
+    "@nx/esbuild:esbuild": {
       "cache": true,
-      "dependsOn": [
-        "^build"
-      ],
-      "outputs": [
-        "{projectRoot}/dist"
-      ]
+      "dependsOn": ["^build"],
+      "inputs": ["production", "^production"]
     },
     "test": {
+      "dependsOn": ["^build"]
+    },
+    "@nx/js:tsc": {
       "cache": true,
-      "dependsOn": [
-        "^test"
-      ]
-    },
-    "dev": {
-      "dependsOn": []
-    },
-    "dev:node": {
-      "dependsOn": []
-    },
-    "dev:remix": {
-      "dependsOn": []
-    },
-    "start": {
-      "dependsOn": []
-    },
-    "typecheck": {
-      "dependsOn": []
-    },
-    "build:example": {
-      "dependsOn": []
-    },
-    "build:lib": {
-      "dependsOn": []
-    },
-    "check": {
-      "dependsOn": []
-    },
-    "check:watch": {
-      "dependsOn": []
-    },
-    "format": {
-      "dependsOn": []
-    },
-    "lint": {
-      "dependsOn": []
-    },
-    "preview": {
-      "dependsOn": []
-    },
-    "test:unit": {
-      "dependsOn": []
+      "dependsOn": ["^build"],
+      "inputs": ["production", "^production"]
     }
-  },
-  "useInferencePlugins": false
+  }
 }
