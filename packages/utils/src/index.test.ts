@@ -9,7 +9,7 @@ import {
   toMatrixId,
   isMatrixId,
   isValidUrl
-} from './index'
+} from './index.ts'
 import { type TwakeLogger } from '@twake-chat/logger'
 
 describe('Utility Functions', () => {

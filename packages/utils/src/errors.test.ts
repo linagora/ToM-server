@@ -1,4 +1,4 @@
-import { errMsg } from './errors'
+import { errMsg } from './errors.ts'
 
 test('Errors', () => {
   expect(errMsg('forbidden', 'Not authorized')).toEqual({
