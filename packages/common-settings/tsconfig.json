@@ -4,6 +4,9 @@
   "include": [],
   "references": [
     {
+      "path": "../tom-server"
+    },
+    {
       "path": "../amqp-connector"
     },
     {

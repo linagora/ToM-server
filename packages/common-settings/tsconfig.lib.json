@@ -11,6 +11,9 @@
   "include": ["src/**/*.ts"],
   "references": [
     {
+      "path": "../tom-server/tsconfig.lib.json"
+    },
+    {
       "path": "../amqp-connector/tsconfig.lib.json"
     },
     {
