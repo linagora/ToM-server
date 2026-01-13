@@ -1,6 +1,6 @@
 import { config } from 'winston'
-import { type IConsoleTransportOptions } from '../../../types'
-import { DefaultTransportOptions } from './default-transport-options'
+import { type IConsoleTransportOptions } from '../../../types.ts'
+import { DefaultTransportOptions } from './default-transport-options.ts'
 
 export class ConsoleTransportOptions
   extends DefaultTransportOptions

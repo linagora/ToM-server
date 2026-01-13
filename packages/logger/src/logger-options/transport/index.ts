@@ -2,10 +2,10 @@ import {
   ETransportType,
   type ITransportConf,
   type TransportConf
-} from '../../types'
-import { ConsoleTransportConf } from './console-transport-conf'
-import { DailyRotateFileTransportConf } from './daily-rotate-transport-conf'
-import { FileTransportConf } from './file-transport-conf'
+} from '../../types.ts'
+import { ConsoleTransportConf } from './console-transport-conf.ts'
+import { DailyRotateFileTransportConf } from './daily-rotate-transport-conf.ts'
+import { FileTransportConf } from './file-transport-conf.ts'
 
 export const createTransportConf = (
   conf: ITransportConf | { type: string }

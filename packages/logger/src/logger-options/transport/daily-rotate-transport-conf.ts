@@ -4,8 +4,8 @@ import {
   type IDailyRotateFileTransportConf,
   type IDailyRotateFileTransportOptions,
   type TransportConf
-} from '../../types'
-import { DailyRotateFileTransportOptions } from './options/daily-rotate-file-transport-options'
+} from '../../types.ts'
+import { DailyRotateFileTransportOptions } from './options/daily-rotate-file-transport-options.ts'
 
 export class DailyRotateFileTransportConf implements TransportConf {
   public type: `${ETransportType.DAILY_ROTATE_FILE}`

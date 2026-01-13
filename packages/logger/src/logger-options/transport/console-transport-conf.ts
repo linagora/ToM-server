@@ -4,8 +4,8 @@ import {
   type IConsoleTransportConf,
   type IConsoleTransportOptions,
   type TransportConf
-} from '../../types'
-import { ConsoleTransportOptions } from './options/console-transport-options'
+} from '../../types.ts'
+import { ConsoleTransportOptions } from './options/console-transport-options.ts'
 
 export class ConsoleTransportConf implements TransportConf {
   public type: `${ETransportType.CONSOLE}`

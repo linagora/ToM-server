@@ -1,9 +1,9 @@
 import {
   type IDailyRotateFileTransportOptions,
   type IWriteFileOptions
-} from '../../../types'
-import { DefaultTransportOptions } from './default-transport-options'
-import { WriteFileOptions } from './utils'
+} from '../../../types.ts'
+import { DefaultTransportOptions } from './default-transport-options.ts'
+import { WriteFileOptions } from './utils.ts'
 
 const defaultRotateFilename = 'twake-%DATE%.log'
 

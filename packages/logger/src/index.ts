@@ -3,11 +3,11 @@ import configParser, { type ConfigDescription } from '@twake-chat/config-parser'
 import fs from 'fs'
 import path from 'path'
 import { createLogger, type Logger } from 'winston'
-import defaultConfDesc from './configDesc.json'
-import { TwakeLoggerOptions } from './logger-options'
-import { type Config, type ILoggerConfig } from './types'
+import defaultConfDesc from './configDesc.json' with { type: "json" }
+import { TwakeLoggerOptions } from './logger-options/index.ts'
+import { type Config, type ILoggerConfig } from './types.ts'
 
-export { ETransportType, type Config } from './types'
+export { ETransportType, type Config } from './types.ts'
 export type TwakeLogger = Logger
 
 export const getLogger = (

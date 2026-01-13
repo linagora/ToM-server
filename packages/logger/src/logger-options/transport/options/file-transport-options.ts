@@ -1,9 +1,9 @@
 import {
   type IFileTransportOptions,
   type IWriteFileOptions
-} from '../../../types'
-import { DefaultTransportOptions } from './default-transport-options'
-import { WriteFileOptions } from './utils'
+} from '../../../types.ts'
+import { DefaultTransportOptions } from './default-transport-options.ts'
+import { WriteFileOptions } from './utils.ts'
 
 const defaultFilename = 'twake.log'
 
