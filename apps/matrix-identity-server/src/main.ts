@@ -8,7 +8,7 @@ const __dirname = path.dirname(__filename)
 
 const conf = {
   base_url: process.env.BASE_URL,
-  additional_features: process.env.ADDITIONAL_FEATURES || false,
+  additional_features: process.env.ADDITIONAL_FEATURES === 'true',
   cron_service: process.env.CRON_SERVICE ?? true,
   database_engine: process.env.DATABASE_ENGINE || 'sqlite',
   database_host: process.env.DATABASE_HOST || './tokens.db',
@@ -42,12 +42,10 @@ const conf = {
   redis_uri: process.env.REDIS_URI,
   server_name: process.env.SERVER_NAME,
   smtp_password: process.env.SMTP_PASSWORD,
-  smtp_tls: process.env.SMTP_TLS.toLocaleLowerCase() === 'true' ? true : false,
+  smtp_tls: process.env.SMTP_TLS?.toLocaleLowerCase() === 'true',
   smtp_user: process.env.SMTP_USER,
   smtp_verify_certificate:
-    process.env.SMTP_VERIFY_CERTIFICATE.toLocaleLowerCase() === 'true'
-      ? true
-      : false,
+    process.env.SMTP_VERIFY_CERTIFICATE?.toLocaleLowerCase() === 'true',
   smtp_sender: process.env.SMTP_SENDER ?? '',
   smtp_server: process.env.SMTP_SERVER || 'localhost',
   smtp_port: process.env.SMTP_PORT || 25,
@@ -79,35 +77,12 @@ const trustProxy = process.env.TRUSTED_PROXIES
   ? process.env.TRUSTED_PROXIES.split(/\s+/)
   : []
 if (trustProxy.length > 0) {
-  conf.trust_x_forwarded_for = true
-  app.set('trust proxy', ...trustProxy)
+  (conf as any).trust_x_forwarded_for = true
+  app.set('trust proxy', trustProxy)
 }
-const matrixIdServer = new MatrixIdentityServer(conf)
-const promises = [matrixIdServer.ready]
+const matrixIdServer = new MatrixIdentityServer(conf as any)
 
-if (process.env.CROWDSEC_URI) {
-  if (!process.env.CROWDSEC_KEY) {
-    throw new Error('Missing CROWDSEC_KEY')
-  }
-  promises.push(
-    new Promise((resolve, reject) => {
-      import('@crowdsec/express-bouncer')
-        .then((m) =>
-          m.default({
-            url: process.env.CROWDSEC_URI,
-            apiKey: process.env.CROWDSEC_KEY
-          })
-        )
-        .then((crowdsecMiddleware) => {
-          app.use(crowdsecMiddleware)
-          resolve()
-        })
-        .catch(reject)
-    })
-  )
-}
-
-Promise.all(promises)
+matrixIdServer.ready
   .then(() => {
     Object.keys(matrixIdServer.api.get).forEach((k) => {
       app.get(k, matrixIdServer.api.get[k])

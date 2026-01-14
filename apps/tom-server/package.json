@@ -2,6 +2,7 @@
   "name": "tom-server",
   "version": "0.0.1",
   "private": true,
+  "type": "module",
   "nx": {
     "name": "tom-server",
     "targets": {
@@ -15,9 +16,9 @@
           "platform": "node",
           "outputPath": "apps/tom-server/dist",
           "format": [
-            "cjs"
+            "esm"
           ],
-          "bundle": false,
+          "bundle": true,
           "main": "apps/tom-server/src/main.ts",
           "tsConfig": "apps/tom-server/tsconfig.app.json",
           "assets": [

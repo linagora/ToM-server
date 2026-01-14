@@ -2,6 +2,7 @@
   "name": "federated-identity-service",
   "version": "0.0.1",
   "private": true,
+  "type": "module",
   "nx": {
     "name": "federated-identity-service",
     "targets": {
@@ -15,9 +16,9 @@
           "platform": "node",
           "outputPath": "apps/federated-identity-service/dist",
           "format": [
-            "cjs"
+            "esm"
           ],
-          "bundle": false,
+          "bundle": true,
           "main": "apps/federated-identity-service/src/main.ts",
           "tsConfig": "apps/federated-identity-service/tsconfig.app.json",
           "assets": [

@@ -7,7 +7,7 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
 const conf = {
-  additional_features: process.env.ADDITIONAL_FEATURES || false,
+  additional_features: process.env.ADDITIONAL_FEATURES === 'true',
   base_url: process.env.BASE_URL,
   cron_service: process.env.CRON_SERVICE || true,
   database_engine: process.env.DATABASE_ENGINE,
@@ -72,38 +72,15 @@ const trustProxy = process.env.TRUSTED_PROXIES
   ? process.env.TRUSTED_PROXIES.split(/\s+/)
   : []
 if (trustProxy.length > 0) {
-  conf.trust_x_forwarded_for = true
-  app.set('trust proxy', ...trustProxy)
+  (conf as any).trust_x_forwarded_for = true
+  app.set('trust proxy', trustProxy)
 } else {
-  app.set('trust proxy', conf.trust_x_forwarded_for)
+  app.set('trust proxy', (conf as any).trust_x_forwarded_for)
 }
 
-const federatedIdentityService = new FederatedIdentityService(conf)
-const promises = [federatedIdentityService.ready]
+const federatedIdentityService = new FederatedIdentityService(conf as any)
 
-if (process.env.CROWDSEC_URI) {
-  if (!process.env.CROWDSEC_KEY) {
-    throw new Error('Missing CROWDSEC_KEY')
-  }
-  promises.push(
-    new Promise((resolve, reject) => {
-      import('@crowdsec/express-bouncer')
-        .then((m) =>
-          m.default({
-            url: process.env.CROWDSEC_URI,
-            apiKey: process.env.CROWDSEC_KEY
-          })
-        )
-        .then((crowdsecMiddleware) => {
-          app.use(crowdsecMiddleware)
-          resolve()
-        })
-        .catch(reject)
-    })
-  )
-}
-
-Promise.all(promises)
+federatedIdentityService.ready
   .then(() => {
     app.use(federatedIdentityService.routes)
     const port = process.argv[2] != null ? parseInt(process.argv[2]) : 3000

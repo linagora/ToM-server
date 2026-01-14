@@ -14,7 +14,7 @@ const __dirname = path.dirname(__filename)
  * @param {boolean} defaultValue - The default value to use if the environment variable is not set
  * @returns {boolean} The parsed boolean value
  */
-const _parseBooleanEnv = (variable, defaultValue) => {
+const _parseBooleanEnv = (variable: string | undefined, defaultValue: boolean): boolean => {
   if (!variable) {
     return defaultValue
   }
@@ -110,7 +110,7 @@ const twakeChatConf = {
     process.env.TCHAT_MAX_UPLOAD_AVATAR_SIZE,
   dev_mode: _parseBooleanEnv(process.env.TCHAT_DEV_MODE, false),
   qr_code_download_url: process.env.TCHAT_QR_CODE_DOWNLOAD_URL,
-  enable_logs: _parseBooleanEnv(process.env.TCHAT_ENABLE_LOGS),
+  enable_logs: _parseBooleanEnv(process.env.TCHAT_ENABLE_LOGS, false),
   support_url: process.env.TCHAT_SUPPORT_URL,
   enable_invitations: _parseBooleanEnv(
     process.env.TCHAT_ENABLE_INVITATIONS,
@@ -219,35 +219,11 @@ const trustProxy = process.env.TRUSTED_PROXIES
   ? process.env.TRUSTED_PROXIES.split(/\s+/)
   : []
 if (trustProxy.length > 0) {
-  conf.trust_x_forwarded_for = true
-  app.set('trust proxy', ...trustProxy)
+  (conf as any).trust_x_forwarded_for = true
+  app.set('trust proxy', trustProxy)
 }
 
-const tomServer = new TomServer(conf)
-
-const promises = [tomServer.ready]
-
-if (process.env.CROWDSEC_URI) {
-  if (!process.env.CROWDSEC_KEY) {
-    throw new Error('Missing CROWDSEC_KEY')
-  }
-  promises.push(
-    new Promise((resolve, reject) => {
-      import('@crowdsec/express-bouncer')
-        .then((m) =>
-          m.default({
-            url: process.env.CROWDSEC_URI,
-            apiKey: process.env.CROWDSEC_KEY
-          })
-        )
-        .then((crowdsecMiddleware) => {
-          app.use(crowdsecMiddleware)
-          resolve()
-        })
-        .catch(reject)
-    })
-  )
-}
+const tomServer = new TomServer(conf as any)
 
 app.get('/', (req, res) => {
   res.sendFile(
@@ -255,7 +231,7 @@ app.get('/', (req, res) => {
   )
 })
 
-Promise.all(promises)
+tomServer.ready
   .then(async () => {
     // Reuse the existing idServer from tomServer to avoid duplicate UserDB initialization
     const idServer = tomServer.idServer
@@ -276,9 +252,9 @@ Promise.all(promises)
       app.listen(port, '0.0.0.0', async () => {
         if (conf.features.common_settings.enabled === true) {
           const commonSettingsServiceI = new CommonSettingsService(
-            conf,
+            conf as any,
             tomServer.logger,
-            tomServer.db
+            tomServer.db!
           )
           await commonSettingsServiceI.start()
         }
