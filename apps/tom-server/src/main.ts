@@ -3,9 +3,42 @@ import { CommonSettingsService } from '@twake-chat/common-settings'
 import express from 'express'
 import path from 'node:path'
 import { fileURLToPath } from 'url'
+import fs from 'fs'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
+
+/**
+ * Set TWAKE_SERVER_CONF from command-line argument or config.json in project root
+ * Priority: TWAKE_SERVER_CONF env var > --config argument > config.json in root
+ * This allows the TwakeServer's config-parser to automatically load it
+ */
+if (process.env.TWAKE_SERVER_CONF == null) {
+  const configArgIndex = process.argv.indexOf('--config')
+  let configPath: string | undefined
+
+  if (configArgIndex !== -1 && process.argv[configArgIndex + 1]) {
+    const providedPath = process.argv[configArgIndex + 1]
+    configPath = path.isAbsolute(providedPath)
+      ? providedPath
+      : path.join(process.cwd(), providedPath)
+
+    if (!fs.existsSync(configPath)) {
+      console.error(`Config file not found: ${configPath}`)
+      process.exit(1)
+    }
+  } else {
+    const defaultConfigPath = path.join(process.cwd(), 'config.json')
+    if (fs.existsSync(defaultConfigPath)) {
+      configPath = defaultConfigPath
+    }
+  }
+
+  if (configPath) {
+    process.env.TWAKE_SERVER_CONF = configPath
+    console.log(`Using configuration file: ${configPath}`)
+  }
+}
 
 /**
  * Parses a boolean environment variable
@@ -226,9 +259,14 @@ if (trustProxy.length > 0) {
 const tomServer = new TomServer(conf as any)
 
 app.get('/', (req, res) => {
-  res.sendFile(
-    path.join(__dirname, 'packages', 'tom-server', 'static', 'landing.html')
-  )
+  // In dev mode, __dirname is apps/tom-server/dist, static files are copied to dist
+  const landingPath = path.join(__dirname, 'packages', 'tom-server', 'static', 'landing.html')
+  if (fs.existsSync(landingPath)) {
+    res.sendFile(landingPath)
+  } else {
+    // Fallback to source location if not found in dist
+    res.sendFile(path.join(process.cwd(), 'packages', 'tom-server', 'static', 'landing.html'))
+  }
 })
 
 tomServer.ready
@@ -247,7 +285,13 @@ tomServer.ready
         app.post(k, idServer.api.post[k])
       })
 
-      const port = process.argv[2] != null ? parseInt(process.argv[2]) : 3000
+      // Parse port from --port argument or environment variable
+      const portArgIndex = process.argv.indexOf('--port')
+      const portFromArg = portArgIndex !== -1 && process.argv[portArgIndex + 1] 
+        ? parseInt(process.argv[portArgIndex + 1]) 
+        : null
+      const port = portFromArg ?? (process.env.PORT ? parseInt(process.env.PORT) : 3000)
+      
       console.log(`ToM-Server listening on port: ${port}`)
       app.listen(port, '0.0.0.0', async () => {
         if (conf.features.common_settings.enabled === true) {

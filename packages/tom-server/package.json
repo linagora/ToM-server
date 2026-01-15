@@ -34,7 +34,16 @@
     }
   },
   "scripts": {
-    "clean": "node ../../scripts/clean.cjs dist coverage"
+    "clean": "node ../../scripts/clean.cjs dist coverage",
+    "build": "tsc --build tsconfig.lib.json",
+    "postbuild": "node ../../scripts/copy-templates.cjs tom-server"
+  },
+  "nx": {
+    "targets": {
+      "build": {
+        "dependsOn": ["^build"]
+      }
+    }
   },
   "engines": {
     "node": "18.20.8",

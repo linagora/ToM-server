@@ -18,11 +18,20 @@
           "format": [
             "esm"
           ],
-          "bundle": true,
+          "bundle": false,
           "main": "apps/tom-server/src/main.ts",
           "tsConfig": "apps/tom-server/tsconfig.app.json",
           "assets": [
-            "apps/tom-server/src/assets"
+            {
+              "input": "apps/tom-server/static",
+              "glob": "**/*",
+              "output": "static"
+            },
+            {
+              "input": "apps/tom-server/templates",
+              "glob": "**/*",
+              "output": "templates"
+            }
           ],
           "esbuildOptions": {
             "sourcemap": true,
@@ -52,7 +61,8 @@
         ],
         "options": {
           "buildTarget": "tom-server:build",
-          "runBuildTargetDependencies": false
+          "runBuildTargetDependencies": false,
+          "args": []
         },
         "configurations": {
           "development": {
@@ -78,5 +88,13 @@
   },
   "scripts": {
     "clean": "node ../../scripts/clean.cjs dist coverage"
+  },
+  "engines": {
+    "node": "18.20.8",
+    "npm": "10.8.2"
+  },
+  "volta": {
+    "node": "18.20.8",
+    "npm": "10.8.2"
   }
 }

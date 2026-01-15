@@ -2,9 +2,41 @@ import MatrixIdentityServer from '@twake-chat/matrix-identity-server'
 import express from 'express'
 import path from 'node:path'
 import { fileURLToPath } from 'url'
+import fs from 'fs'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
+
+/**
+ * Set TWAKE_SERVER_CONF from command-line argument or config.json in project root
+ * Priority: TWAKE_SERVER_CONF env var > --config argument > config.json in root
+ */
+if (process.env.TWAKE_SERVER_CONF == null) {
+  const configArgIndex = process.argv.indexOf('--config')
+  let configPath: string | undefined
+
+  if (configArgIndex !== -1 && process.argv[configArgIndex + 1]) {
+    const providedPath = process.argv[configArgIndex + 1]
+    configPath = path.isAbsolute(providedPath)
+      ? providedPath
+      : path.join(process.cwd(), providedPath)
+
+    if (!fs.existsSync(configPath)) {
+      console.error(`Config file not found: ${configPath}`)
+      process.exit(1)
+    }
+  } else {
+    const defaultConfigPath = path.join(process.cwd(), 'config.json')
+    if (fs.existsSync(defaultConfigPath)) {
+      configPath = defaultConfigPath
+    }
+  }
+
+  if (configPath) {
+    process.env.TWAKE_SERVER_CONF = configPath
+    console.log(`Using configuration file: ${configPath}`)
+  }
+}
 
 const conf = {
   base_url: process.env.BASE_URL,
@@ -90,8 +122,14 @@ matrixIdServer.ready
     Object.keys(matrixIdServer.api.post).forEach((k) => {
       app.post(k, matrixIdServer.api.post[k])
     })
-    const port = process.argv[2] != null ? parseInt(process.argv[2]) : 3000
-    console.log(`Identity Server listening on port: ${port}`)
+    // Parse port from --port argument or environment variable
+    const portArgIndex = process.argv.indexOf('--port')
+    const portFromArg = portArgIndex !== -1 && process.argv[portArgIndex + 1]
+      ? parseInt(process.argv[portArgIndex + 1])
+      : null
+    const port = portFromArg ?? (process.env.PORT ? parseInt(process.env.PORT) : 3000)
+    
+    console.log(`Matrix Identity Server listening on port: ${port}`)
     app.listen(port)
   })
   .catch((e) => {

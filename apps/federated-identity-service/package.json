@@ -18,11 +18,15 @@
           "format": [
             "esm"
           ],
-          "bundle": true,
+          "bundle": false,
           "main": "apps/federated-identity-service/src/main.ts",
           "tsConfig": "apps/federated-identity-service/tsconfig.app.json",
           "assets": [
-            "apps/federated-identity-service/src/assets"
+            {
+              "input": "apps/federated-identity-service/templates",
+              "glob": "**/*",
+              "output": "templates"
+            }
           ],
           "esbuildOptions": {
             "sourcemap": true,
@@ -78,5 +82,13 @@
   },
   "scripts": {
     "clean": "node ../../scripts/clean.cjs dist coverage"
+  },
+  "engines": {
+    "node": "18.20.8",
+    "npm": "10.8.2"
+  },
+  "volta": {
+    "node": "18.20.8",
+    "npm": "10.8.2"
   }
 }

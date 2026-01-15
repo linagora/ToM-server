@@ -1,5 +1,7 @@
 import configParser, { type ConfigDescription } from '@twake-chat/config-parser'
 import fs from 'fs'
+import path from 'path'
+import { fileURLToPath } from 'url'
 
 // Internal libraries
 import defaultConfDesc from './config.json' with { type: "json" }
@@ -135,6 +137,13 @@ export default class MatrixIdentityServer<T extends string = never> {
             .filter((addr) => addr.match(hostnameRe))
         : []
     this._convertStringtoNumberInConfig()
+    
+    // Resolve template_dir to absolute path if it's relative
+    if (this.conf.template_dir && !path.isAbsolute(this.conf.template_dir)) {
+      const __dirname = path.dirname(fileURLToPath(import.meta.url))
+      this.conf.template_dir = path.resolve(__dirname, this.conf.template_dir)
+    }
+    
     this.rateLimiter = rateLimit({
       windowMs: this.conf.rate_limiting_window,
       limit: this.conf.rate_limiting_nb_requests,
