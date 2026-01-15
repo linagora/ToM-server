@@ -46,7 +46,9 @@
       "default": "./dist/index.js"
     }
   },
-  "scripts": {},
+  "scripts": {
+    "clean": "node ../../scripts/clean.cjs dist coverage"
+  },
   "engines": {
     "node": "18.20.8",
     "npm": "10.8.2"

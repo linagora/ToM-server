@@ -15,7 +15,9 @@
       "default": "./dist/index.js"
     }
   },
-  "scripts": {},
+  "scripts": {
+    "clean": "node ../../scripts/clean.cjs dist coverage"
+  },
   "author": {
     "name": "Montassar GHANMI",
     "email": "mghanmi@linagora.com"

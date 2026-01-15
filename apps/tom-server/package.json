@@ -75,5 +75,8 @@
         "command": "docker build -f apps/tom-server/Dockerfile . -t tom-server"
       }
     }
+  },
+  "scripts": {
+    "clean": "node ../../scripts/clean.cjs dist coverage"
   }
 }
