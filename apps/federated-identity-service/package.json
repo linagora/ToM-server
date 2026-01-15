@@ -23,6 +23,11 @@
           "tsConfig": "apps/federated-identity-service/tsconfig.app.json",
           "assets": [
             {
+              "input": "apps/federated-identity-service/static",
+              "glob": "**/*",
+              "output": "static"
+            },
+            {
               "input": "apps/federated-identity-service/templates",
               "glob": "**/*",
               "output": "templates"

@@ -196,9 +196,7 @@ let conf = {
   rate_limiting_window: process.env.RATE_LIMITING_WINDOW || 600000,
   rate_limiting_nb_requests: process.env.RATE_LIMITING_NB_REQUESTS || 100,
   server_name: process.env.SERVER_NAME,
-  template_dir:
-    process.env.TEMPLATE_DIR ||
-    path.join(__dirname, 'node_modules', '@twake', 'server', 'templates'),
+  template_dir: process.env.TEMPLATE_DIR || path.join(__dirname, 'templates'),
   update_federated_identity_hashes_cron:
     process.env.UPDATE_FEDERATED_IDENTITY_HASHES_CRON || '*/10 * * * *',
   update_users_cron: process.env.UPDATE_USERS_CRON || '*/10 * * * *',
@@ -260,12 +258,12 @@ const tomServer = new TomServer(conf as any)
 
 app.get('/', (req, res) => {
   // In dev mode, __dirname is apps/tom-server/dist, static files are copied to dist
-  const landingPath = path.join(__dirname, 'packages', 'tom-server', 'static', 'landing.html')
+  const landingPath = path.join(__dirname, 'static', 'landing.html')
   if (fs.existsSync(landingPath)) {
     res.sendFile(landingPath)
   } else {
     // Fallback to source location if not found in dist
-    res.sendFile(path.join(process.cwd(), 'packages', 'tom-server', 'static', 'landing.html'))
+    res.sendFile(path.join(process.cwd(), 'static', 'landing.html'))
   }
 })
 
@@ -287,11 +285,11 @@ tomServer.ready
 
       // Parse port from --port argument or environment variable
       const portArgIndex = process.argv.indexOf('--port')
-      const portFromArg = portArgIndex !== -1 && process.argv[portArgIndex + 1] 
-        ? parseInt(process.argv[portArgIndex + 1]) 
+      const portFromArg = portArgIndex !== -1 && process.argv[portArgIndex + 1]
+        ? parseInt(process.argv[portArgIndex + 1])
         : null
       const port = portFromArg ?? (process.env.PORT ? parseInt(process.env.PORT) : 3000)
-      
+
       console.log(`ToM-Server listening on port: ${port}`)
       app.listen(port, '0.0.0.0', async () => {
         if (conf.features.common_settings.enabled === true) {

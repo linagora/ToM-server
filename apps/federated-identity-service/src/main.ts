@@ -112,6 +112,17 @@ if (trustProxy.length > 0) {
 
 const federatedIdentityService = new FederatedIdentityService(conf as any)
 
+app.get('/', (req, res) => {
+  // In dev mode, __dirname is apps/tom-server/dist, static files are copied to dist
+  const landingPath = path.join(__dirname, 'static', 'landing.html')
+  if (fs.existsSync(landingPath)) {
+    res.sendFile(landingPath)
+  } else {
+    // Fallback to source location if not found in dist
+    res.sendFile(path.join(process.cwd(), 'static', 'landing.html'))
+  }
+})
+
 federatedIdentityService.ready
   .then(() => {
     app.use(federatedIdentityService.routes)
@@ -121,7 +132,7 @@ federatedIdentityService.ready
       ? parseInt(process.argv[portArgIndex + 1])
       : null
     const port = portFromArg ?? (process.env.PORT ? parseInt(process.env.PORT) : 3000)
-    
+
     console.log(`Federated Identity Server listening on port: ${port}`)
     app.listen(port, '0.0.0.0')
   })

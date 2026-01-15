@@ -1,29 +1,68 @@
-.direnv/
-.git/
-.github/
-.husky/
-docs/
-node_modules/
+# Git
+.git
+.gitignore
+.gitattributes
 
-.envrc
+# Node
+node_modules
+npm-debug.log
+yarn-error.log
+
+# Testing
+coverage
+*.test.ts
+*.test.js
+*.spec.ts
+*.spec.js
+__tests__
+__testData__
+
+# Development
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# CI/CD
+.github
 .gitlab-ci.yml
-**/Dockerfile
-**/.*md
-docker-compose*
-flake.lock
-flake.nix
 
-**/*.db
-**/*.db-shm
-**/*.db-wal
-**/*.db-journal
+# Documentation
+*.md
+!README.md
+docs
 
-**/*.map
-packages/**/example/*.js*
+# Build artifacts (keep only dist folders)
+*.tsbuildinfo
+tsconfig*.json
+!tsconfig.app.json
 
-**/dist/
-**/node_modules/
-**/.nx/
-**/coverage/
+# Source files (we only need dist)
+apps/*/src
+packages/*/src
 
-.compose
+# Nx
+.nx
+
+# Docker
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# Environment
+.env
+.env.*
+
+# Logs
+*.log
+logs
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Misc
+tmp
+temp
+*.tmp
