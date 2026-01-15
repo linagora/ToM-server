@@ -1,0 +1,40 @@
+{
+  "server_name": "docker.internal",
+  "base_url": "http://tom.docker.internal",
+
+  "database_engine": "pg",
+  "database_host": "localhost",
+  "database_name": "tom_db",
+  "database_user": "twake",
+  "database_password": "twake_password",
+
+  "userdb_engine": "ldap",
+  "ldap_uri": "ldap://localhost:389",
+  "ldap_base": "ou=users,dc=docker,dc=internal",
+  "ldap_filter": "(objectClass=inetOrgPerson)",
+
+  "matrix_server": "matrix.docker.internal",
+  "matrix_internal_host": "http://localhost:8008",
+  "matrix_database_engine": "pg",
+  "matrix_database_host": "localhost",
+  "matrix_database_name": "synapse",
+  "matrix_database_user": "synapse_user",
+  "matrix_database_password": "secretpassword",
+
+  "smtp_server": "localhost",
+  "smtp_port": 2525,
+  "smtp_sender": "no-reply@docker.internal",
+
+  "sms_api_url": "https://api.octopush.com/v1/public",
+
+  "logging": {
+    "log_level": "silly",
+    "log_transports": [
+      {
+        "type": "Console"
+      }
+    ]
+  },
+
+  "template_dir": "apps/tom-server/templates"
+}

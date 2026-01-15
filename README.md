@@ -38,8 +38,152 @@ REST API Endpoints documentation is available on https://linagora.github.io/ToM-
 
 ## Try it yourself
 
-- [Running our Dockers](./docker.md)
-- [Deploy locally with compose](./docker.md#docker-compose)
+### Local Development Setup (Hybrid Mode)
+
+This setup runs infrastructure services (Synapse, LDAP, PostgreSQL, SMTP) in Docker while running tom-server locally for faster development iteration.
+
+#### Prerequisites
+
+- Docker and Docker Compose
+- Node.js 18 or higher
+- npm
+
+#### Step 1: Configure hosts file
+
+Add the following entries to your hosts file to access services via domain names:
+
+**Windows** (run in admin PowerShell):
+```powershell
+Add-Content -Path C:\Windows\System32\drivers\etc\hosts -Value "127.0.0.1 matrix.docker.internal"
+Add-Content -Path C:\Windows\System32\drivers\etc\hosts -Value "127.0.0.1 tom.docker.internal"
+```
+
+**Linux/macOS**:
+```bash
+sudo sh -c 'echo "127.0.0.1 matrix.docker.internal" >> /etc/hosts'
+sudo sh -c 'echo "127.0.0.1 tom.docker.internal" >> /etc/hosts'
+```
+
+#### Step 2: Start infrastructure services
+
+```bash
+docker-compose up -d
+```
+
+This starts:
+- **Synapse** - Matrix homeserver (exposed on localhost:8008, proxied via http://matrix.docker.internal)
+- **PostgreSQL** - Database server (localhost:5432)
+- **LDAP** - Development LDAP server with test users (localhost:389)
+- **SMTP** - Email server for testing (localhost:2525)
+- **Traefik** - Reverse proxy (dashboard at http://localhost:8080)
+
+Verify all services are healthy:
+```bash
+docker-compose ps
+```
+
+All services should show "healthy" or "running" status.
+
+#### Step 3: Create local configuration
+
+Copy the example configuration file:
+```bash
+cp config.example.json config.json
+```
+
+The `config.json` file is pre-configured to connect to the Docker infrastructure services via localhost. You can customize it as needed for your development.
+
+**Note**: Tom-server will automatically detect and load `config.json` from the project root. Environment variables can still be used to override specific settings if needed.
+
+#### Step 4: Install dependencies
+
+If not already done:
+```bash
+npm install
+```
+
+#### Step 5: Start tom-server locally
+
+```bash
+npx nx serve tom-server
+```
+
+Tom-server will start on port 3000 and automatically reload when you make code changes.
+
+**Alternative**: You can specify a custom config file location using an environment variable:
+```bash
+# Windows PowerShell
+$env:TWAKE_SERVER_CONF=".\my-custom-config.json"; npx nx serve tom-server
+
+# Windows CMD
+set TWAKE_SERVER_CONF=.\my-custom-config.json && npx nx serve tom-server
+
+# Linux/macOS
+TWAKE_SERVER_CONF=./my-custom-config.json npx nx serve tom-server
+```
+
+Or pass arguments directly to the Node process:
+```bash
+npx nx serve tom-server --args="--config ./my-custom-config.json"
+```
+
+#### Accessing Services
+
+- **Tom Server (direct)**: http://localhost:3000
+- **Tom Server (via Traefik)**: http://tom.docker.internal
+- **Synapse (direct)**: http://localhost:8008
+- **Synapse (via Traefik)**: http://matrix.docker.internal
+- **PostgreSQL**: localhost:5432 (user: twake, password: twake_password, database: tom_db)
+- **LDAP**: localhost:389 (admin password: admin)
+- **SMTP Web UI**: http://localhost:2525
+- **Traefik Dashboard**: http://localhost:8080
+
+#### Testing the Setup
+
+Test tom-server endpoints:
+```bash
+# Direct access
+curl http://localhost:3000/_matrix/identity/v2/
+
+# Via Traefik
+curl http://tom.docker.internal/_matrix/identity/v2/
+```
+
+Test Synapse:
+```bash
+curl http://localhost:8008/_matrix/client/versions
+```
+
+#### LDAP Users
+
+See [.compose/ldap/README.md](./.compose/ldap/README.md) for LDAP configuration and test user credentials.
+
+#### Troubleshooting
+
+**Tom-server can't connect to services**:
+- Verify Docker services are running: `docker-compose ps`
+- Check service logs: `docker-compose logs <service-name>`
+- Ensure ports are not already in use: `netstat -ano | findstr "5432 389 8008 2525"`
+
+**Traefik routing not working**:
+- Check Traefik dashboard at http://localhost:8080
+- Verify tom-local service is registered
+- Ensure hosts file entries are correct
+
+**Database connection errors**:
+- Wait for postgres to be fully healthy: `docker-compose ps postgres`
+- Check postgres logs: `docker-compose logs postgres`
+- Verify connection: `psql -h localhost -U twake -d tom_db`
+
+### Full Docker Development Mode
+
+If you prefer to run everything in Docker (including tom-server), uncomment the `tom` service in `docker-compose.yml` and run:
+
+```bash
+docker-compose up
+```
+
+This mode uses Docker volumes for live code reloading but is slower than running tom-server locally.
 
 ## Modules
 

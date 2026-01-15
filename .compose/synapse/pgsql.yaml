@@ -1,0 +1,29 @@
+server_name: "docker.internal"
+pid_file: /data/homeserver.pid
+listeners:
+  - port: 8008
+    tls: false
+    type: http
+    x_forwarded: true
+    bind_addresses: ['0.0.0.0']
+    resources:
+      - names: [client, federation]
+        compress: false
+database:
+  name: psycopg2
+  txn_limit: 10000
+  args:
+    user: synapse_user
+    password: secretpassword
+    dbname: synapse
+    host: postgres
+    port: 5432
+    cp_min: 5
+    cp_max: 10
+log_config: "/data/docker.internal.log.config"
+media_store_path: /data/media_store
+signing_key_path: "/data/docker.internal.signing.key"
+trusted_key_servers:
+  - server_name: "matrix.org"
+enable_metrics: false
+report_stats: false
