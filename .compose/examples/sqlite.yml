@@ -3,36 +3,40 @@ services:
     image: traefik:v2.11
     restart: unless-stopped
     command:
-      - "--api.insecure=true"
-      - "--api.dashboard=true"
-      - "--providers.docker=true"
-      - "--providers.docker.exposedbydefault=false"
-      - "--entrypoints.web.address=:80"
-      - "--log.level=INFO"
+      - '--api.insecure=true'
+      - '--api.dashboard=true'
+      - '--providers.docker=true'
+      - '--providers.docker.exposedbydefault=false'
+      - '--entrypoints.web.address=:80'
+      - '--log.level=INFO'
     ports:
-      - "80:80"
-      - "8080:8080"
+      - '80:80'
+      - '8080:8080'
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
 
   ldap:
     image: osixia/openldap:1.5.0
     environment:
-      LDAP_ORGANISATION: "Docker"
-      LDAP_DOMAIN: "docker.internal"
-      LDAP_ADMIN_PASSWORD: "admin"
-      LDAP_CONFIG_PASSWORD: "config"
-      LDAP_READONLY_USER: "false"
-      LDAP_RFC2307BIS_SCHEMA: "false"
-      LDAP_BACKEND: "mdb"
-      LDAP_TLS: "false"
-      LDAP_LOG_LEVEL: "256"
-      LDAP_REMOVE_CONFIG_AFTER_SETUP: "false"
-      DISABLE_CHOWN: "true"
+      LDAP_ORGANISATION: 'Docker'
+      LDAP_DOMAIN: 'docker.internal'
+      LDAP_ADMIN_PASSWORD: 'admin'
+      LDAP_CONFIG_PASSWORD: 'config'
+      LDAP_READONLY_USER: 'false'
+      LDAP_RFC2307BIS_SCHEMA: 'false'
+      LDAP_BACKEND: 'mdb'
+      LDAP_TLS: 'false'
+      LDAP_LOG_LEVEL: '256'
+      LDAP_REMOVE_CONFIG_AFTER_SETUP: 'false'
+      DISABLE_CHOWN: 'true'
     volumes:
       - ../ldap/bootstrap:/container/service/slapd/assets/config/bootstrap/ldif/custom
     healthcheck:
-      test: ["CMD-SHELL", "ldapsearch -x -b 'dc=docker,dc=internal' -H ldap://localhost || exit 1"]
+      test:
+        [
+          'CMD-SHELL',
+          "ldapsearch -x -b 'dc=docker,dc=internal' -H ldap://localhost || exit 1",
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -52,12 +56,16 @@ services:
       - ../synapse/docker.internal.log.config:/data/docker.internal.log.config:ro
       - ../synapse/docker.internal.signing.key:/data/docker.internal.signing.key:ro
     labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.synapse.rule=Host(`matrix.docker.internal`)"
-      - "traefik.http.routers.synapse.entrypoints=web"
-      - "traefik.http.services.synapse.loadbalancer.server.port=8008"
+      - 'traefik.enable=true'
+      - 'traefik.http.routers.synapse.rule=Host(`matrix.docker.internal`)'
+      - 'traefik.http.routers.synapse.entrypoints=web'
+      - 'traefik.http.services.synapse.loadbalancer.server.port=8008'
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8008/_matrix/client/versions || exit 1"]
+      test:
+        [
+          'CMD-SHELL',
+          'curl -f http://localhost:8008/_matrix/client/versions || exit 1',
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -110,25 +118,25 @@ services:
       - LOG_LEVEL=silly
       - LOG_TRANSPORTS=Console
     labels:
-      - "traefik.enable=true"
+      - 'traefik.enable=true'
       # Direct access via tom.docker.internal
-      - "traefik.http.routers.tom-direct.rule=Host(`tom.docker.internal`)"
-      - "traefik.http.routers.tom-direct.entrypoints=web"
-      - "traefik.http.routers.tom-direct.priority=110"
+      - 'traefik.http.routers.tom-direct.rule=Host(`tom.docker.internal`)'
+      - 'traefik.http.routers.tom-direct.entrypoints=web'
+      - 'traefik.http.routers.tom-direct.priority=110'
       # Handle .well-known endpoints
-      - "traefik.http.routers.tom-wellknown.rule=Host(`matrix.docker.internal`) && PathPrefix(`/.well-known/matrix/client`)"
-      - "traefik.http.routers.tom-wellknown.entrypoints=web"
-      - "traefik.http.routers.tom-wellknown.priority=100"
+      - 'traefik.http.routers.tom-wellknown.rule=Host(`matrix.docker.internal`) && PathPrefix(`/.well-known/matrix/client`)'
+      - 'traefik.http.routers.tom-wellknown.entrypoints=web'
+      - 'traefik.http.routers.tom-wellknown.priority=100'
       # Handle Matrix Identity Server API
-      - "traefik.http.routers.tom-identity.rule=Host(`matrix.docker.internal`) && PathPrefix(`/_matrix/identity/v2`)"
-      - "traefik.http.routers.tom-identity.entrypoints=web"
-      - "traefik.http.routers.tom-identity.priority=90"
+      - 'traefik.http.routers.tom-identity.rule=Host(`matrix.docker.internal`) && PathPrefix(`/_matrix/identity/v2`)'
+      - 'traefik.http.routers.tom-identity.entrypoints=web'
+      - 'traefik.http.routers.tom-identity.priority=90'
       # Handle specific Matrix Client API endpoints (createRoom, profile)
-      - "traefik.http.routers.tom-matrix-client.rule=Host(`matrix.docker.internal`) && (PathPrefix(`/_matrix/client/v3/createRoom`) || PathPrefix(`/_matrix/client/v3/profile`))"
-      - "traefik.http.routers.tom-matrix-client.entrypoints=web"
-      - "traefik.http.routers.tom-matrix-client.priority=80"
+      - 'traefik.http.routers.tom-matrix-client.rule=Host(`matrix.docker.internal`) && (PathPrefix(`/_matrix/client/v3/createRoom`) || PathPrefix(`/_matrix/client/v3/profile`))'
+      - 'traefik.http.routers.tom-matrix-client.entrypoints=web'
+      - 'traefik.http.routers.tom-matrix-client.priority=80'
       # Service configuration
-      - "traefik.http.services.tom.loadbalancer.server.port=3000"
+      - 'traefik.http.services.tom.loadbalancer.server.port=3000'
 
   fed:
     image: linagora/tom-federated-identity-service
@@ -162,28 +170,9 @@ services:
       - LOG_LEVEL=silly
       - LOG_TRANSPORTS=Console
     labels:
-      - "traefik.enable=true"
+      - 'traefik.enable=true'
       # Direct access via fed.docker.internal
-      - "traefik.http.routers.fed-direct.rule=Host(`fed.docker.internal`)"
-      - "traefik.http.routers.fed-direct.entrypoints=web"
+      - 'traefik.http.routers.fed-direct.rule=Host(`fed.docker.internal`)'
+      - 'traefik.http.routers.fed-direct.entrypoints=web'
       # Service configuration
-      - "traefik.http.services.fed.loadbalancer.server.port=3000"
-
-  # twake-chat:
-  #   image: linagora/twake-web
-  #   restart: unless-stopped
-  #   depends_on:
-  #     - traefik
-  #     - synapse
-  #   volumes:
-  #     - ../chat/config.json:/usr/share/nginx/html/web/config.json
-  #   labels:
-  #     - "traefik.enable=true"
-  #     - "traefik.http.routers.chat.rule=Host(`chat.docker.internal`)"
-  #     - "traefik.http.routers.chat.entrypoints=web"
-  #     - "traefik.http.services.chat.loadbalancer.server.port=80"
-  #     # Redirect root path to /web/
-  #     - "traefik.http.middlewares.chat-redirect.redirectregex.regex=^http://([^/]+)/?$$"
-  #     - "traefik.http.middlewares.chat-redirect.redirectregex.replacement=http://$$1/web/"
-  #     - "traefik.http.middlewares.chat-redirect.redirectregex.permanent=true"
-  #     - "traefik.http.routers.chat.middlewares=chat-redirect"
+      - 'traefik.http.services.fed.loadbalancer.server.port=3000'
