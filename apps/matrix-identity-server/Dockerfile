@@ -11,7 +11,7 @@ FROM node:18.20.8-alpine AS builder
 WORKDIR /build
 
 COPY package.json package-lock.json ./
-RUN npm ci --omit=dev
+RUN npm ci --legacy-peer-deps --omit=dev
 
 # Copy workspace packages directly to node_modules
 COPY packages/config-parser/dist node_modules/@twake-chat/config-parser/dist
@@ -41,7 +41,7 @@ ENV PORT=3000
 WORKDIR /app
 
 RUN addgroup --system matrix-identity-server && \
-          adduser --system -G matrix-identity-server matrix-identity-server
+  adduser --system -G matrix-identity-server matrix-identity-server
 
 COPY --from=builder /build/node_modules ./node_modules/
 COPY apps/matrix-identity-server/package.json matrix-identity-server/

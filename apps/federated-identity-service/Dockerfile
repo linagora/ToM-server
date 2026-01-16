@@ -11,7 +11,7 @@ FROM node:18.20.8-alpine AS builder
 WORKDIR /build
 
 COPY package.json package-lock.json ./
-RUN npm ci --omit=dev
+RUN npm ci --legacy-peer-deps --omit=dev
 
 # Copy workspace packages directly to node_modules
 COPY packages/amqp-connector/dist node_modules/@twake-chat/amqp-connector/dist
@@ -53,7 +53,7 @@ ENV PORT=3000
 WORKDIR /app
 
 RUN addgroup --system federated-identity-service && \
-          adduser --system -G federated-identity-service federated-identity-service
+  adduser --system -G federated-identity-service federated-identity-service
 
 COPY --from=builder /build/node_modules ./node_modules/
 COPY apps/federated-identity-service/package.json federated-identity-service/

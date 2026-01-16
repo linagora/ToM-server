@@ -8,4 +8,5 @@ ignore-paths:
   - __testData__
   - .compose
   - .nx
+  - nx.json
   - .vscode

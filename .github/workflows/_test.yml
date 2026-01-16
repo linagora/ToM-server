@@ -1,0 +1,30 @@
+name: Test
+
+on:
+  workflow_call:
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup hosts
+        run: sudo echo "127.0.0.1 localhost auth.example.com matrix.example.com matrix1.example.com matrix2.example.com matrix3.example.com federated-identity.example.com" | sudo tee -a /etc/hosts
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: ./.github/actions/setup-node
+
+      - name: Setup Nx SHAs
+        uses: nrwl/nx-set-shas@v4
+
+      - name: Run tests
+        run: npx nx affected -t test

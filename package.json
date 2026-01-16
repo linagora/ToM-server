@@ -26,7 +26,10 @@
     }
   ],
   "scripts": {
-    "clean": "node scripts/clean.cjs apps/*/dist packages/*/dist apps/*/coverage packages/*/coverage .nx/cache"
+    "clean": "node scripts/clean.cjs apps/*/dist packages/*/dist apps/*/coverage packages/*/coverage .nx/cache",
+    "doc": "npm run doc:swagger && npm run doc:arch",
+    "doc:swagger": "node docs/swagger.cjs",
+    "doc:arch": "dot -Tpng -o docs/arch.png docs/arch.dot"
   },
   "private": true,
   "dependencies": {
@@ -46,6 +49,7 @@
     "qrcode": "^1.5.4",
     "redis": "^5.10.0",
     "sqlite3": "^5.1.7",
+    "swagger-jsdoc": "^6.2.8",
     "toad-cache": "^3.7.0",
     "tweetnacl": "^1.0.3",
     "tweetnacl-util": "^0.15.1",

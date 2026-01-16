@@ -1,0 +1,11 @@
+name: Scheduled Security Scans
+
+on:
+  schedule:
+    - cron: '0 3 * * 6'  # Weekly Saturday 3am UTC
+  workflow_dispatch:
+
+jobs:
+  security:
+    name: Security
+    uses: ./.github/workflows/_security.yml

@@ -1,0 +1,47 @@
+name: Update Docs
+
+on:
+  workflow_call:
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    name: Update Documentation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+
+      - name: Setup Graphviz
+        uses: tlylt/install-graphviz@v1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18.20.8'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Generate documentation
+        run: npm run doc
+
+      - name: Check if documentation files have changed
+        id: verify-changed-files
+        uses: tj-actions/verify-changed-files@v17
+        with:
+          files: |
+            docs/openapi.json
+            docs/arch.png
+
+      - name: Commit updated documentation files
+        if: steps.verify-changed-files.outputs.files_changed == 'true'
+        uses: EndBug/add-and-commit@v9
+        with:
+          add: docs
+          message: 'chore: update documentation'

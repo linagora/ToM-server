@@ -34,7 +34,5 @@
         "type": "Console"
       }
     ]
-  },
-
-  "template_dir": "apps/tom-server/templates"
+  }
 }
