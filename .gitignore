@@ -967,4 +967,11 @@ test-output
 **/.claude/settings.local.json
 
 # Local development configuration
-/config.json
+config.json
+
+# SQLite database files
+*.sqlite
+*.sqlite3
+*.db
+*.db-shm
+*.db-wal
