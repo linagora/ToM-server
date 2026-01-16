@@ -26,10 +26,14 @@
     }
   ],
   "scripts": {
+    "build": "npx nx affected -t build",
     "clean": "node scripts/clean.cjs apps/*/dist packages/*/dist apps/*/coverage packages/*/coverage .nx/cache",
     "doc": "npm run doc:swagger && npm run doc:arch",
+    "doc:arch": "dot -Tpng -o docs/arch.png docs/arch.dot",
     "doc:swagger": "node docs/swagger.cjs",
-    "doc:arch": "dot -Tpng -o docs/arch.png docs/arch.dot"
+    "lint": "npx nx affected -t lint",
+    "serve": "npx nx serve tom-server",
+    "test": "npx nx affected -t test"
   },
   "private": true,
   "dependencies": {
