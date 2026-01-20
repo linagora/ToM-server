@@ -9,6 +9,48 @@ import type TwakeIdentityServer from '..'
 import type { SearchFunction } from './types'
 
 /**
+ * Masks an email address for logging purposes.
+ * Example: "john.doe@example.com" -> "j***@example.com"
+ */
+const maskEmail = (email: string): string => {
+  if (!email || typeof email !== 'string') return ''
+  const atIndex = email.indexOf('@')
+  if (atIndex <= 0) return '***'
+  const localPart = email.substring(0, atIndex)
+  const domain = email.substring(atIndex)
+  return `${localPart.charAt(0)}***${domain}`
+}
+
+/**
+ * Masks a phone number for logging purposes.
+ * Example: "+33612345678" -> "***5678"
+ */
+const maskPhone = (phone: string): string => {
+  if (!phone || typeof phone !== 'string') return ''
+  if (phone.length <= 4) return '***'
+  return `***${phone.slice(-4)}`
+}
+
+/**
+ * Builds a redacted summary of user info for safe logging (no PII).
+ */
+const buildRedactedUserSummary = (
+  userInfo: UserInformation
+): Record<string, unknown> => {
+  return {
+    uid: userInfo.uid || '',
+    hasDisplayName: !!userInfo.display_name,
+    hasAvatar: !!userInfo.avatar_url,
+    emailCount: userInfo.emails?.length || 0,
+    maskedEmails: userInfo.emails?.map(maskEmail) || [],
+    phoneCount: userInfo.phones?.length || 0,
+    maskedPhones: userInfo.phones?.map(maskPhone) || [],
+    hasLanguage: !!userInfo.language,
+    hasTimezone: !!userInfo.timezone
+  }
+}
+
+/**
  * Factory function that creates a search handler for the Twake Identity Server.
  * @param {TwakeIdentityServer} idServer
  * @param {TwakeLogger} logger
@@ -117,7 +159,7 @@ export const _search = async (
       })
       logger.silly(
         `[IndentityServer][_search][enrichWithUserInfo] Enriched user: ${JSON.stringify(
-          userInfo
+          buildRedactedUserSummary(userInfo)
         )}`
       )
     }
