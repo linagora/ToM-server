@@ -406,6 +406,14 @@ class UserInfoService implements IUserInfoService {
         return rows ?? []
       })()
 
+      // Fetch profile visibility settings for all users
+      const profileSettingsPromise = (async () => {
+        const rows = (await this.db.get('profileSettings', ['*'], {
+          matrix_id: validIds
+        })) as unknown as UserProfileSettingsT[]
+        return rows ?? []
+      })()
+
       // Fetch viewer's addressbook once (if viewer is set)
       const viewerAddressbookPromise = (async () => {
         if (!viewer) return null
@@ -421,13 +429,19 @@ class UserInfoService implements IUserInfoService {
         }
       })()
 
-      const [matrixRows, directoryRows, settingsRows, viewerAddressbook] =
-        await Promise.all([
-          matrixPromise,
-          directoryPromise,
-          settingsPromise,
-          viewerAddressbookPromise
-        ])
+      const [
+        matrixRows,
+        directoryRows,
+        settingsRows,
+        profileSettingsRows,
+        viewerAddressbook
+      ] = await Promise.all([
+        matrixPromise,
+        directoryPromise,
+        settingsPromise,
+        profileSettingsPromise,
+        viewerAddressbookPromise
+      ])
 
       this.logger.debug(
         `[UserInfoService].getBatch: Fetched ${matrixRows.length} matrix profiles, ${directoryRows.length} directory entries, ${settingsRows.length} settings`
@@ -457,6 +471,16 @@ class UserInfoService implements IUserInfoService {
       for (const row of settingsRows) {
         if (row.matrix_id && row.settings) {
           settingsMap.set(row.matrix_id, row.settings)
+        }
+      }
+
+      const profileSettingsMap = new Map<string, UserProfileSettingsPayloadT>()
+      for (const row of profileSettingsRows) {
+        if (row.matrix_id) {
+          profileSettingsMap.set(row.matrix_id, {
+            visibility: row.visibility,
+            visible_fields: row.visible_fields
+          })
         }
       }
 
@@ -492,6 +516,38 @@ class UserInfoService implements IUserInfoService {
           continue
         }
 
+        // ------------------------------------------------------------------
+        // Visibility checks for this user
+        // ------------------------------------------------------------------
+        const isMyProfile = id === viewer
+        const profileSettings =
+          profileSettingsMap.get(id) ?? this.defaultVisibilitySettings
+        const idProfileVisibility = profileSettings.visibility
+        const idProfileVisibleFields = profileSettings.visible_fields ?? []
+
+        // Determine if the profile is visible to the viewer
+        let isIdProfileVisible = isMyProfile
+        if (!isMyProfile) {
+          if (idProfileVisibility === ProfileVisibility.Public) {
+            isIdProfileVisible = true
+          } else if (idProfileVisibility === ProfileVisibility.Private) {
+            isIdProfileVisible = false
+          } else if (
+            idProfileVisibility === ProfileVisibility.Contacts &&
+            viewer
+          ) {
+            // TODO: Implement contacts check - The use of a bloom filter or similar mechanism could be handy here
+            // For now we are only allowing access:
+            //   - if viewer and target are on the same domain
+            // AND
+            //   - if additional features are enabled
+            isIdProfileVisible =
+              this.enableAdditionalFeatures &&
+              viewer.endsWith(`:${this.config.server_name}`) &&
+              id.endsWith(`:${this.config.server_name}`)
+          }
+        }
+
         // Matrix profile (highest precedence)
         if (matrixRow) {
           userInfo.display_name = matrixRow.displayname
@@ -516,12 +572,21 @@ class UserInfoService implements IUserInfoService {
             userInfo.first_name = (directoryRow.givenname ??
               directoryRow.givenName) as string
           }
-          // Note: For batch, we skip visibility checks on emails/phones for performance
-          // The search endpoint doesn't need these fields for display
-          if (directoryRow.mail) {
+          // Apply visibility checks for email/phone
+          if (
+            directoryRow.mail &&
+            (isMyProfile ||
+              (isIdProfileVisible &&
+                idProfileVisibleFields.includes(ProfileField.Email)))
+          ) {
             userInfo.emails = [directoryRow.mail as string]
           }
-          if (directoryRow.mobile) {
+          if (
+            directoryRow.mobile &&
+            (isMyProfile ||
+              (isIdProfileVisible &&
+                idProfileVisibleFields.includes(ProfileField.Phone)))
+          ) {
             userInfo.phones = [directoryRow.mobile as string]
           }
           if (directoryRow.workplaceFqdn) {
@@ -542,17 +607,34 @@ class UserInfoService implements IUserInfoService {
             userInfo.first_name = settingsRow.first_name
             userInfo.givenName = settingsRow.first_name
           }
-          if (settingsRow.email) {
-            if (userInfo.emails && !userInfo.emails.includes(settingsRow.email)) {
+          // Apply visibility checks for email/phone from settings
+          if (
+            settingsRow.email &&
+            (isMyProfile ||
+              (isIdProfileVisible &&
+                idProfileVisibleFields.includes(ProfileField.Email)))
+          ) {
+            if (
+              userInfo.emails &&
+              !userInfo.emails.includes(settingsRow.email)
+            ) {
               userInfo.emails.push(settingsRow.email)
-            } else {
+            } else if (!userInfo.emails) {
               userInfo.emails = [settingsRow.email]
             }
           }
-          if (settingsRow.phone) {
-            if (userInfo.phones && !userInfo.phones.includes(settingsRow.phone)) {
+          if (
+            settingsRow.phone &&
+            (isMyProfile ||
+              (isIdProfileVisible &&
+                idProfileVisibleFields.includes(ProfileField.Phone)))
+          ) {
+            if (
+              userInfo.phones &&
+              !userInfo.phones.includes(settingsRow.phone)
+            ) {
               userInfo.phones.push(settingsRow.phone)
-            } else {
+            } else if (!userInfo.phones) {
               userInfo.phones = [settingsRow.phone]
             }
           }
