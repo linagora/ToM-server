@@ -320,6 +320,273 @@ class UserInfoService implements IUserInfoService {
     }
   }
 
+  /**
+   * Retrieves user information for multiple users in batch (optimized for performance)
+   * @param {string[]} ids Array of user IDs to fetch
+   * @param {string} viewer Optional viewer ID for visibility checks
+   * @returns {Promise<Map<string, UserInformation>>} Map of user ID to user information
+   */
+  getBatch = async (
+    ids: string[],
+    viewer?: string
+  ): Promise<Map<string, UserInformation>> => {
+    this.logger.debug(
+      `[UserInfoService].getBatch: Gathering information on ${ids.length} users`
+    )
+
+    const result = new Map<string, UserInformation>()
+
+    if (ids.length === 0) {
+      return result
+    }
+
+    try {
+      // Build mapping of full ID to local part
+      const idToLocalPart = new Map<string, string>()
+      const localPartToId = new Map<string, string>()
+      for (const id of ids) {
+        const localPart = getLocalPart(id)
+        if (localPart) {
+          idToLocalPart.set(id, localPart)
+          localPartToId.set(localPart, id)
+        }
+      }
+
+      const localParts = Array.from(idToLocalPart.values())
+      const validIds = Array.from(idToLocalPart.keys())
+
+      if (localParts.length === 0) {
+        this.logger.warn(
+          '[UserInfoService].getBatch: No valid user IDs provided'
+        )
+        return result
+      }
+
+      // ------------------------------------------------------------------
+      // 1 - Batch fetch from all sources in parallel
+      // ------------------------------------------------------------------
+      const matrixPromise = (async () => {
+        const rows = (await this.matrixDb.get(
+          'profiles',
+          ['user_id', 'displayname', 'avatar_url'],
+          { user_id: localParts }
+        )) as unknown as Array<{
+          user_id: string
+          displayname: string
+          avatar_url?: string
+        }>
+        return rows ?? []
+      })()
+
+      const directoryPromise = (async () => {
+        const rows = (await this.userDb.get(
+          'users',
+          [
+            'uid',
+            'cn',
+            'sn',
+            'givenname',
+            'givenName',
+            'mail',
+            'mobile',
+            'workplaceFqdn'
+          ],
+          { uid: localParts }
+        )) as unknown as Array<Record<string, string | string[]>>
+        return rows ?? []
+      })()
+
+      const settingsPromise = (async () => {
+        if (!this.enableCommonSettings) {
+          return []
+        }
+        const rows = (await this.db.get('usersettings', ['*'], {
+          matrix_id: validIds
+        })) as unknown as UserSettings[]
+        return rows ?? []
+      })()
+
+      // Fetch viewer's addressbook once (if viewer is set)
+      const viewerAddressbookPromise = (async () => {
+        if (!viewer) return null
+        try {
+          const ab = await this.addressBookService.list(viewer)
+          return ab ?? null
+        } catch (e) {
+          this.logger.warn(
+            '[UserInfoService].getBatch: Address-book lookup failed',
+            { error: e }
+          )
+          return null
+        }
+      })()
+
+      const [matrixRows, directoryRows, settingsRows, viewerAddressbook] =
+        await Promise.all([
+          matrixPromise,
+          directoryPromise,
+          settingsPromise,
+          viewerAddressbookPromise
+        ])
+
+      this.logger.debug(
+        `[UserInfoService].getBatch: Fetched ${matrixRows.length} matrix profiles, ${directoryRows.length} directory entries, ${settingsRows.length} settings`
+      )
+
+      // ------------------------------------------------------------------
+      // 2 - Build lookup maps for efficient merging
+      // ------------------------------------------------------------------
+      const matrixMap = new Map<
+        string,
+        { displayname: string; avatar_url?: string }
+      >()
+      for (const row of matrixRows) {
+        if (row.user_id) {
+          matrixMap.set(row.user_id, row)
+        }
+      }
+
+      const directoryMap = new Map<string, Record<string, string | string[]>>()
+      for (const row of directoryRows) {
+        if (row.uid) {
+          directoryMap.set(row.uid as string, row)
+        }
+      }
+
+      const settingsMap = new Map<string, SettingsPayload>()
+      for (const row of settingsRows) {
+        if (row.matrix_id && row.settings) {
+          settingsMap.set(row.matrix_id, row.settings)
+        }
+      }
+
+      const addressbookContactMap = new Map<string, { display_name: string }>()
+      if (viewerAddressbook?.contacts) {
+        for (const contact of viewerAddressbook.contacts) {
+          if (contact.mxid) {
+            addressbookContactMap.set(contact.mxid, contact)
+          }
+        }
+      }
+
+      // ------------------------------------------------------------------
+      // 3 - Merge data for each user
+      // ------------------------------------------------------------------
+      for (const id of validIds) {
+        const localPart = idToLocalPart.get(id)
+        if (!localPart) continue
+
+        const userInfo: Partial<UserInformation> = { uid: id }
+
+        const matrixRow = matrixMap.get(localPart)
+        const directoryRow = directoryMap.get(localPart)
+        const settingsRow = settingsMap.get(id)
+        const addressbookContact = addressbookContactMap.get(id)
+
+        // Skip if no data from any source (unless additional features enabled)
+        if (
+          !matrixRow &&
+          !this.enableAdditionalFeatures &&
+          !addressbookContact
+        ) {
+          continue
+        }
+
+        // Matrix profile (highest precedence)
+        if (matrixRow) {
+          userInfo.display_name = matrixRow.displayname
+          if (matrixRow.avatar_url) userInfo.avatar_url = matrixRow.avatar_url
+        }
+
+        // Directory (second precedence)
+        if (directoryRow) {
+          if (!userInfo.display_name && directoryRow.cn) {
+            userInfo.display_name = directoryRow.cn as string
+          }
+          if (directoryRow.sn) {
+            userInfo.sn = directoryRow.sn as string
+            userInfo.last_name = directoryRow.sn as string
+          }
+          if (
+            directoryRow.givenname != null ||
+            directoryRow.givenName != null
+          ) {
+            userInfo.givenName = (directoryRow.givenname ??
+              directoryRow.givenName) as string
+            userInfo.first_name = (directoryRow.givenname ??
+              directoryRow.givenName) as string
+          }
+          // Note: For batch, we skip visibility checks on emails/phones for performance
+          // The search endpoint doesn't need these fields for display
+          if (directoryRow.mail) {
+            userInfo.emails = [directoryRow.mail as string]
+          }
+          if (directoryRow.mobile) {
+            userInfo.phones = [directoryRow.mobile as string]
+          }
+          if (directoryRow.workplaceFqdn) {
+            userInfo.workplaceFqdn = directoryRow.workplaceFqdn as string
+          }
+        }
+
+        // Settings (third precedence)
+        if (settingsRow) {
+          if (settingsRow.display_name) {
+            userInfo.display_name = settingsRow.display_name
+          }
+          if (settingsRow.last_name) {
+            userInfo.last_name = settingsRow.last_name
+            userInfo.sn = settingsRow.last_name
+          }
+          if (settingsRow.first_name) {
+            userInfo.first_name = settingsRow.first_name
+            userInfo.givenName = settingsRow.first_name
+          }
+          if (settingsRow.email) {
+            if (userInfo.emails && !userInfo.emails.includes(settingsRow.email)) {
+              userInfo.emails.push(settingsRow.email)
+            } else {
+              userInfo.emails = [settingsRow.email]
+            }
+          }
+          if (settingsRow.phone) {
+            if (userInfo.phones && !userInfo.phones.includes(settingsRow.phone)) {
+              userInfo.phones.push(settingsRow.phone)
+            } else {
+              userInfo.phones = [settingsRow.phone]
+            }
+          }
+          if (settingsRow.language) userInfo.language = settingsRow.language
+          if (settingsRow.timezone) userInfo.timezone = settingsRow.timezone
+        }
+
+        // Addressbook (fourth source) - override display_name if present
+        if (addressbookContact) {
+          userInfo.display_name = addressbookContact.display_name
+        }
+
+        // Only add if we have more than just uid
+        if (Object.keys(userInfo).length > 1) {
+          result.set(id, userInfo as UserInformation)
+        }
+      }
+
+      this.logger.info(
+        `[UserInfoService].getBatch: Returning ${result.size} user info records`
+      )
+
+      return result
+    } catch (error) {
+      this.logger.error('[UserInfoService].getBatch: Error fetching batch', {
+        error
+      })
+      throw new Error(
+        `Error getting batch user info: ${JSON.stringify({ cause: error })}`,
+        { cause: error as Error }
+      )
+    }
+  }
+
   updateVisibility = async (
     userId: string,
     visibilitySettings: UserProfileSettingsPayloadT
