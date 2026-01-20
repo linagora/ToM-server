@@ -79,7 +79,8 @@ export class AddressbookService implements IAddressbookService {
       const uniqueUserDbContacts = userDbContacts.filter(
         (c) => !addressbookMxids.has(c.mxid)
       )
-      const deduplicatedCount = userDbContacts.length - uniqueUserDbContacts.length
+      const deduplicatedCount =
+        userDbContacts.length - uniqueUserDbContacts.length
       if (deduplicatedCount > 0) {
         this.logger.debug(
           `[AddressbookService.list] ${deduplicatedCount} UserDB contacts deduplicated (already in addressbook).`
@@ -1065,7 +1066,7 @@ export class AddressbookService implements IAddressbookService {
 
         try {
           const mxid = toMatrixId(uid, this.serverName)
-          const displayName = ((entry.cn || entry.displayName || uid) as string)
+          const displayName = (entry.cn || entry.displayName || uid) as string
 
           contacts.push({
             id: uid,

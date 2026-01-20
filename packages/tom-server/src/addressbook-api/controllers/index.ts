@@ -42,7 +42,7 @@ export default class AddressbookApiController
           contactsCount: contacts.length
         }
       )
-      return contacts.map((c) => ({ ...c }) as EnrichedContact)
+      return contacts.map((c) => ({ ...c } as EnrichedContact))
     }
 
     const mxids = contacts.map((c) => c.mxid)
@@ -94,7 +94,7 @@ export default class AddressbookApiController
           stack: error.stack
         }
       )
-      return contacts.map((c) => ({ ...c }) as EnrichedContact)
+      return contacts.map((c) => ({ ...c } as EnrichedContact))
     }
   }
 
