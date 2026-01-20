@@ -62,50 +62,62 @@ export const _search = async (
     mxids: string[],
     viewer: string
   ): Promise<EnrichedUser[]> => {
+    if (mxids.length === 0) {
+      return []
+    }
+
+    logger.debug(
+      `[IndentityServer][_search][enrichWithUserInfo] Batch fetching user info for ${mxids.length} users`
+    )
+
+    let userInfoMap: Map<string, UserInformation>
+    try {
+      userInfoMap = await userInfoService.getBatch(mxids, viewer)
+    } catch (e) {
+      logger.error(
+        `[IndentityServer][_search][enrichWithUserInfo] Failed to batch fetch user info: ${JSON.stringify(e)}`
+      )
+      return []
+    }
+
+    logger.debug(
+      `[IndentityServer][_search][enrichWithUserInfo] Got ${userInfoMap.size} user info records`
+    )
+
     const enrichedUsers: EnrichedUser[] = []
     for (const mxid of mxids) {
-      let userInfo: UserInformation | null
-      try {
-        userInfo = await userInfoService.get(mxid, viewer)
-      } catch (e) {
-        logger.warn(
-          `[IndentityServer][_search][enrichWithUserInfo] Failed to fetch user info for ${mxid}: ${JSON.stringify(
-            e
-          )}`
-        )
-        userInfo = null
-      }
+      const userInfo = userInfoMap.get(mxid)
       if (!userInfo) {
-        logger.warn(
+        logger.silly(
           `[IndentityServer][_search][enrichWithUserInfo] No user info found for ${mxid}. Skipping enrichment.`
         )
-      } else {
-        enrichedUsers.push({
-          address: mxid, // TODO: address is deprecated and uid should replace it
-          uid: mxid,
-          display_name: userInfo?.display_name || '',
-          displayName: userInfo?.display_name || '', // TODO: Deprecated kepping for backward compatibility
-          cn: userInfo?.display_name || '', // TODO: Deprecated kepping for backward compatibility
-          sn: userInfo?.sn || '', // TODO: Deprecated kepping for backward compatibility
-          avatar_url: userInfo?.avatar_url || '',
-          last_name: userInfo?.last_name || '',
-          first_name: userInfo?.first_name || '',
-          givenName: userInfo?.first_name || '', // TODO: Deprecated kepping for backward compatibility
-          givenname: userInfo?.first_name || '', // TODO: Deprecated kepping for backward compatibility
-          emails: userInfo?.emails || [],
-          mail: userInfo?.emails?.at(0) || '', // TODO: Deprecated kepping for backward compatibility
-          phones: userInfo?.phones || [],
-          mobile: userInfo?.phones?.at(0) || '', // TODO: Deprecated kepping for backward compatibility
-          language: userInfo?.language || '',
-          timezone: userInfo?.timezone || ''
-        })
-        logger.silly(
-          `[IndentityServer][_search][enrichWithUserInfo] Enriched user: ${JSON.stringify(
-            userInfo
-          )}`
-        )
+        continue
       }
+
+      enrichedUsers.push({
+        address: mxid, // TODO: address is deprecated and uid should replace it
+        uid: mxid,
+        display_name: userInfo.display_name || '',
+        displayName: userInfo.display_name || '', // TODO: Deprecated kepping for backward compatibility
+        cn: userInfo.display_name || '', // TODO: Deprecated kepping for backward compatibility
+        sn: userInfo.sn || '', // TODO: Deprecated kepping for backward compatibility
+        avatar_url: userInfo.avatar_url || '',
+        last_name: userInfo.last_name || '',
+        first_name: userInfo.first_name || '',
+        givenName: userInfo.first_name || '', // TODO: Deprecated kepping for backward compatibility
+        givenname: userInfo.first_name || '', // TODO: Deprecated kepping for backward compatibility
+        emails: userInfo.emails || [],
+        mail: userInfo.emails?.at(0) || '', // TODO: Deprecated kepping for backward compatibility
+        phones: userInfo.phones || [],
+        mobile: userInfo.phones?.at(0) || '', // TODO: Deprecated kepping for backward compatibility
+        language: userInfo.language || '',
+        timezone: userInfo.timezone || ''
+      })
+      logger.silly(
+        `[IndentityServer][_search][enrichWithUserInfo] Enriched user: ${JSON.stringify(userInfo)}`
+      )
     }
+
     return enrichedUsers
   }
 
