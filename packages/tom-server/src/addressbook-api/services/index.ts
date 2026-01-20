@@ -1,6 +1,8 @@
 import { v7 as uuidv7 } from 'uuid'
 import { TwakeLogger } from '@twake/logger'
-import { TwakeDB } from '../../types'
+import type { UserDB } from '@twake/matrix-identity-server'
+import { toMatrixId } from '@twake/utils'
+import type { Config, TwakeDB } from '../../types'
 import type {
   AddressBook,
   AddressbookListResponse,
@@ -11,18 +13,29 @@ import type {
 } from '../types'
 
 export class AddressbookService implements IAddressbookService {
+  private readonly enableAdditionalFeatures: boolean
+  private readonly serverName: string
+
   constructor(
     private readonly db: TwakeDB,
-    private readonly logger: TwakeLogger
+    private readonly logger: TwakeLogger,
+    private readonly userDb?: UserDB,
+    private readonly config?: Config
   ) {
-    this.logger.info('[AddressbookService] Initialized.', {})
+    this.enableAdditionalFeatures =
+      this.config?.additional_features === true ||
+      process.env.ADDITIONAL_FEATURES === 'true'
+    this.serverName = this.config?.server_name ?? ''
+    this.logger.info('[AddressbookService] Initialized.', {
+      additionalFeatures: this.enableAdditionalFeatures
+    })
   }
 
   /**
    * list the addressbook of an owner
    *
    * @param {string} owner - The owner of the addressbook
-   * @returns {Promise<AddressbookListResponse[]>}
+   * @returns {Promise<AddressbookListResponse>}
    */
   public list = async (owner: string): Promise<AddressbookListResponse> => {
     this.logger.silly('[AddressbookService.list] Entering method.', { owner })
@@ -36,17 +49,57 @@ export class AddressbookService implements IAddressbookService {
         owner
       })
 
+      // 1. Get addressbook contacts from database
       this.logger.debug(
         '[AddressbookService.list] Attempting to list contacts for addressbook.'
       )
-      const contacts = await this._listAddressbookContacts(userAddressbook.id)
+      const addressbookContacts = await this._listAddressbookContacts(
+        userAddressbook.id
+      )
+      this.logger.debug(
+        `[AddressbookService.list] Got ${addressbookContacts.length} addressbook contacts.`
+      )
+
+      // 2. Get UserDB contacts (if additional_features enabled)
+      const userDbContacts = await this._getUserDbContacts()
+      this.logger.debug(
+        `[AddressbookService.list] Got ${userDbContacts.length} UserDB contacts.`
+      )
+
+      // 3. Deduplicate: addressbook contacts take precedence
+      const addressbookMxids = new Set(addressbookContacts.map((c) => c.mxid))
+      const uniqueUserDbContacts = userDbContacts.filter(
+        (c) => !addressbookMxids.has(c.mxid)
+      )
+      const deduplicatedCount = userDbContacts.length - uniqueUserDbContacts.length
+      if (deduplicatedCount > 0) {
+        this.logger.debug(
+          `[AddressbookService.list] ${deduplicatedCount} UserDB contacts deduplicated (already in addressbook).`
+        )
+      }
+
+      // 4. Merge contacts
+      const allContacts = [...addressbookContacts, ...uniqueUserDbContacts]
+
+      // 5. Sort by display_name
+      const sortedContacts = this._sortByStringField(
+        allContacts,
+        'display_name',
+        true
+      )
+
       this.logger.info(
-        `[AddressbookService.list] Got ${contacts.length} contacts for owner.`,
-        { owner, contactsCount: contacts.length }
+        `[AddressbookService.list] Got ${sortedContacts.length} total contacts for owner.`,
+        {
+          owner,
+          addressbookCount: addressbookContacts.length,
+          userDbCount: uniqueUserDbContacts.length,
+          totalCount: sortedContacts.length
+        }
       )
       this.logger.silly(
         `[AddressbookService.list] Retrieved contacts: ${JSON.stringify(
-          contacts
+          sortedContacts
         )}`
       )
 
@@ -54,7 +107,7 @@ export class AddressbookService implements IAddressbookService {
       return {
         id: userAddressbook.id,
         owner,
-        contacts
+        contacts: sortedContacts
       }
     } catch (error: any) {
       this.logger.error(
@@ -955,6 +1008,86 @@ export class AddressbookService implements IAddressbookService {
       '[AddressbookService._createUserAddressBook] Exiting method (success).'
     )
     return result
+  }
+
+  /**
+   * Fetches all users from UserDB and converts them to virtual Contact objects.
+   * Only runs when additional_features is enabled.
+   *
+   * @returns {Promise<Contact[]>} Array of contacts from UserDB
+   */
+  private async _getUserDbContacts(): Promise<Contact[]> {
+    if (!this.enableAdditionalFeatures || !this.userDb || !this.serverName) {
+      this.logger.debug(
+        '[AddressbookService._getUserDbContacts] Skipping - feature disabled or missing dependencies',
+        {
+          additionalFeatures: this.enableAdditionalFeatures,
+          hasUserDb: !!this.userDb,
+          hasServerName: !!this.serverName
+        }
+      )
+      return []
+    }
+
+    try {
+      this.logger.debug(
+        '[AddressbookService._getUserDbContacts] Fetching all users from UserDB'
+      )
+      const userDbEntries = await this.userDb.getAll('users', [
+        'uid',
+        'cn',
+        'displayName',
+        'sn',
+        'givenName',
+        'mail',
+        'mobile'
+      ])
+
+      if (!Array.isArray(userDbEntries) || userDbEntries.length === 0) {
+        this.logger.debug(
+          '[AddressbookService._getUserDbContacts] No UserDB entries found'
+        )
+        return []
+      }
+
+      const contacts: Contact[] = []
+      for (const entry of userDbEntries) {
+        const uid = entry.uid as string
+        if (!uid) continue
+
+        try {
+          const mxid = toMatrixId(uid, this.serverName)
+          const displayName = ((entry.cn || entry.displayName || uid) as string)
+
+          contacts.push({
+            id: uid,
+            mxid,
+            display_name: displayName,
+            active: true,
+            addressbook_id: ''
+          })
+        } catch (e: any) {
+          this.logger.warn(
+            '[AddressbookService._getUserDbContacts] Invalid uid, skipping',
+            { uid, error: e.message }
+          )
+        }
+      }
+
+      this.logger.info(
+        `[AddressbookService._getUserDbContacts] Converted ${contacts.length} UserDB entries to contacts`
+      )
+      return contacts
+    } catch (error: any) {
+      this.logger.error(
+        '[AddressbookService._getUserDbContacts] Failed to fetch UserDB entries',
+        {
+          message: error.message,
+          stack: error.stack
+        }
+      )
+      return []
+    }
   }
 
   /**

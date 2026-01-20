@@ -94,7 +94,12 @@ export default class TwakeServer {
     this.logger.debug('Connected to Matrix DB')
 
     // Create singleton service instances
-    this.addressbookService = new AddressbookService(this.db, this.logger)
+    this.addressbookService = new AddressbookService(
+      this.db,
+      this.logger,
+      this.idServer.userDB,
+      this.conf
+    )
     this.userInfoService = new UserInfoService(
       this.idServer.userDB,
       this.db,
@@ -103,6 +108,7 @@ export default class TwakeServer {
       this.logger,
       this.addressbookService
     )
+
     this.tokenService = new TokenService(this.conf, this.logger, 'tom-server')
     this.smsService = new SmsService(this.conf, this.logger)
 
@@ -158,7 +164,8 @@ export default class TwakeServer {
       this.idServer.db,
       this.idServer.authenticate,
       this.logger,
-      this.addressbookService
+      this.addressbookService,
+      this.userInfoService
     )
 
     const deactivateAccountApi = DeactivateAccount(

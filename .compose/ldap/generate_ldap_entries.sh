@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Number of entries to create
-NUM_ENTRIES=2000
+NUM_ENTRIES=200
 
 # Base values
 OU="users"
