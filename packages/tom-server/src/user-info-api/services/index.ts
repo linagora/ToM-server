@@ -321,7 +321,8 @@ class UserInfoService implements IUserInfoService {
 
         // Matrix profile (highest precedence)
         if (matrixRow) {
-          userInfo.display_name = matrixRow.displayname
+          if (matrixRow.displayname)
+            userInfo.display_name = matrixRow.displayname
           if (matrixRow.avatar_url) userInfo.avatar_url = matrixRow.avatar_url
         }
 
@@ -414,7 +415,7 @@ class UserInfoService implements IUserInfoService {
         }
 
         // Addressbook (fourth source) - override display_name if present
-        if (addressbookContact) {
+        if (addressbookContact?.display_name) {
           userInfo.display_name = addressbookContact.display_name
         }
 
