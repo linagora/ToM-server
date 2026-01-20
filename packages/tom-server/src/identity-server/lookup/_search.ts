@@ -75,7 +75,9 @@ export const _search = async (
       userInfoMap = await userInfoService.getBatch(mxids, viewer)
     } catch (e) {
       logger.error(
-        `[IndentityServer][_search][enrichWithUserInfo] Failed to batch fetch user info: ${JSON.stringify(e)}`
+        `[IndentityServer][_search][enrichWithUserInfo] Failed to batch fetch user info: ${JSON.stringify(
+          e
+        )}`
       )
       return []
     }
@@ -114,7 +116,9 @@ export const _search = async (
         timezone: userInfo.timezone || ''
       })
       logger.silly(
-        `[IndentityServer][_search][enrichWithUserInfo] Enriched user: ${JSON.stringify(userInfo)}`
+        `[IndentityServer][_search][enrichWithUserInfo] Enriched user: ${JSON.stringify(
+          userInfo
+        )}`
       )
     }
 
@@ -140,7 +144,9 @@ export const _search = async (
       )
       return []
     }
-    const result = (await addressbookService.list(owner))?.contacts || []
+    // Pass false for includeUserDbContacts to avoid double-counting UserDB users
+    // (UserDB users are handled separately by userDbPromise)
+    const result = (await addressbookService.list(owner, false))?.contacts || []
     logger.debug(
       `[IndentityServer][_search][addressbookPromise] addressBookService.list returned ${
         result?.length || 0
