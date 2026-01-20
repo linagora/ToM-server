@@ -58,8 +58,13 @@ export interface EnrichedContact extends Contact {
 export interface IAddressbookService {
   /**
    * list the contacts of an addressbook
+   * @param owner - The owner of the addressbook
+   * @param includeUserDbContacts - Whether to include UserDB contacts (default: true)
    */
-  list(owner: string): Promise<AddressbookListResponse>
+  list(
+    owner: string,
+    includeUserDbContacts?: boolean
+  ): Promise<AddressbookListResponse>
 
   /**
    * Deletes an addressbook

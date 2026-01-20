@@ -37,8 +37,14 @@ export class AddressbookService implements IAddressbookService {
    * @param {string} owner - The owner of the addressbook
    * @returns {Promise<AddressbookListResponse>}
    */
-  public list = async (owner: string): Promise<AddressbookListResponse> => {
-    this.logger.silly('[AddressbookService.list] Entering method.', { owner })
+  public list = async (
+    owner: string,
+    includeUserDbContacts: boolean = true
+  ): Promise<AddressbookListResponse> => {
+    this.logger.silly('[AddressbookService.list] Entering method.', {
+      owner,
+      includeUserDbContacts
+    })
     try {
       this.logger.debug(
         '[AddressbookService.list] Attempting to get or create user addressbook.'
@@ -60,8 +66,10 @@ export class AddressbookService implements IAddressbookService {
         `[AddressbookService.list] Got ${addressbookContacts.length} addressbook contacts.`
       )
 
-      // 2. Get UserDB contacts (if additional_features enabled)
-      const userDbContacts = await this._getUserDbContacts()
+      // 2. Get UserDB contacts (if additional_features enabled and requested)
+      const userDbContacts = includeUserDbContacts
+        ? await this._getUserDbContacts()
+        : []
       this.logger.debug(
         `[AddressbookService.list] Got ${userDbContacts.length} UserDB contacts.`
       )
