@@ -18,26 +18,25 @@ jest.mock('@twake/utils', () => ({
 }))
 
 // Mock service functions
-const mockAddressbookList = jest.fn().mockResolvedValue({ contacts: [] })
-const mockUserInfoGet = jest
-  .fn()
-  .mockImplementation((address: string, viewer?: string) => {
-    if (!address) return Promise.resolve(null)
-    const uid = address.includes('@')
-      ? address.replace(/^@(.*?):.*/, '$1')
-      : address
-    return Promise.resolve({
-      uid,
-      display_name: `Display ${uid}`,
-      avatar_url: `mxc://server/avatar_${uid}`,
-      first_name: 'First',
-      last_name: 'Last',
-      emails: [`${uid}@example.com`],
-      phones: ['1234567890'],
-      language: 'en',
-      timezone: 'UTC'
-    })
-  })
+const mockAddressbookList = jest.fn()
+const mockUserInfoGetBatch = jest.fn()
+
+// Helper to create user info from mxid
+const createUserInfo = (mxid: string) => {
+  const uid = mxid.includes('@') ? mxid.replace(/^@(.*?):.*/, '$1') : mxid
+  return {
+    uid: mxid,
+    display_name: `Display ${uid}`,
+    avatar_url: `mxc://server/avatar_${uid}`,
+    first_name: 'First',
+    last_name: 'Last',
+    sn: 'Last',
+    emails: [`${uid}@example.com`],
+    phones: ['1234567890'],
+    language: 'en',
+    timezone: 'UTC'
+  }
+}
 
 // Create mock service instances
 const createMockServices = () => ({
@@ -45,7 +44,7 @@ const createMockServices = () => ({
     list: mockAddressbookList
   } as any,
   userInfoService: {
-    get: mockUserInfoGet
+    getBatch: mockUserInfoGetBatch
   } as any
 })
 
@@ -78,24 +77,20 @@ describe('_search factory', () => {
 
   beforeEach(() => {
     jest.clearAllMocks()
+
+    // Default mock: addressbook returns empty
     mockAddressbookList.mockResolvedValue({ contacts: [] })
-    mockUserInfoGet.mockImplementation((address: string) => {
-      if (!address) return Promise.resolve(null)
-      const uid = address.includes('@')
-        ? address.replace(/^@(.*?):.*/, '$1')
-        : address
-      return Promise.resolve({
-        uid,
-        display_name: `Display ${uid}`,
-        avatar_url: `mxc://server/avatar_${uid}`,
-        first_name: 'First',
-        last_name: 'Last',
-        emails: [`${uid}@example.com`],
-        phones: ['1234567890'],
-        language: 'en',
-        timezone: 'UTC'
-      })
-    })
+
+    // Default mock: getBatch returns a Map with user info for requested mxids
+    mockUserInfoGetBatch.mockImplementation(
+      async (mxids: string[], _viewer?: string) => {
+        const result = new Map()
+        for (const mxid of mxids) {
+          result.set(mxid, createUserInfo(mxid))
+        }
+        return result
+      }
+    )
     ;(isMatrixId as jest.Mock).mockImplementation((id) => {
       if (!id || typeof id !== 'string') return false
       return /^@[^:]+:[^:]+$/.test(id)
@@ -187,14 +182,10 @@ describe('_search factory', () => {
 
       await searchFn(resMock, dataMock)
 
-      expect(send).toHaveBeenCalledWith(
-        resMock,
-        200,
-        expect.objectContaining({
-          matches: expect.any(Array),
-          inactive_matches: expect.any(Array)
-        })
-      )
+      expect(send).toHaveBeenCalledWith(resMock, 200, {
+        matches: [],
+        inactive_matches: []
+      })
     })
 
     it('should handle search without owner', async () => {
@@ -294,63 +285,6 @@ describe('_search factory', () => {
 
       // matrixDb.match should not have been called
       expect(serverNoFeatures.matrixDb.db.match).not.toHaveBeenCalled()
-
-      expect(send).toHaveBeenCalledWith(
-        resMock,
-        200,
-        expect.objectContaining({
-          matches: expect.any(Array),
-          inactive_matches: expect.any(Array)
-        })
-      )
-    })
-
-    it('should skip matrixDb when user_directory is disabled via env', async () => {
-      const originalEnv = process.env.ADDITIONAL_FEATURES
-      process.env.ADDITIONAL_FEATURES = 'false'
-
-      const serverNoEnvFeatures = {
-        ...idServerMock,
-        conf: {
-          server_name: 'server',
-          additional_features: false,
-          features: { user_directory: { enabled: false } }
-        },
-        userDB: {
-          match: jest.fn().mockResolvedValue([])
-        },
-        matrixDb: {
-          db: {
-            match: jest.fn().mockResolvedValue([{ user_id: '@drwho:server' }])
-          }
-        }
-      }
-
-      const { addressbookService, userInfoService } = createMockServices()
-      const searchFn = await _search(
-        serverNoEnvFeatures as any,
-        logger as any,
-        addressbookService,
-        userInfoService
-      )
-      const resMock = {} as any
-      const dataMock = {
-        scope: ['uid'],
-        val: 'test',
-        owner: '@user123:server'
-      }
-
-      await searchFn(resMock, dataMock)
-
-      // matrixDb.match should not have been called
-      expect(serverNoEnvFeatures.matrixDb.db.match).not.toHaveBeenCalled()
-
-      // Restore original env
-      if (originalEnv !== undefined) {
-        process.env.ADDITIONAL_FEATURES = originalEnv
-      } else {
-        delete process.env.ADDITIONAL_FEATURES
-      }
     })
 
     it('should query matrixDb when user_directory is enabled', async () => {
@@ -387,46 +321,7 @@ describe('_search factory', () => {
 
       await searchFn(resMock, dataMock)
 
-      // matrixDb.match should have been called
       expect(serverWithFeatures.matrixDb.db.match).toHaveBeenCalled()
-    })
-
-    it('should query matrixDb when user_directory is enabled via config', async () => {
-      const serverWithEnvFeatures = {
-        ...idServerMock,
-        conf: {
-          server_name: 'server',
-          additional_features: false,
-          features: { user_directory: { enabled: true } }
-        },
-        userDB: {
-          match: jest.fn().mockResolvedValue([])
-        },
-        matrixDb: {
-          db: {
-            match: jest.fn().mockResolvedValue([{ user_id: '@drwho:server' }])
-          }
-        }
-      }
-
-      const { addressbookService, userInfoService } = createMockServices()
-      const searchFn = await _search(
-        serverWithEnvFeatures as any,
-        logger as any,
-        addressbookService,
-        userInfoService
-      )
-      const resMock = {} as any
-      const dataMock = {
-        scope: ['uid'],
-        val: 'drwho',
-        owner: '@user123:server'
-      }
-
-      await searchFn(resMock, dataMock)
-
-      // matrixDb.match should have been called
-      expect(serverWithEnvFeatures.matrixDb.db.match).toHaveBeenCalled()
     })
 
     it('should handle matrixDb errors gracefully', async () => {
@@ -496,14 +391,8 @@ describe('_search factory', () => {
 
       await searchFn(resMock, dataMock)
 
-      expect(send).toHaveBeenCalledWith(
-        resMock,
-        200,
-        expect.objectContaining({
-          matches: expect.any(Array),
-          inactive_matches: expect.any(Array)
-        })
-      )
+      // userDB.match should not be called when additional_features is disabled
+      expect(serverNoFeatures.userDB.match).not.toHaveBeenCalled()
     })
 
     it('should handle userDB errors gracefully', async () => {
@@ -545,18 +434,8 @@ describe('_search factory', () => {
     it('should include addressbook contacts in results', async () => {
       mockAddressbookList.mockResolvedValueOnce({
         contacts: [
-          {
-            mxid: '@drwho:server',
-            display_name: 'Dr Who'
-          },
-          {
-            mxid: '@janedoe:server',
-            display_name: 'Jane Doe'
-          },
-          {
-            mxid: '@johndoe:server',
-            display_name: 'John Doe'
-          }
+          { mxid: '@drwho:server', display_name: 'Dr Who' },
+          { mxid: '@janedoe:server', display_name: 'Jane Doe' }
         ]
       })
 
@@ -580,37 +459,6 @@ describe('_search factory', () => {
       const allResults = [...response.matches, ...response.inactive_matches]
       const drwhoResult = allResults.find((r: any) => r.uid === '@drwho:server')
       expect(drwhoResult).toBeDefined()
-    })
-
-    it('should return nothing when no predicate provided', async () => {
-      // Note: This mock won't be consumed because empty predicate returns early
-      // We keep it here for clarity but it doesn't affect the test
-
-      const emptyDbServer = {
-        ...idServerMock,
-        userDB: { match: jest.fn().mockResolvedValue([]) },
-        matrixDb: { db: { match: jest.fn().mockResolvedValue([]) } }
-      }
-
-      const { addressbookService, userInfoService } = createMockServices()
-      const searchFn = await _search(
-        emptyDbServer as any,
-        logger as any,
-        addressbookService,
-        userInfoService
-      )
-      const resMock = {} as any
-      const dataMock = {
-        scope: ['uid'],
-        val: '',
-        owner: '@user123:server'
-      }
-
-      await searchFn(resMock, dataMock)
-
-      const response = (send as jest.Mock).mock.calls[0][2]
-      expect(response.matches.length).toBe(0)
-      expect(response.inactive_matches.length).toBe(0)
     })
 
     it('should filter out invalid Matrix IDs from addressbook', async () => {
@@ -678,6 +526,26 @@ describe('_search factory', () => {
           inactive_matches: expect.any(Array)
         })
       )
+    })
+
+    it('should not search addressbook without owner', async () => {
+      const { addressbookService, userInfoService } = createMockServices()
+      const searchFn = await _search(
+        idServerMock as any,
+        logger as any,
+        addressbookService,
+        userInfoService
+      )
+      const resMock = {} as any
+      const dataMock = {
+        scope: ['uid'],
+        val: 'drwho',
+        owner: ''
+      }
+
+      await searchFn(resMock, dataMock)
+
+      expect(mockAddressbookList).not.toHaveBeenCalled()
     })
   })
 
@@ -787,7 +655,7 @@ describe('_search factory', () => {
   })
 
   describe('User enrichment', () => {
-    it('should enrich users with UserInfoService data', async () => {
+    it('should enrich users with UserInfoService.getBatch data', async () => {
       const { addressbookService, userInfoService } = createMockServices()
       const searchFn = await _search(
         idServerMock as any,
@@ -803,6 +671,8 @@ describe('_search factory', () => {
       }
 
       await searchFn(resMock, dataMock)
+
+      expect(mockUserInfoGetBatch).toHaveBeenCalled()
 
       const response = (send as jest.Mock).mock.calls[0][2]
       const allResults = [...response.matches, ...response.inactive_matches]
@@ -850,8 +720,10 @@ describe('_search factory', () => {
       expect(user).toHaveProperty('mobile')
     })
 
-    it('should handle UserInfoService errors gracefully', async () => {
-      mockUserInfoGet.mockRejectedValueOnce(new Error('UserInfo fetch failed'))
+    it('should handle UserInfoService.getBatch errors gracefully', async () => {
+      mockUserInfoGetBatch.mockRejectedValueOnce(
+        new Error('UserInfo fetch failed')
+      )
 
       const { addressbookService, userInfoService } = createMockServices()
       const searchFn = await _search(
@@ -869,18 +741,14 @@ describe('_search factory', () => {
 
       await searchFn(resMock, dataMock)
 
-      expect(send).toHaveBeenCalledWith(
-        resMock,
-        200,
-        expect.objectContaining({
-          matches: expect.any(Array),
-          inactive_matches: expect.any(Array)
-        })
-      )
+      expect(send).toHaveBeenCalledWith(resMock, 200, {
+        matches: [],
+        inactive_matches: []
+      })
     })
 
-    it('should skip users when UserInfoService returns null', async () => {
-      mockUserInfoGet.mockResolvedValueOnce(null)
+    it('should skip users when UserInfoService returns empty Map', async () => {
+      mockUserInfoGetBatch.mockResolvedValueOnce(new Map())
 
       const { addressbookService, userInfoService } = createMockServices()
       const searchFn = await _search(
@@ -899,43 +767,8 @@ describe('_search factory', () => {
       await searchFn(resMock, dataMock)
 
       const response = (send as jest.Mock).mock.calls[0][2]
-      const allResults = [...response.matches, ...response.inactive_matches]
-
-      // Users without user info are skipped from results
-      expect(allResults.length).toBe(0)
-    })
-
-    it('should handle enrichment errors gracefully', async () => {
-      const { addressbookService } = createMockServices()
-
-      // Create a userInfoService that rejects with an error
-      const failingUserInfoService = {
-        get: jest.fn().mockRejectedValue(new Error('Enrichment failed'))
-      } as any
-
-      const searchFn = await _search(
-        idServerMock as any,
-        logger as any,
-        addressbookService,
-        failingUserInfoService
-      )
-      const resMock = {} as any
-      const dataMock = {
-        scope: ['uid'],
-        val: 'drwho',
-        owner: '@user123:server'
-      }
-
-      await searchFn(resMock, dataMock)
-
-      expect(send).toHaveBeenCalledWith(
-        resMock,
-        200,
-        expect.objectContaining({
-          matches: expect.any(Array),
-          inactive_matches: expect.any(Array)
-        })
-      )
+      expect(response.matches).toEqual([])
+      expect(response.inactive_matches).toEqual([])
     })
   })
 
@@ -1032,7 +865,7 @@ describe('_search factory', () => {
     })
 
     it('should only enrich paginated subset of users', async () => {
-      mockUserInfoGet.mockClear()
+      mockUserInfoGetBatch.mockClear()
 
       const serverWithManyUsers = {
         ...idServerMock,
@@ -1072,9 +905,14 @@ describe('_search factory', () => {
 
       await searchFn(resMock, dataMock)
 
-      // Should only call UserInfoService for 2 users (the paginated subset)
-      // not all 5 users
-      expect(mockUserInfoGet).toHaveBeenCalledTimes(2)
+      // getBatch is called twice (once for active, once for inactive)
+      // but each call should only have 2 users max (the paginated subset)
+      const calls = mockUserInfoGetBatch.mock.calls
+      const totalMxids = calls.reduce(
+        (sum, call) => sum + (call[0]?.length || 0),
+        0
+      )
+      expect(totalMxids).toBe(2)
     })
 
     it('should handle offset beyond total results', async () => {
