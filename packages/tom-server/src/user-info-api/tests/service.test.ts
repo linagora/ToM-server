@@ -7245,3 +7245,167 @@ describe('User Info Service updateVisibility', () => {
     })
   })
 })
+
+describe('User Info Service getBatch', () => {
+  const svc = createService(true, false)
+  const MXID_1 = '@user1:docker.localhost'
+  const MXID_2 = '@user2:docker.localhost'
+  const MXID_3 = '@user3:docker.localhost'
+
+  beforeEach(() => {
+    jest.clearAllMocks()
+  })
+
+  it('Should return empty map for empty input array', async () => {
+    const result = await svc.getBatch([])
+
+    expect(result).toBeInstanceOf(Map)
+    expect(result.size).toBe(0)
+  })
+
+  it('Should return empty map when no users found in any source', async () => {
+    matrixDBMock.get.mockResolvedValue([])
+    userDBMock.get.mockResolvedValue([])
+    twakeDBMock.get.mockResolvedValue([])
+    addressBookServiceMock.list.mockResolvedValue(null)
+
+    const result = await svc.getBatch([MXID_1, MXID_2])
+
+    expect(result).toBeInstanceOf(Map)
+    expect(result.size).toBe(0)
+  })
+
+  it('Should batch fetch multiple users from Matrix DB', async () => {
+    matrixDBMock.get.mockResolvedValue([
+      { user_id: 'user1', displayname: 'User One', avatar_url: 'avatar1.png' },
+      { user_id: 'user2', displayname: 'User Two', avatar_url: 'avatar2.png' }
+    ])
+    userDBMock.get.mockResolvedValue([])
+    twakeDBMock.get.mockResolvedValue([])
+    addressBookServiceMock.list.mockResolvedValue(null)
+
+    const result = await svc.getBatch([MXID_1, MXID_2])
+
+    expect(result.size).toBe(2)
+    expect(result.get(MXID_1)).toMatchObject({
+      uid: MXID_1,
+      display_name: 'User One',
+      avatar_url: 'avatar1.png'
+    })
+    expect(result.get(MXID_2)).toMatchObject({
+      uid: MXID_2,
+      display_name: 'User Two',
+      avatar_url: 'avatar2.png'
+    })
+  })
+
+  it('Should merge data from multiple sources correctly', async () => {
+    matrixDBMock.get.mockResolvedValue([
+      { user_id: 'user1', displayname: 'Matrix Name', avatar_url: 'avatar.png' }
+    ])
+    userDBMock.get.mockResolvedValue([
+      {
+        uid: 'user1',
+        cn: 'LDAP Name',
+        sn: 'LastName',
+        givenName: 'FirstName',
+        mail: 'user1@example.com',
+        mobile: '+1234567890'
+      }
+    ])
+    twakeDBMock.get.mockResolvedValue([])
+    addressBookServiceMock.list.mockResolvedValue(null)
+
+    const result = await svc.getBatch([MXID_1])
+
+    expect(result.size).toBe(1)
+    const user = result.get(MXID_1)
+    expect(user).toBeDefined()
+    // Matrix data takes precedence for display_name
+    expect(user!.display_name).toBe('Matrix Name')
+    expect(user!.avatar_url).toBe('avatar.png')
+    // LDAP data fills in remaining fields
+    expect(user!.last_name).toBe('LastName')
+    expect(user!.first_name).toBe('FirstName')
+    expect(user!.emails).toEqual(['user1@example.com'])
+    expect(user!.phones).toEqual(['+1234567890'])
+  })
+
+  it('Should fetch viewer addressbook only once for all users', async () => {
+    const viewerMxid = '@viewer:docker.localhost'
+    matrixDBMock.get.mockResolvedValue([
+      { user_id: 'user1', displayname: 'User One' },
+      { user_id: 'user2', displayname: 'User Two' }
+    ])
+    userDBMock.get.mockResolvedValue([])
+    twakeDBMock.get.mockResolvedValue([])
+    addressBookServiceMock.list.mockResolvedValue({
+      contacts: [
+        { mxid: MXID_1, display_name: 'Addressbook Name for User1' }
+      ]
+    })
+
+    const result = await svc.getBatch([MXID_1, MXID_2], viewerMxid)
+
+    // Addressbook should be fetched exactly once
+    expect(addressBookServiceMock.list).toHaveBeenCalledTimes(1)
+    expect(addressBookServiceMock.list).toHaveBeenCalledWith(viewerMxid)
+
+    // User1 should have addressbook name override
+    expect(result.get(MXID_1)!.display_name).toBe('Addressbook Name for User1')
+    // User2 should have Matrix name (not in addressbook)
+    expect(result.get(MXID_2)!.display_name).toBe('User Two')
+  })
+
+  it('Should handle partial data - some users in Matrix, others in LDAP only', async () => {
+    matrixDBMock.get.mockResolvedValue([
+      { user_id: 'user1', displayname: 'User One' }
+    ])
+    userDBMock.get.mockResolvedValue([
+      { uid: 'user1', cn: 'LDAP User One' },
+      { uid: 'user2', cn: 'LDAP User Two' }
+    ])
+    twakeDBMock.get.mockResolvedValue([])
+    addressBookServiceMock.list.mockResolvedValue(null)
+
+    const result = await svc.getBatch([MXID_1, MXID_2])
+
+    expect(result.size).toBe(2)
+    // User1: Matrix name takes precedence
+    expect(result.get(MXID_1)!.display_name).toBe('User One')
+    // User2: LDAP name used since no Matrix profile (additional_features=true)
+    expect(result.get(MXID_2)!.display_name).toBe('LDAP User Two')
+  })
+
+  it('Should make batch database calls instead of individual calls', async () => {
+    matrixDBMock.get.mockResolvedValue([])
+    userDBMock.get.mockResolvedValue([])
+    twakeDBMock.get.mockResolvedValue([])
+    addressBookServiceMock.list.mockResolvedValue(null)
+
+    await svc.getBatch([MXID_1, MXID_2, MXID_3])
+
+    // Each database should be called exactly once (batch query)
+    expect(matrixDBMock.get).toHaveBeenCalledTimes(1)
+    expect(userDBMock.get).toHaveBeenCalledTimes(1)
+    // Note: twakeDBMock.get may be called multiple times due to profileSettings checks
+    // but usersettings should be a single batch call
+  })
+
+  it('Should handle invalid matrix IDs gracefully', async () => {
+    matrixDBMock.get.mockResolvedValue([])
+    userDBMock.get.mockResolvedValue([])
+    twakeDBMock.get.mockResolvedValue([])
+
+    const result = await svc.getBatch(['invalid-id', '', MXID_1])
+
+    // Invalid IDs should be filtered out, only valid MXID_1 should be processed
+    expect(result.size).toBe(0) // No data found for valid ID either
+  })
+
+  it('Should handle database errors gracefully', async () => {
+    matrixDBMock.get.mockRejectedValue(new Error('Database connection failed'))
+
+    await expect(svc.getBatch([MXID_1])).rejects.toThrow()
+  })
+})
