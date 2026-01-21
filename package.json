@@ -93,6 +93,7 @@
     "jsonc-eslint-parser": "^2.1.0",
     "nx": "20.6.4",
     "prettier": "^2.6.2",
+    "supertest": "^7.2.2",
     "ts-jest": "^29.1.0",
     "ts-node": "10.9.1",
     "tslib": "^2.3.0",
