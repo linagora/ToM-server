@@ -1,19 +1,19 @@
 /* eslint-disable @typescript-eslint/dot-notation */
-import { CommonSettingsService } from '.'
+import { CommonSettingsService } from './index.ts'
 import {
   QueueNotProvidedError,
   UserIdNotProvidedError,
   UserSettingsNotProvidedError,
   ConfigNotProvidedError,
   ExchangeNotProvidedError
-} from './errors'
+} from './errors.ts'
 
 const mockBuild = jest.fn().mockResolvedValue(undefined)
 const mockClose = jest.fn().mockResolvedValue(undefined)
 
 jest.mock('node-fetch', () => jest.fn())
 
-jest.mock('@twake/amqp-connector', () => {
+jest.mock('@twake-chat/amqp-connector', () => {
   const mockCtor = jest.fn().mockImplementation(() => ({
     withConfig: jest.fn().mockReturnThis(),
     withExchange: jest.fn().mockReturnThis(),

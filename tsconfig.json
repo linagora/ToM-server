@@ -1,0 +1,46 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compileOnSave": false,
+  "files": [],
+  "references": [
+    {
+      "path": "./apps/federated-identity-service"
+    },
+    {
+      "path": "./apps/matrix-identity-server"
+    },
+    {
+      "path": "./apps/tom-server"
+    },
+    {
+      "path": "./packages/amqp-connector"
+    },
+    {
+      "path": "./packages/common-settings"
+    },
+    {
+      "path": "./packages/config-parser"
+    },
+    {
+      "path": "./packages/crypto"
+    },
+    {
+      "path": "./packages/federated-identity-service"
+    },
+    {
+      "path": "./packages/logger"
+    },
+    {
+      "path": "./packages/matrix-identity-server"
+    },
+    {
+      "path": "./packages/matrix-resolve"
+    },
+    {
+      "path": "./packages/tom-server"
+    },
+    {
+      "path": "./packages/utils"
+    }
+  ]
+}

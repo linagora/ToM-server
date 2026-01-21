@@ -1,12 +1,12 @@
-import { getLogger, type TwakeLogger } from '@twake/logger'
+import { getLogger, type TwakeLogger } from '@twake-chat/logger'
 import fs from 'fs'
 import path from 'path'
 import sqlite3 from 'sqlite3'
-import CronTasks from '.'
-import defaultConfig from '../config.json'
-import IdentityServerDB from '../db'
-import { type Config } from '../types'
-import UserDB from '../userdb'
+import CronTasks from './index.ts'
+import defaultConfig from '../config.json' with { type: "json" }
+import IdentityServerDB from '../db/index.ts'
+import { type Config } from '../types.ts'
+import UserDB from '../userdb/index.ts'
 
 jest.mock('node-fetch', () => jest.fn())
 

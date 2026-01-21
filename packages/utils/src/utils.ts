@@ -1,9 +1,9 @@
 /* istanbul ignore file */
-import { type TwakeLogger } from '@twake/logger'
+import { type TwakeLogger } from '@twake-chat/logger'
 import { type NextFunction, type Request, type Response } from 'express'
 import type http from 'http'
 import querystring from 'querystring'
-import { errMsg } from './errors'
+import { errMsg } from './errors.ts'
 
 export const hostnameRe =
   /^((([a-zA-Z0-9][-a-zA-Z0-9]*)?[a-zA-Z0-9])[.])*([a-zA-Z][-a-zA-Z0-9]*[a-zA-Z0-9]|[a-zA-Z])(:(\d+))?$/

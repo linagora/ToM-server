@@ -1,8 +1,8 @@
 import {
   type IdentityServerDb,
   type Config as MConfig
-} from '@twake/matrix-identity-server'
-import { type errCodes } from '@twake/utils'
+} from '@twake-chat/matrix-identity-server'
+import { type errCodes } from '@twake-chat/utils'
 import { type NextFunction, type Request, type Response } from 'express'
 
 export type expressAppHandler = (

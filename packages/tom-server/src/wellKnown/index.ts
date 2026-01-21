@@ -223,9 +223,10 @@
  *                  issuer: https://auth.docker.localhost
  */
 
-import { send } from '@twake/utils'
-import type { TwakeChatConfig, Config, expressAppHandler } from '../types'
-import { buildUrl } from '../utils'
+ import fetch from 'node-fetch'
+import { send } from '@twake-chat/utils'
+import type { TwakeChatConfig, Config, expressAppHandler } from '../types.ts'
+import { buildUrl } from '../utils.ts'
 
 interface WellKnownType {
   'm.homeserver': {

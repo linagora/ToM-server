@@ -1,15 +1,15 @@
-import { type TwakeLogger } from '@twake/logger'
-import { DbGetResult, MatrixDB, UserDB } from '@twake/matrix-identity-server'
-import { IAddressbookService } from '../../addressbook-api/types'
-import type { Config, TwakeDB } from '../../types'
-import UserInfoService from '../services'
+import { type TwakeLogger } from '@twake-chat/logger'
+import { DbGetResult, MatrixDB, UserDB } from '@twake-chat/matrix-identity-server'
+import { IAddressbookService } from '../../addressbook-api/types.ts'
+import type { Config, TwakeDB } from '../../types.ts'
+import UserInfoService from '../services/index.ts'
 import {
   ProfileField,
   ProfileVisibility,
   type UserProfileSettingsPayloadT,
   type UserInformation,
   UserProfileSettingsT
-} from '../types'
+} from '../types.ts'
 
 const BASE_CONFIG = {
   userdb_engine: 'ldap',

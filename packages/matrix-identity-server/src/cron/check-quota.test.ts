@@ -1,12 +1,12 @@
 /* eslint-disable @typescript-eslint/no-misused-promises */
-import { getLogger, type TwakeLogger } from '@twake/logger'
+import { getLogger, type TwakeLogger } from '@twake-chat/logger'
 import fs from 'fs'
 import path from 'path'
 import sqlite3 from 'sqlite3'
-import defaultConfig from '../config.json'
-import IdentityServerDb from '../db'
-import type { Config, UserQuota } from '../types'
-import checkQuota from './check-quota'
+import defaultConfig from '../config.json' with { type: "json" }
+import IdentityServerDb from '../db/index.ts'
+import type { Config, UserQuota } from '../types.ts'
+import checkQuota from './check-quota.ts'
 
 const dbPath = path.join(__dirname, 'check-quota.test.db')
 

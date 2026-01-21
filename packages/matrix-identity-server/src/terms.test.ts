@@ -2,11 +2,11 @@ import express from 'express'
 import fs from 'fs'
 import fetch from 'node-fetch'
 import request from 'supertest'
-import buildUserDB from './__testData__/buildUserDB'
-import defaultConfig from './__testData__/termsConf.json'
-import IdServer from './index'
-import { type Policies } from './terms'
-import { type Config } from './types'
+import buildUserDB from './__testData__/buildUserDB.ts'
+import defaultConfig from './__testData__/termsConf.json' with { type: "json" }
+import IdServer from './index.ts'
+import { type Policies } from './terms/index.ts'
+import { type Config } from './types.ts'
 
 jest.mock('node-fetch', () => jest.fn())
 const sendMailMock = jest.fn()

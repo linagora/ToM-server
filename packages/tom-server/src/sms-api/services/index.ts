@@ -1,6 +1,6 @@
-import { type TwakeLogger } from '@twake/logger'
-import { type Config } from '../../types'
-import { type ISmsService, type SMS, type SendSmsPayload } from '../types'
+import { type TwakeLogger } from '@twake-chat/logger'
+import { type Config } from '../../types.ts'
+import { type ISmsService, type SMS, type SendSmsPayload } from '../types.ts'
 import fetch from 'node-fetch'
 
 export default class SmsService implements ISmsService {

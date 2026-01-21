@@ -1,7 +1,7 @@
-import { type TwakeLogger } from '@twake/logger'
-import { type tokenContent } from '@twake/matrix-identity-server'
+import { type TwakeLogger } from '@twake-chat/logger'
+import { type tokenContent } from '@twake-chat/matrix-identity-server'
 import type { NextFunction, RequestHandler, Response } from 'express'
-import type { AuthRequest, AuthenticationFunction } from '../../types'
+import type { AuthRequest, AuthenticationFunction } from '../../types.ts'
 
 export default (
   authenticator: AuthenticationFunction,

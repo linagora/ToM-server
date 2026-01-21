@@ -1,4 +1,4 @@
-import { type expressAppHandler, send } from '@twake/utils'
+import { type expressAppHandler, send } from '@twake-chat/utils'
 
 const status: expressAppHandler = (req, res, next) => {
   send(res, 200, {})

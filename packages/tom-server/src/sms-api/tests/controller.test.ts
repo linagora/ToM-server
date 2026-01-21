@@ -4,8 +4,8 @@ import bodyParser from 'body-parser'
 import express, { type NextFunction } from 'express'
 import fetch, { type Response } from 'node-fetch'
 import supertest from 'supertest'
-import type { AuthRequest, Config } from '../../types'
-import router, { PATH } from '../routes'
+import type { AuthRequest, Config } from '../../types.ts'
+import router, { PATH } from '../routes/index.ts'
 
 const app = express()
 

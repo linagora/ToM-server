@@ -1,10 +1,10 @@
-import { generateKeyPair, randomString } from '@twake/crypto'
-import { type TwakeLogger } from '@twake/logger'
-import { type invitationToken, type Config, type DbGetResult } from '../types'
-import { epoch } from '@twake/utils'
-import Pg from './sql/pg'
-import { type ISQLCondition } from './sql/sql'
-import Sqlite from './sql/sqlite'
+import { generateKeyPair, randomString } from '@twake-chat/crypto'
+import { type TwakeLogger } from '@twake-chat/logger'
+import { type invitationToken, type Config, type DbGetResult } from '../types.ts'
+import { epoch } from '@twake-chat/utils'
+import Pg from './sql/pg.ts'
+import { type ISQLCondition } from './sql/sql.ts'
+import Sqlite from './sql/sqlite.ts'
 
 export type SupportedDatabases = 'sqlite' | 'pg'
 
@@ -604,6 +604,7 @@ class IdentityServerDb<T extends string = never>
       })
 
       this.logger.error('Failed to get tokens', error)
+      return undefined;
     }
   }
 

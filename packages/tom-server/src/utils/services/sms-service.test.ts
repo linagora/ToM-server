@@ -1,6 +1,6 @@
-import { TwakeLogger } from '@twake/logger'
-import type { Config } from '../../types'
-import SmsService from './sms-service'
+import { TwakeLogger } from '@twake-chat/logger'
+import type { Config } from '../../types.ts'
+import SmsService from './sms-service.ts'
 
 const loggerMock = {
   info: jest.fn(),

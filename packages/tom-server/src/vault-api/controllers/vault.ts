@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-misused-promises */
 /* eslint-disable no-useless-return */
-import { type TwakeDB, type twakeDbCollections } from '../../types'
-import { VaultAPIError, type expressAppHandler } from '../utils'
+import { type TwakeDB, type twakeDbCollections } from '../../types.ts'
+import { VaultAPIError, type expressAppHandler } from '../utils.ts'
 
 export type VaultController = (db: TwakeDB) => expressAppHandler
 

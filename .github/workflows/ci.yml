@@ -1,0 +1,29 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [master, dev]
+  merge_group:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: Lint
+    uses: ./.github/workflows/_lint.yml
+
+  test:
+    name: Test
+    uses: ./.github/workflows/_test.yml
+
+  security:
+    name: Security
+    uses: ./.github/workflows/_security.yml
+
+  docs:
+    name: Docs
+    uses: ./.github/workflows/_docs.yml

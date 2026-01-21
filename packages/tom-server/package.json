@@ -1,5 +1,5 @@
 {
-  "name": "@twake/server",
+  "name": "@twake-chat/tom-server",
   "version": "0.0.1",
   "description": "This is the Twake on Matrix server",
   "keywords": [
@@ -21,42 +21,29 @@
     "email": "jcabannes@linagora.com"
   },
   "type": "module",
-  "exports": {
-    "import": "./dist/index.js"
-  },
-  "main": "dist/index.js",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "files": [
-    "package.json",
-    "dist",
-    "templates",
-    "*.md"
-  ],
+  "exports": {
+    "./package.json": "./package.json",
+    ".": {
+      "development": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
   "scripts": {
-    "build": "npm run build:lib && npm run build:example",
-    "build:example": "rollup -p @rollup/plugin-typescript -e express,@twake/server -m -o example/tom-server.js example/tom-server.ts",
-    "build:lib": "rollup -c",
-    "watch": "rollup -c -w",
-    "start": "node example/tom-server.js",
-    "test": "LOG_TRANSPORTS=File LOG_FILE=/dev/null jest"
+    "clean": "node ../../scripts/clean.cjs dist coverage",
+    "build": "tsc --build tsconfig.lib.json",
+    "postbuild": "node ../../scripts/copy-templates.cjs tom-server"
   },
-  "dependencies": {
-    "@twake/matrix-identity-server": "*",
-    "@twake/utils": "*",
-    "ldapts": "^7.1.0",
-    "lodash": "^4.17.21",
-    "pg": "^8.10.0",
-    "qrcode": "^1.5.4",
-    "redis": "^4.6.6",
-    "sqlite3": "^5.1.6",
-    "uuid": "^11.0.3",
-    "validator": "^13.11.0"
-  },
-  "optionalDependencies": {
-    "@crowdsec/express-bouncer": "^0.1.0"
-  },
-  "devDependencies": {
-    "@types/qrcode": "^1.5.5"
+  "nx": {
+    "targets": {
+      "build": {
+        "dependsOn": ["^build"]
+      }
+    }
   },
   "engines": {
     "node": "18.20.8",

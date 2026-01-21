@@ -1,4 +1,4 @@
-# @twake/vault-api
+# @twake-chat/vault-api
 
 Node.js library that implements a vault API to store messages recovery sentence for each matrix user id.
 
@@ -8,7 +8,7 @@ Example using [express](https://www.npmjs.com/package/express):
 
 ```js
 import express from 'express'
-import TwakeVaultAPI from '@twake/vault-api'
+import TwakeVaultAPI from '@twake-chat/vault-api'
 
 // if configuration is in default file (/etc/twake/vault-server.conf)
 const vaultApiServer = new TwakeVaultAPI()

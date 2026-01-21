@@ -2,15 +2,15 @@
  * Scheduler
  */
 
-import { type TwakeLogger } from '@twake/logger'
+import { type TwakeLogger } from '@twake-chat/logger'
 import cron, { type ScheduledTask } from 'node-cron'
-import type IdentityServerDb from '../db'
-import { type Config } from '../types'
-import type UserDB from '../userdb'
-import updateHashes from './changePepper'
-import checkQuota from './check-quota'
-import updateFederatedIdentityHashes from './update-federated-identity-hashes'
-import updateUsers from './updateUsers'
+import type IdentityServerDb from '../db/index.ts'
+import { type Config } from '../types.ts'
+import type UserDB from '../userdb/index.ts'
+import updateHashes from './changePepper.ts'
+import checkQuota from './check-quota.ts'
+import updateFederatedIdentityHashes from './update-federated-identity-hashes.ts'
+import updateUsers from './updateUsers.ts'
 
 class CronTasks<T extends string = never> {
   tasks: ScheduledTask[]

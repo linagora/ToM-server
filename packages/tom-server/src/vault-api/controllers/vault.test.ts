@@ -1,7 +1,7 @@
 import { type NextFunction, type Request, type Response } from 'express'
-import { type TwakeDB } from '../../types'
-import { type tokenDetail } from '../middlewares/auth'
-import { VaultAPIError, type expressAppHandler } from '../utils'
+import { type TwakeDB } from '../../types.ts'
+import { type tokenDetail } from '../middlewares/auth.ts'
+import { VaultAPIError, type expressAppHandler } from '../utils.ts'
 import {
   getRecoveryWords,
   methodNotAllowed,

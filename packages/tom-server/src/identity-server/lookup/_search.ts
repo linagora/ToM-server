@@ -1,12 +1,12 @@
-import type { TwakeLogger } from '@twake/logger'
-import { isMatrixId, send, toMatrixId } from '@twake/utils'
-import type { IAddressbookService } from '../../addressbook-api/types'
+import type { TwakeLogger } from '@twake-chat/logger'
+import { isMatrixId, send, toMatrixId } from '@twake-chat/utils'
+import type { IAddressbookService } from '../../addressbook-api/types.ts'
 import type {
   IUserInfoService,
   UserInformation
-} from '../../user-info-api/types'
-import type TwakeIdentityServer from '..'
-import type { SearchFunction } from './types'
+} from '../../user-info-api/types.ts'
+import type TwakeIdentityServer from '../index.ts'
+import type { SearchFunction } from './types.ts'
 
 /**
  * Masks an email address for logging purposes.
@@ -68,7 +68,9 @@ export const _search = async (
     '[IndentityServer][_search] Initializing search function factory.'
   )
 
-  const { db, userDB, matrixDb, conf } = idServer
+  // TODO: investigate unused db
+  // const { db, userDB, matrixDb, conf } = idServer
+  const { userDB, matrixDb, conf } = idServer
   const enableAdditionalFeatures =
     process.env.ADDITIONAL_FEATURES === 'true' ||
     (conf.additional_features as boolean)

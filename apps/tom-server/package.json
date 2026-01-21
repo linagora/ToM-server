@@ -1,0 +1,100 @@
+{
+  "name": "tom-server",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "nx": {
+    "name": "tom-server",
+    "targets": {
+      "build": {
+        "executor": "@nx/esbuild:esbuild",
+        "outputs": [
+          "{options.outputPath}"
+        ],
+        "defaultConfiguration": "production",
+        "options": {
+          "platform": "node",
+          "outputPath": "apps/tom-server/dist",
+          "format": [
+            "esm"
+          ],
+          "bundle": false,
+          "main": "apps/tom-server/src/main.ts",
+          "tsConfig": "apps/tom-server/tsconfig.app.json",
+          "assets": [
+            {
+              "input": "apps/tom-server/static",
+              "glob": "**/*",
+              "output": "static"
+            },
+            {
+              "input": "apps/tom-server/templates",
+              "glob": "**/*",
+              "output": "templates"
+            }
+          ],
+          "esbuildOptions": {
+            "sourcemap": true,
+            "outExtension": {
+              ".js": ".js"
+            }
+          }
+        },
+        "configurations": {
+          "development": {},
+          "production": {
+            "generateLockfile": true,
+            "esbuildOptions": {
+              "sourcemap": false,
+              "outExtension": {
+                ".js": ".js"
+              }
+            }
+          }
+        }
+      },
+      "serve": {
+        "executor": "@nx/js:node",
+        "defaultConfiguration": "development",
+        "dependsOn": [
+          "build"
+        ],
+        "options": {
+          "buildTarget": "tom-server:build",
+          "runBuildTargetDependencies": false,
+          "args": []
+        },
+        "configurations": {
+          "development": {
+            "buildTarget": "tom-server:build:development"
+          },
+          "production": {
+            "buildTarget": "tom-server:build:production"
+          }
+        }
+      },
+      "test": {
+        "options": {
+          "passWithNoTests": true
+        }
+      },
+      "docker-build": {
+        "dependsOn": [
+          "build"
+        ],
+        "command": "docker build -f apps/tom-server/Dockerfile . -t tom-server"
+      }
+    }
+  },
+  "scripts": {
+    "clean": "node ../../scripts/clean.cjs dist coverage"
+  },
+  "engines": {
+    "node": "18.20.8",
+    "npm": "10.8.2"
+  },
+  "volta": {
+    "node": "18.20.8",
+    "npm": "10.8.2"
+  }
+}

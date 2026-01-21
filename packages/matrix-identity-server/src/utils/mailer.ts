@@ -3,7 +3,7 @@ import nodeMailer, {
   type SentMessageInfo,
   type SendMailOptions
 } from 'nodemailer'
-import { type Config } from '../types'
+import { type Config } from '../types.ts'
 
 class Mailer {
   transport: Transporter<SentMessageInfo>

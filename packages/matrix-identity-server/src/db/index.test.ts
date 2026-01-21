@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/strict-boolean-expressions */
-import { randomString } from '@twake/crypto'
-import { getLogger, type TwakeLogger } from '@twake/logger'
-import DefaultConfig from '../config.json'
-import { type Config, type DbGetResult } from '../types'
-import IdDb from './index'
+import { randomString } from '@twake-chat/crypto'
+import { getLogger, type TwakeLogger } from '@twake-chat/logger'
+import DefaultConfig from '../config.json' with { type: "json" }
+import { type Config, type DbGetResult } from '../types.ts'
+import IdDb from './index.ts'
 import fs from 'fs'
 import { assert } from 'console'
 

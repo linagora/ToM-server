@@ -2,22 +2,22 @@ import {
   getLogger,
   type TwakeLogger,
   type Config as LoggerConfig
-} from '@twake/logger'
+} from '@twake-chat/logger'
 import type {
   AuthenticationFunction,
   Config,
   TwakeDB,
   ITokenService
-} from '../../types'
+} from '../../types.ts'
 import { Router } from 'express'
 import bodyParser from 'body-parser'
-import InvitationApiController from '../controllers'
-import invitationApiMiddleware from '../middlewares'
-import authMiddleware from '../../utils/middlewares/auth.middleware'
-import CookieAuthenticator from '../../utils/middlewares/cookie-auth.middleware'
-import errorMiddleware from '../../utils/middlewares/error.middleware'
-import { MatrixDB, UserDB } from '@twake/matrix-identity-server'
-import UserInfoService from '../../user-info-api/services'
+import InvitationApiController from '../controllers/index.ts'
+import invitationApiMiddleware from '../middlewares/index.ts'
+import authMiddleware from '../../utils/middlewares/auth.middleware.ts'
+import CookieAuthenticator from '../../utils/middlewares/cookie-auth.middleware.ts'
+import errorMiddleware from '../../utils/middlewares/error.middleware.ts'
+import { MatrixDB, UserDB } from '@twake-chat/matrix-identity-server'
+import UserInfoService from '../../user-info-api/services/index.ts'
 
 export const PATH = '/_twake/v1/invite'
 

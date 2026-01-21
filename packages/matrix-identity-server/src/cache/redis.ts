@@ -1,7 +1,7 @@
 /* istanbul ignore file */
 import { type RedisClientType } from 'redis'
-import { type CacheType } from '.'
-import { type Config, type DbGetResult } from '../types'
+import { type CacheType } from './index.ts'
+import { type Config, type DbGetResult } from '../types.ts'
 
 class RedisCache implements CacheType {
   client?: RedisClientType

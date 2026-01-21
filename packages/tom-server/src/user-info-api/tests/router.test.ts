@@ -1,13 +1,13 @@
-import { type ConfigDescription } from '@twake/config-parser'
-import { IdentityServerDb, type MatrixDB } from '@twake/matrix-identity-server'
+import { type ConfigDescription } from '@twake-chat/config-parser'
+import { IdentityServerDb, type MatrixDB } from '@twake-chat/matrix-identity-server'
 import express from 'express'
 import fs from 'fs'
 import path from 'path'
 import supertest, { type Response } from 'supertest'
 import JEST_PROCESS_ROOT_PATH from '../../../jest.globals'
-import IdServer from '../../identity-server'
-import type { Config } from '../../types'
-import router, { PATH } from '../routes'
+import IdServer from '../../identity-server/index.ts'
+import type { Config } from '../../types.ts'
+import router, { PATH } from '../routes/index.ts'
 
 const app = express()
 

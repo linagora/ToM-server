@@ -1,12 +1,13 @@
-import { type TwakeLogger } from '@twake/logger'
-import { AMQPConnector } from '@twake/amqp-connector'
-import { type AmqpConfig } from '@twake/amqp-connector/src/types'
+import fetch from 'node-fetch'
+import { type TwakeLogger } from '@twake-chat/logger'
+import { AMQPConnector } from '@twake-chat/amqp-connector'
+import { type AmqpConfig } from '@twake-chat/amqp-connector'
 import {
   type UserSettings,
   type UserInformationPayload,
   type CommonSettingsMessage
-} from './types'
-import type { Config, TwakeDB } from '@twake/server/src/types'
+} from './types.ts'
+import type { Config, TwakeDB } from '@twake-chat/tom-server'
 import {
   ConfigNotProvidedError,
   CouldNotParseMessageError,
@@ -14,7 +15,7 @@ import {
   QueueNotProvidedError,
   UserIdNotProvidedError,
   UserSettingsNotProvidedError
-} from './errors'
+} from './errors.ts'
 
 export class CommonSettingsService {
   private readonly config: Partial<Config>

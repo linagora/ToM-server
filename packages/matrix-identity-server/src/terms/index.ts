@@ -1,7 +1,7 @@
-import { type TwakeLogger } from '@twake/logger'
-import { type Config } from '../types'
-import { send, type expressAppHandler } from '@twake/utils'
-import computePolicy from './_computePolicies'
+import { type TwakeLogger } from '@twake-chat/logger'
+import { type Config } from '../types.ts'
+import { send, type expressAppHandler } from '@twake-chat/utils'
+import computePolicy from './_computePolicies.ts'
 
 export interface Policy {
   version: string

@@ -3,18 +3,18 @@ import {
   randomString,
   supportedHashes,
   generateKeyPair
-} from '@twake/crypto'
+} from '@twake-chat/crypto'
 import express from 'express'
 import fs from 'fs'
 import fetch from 'node-fetch'
 import querystring from 'querystring'
 import request, { type Response } from 'supertest'
-import buildUserDB from './__testData__/buildUserDB'
-import defaultConfig from './__testData__/registerConf.json'
-import IdServer from './index'
-import { type Config } from './types'
-import { fillPoliciesDB } from './terms/index.post'
-import { SmsService } from './utils/sms-service'
+import buildUserDB from './__testData__/buildUserDB.ts'
+import defaultConfig from './__testData__/registerConf.json' with { type: "json" }
+import IdServer from './index.ts'
+import { type Config } from './types.ts'
+import { fillPoliciesDB } from './terms/index.post.ts'
+import { SmsService } from './utils/sms-service.ts'
 
 jest.mock('node-fetch', () => jest.fn())
 const sendMailMock = jest.fn()
@@ -756,7 +756,7 @@ describe('Use configuration file', () => {
           expect(response.body.errcode).toBe('M_SESSION_NOT_VALIDATED')
           expect(response.statusCode).toBe(400)
         })
-        /* Works if the validationTime is set to 0 millisecond in 3pid/getValidated3pid.ts 
+        /* Works if the validationTime is set to 0 millisecond in 3pid/getValidated3pid.ts
         it('should return 400 if the session is expired', async () => {
           const responseSubmitToken = await request(app)
             .get('/_matrix/identity/v2/validate/email/submitToken')

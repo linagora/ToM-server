@@ -1,10 +1,10 @@
-import { getLogger } from '@twake/logger'
+import { getLogger } from '@twake-chat/logger'
 import express from 'express'
 import request from 'supertest'
-import DefaultConfig from '../config.json'
-import { type Config } from '../types'
-import { resetPolicies } from './_computePolicies'
-import Terms from './index'
+import DefaultConfig from '../config.json' with { type: "json" }
+import { type Config } from '../types.ts'
+import { resetPolicies } from './_computePolicies.ts'
+import Terms from './index.ts'
 
 const policies = {
   privacy_policy: {

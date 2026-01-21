@@ -1,7 +1,7 @@
-import { Hash, supportedHashes } from '@twake/crypto'
-import { type TwakeLogger } from '@twake/logger'
+import { Hash, supportedHashes } from '@twake-chat/crypto'
+import { type TwakeLogger } from '@twake-chat/logger'
 import { createPool } from 'generic-pool'
-import type IdentityServerDb from '../db'
+import type IdentityServerDb from '../db/index.ts'
 
 export const fieldsToHash = ['phone', 'email']
 

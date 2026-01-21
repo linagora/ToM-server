@@ -1,10 +1,10 @@
 /* istanbul ignore file */
-import { getLogger, type TwakeLogger } from '@twake/logger'
+import { getLogger, type TwakeLogger } from '@twake-chat/logger'
 import sqlite3 from 'sqlite3'
-import { type Config } from '../types'
-import UserDB from '../userdb'
-import type UserDBPg from '../userdb/sql/pg'
-import type UserDBSQLite from '../userdb/sql/sqlite'
+import { type Config } from '../types.ts'
+import UserDB from '../userdb/index.ts'
+import type UserDBPg from '../userdb/sql/pg.ts'
+import type UserDBSQLite from '../userdb/sql/sqlite.ts'
 
 const logger: TwakeLogger = getLogger()
 

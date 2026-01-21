@@ -3,10 +3,10 @@ import {
   getLogger,
   type Config as LoggerConfig,
   type TwakeLogger
-} from '@twake/logger'
-import type { Config, ITokenService } from '../../types'
-import AdminSettingsrController from '../controllers'
-import AdminSettingsMiddleware from '../middlewares'
+} from '@twake-chat/logger'
+import type { Config, ITokenService } from '../../types.ts'
+import AdminSettingsrController from '../controllers/index.ts'
+import AdminSettingsMiddleware from '../middlewares/index.ts'
 
 export const PATH = '/_twake/v1/admin'
 
@@ -18,7 +18,9 @@ export default (
   const logger = defaultLogger ?? getLogger(config as unknown as LoggerConfig)
   const router = Router()
   const controller = new AdminSettingsrController(config, logger, tokenService)
-  const middleware = new AdminSettingsMiddleware(config, logger)
+  // TODO: investigate unused logger
+  // const middleware = new AdminSettingsMiddleware(config, logger)
+  const middleware = new AdminSettingsMiddleware(config)
   /**
    * Set display name
    * @see https://matrix-org.github.io/synapse/latest/admin_api/user_admin_api.html#create-or-modify-account

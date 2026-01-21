@@ -1,5 +1,5 @@
 import { type Request, type Response, type NextFunction } from 'express'
-import { VaultAPIError, allowCors, errorMiddleware } from './utils'
+import { VaultAPIError, allowCors, errorMiddleware } from './utils.ts'
 
 describe('Utils methods', () => {
   let mockRequest: Partial<Request>

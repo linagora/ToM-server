@@ -2,14 +2,14 @@ import {
   getLogger,
   type Config as LoggerConfig,
   type TwakeLogger
-} from '@twake/logger'
-import type { AuthenticationFunction, Config, TwakeDB } from '../../types'
+} from '@twake-chat/logger'
+import type { AuthenticationFunction, Config, TwakeDB } from '../../types.ts'
 import { Router } from 'express'
-import authMiddleware from '../../utils/middlewares/auth.middleware'
-import AddressbookApiController from '../controllers'
-import AddressBookApiMiddleware from '../middlewares'
-import type { IAddressbookService } from '../types'
-import type { IUserInfoService } from '../../user-info-api/types'
+import authMiddleware from '../../utils/middlewares/auth.middleware.ts'
+import AddressbookApiController from '../controllers/index.ts'
+import AddressBookApiMiddleware from '../middlewares/index.ts'
+import type { IAddressbookService } from '../types.ts'
+import type { IUserInfoService } from '../../user-info-api/types.ts'
 
 export const PATH = '/_twake/addressbook'
 

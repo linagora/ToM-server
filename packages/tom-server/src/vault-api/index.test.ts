@@ -5,9 +5,9 @@ import path from 'path'
 import request, { type Response } from 'supertest'
 import TwakeServer from '..'
 import JEST_PROCESS_ROOT_PATH from '../../jest.globals'
-import { type Config } from '../types'
-import buildTokenTable from './__testData__/buildTokenTable'
-import defaultConfig from './__testData__/config.json'
+import { type Config } from '../types.ts'
+import buildTokenTable from './__testData__/buildTokenTable.ts'
+import defaultConfig from './__testData__/config.json' with { type: "json" }
 
 const endpoint = '/_twake/recoveryWords'
 const testFilePath = path.join(JEST_PROCESS_ROOT_PATH, 'vault.db')

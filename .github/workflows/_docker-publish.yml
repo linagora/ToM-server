@@ -1,0 +1,42 @@
+name: Docker Publish
+
+on:
+  workflow_call:
+    inputs:
+      app-name:
+        type: string
+        required: true
+        description: Application name
+      image-name:
+        type: string
+        required: true
+        description: Docker image name (e.g., linagora/tom-server)
+      dockerfile:
+        type: string
+        required: true
+        description: Path to Dockerfile
+    secrets:
+      DOCKERHUB_USER:
+        required: true
+      DOCKERHUB_PASSWORD:
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    name: Publish ${{ inputs.app-name }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Publish Docker image
+        uses: ./.github/actions/docker-publish
+        with:
+          app-name: ${{ inputs.app-name }}
+          image-name: ${{ inputs.image-name }}
+          dockerfile: ${{ inputs.dockerfile }}
+          dockerhub-user: ${{ secrets.DOCKERHUB_USER }}
+          dockerhub-password: ${{ secrets.DOCKERHUB_PASSWORD }}

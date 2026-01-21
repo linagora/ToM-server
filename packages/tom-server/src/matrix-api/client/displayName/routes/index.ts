@@ -2,11 +2,11 @@ import {
   getLogger,
   type TwakeLogger,
   type Config as LoggerConfig
-} from '@twake/logger'
-import type { AuthenticationFunction, Config } from '../../../../types'
+} from '@twake-chat/logger'
+import type { AuthenticationFunction, Config } from '../../../../types.ts'
 import { Router } from 'express'
-import DisplayNameController from '../controllers'
-import authMiddleware from '../../../../utils/middlewares/auth.middleware'
+import DisplayNameController from '../controllers/index.ts'
+import authMiddleware from '../../../../utils/middlewares/auth.middleware.ts'
 
 /**
  * Update display name route

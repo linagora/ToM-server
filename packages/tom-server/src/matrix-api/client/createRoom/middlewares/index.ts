@@ -1,4 +1,4 @@
-import { TwakeLogger } from '@twake/logger'
+import { TwakeLogger } from '@twake-chat/logger'
 import type { NextFunction, Request, Response } from 'express'
 import validator from 'validator'
 export default class CreateRoomMiddleware {

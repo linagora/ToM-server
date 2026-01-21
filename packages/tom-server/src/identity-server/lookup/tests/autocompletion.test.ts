@@ -1,8 +1,8 @@
-import autocompletion from '../autocompletion'
-import { jsonContent, validateParameters } from '@twake/utils'
-import _search from '../_search'
+import autocompletion from '../autocompletion.ts'
+import { jsonContent, validateParameters } from '@twake-chat/utils'
+import _search from '../_search.ts'
 
-jest.mock('@twake/utils', () => ({
+jest.mock('@twake-chat/utils', () => ({
   jsonContent: jest.fn((req, res, logger, callback) => callback(req.body)),
   validateParameters: jest.fn((res, schema, obj, logger, callback) =>
     callback(obj)

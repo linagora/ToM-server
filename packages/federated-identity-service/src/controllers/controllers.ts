@@ -1,13 +1,13 @@
-import { supportedHashes } from '@twake/crypto'
-import { type TwakeLogger } from '@twake/logger'
-import { type DbGetResult } from '@twake/matrix-identity-server'
-import { errCodes } from '@twake/utils'
+import { supportedHashes } from '@twake-chat/crypto'
+import { type TwakeLogger } from '@twake-chat/logger'
+import { type DbGetResult } from '@twake-chat/matrix-identity-server'
+import { errCodes } from '@twake-chat/utils'
 import lodash from 'lodash'
 import {
   FederatedIdentityServiceError,
   validationErrorHandler
-} from '../middlewares/errors'
-import { type Config, type FdServerDb, type expressAppHandler } from '../types'
+} from '../middlewares/errors.ts'
+import { type Config, type FdServerDb, type expressAppHandler } from '../types.ts'
 const { groupBy, mapValues } = lodash
 
 export const hashByServer = 'hashByServer'

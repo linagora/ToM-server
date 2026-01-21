@@ -1,3 +1,3 @@
 /* istanbul ignore file */
-export * from './errors'
-export * from './utils'
+export * from './errors.ts'
+export * from './utils.ts'

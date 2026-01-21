@@ -1,18 +1,5 @@
 {
   "application_name": "Twake Chat",
   "application_welcome_message": "Welcome to Twake Chat!",
-  "default_homeserver": "docker.localhost",
-  "privacy_url": "https://twake.app/en/privacy/",
-  "render_html": true,
-  "hide_redacted_events": false,
-  "hide_unknown_events": false,
-  "issue_id": "",
-  "app_grid_dashboard_available": false,
-  "homeserver": "https://matrix.docker.localhost/",
-  "platform": "localDebug",
-  "default_max_upload_avatar_size_in_bytes": 1000000,
-  "dev_mode": false,
-  "qr_code_download_url": "https://sign-up.twake.app/download/chat",
-  "enable_logs": true,
-  "support_url": "https://twake.app/support"
+  "homeserver": "http://matrix.docker.internal"
 }

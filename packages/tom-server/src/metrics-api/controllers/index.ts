@@ -1,8 +1,8 @@
-import { type TwakeLogger } from '@twake/logger'
-import { type MatrixDBBackend } from '@twake/matrix-identity-server'
+import { type TwakeLogger } from '@twake-chat/logger'
+import { type MatrixDBBackend } from '@twake-chat/matrix-identity-server'
 import { type NextFunction, type Request, type Response } from 'express'
-import { type IMetricsService } from '../types'
-import MetricsService from '../services'
+import { type IMetricsService } from '../types.ts'
+import MetricsService from '../services/index.ts'
 
 export default class MetricsApiController {
   private readonly metricsService: IMetricsService

@@ -1,8 +1,8 @@
 import { type Response, type NextFunction } from 'express'
-import { type AuthRequest } from '../../types'
-import { type ISmsApiMiddleware } from '../types'
+import { type AuthRequest } from '../../types.ts'
+import { type ISmsApiMiddleware } from '../types.ts'
 import validator from 'validator'
-import { type TwakeLogger } from '@twake/logger'
+import { type TwakeLogger } from '@twake-chat/logger'
 
 export default class SmsApiMiddleware implements ISmsApiMiddleware {
   constructor(private readonly logger: TwakeLogger) {}

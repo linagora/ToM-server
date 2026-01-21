@@ -1,5 +1,5 @@
 {
-  "name": "@twake/logger",
+  "name": "@twake-chat/logger",
   "version": "0.0.1",
   "description": "Logger module",
   "keywords": [
@@ -16,33 +16,25 @@
     "url": "https://ci.linagora.com/publicgroup/oss/twake/tom-server.git"
   },
   "license": "AGPL-3.0-or-later",
-  "author": [
-    {
-      "name": "Jordy Cabannes",
-      "email": "jcabannes@linagora.com"
-    }
-  ],
+  "author": {
+    "name": "Jordy Cabannes",
+    "email": "jcabannes@linagora.com"
+  },
   "type": "module",
-  "exports": {
-    "import": "./dist/index.js"
-  },
-  "main": "dist/index.js",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "files": [
-    "package.json",
-    "dist",
-    "*.md"
-  ],
-  "scripts": {
-    "build": "npm run build:lib && npm run build:example",
-    "build:example": "rollup -p @rollup/plugin-typescript -e @twake/logger -o example/logger.js example/logger.ts",
-    "build:lib": "rollup -c",
-    "test": "jest"
+  "exports": {
+    "./package.json": "./package.json",
+    ".": {
+      "development": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
   },
-  "dependencies": {
-    "@twake/config-parser": "*",
-    "winston": "^3.10.0",
-    "winston-daily-rotate-file": "^4.7.1"
+  "scripts": {
+    "clean": "node ../../scripts/clean.cjs dist coverage"
   },
   "engines": {
     "node": "18.20.8",

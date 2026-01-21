@@ -1,6 +1,7 @@
-import type { TwakeLogger } from '@twake/logger'
-import type { Config, ISMSService, SendSmsPayload } from '../../types'
-import { buildUrl } from '../../utils'
+import fetch from 'node-fetch'
+import type { TwakeLogger } from '@twake-chat/logger'
+import type { Config, ISMSService, SendSmsPayload } from '../../types.ts'
+import { buildUrl } from '../../utils.ts'
 
 export default class SmsService implements ISMSService {
   private API_ENDPOINT: string

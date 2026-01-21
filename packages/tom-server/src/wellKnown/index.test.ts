@@ -9,13 +9,13 @@
 import request from 'supertest'
 import express, { type Express } from 'express'
 import WellKnown from '.'
-import { type Config } from '../types'
-import defaultConfig from '../config.json'
-import { ProfileVisibility } from '../user-info-api/types'
+import { type Config } from '../types.ts'
+import defaultConfig from '../config.json' with { type: "json" }
+import { ProfileVisibility } from '../user-info-api/types.ts'
 
 type WellKnownConfig = Pick<Config, 'features'>
 
-jest.mock('@twake/utils', () => ({
+jest.mock('@twake-chat/utils', () => ({
   send: (res: any, code: number, payload: any) => {
     res.status(code).json(payload)
   }

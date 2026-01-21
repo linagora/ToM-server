@@ -1,11 +1,12 @@
-import { type TwakeLogger } from '@twake/logger'
-import { ITokenService, TokenResponse, type Config } from '../../types'
+import fetch from 'node-fetch'
+import { type TwakeLogger } from '@twake-chat/logger'
+import { ITokenService, TokenResponse, type Config } from '../../types.ts'
 import {
   type TokenLoginPayload,
   type TokenLoginResponse,
   type loginFlowsResponse,
   type OIDCRedirectResponse
-} from '../../types'
+} from '../../types.ts'
 
 export default class TokenService implements ITokenService {
   JSON_HEADERS = {

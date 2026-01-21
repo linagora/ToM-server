@@ -1,10 +1,10 @@
-import { type Collections, type UserDBBackend } from '..'
-import SQLite from '../../db/sql/sqlite'
-import { type Config } from '../../types'
+import { type Collections, type UserDBBackend } from '../index.ts'
+import SQLite from '../../db/sql/sqlite.ts'
+import { type Config } from '../../types.ts'
 
 class UserDBSQLite extends SQLite<Collections> implements UserDBBackend {
   // eslint-disable-next-line @typescript-eslint/promise-function-async
-  createDatabases(
+  override createDatabases(
     conf: Config,
     tables: Record<Collections, string>,
     indexes: Partial<Record<Collections, string[]>>,

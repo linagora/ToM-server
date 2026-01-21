@@ -1,9 +1,9 @@
-import { type TwakeLogger } from '@twake/logger'
-import { type IQRCodeApiController, type IQRCodeService } from '../types'
+import { type TwakeLogger } from '@twake-chat/logger'
+import { type IQRCodeApiController, type IQRCodeService } from '../types.ts'
 import { type Response, type NextFunction } from 'express'
-import type { Config, AuthRequest, ITokenService } from '../../types'
-import QRCodeService from '../services'
-import TokenService from '../../utils/services/token-service'
+import type { Config, AuthRequest, ITokenService } from '../../types.ts'
+import QRCodeService from '../services/index.ts'
+import TokenService from '../../utils/services/token-service.ts'
 
 class QRCodeApiController implements IQRCodeApiController {
   private readonly qrCodeService: IQRCodeService

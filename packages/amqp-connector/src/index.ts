@@ -1,19 +1,19 @@
 import amqplib, { type Options } from 'amqplib'
-import { type TwakeLogger } from '@twake/logger'
+import { type TwakeLogger } from '@twake-chat/logger'
 import {
   type AmqpConfig,
   type MessageHandler,
   ConnectionState,
   type ReconnectionConfig,
   DEFAULT_RECONNECTION_CONFIG
-} from './types'
+} from './types.ts'
 import {
   QueueNotSpecifiedError,
   MessageHandlerNotProvidedError,
   ExchangeNotSpecifiedError
-} from './errors'
+} from './errors.ts'
 
-export { ConnectionState, type ReconnectionConfig } from './types'
+export { ConnectionState, type ReconnectionConfig } from './types.ts'
 
 export class AMQPConnector {
   private readonly logger?: TwakeLogger

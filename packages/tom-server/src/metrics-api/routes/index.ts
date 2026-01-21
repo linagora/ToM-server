@@ -3,13 +3,13 @@ import {
   getLogger,
   type Config as LoggerConfig,
   type TwakeLogger
-} from '@twake/logger'
-import { type AuthenticationFunction, type Config } from '../../types'
-import { type MatrixDBBackend } from '@twake/matrix-identity-server'
+} from '@twake-chat/logger'
+import { type AuthenticationFunction, type Config } from '../../types.ts'
+import { type MatrixDBBackend } from '@twake-chat/matrix-identity-server'
 import { Router } from 'express'
-import authMiddleware from '../../utils/middlewares/auth.middleware'
-import MetricsApiController from '../controllers'
-import MetricsApiMiddleware from '../middlewares'
+import authMiddleware from '../../utils/middlewares/auth.middleware.ts'
+import MetricsApiController from '../controllers/index.ts'
+import MetricsApiMiddleware from '../middlewares/index.ts'
 
 export const PATH = '/_twake/v1/metrics'
 

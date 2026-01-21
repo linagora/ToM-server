@@ -1,4 +1,4 @@
-import { getServerNameFromMatrixId } from './utils'
+import { getServerNameFromMatrixId } from './utils.ts'
 
 describe('the getServerNameFromMatrixId helper', () => {
   it('should extract the server name correctly', () => {

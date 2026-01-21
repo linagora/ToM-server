@@ -1,7 +1,31 @@
 {
-  "extends": "../../tsconfig-build.json",
-  "compilerOptions": {
-    "outDir": "dist"
-  },
-  "include": ["src/**/*", "test/**/*"]
+  "extends": "../../tsconfig.base.json",
+  "files": [],
+  "include": [],
+  "references": [
+    {
+      "path": "../matrix-resolve"
+    },
+    {
+      "path": "../config-parser"
+    },
+    {
+      "path": "../logger"
+    },
+    {
+      "path": "../utils"
+    },
+    {
+      "path": "../crypto"
+    },
+    {
+      "path": "./tsconfig.lib.json"
+    },
+    {
+      "path": "./tsconfig.spec.json"
+    }
+  ],
+  "nx": {
+    "addTypecheckTarget": false
+  }
 }

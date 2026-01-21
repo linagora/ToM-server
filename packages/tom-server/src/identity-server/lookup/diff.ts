@@ -1,13 +1,13 @@
-import { type TwakeLogger } from '@twake/logger'
+import { type TwakeLogger } from '@twake-chat/logger'
 import {
   epoch,
   errMsg,
   jsonContent,
   validateParameters,
   send
-} from '@twake/utils'
-import type TwakeIdentityServer from '..'
-import { type expressAppHandler } from '../../types'
+} from '@twake-chat/utils'
+import type TwakeIdentityServer from '../index.ts'
+import { type expressAppHandler } from '../../types.ts'
 
 const schema = {
   since: true,

@@ -1,5 +1,5 @@
-import { type Config } from '../../types'
-import { type tokenDetail } from '../middlewares/auth'
+import { type Config } from '../../types.ts'
+import { type tokenDetail } from '../middlewares/auth.ts'
 import sqlite3 from 'sqlite3'
 
 const token: tokenDetail = {

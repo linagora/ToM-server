@@ -3,12 +3,12 @@ import {
   getLogger,
   type TwakeLogger,
   type Config as LoggerConfig
-} from '@twake/logger'
-import type IdServer from '../../identity-server'
-import { type Config, type ITokenService } from '../../types'
+} from '@twake-chat/logger'
+import type IdServer from '../../identity-server/index.ts'
+import { type Config, type ITokenService } from '../../types.ts'
 import { Router } from 'express'
-import authMiddleware from '../../utils/middlewares/auth.middleware'
-import QRCodeApiController from '../controllers'
+import authMiddleware from '../../utils/middlewares/auth.middleware.ts'
+import QRCodeApiController from '../controllers/index.ts'
 
 export const PATH = '/_twake/v1/qrcode'
 

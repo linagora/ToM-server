@@ -1,5 +1,5 @@
-import { type CacheType } from '.'
-import { type DbGetResult, type Config } from '../types'
+import { type CacheType } from './index.ts'
+import { type DbGetResult, type Config } from '../types.ts'
 import type NodeCache from 'node-cache'
 
 class MemoryCache implements CacheType {

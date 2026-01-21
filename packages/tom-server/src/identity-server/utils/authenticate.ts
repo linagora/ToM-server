@@ -1,9 +1,9 @@
-import { type TwakeLogger } from '@twake/logger'
-import { type tokenContent } from '@twake/matrix-identity-server'
-import { Authenticate as RemoteAuthenticate } from '@twake/matrix-identity-server'
-import { epoch, errMsg, send } from '@twake/utils'
+import { type TwakeLogger } from '@twake-chat/logger'
+import { type tokenContent } from '@twake-chat/matrix-identity-server'
+import { Authenticate as RemoteAuthenticate } from '@twake-chat/matrix-identity-server'
+import { epoch, errMsg, send } from '@twake-chat/utils'
 import fetch from 'node-fetch'
-import type { AuthenticationFunction, Config, TwakeDB } from '../../types'
+import type { AuthenticationFunction, Config, TwakeDB } from '../../types.ts'
 
 export interface WhoAmIResponse {
   user_id?: string

@@ -1,6 +1,6 @@
-import type MatrixIdentityServer from '..'
-import { errMsg, send, type expressAppHandler } from '@twake/utils'
-import { type tokenContent } from './register'
+import type MatrixIdentityServer from '../index.ts'
+import { errMsg, send, type expressAppHandler } from '@twake-chat/utils'
+import { type tokenContent } from './register.ts'
 
 const Logout = <T extends string = never>(
   idServer: MatrixIdentityServer<T>

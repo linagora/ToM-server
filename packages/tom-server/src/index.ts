@@ -1,30 +1,34 @@
-import configParser, { type ConfigDescription } from '@twake/config-parser'
+import configParser, { type ConfigDescription } from '@twake-chat/config-parser'
 import {
   getLogger,
   type Config as LoggerConfig,
   type TwakeLogger
-} from '@twake/logger'
-import { MatrixDB } from '@twake/matrix-identity-server'
+} from '@twake-chat/logger'
+import { MatrixDB } from '@twake-chat/matrix-identity-server'
 import { Router } from 'express'
 import fs from 'fs'
-import defaultConfig from './config.json'
-import IdServer from './identity-server'
-import smsApiRouter from './sms-api'
-import type { Config, ConfigurationFile, TwakeDB } from './types'
-import userInfoAPIRouter from './user-info-api'
-import VaultServer from './vault-api'
-import WellKnown from './wellKnown'
-import QRCode from './qrcode-api'
-import MetricsRouter from './metrics-api'
-import Invitation from './invitation-api'
-import AddressBook from './addressbook-api'
-import DeactivateAccount from './deactivate-account-api'
-import AdminSettings from './admin-settings-api'
-import MatrixclientApi from './matrix-api/client'
-import { AddressbookService } from './addressbook-api/services'
-import UserInfoService from './user-info-api/services'
-import TokenService from './utils/services/token-service'
-import SmsService from './sms-api/services'
+import defaultConfig from './config.json' with { type: "json" }
+import IdServer from './identity-server/index.ts'
+import smsApiRouter from './sms-api/index.ts'
+// TODO: investigate unused ConfigurationFile
+// import type { Config, ConfigurationFile, TwakeDB } from './types.ts'
+import type { Config, TwakeDB } from './types.ts'
+
+export type { Config, TwakeDB } from './types.ts'
+import userInfoAPIRouter from './user-info-api/index.ts'
+import VaultServer from './vault-api/index.ts'
+import WellKnown from './wellKnown/index.ts'
+import QRCode from './qrcode-api/index.ts'
+import MetricsRouter from './metrics-api/index.ts'
+import Invitation from './invitation-api/index.ts'
+import AddressBook from './addressbook-api/index.ts'
+import DeactivateAccount from './deactivate-account-api/index.ts'
+import AdminSettings from './admin-settings-api/index.ts'
+import MatrixclientApi from './matrix-api/client/index.ts'
+import { AddressbookService } from './addressbook-api/services/index.ts'
+import UserInfoService from './user-info-api/services/index.ts'
+import TokenService from './utils/services/token-service.ts'
+import SmsService from './sms-api/services/index.ts'
 
 export default class TwakeServer {
   conf: Config

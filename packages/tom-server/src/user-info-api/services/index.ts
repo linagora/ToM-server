@@ -1,4 +1,4 @@
-import type { MatrixDB, UserDB } from '@twake/matrix-identity-server'
+import type { MatrixDB, UserDB } from '@twake-chat/matrix-identity-server'
 import {
   type IUserInfoService,
   type UserInformation,
@@ -8,12 +8,12 @@ import {
   type UserProfileSettingsPayloadT,
   ProfileField,
   ProfileVisibility
-} from '../types'
-import type { TwakeDB, Config } from '../../types'
-import { getLocalPart } from '@twake/utils'
-import type { TwakeLogger } from '@twake/logger'
-import { type IAddressbookService } from '../../addressbook-api/types'
-import { AddressbookService } from '../../addressbook-api/services'
+} from '../types.ts'
+import type { TwakeDB, Config } from '../../types.ts'
+import { getLocalPart } from '@twake-chat/utils'
+import type { TwakeLogger } from '@twake-chat/logger'
+import { type IAddressbookService } from '../../addressbook-api/types.ts'
+import { AddressbookService } from '../../addressbook-api/services/index.ts'
 
 class UserInfoService implements IUserInfoService {
   private readonly addressBookService: IAddressbookService

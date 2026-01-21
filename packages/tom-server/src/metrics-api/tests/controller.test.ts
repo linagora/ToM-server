@@ -1,11 +1,11 @@
 import bodyParser from 'body-parser'
 import express, { type NextFunction, type Response } from 'express'
 import supertest from 'supertest'
-import type { AuthRequest, Config } from '../../types'
-import router, { PATH } from '../routes'
-import type { TwakeLogger } from '@twake/logger'
-import { type MatrixDBBackend } from '@twake/matrix-identity-server'
-import { type UserMessageCount, type MatrixUserInfo } from '../types'
+import type { AuthRequest, Config } from '../../types.ts'
+import router, { PATH } from '../routes/index.ts'
+import type { TwakeLogger } from '@twake-chat/logger'
+import { type MatrixDBBackend } from '@twake-chat/matrix-identity-server'
+import { type UserMessageCount, type MatrixUserInfo } from '../types.ts'
 
 const ONE_DAY_IN_MS = 24 * 60 * 60 * 1000
 const ONE_WEEK_IN_MS = 7 * ONE_DAY_IN_MS

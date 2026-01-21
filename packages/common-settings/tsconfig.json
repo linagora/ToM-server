@@ -1,7 +1,25 @@
 {
-  "extends": "../../tsconfig-build.json",
-  "compilerOptions": {
-    "outDir": "dist"
-  },
-  "include": ["src/**/*"]
+  "extends": "../../tsconfig.base.json",
+  "files": [],
+  "include": [],
+  "references": [
+    {
+      "path": "../tom-server"
+    },
+    {
+      "path": "../amqp-connector"
+    },
+    {
+      "path": "../logger"
+    },
+    {
+      "path": "./tsconfig.lib.json"
+    },
+    {
+      "path": "./tsconfig.spec.json"
+    }
+  ],
+  "nx": {
+    "addTypecheckTarget": false
+  }
 }

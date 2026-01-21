@@ -1,6 +1,6 @@
 import express from 'express'
 
-import IdServer from '@twake/matrix-identity-server'
+import IdServer from '@twake-chat/matrix-identity-server'
 
 const idServer = new IdServer({
   database_host: ':memory:'

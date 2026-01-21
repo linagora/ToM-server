@@ -1,5 +1,5 @@
 import { type NextFunction, type Response } from 'express'
-import { type AuthRequest } from '../types'
+import { type AuthRequest } from '../types.ts'
 
 export interface ISmsApiController {
   send: (req: AuthRequest, res: Response, next: NextFunction) => Promise<void>

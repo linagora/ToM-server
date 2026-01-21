@@ -1,19 +1,19 @@
-import { randomString } from '@twake/crypto'
+import { randomString } from '@twake-chat/crypto'
 import fs from 'fs'
 import fetch from 'node-fetch'
-import type MatrixIdentityServer from '../index'
-import { type Config } from '../types'
+import type MatrixIdentityServer from '../index.ts'
+import { type Config } from '../types.ts'
 import {
   errMsg,
   jsonContent,
   send,
   validateParameters,
   type expressAppHandler
-} from '@twake/utils'
-import Mailer from '../utils/mailer'
+} from '@twake-chat/utils'
+import Mailer from '../utils/mailer.ts'
 import validator from 'validator'
-import { buildUrl } from '../utils'
-import { SmsService } from '../utils/sms-service'
+import { buildUrl } from '../utils.ts'
+import { SmsService } from '../utils/sms-service.ts'
 
 interface storeInvitationArgs {
   address: string

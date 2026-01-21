@@ -2,15 +2,16 @@ import {
   type IdentityServerDb,
   type Config as MConfig,
   type Utils as MUtils
-} from '@twake/matrix-identity-server'
+} from '@twake-chat/matrix-identity-server'
 import {
   type expressAppHandler as _expressAppHandler,
   errCodes
-} from '@twake/utils'
+} from '@twake-chat/utils'
 import { type NextFunction, type Request, type Response } from 'express'
 import type { PathOrFileDescriptor } from 'fs'
 import type { SendMailOptions } from 'nodemailer'
-import { UserProfileSettingsPayloadT } from './user-info-api/types'
+// TODO: investigate unused
+// import { UserProfileSettingsPayloadT } from './user-info-api/types.ts'
 
 export type expressAppHandler = _expressAppHandler
 export type AuthenticationFunction = MUtils.AuthenticationFunction

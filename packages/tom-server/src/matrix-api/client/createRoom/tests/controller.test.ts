@@ -1,13 +1,13 @@
 import express, { type NextFunction } from 'express'
 import bodyParser from 'body-parser'
-import { TwakeLogger } from '@twake/logger'
+import { TwakeLogger } from '@twake-chat/logger'
 import type {
   AuthenticationFunction,
   AuthRequest,
   Config,
   CreateRoomPayload
-} from '../../../../types'
-import router from '../routes'
+} from '../../../../types.ts'
+import router from '../routes/index.ts'
 import supertest from 'supertest'
 
 const loggerMock = {

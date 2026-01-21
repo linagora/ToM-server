@@ -1,5 +1,5 @@
 {
-  "name": "@twake/federated-identity-service",
+  "name": "@twake-chat/federated-identity-service",
   "version": "0.0.1",
   "description": "This is the Twake Federated Identity Service",
   "keywords": [
@@ -22,36 +22,29 @@
     "email": "jcabannes@linagora.com"
   },
   "type": "module",
-  "exports": {
-    "import": "./dist/index.js"
-  },
-  "main": "dist/index.js",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "files": [
-    "package.json",
-    "dist",
-    "*.md"
-  ],
+  "exports": {
+    "./package.json": "./package.json",
+    ".": {
+      "development": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
   "scripts": {
-    "build": "npm run build:lib && npm run build:example",
-    "build:example": "rollup -p @rollup/plugin-typescript -e express,@twake/federated-identity-service -m -o example/federated-identity-service.js example/federated-identity-service.ts",
-    "build:lib": "rollup -c",
-    "start": "node example/federated-identity-service.js",
-    "test": "LOG_TRANSPORTS=File LOG_FILE=/dev/null jest"
+    "clean": "node ../../scripts/clean.cjs dist coverage",
+    "build": "tsc --build tsconfig.lib.json",
+    "postbuild": "node ../../scripts/copy-templates.cjs federated-identity-service"
   },
-  "dependencies": {
-    "@twake/config-parser": "*",
-    "@twake/crypto": "*",
-    "@twake/logger": "*",
-    "@twake/matrix-identity-server": "*",
-    "@twake/utils": "*",
-    "express-validator": "^7.0.1",
-    "ip-address": "^9.0.5",
-    "lodash": "^4.17.21",
-    "validator": "^13.15.0"
-  },
-  "optionalDependencies": {
-    "@crowdsec/express-bouncer": "^0.1.0"
+  "nx": {
+    "targets": {
+      "build": {
+        "dependsOn": ["^build"]
+      }
+    }
   },
   "engines": {
     "node": "18.20.8",

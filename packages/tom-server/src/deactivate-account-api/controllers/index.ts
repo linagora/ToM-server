@@ -1,8 +1,8 @@
-import type { TwakeLogger } from '@twake/logger'
-import type { IAdminService, IDeactivateUserController } from '../types'
-import type { Config, ITokenService } from '../../types'
+import type { TwakeLogger } from '@twake-chat/logger'
+import type { IAdminService, IDeactivateUserController } from '../types.ts'
+import type { Config, ITokenService } from '../../types.ts'
 import type { NextFunction, Response, Request } from 'express'
-import DeactivateAccountService from '../services'
+import DeactivateAccountService from '../services/index.ts'
 
 export default class DeactivateUserController
   implements IDeactivateUserController

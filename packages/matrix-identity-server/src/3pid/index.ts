@@ -1,5 +1,5 @@
-import type MatrixIdentityServer from '..'
-import { epoch, errMsg, send, type expressAppHandler } from '@twake/utils'
+import { epoch, errMsg, send, type expressAppHandler } from '@twake-chat/utils'
+import type MatrixIdentityServer from '../index.ts'
 interface parameters {
   client_secret: string
   sid: string

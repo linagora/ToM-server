@@ -1,25 +1,25 @@
-import { type TwakeLogger } from '@twake/logger'
-import { type IdServerAPI, type Utils } from '@twake/matrix-identity-server'
+import { type TwakeLogger } from '@twake-chat/logger'
+import { type IdServerAPI, type Utils } from '@twake-chat/matrix-identity-server'
 import { Router, json, urlencoded } from 'express'
-import { hashDetails, lookup, lookups } from '../controllers/controllers'
-import { auth } from '../middlewares/auth'
-import { errorMiddleware } from '../middlewares/errors'
+import { hashDetails, lookup, lookups } from '../controllers/controllers.ts'
+import { auth } from '../middlewares/auth.ts'
+import { errorMiddleware } from '../middlewares/errors.ts'
 import {
   allowCors,
   methodNotAllowed,
   methodNotFound
-} from '../middlewares/utils'
+} from '../middlewares/utils.ts'
 import {
   commonValidators,
   lookupValidator,
   lookupsValidator
-} from '../middlewares/validation'
+} from '../middlewares/validation.ts'
 import {
   type FdServerDb,
   type Config,
   type expressAppHandler,
   type middlewaresList
-} from '../types'
+} from '../types.ts'
 
 const errorMiddlewares = (middleware: expressAppHandler): middlewaresList => [
   allowCors,

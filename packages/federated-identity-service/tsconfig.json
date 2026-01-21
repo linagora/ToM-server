@@ -1,8 +1,31 @@
 {
-  "extends": "../../tsconfig-build.json",
-  "compilerOptions": {
-    "outDir": "dist"
-  },
-  "include": ["src/**/*.ts"],
-  "exclude": ["node_modules", "src/**/*.test.ts"]
+  "extends": "../../tsconfig.base.json",
+  "files": [],
+  "include": [],
+  "references": [
+    {
+      "path": "../config-parser"
+    },
+    {
+      "path": "../utils"
+    },
+    {
+      "path": "../matrix-identity-server"
+    },
+    {
+      "path": "../logger"
+    },
+    {
+      "path": "../crypto"
+    },
+    {
+      "path": "./tsconfig.lib.json"
+    },
+    {
+      "path": "./tsconfig.spec.json"
+    }
+  ],
+  "nx": {
+    "addTypecheckTarget": false
+  }
 }

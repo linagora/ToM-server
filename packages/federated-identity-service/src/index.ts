@@ -1,13 +1,13 @@
-import configParser, { type ConfigDescription } from '@twake/config-parser'
-import { type TwakeLogger } from '@twake/logger'
-import MatrixIdentityServer from '@twake/matrix-identity-server'
+import configParser, { type ConfigDescription } from '@twake-chat/config-parser'
+import { type TwakeLogger } from '@twake-chat/logger'
+import MatrixIdentityServer from '@twake-chat/matrix-identity-server'
 import { Router } from 'express'
 import fs from 'fs'
-import defaultConfig from './config.json'
-import { Authenticate } from './middlewares/auth'
-import Routes from './routes/routes'
-import { type Config, type FdServerDb, type fdDbCollections } from './types'
-import { isIpLiteral, isNetwork } from './utils/ip-address'
+import defaultConfig from './config.json' with { type: "json" }
+import { Authenticate } from './middlewares/auth.ts'
+import Routes from './routes/routes.ts'
+import { type Config, type FdServerDb, type fdDbCollections } from './types.ts'
+import { isIpLiteral, isNetwork } from './utils/ip-address.ts'
 
 const tables = {
   hashByServer:

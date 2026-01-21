@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/consistent-type-assertions */
-import { type ConfigDescription } from '@twake/config-parser'
-import { type TwakeLogger } from '@twake/logger'
-import { IdentityServerDb, type MatrixDB } from '@twake/matrix-identity-server'
+import { type ConfigDescription } from '@twake-chat/config-parser'
+import { type TwakeLogger } from '@twake-chat/logger'
+import { IdentityServerDb, type MatrixDB } from '@twake-chat/matrix-identity-server'
 import bodyParser from 'body-parser'
 import express, {
   type Response as ExpressResponse,
@@ -11,10 +11,10 @@ import fs from 'fs'
 import path from 'path'
 import supertest, { type Response } from 'supertest'
 import JEST_PROCESS_ROOT_PATH from '../../../jest.globals'
-import IdServer from '../../identity-server'
-import type { AuthRequest, Config } from '../../types'
-import errorMiddleware from '../../utils/middlewares/error.middleware'
-import router, { PATH } from '../routes'
+import IdServer from '../../identity-server/index.ts'
+import type { AuthRequest, Config } from '../../types.ts'
+import errorMiddleware from '../../utils/middlewares/error.middleware.ts'
+import router, { PATH } from '../routes/index.ts'
 
 const mockLogger: Partial<TwakeLogger> = {
   debug: jest.fn(),

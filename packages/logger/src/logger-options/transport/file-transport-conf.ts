@@ -4,8 +4,8 @@ import {
   type IFileTransportConf,
   type IFileTransportOptions,
   type TransportConf
-} from '../../types'
-import { FileTransportOptions } from './options/file-transport-options'
+} from '../../types.ts'
+import { FileTransportOptions } from './options/file-transport-options.ts'
 
 export class FileTransportConf implements TransportConf {
   public type: `${ETransportType.FILE}`

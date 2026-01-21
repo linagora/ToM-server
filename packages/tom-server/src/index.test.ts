@@ -3,10 +3,10 @@ import fs from 'fs'
 import path from 'path'
 import request from 'supertest'
 import JEST_PROCESS_ROOT_PATH from '../jest.globals'
-import buildUserDB from './identity-server/__testData__/buildUserDB'
-import defaultConfig from './identity-server/__testData__/registerConf.json'
-import TwakeServer from './index'
-import { type Config } from './types'
+import buildUserDB from './identity-server/__testData__/buildUserDB.ts'
+import defaultConfig from './identity-server/__testData__/registerConf.json' with { type: "json" }
+import TwakeServer from './index.ts'
+import { type Config } from './types.ts'
 
 const testDb = path.join(JEST_PROCESS_ROOT_PATH, 'global.db')
 const userDb = path.join(JEST_PROCESS_ROOT_PATH, 'users.db')

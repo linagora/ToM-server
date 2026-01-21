@@ -1,5 +1,5 @@
 import type { NextFunction, Response } from 'express'
-import type { AuthRequest } from '../types'
+import type { AuthRequest } from '../types.ts'
 
 export interface IUserInfoController {
   get: (req: AuthRequest, res: Response, next: NextFunction) => Promise<void>

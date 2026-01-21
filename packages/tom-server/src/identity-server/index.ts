@@ -1,21 +1,21 @@
 // import MatrixIdentityServer, {
 // defaultConfig as MdefaultConfig
-// } from '@twake/matrix-identity-server'
-import { type ConfigDescription } from '@twake/config-parser'
-import { type TwakeLogger } from '@twake/logger'
+// } from '@twake-chat/matrix-identity-server'
+import { type ConfigDescription } from '@twake-chat/config-parser'
+import { type TwakeLogger } from '@twake-chat/logger'
 import MatrixIdentityServer, {
   type MatrixDB
-} from '@twake/matrix-identity-server'
-import type { IAddressbookService } from '../addressbook-api/types'
-import type { IUserInfoService } from '../user-info-api/types'
-import defaultConfig from '../config.json'
-import type { Config, TwakeDB, twakeDbCollections } from '../types'
-import { tables } from '../utils'
-import autocompletion from './lookup/autocompletion'
-import diff from './lookup/diff'
-import Authenticate from './utils/authenticate'
+} from '@twake-chat/matrix-identity-server'
+import type { IAddressbookService } from '../addressbook-api/types.ts'
+import type { IUserInfoService } from '../user-info-api/types.ts'
+import defaultConfig from '../config.json' with { type: "json" }
+import type { Config, TwakeDB, twakeDbCollections } from '../types.ts'
+import { tables } from '../utils.ts'
+import autocompletion from './lookup/autocompletion.ts'
+import diff from './lookup/diff.ts'
+import Authenticate from './utils/authenticate.ts'
 
-export type { WhoAmIResponse } from './utils/authenticate'
+export type { WhoAmIResponse } from './utils/authenticate.ts'
 
 export default class TwakeIdentityServer extends MatrixIdentityServer<twakeDbCollections> {
   declare db: TwakeDB

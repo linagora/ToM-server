@@ -2,12 +2,12 @@ import {
   getLogger,
   type TwakeLogger,
   type Config as LoggerConfig
-} from '@twake/logger'
-import type { AuthenticationFunction, Config } from '../../types'
+} from '@twake-chat/logger'
+import type { AuthenticationFunction, Config } from '../../types.ts'
 import { Router } from 'express'
 import bodyParser from 'body-parser'
-import CreateRoomAPI from './createRoom'
-import DisplayNameAPI from './displayName'
+import CreateRoomAPI from './createRoom/index.ts'
+import DisplayNameAPI from './displayName/index.ts'
 
 export const PATH = '/_matrix/client/v3'
 

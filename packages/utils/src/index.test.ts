@@ -9,8 +9,8 @@ import {
   toMatrixId,
   isMatrixId,
   isValidUrl
-} from './index'
-import { type TwakeLogger } from '@twake/logger'
+} from './index.ts'
+import { type TwakeLogger } from '@twake-chat/logger'
 
 describe('Utility Functions', () => {
   let mockResponse: Partial<Response & http.ServerResponse>

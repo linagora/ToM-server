@@ -1,5 +1,5 @@
 import { type Response, type NextFunction } from 'express'
-import type { AuthRequest } from '../types'
+import type { AuthRequest } from '../types.ts'
 
 export interface IQRCodeApiController {
   get: (req: AuthRequest, res: Response, next: NextFunction) => Promise<void>

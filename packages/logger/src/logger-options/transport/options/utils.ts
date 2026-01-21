@@ -2,7 +2,7 @@ import {
   nodeFlagsValues,
   type IWriteFileOptions,
   type nodeFlags
-} from '../../../types'
+} from '../../../types.ts'
 
 export class WriteFileOptions implements IWriteFileOptions {
   private _flags?: nodeFlags

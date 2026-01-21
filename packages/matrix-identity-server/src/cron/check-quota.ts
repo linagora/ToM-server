@@ -1,12 +1,12 @@
-import { type TwakeLogger } from '@twake/logger'
-import type IdentityServerDb from '../db'
-import MatrixDB, { type MatrixDBBackend } from '../matrixDb'
+import { type TwakeLogger } from '@twake-chat/logger'
+import type IdentityServerDb from '../db/index.ts'
+import MatrixDB, { type MatrixDBBackend } from '../matrixDb/index.ts'
 import type {
   Config,
   LocalMediaRepository,
   MatrixUser,
   UserQuota
-} from '../types'
+} from '../types.ts'
 
 /**
  * check user quota cron job.

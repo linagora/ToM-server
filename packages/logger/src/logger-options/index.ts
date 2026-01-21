@@ -4,8 +4,8 @@ import {
   type ILoggerConfig,
   type ITransportConf,
   type TransportConf
-} from '../types'
-import { createTransportConf } from './transport'
+} from '../types.ts'
+import { createTransportConf } from './transport/index.ts'
 
 export class TwakeLoggerOptions {
   private _logLevel?: string

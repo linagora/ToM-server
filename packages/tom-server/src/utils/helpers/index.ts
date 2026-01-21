@@ -1,5 +1,5 @@
 import fs from 'fs'
-import { randomString } from '@twake/crypto'
+import { randomString } from '@twake-chat/crypto'
 
 /**
  * builds the email body from a template
@@ -49,5 +49,6 @@ export const buildSmsBody = (
       .replace(/__footer__/g, footer ?? '') // include a footer if present
   } catch (error) {
     console.error('Failed to build sms body', { error })
+    return undefined
   }
 }

@@ -1,12 +1,12 @@
-import type { TwakeLogger } from '@twake/logger'
-import type { AuthRequest, TwakeDB } from '../../types'
+import type { TwakeLogger } from '@twake-chat/logger'
+import type { AuthRequest, TwakeDB } from '../../types.ts'
 import type {
   AddressBook,
   Contact,
   ContactCreationRequest,
   ContactUpdatePayload,
   IAddressbookApiMiddleware
-} from '../types'
+} from '../types.ts'
 import type { NextFunction, Response } from 'express'
 
 export default class AddressBookApiMiddleware
@@ -177,6 +177,7 @@ export default class AddressBookApiMiddleware
       return contact[0]
     } catch (error) {
       this.logger.error('Failed to check contact existance')
+      return undefined
     }
   }
 
@@ -201,6 +202,7 @@ export default class AddressBookApiMiddleware
       return addressbook[0]
     } catch (error) {
       this.logger.error('Failed to check addressbook existance')
+      return undefined
     }
   }
 }

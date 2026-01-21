@@ -1,20 +1,5 @@
-/*
-!/server.mjs
-!/packages
-!/documentation
-packages/**/*.json
-packages/**/*.js
-packages/**/*.cjs
-packages/**/*.md
-packages/**/*.svelte
-packages/**/*.yml
-packages/**/*.css
-packages/**/*.html
-packages/**/*.d.ts
-packages/**/build
-packages/**/dist
-packages/**/coverage
-packages/**/__testData__
-packages/**/node_modules
+# Add files here to ignore them from prettier formatting
+/dist
+/coverage
 /.nx/cache
 /.nx/workspace-data

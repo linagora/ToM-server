@@ -1,4 +1,4 @@
-import type { MatrixDBBackend } from '@twake/matrix-identity-server'
+import type { MatrixDBBackend } from '@twake-chat/matrix-identity-server'
 import type {
   IMetricsService,
   MatrixUserInfo,
@@ -6,8 +6,8 @@ import type {
   UserActivityStats,
   UserMessageCount,
   UserMessageEvent
-} from '../types'
-import type { TwakeLogger } from '@twake/logger'
+} from '../types.ts'
+import type { TwakeLogger } from '@twake-chat/logger'
 
 class MetricsService implements IMetricsService {
   private readonly ONE_DAY_IN_MS = 24 * 60 * 60 * 1000

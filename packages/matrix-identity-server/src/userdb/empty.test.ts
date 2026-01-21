@@ -1,6 +1,6 @@
-import { getLogger, type TwakeLogger } from '@twake/logger'
-import defaultConfig from '../config.json'
-import UserDBEmpty from './empty'
+import { getLogger, type TwakeLogger } from '@twake-chat/logger'
+import defaultConfig from '../config.json' with { type: "json" }
+import UserDBEmpty from './empty.ts'
 
 const logger: TwakeLogger = getLogger()
 

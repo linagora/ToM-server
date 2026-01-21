@@ -1,5 +1,5 @@
 import { config } from 'winston'
-import { type IDefaultTransportOptions } from '../../../types'
+import { type IDefaultTransportOptions } from '../../../types.ts'
 
 export abstract class DefaultTransportOptions
   implements IDefaultTransportOptions

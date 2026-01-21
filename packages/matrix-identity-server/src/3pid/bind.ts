@@ -1,14 +1,15 @@
-import { Hash, signJson } from '@twake/crypto'
-import type MatrixIdentityServer from '..'
+import fetch from 'node-fetch'
+import { Hash, signJson } from '@twake-chat/crypto'
 import {
   errMsg,
   jsonContent,
   send,
   validateParameters,
   type expressAppHandler
-} from '@twake/utils'
-import { buildUrl, getServerNameFromMatrixId } from '../utils'
-import type { onBindRequestPayload } from '../types'
+} from '@twake-chat/utils'
+import type MatrixIdentityServer from '../index.ts'
+import { buildUrl, getServerNameFromMatrixId } from '../utils.ts'
+import type { onBindRequestPayload } from '../types.ts'
 
 const clientSecretRe = /^[0-9a-zA-Z.=_-]{6,255}$/
 const mxidRe = /^@[0-9a-zA-Z._=-]+:[0-9a-zA-Z.-]+$/

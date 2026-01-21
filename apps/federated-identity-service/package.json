@@ -1,0 +1,99 @@
+{
+  "name": "federated-identity-service",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "nx": {
+    "name": "federated-identity-service",
+    "targets": {
+      "build": {
+        "executor": "@nx/esbuild:esbuild",
+        "outputs": [
+          "{options.outputPath}"
+        ],
+        "defaultConfiguration": "production",
+        "options": {
+          "platform": "node",
+          "outputPath": "apps/federated-identity-service/dist",
+          "format": [
+            "esm"
+          ],
+          "bundle": false,
+          "main": "apps/federated-identity-service/src/main.ts",
+          "tsConfig": "apps/federated-identity-service/tsconfig.app.json",
+          "assets": [
+            {
+              "input": "apps/federated-identity-service/static",
+              "glob": "**/*",
+              "output": "static"
+            },
+            {
+              "input": "apps/federated-identity-service/templates",
+              "glob": "**/*",
+              "output": "templates"
+            }
+          ],
+          "esbuildOptions": {
+            "sourcemap": true,
+            "outExtension": {
+              ".js": ".js"
+            }
+          }
+        },
+        "configurations": {
+          "development": {},
+          "production": {
+            "generateLockfile": true,
+            "esbuildOptions": {
+              "sourcemap": false,
+              "outExtension": {
+                ".js": ".js"
+              }
+            }
+          }
+        }
+      },
+      "serve": {
+        "executor": "@nx/js:node",
+        "defaultConfiguration": "development",
+        "dependsOn": [
+          "build"
+        ],
+        "options": {
+          "buildTarget": "federated-identity-service:build",
+          "runBuildTargetDependencies": false
+        },
+        "configurations": {
+          "development": {
+            "buildTarget": "federated-identity-service:build:development"
+          },
+          "production": {
+            "buildTarget": "federated-identity-service:build:production"
+          }
+        }
+      },
+      "test": {
+        "options": {
+          "passWithNoTests": true
+        }
+      },
+      "docker-build": {
+        "dependsOn": [
+          "build"
+        ],
+        "command": "docker build -f apps/federated-identity-service/Dockerfile . -t federated-identity-service"
+      }
+    }
+  },
+  "scripts": {
+    "clean": "node ../../scripts/clean.cjs dist coverage"
+  },
+  "engines": {
+    "node": "18.20.8",
+    "npm": "10.8.2"
+  },
+  "volta": {
+    "node": "18.20.8",
+    "npm": "10.8.2"
+  }
+}

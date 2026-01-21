@@ -1,7 +1,7 @@
-import { type TwakeLogger } from '@twake/logger'
-import { type Config } from '../../types'
-import TokenService from './token-service'
-import type { LoginFlow } from '../../types'
+import { type TwakeLogger } from '@twake-chat/logger'
+import { type Config } from '../../types.ts'
+import TokenService from './token-service.ts'
+import type { LoginFlow } from '../../types.ts'
 
 global.fetch = jest.fn(
   async () =>

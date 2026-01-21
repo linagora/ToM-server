@@ -1,0 +1,94 @@
+{
+  "name": "matrix-identity-server",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "nx": {
+    "name": "matrix-identity-server",
+    "targets": {
+      "build": {
+        "executor": "@nx/esbuild:esbuild",
+        "outputs": [
+          "{options.outputPath}"
+        ],
+        "defaultConfiguration": "production",
+        "options": {
+          "platform": "node",
+          "outputPath": "apps/matrix-identity-server/dist",
+          "format": [
+            "esm"
+          ],
+          "bundle": false,
+          "main": "apps/matrix-identity-server/src/main.ts",
+          "tsConfig": "apps/matrix-identity-server/tsconfig.app.json",
+          "assets": [
+            {
+              "input": "apps/matrix-identity-server/templates",
+              "glob": "**/*",
+              "output": "templates"
+            }
+          ],
+          "esbuildOptions": {
+            "sourcemap": true,
+            "outExtension": {
+              ".js": ".js"
+            }
+          }
+        },
+        "configurations": {
+          "development": {},
+          "production": {
+            "generateLockfile": true,
+            "esbuildOptions": {
+              "sourcemap": false,
+              "outExtension": {
+                ".js": ".js"
+              }
+            }
+          }
+        }
+      },
+      "serve": {
+        "executor": "@nx/js:node",
+        "defaultConfiguration": "development",
+        "dependsOn": [
+          "build"
+        ],
+        "options": {
+          "buildTarget": "matrix-identity-server:build",
+          "runBuildTargetDependencies": false
+        },
+        "configurations": {
+          "development": {
+            "buildTarget": "matrix-identity-server:build:development"
+          },
+          "production": {
+            "buildTarget": "matrix-identity-server:build:production"
+          }
+        }
+      },
+      "test": {
+        "options": {
+          "passWithNoTests": true
+        }
+      },
+      "docker-build": {
+        "dependsOn": [
+          "build"
+        ],
+        "command": "docker build -f apps/matrix-identity-server/Dockerfile . -t matrix-identity-server"
+      }
+    }
+  },
+  "scripts": {
+    "clean": "node ../../scripts/clean.cjs dist coverage"
+  },
+  "engines": {
+    "node": "18.20.8",
+    "npm": "10.8.2"
+  },
+  "volta": {
+    "node": "18.20.8",
+    "npm": "10.8.2"
+  }
+}

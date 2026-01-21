@@ -1,4 +1,4 @@
-# @twake/vault-api
+# @twake-chat/server
 
 Node.js library that implements a Twake-on-Matrix server.
 
@@ -7,37 +7,47 @@ Node.js library that implements a Twake-on-Matrix server.
 Example using [express](https://www.npmjs.com/package/express):
 
 ```js
-import express from 'express'
-import TwakeServer from '@twake/server'
+import express from 'express';
+import TwakeServer from '@twake-chat/server';
 
 // if configuration is in default file (/etc/twake/server.conf)
-const twakeServer = new TwakeServer()
+const twakeServer = new TwakeServer();
 
 // else if configuration is in a different file, set TWAKE_SERVER_CONF
-process.env.TWAKE_SERVER_CONF = '/path/to/config/file'
-const twakeServer = new TwakeVaultAPI()
+process.env.TWAKE_SERVER_CONF = '/path/to/config/file';
+const twakeServer = new TwakeVaultAPI();
 
 // You can also give configuration directly
-const twakeServer = new TwakeVaultAPI(config)
+const twakeServer = new TwakeVaultAPI(config);
 
-const app = express()
+const app = express();
 
 twakeServer.ready
   .then(() => {
-    app.use(twakeServer.endpoints)
-    const port = process.argv[2] != null ? parseInt(process.argv[2]) : 3000
-    console.log(`Listening on port ${port}`)
-    app.listen(port)
+    app.use(twakeServer.endpoints);
+    const port = process.argv[2] != null ? parseInt(process.argv[2]) : 3000;
+    console.log(`Listening on port ${port}`);
+    app.listen(port);
   })
   .catch((e) => {
-    throw e
-  })
+    throw e;
+  });
 ```
 
 ## Configuration file
 
 Configuration file is a JSON file. The default values are
 in [src/config.json](./src/config.json).
+
+This library was generated with [Nx](https://nx.dev).
+
+## Building
+
+Run `nx build @twake-chat/server` to build the library.
+
+## Running unit tests
+
+Run `nx test @twake-chat/server` to execute the unit tests via [Jest](https://jestjs.io).
 
 ## Copyright and license
 

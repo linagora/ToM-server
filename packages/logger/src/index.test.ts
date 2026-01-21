@@ -4,8 +4,8 @@ import winston from 'winston'
 import DailyRotateFile from 'winston-daily-rotate-file'
 import { getLogger, type TwakeLogger } from '.'
 import JEST_PROCESS_ROOT_PATH from '../jest.globals'
-import confDesc from './configDesc.json'
-import { ETransportType, type TransportInstance } from './types'
+import confDesc from './configDesc.json' with { type: "json" }
+import { ETransportType, type TransportInstance } from './types.ts'
 
 describe('Logger', () => {
   describe('Error cases', () => {

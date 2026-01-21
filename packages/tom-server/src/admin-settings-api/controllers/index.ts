@@ -1,8 +1,8 @@
-import type { TwakeLogger } from '@twake/logger'
-import type { IAdminSettingsController, IAdminSettingsService } from '../types'
-import type { Config, ITokenService } from '../../types'
+import type { TwakeLogger } from '@twake-chat/logger'
+import type { IAdminSettingsController, IAdminSettingsService } from '../types.ts'
+import type { Config, ITokenService } from '../../types.ts'
 import type { NextFunction, Response, Request } from 'express'
-import AdminSettingsService from '../services'
+import AdminSettingsService from '../services/index.ts'
 
 export default class AdminSettingsrController
   implements IAdminSettingsController
