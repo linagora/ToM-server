@@ -151,6 +151,12 @@ export class AMQPConnector {
     if (this.onMessageHandler == null)
       throw new MessageHandlerNotProvidedError()
 
+    // Clear any pending reconnect timer to avoid overlapping connection attempts
+    if (this.reconnectTimeoutId != null) {
+      clearTimeout(this.reconnectTimeoutId)
+      this.reconnectTimeoutId = undefined
+    }
+
     // Reset state for fresh build
     this.isIntentionalClose = false
     this.reconnectAttempts = 0
@@ -160,50 +166,17 @@ export class AMQPConnector {
 
     try {
       this.connection = await amqplib.connect(this.url)
-      this.channel = await this.connection.createChannel()
-      await this.channel.assertExchange(
-        this.exchange,
-        'topic',
-        this.exchangeOptions
-      )
-      await this.channel.assertQueue(this.queue, this.queueOptions)
-      await this.channel.bindQueue(this.queue, this.exchange, this.routingKey)
+
+      // Set up channel with exchange, queue, bindings, and consumer
+      await this.setupChannel()
 
       this.logger?.info(
         `[AMQPConnector] Connected and listening on queue: ${this.queue}`
       )
 
-      const consumeResult = await this.channel.consume(
-        this.queue,
-        this.createMessageConsumer(),
-        { noAck: false }
-      )
-
-      this.consumerTag = consumeResult.consumerTag
-
       // Check if close() was called during connection establishment
       if (this.isIntentionalClose) {
-        if (this.consumerTag != null && this.channel != null) {
-          try {
-            await this.channel.cancel(this.consumerTag)
-          } catch {
-            // Ignore errors during cleanup
-          }
-          this.consumerTag = undefined
-        }
-
-        if (this.reconnectTimeoutId != null) {
-          clearTimeout(this.reconnectTimeoutId)
-          this.reconnectTimeoutId = undefined
-        }
-
-        await this.channel?.close().catch(() => {})
-        await this.connection?.close().catch(() => {})
-
-        this.channel = undefined
-        this.connection = undefined
-        this.connectionState = ConnectionState.Disconnected
-
+        await this.cleanupResources()
         this.logger?.info(
           '[AMQPConnector] Connection closed during build - close() was called concurrently.'
         )
@@ -215,7 +188,12 @@ export class AMQPConnector {
 
       this.connectionState = ConnectionState.Connected
     } catch (error) {
-      this.connectionState = ConnectionState.Disconnected
+      this.logger?.debug(
+        `[AMQPConnector] Connection failed, cleaning up partial resources: ${
+          (error as Error).message
+        }`
+      )
+      await this.cleanupResources()
       throw error
     }
   }
@@ -228,28 +206,7 @@ export class AMQPConnector {
     // Mark as intentional close to prevent reconnection
     this.isIntentionalClose = true
 
-    // Clear any pending reconnection timeout
-    if (this.reconnectTimeoutId != null) {
-      clearTimeout(this.reconnectTimeoutId)
-      this.reconnectTimeoutId = undefined
-    }
-
-    // Cancel consumer if active
-    if (this.consumerTag != null && this.channel != null) {
-      try {
-        await this.channel.cancel(this.consumerTag)
-      } catch {
-        // Ignore errors during consumer cancellation
-      }
-      this.consumerTag = undefined
-    }
-
-    await this.channel?.close().catch(() => {})
-    await this.connection?.close().catch(() => {})
-
-    this.channel = undefined
-    this.connection = undefined
-    this.connectionState = ConnectionState.Disconnected
+    await this.cleanupResources()
 
     this.logger?.info(`[AMQPConnector] Connection closed.`)
   }
@@ -260,6 +217,95 @@ export class AMQPConnector {
    */
   getChannel(): amqplib.Channel | undefined {
     return this.channel
+  }
+
+  /**
+   * Clean up all AMQP resources (consumer, channel, connection)
+   * @returns Promise that resolves when cleanup is complete
+   */
+  private async cleanupResources(): Promise<void> {
+    if (this.consumerTag != null && this.channel != null) {
+      try {
+        await this.channel.cancel(this.consumerTag)
+      } catch {
+        // Ignore errors during cleanup
+      }
+      this.consumerTag = undefined
+    }
+
+    if (this.reconnectTimeoutId != null) {
+      clearTimeout(this.reconnectTimeoutId)
+      this.reconnectTimeoutId = undefined
+    }
+
+    await this.channel?.close().catch(() => {})
+    await this.connection?.close().catch(() => {})
+
+    this.channel = undefined
+    this.connection = undefined
+    this.connectionState = ConnectionState.Disconnected
+  }
+
+  /**
+   * Set up or recreate a channel on an existing connection.
+   * This method creates a new channel, asserts exchange/queue, binds them,
+   * starts consuming, and sets up channel event handlers.
+   * @throws Error if connection is not available
+   * @returns Promise that resolves when the channel is set up
+   */
+  private async setupChannel(): Promise<void> {
+    if (this.connection == null) {
+      throw new Error('Cannot setup channel without connection')
+    }
+
+    if (this.exchange == null || this.queue == null) {
+      throw new Error('Cannot setup channel: exchange or queue not configured')
+    }
+
+    this.channel = await this.connection.createChannel()
+
+    await this.channel.assertExchange(
+      this.exchange,
+      'topic',
+      this.exchangeOptions
+    )
+    await this.channel.assertQueue(this.queue, this.queueOptions)
+    await this.channel.bindQueue(this.queue, this.exchange, this.routingKey)
+
+    const consumeResult = await this.channel.consume(
+      this.queue,
+      this.createMessageConsumer(),
+      { noAck: false }
+    )
+
+    this.consumerTag = consumeResult.consumerTag
+
+    // Set up channel event handlers
+    this.channel.on('error', (error: Error) => {
+      this.logger?.error(`[AMQPConnector] Channel error: ${error.message}`)
+    })
+
+    this.channel.on('close', () => {
+      this.logger?.warn('[AMQPConnector] Channel closed')
+      this.channel = undefined
+      this.consumerTag = undefined
+
+      // Recreate channel if connection still exists and not intentionally closing
+      if (!this.isIntentionalClose && this.connection != null) {
+        this.logger?.info('[AMQPConnector] Attempting to recreate channel...')
+        this.setupChannel().catch((error) => {
+          this.logger?.error(
+            `[AMQPConnector] Failed to recreate channel: ${
+              (error as Error).message
+            }`
+          )
+          // If channel recreation fails, trigger full reconnection
+          if (!this.isIntentionalClose && this.reconnectionConfig.enabled) {
+            this.scheduleReconnection()
+          }
+        })
+      }
+    })
   }
 
   /**
@@ -297,7 +343,8 @@ export class AMQPConnector {
   }
 
   /**
-   * Set up event handlers for connection error and close events
+   * Set up event handlers for connection error and close events.
+   * Note: Channel event handlers are set up in setupChannel().
    */
   private setupConnectionEventHandlers(): void {
     if (this.connection == null) return
@@ -313,24 +360,13 @@ export class AMQPConnector {
       this.connectionState = ConnectionState.Disconnected
       this.channel = undefined
       this.connection = undefined
+      this.consumerTag = undefined
 
       // Only attempt reconnection if this was not an intentional close
       if (!this.isIntentionalClose && this.reconnectionConfig.enabled) {
         this.scheduleReconnection()
       }
     })
-
-    // Handle channel errors and closures as well
-    if (this.channel != null) {
-      this.channel.on('error', (error: Error) => {
-        this.logger?.error(`[AMQPConnector] Channel error: ${error.message}`)
-      })
-
-      this.channel.on('close', () => {
-        this.logger?.warn('[AMQPConnector] Channel closed')
-        this.channel = undefined
-      })
-    }
   }
 
   /**
@@ -406,50 +442,12 @@ export class AMQPConnector {
       // Establish new connection
       this.connection = await amqplib.connect(this.url)
 
-      // Create new channel
-      this.channel = await this.connection.createChannel()
-
-      // Re-assert exchange and queue
-      await this.channel.assertExchange(
-        this.exchange!,
-        'topic',
-        this.exchangeOptions
-      )
-      await this.channel.assertQueue(this.queue!, this.queueOptions)
-      await this.channel.bindQueue(this.queue!, this.exchange!, this.routingKey)
-
-      // Re-start consuming
-      const consumeResult = await this.channel.consume(
-        this.queue!,
-        this.createMessageConsumer(),
-        { noAck: false }
-      )
-
-      this.consumerTag = consumeResult.consumerTag
+      // Set up channel with exchange, queue, bindings, and consumer
+      await this.setupChannel()
 
       // Check if close() was called during reconnection establishment
       if (this.isIntentionalClose) {
-        if (this.consumerTag != null && this.channel != null) {
-          try {
-            await this.channel.cancel(this.consumerTag)
-          } catch {
-            // Ignore errors during cleanup
-          }
-          this.consumerTag = undefined
-        }
-
-        if (this.reconnectTimeoutId != null) {
-          clearTimeout(this.reconnectTimeoutId)
-          this.reconnectTimeoutId = undefined
-        }
-
-        await this.channel?.close().catch(() => {})
-        await this.connection?.close().catch(() => {})
-
-        this.channel = undefined
-        this.connection = undefined
-        this.connectionState = ConnectionState.Disconnected
-
+        await this.cleanupResources()
         this.logger?.info(
           '[AMQPConnector] Reconnection aborted: close() was called concurrently.'
         )
@@ -467,7 +465,12 @@ export class AMQPConnector {
         `[AMQPConnector] Successfully reconnected and listening on queue: ${this.queue}`
       )
     } catch (error) {
-      this.connectionState = ConnectionState.Disconnected
+      this.logger?.debug(
+        `[AMQPConnector] Reconnection failed, cleaning up partial resources: ${
+          (error as Error).message
+        }`
+      )
+      await this.cleanupResources()
       throw error
     }
   }

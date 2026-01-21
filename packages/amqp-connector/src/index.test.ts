@@ -490,10 +490,10 @@ describe('AMQPConnector Reconnection', () => {
       // Simulate unexpected connection close
       connectionCloseCallback()
 
-      // Run through all retry attempts
+      // Run through all retry attempts using advanceTimersByTimeAsync
+      // to properly handle async promise resolution
       for (let i = 0; i < 5; i++) {
-        jest.advanceTimersByTime(200)
-        await Promise.resolve() // Allow promises to resolve
+        await jest.advanceTimersByTimeAsync(200)
       }
 
       // Should have stopped at 3 retries
@@ -659,6 +659,422 @@ describe('AMQPConnector Reconnection', () => {
 
       // Should not have attempted reconnection
       expect(mockConnect).not.toHaveBeenCalled()
+      expect(connector.getConnectionState()).toBe(ConnectionState.Disconnected)
+
+      jest.useRealTimers()
+    })
+  })
+
+  describe('Build clears pending reconnect timer', () => {
+    it('should clear pending reconnection timer when build() is called', async () => {
+      jest.useFakeTimers()
+
+      let connectionCloseCallback: () => void = () => {}
+      mockConnectionOn.mockImplementation((event: string, callback: any) => {
+        if (event === 'close') {
+          connectionCloseCallback = callback
+        }
+      })
+
+      // First build succeeds
+      mockConnect.mockImplementation(() =>
+        Promise.resolve(createMockConnection())
+      )
+
+      const connector = new AMQPConnector()
+        .withUrl('amqp://localhost')
+        .withExchange('test-exchange')
+        .withQueue('test-queue')
+        .onMessage(jest.fn())
+        .withReconnection({ initialDelayMs: 5000 })
+
+      await connector.build()
+
+      // Simulate connection close to trigger reconnection scheduling
+      connectionCloseCallback()
+      expect(connector.getConnectionState()).toBe(ConnectionState.Reconnecting)
+
+      mockConnect.mockClear()
+
+      // Call build() again before reconnection timer fires
+      await connector.build()
+
+      // Advance timer past original reconnection delay
+      jest.advanceTimersByTime(10000)
+      await Promise.resolve()
+
+      // Should have only connected once (from build()), not from scheduled reconnection
+      expect(mockConnect).toHaveBeenCalledTimes(1)
+      expect(connector.getConnectionState()).toBe(ConnectionState.Connected)
+
+      jest.useRealTimers()
+    })
+  })
+
+  describe('Channel-only reconnection', () => {
+    let channelCloseCallback: () => void
+    let connectionCloseCallback: () => void
+
+    beforeEach(() => {
+      mockChannelOn.mockImplementation((event: string, callback: any) => {
+        if (event === 'close') {
+          channelCloseCallback = callback
+        }
+      })
+      mockConnectionOn.mockImplementation((event: string, callback: any) => {
+        if (event === 'close') {
+          connectionCloseCallback = callback
+        }
+      })
+    })
+
+    it('should recreate channel when channel closes but connection remains', async () => {
+      jest.useFakeTimers()
+
+      mockConnect.mockImplementation(() =>
+        Promise.resolve(createMockConnection())
+      )
+
+      const connector = new AMQPConnector()
+        .withUrl('amqp://localhost')
+        .withExchange('test-exchange')
+        .withQueue('test-queue')
+        .onMessage(jest.fn())
+
+      await connector.build()
+
+      // Clear to track new channel creation
+      mockCreateChannel.mockClear()
+      mockAssertExchange.mockClear()
+      mockAssertQueue.mockClear()
+      mockBindQueue.mockClear()
+      mockConsume.mockClear()
+
+      // Simulate channel-only close (connection still exists)
+      channelCloseCallback()
+
+      // Allow promises to resolve
+      await jest.advanceTimersByTimeAsync(0)
+
+      // Should have recreated the channel
+      expect(mockCreateChannel).toHaveBeenCalledTimes(1)
+      expect(mockAssertExchange).toHaveBeenCalledTimes(1)
+      expect(mockAssertQueue).toHaveBeenCalledTimes(1)
+      expect(mockBindQueue).toHaveBeenCalledTimes(1)
+      expect(mockConsume).toHaveBeenCalledTimes(1)
+
+      // Connection should NOT have been re-established
+      expect(mockConnect).toHaveBeenCalledTimes(1) // Only from initial build
+
+      jest.useRealTimers()
+    })
+
+    it('should not recreate channel on intentional close', async () => {
+      mockConnect.mockImplementation(() =>
+        Promise.resolve(createMockConnection())
+      )
+
+      const connector = new AMQPConnector()
+        .withUrl('amqp://localhost')
+        .withExchange('test-exchange')
+        .withQueue('test-queue')
+        .onMessage(jest.fn())
+
+      await connector.build()
+
+      // Close intentionally
+      await connector.close()
+
+      mockCreateChannel.mockClear()
+
+      // Simulate channel close event (would have been triggered by close())
+      channelCloseCallback()
+
+      await Promise.resolve()
+
+      // Should NOT have tried to recreate channel
+      expect(mockCreateChannel).not.toHaveBeenCalled()
+    })
+
+    it('should trigger full reconnection if channel recreation fails', async () => {
+      jest.useFakeTimers()
+
+      let channelCreationCount = 0
+      mockCreateChannel.mockImplementation(() => {
+        channelCreationCount++
+        if (channelCreationCount === 1) {
+          // First channel creation succeeds (during build)
+          return Promise.resolve(createMockChannel())
+        }
+        // Subsequent channel creations fail
+        return Promise.reject(new Error('Channel creation failed'))
+      })
+
+      mockConnect.mockImplementation(() =>
+        Promise.resolve(createMockConnection())
+      )
+
+      const connector = new AMQPConnector()
+        .withUrl('amqp://localhost')
+        .withExchange('test-exchange')
+        .withQueue('test-queue')
+        .onMessage(jest.fn())
+        .withReconnection({ initialDelayMs: 100, enabled: true })
+
+      await connector.build()
+
+      mockConnect.mockClear()
+
+      // Simulate channel close - recreation will fail
+      channelCloseCallback()
+
+      // Allow the failed channel recreation to complete
+      await jest.advanceTimersByTimeAsync(0)
+
+      // Should schedule full reconnection
+      expect(connector.getConnectionState()).toBe(ConnectionState.Reconnecting)
+
+      // Advance timer to trigger reconnection
+      await jest.advanceTimersByTimeAsync(200)
+
+      // Should have attempted full reconnection
+      expect(mockConnect).toHaveBeenCalled()
+
+      jest.useRealTimers()
+    })
+  })
+
+  describe('Cleanup on build failure', () => {
+    beforeEach(() => {
+      // Reset mocks to default for these tests
+      mockConnect.mockImplementation(() =>
+        Promise.resolve(createMockConnection())
+      )
+      mockCreateChannel.mockImplementation(() =>
+        Promise.resolve(createMockChannel())
+      )
+    })
+
+    it('should cleanup partial resources when connection fails during build', async () => {
+      mockConnect.mockRejectedValueOnce(new Error('Connection failed'))
+
+      const connector = new AMQPConnector()
+        .withUrl('amqp://localhost')
+        .withExchange('test-exchange')
+        .withQueue('test-queue')
+        .onMessage(jest.fn())
+
+      await expect(connector.build()).rejects.toThrow('Connection failed')
+
+      expect(connector.getConnectionState()).toBe(ConnectionState.Disconnected)
+      expect((connector as any).channel).toBeUndefined()
+      expect((connector as any).connection).toBeUndefined()
+      expect((connector as any).consumerTag).toBeUndefined()
+    })
+
+    it('should cleanup partial resources when channel creation fails during build', async () => {
+      mockCreateChannel.mockRejectedValueOnce(
+        new Error('Channel creation failed')
+      )
+
+      const connector = new AMQPConnector()
+        .withUrl('amqp://localhost')
+        .withExchange('test-exchange')
+        .withQueue('test-queue')
+        .onMessage(jest.fn())
+
+      await expect(connector.build()).rejects.toThrow('Channel creation failed')
+
+      expect(connector.getConnectionState()).toBe(ConnectionState.Disconnected)
+      expect((connector as any).channel).toBeUndefined()
+      expect((connector as any).connection).toBeUndefined()
+      // Connection close should have been called to cleanup
+      expect(mockCloseConnection).toHaveBeenCalled()
+    })
+  })
+
+  describe('Cleanup on reconnection failure', () => {
+    it('should cleanup partial resources when reconnection fails', async () => {
+      jest.useFakeTimers()
+
+      // Reset mock to default for this test
+      mockCreateChannel.mockImplementation(() =>
+        Promise.resolve(createMockChannel())
+      )
+
+      let connectionCloseCallback: () => void = () => {}
+      mockConnectionOn.mockImplementation((event: string, callback: any) => {
+        if (event === 'close') {
+          connectionCloseCallback = callback
+        }
+      })
+
+      // First build succeeds, subsequent connects fail
+      let buildComplete = false
+      mockConnect.mockImplementation(() => {
+        if (!buildComplete) {
+          buildComplete = true
+          return Promise.resolve(createMockConnection())
+        }
+        return Promise.reject(new Error('Reconnection failed'))
+      })
+
+      const connector = new AMQPConnector()
+        .withUrl('amqp://localhost')
+        .withExchange('test-exchange')
+        .withQueue('test-queue')
+        .onMessage(jest.fn())
+        .withReconnection({ initialDelayMs: 100, maxRetries: 1 })
+
+      await connector.build()
+
+      // Simulate connection close
+      connectionCloseCallback()
+
+      // Advance timer to trigger reconnection
+      await jest.advanceTimersByTimeAsync(200)
+
+      // After failed reconnection attempt, state should be disconnected
+      expect(connector.getConnectionState()).toBe(ConnectionState.Disconnected)
+
+      jest.useRealTimers()
+    })
+  })
+
+  describe('Message handling when channel unavailable', () => {
+    it('should handle message gracefully when channel becomes unavailable', async () => {
+      // Reset mocks to default for this test
+      mockConnect.mockImplementation(() =>
+        Promise.resolve(createMockConnection())
+      )
+      mockCreateChannel.mockImplementation(() =>
+        Promise.resolve(createMockChannel())
+      )
+
+      let consumerCallback: any
+      mockConsume.mockImplementation((_queue, cb) => {
+        consumerCallback = cb
+        return Promise.resolve({ consumerTag: 'test-tag' })
+      })
+
+      const handler = jest.fn()
+      const connector = new AMQPConnector()
+        .withUrl('amqp://localhost')
+        .withExchange('test-exchange')
+        .withQueue('test-queue')
+        .onMessage(handler)
+
+      await connector.build()
+
+      // Simulate channel becoming unavailable
+      ;(connector as any).channel = undefined
+
+      const fakeMsg = { content: Buffer.from('test') }
+      await consumerCallback(fakeMsg)
+
+      // Handler should not be called when channel is unavailable
+      expect(handler).not.toHaveBeenCalled()
+      expect(mockAck).not.toHaveBeenCalled()
+      expect(mockNack).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('Race condition: close() during build()', () => {
+    it('should cleanup when close() is called during build()', async () => {
+      // Reset channel mock to default
+      mockCreateChannel.mockImplementation(() =>
+        Promise.resolve(createMockChannel())
+      )
+
+      // Slow down connect to simulate race condition
+      let resolveConnect: (value: any) => void
+      mockConnect.mockImplementation(
+        () =>
+          new Promise((resolve) => {
+            resolveConnect = resolve
+          })
+      )
+
+      const connector = new AMQPConnector()
+        .withUrl('amqp://localhost')
+        .withExchange('test-exchange')
+        .withQueue('test-queue')
+        .onMessage(jest.fn())
+
+      // Start build (will wait for connect)
+      const buildPromise = connector.build()
+
+      // Call close() while build is in progress
+      const closePromise = connector.close()
+
+      // Now resolve the connect
+      resolveConnect!(createMockConnection())
+
+      // Both should complete
+      await Promise.all([buildPromise, closePromise])
+
+      // Should be in disconnected state
+      expect(connector.getConnectionState()).toBe(ConnectionState.Disconnected)
+      expect((connector as any).channel).toBeUndefined()
+      expect((connector as any).connection).toBeUndefined()
+    })
+  })
+
+  describe('Race condition: close() during attemptReconnection()', () => {
+    it('should cleanup when close() is called during reconnection', async () => {
+      jest.useFakeTimers()
+
+      // Reset mocks to default for this test
+      mockCreateChannel.mockImplementation(() =>
+        Promise.resolve(createMockChannel())
+      )
+
+      let connectionCloseCallback: () => void = () => {}
+      mockConnectionOn.mockImplementation((event: string, callback: any) => {
+        if (event === 'close') {
+          connectionCloseCallback = callback
+        }
+      })
+
+      // First build succeeds
+      mockConnect.mockImplementationOnce(() =>
+        Promise.resolve(createMockConnection())
+      )
+
+      const connector = new AMQPConnector()
+        .withUrl('amqp://localhost')
+        .withExchange('test-exchange')
+        .withQueue('test-queue')
+        .onMessage(jest.fn())
+        .withReconnection({ initialDelayMs: 100 })
+
+      await connector.build()
+
+      // Make next connect slow
+      let resolveReconnect: (value: any) => void
+      mockConnect.mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            resolveReconnect = resolve
+          })
+      )
+
+      // Trigger reconnection
+      connectionCloseCallback()
+
+      // Advance timer to start reconnection
+      jest.advanceTimersByTime(200)
+
+      // Call close() while reconnection is in progress
+      const closePromise = connector.close()
+
+      // Resolve the reconnect
+      resolveReconnect!(createMockConnection())
+
+      await closePromise
+      await jest.advanceTimersByTimeAsync(0)
+
+      // Should be in disconnected state
       expect(connector.getConnectionState()).toBe(ConnectionState.Disconnected)
 
       jest.useRealTimers()
