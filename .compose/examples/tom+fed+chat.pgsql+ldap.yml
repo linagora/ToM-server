@@ -178,14 +178,24 @@ services:
       - SMTP_SENDER=no-reply@docker.localhost
 
       - FEATURE_MATRIX_PROFILE_UPDATES_ALLOWED=''
-      - FEATURE_COMMON_SETTINGS_ENABLED=''
+
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_VHOST=/
+      - RABBITMQ_USER=guest
+      - RABBITMQ_PASSWORD=guest
+      - RABBITMQ_TLS=false
+
+      - FEATURE_COMMON_SETTINGS_ENABLED=true
+      - FEATURE_COMMON_SETTINGS_QUEUE=chat.settings.updated.queue
+      - FEATURE_COMMON_SETTINGS_EXCHANGE="settings exchange"
+      - FEATURE_COMMON_SETTINGS_ROUTING_KEY="user.settings.updated"
 
       - FEATURE_USER_DIRECTORY_ENABLED=true
-
       - FEATURE_USER_PROFILE_DEFAULT_VISIBILITY=public
       - FEATURE_USER_PROFILE_DEFAULT_VISIBLE_FIELDS=email,phone
 
-      - LOG_LEVEL=info
+      - LOG_LEVEL=silly
       - LOG_TRANSPORTS=Console
 
   fed:
