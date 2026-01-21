@@ -181,6 +181,35 @@ export class AMQPConnector {
 
       this.consumerTag = consumeResult.consumerTag
 
+      // Check if close() was called during connection establishment
+      if (this.isIntentionalClose) {
+        if (this.consumerTag != null && this.channel != null) {
+          try {
+            await this.channel.cancel(this.consumerTag)
+          } catch {
+            // Ignore errors during cleanup
+          }
+          this.consumerTag = undefined
+        }
+
+        if (this.reconnectTimeoutId != null) {
+          clearTimeout(this.reconnectTimeoutId)
+          this.reconnectTimeoutId = undefined
+        }
+
+        await this.channel?.close().catch(() => {})
+        await this.connection?.close().catch(() => {})
+
+        this.channel = undefined
+        this.connection = undefined
+        this.connectionState = ConnectionState.Disconnected
+
+        this.logger?.info(
+          '[AMQPConnector] Connection closed during build - close() was called concurrently.'
+        )
+        return
+      }
+
       // Set up event handlers for automatic reconnection
       this.setupConnectionEventHandlers()
 
@@ -243,16 +272,25 @@ export class AMQPConnector {
     // eslint-disable-next-line @typescript-eslint/no-misused-promises
     return async (msg) => {
       if (msg != null) {
+        // Capture channel reference to avoid race conditions
+        const channel = this.channel
+        if (channel == null) {
+          this.logger?.warn(
+            '[AMQPConnector] Message received but channel is unavailable. Message will be redelivered.'
+          )
+          return
+        }
+
         try {
-          await this.onMessageHandler?.(msg, this.channel!)
-          this.channel?.ack(msg)
+          await this.onMessageHandler?.(msg, channel)
+          channel.ack(msg)
         } catch (error) {
           this.logger?.error(
             `[AMQPConnector] Error processing message: ${
               (error as Error).message
             }`
           )
-          this.channel?.nack(msg, false, false)
+          channel.nack(msg, false, false)
         }
       }
     }
@@ -388,6 +426,35 @@ export class AMQPConnector {
       )
 
       this.consumerTag = consumeResult.consumerTag
+
+      // Check if close() was called during reconnection establishment
+      if (this.isIntentionalClose) {
+        if (this.consumerTag != null && this.channel != null) {
+          try {
+            await this.channel.cancel(this.consumerTag)
+          } catch {
+            // Ignore errors during cleanup
+          }
+          this.consumerTag = undefined
+        }
+
+        if (this.reconnectTimeoutId != null) {
+          clearTimeout(this.reconnectTimeoutId)
+          this.reconnectTimeoutId = undefined
+        }
+
+        await this.channel?.close().catch(() => {})
+        await this.connection?.close().catch(() => {})
+
+        this.channel = undefined
+        this.connection = undefined
+        this.connectionState = ConnectionState.Disconnected
+
+        this.logger?.info(
+          '[AMQPConnector] Reconnection aborted: close() was called concurrently.'
+        )
+        return
+      }
 
       // Set up event handlers for the new connection
       this.setupConnectionEventHandlers()
