@@ -1,13 +1,13 @@
 import { TwakeLogger } from '@twake-chat/logger'
-import { AuthRequest, TwakeDB } from '../../types'
+import { AuthRequest, TwakeDB } from '../../types.ts'
 import type {
   EnrichedContact,
   IAddressbookApiController,
   IAddressbookService
-} from '../types'
-import { AddressbookService } from '../services'
+} from '../types.ts'
+import { AddressbookService } from '../services/index.ts'
 import type { NextFunction, Response } from 'express'
-import type { IUserInfoService } from '../../user-info-api/types'
+import type { IUserInfoService } from '../../user-info-api/types.ts'
 
 export default class AddressbookApiController
   implements IAddressbookApiController

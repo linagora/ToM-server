@@ -5,11 +5,11 @@ import {
 } from '@twake-chat/logger'
 import type { AuthenticationFunction, Config, TwakeDB } from '../../types.ts'
 import { Router } from 'express'
-import authMiddleware from '../../utils/middlewares/auth.middleware'
+import authMiddleware from '../../utils/middlewares/auth.middleware.ts'
 import AddressbookApiController from '../controllers/index.ts'
 import AddressBookApiMiddleware from '../middlewares/index.ts'
-import type { IAddressbookService } from '../types'
-import type { IUserInfoService } from '../../user-info-api/types'
+import type { IAddressbookService } from '../types.ts'
+import type { IUserInfoService } from '../../user-info-api/types.ts'
 
 export const PATH = '/_twake/addressbook'
 
