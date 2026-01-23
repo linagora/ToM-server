@@ -1,27 +1,49 @@
 import { type TwakeLogger } from '@twake/logger'
-import { type Config, type ITokenService } from '../../types'
+import { type Config } from '../../types'
+import { type ITokenService } from '../../types'
 import TokenService from '../../utils/services/token-service'
 import {
   type UploadUserAvatarResponse,
   type UserInformationPayload,
-  type IAdminSettingsService
+  type IAdminSettingsService,
+  IAdminTokenManager,
+  REQUEST_TOKEN_RETRY_CONFIG
 } from '../types'
-import { Lru } from 'toad-cache'
 import { buildUrl } from '../../utils'
+import AdminTokenManager from './admin-token-manager'
+
 export default class AdminSettingsService implements IAdminSettingsService {
   private readonly device = 'admin_service'
   private readonly tokenService: ITokenService
-  private readonly cache = new Lru<string>(1, 0)
-  private readonly TOKEN_KEY = 'admin_token'
+  private readonly tokenManager: AdminTokenManager
 
   constructor(
     private readonly config: Config,
     private readonly logger: TwakeLogger,
-    tokenService?: ITokenService
+    tokenService?: ITokenService,
+    tokenManager?: IAdminTokenManager
   ) {
     this.tokenService =
       tokenService ?? new TokenService(this.config, this.logger, this.device)
+
+    // Create AdminTokenManager with request-level retry config (bounded retries)
+    this.tokenManager =
+      (tokenManager as AdminTokenManager) ??
+      new AdminTokenManager(
+        this.config,
+        this.logger,
+        this.tokenService,
+        REQUEST_TOKEN_RETRY_CONFIG
+      )
     this.logger.info('[AdminSettingsService] Initialized.')
+  }
+
+  getTokenManager(): IAdminTokenManager {
+    return this.tokenManager
+  }
+
+  cleanup(): void {
+    this.tokenManager.stopTokenAcquisition()
   }
 
   /**
@@ -144,30 +166,32 @@ export default class AdminSettingsService implements IAdminSettingsService {
     maxRetries = 1
   ): Promise<Response> {
     let attempt = 0
-
-    while (true) {
-      const token = await this._getCachedToken()
+    while (attempt <= maxRetries) {
+      const token = await this.tokenManager.getToken()
       const response = await this._doFetch(endpoint, options, token)
-      if (response.status !== 401) {
-        return response
+
+      if (response.status === 401 && attempt < maxRetries) {
+        this.logger.warn(
+          `Received 401 Unauthorized (attempt ${attempt + 1}), refreshing token`
+        )
+        this._invalidateToken()
+        attempt++
+        continue
       }
 
-      if (attempt >= maxRetries) {
+      if (response.status === 401) {
         throw new Error(
-          `Request to ${endpoint} failed after ${
+          `Admin API request failed after ${
             attempt + 1
-          } attempts (status: ${response.status})`
+          } attempts due to 401 Unauthorized`
         )
       }
 
-      this.logger.warn(
-        `Received 401 Unauthorized (attempt ${
-          attempt + 1
-        }). Refreshing token and retrying…`
-      )
-      this._invalidateToken()
-      attempt++
+      return response
     }
+
+    // This should never be reached, but TypeScript needs it
+    throw new Error(`Admin API request failed after ${maxRetries + 1} attempts`)
   }
 
   /** * Performs a fetch request to the Matrix server with the given endpoint and options
@@ -190,60 +214,12 @@ export default class AdminSettingsService implements IAdminSettingsService {
     return await fetch(url, { ...options, headers })
   }
 
-  /**
-   * Gets the admin access token
-   *
-   * @returns {Promise<string | null>} The admin access token or null if an error occurs
-   */
-  private readonly _getAdminAccessToken = async (): Promise<string | null> => {
-    try {
-      const accessToken = await this.tokenService.getAccessTokenWithCreds(
-        this.config.matrix_admin_login,
-        this.config.matrix_admin_password
-      )
-
-      if (accessToken == null) {
-        throw new Error('Failed to get access token')
-      }
-
-      return accessToken
-    } catch (error) {
-      this.logger.error(`Failed to get access token`, { error })
-
-      throw error
-    }
-  }
-
-  /**
-   * Invalidates the cached admin token
-   *
-   * @returns {void}
-   */
   private _invalidateToken(): void {
     this.logger.warn('Invalidating cached admin token')
-    this.cache.delete(this.TOKEN_KEY)
+    this.tokenManager.invalidateToken()
   }
 
-  /**
-   * Gets the cached admin token, or fetches a new one if not cached
-   *
-   * @returns {Promise<string>} The admin access token
-   */
   private async _getCachedToken(): Promise<string> {
-    let token = this.cache.get(this.TOKEN_KEY)
-
-    if (token == null) {
-      const newToken = await this._getAdminAccessToken()
-      if (newToken == null) {
-        throw new Error('Failed to fetch admin access token')
-      }
-
-      this.cache.set(this.TOKEN_KEY, newToken)
-      this.logger.info(`Cached new admin token`)
-
-      token = newToken
-    }
-
-    return token
+    return await this.tokenManager.getToken()
   }
 }
