@@ -5,19 +5,26 @@ import {
   type TwakeLogger
 } from '@twake/logger'
 import type { Config, ITokenService } from '../../types'
-import AdminSettingsrController from '../controllers'
+import AdminSettingsController from '../controllers'
 import AdminSettingsMiddleware from '../middlewares'
+import AdminSettingsService from '../services'
 
 export const PATH = '/_twake/v1/admin'
+
+export interface AdminSettingsApiResult {
+  router: Router
+  service: AdminSettingsService
+}
 
 export default (
   config: Config,
   defaultLogger?: TwakeLogger,
   tokenService?: ITokenService
-): Router => {
+): AdminSettingsApiResult => {
   const logger = defaultLogger ?? getLogger(config as unknown as LoggerConfig)
   const router = Router()
-  const controller = new AdminSettingsrController(config, logger, tokenService)
+  const service = new AdminSettingsService(config, logger, tokenService)
+  const controller = new AdminSettingsController(config, logger, service)
   const middleware = new AdminSettingsMiddleware(config, logger)
   /**
    * Set display name
@@ -33,5 +40,5 @@ export default (
     controller.handle
   )
 
-  return router
+  return { router, service }
 }

@@ -1,21 +1,16 @@
 import type { TwakeLogger } from '@twake/logger'
 import type { IAdminSettingsController, IAdminSettingsService } from '../types'
-import type { Config, ITokenService } from '../../types'
+import type { Config } from '../../types'
 import type { NextFunction, Response, Request } from 'express'
-import AdminSettingsService from '../services'
 
-export default class AdminSettingsrController
+export default class AdminSettingsController
   implements IAdminSettingsController
 {
-  private readonly adminService: IAdminSettingsService
-
   constructor(
     config: Config,
     private readonly logger: TwakeLogger,
-    tokenService?: ITokenService
-  ) {
-    this.adminService = new AdminSettingsService(config, logger, tokenService)
-  }
+    private readonly adminService: IAdminSettingsService
+  ) {}
 
   /**
    * Handles the request to update a user profile
