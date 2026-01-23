@@ -189,15 +189,18 @@ export default class TwakeServer {
     const adminSettingsApi = adminSettingsResult.router
 
     // Start admin token acquisition in background (non-blocking)
-    // Use infinite retry config for startup
-    this.adminSettingsService!.getTokenManager()
-      .startTokenAcquisition()
-      .catch((error) => {
-        this.logger.warn(
-          '[TwakeServer] Initial admin token fetch failed, will retry on first use',
-          { error }
-        )
-      })
+    // Only if admin credentials are configured
+    if (this.conf.matrix_admin_login && this.conf.matrix_admin_password) {
+      this.adminSettingsService!
+        .getTokenManager()
+        .startTokenAcquisition()
+        .catch((error) => {
+          this.logger.warn(
+            '[TwakeServer] Initial admin token fetch failed, will retry on first use',
+            { error }
+          )
+        })
+    }
 
     const matrixClientApi = MatrixclientApi(
       this.conf,

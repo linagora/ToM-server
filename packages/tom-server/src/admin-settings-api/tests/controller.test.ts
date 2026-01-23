@@ -1,5 +1,6 @@
-import AdminSettingsrController from '../controllers'
+import AdminSettingsController from '../controllers'
 import conf from '../../config.json'
+import type { IAdminSettingsService } from '../types'
 
 interface MockLogger {
   info: jest.Mock
@@ -13,17 +14,27 @@ const makeLogger = (): MockLogger => ({
   error: jest.fn()
 })
 
-describe('AdminSettingsrController', () => {
-  let controller: AdminSettingsrController
+describe('AdminSettingsController', () => {
+  let controller: AdminSettingsController
   let logger: MockLogger
   let req: any
   let res: any
   let next: jest.Mock
   let updateUserSpy: jest.SpyInstance
+  let mockAdminService: IAdminSettingsService
 
   beforeEach(() => {
     logger = makeLogger()
-    controller = new AdminSettingsrController(conf as any, logger as any)
+    mockAdminService = {
+      updateUserInformation: jest.fn(),
+      getTokenManager: jest.fn(),
+      cleanup: jest.fn()
+    }
+    controller = new AdminSettingsController(
+      conf as any,
+      logger as any,
+      mockAdminService as IAdminSettingsService
+    )
 
     req = {
       params: { id: 'user1' },

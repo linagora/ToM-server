@@ -18,10 +18,29 @@ const makeLogger = (): MockLogger => ({
 describe('AdminService', () => {
   let service: AdminService
   let logger: MockLogger
+  let mockTokenManager: {
+    getToken: jest.Mock
+    invalidateToken: jest.Mock
+    getState: jest.Mock
+    startTokenAcquisition: jest.Mock
+    stopTokenAcquisition: jest.Mock
+  }
 
   beforeEach(() => {
     logger = makeLogger()
-    service = new AdminService(conf as any, logger as any)
+    mockTokenManager = {
+      getToken: jest.fn().mockResolvedValue('cached-token'),
+      invalidateToken: jest.fn(),
+      getState: jest.fn().mockReturnValue('ready'),
+      startTokenAcquisition: jest.fn(),
+      stopTokenAcquisition: jest.fn()
+    }
+    service = new AdminService(
+      conf as any,
+      logger as any,
+      undefined,
+      mockTokenManager as any
+    )
   })
 
   afterEach(() => {
@@ -29,56 +48,39 @@ describe('AdminService', () => {
     jest.resetAllMocks()
   })
 
-  describe('_getAdminAccessToken', () => {
-    it('throws if tokenService fails', async () => {
-      jest
-        .spyOn(service['tokenService'], 'getAccessTokenWithCreds')
-        .mockResolvedValue(null)
-
-      await expect(service['_getAdminAccessToken']()).rejects.toThrow(
-        'Failed to get access token'
-      )
-      expect(logger.error).toHaveBeenCalledWith(
-        expect.stringContaining('Failed to get access token'),
-        expect.any(Object)
-      )
-    })
-
-    it('returns a token if tokenService succeeds', async () => {
-      jest
-        .spyOn(service['tokenService'], 'getAccessTokenWithCreds')
-        .mockResolvedValue('fake-token')
-      const token = await service['_getAdminAccessToken']()
-      expect(token).toBe('fake-token')
-    })
-  })
-
-  describe('_getCachedToken and _invalidateToken', () => {
-    it('fetches and caches a token if not cached', async () => {
-      jest
-        .spyOn(service as any, '_getAdminAccessToken')
-        .mockResolvedValue('cached-token')
-
+  describe('token caching behavior', () => {
+    it('fetches token on first call and caches it', async () => {
       const t1 = await service['_getCachedToken']()
       const t2 = await service['_getCachedToken']()
 
       expect(t1).toBe('cached-token')
       expect(t2).toBe('cached-token')
-      expect(logger.info).toHaveBeenCalledWith('Cached new admin token')
+      expect(mockTokenManager.getToken).toHaveBeenCalledTimes(2)
     })
 
-    it('invalidates cached token', async () => {
-      jest
-        .spyOn(service as any, '_getAdminAccessToken')
-        .mockResolvedValue('token-to-invalidate')
-
-      await service['_getCachedToken']()
+    it('invalidates token via token manager', async () => {
       service['_invalidateToken']()
 
-      expect(service['cache'].get(service['TOKEN_KEY'])).toBeUndefined()
+      expect(mockTokenManager.invalidateToken).toHaveBeenCalled()
       expect(logger.warn).toHaveBeenCalledWith(
         'Invalidating cached admin token'
       )
+    })
+  })
+
+  describe('getTokenManager', () => {
+    it('returns the token manager instance', () => {
+      const tokenManager = service.getTokenManager()
+      expect(tokenManager).toBeDefined()
+      expect(typeof tokenManager.getToken).toBe('function')
+      expect(typeof tokenManager.invalidateToken).toBe('function')
+    })
+  })
+
+  describe('cleanup', () => {
+    it('stops token acquisition', () => {
+      service.cleanup()
+      expect(mockTokenManager.stopTokenAcquisition).toHaveBeenCalled()
     })
   })
 
@@ -107,7 +109,6 @@ describe('AdminService', () => {
 
   describe('makeRequestWithAdminToken', () => {
     it('returns response if status != 401', async () => {
-      jest.spyOn(service as any, '_getCachedToken').mockResolvedValue('token')
       jest
         .spyOn(service as any, '_doFetch')
         .mockResolvedValue({ status: 200 } as any)
@@ -117,7 +118,6 @@ describe('AdminService', () => {
     })
 
     it('retries on 401 and throws after maxRetries', async () => {
-      jest.spyOn(service as any, '_getCachedToken').mockResolvedValue('token')
       jest
         .spyOn(service as any, '_doFetch')
         .mockResolvedValue({ status: 401 } as any)
