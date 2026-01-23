@@ -19,7 +19,10 @@ import MetricsRouter from './metrics-api'
 import Invitation from './invitation-api'
 import AddressBook from './addressbook-api'
 import DeactivateAccount from './deactivate-account-api'
-import AdminSettings from './admin-settings-api'
+import AdminSettings, {
+  type AdminSettingsApiResult
+} from './admin-settings-api'
+import AdminSettingsService from './admin-settings-api/services'
 import MatrixclientApi from './matrix-api/client'
 import { AddressbookService } from './addressbook-api/services'
 import UserInfoService from './user-info-api/services'
@@ -38,6 +41,7 @@ export default class TwakeServer {
   private userInfoService!: UserInfoService
   private tokenService!: TokenService
   private smsService!: SmsService
+  private adminSettingsService: AdminSettingsService | undefined = undefined
 
   constructor(
     conf?: Partial<Config>,
@@ -83,6 +87,7 @@ export default class TwakeServer {
   cleanJobs(): void {
     this.idServer.cleanJobs()
     this.matrixDb.close()
+    this.adminSettingsService?.cleanup()
   }
 
   private async _initServer(confDesc?: ConfigDescription): Promise<boolean> {
@@ -175,11 +180,24 @@ export default class TwakeServer {
       this.tokenService
     )
 
-    const adminSettingsApi = AdminSettings(
+    const adminSettingsResult: AdminSettingsApiResult = AdminSettings(
       this.conf,
       this.logger,
       this.tokenService
     )
+    this.adminSettingsService = adminSettingsResult.service
+    const adminSettingsApi = adminSettingsResult.router
+
+    // Start admin token acquisition in background (non-blocking)
+    // Use infinite retry config for startup
+    this.adminSettingsService!.getTokenManager()
+      .startTokenAcquisition()
+      .catch((error) => {
+        this.logger.warn(
+          '[TwakeServer] Initial admin token fetch failed, will retry on first use',
+          { error }
+        )
+      })
 
     const matrixClientApi = MatrixclientApi(
       this.conf,
