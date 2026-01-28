@@ -1,0 +1,30 @@
+name: CodeQL Analysis
+description: Run CodeQL security analysis
+
+runs:
+  using: composite
+  steps:
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v3
+      with:
+        languages: javascript-typescript
+        build-mode: none
+        config: |
+          paths-ignore:
+            - 'nx.json'
+            - '**/docs/**'
+            - '**/__testData__/**'
+            - '**/*.test.ts'
+            - '**/*.spec.ts'
+            - '**/node_modules/**'
+            - '**/dist/**'
+            - '**/build/**'
+            - '**/.compose/**'
+            - '**/coverage/**'
+            - '**/example/**'
+            - '**/templates/**'
+
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v3
+      with:
+        category: '/language:javascript-typescript'
