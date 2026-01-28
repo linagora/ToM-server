@@ -622,10 +622,12 @@ packages/matrix-identity-server/matrix-server/synapse-data
 .compose/synapse/homeserver.yaml
 
 # ignore sqlite files
-**/*.db
-**/*.db-shm
-**/*.db-wal
-**/*.db-journal
+*.sqlite
+*.sqlite3
+*.db
+*.db-shm
+*.db-wal
+*.db-journal
 
 packages/federated-identity-service/src/__testData__/synapse-data/*.signing.key
 **/*.last-run.json
