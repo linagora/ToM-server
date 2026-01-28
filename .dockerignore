@@ -36,3 +36,6 @@
 !packages/matrix-identity-server/src/config.json
 !packages/tom-server/src/config.json
 !packages/federated-identity-service/src/config.json
+
+## Allow handmade tools
+!packages/common-settings-bridge/tools/send-message.mjs

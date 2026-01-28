@@ -136,7 +136,7 @@ services:
       # Synapse configuration
       - SYNAPSE_URL=http://synapse:8008
       - SYNAPSE_DOMAIN=docker.localhost
-      - SYNAPSE_ADMIN_API_MODE=disabled
+      - SYNAPSE_ADMIN_API_MODE=fallback
       - REGISTRATION_PATH=/app/registration.yaml
 
       # Database configuration (Must be connected to ToM DB for the moment)
@@ -267,6 +267,29 @@ services:
       - 'traefik.http.routers.fed-direct.entrypoints=web'
       # Service configuration
       - 'traefik.http.services.fed.loadbalancer.server.port=3000'
+
+  send-message-tool:
+    build:
+      context: ../..
+      dockerfile: ./packages/common-settings-bridge/tools/Dockerfile
+    image: linagora/twake-common-settings-bridge-tool
+    container_name: send-message-tool
+    stdin_open: true
+    tty: true
+    depends_on:
+      - rabbitmq
+    environment:
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USERNAME=guest
+      - RABBITMQ_PASSWORD=guest
+      - RABBITMQ_VHOST=/
+      - RABBITMQ_TLS=false
+
+      # Queue configuration
+      # - QUEUE_NAME=chat.settings.updated.queue
+      - EXCHANGE_NAME=settings exchange
+      - ROUTING_KEY=user.settings.updated
 
 volumes:
   postgres-data:
