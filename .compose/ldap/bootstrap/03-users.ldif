@@ -1,0 +1,544 @@
+# User entries with plain text passwords (osixia will hash them automatically)
+
+dn: uid=dwho,ou=users,dc=docker,dc=internal
+objectClass: inetOrgPerson
+objectClass: workplaceUser
+uid: dwho
+cn: Dr Who
+sn: Dwho
+mobile: +33671298765
+workplaceFqdn: tardis.docker.internal
+userPassword: dwho
+
+dn: uid=rtyler,ou=users,dc=docker,dc=internal
+objectClass: inetOrgPerson
+objectClass: workplaceUser
+uid: rtyler
+cn: Rose Tyler
+sn: Rtyler
+mail: rtyler@docker.internal
+mobile: +33671298767
+workplaceFqdn: badwolf.docker.internal
+userPassword: rtyler
+
+dn: uid=msmith,ou=users,dc=docker,dc=internal
+objectClass: inetOrgPerson
+uid: msmith
+cn: Mr Smith
+sn: Msmith
+mail: msmith@docker.internal
+userPassword: msmith
+
+dn: uid=okenobi,ou=users,dc=docker,dc=internal
+objectClass: inetOrgPerson
+objectClass: workplaceUser
+uid: okenobi
+cn: Obi-Wan Kenobi
+sn: Okenobi
+mail: okenobi@docker.internal
+workplaceFqdn: jedi-temple.docker.internal
+userPassword: okenobi
+
+dn: uid=qjinn,ou=users,dc=docker,dc=internal
+objectClass: inetOrgPerson
+uid: qjinn
+cn: Qui-Gon Jinn
+sn: Qgonjinn
+mail: qjinn@docker.internal
+userPassword: qjinn
+
+dn: uid=chewbacca,ou=users,dc=docker,dc=internal
+objectClass: inetOrgPerson
+uid: chewbacca
+cn: Chewbacca
+sn: Chewbacca
+mail: chewbacca@docker.internal
+userPassword: chewbacca
+
+dn: uid=lorgana,ou=users,dc=docker,dc=internal
+objectClass: inetOrgPerson
+uid: lorgana
+cn: Leia Organa
+sn: Lorgana
+mail: lorgana@docker.internal
+userPassword: lorgana
+
+dn: uid=pamidala,ou=users,dc=docker,dc=internal
+objectClass: inetOrgPerson
+uid: pamidala
+cn: Padme Amidala
+sn: Pamidala
+mail: pamidala@docker.internal
+userPassword: pamidala
+
+dn: uid=cdooku,ou=users,dc=docker,dc=internal
+objectClass: inetOrgPerson
+uid: cdooku
+cn: Comte Dooku
+sn: Cdooku
+mail: cdooku@docker.internal
+userPassword: cdooku
+
+dn: uid=kren,ou=users,dc=docker,dc=internal
+objectClass: inetOrgPerson
+uid: kren
+cn: Kylo Ren
+sn: Kren
+mail: kren@docker.internal
+userPassword: kren
+
+dn: uid=dmaul,ou=users,dc=docker,dc=internal
+objectClass: inetOrgPerson
+uid: dmaul
+cn: Dark Maul
+sn: Dmaul
+mail: dmaul@docker.internal
+userPassword: dmaul
+
+dn: uid=askywalker,ou=users,dc=docker,dc=internal
+objectClass: inetOrgPerson
+uid: askywalker
+cn: Anakin Skywalker
+sn: Askywalker
+mail: askywalker@docker.internal
+userPassword: askywalker
+
+dn: uid=jbinks,ou=users,dc=docker,dc=internal
+objectClass: inetOrgPerson
+uid: jbinks
+cn: Jar Jar Binks
+sn: Jbinks
+mail: jbinks@docker.internal
+userPassword: jbinks
+
+dn: uid=bfett,ou=users,dc=docker,dc=internal
+objectClass: inetOrgPerson
+uid: bfett
+cn: Boba Fett
+sn: Bfett
+mail: bfett@docker.internal
+userPassword: bfett
+
+dn: uid=jfett,ou=users,dc=docker,dc=internal
+objectClass: inetOrgPerson
+uid: jfett
+cn: Jango Ffett
+sn: Jfett
+mail: jfett@docker.internal
+userPassword: jfett
+
+dn: uid=lskywalker,ou=users,dc=docker,dc=internal
+objectClass: inetOrgPerson
+objectClass: workplaceUser
+uid: lskywalker
+cn: Luc Skywalker
+sn: Lskywalker
+mail: lskywalker@docker.internal
+workplaceFqdn: rebel-alliance.docker.internal
+userPassword: lskywalker
+
+dn: uid=myoda,ou=users,dc=docker,dc=internal
+objectClass: inetOrgPerson
+objectClass: workplaceUser
+uid: myoda
+cn: Master Yoda
+sn: Myoda
+mail: myoda@docker.internal
+workplaceFqdn: jedi-council.docker.internal
+userPassword: myoda
+
+dn: uid=hsolo,ou=users,dc=docker,dc=internal
+objectClass: inetOrgPerson
+uid: hsolo
+cn: Han Solo
+sn: Hsolo
+mail: hsolo@docker.internal
+userPassword: hsolo
+
+dn: uid=r2d2,ou=users,dc=docker,dc=internal
+objectClass: inetOrgPerson
+uid: r2d2
+cn: R2D2
+sn: R2D2
+mail: r2d2@docker.internal
+userPassword: r2d2
+
+dn: uid=c3po,ou=users,dc=docker,dc=internal
+objectClass: inetOrgPerson
+uid: c3po
+cn: C3PO
+sn: C3po
+mail: c3po@docker.internal
+userPassword: c3po
+
+dn: uid=synapseadmin,ou=users,dc=docker,dc=internal
+objectClass: inetOrgPerson
+uid: synapseadmin
+cn: Synapse Admin
+sn: Syadmin
+mail: synapseadmin@docker.internal
+userPassword: synapseadmin
+
+dn: uid=annasmith,dc=docker,dc=internal
+objectClass: inetOrgPerson
+objectClass: workplaceUser
+uid: annasmith
+cn: Anna Smith
+mail: annasmith@docker.internal
+givenName: Anna
+sn: Smith
+workplaceFqdn: acme-corp.docker.internal
+userPassword: annasmith
+
+dn: uid=johnjohnson,dc=docker,dc=internal
+objectClass: inetOrgPerson
+objectClass: workplaceUser
+uid: johnjohnson
+cn: John Johnson
+mail: johnjohnson@docker.internal
+givenName: John
+sn: Johnson
+workplaceFqdn: techcorp.docker.internal
+userPassword: johnjohnson
+
+dn: uid=emilybrown,dc=docker,dc=internal
+objectClass: inetOrgPerson
+uid: emilybrown
+cn: Emily Brown
+mail: emilybrown@docker.internal
+givenName: Emily
+sn: Brown
+userPassword: emilybrown
+
+dn: uid=daviddavis,dc=docker,dc=internal
+objectClass: inetOrgPerson
+uid: daviddavis
+cn: David Davis
+mail: daviddavis@docker.internal
+givenName: David
+sn: Davis
+userPassword: daviddavis
+
+dn: uid=sarahwilson,dc=docker,dc=internal
+objectClass: inetOrgPerson
+uid: sarahwilson
+cn: Sarah Wilson
+mail: sarahwilson@docker.internal
+givenName: Sarah
+sn: Wilson
+userPassword: sarahwilson
+
+dn: uid=miketaylor,dc=docker,dc=internal
+objectClass: inetOrgPerson
+uid: miketaylor
+cn: Mike Taylor
+mail: miketaylor@docker.internal
+givenName: Mike
+sn: Taylor
+userPassword: miketaylor
+
+dn: uid=graceadams,dc=docker,dc=internal
+objectClass: inetOrgPerson
+uid: graceadams
+cn: Grace Adams
+mail: graceadams@docker.internal
+givenName: Grace
+sn: Adams
+userPassword: graceadams
+
+dn: uid=mattmoore,dc=docker,dc=internal
+objectClass: inetOrgPerson
+uid: mattmoore
+cn: Matt Moore
+mail: mattmoore@docker.internal
+givenName: Matt
+sn: Moore
+userPassword: mattmoore
+
+dn: uid=lilyparker,dc=docker,dc=internal
+objectClass: inetOrgPerson
+uid: lilyparker
+cn: Lily Parker
+mail: lilyparker@docker.internal
+givenName: Lily
+sn: Parker
+userPassword: lilyparker
+
+dn: uid=danieldixon,dc=docker,dc=internal
+objectClass: inetOrgPerson
+uid: danieldixon
+cn: Daniel Dixon
+mail: danieldixon@docker.internal
+givenName: Daniel
+sn: Dixon
+userPassword: danieldixon
+
+dn: uid=mialopez,dc=docker,dc=internal
+objectClass: inetOrgPerson
+uid: mialopez
+cn: Mia Lopez
+mail: mialopez@docker.internal
+givenName: Mia
+sn: Lopez
+userPassword: mialopez
+
+dn: uid=ethanjackson,dc=docker,dc=internal
+objectClass: inetOrgPerson
+uid: ethanjackson
+cn: Ethan Jackson
+mail: ethanjackson@docker.internal
+givenName: Ethan
+sn: Jackson
+userPassword: ethanjackson
+
+dn: uid=oliviaroberts,dc=docker,dc=internal
+objectClass: inetOrgPerson
+uid: oliviaroberts
+cn: Olivia Roberts
+mail: oliviaroberts@docker.internal
+givenName: Olivia
+sn: Roberts
+userPassword: oliviaroberts
+
+dn: uid=jamessmith,dc=docker,dc=internal
+objectClass: inetOrgPerson
+uid: jamessmith
+cn: James Smith
+mail: jamessmith@docker.internal
+givenName: James
+sn: Smith
+userPassword: jamessmith
+
+dn: uid=sophiathomas,dc=docker,dc=internal
+objectClass: inetOrgPerson
+uid: sophiathomas
+cn: Sophia Thomas
+mail: sophiathomas@docker.internal
+givenName: Sophia
+sn: Thomas
+userPassword: sophiathomas
+
+dn: uid=benjaminclark,dc=docker,dc=internal
+objectClass: inetOrgPerson
+uid: benjaminclark
+cn: Benjamin Clark
+mail: benjaminclark@docker.internal
+givenName: Benjamin
+sn: Clark
+userPassword: benjaminclark
+
+dn: uid=avamartin,dc=docker,dc=internal
+objectClass: inetOrgPerson
+uid: avamartin
+cn: Ava Martin
+mail: avamartin@docker.internal
+givenName: Ava
+sn: Martin
+userPassword: avamartin
+
+dn: uid=williamrogers,dc=docker,dc=internal
+objectClass: inetOrgPerson
+uid: williamrogers
+cn: William Rogers
+mail: williamrogers@docker.internal
+givenName: William
+sn: Rogers
+userPassword: williamrogers
+
+dn: uid=emmawright,dc=docker,dc=internal
+objectClass: inetOrgPerson
+uid: emmawright
+cn: Emma Wright
+mail: emmawright@docker.internal
+givenName: Emma
+sn: Wright
+userPassword: emmawright
+
+dn: uid=chloescott,dc=docker,dc=internal
+objectClass: inetOrgPerson
+uid: chloescott
+cn: Chloe Scott
+mail: chloescott@docker.internal
+givenName: Chloe
+sn: Scott
+userPassword: chloescott
+
+dn: uid=danieltaylor,dc=docker,dc=internal
+objectClass: inetOrgPerson
+uid: danieltaylor
+cn: Daniel Taylor
+mail: danieltaylor@docker.internal
+givenName: Daniel
+sn: Taylor
+userPassword: danieltaylor
+
+dn: uid=sophiarichardson,dc=docker,dc=internal
+objectClass: inetOrgPerson
+uid: sophiarichardson
+cn: Sophia Richardson
+mail: sophiarichardson@docker.internal
+givenName: Sophia
+sn: Richardson
+userPassword: sophiarichardson
+
+dn: uid=henryjones,dc=docker,dc=internal
+objectClass: inetOrgPerson
+uid: henryjones
+cn: Henry Jones
+mail: henryjones@docker.internal
+givenName: Henry
+sn: Jones
+userPassword: henryjones
+
+dn: uid=gracelewis,dc=docker,dc=internal
+objectClass: inetOrgPerson
+uid: gracelewis
+cn: Grace Lewis
+mail: gracelewis@docker.internal
+givenName: Grace
+sn: Lewis
+userPassword: gracelewis
+
+dn: uid=samuelharris,dc=docker,dc=internal
+objectClass: inetOrgPerson
+uid: samuelharris
+cn: Samuel Harris
+mail: samuelharris@docker.internal
+givenName: Samuel
+sn: Harris
+userPassword: samuelharris
+
+dn: uid=ameliahall,dc=docker,dc=internal
+objectClass: inetOrgPerson
+uid: ameliahall
+cn: Amelia Hall
+mail: ameliahall@docker.internal
+givenName: Amelia
+sn: Hall
+userPassword: ameliahall
+
+dn: uid=lucyedwards,dc=docker,dc=internal
+objectClass: inetOrgPerson
+uid: lucyedwards
+cn: Lucy Edwards
+mail: lucyedwards@docker.internal
+givenName: Lucy
+sn: Edwards
+userPassword: lucyedwards
+
+dn: uid=christophermiller,dc=docker,dc=internal
+objectClass: inetOrgPerson
+uid: christophermiller
+cn: Christopher Miller
+mail: christophermiller@docker.internal
+givenName: Christopher
+sn: Miller
+userPassword: christophermiller
+
+dn: uid=emilyperez,dc=docker,dc=internal
+objectClass: inetOrgPerson
+uid: emilyperez
+cn: Emily Perez
+mail: emilyperez@docker.internal
+givenName: Emily
+sn: Perez
+userPassword: emilyperez
+
+dn: uid=andrewcook,dc=docker,dc=internal
+objectClass: inetOrgPerson
+uid: andrewcook
+cn: Andrew Cook
+mail: andrewcook@docker.internal
+givenName: Andrew
+sn: Cook
+userPassword: andrewcook
+
+dn: uid=oliviaparker,dc=docker,dc=internal
+objectClass: inetOrgPerson
+uid: oliviaparker
+cn: Olivia Parker
+mail: oliviaparker@docker.internal
+givenName: Olivia
+sn: Parker
+userPassword: oliviaparker
+
+dn: uid=josephmartin,dc=docker,dc=internal
+objectClass: inetOrgPerson
+uid: josephmartin
+cn: Joseph Martin
+mail: josephmartin@docker.internal
+givenName: Joseph
+sn: Martin
+userPassword: josephmartin
+
+dn: uid=lilybrown,dc=docker,dc=internal
+objectClass: inetOrgPerson
+uid: lilybrown
+cn: Lily Brown
+mail: lilybrown@docker.internal
+givenName: Lily
+sn: Brown
+userPassword: lilybrown
+
+dn: uid=elizabethlee,dc=docker,dc=internal
+objectClass: inetOrgPerson
+uid: elizabethlee
+cn: Elizabeth Lee
+mail: elizabethlee@docker.internal
+givenName: Elizabeth
+sn: Lee
+userPassword: elizabethlee
+
+dn: uid=ethangreen,dc=docker,dc=internal
+objectClass: inetOrgPerson
+uid: ethangreen
+cn: Ethan Green
+mail: ethangreen@docker.internal
+givenName: Ethan
+sn: Green
+userPassword: ethangreen
+
+dn: uid=noahroberts,dc=docker,dc=internal
+objectClass: inetOrgPerson
+uid: noahroberts
+cn: Noah Roberts
+mail: noahroberts@docker.internal
+givenName: Noah
+sn: Roberts
+userPassword: noahroberts
+
+dn: uid=gracegarcia,dc=docker,dc=internal
+objectClass: inetOrgPerson
+uid: gracegarcia
+cn: Grace Garcia
+mail: gracegarcia@docker.internal
+givenName: Grace
+sn: Garcia
+userPassword: gracegarcia
+
+dn: uid=avaclark,dc=docker,dc=internal
+objectClass: inetOrgPerson
+uid: avaclark
+cn: Ava Clark
+mail: avaclark@docker.internal
+givenName: Ava
+sn: Clark
+userPassword: avaclark
+
+dn: uid=sophiedavis,dc=docker,dc=internal
+objectClass: inetOrgPerson
+uid: sophiedavis
+cn: Sophie Davis
+mail: sophiedavis@docker.internal
+givenName: Sophie
+sn: Davis
+userPassword: sophiedavis
+
+dn: uid=benjaminharrison,dc=docker,dc=internal
+objectClass: inetOrgPerson
+uid: benjaminharrison
+cn: Benjamin Harrison
+mail: benjaminharrison@docker.internal
+givenName: Benjamin
+sn: Harrison
+userPassword: benjaminharrison

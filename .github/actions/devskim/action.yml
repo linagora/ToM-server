@@ -1,0 +1,15 @@
+name: DevSkim Analysis
+description: Run DevSkim security analysis
+
+runs:
+  using: composite
+  steps:
+    - name: Run DevSkim scanner
+      uses: microsoft/DevSkim-Action@v1
+      with:
+        ignore-globs: 'nx.json,**/docs/**,**/__testData__/**,**/*.test.ts,**/*.spec.ts,**/node_modules/**,**/dist/**,**/build/**,**/.compose/**,**/coverage/**,**/example/**,**/templates/**'
+
+    - name: Upload DevSkim scan results to GitHub Security tab
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: devskim-results.sarif
