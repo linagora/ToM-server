@@ -1,0 +1,16 @@
+# Synapse Application Service Registration
+# Copy this to registration.yaml and configure tokens
+# Then add path to Synapse's app_service_config_files
+
+id: common-settings-bridge
+url: null  # No HTTP callback needed - RabbitMQ consumer only
+as_token: <GENERATE_SECURE_TOKEN_HERE>
+hs_token: <GENERATE_SECURE_TOKEN_HERE>
+sender_localpart: _common_settings_bridge
+namespaces:
+  users:
+    - exclusive: false
+      regex: '@.*'  # Can act on behalf of any user
+  rooms: []
+  aliases: []
+rate_limited: false
