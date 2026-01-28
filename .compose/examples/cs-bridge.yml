@@ -1,0 +1,273 @@
+services:
+  traefik:
+    image: traefik:v2.11
+    restart: unless-stopped
+    command:
+      - '--api.insecure=true'
+      - '--api.dashboard=true'
+      - '--providers.docker=true'
+      - '--providers.docker.exposedbydefault=false'
+      - '--entrypoints.web.address=:80'
+      - '--log.level=INFO'
+    ports:
+      - '80:80'
+      - '8080:8080'
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+
+  ldap:
+    image: osixia/openldap:1.5.0
+    environment:
+      LDAP_ORGANISATION: 'Docker'
+      LDAP_DOMAIN: 'docker.internal'
+      LDAP_ADMIN_PASSWORD: 'admin'
+      LDAP_CONFIG_PASSWORD: 'config'
+      LDAP_READONLY_USER: 'false'
+      LDAP_RFC2307BIS_SCHEMA: 'false'
+      LDAP_BACKEND: 'mdb'
+      LDAP_TLS: 'false'
+      LDAP_LOG_LEVEL: '256'
+      LDAP_REMOVE_CONFIG_AFTER_SETUP: 'false'
+      DISABLE_CHOWN: 'true'
+    volumes:
+      - ../ldap/bootstrap:/container/service/slapd/assets/config/bootstrap/ldif/custom
+    healthcheck:
+      test:
+        [
+          'CMD-SHELL',
+          "ldapsearch -x -b 'dc=docker,dc=internal' -H ldap://localhost || exit 1",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  smtp:
+    image: changemakerstudiosus/papercut-smtp:latest
+
+  synapse:
+    image: matrixdotorg/synapse:v1.119.0
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      traefik:
+        condition: service_started
+    volumes:
+      - ../synapse/.data:/data
+      - ../synapse/pgsql.yaml:/data/homeserver.yaml:ro
+      - ../synapse/docker.internal.log.config:/data/docker.internal.log.config:ro
+      - ../synapse/docker.internal.signing.key:/data/docker.internal.signing.key:ro
+    labels:
+      - 'traefik.enable=true'
+      - 'traefik.http.routers.synapse.rule=Host(`matrix.docker.internal`)'
+      - 'traefik.http.routers.synapse.entrypoints=web'
+      - 'traefik.http.services.synapse.loadbalancer.server.port=8008'
+    healthcheck:
+      test:
+        [
+          'CMD-SHELL',
+          'curl -f http://localhost:8008/_matrix/client/versions || exit 1',
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: twake
+      POSTGRES_PASSWORD: twake_password
+      POSTGRES_DB: postgres
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ../postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - '5432:5432'
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U twake']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    ports:
+      - 5672:5672
+      - 15672:15672
+
+  common-settings-bridge:
+    image: linagora/twake-common-settings-bridge
+    build:
+      context: ../..
+      dockerfile: ./packages/common-settings-bridge/Dockerfile
+    depends_on:
+      synapse:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_started
+    volumes:
+      - ../synapse/cs-bridge-registration.yaml:/app/registration.yaml
+      - common-settings-data:/data
+    environment:
+      - NODE_TLS_REJECT_UNAUTHORIZED=0
+
+      # RabbitMQ configuration
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USERNAME=guest
+      - RABBITMQ_PASSWORD=guest
+      - RABBITMQ_VHOST=/
+      - RABBITMQ_TLS=false
+
+      # Queue configuration
+      - QUEUE_NAME=chat.settings.updated.queue
+      - EXCHANGE_NAME=settings exchange
+      - ROUTING_KEY=user.settings.updated
+
+      # Synapse configuration
+      - SYNAPSE_URL=http://synapse:8008
+      - SYNAPSE_DOMAIN=docker.localhost
+      - SYNAPSE_ADMIN_API_MODE=disabled
+      - REGISTRATION_PATH=/app/registration.yaml
+
+      # Database configuration (Must be connected to ToM DB for the moment)
+      - DATABASE_ENGINE=pg
+      - DATABASE_HOST=postgres
+      - DATABASE_NAME=tom_db
+      - DATABASE_USER=twake
+      - DATABASE_PASSWORD=twake_password
+
+      - LOG_LEVEL=debug
+
+  tom:
+    image: linagora/tom-server
+    build:
+      context: ../..
+      dockerfile: ./Dockerfile
+    depends_on:
+      synapse:
+        condition: service_healthy
+      ldap:
+        condition: service_healthy
+      smtp:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+      traefik:
+        condition: service_started
+    environment:
+      - NODE_TLS_REJECT_UNAUTHORIZED=0
+
+      - SERVER_NAME=docker.internal
+      - BASE_URL=http://tom.docker.internal
+      - TRUSTED_PROXIES=uniquelocal
+
+      - FEDERATED_IDENTITY_SERVICES=fed.docker.internal
+
+      - DATABASE_ENGINE=pg
+      - DATABASE_HOST=postgres
+      - DATABASE_NAME=tom_db
+      - DATABASE_USER=twake
+      - DATABASE_PASSWORD=twake_password
+
+      - USERDB_ENGINE=ldap
+      - LDAP_URI=ldap://ldap
+      - LDAP_BASE=ou=users,dc=docker,dc=internal
+      - LDAP_FILTER=(objectClass=inetOrgPerson)
+      # - LDAP_USER=uid=tom,dc=docker,dc=internal  ## Local LDAP is fully readable
+      # - LDAP_PASSWORD=T0m_p@Ss                   ## Local LDAP is fully readable
+
+      - MATRIX_INTERNAL_HOST=http://synapse:8008
+      - MATRIX_SERVER=matrix.docker.internal
+      - MATRIX_DATABASE_ENGINE=pg
+      - MATRIX_DATABASE_HOST=postgres
+      - MATRIX_DATABASE_NAME=synapse
+      - MATRIX_DATABASE_USER=synapse_user
+      - MATRIX_DATABASE_PASSWORD=secretpassword
+
+      - SMS_API_URL=https://api.octopush.com/v1/public
+
+      - SMTP_SERVER=smtp
+      - SMTP_PORT=2525
+      - SMTP_SENDER=no-reply@docker.internal
+
+      - LOG_LEVEL=silly
+      - LOG_TRANSPORTS=Console
+    labels:
+      - 'traefik.enable=true'
+      # Direct access via tom.docker.internal
+      - 'traefik.http.routers.tom-direct.rule=Host(`tom.docker.internal`)'
+      - 'traefik.http.routers.tom-direct.entrypoints=web'
+      - 'traefik.http.routers.tom-direct.priority=110'
+      # Handle .well-known endpoints
+      - 'traefik.http.routers.tom-wellknown.rule=Host(`matrix.docker.internal`) && PathPrefix(`/.well-known/matrix/client`)'
+      - 'traefik.http.routers.tom-wellknown.entrypoints=web'
+      - 'traefik.http.routers.tom-wellknown.priority=100'
+      # Handle Matrix Identity Server API
+      - 'traefik.http.routers.tom-identity.rule=Host(`matrix.docker.internal`) && PathPrefix(`/_matrix/identity/v2`)'
+      - 'traefik.http.routers.tom-identity.entrypoints=web'
+      - 'traefik.http.routers.tom-identity.priority=90'
+      # Handle specific Matrix Client API endpoints (createRoom, profile)
+      - 'traefik.http.routers.tom-matrix-client.rule=Host(`matrix.docker.internal`) && (PathPrefix(`/_matrix/client/v3/createRoom`) || PathPrefix(`/_matrix/client/v3/profile`))'
+      - 'traefik.http.routers.tom-matrix-client.entrypoints=web'
+      - 'traefik.http.routers.tom-matrix-client.priority=80'
+      # Service configuration
+      - 'traefik.http.services.tom.loadbalancer.server.port=3000'
+
+  fed:
+    image: linagora/tom-federated-identity-service
+    build:
+      context: ../..
+      dockerfile: ./packages/federated-identity-service/Dockerfile
+    depends_on:
+      ldap:
+        condition: service_healthy
+      tom:
+        condition: service_started
+    environment:
+      - NODE_TLS_REJECT_UNAUTHORIZED=0
+
+      - BASE_URL=http://fed.docker.internal
+      - SERVER_NAME=docker.internal
+      - TRUSTED_PROXIES=uniquelocal
+      - TRUSTED_SERVERS_ADDRESSES=172.0.0.0/8
+
+      - DATABASE_ENGINE=sqlite
+      - DATABASE_HOST=file:fed?mode=memory&cache=shared
+
+      ## For storing the federated identity raw users
+      # - USERDB_ENGINE=ldap
+      # - LDAP_URI=ldap://ldap
+      # - LDAP_BASE=ou=users,dc=docker,dc=internal
+      # - LDAP_FILTER=(objectClass=inetOrgPerson)
+      # - LDAP_USER=uid=fed,dc=docker,dc=internal  ## Local LDAP is fully readable
+      # - LDAP_PASSWORD=F3d_p@Ss                   ## Local LDAP is fully readable
+
+      - DATABASE_ENGINE=pg
+      - DATABASE_HOST=postgres
+      - DATABASE_NAME=fed_db
+      - DATABASE_USER=twake
+      - DATABASE_PASSWORD=twake_password
+
+      - LOG_LEVEL=silly
+      - LOG_TRANSPORTS=Console
+    labels:
+      - 'traefik.enable=true'
+      # Direct access via fed.docker.internal
+      - 'traefik.http.routers.fed-direct.rule=Host(`fed.docker.internal`)'
+      - 'traefik.http.routers.fed-direct.entrypoints=web'
+      # Service configuration
+      - 'traefik.http.services.fed.loadbalancer.server.port=3000'
+
+volumes:
+  postgres-data:
+  common-settings-data:
