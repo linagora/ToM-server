@@ -275,6 +275,10 @@ Promise.all(promises)
       console.log(`ToM-Server listening on port: ${port}`)
       app.listen(port, '0.0.0.0', async () => {
         if (conf.features.common_settings.enabled === true) {
+          console.warn(
+            'Common Settings integrated feature is now deprecated in favor of @twake/common-settings-service package.',
+            'We recommend turning off this feature and switching to the new deployment using the standalone service.'
+          )
           const commonSettingsServiceI = new CommonSettingsService(
             conf,
             tomServer.logger,

@@ -8,6 +8,11 @@
 # -----------------------------------------------------------------------------
 FROM node:18.20.8-alpine AS builder
 
+# Update image and install build tools
+RUN apk update && apk upgrade && \
+    apk add --no-cache build-base python3 && \
+    rm -rf /var/cache/apk/*
+
 WORKDIR /usr/src/app
 
 # Copy root package files for workspace setup
