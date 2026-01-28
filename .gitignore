@@ -615,13 +615,51 @@ packages/*/example/*.js*
 packages/matrix-identity-server/matrix-server/synapse-data
 
 ## compose related
-.compose/**/*.env
-.compose/synapse/media_store/
-.compose/haproxy/haproxy.cfg
-.compose/lemon/lmConf-1.json
-.compose/synapse/homeserver.yaml
+.compose/synapse/.data/*
+!.compose/synapse/.data/.gitkeep
 
-# ignore sqlite files
+# IDEs and editors
+/.idea
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+
+# IDE - VSCode
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# misc
+/.sass-cache
+/connect.lock
+/coverage
+/libpeerconnection.log
+npm-debug.log
+yarn-error.log
+testem.log
+/typings
+
+# System Files
+.DS_Store
+Thumbs.db
+
+.nx/cache
+.nx/workspace-data
+
+test-output
+
+# AI Agent Stuff
+**/.claude/settings.local.json
+
+# Local development configuration
+/config.json
+
+# SQLite database files
 *.sqlite
 *.sqlite3
 *.db
@@ -629,5 +667,4 @@ packages/matrix-identity-server/matrix-server/synapse-data
 *.db-wal
 *.db-journal
 
-packages/federated-identity-service/src/__testData__/synapse-data/*.signing.key
 **/*.last-run.json

@@ -1,0 +1,35 @@
+http:
+  services:
+    tom-local:
+      loadBalancer:
+        servers:
+          - url: "http://host.docker.internal:3000"
+
+  routers:
+    tom-direct:
+      rule: "Host(`tom.docker.internal`)"
+      entryPoints:
+        - web
+      service: tom-local
+      priority: 110
+
+    tom-wellknown:
+      rule: "Host(`matrix.docker.internal`) && PathPrefix(`/.well-known/matrix/client`)"
+      entryPoints:
+        - web
+      service: tom-local
+      priority: 100
+
+    tom-identity:
+      rule: "Host(`matrix.docker.internal`) && PathPrefix(`/_matrix/identity/v2`)"
+      entryPoints:
+        - web
+      service: tom-local
+      priority: 90
+
+    tom-matrix-client:
+      rule: "Host(`matrix.docker.internal`) && (PathPrefix(`/_matrix/client/v3/createRoom`) || PathPrefix(`/_matrix/client/v3/profile`))"
+      entryPoints:
+        - web
+      service: tom-local
+      priority: 80

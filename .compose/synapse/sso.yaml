@@ -1,0 +1,64 @@
+server_name: 'docker.internal'
+pid_file: /data/homeserver.pid
+public_baseurl: 'https://matrix.docker.internal/'
+listeners:
+  - port: 8008
+    tls: false
+    type: http
+    x_forwarded: true
+    bind_addresses: ['0.0.0.0']
+    resources:
+      - names: [client, federation]
+        compress: false
+database:
+  name: psycopg2
+  txn_limit: 10000
+  args:
+    user: synapse_user
+    password: secretpassword
+    dbname: synapse
+    host: postgres
+    port: 5432
+    cp_min: 5
+    cp_max: 10
+log_config: '/data/docker.internal.log.config'
+media_store_path: /data/media_store
+signing_key_path: '/data/docker.internal.signing.key'
+macaroon_secret_key: 'i8dF@4#7uLt~ZJC@m@HqxfXt+-Y^rvI5yF3CC;8LbXwNLWO9YM'
+form_secret: ':m_kP~38:lPnlfO2S8lhSrMRy8T52~dT=e35X+jCMHNz-pxIoZ'
+trusted_key_servers:
+  - server_name: 'matrix.org'
+enable_metrics: false
+report_stats: false
+# OIDC Configuration for LemonLDAP::NG SSO
+oidc_providers:
+  - idp_id: lemonldap
+    idp_name: 'Connect with LemonLDAP::NG'
+    # Disable auto-discovery - we provide all endpoints manually
+    discover: false
+    # Issuer must match the 'iss' claim in tokens from LemonLDAP
+    issuer: 'https://auth.docker.internal/'
+    client_id: 'synapse'
+    client_secret: 'synapse-secret'
+    scopes: ['openid', 'profile', 'email']
+    # Browser-facing authorization endpoint (HTTPS via Traefik)
+    authorization_endpoint: 'https://auth.docker.internal/oauth2/authorize'
+    # Backend endpoints - use HTTP directly to auth container on Docker network
+    token_endpoint: 'https://auth.docker.internal/oauth2/token'
+    userinfo_endpoint: 'https://auth.docker.internal/oauth2/userinfo'
+    jwks_uri: 'https://auth.docker.internal/oauth2/jwks'
+    # Skip TLS certificate verification for self-signed certs
+    skip_verification: true
+    client_auth_method: client_secret_post
+    user_mapping_provider:
+      config:
+        localpart_template: '{{ user.preferred_username }}'
+        display_name_template: '{{ user.name }}'
+        email_template: '{{ user.email }}'
+    backchannel_logout_enabled: true
+# Disable password login when using SSO
+password_config:
+  enabled: false
+# Allow registration via SSO
+enable_registration: true
+enable_registration_without_verification: true
