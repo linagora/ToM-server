@@ -13,7 +13,11 @@ import {
   ExchangeNotSpecifiedError
 } from './errors'
 
-export { ConnectionState, type ReconnectionConfig } from './types'
+export {
+  ConnectionState,
+  type ReconnectionConfig,
+  type AmqpConfig
+} from './types'
 
 export class AMQPConnector {
   private readonly logger?: TwakeLogger
