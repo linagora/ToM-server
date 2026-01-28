@@ -1,59 +1,126 @@
-# Base for final image
-FROM node:18.20.8-alpine AS node-minimal
+# =============================================================================
+# federated-identity-service Dockerfile
+# Optimized multi-stage build
+# =============================================================================
 
-# Temporary image to build app
+# -----------------------------------------------------------------------------
+# Stage 1: Builder - Install dependencies and build
+# -----------------------------------------------------------------------------
 FROM node:18.20.8-alpine AS builder
 
 WORKDIR /usr/src/app
 
-# COPIES
-COPY package*.json ./
-RUN npm install
+# Copy root package files for workspace setup
+COPY package.json package-lock.json lerna.json ./
 
-COPY lerna.json tsconfig-build.json rollup-template.js ./packages/federated-identity-service/server.mjs ./
+# Copy only required workspace package.json files first (for better caching)
+COPY packages/config-parser/package.json ./packages/config-parser/
+COPY packages/crypto/package.json ./packages/crypto/
+COPY packages/logger/package.json ./packages/logger/
+COPY packages/utils/package.json ./packages/utils/
+COPY packages/matrix-resolve/package.json ./packages/matrix-resolve/
+COPY packages/matrix-identity-server/package.json ./packages/matrix-identity-server/
+COPY packages/federated-identity-service/package.json ./packages/federated-identity-service/
 
-COPY ./packages/crypto ./packages/crypto
-COPY ./packages/logger ./packages/logger
-COPY ./packages/matrix-resolve ./packages/matrix-resolve
-COPY ./packages/matrix-identity-server ./packages/matrix-identity-server
-COPY ./packages/config-parser ./packages/config-parser
-COPY ./packages/federated-identity-service ./packages/federated-identity-service
-COPY ./packages/utils ./packages/utils
+# Install all dependencies (cached unless package.json changes)
+RUN npm ci --ignore-scripts
 
-RUN npm install && npm run build && \
-    rm -rf node_modules */*/node_modules && \
-    npm install --production && \
-    npm cache clean --force
+# Copy build configuration
+COPY tsconfig-build.json rollup-template.js ./
 
-FROM node-minimal AS federation-server
+# Copy source files for required packages only
+COPY packages/config-parser/src ./packages/config-parser/src
+COPY packages/config-parser/tsconfig.json packages/config-parser/rollup.config.js ./packages/config-parser/
 
-ENV BASE_URL= \
-    CRON_SERVICE= \
-    CROWDSEC_URI= \
-    DATABASE_ENGINE= \
-    DATABASE_HOST= \
-    DATABASE_NAME= \
-    DATABASE_USER= \
-    DATABASE_PASSWORD= \
-    LDAP_BASE= \
-    LDAP_FILTER= \
-    LDAP_USER= \
-    LDAP_PASSWORD= \
-    LDAP_URI= \
-    MATRIX_DATABASE_ENGINE= \
-    MATRIX_DATABASE_HOST= \
-    MATRIX_DATABASE_NAME= \
-    MATRIX_DATABASE_PASSWORD= \
-    MATRIX_DATABASE_USER= \
-    NODE_EXTRA_CA_CERTS= \
-    SERVER_NAME= \
-    TEMPLATE_DIR= \
-    TRUST_X_FORWARDED_FOR= \
-    TRUSTED_SERVERS_ADDRESSES=
+COPY packages/crypto/src ./packages/crypto/src
+COPY packages/crypto/tsconfig.json packages/crypto/rollup.config.js ./packages/crypto/
 
-COPY --from=builder /usr/src/app /usr/src/app/
+COPY packages/logger/src ./packages/logger/src
+COPY packages/logger/tsconfig.json packages/logger/rollup.config.js ./packages/logger/
+
+COPY packages/utils/src ./packages/utils/src
+COPY packages/utils/tsconfig.json packages/utils/rollup.config.js ./packages/utils/
+
+COPY packages/matrix-resolve/src ./packages/matrix-resolve/src
+COPY packages/matrix-resolve/tsconfig.json packages/matrix-resolve/rollup.config.js ./packages/matrix-resolve/
+
+COPY packages/matrix-identity-server/src ./packages/matrix-identity-server/src
+COPY packages/matrix-identity-server/tsconfig.json packages/matrix-identity-server/rollup.config.js ./packages/matrix-identity-server/
+COPY packages/matrix-identity-server/templates ./packages/matrix-identity-server/templates
+
+COPY packages/federated-identity-service/src ./packages/federated-identity-service/src
+COPY packages/federated-identity-service/tsconfig.json packages/federated-identity-service/rollup.config.js ./packages/federated-identity-service/
+COPY packages/federated-identity-service/server.mjs ./packages/federated-identity-service/
+
+# Rebuild native modules and build all packages in dependency order (use build:lib for packages with examples)
+RUN npm rebuild && \
+    npm run build --workspace=@twake/config-parser && \
+    npm run build --workspace=@twake/crypto && \
+    npm run build:lib --workspace=@twake/logger && \
+    npm run build --workspace=@twake/utils && \
+    npm run build --workspace=matrix-resolve && \
+    npm run build:lib --workspace=@twake/matrix-identity-server && \
+    npm run build:lib --workspace=@twake/federated-identity-service
+
+# -----------------------------------------------------------------------------
+# Stage 2: Production dependencies
+# -----------------------------------------------------------------------------
+FROM node:18.20.8-alpine AS deps
 
 WORKDIR /usr/src/app
 
+# Copy package files
+COPY package*.json lerna.json ./
+COPY packages/config-parser/package.json ./packages/config-parser/
+COPY packages/crypto/package.json ./packages/crypto/
+COPY packages/logger/package.json ./packages/logger/
+COPY packages/utils/package.json ./packages/utils/
+COPY packages/matrix-resolve/package.json ./packages/matrix-resolve/
+COPY packages/matrix-identity-server/package.json ./packages/matrix-identity-server/
+COPY packages/federated-identity-service/package.json ./packages/federated-identity-service/
+
+# Install production dependencies only
+RUN npm ci --omit=dev --ignore-scripts && npm rebuild
+
+# -----------------------------------------------------------------------------
+# Stage 3: Final runtime image
+# -----------------------------------------------------------------------------
+FROM node:18.20.8-alpine AS runtime
+
+WORKDIR /usr/src/app
+
+# Copy production node_modules
+COPY --from=deps /usr/src/app/node_modules ./node_modules
+COPY --from=deps /usr/src/app/packages/*/node_modules ./packages/
+
+# Copy built artifacts
+COPY --from=builder /usr/src/app/packages/config-parser/dist ./packages/config-parser/dist
+COPY --from=builder /usr/src/app/packages/config-parser/package.json ./packages/config-parser/
+
+COPY --from=builder /usr/src/app/packages/crypto/dist ./packages/crypto/dist
+COPY --from=builder /usr/src/app/packages/crypto/package.json ./packages/crypto/
+
+COPY --from=builder /usr/src/app/packages/logger/dist ./packages/logger/dist
+COPY --from=builder /usr/src/app/packages/logger/package.json ./packages/logger/
+
+COPY --from=builder /usr/src/app/packages/utils/dist ./packages/utils/dist
+COPY --from=builder /usr/src/app/packages/utils/package.json ./packages/utils/
+
+COPY --from=builder /usr/src/app/packages/matrix-resolve/dist ./packages/matrix-resolve/dist
+COPY --from=builder /usr/src/app/packages/matrix-resolve/package.json ./packages/matrix-resolve/
+
+COPY --from=builder /usr/src/app/packages/matrix-identity-server/dist ./packages/matrix-identity-server/dist
+COPY --from=builder /usr/src/app/packages/matrix-identity-server/package.json ./packages/matrix-identity-server/
+COPY --from=builder /usr/src/app/packages/matrix-identity-server/templates ./packages/matrix-identity-server/templates
+
+COPY --from=builder /usr/src/app/packages/federated-identity-service/dist ./packages/federated-identity-service/dist
+COPY --from=builder /usr/src/app/packages/federated-identity-service/package.json ./packages/federated-identity-service/
+
+# Copy root package.json for workspace resolution
+COPY --from=builder /usr/src/app/packages/federated-identity-service/server.mjs ./
+COPY package.json ./
+
+USER node
+
 EXPOSE 3000
-CMD [ "node", "/usr/src/app/server.mjs" ]
+CMD ["node", "server.mjs"]

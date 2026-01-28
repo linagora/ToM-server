@@ -1,29 +1,38 @@
-.direnv/
-.git/
-.github/
-.husky/
-docs/
-node_modules/
+# =============================================================================
+# Docker Build Context Exclusions
+# Only include files necessary for building the application
+# =============================================================================
+**/*
+*
 
-.envrc
-.gitlab-ci.yml
-**/Dockerfile
-**/.*md
-docker-compose*
-flake.lock
-flake.nix
+## Allow package definition files
+!package.json
+!packages/**/package.json
+!package-lock.json
+!packages/**/package-lock.json
 
-**/*.db
-**/*.db-shm
-**/*.db-wal
-**/*.db-journal
+## Allow build configuration files
+!lerna.json
+!tsconfig-build.json
+!packages/**/tsconfig.json
+!rollup-template.js
+!packages/**/rollup.config.js
 
-**/*.map
-packages/**/example/*.js*
+## Allow source files
+!packages/**/src/*.ts
+!packages/**/src/**/*.ts
 
-**/dist/
-**/node_modules/
-**/.nx/
-**/coverage/
+## Allow entry points
+!server.mjs
+!packages/federated-identity-service/server.mjs
 
-.compose
+## Allow template files
+!packages/matrix-identity-server/templates
+!packages/tom-server/templates
+!packages/federated-identity-service/templates
+
+## Allow default config files
+!packages/logger/src/configDesc.json
+!packages/matrix-identity-server/src/config.json
+!packages/tom-server/src/config.json
+!packages/federated-identity-service/src/config.json
