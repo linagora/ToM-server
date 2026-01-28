@@ -29,5 +29,8 @@ jobs:
       - name: Setup Node.js
         uses: ./.github/actions/setup-node
 
-      - name: Run all tests
-        run: npm run test ${{ inputs.skip-nx-cache && '-- --skip-nx-cache' || '' }}
+      - name: Setup Nx SHAs
+        uses: nrwl/nx-set-shas@v4
+
+      - name: Run tests on affected packages
+        run: npx nx affected -t test

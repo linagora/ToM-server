@@ -21,5 +21,8 @@ jobs:
       - name: Setup Node.js
         uses: ./.github/actions/setup-node
 
+      - name: Setup Nx SHAs
+        uses: nrwl/nx-set-shas@v4
+
       - name: Run lint
-        run: npm run format:check
+        run: npx nx affected -t format:check

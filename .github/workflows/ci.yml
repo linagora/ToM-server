@@ -18,7 +18,7 @@ jobs:
 
   test:
     name: Test
-    uses: ./.github/workflows/_test.yml
+    uses: ./.github/workflows/_test-ci.yml
 
   security:
     name: Security
