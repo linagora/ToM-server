@@ -7,7 +7,7 @@ registrationPath: "/data/registration.yaml"
 # Synapse-specific settings
 # Controls retry behavior for admin operations
 synapse:
-  adminRetryMode: "fallback"
+  adminRetryMode: "exclusive"
 
 # Database Configuration
 # PostgreSQL connection details for storing application state and settings

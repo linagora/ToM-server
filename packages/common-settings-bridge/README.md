@@ -467,7 +467,7 @@ On startup, the bridge performs these checks:
 
 1. **Loads Configuration**: Reads config.yaml and registration.yaml
 2. **Connects to Services**: Establishes connections to Synapse, RabbitMQ, and database
-3. **Registers Bot User**: Creates/verifies `@profile-bot:domain` in Synapse
+3. **Registers Bot User**: Creates/verifies `@_common_settings_bridge:domain` in Synapse
 4. **Checks Admin Status**: Verifies if bot user has admin privileges
 5. **Starts Message Consumer**: Begins consuming messages from RabbitMQ
 6. **Logs Status**: Outputs all configuration and status information
@@ -623,19 +623,19 @@ For `fallback` or `exclusive` modes, the bridge bot must be registered as an adm
 **In PostgreSQL Synapse database**:
 ```sql
 INSERT INTO public.users (name, admin)
-VALUES ('@profile-bot:your.domain', 1)
+VALUES ('@_common_settings_bridge:your.domain', 1)
 ON CONFLICT DO NOTHING;
 ```
 
 **In SQLite Synapse database**:
 ```sql
 INSERT OR IGNORE INTO users (name, admin)
-VALUES ('@profile-bot:your.domain', 1);
+VALUES ('@_common_settings_bridge:your.domain', 1);
 ```
 
 **Verification**: Check startup logs for message:
 ```
-Bridge bot user @profile-bot:your.domain has admin privileges.
+Bridge bot user @_common_settings_bridge:your.domain has admin privileges.
 ```
 
 ## Troubleshooting
@@ -648,7 +648,7 @@ Bridge bot user @profile-bot:your.domain has admin privileges.
 1. Verify bot user exists in Synapse database
 2. Update user to have admin privileges:
    ```sql
-   UPDATE public.users SET admin = 1 WHERE name = '@profile-bot:your.domain';
+   UPDATE public.users SET admin = 1 WHERE name = '@_common_settings_bridge:your.domain';
    ```
 3. Restart bridge and check logs
 
@@ -740,10 +740,9 @@ Bridge bot user @profile-bot:your.domain has admin privileges.
 
 **Symptom**: Too much debug output in logs
 
-**Solution**: Adjust logging level in config.yaml:
-```yaml
-logging:
-  level: "info"  # Change from "debug" to "info"
+**Solution**: Adjust logging level in your environment:
+```shell
+LOG_LEVEL=warn npm start -- -c config.yaml
 ```
 
 ## Message Testing and Debugging
