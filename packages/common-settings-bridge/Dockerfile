@@ -48,7 +48,7 @@ COPY packages/db/src ./packages/db/src
 COPY packages/db/tsconfig.json packages/db/rollup.config.js ./packages/db/
 
 COPY packages/common-settings-bridge/src ./packages/common-settings-bridge/src
-COPY packages/common-settings-bridge/tsconfig.json packages/common-settings-bridge/rollup.config.js packages/common-settings-bridge/config.yaml.example ./packages/common-settings-bridge/
+COPY packages/common-settings-bridge/tsconfig.json packages/common-settings-bridge/rollup.config.js ./packages/common-settings-bridge/
 
 # Rebuild native modules and build all packages
 RUN npm rebuild && \
@@ -108,7 +108,6 @@ COPY --from=builder /usr/src/app/packages/db/package.json ./packages/db/
 
 COPY --from=builder /usr/src/app/packages/common-settings-bridge/dist ./packages/common-settings-bridge/dist
 COPY --from=builder /usr/src/app/packages/common-settings-bridge/package.json ./packages/common-settings-bridge/
-COPY --from=builder /usr/src/app/packages/common-settings-bridge/config.yaml.example ./packages/common-settings-bridge/config.yaml
 
 # Copy root package.json for workspace resolution
 COPY package.json ./
