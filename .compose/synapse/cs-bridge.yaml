@@ -29,9 +29,11 @@ trusted_key_servers:
   - server_name: 'matrix.org'
 enable_metrics: false
 report_stats: false
+enable_registration: true
+enable_registration_without_verification: true
 
 # Change booleans to test cs-bridge behavior
-enable_set_displayname: true # if false => cs-bridge must be set to SYNAPSE_ADMIN_API_MODE: 'fallback' or 'exclusive' to allow display name changes
+enable_set_displayname: false # if false => cs-bridge must be set to SYNAPSE_ADMIN_API_MODE: 'fallback' or 'exclusive' to allow display name changes
 enable_set_avatar_url: true # if false => cs-bridge must be set to SYNAPSE_ADMIN_API_MODE: 'fallback' or 'exclusive' to allow display name changes
 enable_3pid_changes: false # untouched by cs-bridge yet
 

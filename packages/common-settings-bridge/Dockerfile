@@ -48,7 +48,7 @@ COPY packages/db/src ./packages/db/src
 COPY packages/db/tsconfig.json packages/db/rollup.config.js ./packages/db/
 
 COPY packages/common-settings-bridge/src ./packages/common-settings-bridge/src
-COPY packages/common-settings-bridge/tsconfig.json packages/common-settings-bridge/rollup.config.js ./packages/common-settings-bridge/
+COPY packages/common-settings-bridge/tsconfig.json packages/common-settings-bridge/rollup.config.js packages/common-settings-bridge/config.yaml.example ./packages/common-settings-bridge/
 
 # Rebuild native modules and build all packages (use build:lib for packages with examples)
 RUN npm rebuild && \
@@ -108,28 +108,10 @@ COPY --from=builder /usr/src/app/packages/db/package.json ./packages/db/
 
 COPY --from=builder /usr/src/app/packages/common-settings-bridge/dist ./packages/common-settings-bridge/dist
 COPY --from=builder /usr/src/app/packages/common-settings-bridge/package.json ./packages/common-settings-bridge/
+COPY --from=builder /usr/src/app/packages/common-settings-bridge/config.yaml.example ./packages/common-settings-bridge/config.yaml
 
 # Copy root package.json for workspace resolution
 COPY package.json ./
-
-# Environment variables with defaults
-ENV NODE_ENV=production \
-    LOG_LEVEL=info \
-    RABBITMQ_HOST=localhost \
-    RABBITMQ_PORT=5672 \
-    RABBITMQ_USERNAME=guest \
-    RABBITMQ_PASSWORD=guest \
-    RABBITMQ_VHOST=/ \
-    RABBITMQ_TLS=false \
-    QUEUE_NAME=chat.settings.updated.queue \
-    EXCHANGE_NAME="settings exchange" \
-    ROUTING_KEY=user.settings.updated \
-    SYNAPSE_URL=http://synapse:8008 \
-    SYNAPSE_DOMAIN=localhost \
-    SYNAPSE_ADMIN_API_MODE=disabled \
-    REGISTRATION_PATH=/app/registration.yaml \
-    DATABASE_ENGINE=sqlite \
-    DATABASE_HOST=/data/bridge.db
 
 # Create data directory for SQLite
 RUN mkdir -p /data && chown -R node:node /data
@@ -138,4 +120,4 @@ USER node
 
 WORKDIR /usr/src/app/packages/common-settings-bridge
 
-CMD ["node", "dist/index.js"]
+CMD ["node", "dist/index.js", "-c", "config.yaml"]

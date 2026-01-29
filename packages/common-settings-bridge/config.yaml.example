@@ -1,0 +1,31 @@
+# Matrix / Synapse Configuration
+homeserverUrl: "http://synapse:8008"
+domain: "docker.internal"
+registrationPath: "/data/registration.yaml"
+
+synapse:
+  adminRetryMode: "exclusive"
+
+# Logging
+logging:
+  level: "debug"
+
+# Database Configuration
+database:
+  engine: "pg"
+  host: "postgres"
+  name: "tom_db"
+  user: "twake"
+  password: "twake_password"
+
+# RabbitMQ Configuration
+rabbitmq:
+  host: "rabbitmq"
+  port: 5672
+  username: "guest"
+  password: "guest"
+  vhost: "/"
+  tls: false
+  queueName: "chat.settings.updated.queue"
+  exchangeName: "settings exchange"
+  routingKey: "user.settings.updated"
