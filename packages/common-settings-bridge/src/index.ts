@@ -39,7 +39,7 @@ Logger.configure({
  * It listens for settings change messages and updates Matrix display names
  * and avatars accordingly.
  */
-class CommonSettingsBridge {
+export class CommonSettingsBridge {
   readonly #config: BridgeConfig
   readonly #log: Logger
   #bridge!: Bridge
@@ -650,13 +650,49 @@ class CommonSettingsBridge {
   }
 
   /**
+   * Resolves an avatar URL to an MXC URL.
+   * If the URL is already an MXC URL, returns it as-is.
+   * If the URL is an HTTP/HTTPS URL, downloads and uploads it to Synapse.
+   * @param userId - The Matrix user ID (used for logging and intent)
+   * @param avatarUrl - The avatar URL to resolve (can be mxc:// or http(s)://)
+   * @returns The MXC URL for the avatar
+   */
+  async #resolveAvatarUrl(userId: string, avatarUrl: string): Promise<string> {
+    if (avatarUrl.startsWith('mxc://')) {
+      this.#log.debug(`Avatar URL is already MXC format: ${avatarUrl}`)
+      return avatarUrl
+    }
+
+    this.#log.info(
+      `Downloading avatar from external URL for ${userId}: ${avatarUrl}`
+    )
+
+    try {
+      const intent = this.#bridge.getIntent(userId)
+      const mxcUrl = await intent.matrixClient.uploadContentFromUrl(avatarUrl)
+      this.#log.info(`Uploaded avatar to Synapse for ${userId}: ${mxcUrl}`)
+      return mxcUrl
+    } catch (error) {
+      this.#log.error(
+        `Failed to download/upload avatar for ${userId} from ${avatarUrl}: ${
+          error instanceof Error ? error.message : 'Unknown error'
+        }`
+      )
+      throw error
+    }
+  }
+
+  /**
    * Updates a user's avatar URL in Matrix.
    * Uses either the Synapse admin API or the standard intent API
    * based on the configured retry mode.
+   * If the avatar URL is not an MXC URL, it will be downloaded and uploaded first.
    * @param userId - The Matrix user ID to update
-   * @param avatarUrl - The new avatar MXC URL to set
+   * @param avatarUrl - The avatar URL to set (can be mxc:// or http(s)://)
    */
   async #updateAvatar(userId: string, avatarUrl: string): Promise<void> {
+    const resolvedUrl = await this.#resolveAvatarUrl(userId, avatarUrl)
+
     const retryMode = this.#getAdminRetryMode()
     this.#log.debug(
       `Updating avatar for ${userId} (retryMode=${this.#getRetryModeName(
@@ -668,7 +704,7 @@ class CommonSettingsBridge {
       this.#log.debug(
         `Using admin API exclusively for avatar update: ${userId}`
       )
-      await this.#updateAvatarAdmin(userId, avatarUrl)
+      await this.#updateAvatarAdmin(userId, resolvedUrl)
       return
     }
 
@@ -676,8 +712,8 @@ class CommonSettingsBridge {
 
     try {
       this.#log.debug(`Attempting standard API avatar update for ${userId}`)
-      await intent.setAvatarUrl(avatarUrl)
-      this.#log.info(`Updated avatar for ${userId} to "${avatarUrl}"`)
+      await intent.setAvatarUrl(resolvedUrl)
+      this.#log.info(`Updated avatar for ${userId} to "${resolvedUrl}"`)
     } catch (err: any) {
       this.#log.warn(
         `Failed to update avatar via standard API for ${userId}: ${
@@ -690,7 +726,7 @@ class CommonSettingsBridge {
         retryMode === SynapseAdminRetryMode.FALLBACK
       ) {
         this.#log.info(`Falling back to admin API for avatar ${userId}`)
-        await this.#updateAvatarAdmin(userId, avatarUrl)
+        await this.#updateAvatarAdmin(userId, resolvedUrl)
       } else {
         this.#log.error(
           `Cannot update avatar for ${userId}, exhausted all methods`
