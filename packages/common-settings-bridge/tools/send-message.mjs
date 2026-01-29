@@ -86,6 +86,10 @@ function main() {
         break
       }
 
+      const nickname = matrix_id.startsWith('@')
+        ? matrix_id.split(':')[0].substring(1)
+        : matrix_id
+
       const nversion = await ask(`Enter a version number: (${version})`)
       if (nversion) {
         version = parseInt(nversion, 10)
@@ -94,17 +98,8 @@ function main() {
       const display_name = await ask('Enter new display_name: ')
       const avatar = await ask('Enter new avatar URL (optional): ')
 
-      if (!matrix_id) {
-        console.error('Error: matrix_id is a required argument.')
-        continue
-      }
-
-      const nickname = matrix_id.startsWith('@')
-        ? matrix_id.split(':')[0].substring(1)
-        : matrix_id
-
       const payload = {
-        matrix_id: matrix_id
+        matrix_id
       }
 
       if (display_name) {
