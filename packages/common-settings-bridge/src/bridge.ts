@@ -192,7 +192,18 @@ export class CommonSettingsBridge {
 
     if (message === null) {
       this.#log.error('Failed to parse message content')
-      this.#log.debug(`Raw message content: ${rawContent.substring(0, 200)}...`)
+      if (
+        process.env.NODE_ENV === 'development' ||
+        process.env.LOG_RAW_MESSAGES === 'true'
+      ) {
+        this.#log.debug(
+          `Raw message content: ${rawContent.substring(0, 200)}...`
+        )
+      } else {
+        this.#log.debug(
+          'Raw message content omitted (enable LOG_RAW_MESSAGES=true to view)'
+        )
+      }
       throw new MessageParseError()
     }
 
