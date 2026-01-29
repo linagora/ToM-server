@@ -57,6 +57,7 @@ COPY packages/matrix-identity-server/tsconfig.json packages/matrix-identity-serv
 COPY packages/tom-server/src ./packages/tom-server/src
 COPY packages/tom-server/tsconfig.json packages/tom-server/rollup.config.js ./packages/tom-server/
 COPY packages/tom-server/templates ./packages/tom-server/templates
+COPY packages/tom-server/static ./packages/tom-server/static
 
 COPY packages/amqp-connector/src ./packages/amqp-connector/src
 COPY packages/amqp-connector/tsconfig.json packages/amqp-connector/rollup.config.js ./packages/amqp-connector/
@@ -134,6 +135,7 @@ COPY --from=builder /usr/src/app/packages/matrix-identity-server/package.json ./
 COPY --from=builder /usr/src/app/packages/tom-server/dist ./packages/tom-server/dist
 COPY --from=builder /usr/src/app/packages/tom-server/package.json ./packages/tom-server/
 COPY --from=builder /usr/src/app/packages/tom-server/templates ./packages/tom-server/templates
+COPY --from=builder /usr/src/app/packages/tom-server/static ./packages/tom-server/static
 
 COPY --from=builder /usr/src/app/packages/amqp-connector/dist ./packages/amqp-connector/dist
 COPY --from=builder /usr/src/app/packages/amqp-connector/package.json ./packages/amqp-connector/
