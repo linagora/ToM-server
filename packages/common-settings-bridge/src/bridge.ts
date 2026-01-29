@@ -397,13 +397,17 @@ export class CommonSettingsBridge {
     this.#log.info('==========================================')
 
     try {
-      this.#log.info('Closing AMQP connector...')
-      await this.#connector.close()
-      this.#log.info('AMQP connector closed')
+      if (this.#connector) {
+        this.#log.info('Closing AMQP connector...')
+        await this.#connector.close()
+        this.#log.info('AMQP connector closed')
+      }
 
-      this.#log.info('Closing database connection...')
-      this.#db.close()
-      this.#log.info('Database closed')
+      if (this.#db) {
+        this.#log.info('Closing database connection...')
+        this.#db.close()
+        this.#log.info('Database closed')
+      }
 
       this.#log.info('==========================================')
       this.#log.info('Common Settings Bridge Stopped')
