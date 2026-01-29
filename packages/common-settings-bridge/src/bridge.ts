@@ -10,7 +10,7 @@ import {
 } from './types'
 import { SettingsRepository } from './settings-repository'
 import { MatrixProfileUpdater, type MatrixApis } from './matrix-profile-updater'
-import { parseMessage, validateMessage } from './message-handler'
+import { ParsedMessage, parseMessage, validateMessage } from './message-handler'
 import {
   shouldApplyUpdate,
   isIdempotentDuplicate,
@@ -97,7 +97,7 @@ export class CommonSettingsBridge {
 
     this.#db = new Database<UserSettingsTableName>(
       dbConfig,
-      consoleLogger as any,
+      consoleLogger as logger.TwakeLogger,
       tables
     )
 
@@ -197,7 +197,7 @@ export class CommonSettingsBridge {
     }
 
     // Validate message
-    let parsed
+    let parsed: ParsedMessage
     try {
       parsed = validateMessage(message)
     } catch (error) {
