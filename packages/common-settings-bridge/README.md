@@ -303,8 +303,6 @@ CREATE TABLE usersettings (
     timestamp bigint,
     request_id varchar(255)
 );
-
-CREATE INDEX idx_usersettings_updated_at ON usersettings(updated_at);
 ```
 
 **SQLite:**
@@ -316,8 +314,6 @@ CREATE TABLE usersettings (
     timestamp bigint,
     request_id varchar(255)
 );
-
-CREATE INDEX idx_usersettings_updated_at ON usersettings(updated_at);
 ```
 
 **Column Descriptions:**
