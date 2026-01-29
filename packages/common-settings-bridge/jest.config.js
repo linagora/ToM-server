@@ -1,19 +1,15 @@
+import jestConfigBase from '../../jest-base.config.js'
+
 export default {
-  preset: 'ts-jest/presets/default-esm',
-  testEnvironment: 'node',
-  extensionsToTreatAsEsm: ['.ts'],
-  moduleNameMapper: {
-    '^(\\.{1,2}/.*)\\.js$': '$1'
-  },
-  transform: {
-    '^.+\\.tsx?$': [
-      'ts-jest',
-      {
-        useESM: true
-      }
-    ]
-  },
-  testMatch: ['**/__tests__/**/*.spec.ts'],
-  collectCoverageFrom: ['src/**/*.ts'],
-  coverageDirectory: 'coverage'
+  ...jestConfigBase,
+  // Override coverage thresholds for this package
+  // The CLI entry point and some error paths are not easily unit-testable
+  coverageThreshold: {
+    global: {
+      branches: 50,
+      functions: 20,
+      lines: 65,
+      statements: 65
+    }
+  }
 }
