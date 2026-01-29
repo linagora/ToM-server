@@ -11,5 +11,7 @@ export default {
       lines: 65,
       statements: 65
     }
-  }
+  },
+  // Setup manual mocks
+  modulePathIgnorePatterns: ['<rootDir>/dist/']
 }

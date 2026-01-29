@@ -66,6 +66,62 @@ This bridge decouples profile management from the main application by:
 - **Database Persistence**: SQLite or PostgreSQL backend for settings storage
 - **Application Service Protocol**: Uses Matrix AS protocol for seamless integration
 - **Startup Verification**: Ensures bot user is registered and admin status is verified
+- **Modular Design**: Clean separation of concerns with specialized modules for each responsibility
+- **Idempotency**: Request-based deduplication prevents duplicate profile updates
+
+## Modular Architecture Overview
+
+The bridge is organized into specialized modules, each with a single responsibility:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  CLI Entry Point (cli.ts)                                   │
+│  - Command-line interface setup                             │
+│  - Registration file generation                             │
+│  - Bridge startup orchestration                             │
+└────────────────────┬────────────────────────────────────────┘
+                     │
+┌────────────────────v────────────────────────────────────────┐
+│  Bridge Orchestrator (bridge.ts)                            │
+│  - Central coordinator of all modules                       │
+│  - AMQP message routing                                     │
+│  - Lifecycle management                                     │
+└───┬──────────────┬──────────────┬──────────────┬────────────┘
+    │              │              │              │
+    v              v              v              v
+┌────────────┐ ┌─────────────┐ ┌──────────────┐ ┌──────────────┐
+│ Message    │ │ Version     │ │ Matrix       │ │ Settings     │
+│ Handler    │ │ Manager     │ │ Profile      │ │ Repository   │
+│            │ │             │ │ Updater      │ │              │
+│ - Parse    │ │ - Version   │ │              │ │ - Store      │
+│ - Validate │ │   ordering  │ │ - Display    │ │ - Retrieve   │
+│            │ │ - Idempotent│ │   name       │ │ - Update     │
+│            │ │   check     │ │ - Avatar     │ │              │
+└────────────┘ └─────────────┘ └──────────────┘ └──────────────┘
+                                                      │
+                                    ┌─────────────────v──────────────┐
+                                    │  Database (PostgreSQL/SQLite)  │
+                                    │  - usersettings table          │
+                                    │  - Version tracking            │
+                                    │  - Idempotency data            │
+                                    └────────────────────────────────┘
+
+Shared Types & Errors:
+- types.ts: Type definitions and enums
+- errors.ts: Custom error classes
+```
+
+### Module Interaction Flow
+
+1. **Initialization**: CLI calls `startBridge()` which creates a `CommonSettingsBridge` instance
+2. **Setup**: Bridge initializes database, AMQP connector, and Matrix connection
+3. **Message Reception**: AMQP connector receives messages and triggers message handler
+4. **Processing**:
+   - Message is parsed and validated by `message-handler.ts`
+   - Version manager checks if update should be applied (idempotency + ordering)
+   - Profile updater applies Matrix changes using appropriate retry mode
+   - Settings repository persists changes to database
+5. **Acknowledgment**: Message is ACKed (success) or NAKed to dead letter exchange (failure)
 
 ## Prerequisites
 
@@ -241,11 +297,11 @@ Create the table before starting the bridge:
 **PostgreSQL:**
 ```sql
 CREATE TABLE usersettings (
-  matrix_id VARCHAR(255) PRIMARY KEY,
-  settings TEXT,
-  version INTEGER,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    matrix_id varchar(64) PRIMARY KEY,
+    settings jsonb,
+    version int,
+    timestamp bigint,
+    request_id varchar(255)
 );
 
 CREATE INDEX idx_usersettings_updated_at ON usersettings(updated_at);
@@ -254,11 +310,11 @@ CREATE INDEX idx_usersettings_updated_at ON usersettings(updated_at);
 **SQLite:**
 ```sql
 CREATE TABLE usersettings (
-  matrix_id VARCHAR(255) PRIMARY KEY,
-  settings TEXT,
-  version INTEGER,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    matrix_id varchar(64) PRIMARY KEY,
+    settings text,
+    version int,
+    timestamp bigint,
+    request_id varchar(255)
 );
 
 CREATE INDEX idx_usersettings_updated_at ON usersettings(updated_at);
@@ -268,8 +324,8 @@ CREATE INDEX idx_usersettings_updated_at ON usersettings(updated_at);
 - `matrix_id`: User's full Matrix ID (e.g., `@user:example.com`)
 - `settings`: JSON string containing user profile settings
 - `version`: Integer tracking update version for delta detection
-- `created_at`: Timestamp when the record was created
-- `updated_at`: Timestamp when the record was last updated
+- `timestamp`: Timestamp when the record was created
+- `request_id`: Unique identifier for idempotency checks
 
 ## RabbitMQ Setup
 
@@ -838,9 +894,248 @@ npm test
 npm run watch
 ```
 
-### Code Structure
+### Module Responsibilities
 
-- `src/index.ts`: Main bridge application, entry point
+#### bridge.ts - Orchestration Layer
+**Purpose**: Central coordinator that ties all modules together
+
+**Key Responsibilities**:
+- Initialize database, AMQP connector, and Matrix bridge
+- Route incoming AMQP messages to appropriate handlers
+- Manage version ordering and idempotency checks
+- Coordinate profile updates and database persistence
+- Handle service lifecycle (startup, shutdown, graceful signals)
+
+**Key Classes**:
+- `CommonSettingsBridge`: Main service class
+
+**Dependencies**: All other modules
+
+---
+
+#### cli.ts - Command-Line Interface
+**Purpose**: Entry point for running the bridge from the terminal
+
+**Key Responsibilities**:
+- Parse command-line arguments (config path, registration path)
+- Initialize the CLI framework from matrix-appservice-bridge
+- Set up registration file generation
+- Handle process signals (SIGINT, SIGTERM) for graceful shutdown
+
+**Key Functions**:
+- `runCli()`: Main entry point
+- `startBridge()`: Creates and starts CommonSettingsBridge
+- `setupRegistration()`: Generates secure tokens for registration
+
+**Dependencies**: bridge.ts, types.ts
+
+---
+
+#### message-handler.ts - Message Parsing and Validation
+**Purpose**: Extract and validate user settings from AMQP messages
+
+**Key Responsibilities**:
+- Parse JSON strings into strongly-typed message objects
+- Validate required fields (matrix_id, request_id, etc.)
+- Extract settings payload from message envelope
+- Return null on parse errors instead of throwing exceptions
+
+**Key Functions**:
+- `parseMessage()`: JSON parsing with null fallback
+- `parsePayload()`: Settings payload extraction
+- `validateMessage()`: Schema validation and type conversion
+
+**Dependencies**: types.ts, errors.ts
+
+---
+
+#### version-manager.ts - Version and Timestamp Ordering
+**Purpose**: Prevent duplicate and stale updates using version/timestamp ordering
+
+**Key Responsibilities**:
+- Determine if an update is newer than last known version
+- Detect duplicate messages using request_id (idempotency)
+- Format timestamps for logging
+- Implement deterministic ordering: higher version > newer timestamp > discard
+
+**Key Functions**:
+- `shouldApplyUpdate()`: Compares versions and timestamps
+- `isIdempotentDuplicate()`: Checks for duplicate request_ids
+- `formatTimestamp()`: Human-readable timestamp formatting
+
+**Algorithm**:
+1. New user → always apply
+2. Higher version → always apply
+3. Same version, newer timestamp → apply
+4. Otherwise → discard as stale
+
+**Dependencies**: types.ts
+
+---
+
+#### matrix-profile-updater.ts - Matrix Profile Updates
+**Purpose**: Update user profiles in Matrix/Synapse with retry strategies
+
+**Key Responsibilities**:
+- Update display names via intent API or admin API
+- Update avatar URLs via intent API or admin API
+- Implement three retry modes: disabled, fallback, exclusive
+- Handle M_FORBIDDEN errors gracefully based on configuration
+
+**Key Classes**:
+- `MatrixProfileUpdater`: Main updater class
+- `MatrixApis`: Interface for Matrix operations (dependency injection)
+
+**Key Methods**:
+- `updateDisplayName()`: Update user's display name
+- `updateAvatar()`: Update user's avatar URL
+- `processChanges()`: Orchestrate all profile changes
+
+**Retry Modes**:
+- **DISABLED**: Only intent API, fails on M_FORBIDDEN
+- **FALLBACK**: Try intent API first, retry with admin API on M_FORBIDDEN
+- **EXCLUSIVE**: Use admin API only
+
+**Dependencies**: types.ts
+
+---
+
+#### settings-repository.ts - Database Operations
+**Purpose**: Persist and retrieve user settings from the database
+
+**Key Responsibilities**:
+- Store user settings with version and timestamp
+- Retrieve user settings for idempotency checks
+- Handle JSON serialization/deserialization
+- Manage error cases and corrupted data
+
+**Key Classes**:
+- `SettingsRepository`: Main persistence class
+- `UserSettingsRow`: Database row representation
+
+**Key Methods**:
+- `getUserSettings()`: Retrieve user settings by matrix_id
+- `saveSettings()`: Insert or update user settings
+
+**Database Schema**:
+```
+usersettings:
+  - matrix_id (VARCHAR 255 PRIMARY KEY)
+  - settings (JSONB, serialized SettingsPayload)
+  - version (INTEGER)
+  - timestamp (BIGINT, Unix milliseconds)
+  - request_id (VARCHAR 255, for idempotency)
+```
+
+**Dependencies**: types.ts, @twake/db
+
+---
+
+#### types.ts - Type Definitions
+**Purpose**: Define all TypeScript types and enums used throughout the bridge
+
+**Key Types**:
+- `SynapseAdminRetryMode`: Enum for retry strategies
+- `SettingsPayload`: User profile data structure
+- `CommonSettingsMessage`: AMQP message format
+- `UserSettings`: Stored user settings
+- `BridgeConfig`: Bridge configuration structure
+
+**Key Enums**:
+- `SynapseAdminRetryMode`: DISABLED | FALLBACK | EXCLUSIVE
+
+**Dependencies**: @twake/amqp-connector
+
+---
+
+#### errors.ts - Error Classes
+**Purpose**: Define custom errors for specific failure scenarios
+
+**Error Classes**:
+- `ConfigNotProvidedError`: Missing or invalid configuration
+- `UserIdNotProvidedError`: matrix_id not in payload
+- `MessageParseError`: JSON parsing failed
+- `MatrixUpdateError`: Profile update failed
+- `DatabaseUpdateError`: Database operation failed
+
+**Dependencies**: None
+
+---
+
+### Code Structure and Modules
+
+The common-settings-bridge is built on a modular architecture with clear separation of concerns:
+
+#### Core Modules
+
+**bridge.ts** - Thin orchestration layer
+- Main `CommonSettingsBridge` class that coordinates the entire service
+- Initializes and manages lifecycle of all other modules
+- Handles AMQP message consumption and routing
+- Implements the main message processing workflow
+- Manages graceful startup/shutdown
+
+**cli.ts** - CLI entry point
+- `runCli()` - Main function for command-line interface setup
+- `startBridge()` - Entry point for starting the bridge with configuration
+- `setupRegistration()` - Generates registration file with security tokens
+- Handles process signal handlers for graceful shutdown
+
+**message-handler.ts** - AMQP message parsing and validation
+- `parseMessage()` - Parses JSON string into CommonSettingsMessage objects
+- `parsePayload()` - Extracts SettingsPayload from raw JSON
+- `validateMessage()` - Validates message structure and required fields
+- Returns strongly-typed ParsedMessage on success
+- Returns null on parse failures instead of throwing
+
+**version-manager.ts** - Version and timestamp ordering logic
+- `shouldApplyUpdate()` - Determines if an update should be applied based on version/timestamp
+- `isIdempotentDuplicate()` - Detects duplicate messages using request_id
+- `formatTimestamp()` - Formats Unix milliseconds timestamps for logging
+- Implements deterministic ordering: version > timestamp > discard stale updates
+
+**matrix-profile-updater.ts** - Matrix profile updates
+- `MatrixProfileUpdater` class handles display name and avatar updates
+- `updateDisplayName()` - Updates Matrix user display name
+- `updateAvatar()` - Updates Matrix user avatar URL
+- `processChanges()` - Orchestrates all profile updates for a user
+- Supports three retry modes: DISABLED, FALLBACK, EXCLUSIVE
+- Abstracts Matrix API calls through MatrixApis interface
+
+**settings-repository.ts** - Database operations
+- `SettingsRepository` class manages all database persistence
+- `getUserSettings()` - Retrieves existing user settings with JSON deserialization
+- `saveSettings()` - Inserts or updates user settings in database
+- Handles error cases and corrupted data gracefully
+- Manages version, timestamp, and request_id tracking for idempotency
+
+**types.ts** - TypeScript type definitions
+- `SynapseAdminRetryMode` - Enum for admin API retry strategies
+- `SettingsPayload` - User profile and settings data structure
+- `CommonSettingsMessage` - AMQP message format
+- `UserSettings` - Database representation of user settings
+- `BridgeConfig` - Bridge configuration structure
+- Database table name type union
+
+**errors.ts** - Custom error classes
+- `ConfigNotProvidedError` - Configuration initialization errors
+- `UserIdNotProvidedError` - Missing matrix_id in payload
+- `MessageParseError` - JSON parsing failures
+- `MatrixUpdateError` - Matrix profile update failures
+- `DatabaseUpdateError` - Database operation failures
+
+#### Testing
+
+Each module has a corresponding test file with comprehensive test coverage:
+- `message-handler.test.ts` - Message parsing and validation tests
+- `version-manager.test.ts` - Version ordering and idempotency tests
+- `settings-repository.test.ts` - Database operation tests
+- `matrix-profile-updater.test.ts` - Profile update strategy tests
+- `bridge.test.ts` - Integration tests for bridge orchestration
+- `index.test.ts` - End-to-end bridge functionality tests
+
+#### Build Output
+
 - `dist/index.js`: Compiled JavaScript (output of build)
 
 ### Key Dependencies

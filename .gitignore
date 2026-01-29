@@ -655,8 +655,7 @@ test-output
 
 # AI Agent Stuff
 **/.claude/settings.local.json
-**/.omc/sessions
-**/.omc/state
+**/.omc/
 
 # Local development configuration
 /config.json
