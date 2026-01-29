@@ -1,0 +1,40 @@
+# TODOs
+
+## TS Build File
+
+Add path resolution and fix JSON imports:
+
+```json
+{
+  "compilerOptions": {
+    "strict": true,
+    "module": "esnext",
+    "target": "esnext",
+    "esModuleInterop": true,
+    "moduleResolution": "node",
+    "lib": ["esnext"],
+    "sourceMap": true,
+    "noEmitOnError": true,
+    "resolveJsonModule": true,
+    "declaration": true,
+    "paths": {
+      "@twake/amqp-connector": ["./packages/amqp-connector/src"],
+      "@twake/common-settings": ["./packages/common-settings/src"],
+      "@twake/common-settings-bridge": ["./packages/common-settings-bridge/src"],
+      "@twake/config-parser": ["./packages/config-parser/src"],
+      "@twake/crypto": ["./packages/crypto/src"],
+      "@twake/db": ["./packages/db/src"],
+      "@twake/federated-identity-server": ["./packages/federated-identity-server/src"],
+      "@twake/logger": ["./packages/logger/src"],
+      "@twake/matrix-identity-server": ["./packages/matrix-identity-server/src"],
+      "matrix-resolve": ["./packages/matrix-resolve/src"],
+      "@twake/tom-server": ["./packages/tom-server/src"],
+      "@twake/utils": ["./packages/utils/src"]
+    }
+  },
+  "exclude": [
+    "**/__testData__",
+    "**/*.test.ts"
+  ]
+}
+```

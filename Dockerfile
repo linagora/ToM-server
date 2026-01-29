@@ -68,15 +68,15 @@ COPY packages/common-settings/tsconfig.json packages/common-settings/rollup.conf
 # Copy server entry point
 COPY server.mjs ./
 
-# Rebuild native modules and build all packages in dependency order (use build:lib for packages with examples)
+# Rebuild native modules and build all packages in dependency order
 RUN npm rebuild && \
     npm run build --workspace=@twake/config-parser && \
     npm run build --workspace=@twake/crypto && \
-    npm run build:lib --workspace=@twake/logger && \
+    npm run build --workspace=@twake/logger && \
     npm run build --workspace=@twake/utils && \
     npm run build --workspace=matrix-resolve && \
-    npm run build:lib --workspace=@twake/matrix-identity-server && \
-    npm run build:lib --workspace=@twake/server && \
+    npm run build --workspace=@twake/matrix-identity-server && \
+    npm run build --workspace=@twake/server && \
     npm run build --workspace=@twake/amqp-connector && \
     npm run build --workspace=@twake/common-settings
 

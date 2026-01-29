@@ -57,15 +57,15 @@ COPY packages/federated-identity-service/src ./packages/federated-identity-servi
 COPY packages/federated-identity-service/tsconfig.json packages/federated-identity-service/rollup.config.js ./packages/federated-identity-service/
 COPY packages/federated-identity-service/server.mjs ./packages/federated-identity-service/
 
-# Rebuild native modules and build all packages in dependency order (use build:lib for packages with examples)
+# Rebuild native modules and build all packages in dependency order
 RUN npm rebuild && \
     npm run build --workspace=@twake/config-parser && \
     npm run build --workspace=@twake/crypto && \
-    npm run build:lib --workspace=@twake/logger && \
+    npm run build --workspace=@twake/logger && \
     npm run build --workspace=@twake/utils && \
     npm run build --workspace=matrix-resolve && \
-    npm run build:lib --workspace=@twake/matrix-identity-server && \
-    npm run build:lib --workspace=@twake/federated-identity-service
+    npm run build --workspace=@twake/matrix-identity-server && \
+    npm run build --workspace=@twake/federated-identity-service
 
 # -----------------------------------------------------------------------------
 # Stage 2: Production dependencies

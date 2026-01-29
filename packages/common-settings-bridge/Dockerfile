@@ -50,10 +50,10 @@ COPY packages/db/tsconfig.json packages/db/rollup.config.js ./packages/db/
 COPY packages/common-settings-bridge/src ./packages/common-settings-bridge/src
 COPY packages/common-settings-bridge/tsconfig.json packages/common-settings-bridge/rollup.config.js packages/common-settings-bridge/config.yaml.example ./packages/common-settings-bridge/
 
-# Rebuild native modules and build all packages (use build:lib for packages with examples)
+# Rebuild native modules and build all packages
 RUN npm rebuild && \
     npm run build --workspace=@twake/config-parser && \
-    npm run build:lib --workspace=@twake/logger && \
+    npm run build --workspace=@twake/logger && \
     npm run build --workspace=@twake/amqp-connector && \
     npm run build --workspace=@twake/db && \
     npm run build --workspace=@twake/common-settings-bridge

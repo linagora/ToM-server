@@ -34,9 +34,7 @@
     "*.md"
   ],
   "scripts": {
-    "build": "npm run build:lib && npm run build:example",
-    "build:example": "rollup -p @rollup/plugin-typescript -e @twake/logger -o example/logger.js example/logger.ts",
-    "build:lib": "rollup -c",
+    "build": "rollup -c",
     "test": "jest"
   },
   "dependencies": {
