@@ -16,15 +16,15 @@ export enum SynapseAdminRetryMode {
  * across services via the common-settings bridge.
  */
 export interface SettingsPayload {
-  readonly language?: string
-  readonly timezone?: string
-  readonly avatar?: string
-  readonly last_name?: string
-  readonly first_name?: string
-  readonly email?: string
-  readonly phone?: string
-  readonly matrix_id?: string
-  readonly display_name?: string
+  readonly language: string
+  readonly timezone: string
+  readonly avatar: string
+  readonly last_name: string
+  readonly first_name: string
+  readonly email: string
+  readonly phone: string
+  readonly matrix_id: string
+  readonly display_name: string
 }
 
 /**
@@ -43,9 +43,12 @@ export interface CommonSettingsMessage {
  * Represents user settings as stored in the bridge database.
  */
 export interface UserSettings {
-  readonly matrix_id: string
-  readonly settings: SettingsPayload
+  readonly source?: string
+  readonly nickname: string
+  readonly request_id: string
+  readonly timestamp: number
   readonly version: number
+  readonly payload: SettingsPayload
 }
 
 /**

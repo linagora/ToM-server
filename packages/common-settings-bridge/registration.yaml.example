@@ -1,16 +1,75 @@
-# Synapse Application Service Registration
-# Copy this to registration.yaml and configure tokens
-# Then add path to Synapse's app_service_config_files
+# Synapse Application Service Registration for Common Settings Bridge
+#
+# OVERVIEW:
+# This file registers the Common Settings Bridge as a Synapse Application Service.
+# The bridge synchronizes user settings across Matrix homeservers via RabbitMQ.
+#
+# ARCHITECTURE:
+# This is an AMQP-driven bridge (not HTTP-based). It consumes messages from RabbitMQ
+# instead of receiving HTTP callbacks from Synapse. Therefore, the 'url' field is null.
+# Synapse still manages the service via this registration, but communication flows
+# through the message broker for event propagation.
+#
+# SETUP INSTRUCTIONS:
+#
+# 1. Generate Secure Tokens
+#    Use a cryptographically secure random generator:
+#    $ openssl rand -hex 32
+#    Run this twice to get as_token and hs_token values.
+#
+# 2. Copy and Configure
+#    $ cp registration.yaml.example registration.yaml
+#    $ # Edit registration.yaml and replace token placeholders with generated values
+#
+# 3. Update Synapse Configuration
+#    Edit your Synapse homeserver.yaml and add this registration file:
+#    app_service_config_files:
+#      - /path/to/registration.yaml
+#
+# 4. Restart Synapse
+#    The bridge will be registered on the next startup.
+#    Monitor logs to confirm: "Loaded application service: common-settings-bridge"
+#
+# FIELD REFERENCE:
 
+# Service identifier - must be unique within Synapse
 id: common-settings-bridge
-url: null  # No HTTP callback needed - RabbitMQ consumer only
+
+# HTTP callback URL - set to null for AMQP-only operation
+# The bridge does not expose an HTTP interface. Instead, it connects to RabbitMQ
+# to receive events. Synapse does not make outbound HTTP requests to this bridge.
+url: null
+
+# Token for bridge → homeserver authentication
+# Synapse uses this token to verify requests from the bridge are legitimate.
+# Generated via: openssl rand -hex 32
 as_token: <GENERATE_SECURE_TOKEN_HERE>
+
+# Token for homeserver → bridge authentication (if HTTP were enabled)
+# Synapse uses this token in the Authorization header of requests to the bridge.
+# In this AMQP-only setup, this token is not actively used, but required by the spec.
+# Generated via: openssl rand -hex 32
 hs_token: <GENERATE_SECURE_TOKEN_HERE>
+
+# Local part of the bridge's sender user (without @homeserver suffix)
+# This user sends settings synchronization events on behalf of the bridge.
+# Full Matrix ID becomes: @_common_settings_bridge:your.homeserver.com
 sender_localpart: _common_settings_bridge
+
+# Namespace configuration - defines which users/rooms/aliases the bridge can act on
 namespaces:
+  # User namespace: allows the bridge to act on behalf of Matrix users
   users:
     - exclusive: false
-      regex: '@.*'  # Can act on behalf of any user
+      # Regex pattern matching user IDs this service can handle
+      # '@.*' means the bridge can act on behalf of ANY user in the homeserver
+      # For restrictive mode, use something like: '@_common_settings.*'
+      regex: '@.*'
+  # Room namespace: not used by this bridge (empty list)
   rooms: []
+  # Alias namespace: not used by this bridge (empty list)
   aliases: []
+
+# Rate limiting - disabled for internal bridge services
+# The bridge communicates via RabbitMQ, not HTTP, so rate limiting is not applicable
 rate_limited: false

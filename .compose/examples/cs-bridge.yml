@@ -191,12 +191,14 @@ services:
       synapse: { condition: service_healthy }
       postgres: { condition: service_healthy }
       rabbitmq: { condition: service_healthy }
+      tom: { condition: service_started }
     volumes:
       - ../synapse/cs-bridge-registration.yaml:/data/registration.yaml
       - common-settings-data:/data
     environment:
       - NODE_TLS_REJECT_UNAUTHORIZED=0
       - REGISTRATION_FILE=/data/registration.yaml
+      - LOG_LEVEL=debug
 
   send-message-tool:
     build:

@@ -1,16 +1,21 @@
 # Matrix / Synapse Configuration
+# Configures connection to the Matrix homeserver and service registration details
 homeserverUrl: "http://synapse:8008"
 domain: "docker.internal"
 registrationPath: "/data/registration.yaml"
 
+# Synapse-specific settings
+# Controls retry behavior for admin operations
 synapse:
   adminRetryMode: "exclusive"
 
-# Logging
+# Logging Configuration
+# Sets the verbosity level for application logs
 logging:
   level: "debug"
 
 # Database Configuration
+# PostgreSQL connection details for storing application state and settings
 database:
   engine: "pg"
   host: "postgres"
@@ -19,6 +24,7 @@ database:
   password: "twake_password"
 
 # RabbitMQ Configuration
+# Message queue setup for publishing and consuming settings update events
 rabbitmq:
   host: "rabbitmq"
   port: 5672
@@ -26,6 +32,13 @@ rabbitmq:
   password: "guest"
   vhost: "/"
   tls: false
-  queueName: "chat.settings.updated.queue"
-  exchangeName: "settings exchange"
+  # Primary queue for receiving settings update events
+  queue: "chat.settings.updated.queue"
+  # Exchange for publishing settings updates
+  exchange: "settings exchange"
+  # Routing key for filtering settings update messages
   routingKey: "user.settings.updated"
+  # Dead letter exchange for handling failed message processing
+  deadLetterExchange: "settings.dlx"
+  # Routing key for directing failed messages to dead letter queue
+  deadLetterRoutingKey: "user.settings.updated.dlx"

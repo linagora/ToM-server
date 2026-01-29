@@ -63,7 +63,8 @@ class CommonSettingsBridge {
 
   /**
    * Initializes the database connection with the user settings table schema.
-   * The database stores Matrix user IDs mapped to their settings JSON and version number.
+   * The database stores Matrix user IDs mapped to their settings JSON, version number,
+   * timestamp, and request_id for idempotency.
    */
   #initDatabase(): void {
     this.#log.debug('Initializing database connection...')
@@ -92,7 +93,7 @@ class CommonSettingsBridge {
 
     const tables: Record<UserSettingsTableName, string> = {
       usersettings:
-        'matrix_id varchar(64) PRIMARY KEY, settings jsonb, version int'
+        'matrix_id varchar(64) PRIMARY KEY, settings jsonb, version int, timestamp bigint, request_id varchar(255)'
     }
 
     this.#db = new Database<UserSettingsTableName>(
@@ -176,9 +177,17 @@ class CommonSettingsBridge {
   }
 
   /**
+   * Formats a timestamp for logging purposes.
+   * @param timestamp - Unix timestamp in milliseconds
+   * @returns Human-readable timestamp string
+   */
+  #formatTimestamp(timestamp: number): string {
+    return new Date(timestamp).toISOString()
+  }
+
+  /**
    * Handles incoming AMQP messages containing user settings changes.
-   * Parses the message, validates required fields, detects changes,
-   * updates Matrix profiles, and persists settings to the database.
+   * Implements idempotency checking and version-based ordering.
    * @param msg - The AMQP message containing settings data
    * @param channel - The AMQP channel for acknowledgment
    */
@@ -196,11 +205,16 @@ class CommonSettingsBridge {
       throw new MessageParseError()
     }
 
-    this.#log.debug(
-      `Parsed message: version=${
-        message.version
-      }, has payload=${!!message.payload}`
-    )
+    // Validate required fields
+    if (!message.request_id) {
+      this.#log.error('Message missing required request_id field')
+      throw new MessageParseError()
+    }
+
+    if (message.timestamp === undefined || message.timestamp === null) {
+      this.#log.error('Message missing required timestamp field')
+      throw new MessageParseError()
+    }
 
     if (!message.payload?.matrix_id) {
       this.#log.error('Message missing required matrix_id field in payload')
@@ -211,45 +225,206 @@ class CommonSettingsBridge {
     }
 
     const userId = message.payload.matrix_id
-    this.#log.info(`Processing settings update for user: ${userId}`)
+    const newVersion = message.version ?? 1
+    const newTimestamp = message.timestamp
+    const requestId = message.request_id
+    const source = message.source
+
+    this.#log.info(
+      `Processing settings update for user: ${userId} (source=${source}, version=${newVersion}, request_id=${requestId}, timestamp=${this.#formatTimestamp(
+        newTimestamp
+      )})`
+    )
     this.#log.debug(
       `Settings update contains: displayName=${!!message.payload
-        .display_name}, avatar=${!!message.payload.avatar}`
+        .display_name}, avatar=${!!message.payload.avatar}, email=${!!message
+        .payload.email}, phone=${!!message.payload.phone}`
     )
 
-    const { userSettings, created } = await this.#getOrCreateUserSettings(
-      userId,
-      message
+    // Get cached/stored settings for this user
+    const lastSettings = await this.#getUserSettings(userId)
+
+    // Idempotency check
+    if (lastSettings && requestId === lastSettings.request_id) {
+      this.#log.warn(
+        `Duplicate message detected for ${userId} (request_id=${requestId}), discarding`
+      )
+      return
+    }
+
+    // Determine if we should apply this update
+    const shouldApply = this.#shouldApplyUpdate(
+      lastSettings,
+      newVersion,
+      newTimestamp
     )
+
+    if (!shouldApply) {
+      this.#log.warn(
+        `Stale update for ${userId}, discarding (current: version=${
+          lastSettings?.version
+        }, timestamp=${
+          lastSettings ? this.#formatTimestamp(lastSettings.timestamp) : 'N/A'
+        }; new: version=${newVersion}, timestamp=${this.#formatTimestamp(
+          newTimestamp
+        )})`
+      )
+      return
+    }
 
     this.#log.debug(
-      `User record: created=${created}, currentVersion=${userSettings.version}, newVersion=${message.version}`
+      `Applying update for ${userId} (${
+        lastSettings
+          ? `old version=${
+              lastSettings.version
+            }, timestamp=${this.#formatTimestamp(lastSettings.timestamp)}`
+          : 'new user'
+      } -> new version=${newVersion}, timestamp=${this.#formatTimestamp(
+        newTimestamp
+      )})`
     )
 
-    await this.#processSettingsChanges(userId, userSettings, message, created)
-    await this.#updateUserSettings(userId, message)
+    // Apply the update
+    await this.#applyUpdate(userId, message, lastSettings, newTimestamp)
 
     this.#log.info(`Successfully processed settings for user: ${userId}`)
+  }
+
+  /**
+   * Determines whether an update should be applied based on version and timestamp.
+   * @param lastSettings - The last known settings for the user, or null if new user
+   * @param newVersion - The version number from the incoming message
+   * @param newTimestamp - The timestamp from the incoming message (Unix ms)
+   * @returns true if the update should be applied, false otherwise
+   */
+  #shouldApplyUpdate(
+    lastSettings: UserSettings | null,
+    newVersion: number,
+    newTimestamp: number
+  ): boolean {
+    // New user - always apply
+    if (!lastSettings) {
+      this.#log.debug('No existing settings found, will apply update')
+      return true
+    }
+
+    // Higher version - always apply
+    if (newVersion > lastSettings.version) {
+      this.#log.debug(
+        `New version is higher (${newVersion} > ${lastSettings.version}), will apply update`
+      )
+      return true
+    }
+
+    // Same version but newer timestamp - apply
+    if (
+      newVersion === lastSettings.version &&
+      newTimestamp > lastSettings.timestamp
+    ) {
+      this.#log.debug(
+        `Same version but newer timestamp (${this.#formatTimestamp(
+          newTimestamp
+        )} > ${this.#formatTimestamp(
+          lastSettings.timestamp
+        )}), will apply update`
+      )
+      return true
+    }
+
+    // Otherwise, it's stale
+    this.#log.debug(
+      `Update is stale (version ${newVersion} <= ${
+        lastSettings.version
+      }, timestamp ${this.#formatTimestamp(
+        newTimestamp
+      )} <= ${this.#formatTimestamp(lastSettings.timestamp)})`
+    )
+    return false
+  }
+
+  /**
+   * Applies the settings update to Matrix and updates the database cache.
+   * @param userId - The Matrix user ID to update
+   * @param message - The new settings message
+   * @param lastSettings - The previous settings, or null if new user
+   * @param newTimestamp - The timestamp from the message
+   */
+  async #applyUpdate(
+    userId: string,
+    message: CommonSettingsMessage,
+    lastSettings: UserSettings | null,
+    newTimestamp: number
+  ): Promise<void> {
+    const isNewUser = lastSettings === null
+    const newVersion = message.version ?? 1
+
+    // Process settings changes and update Matrix profile
+    await this.#processSettingsChanges(
+      userId,
+      lastSettings?.payload ?? null,
+      message.payload,
+      isNewUser
+    )
+
+    // Update the database cache
+    const cacheData = {
+      matrix_id: userId,
+      settings: JSON.stringify(message.payload),
+      version: newVersion,
+      timestamp: newTimestamp,
+      request_id: message.request_id
+    }
+
+    if (isNewUser) {
+      this.#log.debug(`Inserting new cache entry for ${userId}`)
+      try {
+        await this.#db.insert('usersettings', cacheData)
+        this.#log.debug(`Successfully inserted cache entry for ${userId}`)
+      } catch (error) {
+        this.#log.error(
+          `Failed to insert cache entry for ${userId}: ${
+            error instanceof Error ? error.message : 'Unknown error'
+          }`
+        )
+        throw error
+      }
+    } else {
+      this.#log.debug(`Updating cache entry for ${userId}`)
+      try {
+        await this.#db.update('usersettings', cacheData, 'matrix_id', userId)
+        this.#log.debug(`Successfully updated cache entry for ${userId}`)
+      } catch (error) {
+        this.#log.error(
+          `Failed to update cache entry for ${userId}: ${
+            error instanceof Error ? error.message : 'Unknown error'
+          }`
+        )
+        throw error
+      }
+    }
+
+    this.#log.debug(
+      `Cache updated for ${userId}: version=${newVersion}, timestamp=${this.#formatTimestamp(
+        newTimestamp
+      )}, request_id=${message.request_id}`
+    )
   }
 
   /**
    * Processes detected changes between old and new settings.
    * Updates Matrix display name and avatar if they have changed.
    * @param userId - The Matrix user ID to update
-   * @param oldSettings - The previous user settings from the database
-   * @param newMessage - The new settings from the AMQP message
+   * @param oldPayload - The previous settings payload, or null if new user
+   * @param newPayload - The new settings payload from the AMQP message
    * @param isNewUser - Whether this is a newly created user record
    */
   async #processSettingsChanges(
     userId: string,
-    oldSettings: UserSettings,
-    newMessage: CommonSettingsMessage,
+    oldPayload: SettingsPayload | null,
+    newPayload: SettingsPayload,
     isNewUser: boolean
   ): Promise<void> {
     this.#log.debug(`Processing changes for ${userId} (isNewUser=${isNewUser})`)
-
-    const oldPayload = oldSettings.settings
-    const newPayload = newMessage.payload
 
     const displayNameChanged =
       isNewUser || oldPayload?.display_name !== newPayload.display_name
@@ -319,107 +494,73 @@ class CommonSettingsBridge {
   }
 
   /**
-   * Retrieves existing user settings from the database or creates a new record.
+   * Retrieves existing user settings from the database.
    * @param userId - The Matrix user ID to look up
-   * @param message - The settings message for initial creation
-   * @returns Object containing user settings and whether the record was created
+   * @returns UserSettings object or null if user not found
    */
-  async #getOrCreateUserSettings(
-    userId: string,
-    message: CommonSettingsMessage
-  ): Promise<{ userSettings: UserSettings; created: boolean }> {
+  async #getUserSettings(userId: string): Promise<UserSettings | null> {
     this.#log.debug(`Looking up user settings for ${userId}`)
 
-    const result = await this.#db.get(
-      'usersettings',
-      ['matrix_id', 'settings', 'version'],
-      { matrix_id: userId }
-    )
+    try {
+      const result = await this.#db.get(
+        'usersettings',
+        ['matrix_id', 'settings', 'version', 'timestamp', 'request_id'],
+        { matrix_id: userId }
+      )
 
-    if (result.length > 0) {
-      this.#log.debug(`Found existing settings for ${userId}`)
+      if (result.length === 0) {
+        this.#log.debug(`No existing settings found for ${userId}`)
+        return null
+      }
+
       const dbRow = result[0] as Record<string, unknown>
       const parsedSettings = this.#safeParsePayload(dbRow.settings as string)
 
       if (!parsedSettings) {
         this.#log.warn(
-          `Settings for ${userId} in database are corrupted, using new payload`
+          `Settings for ${userId} in database are corrupted, treating as new user`
         )
+        return null
       }
+
+      this.#log.debug(
+        `Found existing settings for ${userId}: version=${
+          dbRow.version
+        }, timestamp=${this.#formatTimestamp(
+          dbRow.timestamp as number
+        )}, request_id=${dbRow.request_id}`
+      )
 
       return {
-        userSettings: {
-          matrix_id: dbRow.matrix_id as string,
-          settings: parsedSettings ?? message.payload,
-          version: dbRow.version as number
-        },
-        created: false
+        nickname: dbRow.matrix_id as string,
+        payload: parsedSettings,
+        version: dbRow.version as number,
+        timestamp: dbRow.timestamp as number,
+        request_id: dbRow.request_id as string
       }
-    }
-
-    this.#log.info(`Creating new settings record for ${userId}`)
-
-    const newSettings = {
-      matrix_id: userId,
-      settings: JSON.stringify(message.payload),
-      version: message.version ?? 1
-    }
-
-    try {
-      await this.#db.insert('usersettings', newSettings)
-      this.#log.debug(`Successfully inserted settings for ${userId}`)
     } catch (error) {
       this.#log.error(
-        `Failed to insert settings for ${userId}: ${
+        `Error retrieving settings for ${userId}: ${
           error instanceof Error ? error.message : 'Unknown error'
         }`
       )
       throw error
-    }
-
-    return {
-      userSettings: {
-        matrix_id: userId,
-        settings: message.payload,
-        version: message.version ?? 1
-      },
-      created: true
     }
   }
 
   /**
-   * Updates the user settings record in the database with new values.
-   * @param userId - The Matrix user ID to update
-   * @param message - The new settings message to persist
+   * Gets a human-readable name for the retry mode
+   * @param mode - The SynapseAdminRetryMode enum value
+   * @returns String name of the mode
    */
-  async #updateUserSettings(
-    userId: string,
-    message: CommonSettingsMessage
-  ): Promise<void> {
-    this.#log.debug(
-      `Updating database settings for ${userId} to version ${
-        message.version ?? 1
-      }`
-    )
-
-    try {
-      await this.#db.update(
-        'usersettings',
-        {
-          settings: JSON.stringify(message.payload),
-          version: message.version ?? 1
-        },
-        'matrix_id',
-        userId
-      )
-      this.#log.debug(`Database updated for ${userId}`)
-    } catch (error) {
-      this.#log.error(
-        `Failed to update database for ${userId}: ${
-          error instanceof Error ? error.message : 'Unknown error'
-        }`
-      )
-      throw error
+  #getRetryModeName(mode: SynapseAdminRetryMode): string {
+    switch (mode) {
+      case SynapseAdminRetryMode.EXCLUSIVE:
+        return 'EXCLUSIVE'
+      case SynapseAdminRetryMode.FALLBACK:
+        return 'FALLBACK'
+      default:
+        return 'DISABLED'
     }
   }
 
@@ -436,7 +577,9 @@ class CommonSettingsBridge {
   ): Promise<void> {
     const retryMode = this.#getAdminRetryMode()
     this.#log.debug(
-      `Updating display name for ${userId} (retryMode=${retryMode})`
+      `Updating display name for ${userId} (retryMode=${this.#getRetryModeName(
+        retryMode
+      )})`
     )
 
     if (retryMode === SynapseAdminRetryMode.EXCLUSIVE) {
@@ -515,7 +658,11 @@ class CommonSettingsBridge {
    */
   async #updateAvatar(userId: string, avatarUrl: string): Promise<void> {
     const retryMode = this.#getAdminRetryMode()
-    this.#log.debug(`Updating avatar for ${userId} (retryMode=${retryMode})`)
+    this.#log.debug(
+      `Updating avatar for ${userId} (retryMode=${this.#getRetryModeName(
+        retryMode
+      )})`
+    )
 
     if (retryMode === SynapseAdminRetryMode.EXCLUSIVE) {
       this.#log.debug(

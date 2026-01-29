@@ -18,7 +18,7 @@ const exchangeName = process.env.EXCHANGE_NAME || 'settings exchange'
 const routingKey = process.env.ROUTING_KEY || 'user.settings.updated'
 // --- End Configuration ---
 
-async function sendMessage(payload, nickname) {
+async function sendMessage(payload, nickname, version) {
   let connection
   try {
     // Connect to RabbitMQ
@@ -35,11 +35,11 @@ async function sendMessage(payload, nickname) {
     // Construct the message according to the CommonSettingsMessage interface
     const message = {
       source: 'test-helper',
-      nickname: nickname,
+      nickname,
       request_id: randomUUID(),
       timestamp: Date.now(),
-      version: 1,
-      payload: payload
+      version,
+      payload
     }
 
     const messageBuffer = Buffer.from(JSON.stringify(message))
@@ -78,10 +78,17 @@ function main() {
     console.log('Starting interactive message sender. Press Ctrl+C to exit.')
     console.log('Leave matrix_id empty to exit.')
 
+    let version = 1
+
     while (true) {
       const matrix_id = await ask('Enter matrix_id (e.g., @user:matrix.org): ')
       if (!matrix_id) {
         break
+      }
+
+      const nversion = await ask(`Enter a version number: (${version})`)
+      if (nversion) {
+        version = parseInt(nversion, 10)
       }
 
       const display_name = await ask('Enter new display_name: ')
@@ -103,11 +110,17 @@ function main() {
       if (display_name) {
         payload.display_name = display_name
       }
+
       if (avatar) {
         payload.avatar = avatar
       }
 
-      await sendMessage(payload, nickname)
+      try {
+        await sendMessage(payload, nickname, version)
+        version += 1
+      } catch (error) {
+        console.error('Failed to send message:', error)
+      }
     }
 
     rl.close()
