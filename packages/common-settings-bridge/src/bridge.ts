@@ -92,7 +92,7 @@ export class CommonSettingsBridge {
 
     const tables: Record<UserSettingsTableName, string> = {
       usersettings:
-        'matrix_id varchar(255) PRIMARY KEY, settings jsonb, version int, timestamp bigint, request_id varchar(255)'
+        "matrix_id varchar(255) PRIMARY KEY, settings jsonb, version int DEFAULT 1, timestamp bigint DEFAULT 0, request_id varchar(255) DEFAULT ''"
     }
 
     this.#db = new Database<UserSettingsTableName>(
