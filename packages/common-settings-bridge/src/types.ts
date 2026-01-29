@@ -1,122 +1,95 @@
-/**
- * Types for common-settings-bridge
- */
+import { type AmqpConfig } from '@twake/amqp-connector'
 
 /**
- * RabbitMQ message payload for user profile updates
+ * Defines the retry strategy for Synapse admin API operations.
+ * This controls how the bridge handles failures when attempting to update
+ * user profiles via the Synapse admin API.
+ */
+export enum SynapseAdminRetryMode {
+  DISABLED = 'disabled',
+  FALLBACK = 'fallback',
+  EXCLUSIVE = 'exclusive'
+}
+
+/**
+ * Represents user profile and settings data that can be synchronized
+ * across services via the common-settings bridge.
  */
 export interface SettingsPayload {
-  matrix_id: string
-  display_name?: string
-  avatar?: string
-  email?: string
-  phone?: string
-  first_name?: string
-  last_name?: string
-  language?: string
-  timezone?: string
+  readonly language?: string
+  readonly timezone?: string
+  readonly avatar?: string
+  readonly last_name?: string
+  readonly first_name?: string
+  readonly email?: string
+  readonly phone?: string
+  readonly matrix_id?: string
+  readonly display_name?: string
 }
 
 /**
- * Full RabbitMQ message structure
+ * Represents a complete message exchanged via AMQP for settings synchronization.
  */
 export interface CommonSettingsMessage {
-  source: string
-  nickname: string
-  request_id: string
-  timestamp: number
-  version: number
-  payload: SettingsPayload
+  readonly source: string
+  readonly nickname: string
+  readonly request_id: string
+  readonly timestamp: number
+  readonly version: number
+  readonly payload: SettingsPayload
 }
 
 /**
- * User settings stored in database
+ * Represents user settings as stored in the bridge database.
  */
 export interface UserSettings {
-  matrix_id: string
-  settings: SettingsPayload
-  version: number
+  readonly matrix_id: string
+  readonly settings: SettingsPayload
+  readonly version: number
 }
 
 /**
- * Payload for updating user profile via Synapse
+ * Configuration for AMQP exchange, queue, and routing within the bridge.
  */
-export interface UserProfileUpdate {
-  displayName?: string
-  avatarUrl?: string
+export interface BridgeAmqpConfig {
+  readonly exchange: string
+  readonly queue: string
+  readonly routingKey?: string
+  readonly deadLetterExchange?: string
+  readonly deadLetterRoutingKey?: string
 }
 
 /**
- * RabbitMQ configuration
- */
-export interface RabbitMQConfig {
-  host: string
-  port: number
-  username: string
-  password: string
-  vhost: string
-  tls: boolean
-}
-
-/**
- * Queue configuration
- */
-export interface QueueConfig {
-  name: string
-  exchange: string
-  routingKey?: string
-  deadLetterExchange?: string
-  deadLetterRoutingKey?: string
-}
-
-/**
- * Synapse/Bridge configuration
- */
-export interface SynapseConfig {
-  homeserverUrl: string
-  domain: string
-  registrationPath: string
-  /**
-   * Mode for using Synapse Admin API for profile updates:
-   * - 'disabled': Only use standard AS masquerading (default)
-   * - 'fallback': Try standard first, use Admin API if it fails
-   * - 'exclusive': Only use Admin API
-   */
-  adminApiMode?: 'disabled' | 'fallback' | 'exclusive'
-}
-
-/**
- * Database configuration
+ * Configuration for the bridge's database connection.
  */
 export interface DatabaseConfig {
-  engine: 'sqlite' | 'pg'
-  host: string
-  name?: string
-  user?: string
-  password?: string
-  ssl?: boolean
+  readonly engine: 'sqlite' | 'pg'
+  readonly host?: string
+  readonly name?: string
+  readonly user?: string
+  readonly password?: string
 }
 
 /**
- * Complete service configuration
+ * Configuration specific to Synapse homeserver integration.
+ */
+export interface SynapseConfig {
+  readonly adminRetryMode: 'disabled' | 'fallback' | 'exclusive'
+}
+
+/**
+ * Complete configuration for the common-settings bridge.
  */
 export interface BridgeConfig {
-  rabbitmq: RabbitMQConfig
-  queue: QueueConfig
-  synapse: SynapseConfig
-  database: DatabaseConfig
-  logLevel?: string
+  readonly homeserverUrl: string
+  readonly domain: string
+  readonly registrationPath: string
+  readonly synapse: SynapseConfig
+  readonly rabbitmq: AmqpConfig & BridgeAmqpConfig
+  readonly database: DatabaseConfig
 }
 
 /**
- * Database table collections for common-settings-bridge
+ * Type literal for the user settings database table name.
  */
-export type BridgeCollections = 'usersettings'
-
-/**
- * Result from database get operations
- */
-export interface DbGetResult {
-  rows: UserSettings[]
-  rowCount: number
-}
+export type UserSettingsTableName = 'usersettings'

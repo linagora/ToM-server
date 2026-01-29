@@ -1,105 +1,59 @@
 /**
- * Custom errors for common-settings-bridge
+ * Error thrown when configuration is not provided or is invalid.
+ * This typically occurs during service initialization when required
+ * configuration parameters are missing or malformed.
  */
-
-/**
- * Base error class for common-settings-bridge
- */
-export class CommonSettingsBridgeError extends Error {
-  constructor(message: string) {
+export class ConfigNotProvidedError extends Error {
+  constructor(message = 'Configuration not provided or invalid') {
     super(message)
-    this.name = 'CommonSettingsBridgeError'
+    this.name = 'ConfigNotProvidedError'
   }
 }
 
 /**
- * Error thrown when configuration is invalid
+ * Error thrown when a user ID (matrix_id) is not provided in the message payload.
+ * This occurs when processing AMQP messages that lack the required user identifier
+ * needed to perform profile updates.
  */
-export class ConfigurationError extends CommonSettingsBridgeError {
-  constructor(message: string) {
-    super(`Configuration error: ${message}`)
-    this.name = 'ConfigurationError'
+export class UserIdNotProvidedError extends Error {
+  constructor(message = 'User ID (matrix_id) not provided in message payload') {
+    super(message)
+    this.name = 'UserIdNotProvidedError'
   }
 }
 
 /**
- * Error thrown when RabbitMQ config is missing
+ * Error thrown when parsing an AMQP message payload fails.
+ * This can occur due to malformed JSON, unexpected data types,
+ * or missing required fields in the message structure.
  */
-export class RabbitMQConfigError extends ConfigurationError {
-  constructor(field: string) {
-    super(`RabbitMQ ${field} must be provided`)
-    this.name = 'RabbitMQConfigError'
-  }
-}
-
-/**
- * Error thrown when Synapse config is missing
- */
-export class SynapseConfigError extends ConfigurationError {
-  constructor(field: string) {
-    super(`Synapse ${field} must be provided`)
-    this.name = 'SynapseConfigError'
-  }
-}
-
-/**
- * Error thrown when database config is missing
- */
-export class DatabaseConfigError extends ConfigurationError {
-  constructor(field: string) {
-    super(`Database ${field} must be provided`)
-    this.name = 'DatabaseConfigError'
-  }
-}
-
-/**
- * Error thrown when message cannot be parsed
- */
-export class MessageParseError extends CommonSettingsBridgeError {
-  constructor(reason?: string) {
-    super(
-      reason ? `Failed to parse message: ${reason}` : 'Failed to parse message'
-    )
+export class MessageParseError extends Error {
+  constructor(message = 'Failed to parse AMQP message payload') {
+    super(message)
     this.name = 'MessageParseError'
   }
 }
 
 /**
- * Error thrown when message validation fails
+ * Error thrown when updating a user profile in Matrix fails.
+ * This can occur due to network issues, invalid user IDs,
+ * permission problems, or Matrix server errors.
  */
-export class MessageValidationError extends CommonSettingsBridgeError {
-  constructor(field: string) {
-    super(`Message validation failed: ${field} is required`)
-    this.name = 'MessageValidationError'
+export class MatrixUpdateError extends Error {
+  constructor(message = 'Failed to update user profile in Matrix') {
+    super(message)
+    this.name = 'MatrixUpdateError'
   }
 }
 
 /**
- * Error thrown when Synapse bridge operation fails
+ * Error thrown when updating user settings in the database fails.
+ * This can occur due to database connectivity issues, constraint violations,
+ * or transaction failures.
  */
-export class BridgeOperationError extends CommonSettingsBridgeError {
-  constructor(operation: string, reason: string) {
-    super(`Bridge operation '${operation}' failed: ${reason}`)
-    this.name = 'BridgeOperationError'
-  }
-}
-
-/**
- * Error thrown when database operation fails
- */
-export class DatabaseOperationError extends CommonSettingsBridgeError {
-  constructor(operation: string, reason: string) {
-    super(`Database operation '${operation}' failed: ${reason}`)
-    this.name = 'DatabaseOperationError'
-  }
-}
-
-/**
- * Error thrown when avatar upload fails
- */
-export class AvatarUploadError extends CommonSettingsBridgeError {
-  constructor(userId: string, reason: string) {
-    super(`Failed to upload avatar for ${userId}: ${reason}`)
-    this.name = 'AvatarUploadError'
+export class DatabaseUpdateError extends Error {
+  constructor(message = 'Failed to update user settings in database') {
+    super(message)
+    this.name = 'DatabaseUpdateError'
   }
 }
