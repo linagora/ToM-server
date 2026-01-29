@@ -109,34 +109,6 @@ services:
       retries: 5
       start_period: 30s
 
-  # auth:
-  #   image: yadd/lemonldap-ng-portal
-  #   depends_on:
-  #     ldap: { condition: service_healthy }
-  #     postgres: { condition: service_healthy }
-  #     traefik: { condition: service_healthy }
-  #   environment:
-  #     - SSODOMAIN=docker.internal
-  #     - PORTAL=https://auth.docker.internal
-  #     - LOGLEVEL=debug
-  #     - LOGGER=stderr
-  #     - USERLOGGER=stderr
-  #   volumes:
-  #     - ../llng/lmConf-1.json:/var/lib/lemonldap-ng/conf/lmConf-1.json:ro
-  #   healthcheck:
-  #     test: ['CMD-SHELL', 'curl -f http://localhost/ || exit 1']
-  #     interval: 10s
-  #     timeout: 5s
-  #     retries: 5
-  #     start_period: 15s
-  #   labels:
-  #     - 'traefik.enable=true'
-  #     - 'traefik.http.routers.auth.rule=Host(`auth.docker.internal`)'
-  #     - 'traefik.http.routers.auth.entrypoints=websecure'
-  #     - 'traefik.http.routers.auth.tls=true'
-  #     - 'traefik.http.routers.auth.middlewares=cors-policy'
-  #     - 'traefik.http.services.auth.loadbalancer.server.port=80'
-
   synapse:
     image: matrixdotorg/synapse:v1.119.0
     restart: unless-stopped
@@ -317,25 +289,6 @@ services:
   #     - 'traefik.http.routers.fed-direct.tls=true'
   #     - 'traefik.http.routers.fed-direct.middlewares=cors-policy'
   #     - 'traefik.http.services.fed.loadbalancer.server.port=3000'
-
-  # twake-chat:
-  #   image: linagora/twake-web
-  #   restart: unless-stopped
-  #   depends_on:
-  #     synapse: { condition: service_healthy }
-  #     traefik: { condition: service_started }
-  #   volumes:
-  #     - ../chat/config.sso.json:/usr/share/nginx/html/web/config.json:ro
-  #   labels:
-  #     - 'traefik.enable=true'
-  #     - 'traefik.http.routers.chat.rule=Host(`chat.docker.internal`)'
-  #     - 'traefik.http.routers.chat.entrypoints=websecure'
-  #     - 'traefik.http.routers.chat.tls=true'
-  #     - 'traefik.http.routers.chat.middlewares=chat-redirect,cors-policy'
-  #     - 'traefik.http.services.chat.loadbalancer.server.port=80'
-  #     - 'traefik.http.middlewares.chat-redirect.redirectregex.regex=^https://([^/]+)/?$$'
-  #     - 'traefik.http.middlewares.chat-redirect.redirectregex.replacement=https://$$1/web/'
-  #     - 'traefik.http.middlewares.chat-redirect.redirectregex.permanent=true'
 
 volumes:
   postgres-data:

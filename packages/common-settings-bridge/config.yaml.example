@@ -7,7 +7,7 @@ registrationPath: "/data/registration.yaml"
 # Synapse-specific settings
 # Controls retry behavior for admin operations
 synapse:
-  adminRetryMode: "exclusive"
+  adminRetryMode: "fallback"
 
 # Logging Configuration
 # Sets the verbosity level for application logs

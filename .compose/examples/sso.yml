@@ -1,21 +1,14 @@
-# SSO Example with LemonLDAP::NG
-#
-# This compose file demonstrates Single Sign-On (SSO) configuration using
-# LemonLDAP::NG as the OIDC provider for Synapse Matrix homeserver.
+# SSO Example with LemonLDAP::NG and Global CORS Configuration
 #
 # Features:
+# - Global CORS policy tuned for Element (app.element.io) and local dev
 # - LemonLDAP::NG portal for authentication
 # - OIDC integration with Synapse
 # - HTTPS via Traefik with auto-generated certificates
-# - Shared PostgreSQL database
-# - LDAP user directory
 #
 # Prerequisites:
 # Add to /etc/hosts:
-#   127.0.0.1 docker.internal auth.docker.internal matrix.docker.internal tom.docker.internal fed.docker.internal chat.docker.internal
-#
-# Usage:
-#   docker compose -f .compose/examples/sso.yml up -d
+#   127.0.0.1 docker.internal auth.docker.internal matrix.docker.internal tom.docker.internal fed.docker.internal chat.docker.internal smtp.docker.internal
 
 services:
   traefik:
@@ -45,12 +38,20 @@ services:
           - tom.docker.internal
           - fed.docker.internal
           - chat.docker.internal
+    labels:
+      # --- REQUIRED: Enable Traefik on itself so it reads the middleware labels ---
+      - "traefik.enable=true"
+
+      # --- CORS MIDDLEWARE (FIXED FOR CREDENTIALS) ---
+      # Note: When AllowCredentials is true, AllowOrigin cannot be "*"
+      - "traefik.http.middlewares.cors-policy.headers.accesscontrolallowmethods=GET,OPTIONS,POST,PUT,DELETE,PATCH"
+      - "traefik.http.middlewares.cors-policy.headers.accesscontrolalloworiginlist=https://app.element.io,https://chat.docker.internal,https://tom.docker.internal,https://matrix.docker.internal,https://auth.docker.internal,https://fed.docker.internal"
+      - "traefik.http.middlewares.cors-policy.headers.accesscontrolallowheaders=*"
+      - "traefik.http.middlewares.cors-policy.headers.accesscontrolallowcredentials=true"
+      - "traefik.http.middlewares.cors-policy.headers.accesscontrolmaxage=100"
+      - "traefik.http.middlewares.cors-policy.headers.addvaryheader=true"
     healthcheck:
-      test:
-        [
-          'CMD-SHELL',
-          'wget -q --spider http://localhost:8080/api/overview || exit 1',
-        ]
+      test: ['CMD-SHELL', 'wget -q --spider http://localhost:8080/api/overview || exit 1']
       interval: 5s
       timeout: 3s
       retries: 5
@@ -73,11 +74,7 @@ services:
     volumes:
       - ../ldap/bootstrap:/container/service/slapd/assets/config/bootstrap/ldif/custom
     healthcheck:
-      test:
-        [
-          'CMD-SHELL',
-          "ldapsearch -x -b 'dc=docker,dc=internal' -H ldap://localhost || exit 1",
-        ]
+      test: ["CMD-SHELL", "ldapsearch -x -b 'dc=docker,dc=internal' -H ldap://localhost || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -90,6 +87,7 @@ services:
       - 'traefik.http.routers.smtp.rule=Host(`smtp.docker.internal`)'
       - 'traefik.http.routers.smtp.entrypoints=websecure'
       - 'traefik.http.routers.smtp.tls=true'
+      - 'traefik.http.routers.smtp.middlewares=cors-policy'
       - 'traefik.http.services.smtp.loadbalancer.server.port=37408'
 
   postgres:
@@ -114,12 +112,9 @@ services:
   auth:
     image: yadd/lemonldap-ng-portal
     depends_on:
-      ldap:
-        condition: service_healthy
-      postgres:
-        condition: service_healthy
-      traefik:
-        condition: service_healthy
+      ldap: { condition: service_healthy }
+      postgres: { condition: service_healthy }
+      traefik: { condition: service_healthy }
     environment:
       - SSODOMAIN=docker.internal
       - PORTAL=https://auth.docker.internal
@@ -139,18 +134,16 @@ services:
       - 'traefik.http.routers.auth.rule=Host(`auth.docker.internal`)'
       - 'traefik.http.routers.auth.entrypoints=websecure'
       - 'traefik.http.routers.auth.tls=true'
+      - 'traefik.http.routers.auth.middlewares=cors-policy'
       - 'traefik.http.services.auth.loadbalancer.server.port=80'
 
   synapse:
     image: matrixdotorg/synapse:v1.119.0
     restart: unless-stopped
     depends_on:
-      postgres:
-        condition: service_healthy
-      auth:
-        condition: service_healthy
-      traefik:
-        condition: service_healthy
+      postgres: { condition: service_healthy }
+      auth: { condition: service_healthy }
+      traefik: { condition: service_healthy }
     volumes:
       - ../synapse/.data:/data
       - ../synapse/sso.yaml:/data/homeserver.yaml:ro
@@ -162,13 +155,10 @@ services:
       - 'traefik.http.routers.synapse.entrypoints=websecure'
       - 'traefik.http.routers.synapse.tls=true'
       - 'traefik.http.routers.synapse.priority=10'
+      - 'traefik.http.routers.synapse.middlewares=cors-policy'
       - 'traefik.http.services.synapse.loadbalancer.server.port=8008'
     healthcheck:
-      test:
-        [
-          'CMD-SHELL',
-          'curl -f http://localhost:8008/_matrix/client/versions || exit 1',
-        ]
+      test: ['CMD-SHELL', 'curl -f http://localhost:8008/_matrix/client/versions || exit 1']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -180,38 +170,27 @@ services:
       context: ../..
       dockerfile: ./Dockerfile
     depends_on:
-      synapse:
-        condition: service_healthy
-      ldap:
-        condition: service_healthy
-      smtp:
-        condition: service_started
-      postgres:
-        condition: service_healthy
-      traefik:
-        condition: service_started
+      synapse: { condition: service_healthy }
+      ldap: { condition: service_healthy }
+      smtp: { condition: service_started }
+      postgres: { condition: service_healthy }
+      traefik: { condition: service_started }
     environment:
       - NODE_TLS_REJECT_UNAUTHORIZED=0
-
       - SERVER_NAME=docker.internal
       - BASE_URL=https://tom.docker.internal
       - TRUSTED_PROXIES=uniquelocal
-
       - OIDC_ISSUER=https://auth.docker.internal/
-
       - FEDERATED_IDENTITY_SERVICES=fed.docker.internal
-
       - DATABASE_ENGINE=pg
       - DATABASE_HOST=postgres
       - DATABASE_NAME=tom_db
       - DATABASE_USER=twake
       - DATABASE_PASSWORD=twake_password
-
       - USERDB_ENGINE=ldap
       - LDAP_URI=ldap://ldap
       - LDAP_BASE=ou=users,dc=docker,dc=internal
       - LDAP_FILTER=(objectClass=inetOrgPerson)
-
       - MATRIX_INTERNAL_HOST=http://synapse:8008
       - MATRIX_SERVER=matrix.docker.internal
       - MATRIX_DATABASE_ENGINE=pg
@@ -219,38 +198,38 @@ services:
       - MATRIX_DATABASE_NAME=synapse
       - MATRIX_DATABASE_USER=synapse_user
       - MATRIX_DATABASE_PASSWORD=secretpassword
-
       - SMS_API_URL=https://api.octopush.com/v1/public
-
       - SMTP_SERVER=smtp
       - SMTP_PORT=2525
       - SMTP_SENDER=no-reply@docker.internal
-
       - LOG_LEVEL=silly
       - LOG_TRANSPORTS=Console
     labels:
       - 'traefik.enable=true'
-      # Direct access via tom.docker.internal
       - 'traefik.http.routers.tom-direct.rule=Host(`tom.docker.internal`)'
       - 'traefik.http.routers.tom-direct.entrypoints=websecure'
       - 'traefik.http.routers.tom-direct.tls=true'
       - 'traefik.http.routers.tom-direct.priority=110'
-      # Handle .well-known endpoints
-      - 'traefik.http.routers.tom-wellknown.rule=Host(`matrix.docker.internal`) && PathPrefix(`/.well-known/matrix/client`)'
+      - 'traefik.http.routers.tom-direct.middlewares=cors-policy'
+
+      - 'traefik.http.routers.tom-wellknown.rule=(Host(`matrix.docker.internal`) || Host(`docker.internal`)) && PathPrefix(`/.well-known/matrix/client`)'
       - 'traefik.http.routers.tom-wellknown.entrypoints=websecure'
       - 'traefik.http.routers.tom-wellknown.tls=true'
       - 'traefik.http.routers.tom-wellknown.priority=100'
-      # Handle Matrix Identity Server API
+      - 'traefik.http.routers.tom-wellknown.middlewares=cors-policy'
+
       - 'traefik.http.routers.tom-identity.rule=Host(`matrix.docker.internal`) && PathPrefix(`/_matrix/identity/v2`)'
       - 'traefik.http.routers.tom-identity.entrypoints=websecure'
       - 'traefik.http.routers.tom-identity.tls=true'
       - 'traefik.http.routers.tom-identity.priority=90'
-      # Handle specific Matrix Client API endpoints (createRoom, profile)
-      - 'traefik.http.routers.tom-matrix-client.rule=Host(`matrix.docker.internal`) && (PathPrefix(`/_matrix/client/v3/createRoom`) || PathPrefix(`/_matrix/client/v3/profile`))'
+      - 'traefik.http.routers.tom-identity.middlewares=cors-policy'
+
+      # - 'traefik.http.routers.tom-matrix-client.rule=Host(`matrix.docker.internal`) && (PathPrefix(`/_matrix/client/v3/createRoom`) || PathPrefix(`/_matrix/client/v3/profile`))'
       - 'traefik.http.routers.tom-matrix-client.entrypoints=websecure'
       - 'traefik.http.routers.tom-matrix-client.tls=true'
       - 'traefik.http.routers.tom-matrix-client.priority=80'
-      # Service configuration
+      - 'traefik.http.routers.tom-matrix-client.middlewares=cors-policy'
+
       - 'traefik.http.services.tom.loadbalancer.server.port=3000'
 
   fed:
@@ -259,26 +238,20 @@ services:
       context: ../..
       dockerfile: ./packages/federated-identity-service/Dockerfile
     depends_on:
-      ldap:
-        condition: service_healthy
-      tom:
-        condition: service_started
-      postgres:
-        condition: service_healthy
+      ldap: { condition: service_healthy }
+      tom: { condition: service_started }
+      postgres: { condition: service_healthy }
     environment:
       - NODE_TLS_REJECT_UNAUTHORIZED=0
-
       - BASE_URL=https://fed.docker.internal
       - SERVER_NAME=docker.internal
       - TRUSTED_PROXIES=uniquelocal
       - TRUSTED_SERVERS_ADDRESSES=172.0.0.0/8
-
       - DATABASE_ENGINE=pg
       - DATABASE_HOST=postgres
       - DATABASE_NAME=fed_db
       - DATABASE_USER=twake
       - DATABASE_PASSWORD=twake_password
-
       - LOG_LEVEL=silly
       - LOG_TRANSPORTS=Console
     labels:
@@ -286,16 +259,15 @@ services:
       - 'traefik.http.routers.fed-direct.rule=Host(`fed.docker.internal`)'
       - 'traefik.http.routers.fed-direct.entrypoints=websecure'
       - 'traefik.http.routers.fed-direct.tls=true'
+      - 'traefik.http.routers.fed-direct.middlewares=cors-policy'
       - 'traefik.http.services.fed.loadbalancer.server.port=3000'
 
   twake-chat:
     image: linagora/twake-web
     restart: unless-stopped
     depends_on:
-      synapse:
-        condition: service_healthy
-      traefik:
-        condition: service_started
+      synapse: { condition: service_healthy }
+      traefik: { condition: service_started }
     volumes:
       - ../chat/config.sso.json:/usr/share/nginx/html/web/config.json:ro
     labels:
@@ -303,12 +275,11 @@ services:
       - 'traefik.http.routers.chat.rule=Host(`chat.docker.internal`)'
       - 'traefik.http.routers.chat.entrypoints=websecure'
       - 'traefik.http.routers.chat.tls=true'
+      - 'traefik.http.routers.chat.middlewares=chat-redirect,cors-policy'
       - 'traefik.http.services.chat.loadbalancer.server.port=80'
-      # Redirect root path to /web/
       - 'traefik.http.middlewares.chat-redirect.redirectregex.regex=^https://([^/]+)/?$$'
       - 'traefik.http.middlewares.chat-redirect.redirectregex.replacement=https://$$1/web/'
       - 'traefik.http.middlewares.chat-redirect.redirectregex.permanent=true'
-      - 'traefik.http.routers.chat.middlewares=chat-redirect'
 
 volumes:
   postgres-data:

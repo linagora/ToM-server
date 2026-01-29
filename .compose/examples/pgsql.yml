@@ -186,8 +186,11 @@ services:
       - TRUSTED_PROXIES=uniquelocal
       - TRUSTED_SERVERS_ADDRESSES=172.0.0.0/8
 
-      - DATABASE_ENGINE=sqlite
-      - DATABASE_HOST=file:fed?mode=memory&cache=shared
+      - DATABASE_ENGINE=pg
+      - DATABASE_HOST=postgres
+      - DATABASE_NAME=fed_db
+      - DATABASE_USER=twake
+      - DATABASE_PASSWORD=twake_password
 
       ## For storing the federated identity raw users
       # - USERDB_ENGINE=ldap
@@ -196,12 +199,6 @@ services:
       # - LDAP_FILTER=(objectClass=inetOrgPerson)
       # - LDAP_USER=uid=fed,dc=docker,dc=internal  ## Local LDAP is fully readable
       # - LDAP_PASSWORD=F3d_p@Ss                   ## Local LDAP is fully readable
-
-      - DATABASE_ENGINE=pg
-      - DATABASE_HOST=postgres
-      - DATABASE_NAME=fed_db
-      - DATABASE_USER=twake
-      - DATABASE_PASSWORD=twake_password
 
       - LOG_LEVEL=silly
       - LOG_TRANSPORTS=Console

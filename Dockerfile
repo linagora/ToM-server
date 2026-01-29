@@ -111,7 +111,7 @@ WORKDIR /usr/src/app
 
 # Copy production node_modules
 COPY --from=deps /usr/src/app/node_modules ./node_modules
-COPY --from=deps /usr/src/app/packages/*/node_modules ./packages/
+COPY --parents --from=deps /usr/src/app/packages/*/node_modules ./
 
 # Copy built artifacts
 COPY --from=builder /usr/src/app/packages/config-parser/dist ./packages/config-parser/dist
