@@ -11,7 +11,8 @@ describe('MatrixProfileUpdater', () => {
   beforeEach(() => {
     // Create mock matrix client
     mockMatrixClient = {
-      uploadContentFromUrl: jest.fn()
+      uploadContentFromUrl: jest.fn(),
+      uploadContent: jest.fn()
     }
 
     // Create mock intent
@@ -34,6 +35,9 @@ describe('MatrixProfileUpdater', () => {
       warn: jest.fn(),
       error: jest.fn()
     } as any
+
+    // Mock global fetch
+    global.fetch = jest.fn()
   })
 
   describe('updateDisplayName', () => {
@@ -223,17 +227,40 @@ describe('MatrixProfileUpdater', () => {
         )
       })
 
-      it('should upload HTTP URL via uploadContentFromUrl', async () => {
+      it('should upload HTTP URL via fetch and uploadContent', async () => {
         const httpUrl = 'https://example.com/avatar.png'
         const mxcUrl = 'mxc://example.com/uploaded123'
+        const mockBuffer = Buffer.from('fake-image-data')
 
-        mockMatrixClient.uploadContentFromUrl.mockResolvedValue(mxcUrl)
+        // Mock fetch response
+        const mockResponse = {
+          ok: true,
+          headers: {
+            get: jest.fn((header: string) => {
+              if (header === 'content-type') return 'image/png'
+              if (header === 'content-length') return '1024'
+              return null
+            })
+          },
+          arrayBuffer: jest.fn().mockResolvedValue(mockBuffer.buffer)
+        }
+        ;(global.fetch as jest.Mock).mockResolvedValue(mockResponse)
+
+        mockMatrixClient.uploadContent.mockResolvedValue(mxcUrl)
         mockIntent.setAvatarUrl.mockResolvedValue(undefined)
 
         await updater.updateAvatar('@user:example.com', httpUrl)
 
-        expect(mockMatrixClient.uploadContentFromUrl).toHaveBeenCalledWith(
-          httpUrl
+        expect(global.fetch).toHaveBeenCalledWith(
+          httpUrl,
+          expect.objectContaining({
+            signal: expect.any(AbortSignal)
+          })
+        )
+        expect(mockMatrixClient.uploadContent).toHaveBeenCalledWith(
+          expect.any(Buffer),
+          'image/png',
+          'avatar'
         )
         expect(mockIntent.setAvatarUrl).toHaveBeenCalledWith(mxcUrl)
         expect(mockLogger.info).toHaveBeenCalledWith(
@@ -248,7 +275,23 @@ describe('MatrixProfileUpdater', () => {
         const httpUrl = 'https://example.com/avatar.png'
         const error = new Error('Upload failed')
 
-        mockMatrixClient.uploadContentFromUrl.mockRejectedValue(error)
+        // Mock fetch to succeed
+        const mockBuffer = Buffer.from('fake-image-data')
+        const mockResponse = {
+          ok: true,
+          headers: {
+            get: jest.fn((header: string) => {
+              if (header === 'content-type') return 'image/png'
+              if (header === 'content-length') return '1024'
+              return null
+            })
+          },
+          arrayBuffer: jest.fn().mockResolvedValue(mockBuffer.buffer)
+        }
+        ;(global.fetch as jest.Mock).mockResolvedValue(mockResponse)
+
+        // But uploadContent fails
+        mockMatrixClient.uploadContent.mockRejectedValue(error)
 
         await expect(
           updater.updateAvatar('@user:example.com', httpUrl)
@@ -258,6 +301,105 @@ describe('MatrixProfileUpdater', () => {
         expect(mockLogger.error).toHaveBeenCalledWith(
           `Failed to download/upload avatar for @user:example.com from ${httpUrl}: Upload failed`
         )
+      })
+
+      it('should reject avatars exceeding size limit via content-length header', async () => {
+        const httpUrl = 'https://example.com/huge-avatar.png'
+        const tooLargeSize = 6 * 1024 * 1024 // 6MB (exceeds 5MB limit)
+
+        const mockResponse = {
+          ok: true,
+          headers: {
+            get: jest.fn((header: string) => {
+              if (header === 'content-type') return 'image/png'
+              if (header === 'content-length') return String(tooLargeSize)
+              return null
+            })
+          },
+          arrayBuffer: jest.fn()
+        }
+        ;(global.fetch as jest.Mock).mockResolvedValue(mockResponse)
+
+        await expect(
+          updater.updateAvatar('@user:example.com', httpUrl)
+        ).rejects.toThrow('Avatar too large')
+
+        expect(mockResponse.arrayBuffer).not.toHaveBeenCalled()
+        expect(mockIntent.setAvatarUrl).not.toHaveBeenCalled()
+      })
+
+      it('should reject avatars exceeding size limit after download', async () => {
+        const httpUrl = 'https://example.com/avatar.png'
+        const tooLargeBuffer = Buffer.alloc(6 * 1024 * 1024) // 6MB
+
+        const mockResponse = {
+          ok: true,
+          headers: {
+            get: jest.fn((header: string) => {
+              if (header === 'content-type') return 'image/png'
+              // No content-length header
+              return null
+            })
+          },
+          arrayBuffer: jest.fn().mockResolvedValue(tooLargeBuffer.buffer)
+        }
+        ;(global.fetch as jest.Mock).mockResolvedValue(mockResponse)
+
+        await expect(
+          updater.updateAvatar('@user:example.com', httpUrl)
+        ).rejects.toThrow('Avatar too large')
+
+        expect(mockMatrixClient.uploadContent).not.toHaveBeenCalled()
+        expect(mockIntent.setAvatarUrl).not.toHaveBeenCalled()
+      })
+
+      it('should timeout on slow avatar downloads', async () => {
+        jest.useFakeTimers()
+        const httpUrl = 'https://example.com/slow-avatar.png'
+
+        // Mock fetch to simulate abort
+        ;(global.fetch as jest.Mock).mockImplementation((url, options) => {
+          return new Promise((resolve, reject) => {
+            // Simulate the abort signal behavior
+            if (options?.signal) {
+              options.signal.addEventListener('abort', () => {
+                const abortError = new Error('The operation was aborted')
+                abortError.name = 'AbortError'
+                reject(abortError)
+              })
+            }
+          })
+        })
+
+        const updatePromise = updater.updateAvatar('@user:example.com', httpUrl)
+
+        // Fast-forward time to trigger timeout
+        jest.advanceTimersByTime(10000)
+
+        await expect(updatePromise).rejects.toThrow(
+          'Avatar fetch timed out after 10000ms'
+        )
+
+        expect(mockIntent.setAvatarUrl).not.toHaveBeenCalled()
+
+        jest.useRealTimers()
+      })
+
+      it('should handle HTTP errors from external URLs', async () => {
+        const httpUrl = 'https://example.com/missing.png'
+
+        const mockResponse = {
+          ok: false,
+          status: 404,
+          statusText: 'Not Found'
+        }
+        ;(global.fetch as jest.Mock).mockResolvedValue(mockResponse)
+
+        await expect(
+          updater.updateAvatar('@user:example.com', httpUrl)
+        ).rejects.toThrow('HTTP 404: Not Found')
+
+        expect(mockIntent.setAvatarUrl).not.toHaveBeenCalled()
       })
     })
 

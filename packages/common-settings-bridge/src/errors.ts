@@ -57,3 +57,14 @@ export class DatabaseUpdateError extends Error {
     this.name = 'DatabaseUpdateError'
   }
 }
+
+/**
+ * Error thrown when an avatar download fails validation checks.
+ * This includes timeout, size limit exceeded, or HTTP errors.
+ */
+export class AvatarFetchError extends Error {
+  constructor(message = 'Failed to fetch avatar from external URL') {
+    super(message)
+    this.name = 'AvatarFetchError'
+  }
+}

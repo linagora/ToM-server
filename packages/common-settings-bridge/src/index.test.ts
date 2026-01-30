@@ -37,6 +37,9 @@ jest.mock('@twake/db', () => ({
 const mockUploadContentFromUrl = jest.fn(() =>
   Promise.resolve('mxc://example.com/uploaded123')
 )
+const mockUploadContent = jest.fn(() =>
+  Promise.resolve('mxc://example.com/uploaded123')
+)
 const mockSetDisplayName = jest.fn(() => Promise.resolve())
 const mockSetAvatarUrl = jest.fn(() => Promise.resolve())
 const mockEnsureRegistered = jest.fn(() => Promise.resolve())
@@ -49,6 +52,7 @@ const mockIntent = {
   setAvatarUrl: mockSetAvatarUrl,
   matrixClient: {
     uploadContentFromUrl: mockUploadContentFromUrl,
+    uploadContent: mockUploadContent,
     adminApis: {
       synapse: {
         isSelfAdmin: mockIsSelfAdmin,
@@ -121,10 +125,32 @@ beforeAll(() => {
   Database.mockImplementation(() => mockDb)
 })
 
+// Create a proper fetch mock for avatar downloads
+const createMockFetchResponse = (
+  options: { ok?: boolean; status?: number; statusText?: string } = {}
+) => ({
+  ok: options.ok ?? true,
+  status: options.status ?? 200,
+  statusText: options.statusText ?? 'OK',
+  headers: {
+    get: (name: string) => {
+      if (name === 'content-length') return '1000'
+      if (name === 'content-type') return 'image/png'
+      return null
+    }
+  },
+  arrayBuffer: () => Promise.resolve(new ArrayBuffer(1000))
+})
+
 beforeEach(() => {
   jest.clearAllMocks()
   mockDbGet.mockResolvedValue([] as unknown[])
   mockUploadContentFromUrl.mockResolvedValue('mxc://example.com/uploaded123')
+  mockUploadContent.mockResolvedValue('mxc://example.com/uploaded123')
+  // Mock global fetch for avatar downloads
+  global.fetch = jest.fn(() =>
+    Promise.resolve(createMockFetchResponse())
+  ) as any
   // Re-setup chaining after clearAllMocks
   mockConnectorWithConfig.mockReturnValue(mockConnector)
   mockConnectorWithExchange.mockReturnValue(mockConnector)
@@ -291,9 +317,11 @@ describe('CommonSettingsBridge - Avatar URL Resolution', () => {
 
     await messageHandler(msg, mockChannel)
 
-    expect(mockUploadContentFromUrl).toHaveBeenCalledWith(
-      'https://example.com/avatar.png'
+    expect(global.fetch).toHaveBeenCalledWith(
+      'https://example.com/avatar.png',
+      expect.objectContaining({ signal: expect.any(AbortSignal) })
     )
+    expect(mockUploadContent).toHaveBeenCalled()
     expect(mockSetAvatarUrl).toHaveBeenCalledWith(
       'mxc://example.com/uploaded123'
     )
@@ -304,7 +332,7 @@ describe('CommonSettingsBridge - Avatar URL Resolution', () => {
     const config = createTestConfig()
     const bridge = new (CommonSettingsBridge as any)(config)
 
-    mockUploadContentFromUrl.mockRejectedValueOnce(new Error('Upload failed'))
+    mockUploadContent.mockRejectedValueOnce(new Error('Upload failed'))
 
     await bridge.start()
 
@@ -340,9 +368,11 @@ describe('CommonSettingsBridge - Avatar URL Resolution', () => {
 
     await messageHandler(msg, mockChannel)
 
-    expect(mockUploadContentFromUrl).toHaveBeenCalledWith(
-      'https://example.com/avatar.png'
+    expect(global.fetch).toHaveBeenCalledWith(
+      'https://example.com/avatar.png',
+      expect.objectContaining({ signal: expect.any(AbortSignal) })
     )
+    expect(mockUploadContent).toHaveBeenCalled()
     expect(mockUpsertUser).toHaveBeenCalledWith('@user:example.com', {
       avatar_url: 'mxc://example.com/uploaded123'
     })

@@ -32,7 +32,8 @@ const mockIntent = {
     },
     uploadContentFromUrl: jest
       .fn()
-      .mockResolvedValue('mxc://example.com/avatar123')
+      .mockResolvedValue('mxc://example.com/avatar123'),
+    uploadContent: jest.fn().mockResolvedValue('mxc://example.com/avatar123')
   }
 }
 
@@ -58,7 +59,8 @@ export class Intent {
     },
     uploadContentFromUrl: jest
       .fn()
-      .mockResolvedValue('mxc://example.com/avatar123')
+      .mockResolvedValue('mxc://example.com/avatar123'),
+    uploadContent: jest.fn().mockResolvedValue('mxc://example.com/avatar123')
   }
 }
 

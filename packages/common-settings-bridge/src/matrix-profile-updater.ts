@@ -1,5 +1,18 @@
 import { type Logger, type Intent } from 'matrix-appservice-bridge'
 import { SynapseAdminRetryMode, type SettingsPayload } from './types'
+import { AvatarFetchError } from './errors'
+
+/**
+ * Maximum allowed avatar file size (5MB).
+ * Prevents memory exhaustion from malicious or oversized external URLs.
+ */
+const MAX_AVATAR_BYTES = 5 * 1024 * 1024
+
+/**
+ * Timeout for fetching external avatar URLs (10 seconds).
+ * Prevents indefinite hangs on slow or unresponsive servers.
+ */
+const AVATAR_FETCH_TIMEOUT_MS = 10_000
 
 /**
  * Interface for Matrix API operations required by the profile updater.
@@ -124,10 +137,12 @@ export class MatrixProfileUpdater {
   /**
    * Resolves an avatar URL to an MXC URL.
    * If the URL is already an MXC URL, returns it as-is.
-   * If the URL is an HTTP/HTTPS URL, downloads and uploads it to Synapse.
+   * If the URL is an HTTP/HTTPS URL, downloads with timeout and size validation,
+   * then uploads it to Synapse.
    * @param userId - The Matrix user ID (used for logging and intent)
    * @param avatarUrl - The avatar URL to resolve (can be mxc:// or http(s)://)
    * @returns The MXC URL for the avatar
+   * @throws {AvatarFetchError} If download times out, exceeds size limit, or HTTP error
    */
   async #resolveAvatarUrl(userId: string, avatarUrl: string): Promise<string> {
     if (avatarUrl.startsWith('mxc://')) {
@@ -139,12 +154,69 @@ export class MatrixProfileUpdater {
       `Downloading avatar from external URL for ${userId}: ${avatarUrl}`
     )
 
+    const controller = new AbortController()
+    const timeout = setTimeout(
+      () => controller.abort(),
+      AVATAR_FETCH_TIMEOUT_MS
+    )
+
     try {
+      const response = await fetch(avatarUrl, { signal: controller.signal })
+      clearTimeout(timeout)
+
+      if (!response.ok) {
+        throw new AvatarFetchError(
+          `HTTP ${response.status}: ${response.statusText}`
+        )
+      }
+
+      // Pre-check content-length header if available
+      const contentLength = Number(response.headers.get('content-length') || 0)
+      if (contentLength > MAX_AVATAR_BYTES) {
+        throw new AvatarFetchError(
+          `Avatar too large: ${contentLength} bytes (max ${MAX_AVATAR_BYTES})`
+        )
+      }
+
+      const contentType = response.headers.get('content-type') ?? 'image/png'
+
+      // Download and validate actual size
+      const arrayBuffer = await response.arrayBuffer()
+      const buffer = Buffer.from(arrayBuffer)
+
+      if (buffer.length > MAX_AVATAR_BYTES) {
+        throw new AvatarFetchError(
+          `Avatar too large: ${buffer.length} bytes (max ${MAX_AVATAR_BYTES})`
+        )
+      }
+
+      this.logger.debug(
+        `Downloaded avatar for ${userId}: ${buffer.length} bytes, type=${contentType}`
+      )
+
+      // Upload to Matrix via the SDK's uploadContent (accepts Buffer)
       const intent = this.apis.getIntent(userId)
-      const mxcUrl = await intent.matrixClient.uploadContentFromUrl(avatarUrl)
+      const mxcUrl = await intent.matrixClient.uploadContent(
+        buffer,
+        contentType,
+        'avatar'
+      )
+
       this.logger.info(`Uploaded avatar to Synapse for ${userId}: ${mxcUrl}`)
       return mxcUrl
     } catch (error) {
+      clearTimeout(timeout)
+
+      if (error instanceof Error && error.name === 'AbortError') {
+        const timeoutError = new AvatarFetchError(
+          `Avatar fetch timed out after ${AVATAR_FETCH_TIMEOUT_MS}ms`
+        )
+        this.logger.error(
+          `Failed to download avatar for ${userId} from ${avatarUrl}: ${timeoutError.message}`
+        )
+        throw timeoutError
+      }
+
       this.logger.error(
         `Failed to download/upload avatar for ${userId} from ${avatarUrl}: ${
           error instanceof Error ? error.message : 'Unknown error'
