@@ -114,7 +114,6 @@ services:
     restart: unless-stopped
     depends_on:
       postgres: { condition: service_healthy }
-      # auth: { condition: service_healthy }
       traefik: { condition: service_healthy }
     volumes:
       - ../synapse/.data:/data
