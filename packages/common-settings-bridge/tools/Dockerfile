@@ -22,7 +22,7 @@ ENV RABBITMQ_HOST=rabbitmq \
     RABBITMQ_PASSWORD=guest \
     RABBITMQ_VHOST=/ \
     RABBITMQ_TLS=false \
-    EXCHANGE_NAME="settings exchange" \
+    EXCHANGE_NAME="settings.exchange" \
     ROUTING_KEY="user.settings.updated"
 
 # Run the interactive script

@@ -14,7 +14,7 @@ const rabbitmqConfig = {
 }
 
 // Exchange and routing key from environment variables or defaults
-const exchangeName = process.env.EXCHANGE_NAME || 'settings exchange'
+const exchange = process.env.EXCHANGE_NAME || 'settings.exchange'
 const routingKey = process.env.ROUTING_KEY || 'user.settings.updated'
 // --- End Configuration ---
 
@@ -30,7 +30,7 @@ async function sendMessage(payload, nickname, version) {
     console.log('Connection successful.')
 
     // Assert the exchange exists (durable, topic type)
-    await channel.assertExchange(exchangeName, 'topic', { durable: true })
+    await channel.assertExchange(exchange, 'topic', { durable: true })
 
     // Construct the message according to the CommonSettingsMessage interface
     const message = {
@@ -45,11 +45,11 @@ async function sendMessage(payload, nickname, version) {
     const messageBuffer = Buffer.from(JSON.stringify(message))
 
     // Publish the message to the exchange with the specified routing key
-    channel.publish(exchangeName, routingKey, messageBuffer)
+    channel.publish(exchange, routingKey, messageBuffer)
 
     console.log(
       "Message sent to exchange '%s' with routing key '%s':",
-      exchangeName,
+      exchange,
       routingKey
     )
     console.log(JSON.stringify(message, null, 2))

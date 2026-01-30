@@ -16,7 +16,7 @@ This bridge decouples profile management from the main application by:
 
 ### Architecture
 
-```
+```text
 ┌─────────────┐
 │  RabbitMQ   │
 │   Exchange  │
@@ -73,7 +73,7 @@ This bridge decouples profile management from the main application by:
 
 The bridge is organized into specialized modules, each with a single responsibility:
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │  CLI Entry Point (cli.ts)                                   │
 │  - Command-line interface setup                             │
@@ -228,10 +228,11 @@ rabbitmq:
   password: "guest"
   vhost: "/"
   tls: false                          # Enable TLS with `true`
-  queueName: "chat.settings.updated.queue"
-  exchangeName: "settings exchange"
+  queue: "chat.settings.updated.queue"
+  exchange: "settings.exchange"
   routingKey: "user.settings.updated"
-  deadLetterExchangeName: "settings.dlx"  # Dead letter exchange for failed messages
+  deadLetterExchange: "users.settings.dlx"  # Dead letter exchange for failed messages
+  deadLetterRoutingKey: "user.settings.updated.dlx"
 ```
 
 ### Configuration File: registration.yaml
@@ -331,7 +332,7 @@ Create a topic exchange for settings updates:
 
 **Type**: topic
 **Durable**: true
-**Name**: `settings exchange` (or as configured in config.yaml)
+**Name**: `settings.exchange` (or as configured in config.yaml)
 
 ### Queue Configuration
 
@@ -342,8 +343,8 @@ Create a durable queue for the bridge to consume:
 **Arguments**:
 ```json
 {
-  "x-dead-letter-exchange": "settings.dlx",
-  "x-dead-letter-routing-key": "dlx.user.settings.updated"
+  "x-dead-letter-exchange": "users.settings.dlx",
+  "x-dead-letter-routing-key": "user.settings.updated.dlx"
 }
 ```
 
@@ -351,7 +352,7 @@ Create a durable queue for the bridge to consume:
 
 Bind the queue to the exchange with routing key:
 
-**Exchange**: `settings exchange`
+**Exchange**: `settings.exchange`
 **Queue**: `chat.settings.updated.queue`
 **Routing Key**: `user.settings.updated`
 
@@ -359,12 +360,12 @@ Bind the queue to the exchange with routing key:
 
 For handling failed message delivery:
 
-**DLX Exchange Name**: `settings.dlx`
+**DLX Exchange Name**: `users.settings.dlx`
 **Type**: topic
 **Durable**: true
 
-**DLX Queue**: `settings.dlx.queue`
-**Binding**: Route `dlx.user.settings.updated` → `settings.dlx.queue`
+**DLX Queue**: `users.settings.dlx.queue`
+**Binding**: Route `dlx.user.settings.updated` → `users.settings.dlx.queue`
 
 Failed messages are automatically routed to the DLX when:
 - Message processing fails
@@ -719,7 +720,7 @@ Bridge bot user @_common_settings_bridge:your.domain has admin privileges.
 
 ### Dead Letter Exchange Receiving Messages
 
-**Symptom**: Messages accumulated in `settings.dlx.queue`
+**Symptom**: Messages accumulated in `users.settings.dlx.queue`
 
 **Meaning**: Messages are failing to process. Common causes:
 - Invalid message format
@@ -733,7 +734,7 @@ Bridge bot user @_common_settings_bridge:your.domain has admin privileges.
 3. Fix root cause based on error logs
 4. Purge DLX queue after fix, then restart bridge:
    ```bash
-   rabbitmqctl purge_queue settings.dlx.queue
+   rabbitmqctl purge_queue users.settings.dlx.queue
    ```
 
 ### Excessive Logging Output
@@ -771,7 +772,7 @@ RABBITMQ_HOST=localhost \
 RABBITMQ_PORT=5672 \
 RABBITMQ_USERNAME=guest \
 RABBITMQ_PASSWORD=guest \
-EXCHANGE_NAME="settings exchange" \
+EXCHANGE_NAME="settings.exchange" \
 ROUTING_KEY="user.settings.updated" \
 node send-message.mjs
 ```
@@ -782,7 +783,7 @@ Publish a message directly with `rabbitmqctl`:
 
 ```bash
 rabbitmqctl publish_to_exchange \
-  "settings exchange" \
+  "settings.exchange" \
   "user.settings.updated" \
   "{\"source\":\"test\",\"nickname\":\"john\",\"request_id\":\"123\",\"timestamp\":$(date +%s)000,\"version\":1,\"payload\":{\"matrix_id\":\"@john:example.com\",\"display_name\":\"John Doe\"}}"
 ```

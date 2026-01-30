@@ -30,10 +30,10 @@ rabbitmq:
   # Primary queue for receiving settings update events
   queue: "chat.settings.updated.queue"
   # Exchange for publishing settings updates
-  exchange: "settings exchange"
+  exchange: "settings.exchange"
   # Routing key for filtering settings update messages
   routingKey: "user.settings.updated"
   # Dead letter exchange for handling failed message processing
-  deadLetterExchange: "settings.dlx"
+  deadLetterExchange: "users.settings.dlx"
   # Routing key for directing failed messages to dead letter queue
   deadLetterRoutingKey: "user.settings.updated.dlx"
