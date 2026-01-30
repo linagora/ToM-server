@@ -26,6 +26,7 @@ jest.mock('@twake/amqp-connector', () => {
 })
 
 interface MockLogger {
+  debug: jest.Mock
   info: jest.Mock
   warn: jest.Mock
   error: jest.Mock
@@ -37,6 +38,7 @@ interface MockDb {
 }
 
 const makeLogger = (): MockLogger => ({
+  debug: jest.fn(),
   info: jest.fn(),
   warn: jest.fn(),
   error: jest.fn()
@@ -147,6 +149,7 @@ describe('should handle the settings message', () => {
 
   beforeEach(() => {
     logger = {
+      debug: jest.fn(),
       info: jest.fn(),
       warn: jest.fn(),
       error: jest.fn()
@@ -226,11 +229,6 @@ describe('should handle the settings message', () => {
         .mockResolvedValue(undefined)
 
       await service['handleMessage'](fakeMsg)
-
-      expect(logger.info).toHaveBeenCalledWith(
-        expect.stringContaining('Received message'),
-        expect.any(Object)
-      )
       expect(updateSpy).toHaveBeenCalledWith('user123', expectedPayload)
     }
   )

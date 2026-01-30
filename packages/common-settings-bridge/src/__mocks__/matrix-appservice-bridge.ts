@@ -7,10 +7,6 @@ export class Logger {
   info = jest.fn()
   warn = jest.fn()
   error = jest.fn()
-
-  constructor(name?: string) {
-    // Mock constructor
-  }
 }
 
 // Shared mock methods that all Bridge instances will use
@@ -47,10 +43,6 @@ export class Bridge {
   run = sharedBridgeMethods.run
   getBot = sharedBridgeMethods.getBot
   getIntent = sharedBridgeMethods.getIntent
-
-  constructor(config: any) {
-    // All instances share the same mock methods
-  }
 }
 
 export class Intent {
@@ -68,9 +60,7 @@ export class Intent {
       .fn()
       .mockResolvedValue('mxc://example.com/avatar123')
   }
-
-  constructor() {
-    // Return the shared mock intent instance
-    return mockIntent as any
-  }
 }
+
+// Export for direct use in tests that need the shared instance
+export { mockIntent }
