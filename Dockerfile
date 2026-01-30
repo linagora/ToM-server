@@ -1,5 +1,3 @@
-#syntax=docker/dockerfile:1.7
-#
 # =============================================================================
 # tom-server Dockerfile
 # Optimized multi-stage build
@@ -113,7 +111,6 @@ WORKDIR /usr/src/app
 
 # Copy production node_modules
 COPY --from=deps /usr/src/app/node_modules ./node_modules
-COPY --parents --from=deps /usr/src/app/packages/*/node_modules ./
 
 # Copy built artifacts
 COPY --from=builder /usr/src/app/packages/config-parser/dist ./packages/config-parser/dist
