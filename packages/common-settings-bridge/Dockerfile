@@ -1,3 +1,5 @@
+#syntax=docker/dockerfile:1.7
+#
 # =============================================================================
 # common-settings-bridge Dockerfile
 # Optimized multi-stage build

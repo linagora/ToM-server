@@ -21,12 +21,6 @@ inputs:
 runs:
   using: composite
   steps:
-    - name: Download dist artifacts
-      uses: actions/download-artifact@v4
-      with:
-        name: dist-artifacts
-        path: .
-
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v3
 
@@ -45,7 +39,7 @@ runs:
       shell: bash
 
     - name: Build and push Docker image
-      uses: docker/build-push-action@v5
+      uses: docker/build-push-action@v6
       with:
         context: ./
         file: ${{ inputs.dockerfile }}

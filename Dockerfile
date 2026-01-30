@@ -1,3 +1,5 @@
+#syntax=docker/dockerfile:1.7
+#
 # =============================================================================
 # tom-server Dockerfile
 # Optimized multi-stage build

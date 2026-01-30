@@ -17,7 +17,7 @@ jobs:
       skip-nx-cache: true
 
   publish-tom-server:
-    name: Publish tom-server
+    name: Publish ToM Server
     uses: ./.github/workflows/_docker-publish.yml
     with:
       app-name: tom-server
@@ -28,7 +28,7 @@ jobs:
       DOCKERHUB_PASSWORD: ${{ secrets.DOCKERHUB_PASSWORD }}
 
   publish-federated-identity-service:
-    name: Publish federated-identity-service
+    name: Publish ToM Federated Identity Service
     uses: ./.github/workflows/_docker-publish.yml
     with:
       app-name: federated-identity-service
@@ -38,12 +38,12 @@ jobs:
       DOCKERHUB_USER: ${{ secrets.DOCKERHUB_USER }}
       DOCKERHUB_PASSWORD: ${{ secrets.DOCKERHUB_PASSWORD }}
 
-  publish-twake-common-settings-bridge:
-    name: Publish common-settings-bridge
+  publish-tom-twp-cs-bridge:
+    name: Publish Twake Common Settings Bridge
     uses: ./.github/workflows/_docker-publish.yml
     with:
       app-name: common-settings-bridge
-      image-name: linagora/twake-common-settings-bridge
+      image-name: linagora/tom-twp-cs-bridge
       dockerfile: packages/common-settings-bridge/Dockerfile
     secrets:
       DOCKERHUB_USER: ${{ secrets.DOCKERHUB_USER }}
