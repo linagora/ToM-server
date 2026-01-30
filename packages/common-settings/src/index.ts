@@ -103,11 +103,20 @@ export class CommonSettingsService {
    * @throws Logs errors if message processing fails
    */
   private async handleMessage(rawMsg: any): Promise<void> {
-    // Log the raw message for debugging
     const rawContent = rawMsg.content.toString()
-    this.logger.info('[CommonSettingsService] Received message', {
-      raw: rawContent
-    })
+    // Log the raw message for debugging
+    if (
+      process.env.NODE_ENV === 'development' ||
+      process.env.LOG_RAW_MESSAGES === 'true'
+    ) {
+      this.logger.debug('[CommonSettingsService] Received message', {
+        raw: rawContent
+      })
+    } else {
+      this.logger.debug(
+        'Raw message content omitted (enable LOG_RAW_MESSAGES=true to view)'
+      )
+    }
 
     // Parse and validate message
     const parsed = this._safeParseMessage(rawContent)

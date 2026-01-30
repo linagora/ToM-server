@@ -8,6 +8,11 @@
 # -----------------------------------------------------------------------------
 FROM node:18.20.8-alpine AS builder
 
+# Update image and install build tools
+RUN apk update && apk upgrade && \
+    apk add --no-cache build-base python3 && \
+    rm -rf /var/cache/apk/*
+
 WORKDIR /usr/src/app
 
 # Copy root package files for workspace setup
@@ -52,6 +57,7 @@ COPY packages/matrix-identity-server/tsconfig.json packages/matrix-identity-serv
 COPY packages/tom-server/src ./packages/tom-server/src
 COPY packages/tom-server/tsconfig.json packages/tom-server/rollup.config.js ./packages/tom-server/
 COPY packages/tom-server/templates ./packages/tom-server/templates
+COPY packages/tom-server/static ./packages/tom-server/static
 
 COPY packages/amqp-connector/src ./packages/amqp-connector/src
 COPY packages/amqp-connector/tsconfig.json packages/amqp-connector/rollup.config.js ./packages/amqp-connector/
@@ -62,15 +68,15 @@ COPY packages/common-settings/tsconfig.json packages/common-settings/rollup.conf
 # Copy server entry point
 COPY server.mjs ./
 
-# Rebuild native modules and build all packages in dependency order (use build:lib for packages with examples)
+# Rebuild native modules and build all packages in dependency order
 RUN npm rebuild && \
     npm run build --workspace=@twake/config-parser && \
     npm run build --workspace=@twake/crypto && \
-    npm run build:lib --workspace=@twake/logger && \
+    npm run build --workspace=@twake/logger && \
     npm run build --workspace=@twake/utils && \
     npm run build --workspace=matrix-resolve && \
-    npm run build:lib --workspace=@twake/matrix-identity-server && \
-    npm run build:lib --workspace=@twake/server && \
+    npm run build --workspace=@twake/matrix-identity-server && \
+    npm run build --workspace=@twake/server && \
     npm run build --workspace=@twake/amqp-connector && \
     npm run build --workspace=@twake/common-settings
 
@@ -105,7 +111,6 @@ WORKDIR /usr/src/app
 
 # Copy production node_modules
 COPY --from=deps /usr/src/app/node_modules ./node_modules
-COPY --from=deps /usr/src/app/packages/*/node_modules ./packages/
 
 # Copy built artifacts
 COPY --from=builder /usr/src/app/packages/config-parser/dist ./packages/config-parser/dist
@@ -129,6 +134,7 @@ COPY --from=builder /usr/src/app/packages/matrix-identity-server/package.json ./
 COPY --from=builder /usr/src/app/packages/tom-server/dist ./packages/tom-server/dist
 COPY --from=builder /usr/src/app/packages/tom-server/package.json ./packages/tom-server/
 COPY --from=builder /usr/src/app/packages/tom-server/templates ./packages/tom-server/templates
+COPY --from=builder /usr/src/app/packages/tom-server/static ./packages/tom-server/static
 
 COPY --from=builder /usr/src/app/packages/amqp-connector/dist ./packages/amqp-connector/dist
 COPY --from=builder /usr/src/app/packages/amqp-connector/package.json ./packages/amqp-connector/

@@ -65,6 +65,7 @@
     "@types/js-yaml": "^4.0.5",
     "@types/ldapjs": "^2.2.5",
     "@types/lodash": "^4.14.197",
+    "@types/node": "^18.19.130",
     "@types/node-cron": "^3.0.7",
     "@types/nodemailer": "^6.4.7",
     "@types/pg": "^8.6.6",

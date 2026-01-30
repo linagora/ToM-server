@@ -8,6 +8,11 @@
 # -----------------------------------------------------------------------------
 FROM node:18.20.8-alpine AS builder
 
+# Update image and install build tools
+RUN apk update && apk upgrade && \
+    apk add --no-cache build-base python3 && \
+    rm -rf /var/cache/apk/*
+
 WORKDIR /usr/src/app
 
 # Copy root package files for workspace setup
@@ -52,15 +57,15 @@ COPY packages/federated-identity-service/src ./packages/federated-identity-servi
 COPY packages/federated-identity-service/tsconfig.json packages/federated-identity-service/rollup.config.js ./packages/federated-identity-service/
 COPY packages/federated-identity-service/server.mjs ./packages/federated-identity-service/
 
-# Rebuild native modules and build all packages in dependency order (use build:lib for packages with examples)
+# Rebuild native modules and build all packages in dependency order
 RUN npm rebuild && \
     npm run build --workspace=@twake/config-parser && \
     npm run build --workspace=@twake/crypto && \
-    npm run build:lib --workspace=@twake/logger && \
+    npm run build --workspace=@twake/logger && \
     npm run build --workspace=@twake/utils && \
     npm run build --workspace=matrix-resolve && \
-    npm run build:lib --workspace=@twake/matrix-identity-server && \
-    npm run build:lib --workspace=@twake/federated-identity-service
+    npm run build --workspace=@twake/matrix-identity-server && \
+    npm run build --workspace=@twake/federated-identity-service
 
 # -----------------------------------------------------------------------------
 # Stage 2: Production dependencies
@@ -91,7 +96,7 @@ WORKDIR /usr/src/app
 
 # Copy production node_modules
 COPY --from=deps /usr/src/app/node_modules ./node_modules
-COPY --from=deps /usr/src/app/packages/*/node_modules ./packages/
+COPY --from=deps /usr/src/app/packages/federated-identity-service/node_modules ./packages/federated-identity-service/node_modules
 
 # Copy built artifacts
 COPY --from=builder /usr/src/app/packages/config-parser/dist ./packages/config-parser/dist

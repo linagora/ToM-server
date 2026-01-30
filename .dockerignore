@@ -19,8 +19,18 @@
 !packages/**/rollup.config.js
 
 ## Allow source files
-!packages/**/src/*.ts
-!packages/**/src/**/*.ts
+!packages/amqp-connector/src/
+!packages/common-settings/src/
+!packages/common-settings-bridge/src/
+!packages/config-parser/src/
+!packages/crypto/src/
+!packages/db/src/
+!packages/federated-identity-service/src/
+!packages/logger/src/
+!packages/matrix-identity-server/src/
+!packages/matrix-resolve/src/
+!packages/tom-server/src/
+!packages/utils/src/
 
 ## Allow entry points
 !server.mjs
@@ -29,6 +39,7 @@
 ## Allow template files
 !packages/matrix-identity-server/templates
 !packages/tom-server/templates
+!packages/tom-server/static
 !packages/federated-identity-service/templates
 
 ## Allow default config files
@@ -36,3 +47,6 @@
 !packages/matrix-identity-server/src/config.json
 !packages/tom-server/src/config.json
 !packages/federated-identity-service/src/config.json
+
+## Allow handmade tools
+!packages/common-settings-bridge/tools/send-message.mjs

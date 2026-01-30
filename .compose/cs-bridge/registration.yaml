@@ -1,0 +1,29 @@
+# Common Settings Bridge - Synapse Application Service Registration
+# This file must be referenced in Synapse's homeserver.yaml app_service_config_files
+
+id: common-settings-bridge
+
+# URL is null because this bridge doesn't receive events from Synapse
+# It only pushes profile updates via RabbitMQ consumption
+url: null
+
+# Application Service token (bridge uses this to authenticate to Synapse)
+as_token: common_settings_bridge_as_token_change_in_production
+
+# Homeserver token (Synapse uses this to authenticate to bridge - unused since url is null)
+hs_token: common_settings_bridge_hs_token_change_in_production
+
+# The localpart of the bridge bot user
+sender_localpart: cs-bot
+
+# Namespace configuration
+namespaces:
+  # Can act on behalf of any user (non-exclusive means real users can still exist)
+  users:
+    - exclusive: false
+      regex: '@.*'
+  rooms: []
+  aliases: []
+
+# Don't rate limit the bridge
+rate_limited: false

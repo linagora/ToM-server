@@ -14,7 +14,7 @@ http:
       priority: 110
 
     tom-wellknown:
-      rule: "Host(`matrix.docker.internal`) && PathPrefix(`/.well-known/matrix/client`)"
+      rule: "(Host(`matrix.docker.internal`) || Host(`docker.internal`)) && PathPrefix(`/.well-known/matrix/client`)"
       entryPoints:
         - web
       service: tom-local
@@ -27,9 +27,9 @@ http:
       service: tom-local
       priority: 90
 
-    tom-matrix-client:
-      rule: "Host(`matrix.docker.internal`) && (PathPrefix(`/_matrix/client/v3/createRoom`) || PathPrefix(`/_matrix/client/v3/profile`))"
-      entryPoints:
-        - web
-      service: tom-local
-      priority: 80
+    # tom-matrix-client:
+    #   rule: "Host(`matrix.docker.internal`) && (PathPrefix(`/_matrix/client/v3/createRoom`) || PathPrefix(`/_matrix/client/v3/profile`))"
+    #   entryPoints:
+    #     - web
+    #   service: tom-local
+    #   priority: 80

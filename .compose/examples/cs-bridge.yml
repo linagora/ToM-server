@@ -1,8 +1,8 @@
-# Example with All Services Connected to PGSQL
+# Example with TWP Common Settings Bridge
 #
 # Prerequisites:
 # Add to /etc/hosts:
-#   127.0.0.1 docker.internal matrix.docker.internal tom.docker.internal fed.docker.internal smtp.docker.internal
+#   127.0.0.1 docker.internal smtp.docker.internal matrix.docker.internal tom.docker.internal fed.docker.internal
 
 services:
   traefik:
@@ -111,7 +111,8 @@ services:
       traefik: { condition: service_healthy }
     volumes:
       - ../synapse/.data:/data
-      - ../synapse/hs-config/pgsql.yaml:/data/homeserver.yaml:ro
+      - ../synapse/hs-config/cs-bridge.yaml:/data/homeserver.yaml:ro
+      - ../cs-bridge/registration.yaml:/data/cs-bridge-registration.yaml:ro
       - ../synapse/docker.internal.log.config:/data/docker.internal.log.config:ro
       - ../synapse/docker.internal.signing.key:/data/docker.internal.signing.key:ro
     labels:
@@ -128,6 +129,64 @@ services:
       timeout: 5s
       retries: 5
       start_period: 30s
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    ports:
+      - 5672:5672
+      - 15672:15672
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    healthcheck:
+      test: ['CMD-SHELL', 'rabbitmq-diagnostics -q ping || exit 1']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  common-settings-bridge:
+    image: linagora/twake-common-settings-bridge
+    build:
+      context: ../..
+      dockerfile: ./packages/common-settings-bridge/Dockerfile
+    depends_on:
+      synapse: { condition: service_healthy }
+      postgres: { condition: service_healthy }
+      rabbitmq: { condition: service_healthy }
+      tom: { condition: service_started }
+    volumes:
+      - common-settings-data:/data
+      - ../cs-bridge/config.yaml:/data/config.yaml:ro
+      - ../cs-bridge/registration.yaml:/data/registration.yaml:ro
+    environment:
+      - NODE_TLS_REJECT_UNAUTHORIZED=0
+      - REGISTRATION_FILE=/data/registration.yaml
+      - LOG_RAW_MESSAGES=true
+      - LOG_LEVEL=debug
+
+  send-message-tool:
+    build:
+      context: ../..
+      dockerfile: ./packages/common-settings-bridge/tools/Dockerfile
+    image: linagora/twake-common-settings-bridge-tool
+    container_name: send-message-tool
+    stdin_open: true
+    tty: true
+    depends_on:
+      rabbitmq: { condition: service_healthy }
+      common-settings-bridge: { condition: service_started }
+    environment:
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USERNAME=guest
+      - RABBITMQ_PASSWORD=guest
+      - RABBITMQ_VHOST=/
+      - RABBITMQ_TLS=false
+      - EXCHANGE_NAME=settings.exchange
+      - ROUTING_KEY=user.settings.updated
 
   tom:
     image: linagora/tom-server
@@ -219,7 +278,6 @@ services:
       dockerfile: ./packages/federated-identity-service/Dockerfile
     depends_on:
       postgres: { condition: service_healthy }
-      traefik: { condition: service_healthy }
     environment:
       - NODE_TLS_REJECT_UNAUTHORIZED=0
 
@@ -258,3 +316,5 @@ services:
 
 volumes:
   postgres-data:
+  common-settings-data:
+  rabbitmq-data:

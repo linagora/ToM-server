@@ -1,0 +1,32 @@
+{
+  "type": "module",
+  "name": "@twake/common-settings-bridge",
+  "version": "0.0.1",
+  "description": "Standalone service bridging RabbitMQ profile updates to Synapse via Application Service Protocol",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "rollup -c",
+    "watch": "rollup -c -w",
+    "test": "jest",
+    "start": "node dist/index.js"
+  },
+  "author": {
+    "name": "Pierre 'McFly' Marty",
+    "email": "pmarty@linagora.com"
+  },
+  "license": "AGPL-3.0-or-later",
+  "dependencies": {
+    "@twake/amqp-connector": "*",
+    "@twake/db": "*",
+    "@twake/logger": "*",
+    "matrix-appservice-bridge": "^9.0.1"
+  },
+  "engines": {
+    "node": "18.20.8",
+    "npm": "10.8.2"
+  },
+  "volta": {
+    "node": "18.20.8",
+    "npm": "10.8.2"
+  }
+}
