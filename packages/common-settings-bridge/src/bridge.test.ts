@@ -546,7 +546,7 @@ describe('CommonSettingsBridge', () => {
       )
     })
 
-    it('should handle complete orchestration flow for valid message', async () => {
+    it('should execute orchestration steps in correct order', async () => {
       mockUserSettings = {
         nickname: '@user:example.com',
         payload: {
@@ -568,50 +568,40 @@ describe('CommonSettingsBridge', () => {
       ;(isIdempotentDuplicate as jest.Mock).mockReturnValue(false)
       ;(shouldApplyUpdate as jest.Mock).mockReturnValue(true)
 
+      // Execute the handler once
       await handleMessageFn(mockMessage, mockChannel)
 
-      // Verify orchestration order
-      const callOrder: string[] = []
-      ;(parseMessage as jest.Mock).mockImplementation(() => {
-        callOrder.push('parseMessage')
-        return mockParsedMessage
-      })
-      ;(validateMessage as jest.Mock).mockImplementation(() => {
-        callOrder.push('validateMessage')
-        return mockValidatedMessage
-      })
-      mockSettingsRepo.getUserSettings.mockImplementation(async () => {
-        callOrder.push('getUserSettings')
-        return mockUserSettings
-      })
-      ;(isIdempotentDuplicate as jest.Mock).mockImplementation(() => {
-        callOrder.push('isIdempotentDuplicate')
-        return false
-      })
-      ;(shouldApplyUpdate as jest.Mock).mockImplementation(() => {
-        callOrder.push('shouldApplyUpdate')
-        return true
-      })
-      mockProfileUpdater.processChanges.mockImplementation(async () => {
-        callOrder.push('processChanges')
-      })
-      mockSettingsRepo.saveSettings.mockImplementation(async () => {
-        callOrder.push('saveSettings')
-      })
+      // Extract invocation order from each mock
+      const parseOrder = (parseMessage as jest.Mock).mock.invocationCallOrder[0]
+      const validateOrder = (validateMessage as jest.Mock).mock
+        .invocationCallOrder[0]
+      const getSettingsOrder =
+        mockSettingsRepo.getUserSettings.mock.invocationCallOrder[0]
+      const isIdempotentOrder = (isIdempotentDuplicate as jest.Mock).mock
+        .invocationCallOrder[0]
+      const shouldApplyOrder = (shouldApplyUpdate as jest.Mock).mock
+        .invocationCallOrder[0]
+      const processChangesOrder =
+        mockProfileUpdater.processChanges.mock.invocationCallOrder[0]
+      const saveSettingsOrder =
+        mockSettingsRepo.saveSettings.mock.invocationCallOrder[0]
 
-      // Clear and re-run
-      jest.clearAllMocks()
-      callOrder.length = 0
-      await handleMessageFn(mockMessage, mockChannel)
+      // Verify all functions were called
+      expect(parseOrder).toBeDefined()
+      expect(validateOrder).toBeDefined()
+      expect(getSettingsOrder).toBeDefined()
+      expect(isIdempotentOrder).toBeDefined()
+      expect(shouldApplyOrder).toBeDefined()
+      expect(processChangesOrder).toBeDefined()
+      expect(saveSettingsOrder).toBeDefined()
 
-      // Verify all steps executed
-      expect(parseMessage).toHaveBeenCalled()
-      expect(validateMessage).toHaveBeenCalled()
-      expect(mockSettingsRepo.getUserSettings).toHaveBeenCalled()
-      expect(isIdempotentDuplicate).toHaveBeenCalled()
-      expect(shouldApplyUpdate).toHaveBeenCalled()
-      expect(mockProfileUpdater.processChanges).toHaveBeenCalled()
-      expect(mockSettingsRepo.saveSettings).toHaveBeenCalled()
+      // Verify correct execution order
+      expect(parseOrder).toBeLessThan(validateOrder)
+      expect(validateOrder).toBeLessThan(getSettingsOrder)
+      expect(getSettingsOrder).toBeLessThan(isIdempotentOrder)
+      expect(isIdempotentOrder).toBeLessThan(shouldApplyOrder)
+      expect(shouldApplyOrder).toBeLessThan(processChangesOrder)
+      expect(processChangesOrder).toBeLessThan(saveSettingsOrder)
     })
   })
 })
