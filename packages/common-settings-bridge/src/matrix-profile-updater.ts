@@ -167,10 +167,17 @@ export class MatrixProfileUpdater {
     )
 
     const controller = new AbortController()
-    const timeout = setTimeout(
-      () => controller.abort(),
-      this.avatarConfig.fetchTimeoutMs
+    // Validate and sanitize timeout value to prevent DoS attacks
+    // Ensures timeout is a positive finite number within reasonable bounds
+    const timeoutMs = Math.max(
+      1000, // Minimum 1 second
+      Math.min(
+        60_000, // Maximum 60 seconds
+        Number(this.avatarConfig.fetchTimeoutMs) ||
+          DEFAULT_AVATAR_FETCH_TIMEOUT_MS
+      )
     )
+    const timeout = setTimeout(() => controller.abort(), timeoutMs)
 
     try {
       const response = await fetch(avatarUrl, { signal: controller.signal })
@@ -221,7 +228,7 @@ export class MatrixProfileUpdater {
 
       if (error instanceof Error && error.name === 'AbortError') {
         const timeoutError = new AvatarFetchError(
-          `Avatar fetch timed out after ${this.avatarConfig.fetchTimeoutMs}ms`
+          `Avatar fetch timed out after ${timeoutMs}ms`
         )
         this.logger.error(
           `Failed to download avatar for ${userId} from ${avatarUrl}: ${timeoutError.message}`
