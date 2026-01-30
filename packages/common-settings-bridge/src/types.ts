@@ -78,6 +78,10 @@ export interface DatabaseConfig {
  */
 export interface SynapseConfig {
   readonly adminRetryMode: 'disabled' | 'fallback' | 'exclusive'
+  /** Maximum avatar file size in bytes. Default: 5MB (5242880) */
+  readonly avatarMaxSizeBytes?: number
+  /** Timeout for fetching external avatar URLs in milliseconds. Default: 10000 (10s) */
+  readonly avatarFetchTimeoutMs?: number
 }
 
 /**

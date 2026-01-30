@@ -9,7 +9,12 @@ import {
   type UserSettingsTableName
 } from './types'
 import { SettingsRepository } from './settings-repository'
-import { MatrixProfileUpdater, type MatrixApis } from './matrix-profile-updater'
+import {
+  DEFAULT_AVATAR_FETCH_TIMEOUT_MS,
+  DEFAULT_MAX_AVATAR_BYTES,
+  MatrixProfileUpdater,
+  type MatrixApis
+} from './matrix-profile-updater'
 import { ParsedMessage, parseMessage, validateMessage } from './message-handler'
 import {
   shouldApplyUpdate,
@@ -372,7 +377,14 @@ export class CommonSettingsBridge {
       this.#profileUpdater = new MatrixProfileUpdater(
         matrixApis,
         retryMode,
-        this.#log
+        this.#log,
+        {
+          maxSizeBytes:
+            this.#config.synapse.avatarMaxSizeBytes ?? DEFAULT_MAX_AVATAR_BYTES,
+          fetchTimeoutMs:
+            this.#config.synapse.avatarFetchTimeoutMs ??
+            DEFAULT_AVATAR_FETCH_TIMEOUT_MS
+        }
       )
 
       this.#log.info('Building AMQP connector...')

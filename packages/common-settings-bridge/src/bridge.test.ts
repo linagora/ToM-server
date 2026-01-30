@@ -248,7 +248,11 @@ describe('CommonSettingsBridge', () => {
           adminUpsertUser: expect.any(Function)
         }),
         SynapseAdminRetryMode.FALLBACK,
-        expect.any(Object)
+        expect.any(Object),
+        expect.objectContaining({
+          maxSizeBytes: expect.any(Number),
+          fetchTimeoutMs: expect.any(Number)
+        })
       )
     })
 

@@ -8,6 +8,9 @@ registrationPath: "/data/registration.yaml"
 # Controls retry behavior for admin operations
 synapse:
   adminRetryMode: "exclusive"
+  # Avatar upload settings (optional, shown with defaults)
+  # avatarMaxSizeBytes: 5242880      # 5MB
+  # avatarFetchTimeoutMs: 10000      # 10 seconds
 
 # Database Configuration
 # PostgreSQL connection details for storing application state and settings

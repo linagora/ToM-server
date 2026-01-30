@@ -3,16 +3,24 @@ import { SynapseAdminRetryMode, type SettingsPayload } from './types'
 import { AvatarFetchError } from './errors'
 
 /**
- * Maximum allowed avatar file size (5MB).
+ * Default maximum allowed avatar file size (5MB).
  * Prevents memory exhaustion from malicious or oversized external URLs.
  */
-const MAX_AVATAR_BYTES = 5 * 1024 * 1024
+export const DEFAULT_MAX_AVATAR_BYTES = 5 * 1024 * 1024
 
 /**
- * Timeout for fetching external avatar URLs (10 seconds).
+ * Default timeout for fetching external avatar URLs (10 seconds).
  * Prevents indefinite hangs on slow or unresponsive servers.
  */
-const AVATAR_FETCH_TIMEOUT_MS = 10_000
+export const DEFAULT_AVATAR_FETCH_TIMEOUT_MS = 10_000
+
+/**
+ * Configuration for avatar upload behavior.
+ */
+export interface AvatarConfig {
+  readonly maxSizeBytes: number
+  readonly fetchTimeoutMs: number
+}
 
 /**
  * Interface for Matrix API operations required by the profile updater.
@@ -47,7 +55,11 @@ export class MatrixProfileUpdater {
   constructor(
     private readonly apis: MatrixApis,
     private readonly retryMode: SynapseAdminRetryMode,
-    private readonly logger: Logger
+    private readonly logger: Logger,
+    private readonly avatarConfig: AvatarConfig = {
+      maxSizeBytes: DEFAULT_MAX_AVATAR_BYTES,
+      fetchTimeoutMs: DEFAULT_AVATAR_FETCH_TIMEOUT_MS
+    }
   ) {}
 
   /**
@@ -157,7 +169,7 @@ export class MatrixProfileUpdater {
     const controller = new AbortController()
     const timeout = setTimeout(
       () => controller.abort(),
-      AVATAR_FETCH_TIMEOUT_MS
+      this.avatarConfig.fetchTimeoutMs
     )
 
     try {
@@ -172,9 +184,9 @@ export class MatrixProfileUpdater {
 
       // Pre-check content-length header if available
       const contentLength = Number(response.headers.get('content-length') || 0)
-      if (contentLength > MAX_AVATAR_BYTES) {
+      if (contentLength > this.avatarConfig.maxSizeBytes) {
         throw new AvatarFetchError(
-          `Avatar too large: ${contentLength} bytes (max ${MAX_AVATAR_BYTES})`
+          `Avatar too large: ${contentLength} bytes (max ${this.avatarConfig.maxSizeBytes})`
         )
       }
 
@@ -184,9 +196,9 @@ export class MatrixProfileUpdater {
       const arrayBuffer = await response.arrayBuffer()
       const buffer = Buffer.from(arrayBuffer)
 
-      if (buffer.length > MAX_AVATAR_BYTES) {
+      if (buffer.length > this.avatarConfig.maxSizeBytes) {
         throw new AvatarFetchError(
-          `Avatar too large: ${buffer.length} bytes (max ${MAX_AVATAR_BYTES})`
+          `Avatar too large: ${buffer.length} bytes (max ${this.avatarConfig.maxSizeBytes})`
         )
       }
 
@@ -209,7 +221,7 @@ export class MatrixProfileUpdater {
 
       if (error instanceof Error && error.name === 'AbortError') {
         const timeoutError = new AvatarFetchError(
-          `Avatar fetch timed out after ${AVATAR_FETCH_TIMEOUT_MS}ms`
+          `Avatar fetch timed out after ${this.avatarConfig.fetchTimeoutMs}ms`
         )
         this.logger.error(
           `Failed to download avatar for ${userId} from ${avatarUrl}: ${timeoutError.message}`

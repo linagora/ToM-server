@@ -48,7 +48,11 @@ describe('MatrixProfileUpdater', () => {
         updater = new MatrixProfileUpdater(
           mockApis,
           SynapseAdminRetryMode.DISABLED,
-          mockLogger
+          mockLogger,
+          {
+            maxSizeBytes: 5 * 1024 * 1024,
+            fetchTimeoutMs: 10_000
+          }
         )
       })
 
@@ -138,7 +142,11 @@ describe('MatrixProfileUpdater', () => {
         updater = new MatrixProfileUpdater(
           mockApis,
           SynapseAdminRetryMode.FALLBACK,
-          mockLogger
+          mockLogger,
+          {
+            maxSizeBytes: 5 * 1024 * 1024,
+            fetchTimeoutMs: 10_000
+          }
         )
       })
 
@@ -198,7 +206,11 @@ describe('MatrixProfileUpdater', () => {
         updater = new MatrixProfileUpdater(
           mockApis,
           SynapseAdminRetryMode.DISABLED,
-          mockLogger
+          mockLogger,
+          {
+            maxSizeBytes: 5 * 1024 * 1024,
+            fetchTimeoutMs: 10_000
+          }
         )
       })
 
@@ -223,7 +235,11 @@ describe('MatrixProfileUpdater', () => {
         updater = new MatrixProfileUpdater(
           mockApis,
           SynapseAdminRetryMode.DISABLED,
-          mockLogger
+          mockLogger,
+          {
+            maxSizeBytes: 5 * 1024 * 1024,
+            fetchTimeoutMs: 10_000
+          }
         )
       })
 
@@ -410,7 +426,11 @@ describe('MatrixProfileUpdater', () => {
         updater = new MatrixProfileUpdater(
           mockApis,
           SynapseAdminRetryMode.DISABLED,
-          mockLogger
+          mockLogger,
+          {
+            maxSizeBytes: 5 * 1024 * 1024,
+            fetchTimeoutMs: 10_000
+          }
         )
       })
 
@@ -444,7 +464,11 @@ describe('MatrixProfileUpdater', () => {
         updater = new MatrixProfileUpdater(
           mockApis,
           SynapseAdminRetryMode.EXCLUSIVE,
-          mockLogger
+          mockLogger,
+          {
+            maxSizeBytes: 5 * 1024 * 1024,
+            fetchTimeoutMs: 10_000
+          }
         )
       })
 
@@ -469,7 +493,11 @@ describe('MatrixProfileUpdater', () => {
         updater = new MatrixProfileUpdater(
           mockApis,
           SynapseAdminRetryMode.FALLBACK,
-          mockLogger
+          mockLogger,
+          {
+            maxSizeBytes: 5 * 1024 * 1024,
+            fetchTimeoutMs: 10_000
+          }
         )
       })
 
@@ -512,7 +540,11 @@ describe('MatrixProfileUpdater', () => {
       updater = new MatrixProfileUpdater(
         mockApis,
         SynapseAdminRetryMode.DISABLED,
-        mockLogger
+        mockLogger,
+        {
+          maxSizeBytes: 5 * 1024 * 1024,
+          fetchTimeoutMs: 10_000
+        }
       )
       mockIntent.setDisplayName.mockResolvedValue(undefined)
       mockIntent.setAvatarUrl.mockResolvedValue(undefined)
