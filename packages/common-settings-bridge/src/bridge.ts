@@ -79,11 +79,12 @@ export class CommonSettingsBridge {
       database_name: this.#config.database.name,
       database_user: this.#config.database.user,
       database_password: this.#config.database.password,
-      database_vacuum_delay: 3600
+      database_ssl: this.#config.database.ssl ?? false,
+      database_vacuum_delay: this.#config.database.vacuumDelay ?? 3600
     }
 
     this.#log.debug(
-      `Database config: engine=${dbConfig.database_engine}, host=${dbConfig.database_host}, name=${dbConfig.database_name}, user=${dbConfig.database_user}`
+      `Database config: engine=${dbConfig.database_engine}, host=${dbConfig.database_host}, name=${dbConfig.database_name}, user=${dbConfig.database_user}, ssl=${dbConfig.database_ssl}, vacuumDelay=${dbConfig.database_vacuum_delay}s`
     )
 
     const consoleLogger = {
