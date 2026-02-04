@@ -20,6 +20,8 @@ database:
   name: 'tom_db'
   user: 'twake'
   password: 'twake_password'
+  ssl: false
+  vacuumDelay: 3600 # 1 hour in seconds
 
 # RabbitMQ Configuration
 # Message queue setup for publishing and consuming settings update events
