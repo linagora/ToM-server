@@ -65,8 +65,10 @@ FROM node:18.20.8-slim AS deps
 
 WORKDIR /usr/src/app
 
-# Copy package files
+# Copy root package files for workspace setup
 COPY package.json package-lock.json lerna.json ./
+
+# Copy only required workspace package.json files first (for better caching)
 COPY packages/config-parser/package.json ./packages/config-parser/
 COPY packages/logger/package.json ./packages/logger/
 COPY packages/amqp-connector/package.json ./packages/amqp-connector/
