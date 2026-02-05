@@ -19,9 +19,7 @@ sender_localpart: cs-bot
 # Namespace configuration
 namespaces:
   # Can act on behalf of any user (non-exclusive means real users can still exist)
-  users:
-    - exclusive: false
-      regex: '@.*'
+  users: []
   rooms: []
   aliases: []
 

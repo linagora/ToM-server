@@ -7,7 +7,7 @@ registrationPath: "/data/registration.yaml"
 # Synapse-specific settings
 # Controls retry behavior for admin operations
 synapse:
-  adminRetryMode: "exclusive"
+  adminRetryMode: "fallback"
   # Avatar upload settings (optional, shown with defaults)
   # avatarMaxSizeBytes: 5242880      # 5MB
   # avatarFetchTimeoutMs: 10000      # 10 seconds
