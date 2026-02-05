@@ -15,16 +15,16 @@ export enum SynapseAdminRetryMode {
  * Represents user profile and settings data that can be synchronized
  * across services via the common-settings bridge.
  */
-export interface SettingsPayload {
-  readonly language: string
-  readonly timezone: string
-  readonly avatar: string
-  readonly last_name: string
-  readonly first_name: string
-  readonly email: string
-  readonly phone: string
+export interface ISettingsPayload {
+  readonly language?: string
+  readonly timezone?: string
+  readonly avatar?: string
+  readonly last_name?: string
+  readonly first_name?: string
+  readonly email?: string
+  readonly phone?: string
   readonly matrix_id: string
-  readonly display_name: string
+  readonly display_name?: string
 }
 
 /**
@@ -36,7 +36,7 @@ export interface CommonSettingsMessage {
   readonly request_id: string
   readonly timestamp: number
   readonly version: number
-  readonly payload: SettingsPayload
+  readonly payload: ISettingsPayload
 }
 
 /**
@@ -50,7 +50,7 @@ export interface StoredUserSettings {
   readonly request_id: string
   readonly timestamp: number
   readonly version: number
-  readonly payload: SettingsPayload
+  readonly payload: ISettingsPayload
 }
 
 /**

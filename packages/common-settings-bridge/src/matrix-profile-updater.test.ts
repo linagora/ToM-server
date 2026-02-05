@@ -1,5 +1,5 @@
 import { MatrixProfileUpdater, type MatrixApis } from './matrix-profile-updater'
-import { SynapseAdminRetryMode, type SettingsPayload } from './types'
+import { SynapseAdminRetryMode, type ISettingsPayload } from './types'
 import { type Logger, type Intent } from 'matrix-appservice-bridge'
 
 describe('MatrixProfileUpdater', () => {
@@ -627,8 +627,8 @@ describe('MatrixProfileUpdater', () => {
     })
 
     const createPayload = (
-      overrides?: Partial<SettingsPayload>
-    ): SettingsPayload => ({
+      overrides?: Partial<ISettingsPayload>
+    ): ISettingsPayload => ({
       language: 'en',
       timezone: 'UTC',
       avatar: 'mxc://example.com/avatar',

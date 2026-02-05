@@ -21,7 +21,7 @@ import {
   UserIdNotProvidedError,
   type StoredUserSettings,
   type CommonSettingsMessage,
-  type SettingsPayload
+  type ISettingsPayload
 } from './types'
 
 // =============================================================================
@@ -37,7 +37,7 @@ interface ParsedMessage {
   timestamp: number
   requestId: string
   source: string
-  payload: SettingsPayload
+  payload: ISettingsPayload
 }
 
 /**

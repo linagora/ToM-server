@@ -1,10 +1,171 @@
-import { Database } from '@twake/db'
+import { Database, DbGetResult } from '@twake/db'
 import { Logger } from 'matrix-appservice-bridge'
 import {
-  StoredUserSettings,
   UserSettingsTableName,
-  SettingsPayload
+  ISettingsPayload,
+  StoredUserSettings
 } from './types'
+import { formatTimestamp } from './bridge'
+
+export class SettingsPayload implements ISettingsPayload {
+  readonly #language?: string
+  readonly #timezone?: string
+  readonly #avatar?: string
+  readonly #last_name?: string
+  readonly #first_name?: string
+  readonly #email?: string
+  readonly #phone?: string
+  readonly #matrix_id: string
+  readonly #display_name?: string
+
+  constructor(jsonString: string) {
+    const data = SettingsPayload.#parseJSON(jsonString)
+
+    /* Validate required field */
+    if (typeof data.matrix_id !== 'string' || data.matrix_id.length === 0) {
+      throw new Error('matrix_id is required and must be a non-empty string')
+    }
+
+    this.#matrix_id = data.matrix_id
+
+    /* Parse optional string fields */
+    this.#language = SettingsPayload.#validateOptionalString(
+      data.language,
+      'language'
+    )
+    this.#timezone = SettingsPayload.#validateOptionalString(
+      data.timezone,
+      'timezone'
+    )
+    this.#avatar = SettingsPayload.#validateOptionalString(
+      data.avatar,
+      'avatar'
+    )
+    this.#last_name = SettingsPayload.#validateOptionalString(
+      data.last_name,
+      'last_name'
+    )
+    this.#first_name = SettingsPayload.#validateOptionalString(
+      data.first_name,
+      'first_name'
+    )
+    this.#email = SettingsPayload.#validateOptionalString(data.email, 'email')
+    this.#phone = SettingsPayload.#validateOptionalString(data.phone, 'phone')
+    this.#display_name = SettingsPayload.#validateOptionalString(
+      data.display_name,
+      'display_name'
+    )
+  }
+
+  /* Parse and validate JSON string */
+  static #parseJSON(jsonString: string): Record<string, unknown> {
+    let parsed: unknown
+
+    try {
+      parsed = JSON.parse(jsonString)
+    } catch (err) {
+      throw new Error(
+        `Invalid JSON string: ${
+          err instanceof Error ? err.message : String(err)
+        }`
+      )
+    }
+
+    if (!parsed || typeof parsed !== 'object') {
+      throw new Error('Parsed JSON must be an object')
+    }
+
+    return parsed as Record<string, unknown>
+  }
+
+  /* Validate optional string field */
+  static #validateOptionalString(
+    value: unknown,
+    fieldName: string
+  ): string | undefined {
+    if (value === undefined) {
+      return undefined
+    }
+
+    if (typeof value !== 'string') {
+      throw new Error(`${fieldName} must be a string`)
+    }
+
+    return value
+  }
+
+  /* Getters for all fields */
+  get language(): string | undefined {
+    return this.#language
+  }
+
+  get timezone(): string | undefined {
+    return this.#timezone
+  }
+
+  get avatar(): string | undefined {
+    return this.#avatar
+  }
+
+  get last_name(): string | undefined {
+    return this.#last_name
+  }
+
+  get first_name(): string | undefined {
+    return this.#first_name
+  }
+
+  get email(): string | undefined {
+    return this.#email
+  }
+
+  get phone(): string | undefined {
+    return this.#phone
+  }
+
+  get matrix_id(): string {
+    return this.#matrix_id
+  }
+
+  get display_name(): string | undefined {
+    return this.#display_name
+  }
+
+  /* Create instance from plain object */
+  static fromObject(obj: ISettingsPayload): ISettingsPayload {
+    return new SettingsPayload(JSON.stringify(obj))
+  }
+
+  /* Serialize back to JSON */
+  toJSON(): string {
+    return JSON.stringify({
+      matrix_id: this.#matrix_id,
+      ...(this.#language && { language: this.#language }),
+      ...(this.#timezone && { timezone: this.#timezone }),
+      ...(this.#avatar && { avatar: this.#avatar }),
+      ...(this.#last_name && { last_name: this.#last_name }),
+      ...(this.#first_name && { first_name: this.#first_name }),
+      ...(this.#email && { email: this.#email }),
+      ...(this.#phone && { phone: this.#phone }),
+      ...(this.#display_name && { display_name: this.#display_name })
+    })
+  }
+
+  /* Get plain object representation */
+  toObject(): ISettingsPayload {
+    return {
+      matrix_id: this.#matrix_id,
+      ...(this.#language && { language: this.#language }),
+      ...(this.#timezone && { timezone: this.#timezone }),
+      ...(this.#avatar && { avatar: this.#avatar }),
+      ...(this.#last_name && { last_name: this.#last_name }),
+      ...(this.#first_name && { first_name: this.#first_name }),
+      ...(this.#email && { email: this.#email }),
+      ...(this.#phone && { phone: this.#phone }),
+      ...(this.#display_name && { display_name: this.#display_name })
+    }
+  }
+}
 
 /**
  * Repository for managing user settings persistence in the database.
@@ -37,7 +198,7 @@ export class SettingsRepository {
     this.#logger.debug(`Looking up user settings for ${userId}`)
 
     try {
-      const result = await this.#db.get(
+      const result: DbGetResult = await this.#db.get(
         'usersettings',
         ['matrix_id', 'settings', 'version', 'timestamp', 'request_id'],
         { matrix_id: userId }
@@ -48,8 +209,10 @@ export class SettingsRepository {
         return null
       }
 
-      const dbRow = result[0] as Record<string, unknown>
-      const parsedSettings = this.#safeParsePayload(dbRow.settings)
+      const dbRow: Record<string, unknown> = result[0]
+      const parsedSettings = this.#safeParsePayload(
+        JSON.stringify(dbRow.settings)
+      )
 
       if (parsedSettings === null) {
         this.#logger.warn(
@@ -59,14 +222,18 @@ export class SettingsRepository {
       }
 
       this.#logger.debug(
-        `Found existing settings for ${userId}: version=${dbRow.version}, timestamp=${dbRow.timestamp}, request_id=${dbRow.request_id}`
+        `Found existing settings for ${userId}: version=${
+          dbRow.version
+        }, timestamp=${formatTimestamp(
+          parseInt(dbRow.timestamp as string, 10)
+        )}, request_id=${dbRow.request_id}`
       )
 
       return {
         nickname: dbRow.matrix_id as string,
         payload: parsedSettings,
         version: dbRow.version as number,
-        timestamp: dbRow.timestamp as number,
+        timestamp: parseInt(dbRow.timestamp as string, 10),
         request_id: dbRow.request_id as string
       }
     } catch (error) {
@@ -93,7 +260,7 @@ export class SettingsRepository {
    */
   async saveSettings(
     userId: string,
-    payload: SettingsPayload,
+    payload: ISettingsPayload,
     version: number,
     timestamp: number,
     requestId: string,
@@ -165,28 +332,19 @@ export class SettingsRepository {
    * Handles both JSON strings (sqlite) and objects (PostgreSQL jsonb).
    *
    * @param raw - The raw value from database (string or object)
-   * @returns The parsed SettingsPayload or null if parsing failed
+   * @returns The parsed ISettingsPayload or null if parsing failed
    */
-  #safeParsePayload(raw: unknown): SettingsPayload | null {
-    // PostgreSQL jsonb returns objects directly
-    if (typeof raw === 'object' && raw !== null) {
-      return raw as SettingsPayload
+  #safeParsePayload(raw: string): ISettingsPayload | null {
+    try {
+      this.#logger.debug(`Parsing settings payload from database: ${raw}`)
+      return new SettingsPayload(raw).toObject()
+    } catch (error) {
+      this.#logger.warn(
+        `Failed to parse settings payload from database: ${
+          error instanceof Error ? error.message : 'Unknown error'
+        }`
+      )
+      return null
     }
-
-    // SQLite or string-based storage
-    if (typeof raw === 'string') {
-      try {
-        return JSON.parse(raw) as SettingsPayload
-      } catch (error) {
-        this.#logger.warn(
-          `Failed to parse settings payload from database: ${
-            error instanceof Error ? error.message : 'Unknown error'
-          }`
-        )
-        return null
-      }
-    }
-
-    return null
   }
 }

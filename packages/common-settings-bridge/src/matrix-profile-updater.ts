@@ -1,5 +1,5 @@
 import { type Logger, type Intent } from 'matrix-appservice-bridge'
-import { SynapseAdminRetryMode, type SettingsPayload } from './types'
+import { SynapseAdminRetryMode, type ISettingsPayload } from './types'
 import { AvatarFetchError } from './types'
 
 /**
@@ -403,8 +403,8 @@ export class MatrixProfileUpdater {
    */
   async processChanges(
     userId: string,
-    oldPayload: SettingsPayload | null,
-    newPayload: SettingsPayload
+    oldPayload: ISettingsPayload | null,
+    newPayload: ISettingsPayload
   ): Promise<void> {
     this.logger.debug(`Processing changes for ${userId}`)
 
