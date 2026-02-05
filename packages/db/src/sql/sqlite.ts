@@ -5,7 +5,9 @@ import {
   type DatabaseConfig,
   type DbGetResult,
   type DbBackend,
-  type ISQLCondition
+  type ISQLCondition,
+  type ColumnDefinition,
+  type ColumnInfo
 } from '../types'
 import createTables from './_createTables'
 import SQL from './sql'
@@ -1111,6 +1113,125 @@ class SQLite<T extends string> extends SQL<T> implements DbBackend<T> {
           }
         })
       }
+    })
+  }
+
+  getTableColumns(table: T): Promise<ColumnInfo[]> {
+    return new Promise((resolve, reject) => {
+      if (this.db == null) {
+        this.logger.error('[SQLite][getTableColumns] DB not ready', { table })
+        reject(new Error('DB not ready'))
+        return
+      }
+      const query = `PRAGMA table_info(${table})`
+      this.logger.debug('[SQLite][getTableColumns] Executing', { table, query })
+      this.db.all(
+        query,
+        (
+          err: Error | null,
+          rows: Array<{
+            cid: number
+            name: string
+            type: string
+            notnull: number
+            dflt_value: string | null
+            pk: number
+          }>
+        ) => {
+          if (err) {
+            this.logger.error('[SQLite][getTableColumns] Failed', {
+              table,
+              query,
+              error: err
+            })
+            reject(err)
+          } else {
+            const columns: ColumnInfo[] = rows.map((row) => ({
+              name: row.name,
+              type: row.type,
+              defaultValue: row.dflt_value
+            }))
+            this.logger.debug('[SQLite][getTableColumns] Successful', {
+              table,
+              columnCount: columns.length
+            })
+            resolve(columns)
+          }
+        }
+      )
+    })
+  }
+
+  addColumn(table: T, column: ColumnDefinition): Promise<void> {
+    return new Promise((resolve, reject) => {
+      if (this.db == null) {
+        this.logger.error('[SQLite][addColumn] DB not ready', { table, column })
+        reject(new Error('DB not ready'))
+        return
+      }
+      let query = `ALTER TABLE ${table} ADD COLUMN ${column.name} ${column.type}`
+      if (column.default !== undefined) {
+        const defaultVal =
+          column.default === null
+            ? 'NULL'
+            : typeof column.default === 'string'
+            ? `'${column.default}'`
+            : column.default
+        query += ` DEFAULT ${defaultVal}`
+      }
+      this.logger.debug('[SQLite][addColumn] Executing', {
+        table,
+        column,
+        query
+      })
+      this.db.run(query, (err) => {
+        if (err) {
+          this.logger.error('[SQLite][addColumn] Failed', {
+            table,
+            column,
+            query,
+            error: err
+          })
+          reject(err)
+        } else {
+          this.logger.info('[SQLite][addColumn] Column added successfully', {
+            table,
+            column: column.name
+          })
+          resolve()
+        }
+      })
+    })
+  }
+
+  ensureColumns(table: T, columns: ColumnDefinition[]): Promise<void> {
+    return this.getTableColumns(table).then((existingColumns) => {
+      const existingNames = new Set(
+        existingColumns.map((c) => c.name.toLowerCase())
+      )
+      const missingColumns = columns.filter(
+        (col) => !existingNames.has(col.name.toLowerCase())
+      )
+      if (missingColumns.length === 0) {
+        this.logger.debug('[SQLite][ensureColumns] All columns exist', {
+          table
+        })
+        return Promise.resolve()
+      }
+      this.logger.info('[SQLite][ensureColumns] Adding missing columns', {
+        table,
+        columns: missingColumns.map((c) => c.name)
+      })
+      return missingColumns
+        .reduce<Promise<void>>(
+          (promise, col) => promise.then(() => this.addColumn(table, col)),
+          Promise.resolve()
+        )
+        .then(() => {
+          this.logger.info('[SQLite][ensureColumns] All columns ensured', {
+            table
+          })
+        })
     })
   }
 

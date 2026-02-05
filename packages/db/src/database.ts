@@ -3,7 +3,9 @@ import {
   type DatabaseConfig,
   type DbGetResult,
   type DbBackend,
-  type ISQLCondition
+  type ISQLCondition,
+  type ColumnDefinition,
+  type ColumnInfo
 } from './types'
 import Pg from './sql/pg'
 import SQLite from './sql/sqlite'
@@ -299,6 +301,21 @@ class Database<T extends string> implements DbBackend<T> {
     conditions: ISQLCondition | ISQLCondition[]
   ): Promise<void> {
     return this.db.deleteWhere(table, conditions)
+  }
+
+  // eslint-disable-next-line @typescript-eslint/promise-function-async
+  getTableColumns(table: T): Promise<ColumnInfo[]> {
+    return this.db.getTableColumns(table)
+  }
+
+  // eslint-disable-next-line @typescript-eslint/promise-function-async
+  addColumn(table: T, column: ColumnDefinition): Promise<void> {
+    return this.db.addColumn(table, column)
+  }
+
+  // eslint-disable-next-line @typescript-eslint/promise-function-async
+  ensureColumns(table: T, columns: ColumnDefinition[]): Promise<void> {
+    return this.db.ensureColumns(table, columns)
   }
 
   close(): void {

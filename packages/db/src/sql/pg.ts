@@ -7,7 +7,9 @@ import {
   type DatabaseConfig,
   type DbGetResult,
   type DbBackend,
-  type ISQLCondition
+  type ISQLCondition,
+  type ColumnDefinition,
+  type ColumnInfo
 } from '../types'
 import createTables from './_createTables'
 import SQL from './sql'
@@ -1090,6 +1092,109 @@ class Pg<T extends string> extends SQL<T> implements DbBackend<T> {
           }
         )
       }
+    })
+  }
+
+  getTableColumns(table: T): Promise<ColumnInfo[]> {
+    return new Promise((resolve, reject) => {
+      if (this.db == null) {
+        this.logger.error('[Pg][getTableColumns] DB not ready', { table })
+        reject(new Error('DB not ready'))
+        return
+      }
+      const query = `
+        SELECT column_name, data_type, column_default
+        FROM information_schema.columns
+        WHERE table_name = $1
+      `
+      this.logger.debug('[Pg][getTableColumns] Executing', { table, query })
+      this.db.query(query, [table.toLowerCase()], (err, result) => {
+        if (err) {
+          this.logger.error('[Pg][getTableColumns] Failed', {
+            table,
+            query,
+            error: err
+          })
+          reject(err)
+        } else {
+          const columns: ColumnInfo[] = result.rows.map((row) => ({
+            name: row.column_name,
+            type: row.data_type,
+            defaultValue: row.column_default
+          }))
+          this.logger.debug('[Pg][getTableColumns] Successful', {
+            table,
+            columnCount: columns.length
+          })
+          resolve(columns)
+        }
+      })
+    })
+  }
+
+  addColumn(table: T, column: ColumnDefinition): Promise<void> {
+    return new Promise((resolve, reject) => {
+      if (this.db == null) {
+        this.logger.error('[Pg][addColumn] DB not ready', { table, column })
+        reject(new Error('DB not ready'))
+        return
+      }
+      let query = `ALTER TABLE ${table} ADD COLUMN ${column.name} ${column.type}`
+      if (column.default !== undefined) {
+        const defaultVal =
+          column.default === null
+            ? 'NULL'
+            : typeof column.default === 'string'
+            ? `'${column.default}'`
+            : column.default
+        query += ` DEFAULT ${defaultVal}`
+      }
+      this.logger.debug('[Pg][addColumn] Executing', { table, column, query })
+      this.db.query(query, (err) => {
+        if (err) {
+          this.logger.error('[Pg][addColumn] Failed', {
+            table,
+            column,
+            query,
+            error: err
+          })
+          reject(err)
+        } else {
+          this.logger.info('[Pg][addColumn] Column added successfully', {
+            table,
+            column: column.name
+          })
+          resolve()
+        }
+      })
+    })
+  }
+
+  // eslint-disable-next-line @typescript-eslint/promise-function-async
+  ensureColumns(table: T, columns: ColumnDefinition[]): Promise<void> {
+    return this.getTableColumns(table).then((existingColumns) => {
+      const existingNames = new Set(
+        existingColumns.map((c) => c.name.toLowerCase())
+      )
+      const missingColumns = columns.filter(
+        (col) => !existingNames.has(col.name.toLowerCase())
+      )
+      if (missingColumns.length === 0) {
+        this.logger.debug('[Pg][ensureColumns] All columns exist', { table })
+        return Promise.resolve()
+      }
+      this.logger.info('[Pg][ensureColumns] Adding missing columns', {
+        table,
+        columns: missingColumns.map((c) => c.name)
+      })
+      return missingColumns
+        .reduce<Promise<void>>(
+          (promise, col) => promise.then(() => this.addColumn(table, col)),
+          Promise.resolve()
+        )
+        .then(() => {
+          this.logger.info('[Pg][ensureColumns] All columns ensured', { table })
+        })
     })
   }
 
