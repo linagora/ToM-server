@@ -102,3 +102,45 @@ export interface BridgeConfig {
  * Type literal for the user settings database table name.
  */
 export type UserSettingsTableName = 'usersettings'
+
+/**
+ * Minimal logger interface for creating adapters.
+ */
+export interface AppLogger {
+  error: (...args: unknown[]) => void
+  warn: (...args: unknown[]) => void
+  info: (...args: unknown[]) => void
+  debug: (...args: unknown[]) => void
+}
+
+/**
+ * TwakeLogger-compatible interface for @twake/db and @twake/amqp-connector.
+ */
+export interface TwakeLoggerAdapter {
+  error: (...args: unknown[]) => void
+  warn: (...args: unknown[]) => void
+  info: (...args: unknown[]) => void
+  debug: (...args: unknown[]) => void
+  silly: (...args: unknown[]) => void
+  close: () => void
+}
+
+/**
+ * Creates a TwakeLogger-compatible adapter from an AppLogger with a prefix.
+ * @param log - The source logger to wrap
+ * @param prefix - Prefix to add to all log messages (e.g., 'DB', 'AMQP')
+ * @returns A TwakeLogger-compatible object
+ */
+export function createLoggerAdapter(
+  log: AppLogger,
+  prefix: string
+): TwakeLoggerAdapter {
+  return {
+    error: (...args: unknown[]) => log.error(`[${prefix}]`, ...args),
+    warn: (...args: unknown[]) => log.warn(`[${prefix}]`, ...args),
+    info: (...args: unknown[]) => log.info(`[${prefix}]`, ...args),
+    debug: (...args: unknown[]) => log.debug(`[${prefix}]`, ...args),
+    silly: (...args: unknown[]) => log.debug(`[${prefix}][SILLY]`, ...args),
+    close: () => {}
+  }
+}
