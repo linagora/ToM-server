@@ -210,9 +210,11 @@ export class SettingsRepository {
       }
 
       const dbRow: Record<string, unknown> = result[0]
-      const parsedSettings = this.#safeParsePayload(
-        JSON.stringify(dbRow.settings)
-      )
+      const settingsRaw =
+        typeof dbRow.settings === 'string'
+          ? dbRow.settings
+          : JSON.stringify(dbRow.settings)
+      const parsedSettings = this.#safeParsePayload(settingsRaw)
 
       if (parsedSettings === null) {
         this.#logger.warn(
