@@ -78,13 +78,15 @@ const mockDbGet = jest.fn().mockResolvedValue([] as unknown[])
 const mockDbInsert = jest.fn(() => Promise.resolve())
 const mockDbUpdate = jest.fn(() => Promise.resolve())
 const mockDbClose = jest.fn()
+const mockDbEnsureColumns = jest.fn(() => Promise.resolve())
 
 const mockDb = {
   ready: Promise.resolve(),
   get: mockDbGet,
   insert: mockDbInsert,
   update: mockDbUpdate,
-  close: mockDbClose
+  close: mockDbClose,
+  ensureColumns: mockDbEnsureColumns
 }
 
 const mockConnectorBuild = jest.fn(() => Promise.resolve())

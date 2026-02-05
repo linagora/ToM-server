@@ -368,6 +368,16 @@ export class CommonSettingsBridge {
       await this.#db.ready
       this.#log.info('Database connection established')
 
+      // Ensure all required columns exist (handles schema migrations)
+      this.#log.info('Ensuring database schema is up to date...')
+      await this.#db.ensureColumns('usersettings', [
+        { name: 'settings', type: 'jsonb', default: null },
+        { name: 'version', type: 'int', default: 1 },
+        { name: 'timestamp', type: 'bigint', default: 0 },
+        { name: 'request_id', type: 'varchar(255)', default: '' }
+      ])
+      this.#log.info('Database schema verified')
+
       // Initialize repository and updater with dependencies
       this.#log.debug('Initializing settings repository...')
       this.#settingsRepository = new SettingsRepository(this.#db, this.#log)
