@@ -140,6 +140,7 @@ export class CommonSettingsBridge {
   #connector!: AMQPConnector
   #settingsRepository!: SettingsRepository
   #profileUpdater!: MatrixProfileUpdater
+  #isDatabaseAvailable: boolean = false
 
   /**
    * Creates a new CommonSettingsBridge instance.
@@ -311,62 +312,116 @@ export class CommonSettingsBridge {
       `Settings update contains: displayName=${!!payload.display_name}, avatar=${!!payload.avatar}, email=${!!payload.email}, phone=${!!payload.phone}`
     )
 
-    // Get cached/stored settings for this user
-    const lastSettings = await this.#settingsRepository.getUserSettings(userId)
-
-    // Idempotency check
-    if (isIdempotentDuplicate(lastSettings, requestId)) {
-      this.#log.warn(
-        `Duplicate message detected for ${userId} (request_id=${requestId}), discarding`
+    // Handle degraded mode (database unavailable)
+    if (!this.#isDatabaseAvailable) {
+      this.#log.debug(
+        `Degraded mode: applying update for ${userId} without idempotency checks`
+      )
+      await this.#profileUpdater.processChanges(userId, null, payload, true)
+      this.#log.info(
+        `Successfully processed settings for user: ${userId} (degraded mode)`
       )
       return
     }
 
-    // Determine if we should apply this update
-    const shouldApply = shouldApplyUpdate(lastSettings, version, timestamp)
+    // Track whether profile has been updated to avoid double-processing
+    let profileUpdated = false
+    let lastSettings: UserSettings | null = null
+    let isNewUser = true
 
-    if (!shouldApply) {
-      this.#log.warn(
-        `Stale update for ${userId}, discarding (current: version=${
-          lastSettings?.version
-        }, timestamp=${
-          lastSettings ? formatTimestamp(lastSettings.timestamp) : 'N/A'
-        }; new: version=${version}, timestamp=${formatTimestamp(timestamp)})`
+    // Try to get settings from database (with error handling)
+    try {
+      lastSettings = await this.#settingsRepository.getUserSettings(userId)
+
+      // Idempotency check
+      if (isIdempotentDuplicate(lastSettings, requestId)) {
+        this.#log.warn(
+          `Duplicate message detected for ${userId} (request_id=${requestId}), discarding`
+        )
+        return
+      }
+
+      // Determine if we should apply this update
+      const shouldApply = shouldApplyUpdate(lastSettings, version, timestamp)
+
+      if (!shouldApply) {
+        this.#log.warn(
+          `Stale update for ${userId}, discarding (current: version=${
+            lastSettings?.version
+          }, timestamp=${
+            lastSettings ? formatTimestamp(lastSettings.timestamp) : 'N/A'
+          }; new: version=${version}, timestamp=${formatTimestamp(timestamp)})`
+        )
+        return
+      }
+
+      this.#log.debug(
+        `Applying update for ${userId} (${
+          lastSettings
+            ? `old version=${lastSettings.version}, timestamp=${formatTimestamp(
+                lastSettings.timestamp
+              )}`
+            : 'new user'
+        } -> new version=${version}, timestamp=${formatTimestamp(timestamp)})`
       )
-      return
+
+      isNewUser = lastSettings === null
+    } catch (error) {
+      // Database error during read/check - switch to degraded mode
+      const errorMsg = error instanceof Error ? error.message : String(error)
+      this.#log.error(`Database error while reading ${userId}: ${errorMsg}`)
+
+      // Switch to degraded mode for future messages
+      this.#isDatabaseAvailable = false
+      this.#log.warn('==========================================')
+      this.#log.warn('DATABASE ERROR - Switching to degraded mode')
+      this.#log.warn('Future messages will bypass idempotency checks')
+      this.#log.warn('==========================================')
+
+      // Continue processing in degraded mode (no idempotency check)
+      this.#log.info(
+        `Processing ${userId} in degraded mode (no idempotency check)`
+      )
     }
-
-    this.#log.debug(
-      `Applying update for ${userId} (${
-        lastSettings
-          ? `old version=${lastSettings.version}, timestamp=${formatTimestamp(
-              lastSettings.timestamp
-            )}`
-          : 'new user'
-      } -> new version=${version}, timestamp=${formatTimestamp(timestamp)})`
-    )
-
-    const isNewUser = lastSettings === null
 
     // Process settings changes and update Matrix profile
+    // (This is outside try/catch so errors propagate normally)
     await this.#profileUpdater.processChanges(
       userId,
       lastSettings?.payload ?? null,
       payload,
       isNewUser
     )
-
-    // Save settings to database
-    await this.#settingsRepository.saveSettings(
-      userId,
-      payload,
-      version,
-      timestamp,
-      requestId,
-      isNewUser
-    )
+    profileUpdated = true
 
     this.#log.info(`Successfully processed settings for user: ${userId}`)
+
+    // Save settings to database (if still available)
+    if (this.#isDatabaseAvailable && profileUpdated) {
+      try {
+        const isNewUser = lastSettings === null
+        await this.#settingsRepository.saveSettings(
+          userId,
+          payload,
+          version,
+          timestamp,
+          requestId,
+          isNewUser
+        )
+      } catch (error) {
+        // DB save failed but profile was updated - log and continue in degraded mode
+        const errorMsg = error instanceof Error ? error.message : String(error)
+        this.#log.error(`Database save error for ${userId}: ${errorMsg}`)
+        this.#isDatabaseAvailable = false
+        this.#log.warn('==========================================')
+        this.#log.warn('DATABASE SAVE ERROR - Switching to degraded mode')
+        this.#log.warn('Future messages will bypass idempotency checks')
+        this.#log.warn('==========================================')
+        this.#log.info(
+          `Settings for ${userId} applied to Matrix but not saved to database`
+        )
+      }
+    }
   }
 
   /**
@@ -434,23 +489,48 @@ export class CommonSettingsBridge {
         this.#log.warn('Admin API fallback will not be available')
       }
 
-      this.#log.info('Waiting for database to be ready...')
-      await this.#db.ready
-      this.#log.info('Database connection established')
+      // OPTIONAL: Database (degrade gracefully if unavailable)
+      try {
+        this.#log.info('Waiting for database to be ready...')
 
-      // Ensure all required columns exist (handles schema migrations)
-      this.#log.info('Ensuring database schema is up to date...')
-      await this.#db.ensureColumns('usersettings', [
-        { name: 'settings', type: 'jsonb', default: null },
-        { name: 'version', type: 'int', default: 1 },
-        { name: 'timestamp', type: 'bigint', default: 0 },
-        { name: 'request_id', type: 'varchar(255)', default: '' }
-      ])
-      this.#log.info('Database schema verified')
+        // Timeout to prevent indefinite hang
+        const DB_READY_TIMEOUT_MS = 30000 // 30 seconds
+        const timeoutPromise = new Promise((_, reject) => {
+          setTimeout(() => {
+            reject(
+              new Error(
+                `Database connection timeout after ${DB_READY_TIMEOUT_MS}ms`
+              )
+            )
+          }, DB_READY_TIMEOUT_MS)
+        })
 
-      // Initialize repository and updater with dependencies
-      this.#log.debug('Initializing settings repository...')
-      this.#settingsRepository = new SettingsRepository(this.#db, this.#log)
+        await Promise.race([this.#db.ready, timeoutPromise])
+        this.#log.info('Database connection established')
+
+        // Ensure all required columns exist (handles schema migrations)
+        this.#log.info('Ensuring database schema is up to date...')
+        await this.#db.ensureColumns('usersettings', [
+          { name: 'settings', type: 'jsonb', default: null },
+          { name: 'version', type: 'int', default: 1 },
+          { name: 'timestamp', type: 'bigint', default: 0 },
+          { name: 'request_id', type: 'varchar(255)', default: '' }
+        ])
+        this.#log.info('Database schema verified')
+
+        // Initialize repository
+        this.#log.debug('Initializing settings repository...')
+        this.#settingsRepository = new SettingsRepository(this.#db, this.#log)
+        this.#isDatabaseAvailable = true
+      } catch (error) {
+        this.#log.warn('==========================================')
+        this.#log.warn('DATABASE UNAVAILABLE - Running in degraded mode')
+        this.#log.warn('Idempotency and version checks disabled')
+        this.#log.warn(
+          `Error: ${error instanceof Error ? error.message : String(error)}`
+        )
+        this.#log.warn('==========================================')
+      }
 
       this.#log.debug('Initializing profile updater...')
       const retryMode = this.#getAdminRetryMode()
