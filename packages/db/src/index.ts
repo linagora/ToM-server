@@ -16,7 +16,9 @@ export type {
   DbGetResult,
   SqlComparaisonOperator,
   ISQLCondition,
-  DbBackend
+  DbBackend,
+  ColumnDefinition,
+  ColumnInfo
 } from './types'
 
 // Re-export adapter database types

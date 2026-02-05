@@ -88,11 +88,11 @@ export class CommonSettingsBridge {
     )
 
     const consoleLogger = {
-      error: (msg: string) => this.#log.error(`[DB] ${msg}`),
-      warn: (msg: string) => this.#log.warn(`[DB] ${msg}`),
-      info: (msg: string) => this.#log.info(`[DB] ${msg}`),
-      debug: (msg: string) => this.#log.debug(`[DB] ${msg}`),
-      silly: (msg: string) => this.#log.debug('[DB][SILLY]', msg),
+      error: (...args: unknown[]) => this.#log.error('[DB]', ...args),
+      warn: (...args: unknown[]) => this.#log.warn('[DB]', ...args),
+      info: (...args: unknown[]) => this.#log.info('[DB]', ...args),
+      debug: (...args: unknown[]) => this.#log.debug('[DB]', ...args),
+      silly: (...args: unknown[]) => this.#log.debug('[DB][SILLY]', ...args),
       close: () => {}
     }
 
@@ -118,11 +118,11 @@ export class CommonSettingsBridge {
     this.#log.debug('Initializing AMQP connector...')
 
     const consoleLogger = {
-      info: (msg: string) => this.#log.info(`[AMQP] ${msg}`),
-      warn: (msg: string) => this.#log.warn(`[AMQP] ${msg}`),
-      error: (msg: string) => this.#log.error(`[AMQP] ${msg}`),
-      debug: (msg: string) => this.#log.debug(`[AMQP] ${msg}`),
-      silly: (msg: string) => this.#log.debug('[AMQP][SILLY]', msg),
+      error: (...args: unknown[]) => this.#log.error('[DB]', ...args),
+      warn: (...args: unknown[]) => this.#log.warn('[DB]', ...args),
+      info: (...args: unknown[]) => this.#log.info('[DB]', ...args),
+      debug: (...args: unknown[]) => this.#log.debug('[DB]', ...args),
+      silly: (...args: unknown[]) => this.#log.debug('[DB][SILLY]', ...args),
       close: () => {}
     }
 
@@ -367,6 +367,16 @@ export class CommonSettingsBridge {
       this.#log.info('Waiting for database to be ready...')
       await this.#db.ready
       this.#log.info('Database connection established')
+
+      // Ensure all required columns exist (handles schema migrations)
+      this.#log.info('Ensuring database schema is up to date...')
+      await this.#db.ensureColumns('usersettings', [
+        { name: 'settings', type: 'jsonb', default: null },
+        { name: 'version', type: 'int', default: 1 },
+        { name: 'timestamp', type: 'bigint', default: 0 },
+        { name: 'request_id', type: 'varchar(255)', default: '' }
+      ])
+      this.#log.info('Database schema verified')
 
       // Initialize repository and updater with dependencies
       this.#log.debug('Initializing settings repository...')

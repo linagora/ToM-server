@@ -7,7 +7,9 @@ import {
   type DatabaseConfig,
   type DbGetResult,
   type DbBackend,
-  type ISQLCondition
+  type ISQLCondition,
+  type ColumnDefinition,
+  type ColumnInfo
 } from '../types'
 import createTables from './_createTables'
 import SQL from './sql'
@@ -1091,6 +1093,179 @@ class Pg<T extends string> extends SQL<T> implements DbBackend<T> {
         )
       }
     })
+  }
+
+  async getTableColumns(table: T): Promise<ColumnInfo[]> {
+    if (!this.db) {
+      this.logger.error(
+        `[Pg][getTableColumns] DB not ready for table "${table}"`
+      )
+      throw new Error('DB not ready')
+    }
+
+    const query = `
+      SELECT column_name, data_type, column_default
+      FROM information_schema.columns
+      WHERE table_schema = current_schema()
+        AND table_name = $1
+  	`
+
+    try {
+      const result = await this.db.query(query, [table.toLowerCase()])
+      const columns: ColumnInfo[] = result.rows.map((row) => ({
+        name: row.column_name,
+        type: row.data_type,
+        defaultValue: row.column_default
+      }))
+
+      this.logger.debug(
+        `[Pg][getTableColumns] Found ${columns.length} column(s) in "${table}"`
+      )
+
+      return columns
+    } catch (err) {
+      this.logger.error(
+        `[Pg][getTableColumns] Failed to get columns for "${table}"`,
+        err
+      )
+      throw err
+    }
+  }
+
+  /**
+   * Validates an SQL identifier (table name, column name) to prevent injection.
+   * Only allows alphanumeric characters and underscores, must start with letter or underscore.
+   */
+  #isValidIdentifier(name: string): boolean {
+    return /^[A-Za-z_][A-Za-z0-9_]*$/.test(name)
+  }
+
+  /**
+   * Quotes an SQL identifier using double quotes, escaping any internal double quotes.
+   */
+  #quoteIdentifier(name: string): string {
+    return `"${name.replace(/"/g, '""')}"`
+  }
+
+  /**
+   * Validates column type against allowed SQL types.
+   */
+  #isValidColumnType(type: string): boolean {
+    const typePattern =
+      /^(varchar|char|text|int|integer|smallint|bigint|serial|bigserial|boolean|bool|real|double precision|numeric|decimal|date|time|timestamp|timestamptz|json|jsonb|uuid|bytea)(\(\d+\))?$/i
+    return typePattern.test(type.trim())
+  }
+
+  /**
+   * Escapes a string value for use in SQL by doubling single quotes.
+   */
+  #escapeString(value: string): string {
+    return value.replace(/'/g, "''")
+  }
+
+  async addColumn(table: T, column: ColumnDefinition): Promise<void> {
+    if (!this.db) {
+      this.logger.error('[Pg][addColumn] DB not ready', table, column)
+      throw new Error('DB not ready')
+    }
+
+    /* Validate identifiers to prevent SQL injection */
+    if (!this.#isValidIdentifier(table)) {
+      this.logger.error('[Pg][addColumn] Invalid table name', table, column)
+      throw new Error(`Invalid table name: ${table}`)
+    }
+
+    if (!this.#isValidIdentifier(column.name)) {
+      this.logger.error('[Pg][addColumn] Invalid column name', table, column)
+      throw new Error(`Invalid column name: ${column.name}`)
+    }
+
+    if (!this.#isValidColumnType(column.type)) {
+      this.logger.error('[Pg][addColumn] Invalid column type', table, column)
+      throw new Error(`Invalid column type: ${column.type}`)
+    }
+
+    /* Build query with quoted identifiers */
+    const quotedTable = this.#quoteIdentifier(table)
+    const quotedColumn = this.#quoteIdentifier(column.name)
+    let query = `ALTER TABLE ${quotedTable} ADD COLUMN ${quotedColumn} ${column.type}`
+
+    /* Handle default value with proper escaping (no params for DDL) */
+    if (column.default !== undefined) {
+      if (column.default === null) {
+        query += ' DEFAULT NULL'
+      } else if (typeof column.default === 'number') {
+        query += ` DEFAULT ${column.default}`
+      } else if (typeof column.default === 'boolean') {
+        query += ` DEFAULT ${column.default}`
+      } else {
+        /* Escape string and use literal */
+        query += ` DEFAULT '${this.#escapeString(column.default)}'`
+      }
+    }
+
+    /* Handle NOT NULL constraint if specified */
+    if (column.notNull) {
+      query += ' NOT NULL'
+    }
+
+    /* Capture db reference to avoid undefined in callback */
+    const db = this.db
+
+    return new Promise((resolve, reject) => {
+      db.query(query, (err) => {
+        if (err) {
+          const pgError = err as { code?: string }
+          if (pgError.code === '42701') {
+            this.logger.debug(
+              `[Pg][addColumn] Column "${column.name}" already exists in "${table}"`
+            )
+            resolve()
+            return
+          }
+          this.logger.error(
+            `[Pg][addColumn] Failed to add column "${column.name}" to "${table}"`,
+            err
+          )
+          reject(err)
+        } else {
+          this.logger.info(
+            `[Pg][addColumn] Added column "${column.name}" to "${table}"`
+          )
+          resolve()
+        }
+      })
+    })
+  }
+
+  async ensureColumns(table: T, columns: ColumnDefinition[]): Promise<void> {
+    const existingColumns = await this.getTableColumns(table)
+    const existingNames = new Set(
+      existingColumns.map((c) => c.name.toLowerCase())
+    )
+
+    const missingColumns = columns.filter(
+      (col) => !existingNames.has(col.name.toLowerCase())
+    )
+
+    if (missingColumns.length === 0) {
+      this.logger.debug(`[Pg][ensureColumns] All columns exist in "${table}"`)
+      return
+    }
+
+    this.logger.info(
+      `[Pg][ensureColumns] Adding ${
+        missingColumns.length
+      } missing column(s) to "${table}": ${missingColumns
+        .map((c) => c.name)
+        .join(', ')}`
+    )
+
+    for (const col of missingColumns) {
+      await this.addColumn(table, col)
+    }
+
+    this.logger.info(`[Pg][ensureColumns] Schema updated for "${table}"`)
   }
 
   close(): void {

@@ -147,8 +147,8 @@ services:
       retries: 5
       start_period: 30s
 
-  common-settings-bridge:
-    image: linagora/twake-common-settings-bridge
+  tom-twp-cs-bridge:
+    image: linagora/tom-twp-cs-bridge
     build:
       context: ../..
       dockerfile: ./packages/common-settings-bridge/Dockerfile
@@ -158,7 +158,7 @@ services:
       rabbitmq: { condition: service_healthy }
       tom: { condition: service_started }
     volumes:
-      - common-settings-data:/data
+      - tom-twp-cs-bridge-data:/data
       - ../cs-bridge/config.yaml:/data/config.yaml:ro
       - ../cs-bridge/registration.yaml:/data/registration.yaml:ro
     environment:
@@ -167,17 +167,16 @@ services:
       - LOG_RAW_MESSAGES=true
       - LOG_LEVEL=debug
 
-  send-message-tool:
+  tom-twp-cs-bridge-notifier:
     build:
       context: ../..
       dockerfile: ./packages/common-settings-bridge/tools/Dockerfile
-    image: linagora/twake-common-settings-bridge-tool
-    container_name: send-message-tool
+    image: linagora/tom-twp-cs-bridge-notifier
     stdin_open: true
     tty: true
     depends_on:
       rabbitmq: { condition: service_healthy }
-      common-settings-bridge: { condition: service_started }
+      tom-twp-cs-bridge: { condition: service_started }
     environment:
       - RABBITMQ_HOST=rabbitmq
       - RABBITMQ_PORT=5672
@@ -316,5 +315,5 @@ services:
 
 volumes:
   postgres-data:
-  common-settings-data:
+  tom-twp-cs-bridge-data:
   rabbitmq-data:

@@ -24,6 +24,27 @@ export interface ISQLCondition {
   value: string | number
 }
 
+/**
+ * Definition for a column to be ensured in a table.
+ * Used by ensureColumns() to add missing columns.
+ */
+export interface ColumnDefinition {
+  name: string
+  type: string
+  default?: string | number | null
+  notNull?: boolean
+}
+
+/**
+ * Information about an existing column in a table.
+ * Returned by getTableColumns().
+ */
+export interface ColumnInfo {
+  name: string
+  type: string
+  defaultValue: string | null
+}
+
 type Insert<T> = (
   table: T,
   values: Record<string, string | number>
@@ -138,6 +159,12 @@ type DeleteWhere<T> = (
   conditions: ISQLCondition | ISQLCondition[]
 ) => Promise<void>
 
+type GetTableColumns<T> = (table: T) => Promise<ColumnInfo[]>
+
+type AddColumn<T> = (table: T, column: ColumnDefinition) => Promise<void>
+
+type EnsureColumns<T> = (table: T, columns: ColumnDefinition[]) => Promise<void>
+
 export interface DbBackend<T> {
   ready: Promise<void>
   createDatabases: (conf: DatabaseConfig, ...args: any) => Promise<void>
@@ -160,5 +187,8 @@ export interface DbBackend<T> {
   deleteEqualAnd: DeleteEqualAnd<T>
   deleteLowerThan: DeleteLowerThan<T>
   deleteWhere: DeleteWhere<T>
+  getTableColumns: GetTableColumns<T>
+  addColumn: AddColumn<T>
+  ensureColumns: EnsureColumns<T>
   close: () => void
 }

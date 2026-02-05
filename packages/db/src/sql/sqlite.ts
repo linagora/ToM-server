@@ -5,7 +5,9 @@ import {
   type DatabaseConfig,
   type DbGetResult,
   type DbBackend,
-  type ISQLCondition
+  type ISQLCondition,
+  type ColumnDefinition,
+  type ColumnInfo
 } from '../types'
 import createTables from './_createTables'
 import SQL from './sql'
@@ -1112,6 +1114,229 @@ class SQLite<T extends string> extends SQL<T> implements DbBackend<T> {
         })
       }
     })
+  }
+
+  async getTableColumns(table: T): Promise<ColumnInfo[]> {
+    if (!this.db) {
+      this.logger.error('[SQLite][getTableColumns] DB not ready', { table })
+      throw new Error('DB not ready')
+    }
+
+    const query = `PRAGMA table_info(${table})`
+    this.logger.debug('[SQLite][getTableColumns] Executing', { table, query })
+
+    /* Capture db reference to avoid undefined in callback */
+    const db = this.db
+
+    return new Promise((resolve, reject) => {
+      db.all(
+        query,
+        (
+          err: Error | null,
+          rows: Array<{
+            cid: number
+            name: string
+            type: string
+            notnull: number
+            dflt_value: string | null
+            pk: number
+          }>
+        ) => {
+          if (err) {
+            this.logger.error('[SQLite][getTableColumns] Failed', {
+              table,
+              query,
+              error: err
+            })
+            reject(err)
+            return
+          }
+
+          const columns: ColumnInfo[] = rows.map((row) => ({
+            name: row.name,
+            type: row.type,
+            defaultValue: row.dflt_value
+          }))
+
+          this.logger.debug('[SQLite][getTableColumns] Successful', {
+            table,
+            columnCount: columns.length
+          })
+
+          resolve(columns)
+        }
+      )
+    })
+  }
+
+  /**
+   * Validates an SQL identifier (table name, column name) to prevent injection.
+   * Only allows alphanumeric characters and underscores, must start with letter or underscore.
+   */
+  #isValidIdentifier(name: string): boolean {
+    return /^[A-Za-z_][A-Za-z0-9_]*$/.test(name)
+  }
+
+  /**
+   * Quotes an SQL identifier using double quotes, escaping any internal double quotes.
+   */
+  #quoteIdentifier(name: string): string {
+    return `"${name.replace(/"/g, '""')}"`
+  }
+
+  /**
+   * Validates column type against allowed SQL types.
+   */
+  #isValidColumnType(type: string): boolean {
+    const typePattern =
+      /^(varchar|char|text|int|integer|smallint|bigint|real|numeric|decimal|boolean|bool|date|time|timestamp|blob|json|jsonb)(\(\d+\))?$/i
+    return typePattern.test(type.trim())
+  }
+
+  async addColumn(table: T, column: ColumnDefinition): Promise<void> {
+    if (!this.db) {
+      this.logger.error('[SQLite][addColumn] DB not ready', { table, column })
+      throw new Error('DB not ready')
+    }
+
+    /* Validate identifiers to prevent SQL injection */
+    if (!this.#isValidIdentifier(table)) {
+      this.logger.error('[SQLite][addColumn] Invalid table name', {
+        table,
+        column
+      })
+      throw new Error(`Invalid table name: ${table}`)
+    }
+
+    if (!this.#isValidIdentifier(column.name)) {
+      this.logger.error('[SQLite][addColumn] Invalid column name', {
+        table,
+        column
+      })
+      throw new Error(`Invalid column name: ${column.name}`)
+    }
+
+    if (!this.#isValidColumnType(column.type)) {
+      this.logger.error('[SQLite][addColumn] Invalid column type', {
+        table,
+        column
+      })
+      throw new Error(`Invalid column type: ${column.type}`)
+    }
+
+    /* Build query with quoted identifiers */
+    const quotedTable = this.#quoteIdentifier(table)
+    const quotedColumn = this.#quoteIdentifier(column.name)
+    let query = `ALTER TABLE ${quotedTable} ADD COLUMN ${quotedColumn} ${column.type}`
+
+    /* Handle default value - use parameterized query for safety */
+    const params: Array<string | number | null> = []
+    if (column.default !== undefined) {
+      /*
+       * SQLite doesn't support parameterized DEFAULT in ALTER TABLE,
+       * so we must use literal values with proper escaping
+       */
+      if (column.default === null) {
+        query += ' DEFAULT NULL'
+      } else if (typeof column.default === 'number') {
+        query += ` DEFAULT ${column.default}`
+      } else if (typeof column.default === 'boolean') {
+        query += ` DEFAULT ${column.default ? 1 : 0}`
+      } else {
+        /* For strings, use parameterized query via prepared statement */
+        params.push(column.default)
+        query += ' DEFAULT ?'
+      }
+    }
+
+    /* Handle NOT NULL constraint if specified */
+    if (column.notNull) {
+      query += ' NOT NULL'
+    }
+
+    this.logger.debug('[SQLite][addColumn] Executing', {
+      table,
+      column,
+      query,
+      params
+    })
+
+    /* Capture db reference to avoid undefined in callback */
+    const db = this.db
+
+    return new Promise((resolve, reject) => {
+      /*
+       * Note: SQLite ALTER TABLE doesn't support parameterized DEFAULT values.
+       * If we have params, we need to use a workaround or fall back to escaping.
+       * For now, we'll escape the string properly.
+       */
+      let finalQuery = query
+      if (params.length > 0 && typeof params[0] === 'string') {
+        /* Replace ? with properly escaped string literal */
+        const escapedValue = params[0].replace(/'/g, "''")
+        finalQuery = query.replace('?', `'${escapedValue}'`)
+      }
+
+      db.run(finalQuery, (err) => {
+        if (err) {
+          /* Check for duplicate column error - make idempotent */
+          const errMessage = err.message?.toLowerCase() ?? ''
+          if (errMessage.includes('duplicate column name')) {
+            this.logger.debug(
+              '[SQLite][addColumn] Column already exists (idempotent)',
+              {
+                table,
+                column: column.name
+              }
+            )
+            resolve()
+            return
+          }
+
+          this.logger.error('[SQLite][addColumn] Failed', {
+            table,
+            column,
+            query: finalQuery,
+            error: err
+          })
+          reject(err)
+          return
+        }
+
+        this.logger.info('[SQLite][addColumn] Column added successfully', {
+          table,
+          column: column.name
+        })
+        resolve()
+      })
+    })
+  }
+
+  async ensureColumns(table: T, columns: ColumnDefinition[]): Promise<void> {
+    const existingColumns = await this.getTableColumns(table)
+    const existingNames = new Set(
+      existingColumns.map((c) => c.name.toLowerCase())
+    )
+
+    const missingColumns = columns.filter(
+      (col) => !existingNames.has(col.name.toLowerCase())
+    )
+
+    if (missingColumns.length === 0) {
+      this.logger.debug('[SQLite][ensureColumns] All columns exist', { table })
+      return
+    }
+
+    this.logger.info('[SQLite][ensureColumns] Adding missing columns', {
+      table,
+      columns: missingColumns.map((c) => c.name)
+    })
+
+    for (const col of missingColumns) {
+      await this.addColumn(table, col)
+    }
+
+    this.logger.info('[SQLite][ensureColumns] All columns ensured', { table })
   }
 
   close(): void {

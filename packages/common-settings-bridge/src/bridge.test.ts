@@ -72,7 +72,8 @@ describe('CommonSettingsBridge', () => {
       get: jest.fn(),
       insert: jest.fn(),
       update: jest.fn(),
-      close: jest.fn()
+      close: jest.fn(),
+      ensureColumns: jest.fn().mockResolvedValue(undefined)
     } as any
     ;(Database as jest.MockedClass<typeof Database>).mockImplementation(
       () => mockDatabase

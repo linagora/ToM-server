@@ -12,9 +12,9 @@ FROM node:18.20.8-slim AS builder
 
 # Update image and install build tools
 ENV DEBIAN_FRONTEND=noninteractive
-RUN apt-get update && apt-get upgrade -yqq && \
-    apt-get install -yqq build-essential python3 && \
-    apt-get clean && rm -rf /var/lib/apt/lists/*
+RUN apt update && \
+    apt install -yqq --no-install-recommends --no-install-suggests build-essential python3 && \
+    apt clean && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /usr/src/app
 
