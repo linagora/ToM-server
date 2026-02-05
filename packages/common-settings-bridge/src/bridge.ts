@@ -140,6 +140,7 @@ export class CommonSettingsBridge {
   #connector!: AMQPConnector
   #settingsRepository!: SettingsRepository
   #profileUpdater!: MatrixProfileUpdater
+  #isDatabaseAvailable: boolean = false
 
   /**
    * Creates a new CommonSettingsBridge instance.
@@ -311,6 +312,18 @@ export class CommonSettingsBridge {
       `Settings update contains: displayName=${!!payload.display_name}, avatar=${!!payload.avatar}, email=${!!payload.email}, phone=${!!payload.phone}`
     )
 
+    // Handle degraded mode (database unavailable)
+    if (!this.#isDatabaseAvailable) {
+      this.#log.debug(
+        `Degraded mode: applying update for ${userId} without idempotency checks`
+      )
+      await this.#profileUpdater.processChanges(userId, null, payload, true)
+      this.#log.info(
+        `Successfully processed settings for user: ${userId} (degraded mode)`
+      )
+      return
+    }
+
     // Get cached/stored settings for this user
     const lastSettings = await this.#settingsRepository.getUserSettings(userId)
 
@@ -434,23 +447,35 @@ export class CommonSettingsBridge {
         this.#log.warn('Admin API fallback will not be available')
       }
 
-      this.#log.info('Waiting for database to be ready...')
-      await this.#db.ready
-      this.#log.info('Database connection established')
+      // OPTIONAL: Database (degrade gracefully if unavailable)
+      try {
+        this.#log.info('Waiting for database to be ready...')
+        await this.#db.ready
+        this.#log.info('Database connection established')
 
-      // Ensure all required columns exist (handles schema migrations)
-      this.#log.info('Ensuring database schema is up to date...')
-      await this.#db.ensureColumns('usersettings', [
-        { name: 'settings', type: 'jsonb', default: null },
-        { name: 'version', type: 'int', default: 1 },
-        { name: 'timestamp', type: 'bigint', default: 0 },
-        { name: 'request_id', type: 'varchar(255)', default: '' }
-      ])
-      this.#log.info('Database schema verified')
+        // Ensure all required columns exist (handles schema migrations)
+        this.#log.info('Ensuring database schema is up to date...')
+        await this.#db.ensureColumns('usersettings', [
+          { name: 'settings', type: 'jsonb', default: null },
+          { name: 'version', type: 'int', default: 1 },
+          { name: 'timestamp', type: 'bigint', default: 0 },
+          { name: 'request_id', type: 'varchar(255)', default: '' }
+        ])
+        this.#log.info('Database schema verified')
 
-      // Initialize repository and updater with dependencies
-      this.#log.debug('Initializing settings repository...')
-      this.#settingsRepository = new SettingsRepository(this.#db, this.#log)
+        // Initialize repository
+        this.#log.debug('Initializing settings repository...')
+        this.#settingsRepository = new SettingsRepository(this.#db, this.#log)
+        this.#isDatabaseAvailable = true
+      } catch (error) {
+        this.#log.warn('==========================================')
+        this.#log.warn('DATABASE UNAVAILABLE - Running in degraded mode')
+        this.#log.warn('Idempotency and version checks disabled')
+        this.#log.warn(
+          `Error: ${error instanceof Error ? error.message : String(error)}`
+        )
+        this.#log.warn('==========================================')
+      }
 
       this.#log.debug('Initializing profile updater...')
       const retryMode = this.#getAdminRetryMode()
