@@ -1162,6 +1162,38 @@ class SQLite<T extends string> extends SQL<T> implements DbBackend<T> {
     })
   }
 
+  /**
+   * Validates an SQL identifier (table name, column name) to prevent injection.
+   * Only allows alphanumeric characters and underscores, must start with letter or underscore.
+   */
+  #isValidIdentifier(name: string): boolean {
+    return /^[A-Za-z_][A-Za-z0-9_]*$/.test(name)
+  }
+
+  /**
+   * Quotes an SQL identifier using double quotes, escaping any internal double quotes.
+   */
+  #quoteIdentifier(name: string): string {
+    return `"${name.replace(/"/g, '""')}"`
+  }
+
+  /**
+   * Escapes a string value for use in SQL by doubling single quotes.
+   */
+  #escapeString(value: string): string {
+    return value.replace(/'/g, "''")
+  }
+
+  /**
+   * Validates column type against allowed SQL types.
+   */
+  #isValidColumnType(type: string): boolean {
+    // Allow common SQL types with optional parameters like varchar(255)
+    const typePattern =
+      /^(varchar|char|text|int|integer|smallint|bigint|real|numeric|decimal|boolean|bool|date|time|timestamp|blob|json|jsonb)(\(\d+\))?$/i
+    return typePattern.test(type.trim())
+  }
+
   addColumn(table: T, column: ColumnDefinition): Promise<void> {
     return new Promise((resolve, reject) => {
       if (this.db == null) {
@@ -1169,16 +1201,52 @@ class SQLite<T extends string> extends SQL<T> implements DbBackend<T> {
         reject(new Error('DB not ready'))
         return
       }
-      let query = `ALTER TABLE ${table} ADD COLUMN ${column.name} ${column.type}`
-      if (column.default !== undefined) {
-        const defaultVal =
-          column.default === null
-            ? 'NULL'
-            : typeof column.default === 'string'
-            ? `'${column.default}'`
-            : column.default
-        query += ` DEFAULT ${defaultVal}`
+
+      // Validate identifiers to prevent SQL injection
+      if (!this.#isValidIdentifier(table)) {
+        this.logger.error('[SQLite][addColumn] Invalid table name', {
+          table,
+          column
+        })
+        reject(new Error(`Invalid table name: ${table}`))
+        return
       }
+
+      if (!this.#isValidIdentifier(column.name)) {
+        this.logger.error('[SQLite][addColumn] Invalid column name', {
+          table,
+          column
+        })
+        reject(new Error(`Invalid column name: ${column.name}`))
+        return
+      }
+
+      if (!this.#isValidColumnType(column.type)) {
+        this.logger.error('[SQLite][addColumn] Invalid column type', {
+          table,
+          column
+        })
+        reject(new Error(`Invalid column type: ${column.type}`))
+        return
+      }
+
+      // Build query with quoted identifiers
+      const quotedTable = this.#quoteIdentifier(table)
+      const quotedColumn = this.#quoteIdentifier(column.name)
+      let query = `ALTER TABLE ${quotedTable} ADD COLUMN ${quotedColumn} ${column.type}`
+
+      // Handle default value safely with proper escaping
+      if (column.default !== undefined) {
+        if (column.default === null) {
+          query += ' DEFAULT NULL'
+        } else if (typeof column.default === 'number') {
+          query += ` DEFAULT ${column.default}`
+        } else {
+          // Escape string defaults by doubling single quotes
+          query += ` DEFAULT '${this.#escapeString(column.default)}'`
+        }
+      }
+
       this.logger.debug('[SQLite][addColumn] Executing', {
         table,
         column,
@@ -1186,6 +1254,20 @@ class SQLite<T extends string> extends SQL<T> implements DbBackend<T> {
       })
       this.db.run(query, (err) => {
         if (err) {
+          // Check for duplicate column error - make idempotent
+          // SQLite error message contains "duplicate column name"
+          const errMessage = err.message?.toLowerCase() ?? ''
+          if (errMessage.includes('duplicate column name')) {
+            this.logger.debug(
+              '[SQLite][addColumn] Column already exists (idempotent)',
+              {
+                table,
+                column: column.name
+              }
+            )
+            resolve()
+            return
+          }
           this.logger.error('[SQLite][addColumn] Failed', {
             table,
             column,
