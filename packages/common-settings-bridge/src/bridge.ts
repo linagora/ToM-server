@@ -381,9 +381,14 @@ export class CommonSettingsBridge {
     if (this.#isDatabaseAvailable && profileUpdated) {
       try {
         const isNewUser = lastSettings === null
+        // Merge new payload with previous settings to preserve unchanged fields
+        const mergedPayload: ISettingsPayload = {
+          ...(lastSettings?.payload ?? {}),
+          ...payload
+        }
         await this.#settingsRepository.saveSettings(
           userId,
-          payload,
+          mergedPayload,
           version,
           timestamp,
           requestId,
