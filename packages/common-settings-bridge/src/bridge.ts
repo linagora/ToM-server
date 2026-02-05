@@ -1,10 +1,11 @@
-import { Bridge, Logger, Intent } from 'matrix-appservice-bridge'
+import { Bridge, Logger } from 'matrix-appservice-bridge'
 import type { ConsumeMessage, Channel } from 'amqplib'
 import { AMQPConnector } from '@twake/amqp-connector'
 import { Database } from '@twake/db'
 import type * as logger from '@twake/logger'
 import {
   SynapseAdminRetryMode,
+  createLoggerAdapter,
   type BridgeConfig,
   type UserSettingsTableName
 } from './types'
@@ -15,13 +16,102 @@ import {
   MatrixProfileUpdater,
   type MatrixApis
 } from './matrix-profile-updater'
-import { ParsedMessage, parseMessage, validateMessage } from './message-handler'
 import {
-  shouldApplyUpdate,
-  isIdempotentDuplicate,
-  formatTimestamp
-} from './version-manager'
-import { MessageParseError } from './errors'
+  MessageParseError,
+  UserIdNotProvidedError,
+  type UserSettings,
+  type CommonSettingsMessage,
+  type SettingsPayload
+} from './types'
+
+// =============================================================================
+// Message handling helpers (inlined from message-handler.ts)
+// =============================================================================
+
+/**
+ * Represents a validated and parsed message ready for processing.
+ */
+interface ParsedMessage {
+  userId: string
+  version: number
+  timestamp: number
+  requestId: string
+  source: string
+  payload: SettingsPayload
+}
+
+/**
+ * Attempts to parse a JSON string into a CommonSettingsMessage object.
+ */
+function parseMessage(raw: string): CommonSettingsMessage | null {
+  try {
+    return JSON.parse(raw) as CommonSettingsMessage
+  } catch (error) {
+    return null
+  }
+}
+
+/**
+ * Validates a CommonSettingsMessage and extracts required fields.
+ */
+function validateMessage(message: CommonSettingsMessage): ParsedMessage {
+  if (!message.request_id) {
+    throw new MessageParseError('Message missing required request_id field')
+  }
+  if (message.timestamp === undefined || message.timestamp === null) {
+    throw new MessageParseError('Message missing required timestamp field')
+  }
+  if (!message.payload?.matrix_id) {
+    throw new UserIdNotProvidedError()
+  }
+  return {
+    userId: message.payload.matrix_id,
+    version: message.version ?? 1,
+    timestamp: message.timestamp,
+    requestId: message.request_id,
+    source: message.source,
+    payload: message.payload
+  }
+}
+
+// =============================================================================
+// Version management helpers (inlined from version-manager.ts)
+// =============================================================================
+
+/**
+ * Determines whether an update should be applied based on version and timestamp.
+ */
+function shouldApplyUpdate(
+  lastSettings: UserSettings | null,
+  newVersion: number,
+  newTimestamp: number
+): boolean {
+  if (!lastSettings) return true
+  if (newVersion > lastSettings.version) return true
+  if (
+    newVersion === lastSettings.version &&
+    newTimestamp > lastSettings.timestamp
+  )
+    return true
+  return false
+}
+
+/**
+ * Checks if an incoming update is an idempotent duplicate based on request ID.
+ */
+function isIdempotentDuplicate(
+  lastSettings: UserSettings | null,
+  newRequestId: string
+): boolean {
+  return lastSettings?.request_id === newRequestId
+}
+
+/**
+ * Formats a Unix timestamp (milliseconds) as an ISO 8601 string.
+ */
+function formatTimestamp(timestamp: number): string {
+  return new Date(timestamp).toISOString()
+}
 
 Logger.configure({
   console:
@@ -45,7 +135,6 @@ export class CommonSettingsBridge {
   readonly #config: BridgeConfig
   readonly #log: Logger
   #bridge!: Bridge
-  #botIntent!: Intent
   #adminApis!: any
   #db!: Database<UserSettingsTableName>
   #connector!: AMQPConnector
@@ -87,14 +176,7 @@ export class CommonSettingsBridge {
       `Database config: engine=${dbConfig.database_engine}, host=${dbConfig.database_host}, name=${dbConfig.database_name}, user=${dbConfig.database_user}, ssl=${dbConfig.database_ssl}, vacuumDelay=${dbConfig.database_vacuum_delay}s`
     )
 
-    const consoleLogger = {
-      error: (...args: unknown[]) => this.#log.error('[DB]', ...args),
-      warn: (...args: unknown[]) => this.#log.warn('[DB]', ...args),
-      info: (...args: unknown[]) => this.#log.info('[DB]', ...args),
-      debug: (...args: unknown[]) => this.#log.debug('[DB]', ...args),
-      silly: (...args: unknown[]) => this.#log.debug('[DB][SILLY]', ...args),
-      close: () => {}
-    }
+    const dbLogger = createLoggerAdapter(this.#log, 'DB')
 
     const tables: Record<UserSettingsTableName, string> = {
       usersettings:
@@ -103,7 +185,7 @@ export class CommonSettingsBridge {
 
     this.#db = new Database<UserSettingsTableName>(
       dbConfig,
-      consoleLogger as logger.TwakeLogger,
+      dbLogger as logger.TwakeLogger,
       tables
     )
 
@@ -117,22 +199,14 @@ export class CommonSettingsBridge {
   #initAmqpConnector(): void {
     this.#log.debug('Initializing AMQP connector...')
 
-    const consoleLogger = {
-      error: (...args: unknown[]) => this.#log.error('[DB]', ...args),
-      warn: (...args: unknown[]) => this.#log.warn('[DB]', ...args),
-      info: (...args: unknown[]) => this.#log.info('[DB]', ...args),
-      debug: (...args: unknown[]) => this.#log.debug('[DB]', ...args),
-      silly: (...args: unknown[]) => this.#log.debug('[DB][SILLY]', ...args),
-      close: () => {}
-    }
-
+    const amqpLogger = createLoggerAdapter(this.#log, 'AMQP')
     const rabbitConfig = this.#config.rabbitmq
 
     this.#log.debug(
       `RabbitMQ config: host=${rabbitConfig.host}, exchange=${rabbitConfig.exchange}, queue=${rabbitConfig.queue}, routingKey=${rabbitConfig.routingKey}`
     )
 
-    this.#connector = new AMQPConnector(consoleLogger as logger.TwakeLogger)
+    this.#connector = new AMQPConnector(amqpLogger as logger.TwakeLogger)
       .withConfig(rabbitConfig)
       .withExchange(rabbitConfig.exchange, { durable: true })
       .withQueue(
@@ -301,15 +375,11 @@ export class CommonSettingsBridge {
    * @returns The SynapseAdminRetryMode enum value
    */
   #getAdminRetryMode(): SynapseAdminRetryMode {
-    const modeString = this.#config.synapse?.adminRetryMode
-    switch (modeString) {
-      case 'exclusive':
-        return SynapseAdminRetryMode.EXCLUSIVE
-      case 'fallback':
-        return SynapseAdminRetryMode.FALLBACK
-      default:
-        return SynapseAdminRetryMode.DISABLED
-    }
+    const mode = this.#config.synapse?.adminRetryMode
+    const validModes = Object.values(SynapseAdminRetryMode)
+    return validModes.includes(mode as SynapseAdminRetryMode)
+      ? (mode as SynapseAdminRetryMode)
+      : SynapseAdminRetryMode.DISABLED
   }
 
   /**
@@ -348,12 +418,12 @@ export class CommonSettingsBridge {
       this.#log.info(`Bot user ID: ${botUserId}`)
 
       this.#log.debug('Ensuring bot is registered...')
-      this.#botIntent = this.#bridge.getIntent(botUserId)
-      await this.#botIntent.ensureRegistered()
+      const botIntent = this.#bridge.getIntent(botUserId)
+      await botIntent.ensureRegistered()
       this.#log.debug('Bot registration confirmed')
 
       this.#log.debug('Initializing admin APIs...')
-      this.#adminApis = this.#botIntent.matrixClient.adminApis.synapse
+      this.#adminApis = botIntent.matrixClient.adminApis.synapse
 
       this.#log.debug('Checking admin privileges...')
       const isAdmin = await this.#adminApis.isSelfAdmin()

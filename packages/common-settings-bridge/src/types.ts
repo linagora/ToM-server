@@ -102,3 +102,84 @@ export interface BridgeConfig {
  * Type literal for the user settings database table name.
  */
 export type UserSettingsTableName = 'usersettings'
+
+/**
+ * Minimal logger interface for creating adapters.
+ */
+export interface AppLogger {
+  error: (...args: unknown[]) => void
+  warn: (...args: unknown[]) => void
+  info: (...args: unknown[]) => void
+  debug: (...args: unknown[]) => void
+}
+
+/**
+ * TwakeLogger-compatible interface for @twake/db and @twake/amqp-connector.
+ */
+export interface TwakeLoggerAdapter {
+  error: (...args: unknown[]) => void
+  warn: (...args: unknown[]) => void
+  info: (...args: unknown[]) => void
+  debug: (...args: unknown[]) => void
+  silly: (...args: unknown[]) => void
+  close: () => void
+}
+
+/**
+ * Creates a TwakeLogger-compatible adapter from an AppLogger with a prefix.
+ * @param log - The source logger to wrap
+ * @param prefix - Prefix to add to all log messages (e.g., 'DB', 'AMQP')
+ * @returns A TwakeLogger-compatible object
+ */
+export function createLoggerAdapter(
+  log: AppLogger,
+  prefix: string
+): TwakeLoggerAdapter {
+  return {
+    error: (...args: unknown[]) => log.error(`[${prefix}]`, ...args),
+    warn: (...args: unknown[]) => log.warn(`[${prefix}]`, ...args),
+    info: (...args: unknown[]) => log.info(`[${prefix}]`, ...args),
+    debug: (...args: unknown[]) => log.debug(`[${prefix}]`, ...args),
+    silly: (...args: unknown[]) => log.debug(`[${prefix}][SILLY]`, ...args),
+    close: () => {}
+  }
+}
+
+// =============================================================================
+// Error Classes (merged from errors.ts)
+// =============================================================================
+
+/**
+ * Error thrown when a user ID (matrix_id) is not provided in the message payload.
+ * This occurs when processing AMQP messages that lack the required user identifier
+ * needed to perform profile updates.
+ */
+export class UserIdNotProvidedError extends Error {
+  constructor(message = 'User ID (matrix_id) not provided in message payload') {
+    super(message)
+    this.name = 'UserIdNotProvidedError'
+  }
+}
+
+/**
+ * Error thrown when parsing an AMQP message payload fails.
+ * This can occur due to malformed JSON, unexpected data types,
+ * or missing required fields in the message structure.
+ */
+export class MessageParseError extends Error {
+  constructor(message = 'Failed to parse AMQP message payload') {
+    super(message)
+    this.name = 'MessageParseError'
+  }
+}
+
+/**
+ * Error thrown when an avatar download fails validation checks.
+ * This includes timeout, size limit exceeded, or HTTP errors.
+ */
+export class AvatarFetchError extends Error {
+  constructor(message = 'Failed to fetch avatar from external URL') {
+    super(message)
+    this.name = 'AvatarFetchError'
+  }
+}
