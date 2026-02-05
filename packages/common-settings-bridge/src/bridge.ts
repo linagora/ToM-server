@@ -324,62 +324,104 @@ export class CommonSettingsBridge {
       return
     }
 
-    // Get cached/stored settings for this user
-    const lastSettings = await this.#settingsRepository.getUserSettings(userId)
+    // Track whether profile has been updated to avoid double-processing
+    let profileUpdated = false
+    let lastSettings: UserSettings | null = null
+    let isNewUser = true
 
-    // Idempotency check
-    if (isIdempotentDuplicate(lastSettings, requestId)) {
-      this.#log.warn(
-        `Duplicate message detected for ${userId} (request_id=${requestId}), discarding`
+    // Try to get settings from database (with error handling)
+    try {
+      lastSettings = await this.#settingsRepository.getUserSettings(userId)
+
+      // Idempotency check
+      if (isIdempotentDuplicate(lastSettings, requestId)) {
+        this.#log.warn(
+          `Duplicate message detected for ${userId} (request_id=${requestId}), discarding`
+        )
+        return
+      }
+
+      // Determine if we should apply this update
+      const shouldApply = shouldApplyUpdate(lastSettings, version, timestamp)
+
+      if (!shouldApply) {
+        this.#log.warn(
+          `Stale update for ${userId}, discarding (current: version=${
+            lastSettings?.version
+          }, timestamp=${
+            lastSettings ? formatTimestamp(lastSettings.timestamp) : 'N/A'
+          }; new: version=${version}, timestamp=${formatTimestamp(timestamp)})`
+        )
+        return
+      }
+
+      this.#log.debug(
+        `Applying update for ${userId} (${
+          lastSettings
+            ? `old version=${lastSettings.version}, timestamp=${formatTimestamp(
+                lastSettings.timestamp
+              )}`
+            : 'new user'
+        } -> new version=${version}, timestamp=${formatTimestamp(timestamp)})`
       )
-      return
-    }
 
-    // Determine if we should apply this update
-    const shouldApply = shouldApplyUpdate(lastSettings, version, timestamp)
+      isNewUser = lastSettings === null
+    } catch (error) {
+      // Database error during read/check - switch to degraded mode
+      const errorMsg = error instanceof Error ? error.message : String(error)
+      this.#log.error(`Database error while reading ${userId}: ${errorMsg}`)
 
-    if (!shouldApply) {
-      this.#log.warn(
-        `Stale update for ${userId}, discarding (current: version=${
-          lastSettings?.version
-        }, timestamp=${
-          lastSettings ? formatTimestamp(lastSettings.timestamp) : 'N/A'
-        }; new: version=${version}, timestamp=${formatTimestamp(timestamp)})`
+      // Switch to degraded mode for future messages
+      this.#isDatabaseAvailable = false
+      this.#log.warn('==========================================')
+      this.#log.warn('DATABASE ERROR - Switching to degraded mode')
+      this.#log.warn('Future messages will bypass idempotency checks')
+      this.#log.warn('==========================================')
+
+      // Continue processing in degraded mode (no idempotency check)
+      this.#log.info(
+        `Processing ${userId} in degraded mode (no idempotency check)`
       )
-      return
     }
-
-    this.#log.debug(
-      `Applying update for ${userId} (${
-        lastSettings
-          ? `old version=${lastSettings.version}, timestamp=${formatTimestamp(
-              lastSettings.timestamp
-            )}`
-          : 'new user'
-      } -> new version=${version}, timestamp=${formatTimestamp(timestamp)})`
-    )
-
-    const isNewUser = lastSettings === null
 
     // Process settings changes and update Matrix profile
+    // (This is outside try/catch so errors propagate normally)
     await this.#profileUpdater.processChanges(
       userId,
       lastSettings?.payload ?? null,
       payload,
       isNewUser
     )
-
-    // Save settings to database
-    await this.#settingsRepository.saveSettings(
-      userId,
-      payload,
-      version,
-      timestamp,
-      requestId,
-      isNewUser
-    )
+    profileUpdated = true
 
     this.#log.info(`Successfully processed settings for user: ${userId}`)
+
+    // Save settings to database (if still available)
+    if (this.#isDatabaseAvailable && profileUpdated) {
+      try {
+        const isNewUser = lastSettings === null
+        await this.#settingsRepository.saveSettings(
+          userId,
+          payload,
+          version,
+          timestamp,
+          requestId,
+          isNewUser
+        )
+      } catch (error) {
+        // DB save failed but profile was updated - log and continue in degraded mode
+        const errorMsg = error instanceof Error ? error.message : String(error)
+        this.#log.error(`Database save error for ${userId}: ${errorMsg}`)
+        this.#isDatabaseAvailable = false
+        this.#log.warn('==========================================')
+        this.#log.warn('DATABASE SAVE ERROR - Switching to degraded mode')
+        this.#log.warn('Future messages will bypass idempotency checks')
+        this.#log.warn('==========================================')
+        this.#log.info(
+          `Settings for ${userId} applied to Matrix but not saved to database`
+        )
+      }
+    }
   }
 
   /**
@@ -450,7 +492,20 @@ export class CommonSettingsBridge {
       // OPTIONAL: Database (degrade gracefully if unavailable)
       try {
         this.#log.info('Waiting for database to be ready...')
-        await this.#db.ready
+
+        // Timeout to prevent indefinite hang
+        const DB_READY_TIMEOUT_MS = 30000 // 30 seconds
+        const timeoutPromise = new Promise((_, reject) => {
+          setTimeout(() => {
+            reject(
+              new Error(
+                `Database connection timeout after ${DB_READY_TIMEOUT_MS}ms`
+              )
+            )
+          }, DB_READY_TIMEOUT_MS)
+        })
+
+        await Promise.race([this.#db.ready, timeoutPromise])
         this.#log.info('Database connection established')
 
         // Ensure all required columns exist (handles schema migrations)
