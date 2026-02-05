@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/promise-function-async */
 import type { ConsumeMessage, Channel } from 'amqplib'
 import { type BridgeConfig } from './types'
-import { UserIdNotProvidedError, MessageParseError } from './errors'
+import { UserIdNotProvidedError, MessageParseError } from './types'
 
 // Must provide factory functions for mocks used at module load time
 jest.mock('matrix-appservice-bridge', () => {

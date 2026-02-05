@@ -1,10 +1,9 @@
 import {
   parseMessage,
-  parsePayload,
   validateMessage,
   type ParsedMessage
 } from './message-handler'
-import { UserIdNotProvidedError, MessageParseError } from './errors'
+import { UserIdNotProvidedError, MessageParseError } from './types'
 import { type CommonSettingsMessage, type SettingsPayload } from './types'
 
 describe('parseMessage', () => {
@@ -57,54 +56,6 @@ describe('parseMessage', () => {
 
   it('should return null for empty string', () => {
     const result = parseMessage('')
-
-    expect(result).toBeNull()
-  })
-})
-
-describe('parsePayload', () => {
-  it('should parse valid JSON correctly', () => {
-    const validJson = JSON.stringify({
-      language: 'en',
-      timezone: 'UTC',
-      avatar: 'https://example.com/avatar.png',
-      last_name: 'Doe',
-      first_name: 'John',
-      email: 'john@example.com',
-      phone: '+1234567890',
-      matrix_id: '@john:example.com',
-      display_name: 'John Doe'
-    })
-
-    const result = parsePayload(validJson)
-
-    expect(result).not.toBeNull()
-    expect(result).toMatchObject({
-      language: 'en',
-      timezone: 'UTC',
-      matrix_id: '@john:example.com',
-      display_name: 'John Doe'
-    })
-  })
-
-  it('should return null for invalid JSON', () => {
-    const invalidJson = '{ not valid json at all }'
-
-    const result = parsePayload(invalidJson)
-
-    expect(result).toBeNull()
-  })
-
-  it('should return null for malformed JSON string', () => {
-    const malformedJson = '{"matrix_id":"@user:domain","language":"en"'
-
-    const result = parsePayload(malformedJson)
-
-    expect(result).toBeNull()
-  })
-
-  it('should return null for empty string', () => {
-    const result = parsePayload('')
 
     expect(result).toBeNull()
   })

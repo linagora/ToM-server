@@ -7,11 +7,8 @@
 // Re-export main bridge class
 export { CommonSettingsBridge } from './bridge'
 
-// Re-export types
+// Re-export types and errors
 export * from './types'
-
-// Re-export errors
-export * from './errors'
 
 // Run CLI when executed directly
 import { runCli } from './cli'

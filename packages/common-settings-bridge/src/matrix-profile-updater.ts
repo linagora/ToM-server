@@ -1,6 +1,6 @@
 import { type Logger, type Intent } from 'matrix-appservice-bridge'
 import { SynapseAdminRetryMode, type SettingsPayload } from './types'
-import { AvatarFetchError } from './errors'
+import { AvatarFetchError } from './types'
 
 /**
  * Default maximum allowed avatar file size (5MB).

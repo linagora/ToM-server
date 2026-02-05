@@ -1,6 +1,6 @@
 import { CommonSettingsMessage } from './types'
 import type { SettingsPayload } from './types'
-import { UserIdNotProvidedError, MessageParseError } from './errors'
+import { UserIdNotProvidedError, MessageParseError } from './types'
 
 /**
  * Represents a validated and parsed message ready for processing.

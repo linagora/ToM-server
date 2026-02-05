@@ -22,7 +22,7 @@ import {
   isIdempotentDuplicate,
   formatTimestamp
 } from './version-manager'
-import { MessageParseError } from './errors'
+import { MessageParseError } from './types'
 
 Logger.configure({
   console:
