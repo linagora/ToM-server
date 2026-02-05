@@ -448,10 +448,11 @@ describe('CommonSettingsBridge - Change Detection', () => {
 
     const existingSettings = {
       matrix_id: '@user:example.com',
-      settings: JSON.stringify({
+      settings: {
+        matrix_id: '@user:example.com',
         display_name: 'Test User',
         avatar: 'mxc://example.com/avatar123'
-      }),
+      },
       version: 1,
       timestamp: Date.now() - 1000,
       request_id: 'old-request'
@@ -477,10 +478,11 @@ describe('CommonSettingsBridge - Change Detection', () => {
 
     const existingSettings = {
       matrix_id: '@user:example.com',
-      settings: JSON.stringify({
+      settings: {
+        matrix_id: '@user:example.com',
         display_name: 'Old Name',
         avatar: 'mxc://example.com/avatar123'
-      }),
+      },
       version: 1,
       timestamp: Date.now() - 1000,
       request_id: 'old-request'

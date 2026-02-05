@@ -41,8 +41,10 @@ export interface CommonSettingsMessage {
 
 /**
  * Represents user settings as stored in the bridge database.
+ * Named StoredUserSettings to distinguish from the UserSettings type
+ * in the @twake/common-settings package.
  */
-export interface UserSettings {
+export interface StoredUserSettings {
   readonly source?: string
   readonly nickname: string
   readonly request_id: string

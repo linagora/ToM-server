@@ -83,7 +83,7 @@ describe('SettingsRepository', () => {
       const payload = createTestPayload()
       const dbRow = {
         matrix_id: '@user:example.com',
-        settings: JSON.stringify(payload),
+        settings: payload, // jsonb returns as object, not string
         version: 1,
         timestamp: 1234567890,
         request_id: 'req-123'
