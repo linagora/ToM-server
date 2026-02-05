@@ -1,12 +1,6 @@
 import { CommonSettingsBridge } from './bridge'
 import { SettingsRepository } from './settings-repository'
 import { MatrixProfileUpdater } from './matrix-profile-updater'
-import { parseMessage, validateMessage } from './message-handler'
-import {
-  shouldApplyUpdate,
-  isIdempotentDuplicate,
-  formatTimestamp
-} from './version-manager'
 import { Bridge, Logger, Intent } from 'matrix-appservice-bridge'
 import { AMQPConnector } from '@twake/amqp-connector'
 import { Database } from '@twake/db'
@@ -14,11 +8,9 @@ import type { ConsumeMessage, Channel } from 'amqplib'
 import type { BridgeConfig, UserSettings, SettingsPayload } from './types'
 import { SynapseAdminRetryMode } from './types'
 
-// Mock all dependencies
+// Mock external dependencies
 jest.mock('./settings-repository')
 jest.mock('./matrix-profile-updater')
-jest.mock('./message-handler')
-jest.mock('./version-manager')
 jest.mock('@twake/amqp-connector')
 jest.mock('@twake/db')
 
@@ -304,8 +296,6 @@ describe('CommonSettingsBridge', () => {
       channel: Channel
     ) => Promise<void>
     let mockMessage: ConsumeMessage
-    let mockParsedMessage: any
-    let mockValidatedMessage: any
     let mockUserSettings: UserSettings | null
     let mockPayload: SettingsPayload
 
@@ -330,84 +320,68 @@ describe('CommonSettingsBridge', () => {
         last_name: 'Doe',
         first_name: 'John'
       }
+    })
 
-      mockParsedMessage = {
-        source: 'test-app',
-        request_id: 'req-123',
-        version: 2,
-        timestamp: 1640995200000,
-        payload: mockPayload
-      }
-
-      mockValidatedMessage = {
-        userId: '@user:example.com',
-        version: 2,
-        timestamp: 1640995200000,
-        requestId: 'req-123',
-        source: 'test-app',
-        payload: mockPayload
-      }
-
+    it('should throw error if JSON parse fails', async () => {
       mockMessage = {
-        content: Buffer.from(JSON.stringify(mockParsedMessage))
+        content: Buffer.from('invalid json {{{')
       } as ConsumeMessage
-
-      // Setup mocks
-      ;(parseMessage as jest.Mock).mockReturnValue(mockParsedMessage)
-      ;(validateMessage as jest.Mock).mockReturnValue(mockValidatedMessage)
-      ;(formatTimestamp as jest.Mock).mockReturnValue(
-        '2022-01-01T00:00:00.000Z'
-      )
-    })
-
-    it('should parse message using parseMessage', async () => {
-      mockUserSettings = null
-      mockSettingsRepo.getUserSettings.mockResolvedValue(mockUserSettings)
-      ;(isIdempotentDuplicate as jest.Mock).mockReturnValue(false)
-      ;(shouldApplyUpdate as jest.Mock).mockReturnValue(true)
-
-      await handleMessageFn(mockMessage, mockChannel)
-
-      expect(parseMessage).toHaveBeenCalledWith(
-        JSON.stringify(mockParsedMessage)
-      )
-    })
-
-    it('should throw error if parse fails', async () => {
-      ;(parseMessage as jest.Mock).mockReturnValue(null)
 
       await expect(handleMessageFn(mockMessage, mockChannel)).rejects.toThrow(
         'Failed to parse AMQP message payload'
       )
     })
 
-    it('should validate message using validateMessage', async () => {
-      mockUserSettings = null
-      mockSettingsRepo.getUserSettings.mockResolvedValue(mockUserSettings)
-      ;(isIdempotentDuplicate as jest.Mock).mockReturnValue(false)
-      ;(shouldApplyUpdate as jest.Mock).mockReturnValue(true)
-
-      await handleMessageFn(mockMessage, mockChannel)
-
-      expect(validateMessage).toHaveBeenCalledWith(mockParsedMessage)
-    })
-
-    it('should throw error if validation fails', async () => {
-      const validationError = new Error('Validation failed')
-      ;(validateMessage as jest.Mock).mockImplementation(() => {
-        throw validationError
-      })
+    it('should throw error if message is missing request_id', async () => {
+      mockMessage = {
+        content: Buffer.from(
+          JSON.stringify({
+            source: 'test-app',
+            timestamp: 1640995200000,
+            version: 1,
+            payload: mockPayload
+          })
+        )
+      } as ConsumeMessage
 
       await expect(handleMessageFn(mockMessage, mockChannel)).rejects.toThrow(
-        'Validation failed'
+        'Message missing required request_id field'
+      )
+    })
+
+    it('should throw error if message is missing matrix_id in payload', async () => {
+      mockMessage = {
+        content: Buffer.from(
+          JSON.stringify({
+            source: 'test-app',
+            request_id: 'req-123',
+            timestamp: 1640995200000,
+            version: 1,
+            payload: { display_name: 'Test' }
+          })
+        )
+      } as ConsumeMessage
+
+      await expect(handleMessageFn(mockMessage, mockChannel)).rejects.toThrow(
+        'User ID (matrix_id) not provided in message payload'
       )
     })
 
     it('should get user settings from repository', async () => {
       mockUserSettings = null
       mockSettingsRepo.getUserSettings.mockResolvedValue(mockUserSettings)
-      ;(isIdempotentDuplicate as jest.Mock).mockReturnValue(false)
-      ;(shouldApplyUpdate as jest.Mock).mockReturnValue(true)
+
+      mockMessage = {
+        content: Buffer.from(
+          JSON.stringify({
+            source: 'test-app',
+            request_id: 'req-123',
+            timestamp: 1640995200000,
+            version: 2,
+            payload: mockPayload
+          })
+        )
+      } as ConsumeMessage
 
       await handleMessageFn(mockMessage, mockChannel)
 
@@ -416,46 +390,58 @@ describe('CommonSettingsBridge', () => {
       )
     })
 
-    it('should discard duplicate messages using isIdempotentDuplicate', async () => {
+    it('should discard duplicate messages (same request_id)', async () => {
       mockUserSettings = {
         nickname: '@user:example.com',
         payload: mockPayload,
         version: 1,
         timestamp: 1640991600000,
-        request_id: 'req-123'
+        request_id: 'req-123' // Same as incoming
       }
       mockSettingsRepo.getUserSettings.mockResolvedValue(mockUserSettings)
-      ;(isIdempotentDuplicate as jest.Mock).mockReturnValue(true)
+
+      mockMessage = {
+        content: Buffer.from(
+          JSON.stringify({
+            source: 'test-app',
+            request_id: 'req-123',
+            timestamp: 1640995200000,
+            version: 2,
+            payload: mockPayload
+          })
+        )
+      } as ConsumeMessage
 
       await handleMessageFn(mockMessage, mockChannel)
 
-      expect(isIdempotentDuplicate).toHaveBeenCalledWith(
-        mockUserSettings,
-        'req-123'
-      )
       expect(mockProfileUpdater.processChanges).not.toHaveBeenCalled()
       expect(mockSettingsRepo.saveSettings).not.toHaveBeenCalled()
     })
 
-    it('should discard stale updates using shouldApplyUpdate', async () => {
+    it('should discard stale updates (lower version)', async () => {
       mockUserSettings = {
         nickname: '@user:example.com',
         payload: mockPayload,
-        version: 3,
+        version: 5, // Higher than incoming
         timestamp: 1640998800000,
         request_id: 'req-999'
       }
       mockSettingsRepo.getUserSettings.mockResolvedValue(mockUserSettings)
-      ;(isIdempotentDuplicate as jest.Mock).mockReturnValue(false)
-      ;(shouldApplyUpdate as jest.Mock).mockReturnValue(false)
+
+      mockMessage = {
+        content: Buffer.from(
+          JSON.stringify({
+            source: 'test-app',
+            request_id: 'req-123',
+            timestamp: 1640995200000,
+            version: 2, // Lower than stored
+            payload: mockPayload
+          })
+        )
+      } as ConsumeMessage
 
       await handleMessageFn(mockMessage, mockChannel)
 
-      expect(shouldApplyUpdate).toHaveBeenCalledWith(
-        mockUserSettings,
-        2,
-        1640995200000
-      )
       expect(mockProfileUpdater.processChanges).not.toHaveBeenCalled()
       expect(mockSettingsRepo.saveSettings).not.toHaveBeenCalled()
     })
@@ -463,8 +449,18 @@ describe('CommonSettingsBridge', () => {
     it('should process changes for new user', async () => {
       mockUserSettings = null
       mockSettingsRepo.getUserSettings.mockResolvedValue(mockUserSettings)
-      ;(isIdempotentDuplicate as jest.Mock).mockReturnValue(false)
-      ;(shouldApplyUpdate as jest.Mock).mockReturnValue(true)
+
+      mockMessage = {
+        content: Buffer.from(
+          JSON.stringify({
+            source: 'test-app',
+            request_id: 'req-123',
+            timestamp: 1640995200000,
+            version: 2,
+            payload: mockPayload
+          })
+        )
+      } as ConsumeMessage
 
       await handleMessageFn(mockMessage, mockChannel)
 
@@ -476,7 +472,7 @@ describe('CommonSettingsBridge', () => {
       )
     })
 
-    it('should process changes for existing user', async () => {
+    it('should process changes for existing user with higher version', async () => {
       const oldPayload: SettingsPayload = {
         matrix_id: '@user:example.com',
         display_name: 'Old Name',
@@ -496,8 +492,18 @@ describe('CommonSettingsBridge', () => {
         request_id: 'req-old'
       }
       mockSettingsRepo.getUserSettings.mockResolvedValue(mockUserSettings)
-      ;(isIdempotentDuplicate as jest.Mock).mockReturnValue(false)
-      ;(shouldApplyUpdate as jest.Mock).mockReturnValue(true)
+
+      mockMessage = {
+        content: Buffer.from(
+          JSON.stringify({
+            source: 'test-app',
+            request_id: 'req-123',
+            timestamp: 1640995200000,
+            version: 2,
+            payload: mockPayload
+          })
+        )
+      } as ConsumeMessage
 
       await handleMessageFn(mockMessage, mockChannel)
 
@@ -512,8 +518,18 @@ describe('CommonSettingsBridge', () => {
     it('should save settings for new user', async () => {
       mockUserSettings = null
       mockSettingsRepo.getUserSettings.mockResolvedValue(mockUserSettings)
-      ;(isIdempotentDuplicate as jest.Mock).mockReturnValue(false)
-      ;(shouldApplyUpdate as jest.Mock).mockReturnValue(true)
+
+      mockMessage = {
+        content: Buffer.from(
+          JSON.stringify({
+            source: 'test-app',
+            request_id: 'req-123',
+            timestamp: 1640995200000,
+            version: 2,
+            payload: mockPayload
+          })
+        )
+      } as ConsumeMessage
 
       await handleMessageFn(mockMessage, mockChannel)
 
@@ -536,8 +552,18 @@ describe('CommonSettingsBridge', () => {
         request_id: 'req-old'
       }
       mockSettingsRepo.getUserSettings.mockResolvedValue(mockUserSettings)
-      ;(isIdempotentDuplicate as jest.Mock).mockReturnValue(false)
-      ;(shouldApplyUpdate as jest.Mock).mockReturnValue(true)
+
+      mockMessage = {
+        content: Buffer.from(
+          JSON.stringify({
+            source: 'test-app',
+            request_id: 'req-123',
+            timestamp: 1640995200000,
+            version: 2,
+            payload: mockPayload
+          })
+        )
+      } as ConsumeMessage
 
       await handleMessageFn(mockMessage, mockChannel)
 
@@ -570,42 +596,34 @@ describe('CommonSettingsBridge', () => {
         request_id: 'req-old'
       }
       mockSettingsRepo.getUserSettings.mockResolvedValue(mockUserSettings)
-      ;(isIdempotentDuplicate as jest.Mock).mockReturnValue(false)
-      ;(shouldApplyUpdate as jest.Mock).mockReturnValue(true)
 
-      // Execute the handler once
+      mockMessage = {
+        content: Buffer.from(
+          JSON.stringify({
+            source: 'test-app',
+            request_id: 'req-123',
+            timestamp: 1640995200000,
+            version: 2,
+            payload: mockPayload
+          })
+        )
+      } as ConsumeMessage
+
       await handleMessageFn(mockMessage, mockChannel)
 
-      // Extract invocation order from each mock
-      const parseOrder = (parseMessage as jest.Mock).mock.invocationCallOrder[0]
-      const validateOrder = (validateMessage as jest.Mock).mock
-        .invocationCallOrder[0]
+      // Verify orchestration order: getUserSettings -> processChanges -> saveSettings
       const getSettingsOrder =
         mockSettingsRepo.getUserSettings.mock.invocationCallOrder[0]
-      const isIdempotentOrder = (isIdempotentDuplicate as jest.Mock).mock
-        .invocationCallOrder[0]
-      const shouldApplyOrder = (shouldApplyUpdate as jest.Mock).mock
-        .invocationCallOrder[0]
       const processChangesOrder =
         mockProfileUpdater.processChanges.mock.invocationCallOrder[0]
       const saveSettingsOrder =
         mockSettingsRepo.saveSettings.mock.invocationCallOrder[0]
 
-      // Verify all functions were called
-      expect(parseOrder).toBeDefined()
-      expect(validateOrder).toBeDefined()
       expect(getSettingsOrder).toBeDefined()
-      expect(isIdempotentOrder).toBeDefined()
-      expect(shouldApplyOrder).toBeDefined()
       expect(processChangesOrder).toBeDefined()
       expect(saveSettingsOrder).toBeDefined()
 
-      // Verify correct execution order
-      expect(parseOrder).toBeLessThan(validateOrder)
-      expect(validateOrder).toBeLessThan(getSettingsOrder)
-      expect(getSettingsOrder).toBeLessThan(isIdempotentOrder)
-      expect(isIdempotentOrder).toBeLessThan(shouldApplyOrder)
-      expect(shouldApplyOrder).toBeLessThan(processChangesOrder)
+      expect(getSettingsOrder).toBeLessThan(processChangesOrder)
       expect(processChangesOrder).toBeLessThan(saveSettingsOrder)
     })
   })
