@@ -3,17 +3,6 @@ import { Logger } from 'matrix-appservice-bridge'
 import { UserSettings, UserSettingsTableName, SettingsPayload } from './types'
 
 /**
- * Represents a raw row from the user settings database table.
- */
-export interface UserSettingsRow {
-  matrix_id: string
-  settings: string
-  version: number
-  timestamp: number
-  request_id: string
-}
-
-/**
  * Repository for managing user settings persistence in the database.
  * Handles all database operations for storing and retrieving user settings,
  * including JSON serialization/deserialization and error handling.
