@@ -1,4 +1,4 @@
-import { Bridge, Logger, Intent } from 'matrix-appservice-bridge'
+import { Bridge, Logger } from 'matrix-appservice-bridge'
 import type { ConsumeMessage, Channel } from 'amqplib'
 import { AMQPConnector } from '@twake/amqp-connector'
 import { Database } from '@twake/db'
@@ -45,7 +45,6 @@ export class CommonSettingsBridge {
   readonly #config: BridgeConfig
   readonly #log: Logger
   #bridge!: Bridge
-  #botIntent!: Intent
   #adminApis!: any
   #db!: Database<UserSettingsTableName>
   #connector!: AMQPConnector
@@ -348,12 +347,12 @@ export class CommonSettingsBridge {
       this.#log.info(`Bot user ID: ${botUserId}`)
 
       this.#log.debug('Ensuring bot is registered...')
-      this.#botIntent = this.#bridge.getIntent(botUserId)
-      await this.#botIntent.ensureRegistered()
+      const botIntent = this.#bridge.getIntent(botUserId)
+      await botIntent.ensureRegistered()
       this.#log.debug('Bot registration confirmed')
 
       this.#log.debug('Initializing admin APIs...')
-      this.#adminApis = this.#botIntent.matrixClient.adminApis.synapse
+      this.#adminApis = botIntent.matrixClient.adminApis.synapse
 
       this.#log.debug('Checking admin privileges...')
       const isAdmin = await this.#adminApis.isSelfAdmin()
