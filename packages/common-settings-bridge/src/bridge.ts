@@ -17,12 +17,42 @@ import {
   type MatrixApis
 } from './matrix-profile-updater'
 import { ParsedMessage, parseMessage, validateMessage } from './message-handler'
-import {
-  shouldApplyUpdate,
-  isIdempotentDuplicate,
-  formatTimestamp
-} from './version-manager'
-import { MessageParseError } from './types'
+import { MessageParseError, type UserSettings } from './types'
+
+// =============================================================================
+// Version management helpers (inlined from version-manager.ts)
+// =============================================================================
+
+/**
+ * Determines whether an update should be applied based on version and timestamp.
+ */
+function shouldApplyUpdate(
+  lastSettings: UserSettings | null,
+  newVersion: number,
+  newTimestamp: number
+): boolean {
+  if (!lastSettings) return true
+  if (newVersion > lastSettings.version) return true
+  if (newVersion === lastSettings.version && newTimestamp > lastSettings.timestamp) return true
+  return false
+}
+
+/**
+ * Checks if an incoming update is an idempotent duplicate based on request ID.
+ */
+function isIdempotentDuplicate(
+  lastSettings: UserSettings | null,
+  newRequestId: string
+): boolean {
+  return lastSettings?.request_id === newRequestId
+}
+
+/**
+ * Formats a Unix timestamp (milliseconds) as an ISO 8601 string.
+ */
+function formatTimestamp(timestamp: number): string {
+  return new Date(timestamp).toISOString()
+}
 
 Logger.configure({
   console:
