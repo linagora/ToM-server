@@ -1,4 +1,5 @@
-import { CommonSettingsMessage, SettingsPayload } from './types'
+import { CommonSettingsMessage } from './types'
+import type { SettingsPayload } from './types'
 import { UserIdNotProvidedError, MessageParseError } from './errors'
 
 /**
@@ -32,29 +33,6 @@ export interface ParsedMessage {
 export function parseMessage(raw: string): CommonSettingsMessage | null {
   try {
     return JSON.parse(raw) as CommonSettingsMessage
-  } catch (error) {
-    return null
-  }
-}
-
-/**
- * Parses a settings payload from a JSON string.
- * Used when retrieving settings from the database.
- *
- * @param raw - The raw JSON string to parse
- * @returns The parsed SettingsPayload or null if parsing failed
- *
- * @example
- * ```typescript
- * const payload = parsePayload('{"matrix_id":"@user:domain",...}')
- * if (payload === null) {
- *   console.error('Failed to parse payload')
- * }
- * ```
- */
-export function parsePayload(raw: string): SettingsPayload | null {
-  try {
-    return JSON.parse(raw) as SettingsPayload
   } catch (error) {
     return null
   }
