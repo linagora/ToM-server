@@ -74,9 +74,7 @@ export class MatrixProfileUpdater {
     newDisplayname: string
   ): Promise<void> {
     this.logger.debug(
-      `Updating display name for ${userId} (retryMode=${this.#getRetryModeName(
-        this.retryMode
-      )})`
+      `Updating display name for ${userId} (retryMode=${this.retryMode})`
     )
 
     if (this.retryMode === SynapseAdminRetryMode.EXCLUSIVE) {
@@ -257,9 +255,7 @@ export class MatrixProfileUpdater {
     const resolvedUrl = await this.#resolveAvatarUrl(userId, avatarUrl)
 
     this.logger.debug(
-      `Updating avatar for ${userId} (retryMode=${this.#getRetryModeName(
-        this.retryMode
-      )})`
+      `Updating avatar for ${userId} (retryMode=${this.retryMode})`
     )
 
     if (this.retryMode === SynapseAdminRetryMode.EXCLUSIVE) {
@@ -366,22 +362,6 @@ export class MatrixProfileUpdater {
 
     if (!displayNameChanged && !avatarChanged) {
       this.logger.debug(`No profile changes detected for ${userId}`)
-    }
-  }
-
-  /**
-   * Gets a human-readable name for the retry mode.
-   * @param mode - The SynapseAdminRetryMode enum value
-   * @returns String name of the mode
-   */
-  #getRetryModeName(mode: SynapseAdminRetryMode): string {
-    switch (mode) {
-      case SynapseAdminRetryMode.EXCLUSIVE:
-        return 'EXCLUSIVE'
-      case SynapseAdminRetryMode.FALLBACK:
-        return 'FALLBACK'
-      default:
-        return 'DISABLED'
     }
   }
 }
