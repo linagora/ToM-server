@@ -25,7 +25,10 @@ describe('MatrixProfileUpdater', () => {
     // Create mock APIs
     mockApis = {
       getIntent: jest.fn().mockReturnValue(mockIntent),
-      adminUpsertUser: jest.fn()
+      adminUpsertUser: jest.fn(),
+      botUploadContent: jest
+        .fn()
+        .mockResolvedValue('mxc://example.com/bot-uploaded')
     }
 
     // Create mock logger
@@ -315,7 +318,7 @@ describe('MatrixProfileUpdater', () => {
 
         expect(mockIntent.setAvatarUrl).not.toHaveBeenCalled()
         expect(mockLogger.error).toHaveBeenCalledWith(
-          `Failed to download/upload avatar for @user:example.com from ${httpUrl}: Upload failed`
+          `Failed to upload avatar for @user:example.com: Upload failed`
         )
       })
 
@@ -484,6 +487,38 @@ describe('MatrixProfileUpdater', () => {
         )
         expect(mockIntent.setAvatarUrl).not.toHaveBeenCalled()
       })
+
+      it('should upload HTTP URL avatar using bot credentials', async () => {
+        const httpUrl = 'https://example.com/avatar.png'
+        const mockBuffer = Buffer.from('fake image data')
+        const mockResponse = {
+          ok: true,
+          headers: {
+            get: jest.fn((header: string) => {
+              if (header === 'content-type') return 'image/png'
+              if (header === 'content-length') return '1024'
+              return null
+            })
+          },
+          arrayBuffer: jest.fn().mockResolvedValue(mockBuffer.buffer)
+        }
+        ;(global.fetch as jest.Mock).mockResolvedValue(mockResponse)
+        mockApis.botUploadContent.mockResolvedValue(
+          'mxc://example.com/bot-uploaded'
+        )
+        mockApis.adminUpsertUser.mockResolvedValue(undefined)
+
+        await updater.updateAvatar('@user:example.com', httpUrl)
+
+        // Should use bot upload, not user intent upload
+        expect(mockApis.botUploadContent).toHaveBeenCalled()
+        expect(mockMatrixClient.uploadContent).not.toHaveBeenCalled()
+        // Then update via admin API
+        expect(mockApis.adminUpsertUser).toHaveBeenCalledWith(
+          '@user:example.com',
+          { avatar_url: 'mxc://example.com/bot-uploaded' }
+        )
+      })
     })
 
     describe('FALLBACK mode', () => {
@@ -530,6 +565,47 @@ describe('MatrixProfileUpdater', () => {
 
         expect(mockApis.adminUpsertUser).not.toHaveBeenCalled()
       })
+
+      it('should fall back to bot upload on M_FORBIDDEN for HTTP URL', async () => {
+        const httpUrl = 'https://example.com/avatar.png'
+        const mockBuffer = Buffer.from('fake image data')
+        const mockResponse = {
+          ok: true,
+          headers: {
+            get: jest.fn((header: string) => {
+              if (header === 'content-type') return 'image/png'
+              if (header === 'content-length') return '1024'
+              return null
+            })
+          },
+          arrayBuffer: jest.fn().mockResolvedValue(mockBuffer.buffer)
+        }
+        ;(global.fetch as jest.Mock).mockResolvedValue(mockResponse)
+
+        // User upload fails with M_FORBIDDEN
+        const error = { errcode: 'M_FORBIDDEN', message: 'Forbidden' }
+        mockMatrixClient.uploadContent.mockRejectedValue(error)
+        mockApis.botUploadContent.mockResolvedValue(
+          'mxc://example.com/bot-uploaded'
+        )
+        // setAvatarUrl also fails with M_FORBIDDEN (user cannot set their own avatar)
+        mockIntent.setAvatarUrl.mockRejectedValue(error)
+        mockApis.adminUpsertUser.mockResolvedValue(undefined)
+
+        await updater.updateAvatar('@user:example.com', httpUrl)
+
+        // Should try user upload first, then fall back to bot upload
+        expect(mockMatrixClient.uploadContent).toHaveBeenCalled()
+        expect(mockApis.botUploadContent).toHaveBeenCalled()
+        // Then setAvatarUrl fails, falls back to admin API
+        expect(mockIntent.setAvatarUrl).toHaveBeenCalledWith(
+          'mxc://example.com/bot-uploaded'
+        )
+        expect(mockApis.adminUpsertUser).toHaveBeenCalledWith(
+          '@user:example.com',
+          { avatar_url: 'mxc://example.com/bot-uploaded' }
+        )
+      })
     })
   })
 
@@ -573,8 +649,7 @@ describe('MatrixProfileUpdater', () => {
         await updater.processChanges(
           '@user:example.com',
           oldPayload,
-          newPayload,
-          false
+          newPayload
         )
 
         expect(mockIntent.setDisplayName).toHaveBeenCalledWith('New Name')
@@ -588,8 +663,7 @@ describe('MatrixProfileUpdater', () => {
         await updater.processChanges(
           '@user:example.com',
           oldPayload,
-          newPayload,
-          false
+          newPayload
         )
 
         expect(mockIntent.setDisplayName).not.toHaveBeenCalled()
@@ -605,8 +679,7 @@ describe('MatrixProfileUpdater', () => {
         await updater.processChanges(
           '@user:example.com',
           oldPayload,
-          newPayload,
-          false
+          newPayload
         )
 
         expect(mockIntent.setDisplayName).not.toHaveBeenCalled()
@@ -624,8 +697,7 @@ describe('MatrixProfileUpdater', () => {
         await updater.processChanges(
           '@user:example.com',
           oldPayload,
-          newPayload,
-          false
+          newPayload
         )
 
         expect(mockIntent.setAvatarUrl).toHaveBeenCalledWith(
@@ -641,8 +713,7 @@ describe('MatrixProfileUpdater', () => {
         await updater.processChanges(
           '@user:example.com',
           oldPayload,
-          newPayload,
-          false
+          newPayload
         )
 
         expect(mockIntent.setAvatarUrl).not.toHaveBeenCalled()
@@ -655,8 +726,7 @@ describe('MatrixProfileUpdater', () => {
         await updater.processChanges(
           '@user:example.com',
           oldPayload,
-          newPayload,
-          false
+          newPayload
         )
 
         expect(mockIntent.setAvatarUrl).not.toHaveBeenCalled()
@@ -674,8 +744,7 @@ describe('MatrixProfileUpdater', () => {
         await updater.processChanges(
           '@user:example.com',
           oldPayload,
-          newPayload,
-          false
+          newPayload
         )
 
         expect(mockIntent.setDisplayName).not.toHaveBeenCalled()
@@ -693,12 +762,7 @@ describe('MatrixProfileUpdater', () => {
           avatar: 'mxc://example.com/avatar'
         })
 
-        await updater.processChanges(
-          '@user:example.com',
-          null,
-          newPayload,
-          true
-        )
+        await updater.processChanges('@user:example.com', null, newPayload)
 
         expect(mockIntent.setDisplayName).toHaveBeenCalledWith('New User')
         expect(mockIntent.setAvatarUrl).toHaveBeenCalledWith(
@@ -712,12 +776,7 @@ describe('MatrixProfileUpdater', () => {
           avatar: ''
         })
 
-        await updater.processChanges(
-          '@user:example.com',
-          null,
-          newPayload,
-          true
-        )
+        await updater.processChanges('@user:example.com', null, newPayload)
 
         expect(mockIntent.setDisplayName).toHaveBeenCalledWith('New User')
         expect(mockIntent.setAvatarUrl).not.toHaveBeenCalled()
@@ -729,12 +788,7 @@ describe('MatrixProfileUpdater', () => {
           avatar: 'mxc://example.com/avatar'
         })
 
-        await updater.processChanges(
-          '@user:example.com',
-          null,
-          newPayload,
-          true
-        )
+        await updater.processChanges('@user:example.com', null, newPayload)
 
         expect(mockIntent.setDisplayName).not.toHaveBeenCalled()
         expect(mockIntent.setAvatarUrl).toHaveBeenCalledWith(
@@ -748,12 +802,7 @@ describe('MatrixProfileUpdater', () => {
           avatar: ''
         })
 
-        await updater.processChanges(
-          '@user:example.com',
-          null,
-          newPayload,
-          true
-        )
+        await updater.processChanges('@user:example.com', null, newPayload)
 
         expect(mockIntent.setDisplayName).not.toHaveBeenCalled()
         expect(mockIntent.setAvatarUrl).not.toHaveBeenCalled()
@@ -774,8 +823,7 @@ describe('MatrixProfileUpdater', () => {
         await updater.processChanges(
           '@user:example.com',
           oldPayload,
-          newPayload,
-          false
+          newPayload
         )
 
         expect(mockIntent.setDisplayName).toHaveBeenCalledWith('New Name')

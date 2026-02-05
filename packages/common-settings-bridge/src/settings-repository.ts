@@ -1,6 +1,10 @@
 import { Database } from '@twake/db'
 import { Logger } from 'matrix-appservice-bridge'
-import { UserSettings, UserSettingsTableName, SettingsPayload } from './types'
+import {
+  StoredUserSettings,
+  UserSettingsTableName,
+  SettingsPayload
+} from './types'
 
 /**
  * Repository for managing user settings persistence in the database.
@@ -29,7 +33,7 @@ export class SettingsRepository {
    * @returns UserSettings object or null if user not found or data is corrupted
    * @throws Error if database query fails
    */
-  async getUserSettings(userId: string): Promise<UserSettings | null> {
+  async getUserSettings(userId: string): Promise<StoredUserSettings | null> {
     this.#logger.debug(`Looking up user settings for ${userId}`)
 
     try {
@@ -45,7 +49,7 @@ export class SettingsRepository {
       }
 
       const dbRow = result[0] as Record<string, unknown>
-      const parsedSettings = this.#safeParsePayload(dbRow.settings as string)
+      const parsedSettings = this.#safeParsePayload(dbRow.settings)
 
       if (parsedSettings === null) {
         this.#logger.warn(
@@ -157,22 +161,32 @@ export class SettingsRepository {
   }
 
   /**
-   * Parses a settings payload from a JSON string.
-   * Used when retrieving settings from the database.
+   * Parses a settings payload from database result.
+   * Handles both JSON strings (sqlite) and objects (PostgreSQL jsonb).
    *
-   * @param raw - The raw JSON string to parse
+   * @param raw - The raw value from database (string or object)
    * @returns The parsed SettingsPayload or null if parsing failed
    */
-  #safeParsePayload(raw: string): SettingsPayload | null {
-    try {
-      return JSON.parse(raw) as SettingsPayload
-    } catch (error) {
-      this.#logger.warn(
-        `Failed to parse settings payload from database: ${
-          error instanceof Error ? error.message : 'Unknown error'
-        }`
-      )
-      return null
+  #safeParsePayload(raw: unknown): SettingsPayload | null {
+    // PostgreSQL jsonb returns objects directly
+    if (typeof raw === 'object' && raw !== null) {
+      return raw as SettingsPayload
     }
+
+    // SQLite or string-based storage
+    if (typeof raw === 'string') {
+      try {
+        return JSON.parse(raw) as SettingsPayload
+      } catch (error) {
+        this.#logger.warn(
+          `Failed to parse settings payload from database: ${
+            error instanceof Error ? error.message : 'Unknown error'
+          }`
+        )
+        return null
+      }
+    }
+
+    return null
   }
 }

@@ -5,7 +5,7 @@ import { Bridge, Logger, Intent } from 'matrix-appservice-bridge'
 import { AMQPConnector } from '@twake/amqp-connector'
 import { Database } from '@twake/db'
 import type { ConsumeMessage, Channel } from 'amqplib'
-import type { BridgeConfig, UserSettings, SettingsPayload } from './types'
+import type { BridgeConfig, StoredUserSettings, SettingsPayload } from './types'
 import { SynapseAdminRetryMode } from './types'
 
 // Mock external dependencies
@@ -296,7 +296,7 @@ describe('CommonSettingsBridge', () => {
       channel: Channel
     ) => Promise<void>
     let mockMessage: ConsumeMessage
-    let mockUserSettings: UserSettings | null
+    let mockUserSettings: StoredUserSettings | null
     let mockPayload: SettingsPayload
 
     beforeEach(async () => {
@@ -467,8 +467,7 @@ describe('CommonSettingsBridge', () => {
       expect(mockProfileUpdater.processChanges).toHaveBeenCalledWith(
         '@user:example.com',
         null,
-        mockPayload,
-        true
+        mockPayload
       )
     })
 
@@ -510,8 +509,7 @@ describe('CommonSettingsBridge', () => {
       expect(mockProfileUpdater.processChanges).toHaveBeenCalledWith(
         '@user:example.com',
         oldPayload,
-        mockPayload,
-        false
+        mockPayload
       )
     })
 

@@ -40,6 +40,20 @@ export interface MatrixApis {
    * @param data - User data to update (displayname, avatar_url, etc.)
    */
   adminUpsertUser(userId: string, data: Record<string, string>): Promise<void>
+
+  /**
+   * Uploads content to Matrix using the bot's credentials.
+   * Used when the bot cannot masquerade as the target user.
+   * @param content - The content buffer to upload
+   * @param contentType - MIME type of the content
+   * @param fileName - Optional file name
+   * @returns The MXC URL of the uploaded content
+   */
+  botUploadContent(
+    content: Buffer,
+    contentType: string,
+    fileName?: string
+  ): Promise<string>
 }
 
 /**
@@ -103,7 +117,7 @@ export class MatrixProfileUpdater {
       )
 
       if (
-        err?.errcode === 'M_FORBIDDEN' &&
+        (err?.errcode === 'M_FORBIDDEN' || err?.errcode === 'M_EXCLUSIVE') &&
         this.retryMode === SynapseAdminRetryMode.FALLBACK
       ) {
         this.logger.info(`Falling back to admin API for display name ${userId}`)
@@ -145,21 +159,16 @@ export class MatrixProfileUpdater {
   }
 
   /**
-   * Resolves an avatar URL to an MXC URL.
-   * If the URL is already an MXC URL, returns it as-is.
-   * If the URL is an HTTP/HTTPS URL, downloads with timeout and size validation,
-   * then uploads it to Synapse.
-   * @param userId - The Matrix user ID (used for logging and intent)
-   * @param avatarUrl - The avatar URL to resolve (can be mxc:// or http(s)://)
-   * @returns The MXC URL for the avatar
+   * Downloads an avatar from an external URL and returns the buffer and content type.
+   * @param userId - The Matrix user ID (for logging)
+   * @param avatarUrl - The HTTP(S) URL to download from
+   * @returns Object containing the buffer and content type
    * @throws {AvatarFetchError} If download times out, exceeds size limit, or HTTP error
    */
-  async #resolveAvatarUrl(userId: string, avatarUrl: string): Promise<string> {
-    if (avatarUrl.startsWith('mxc://')) {
-      this.logger.debug(`Avatar URL is already MXC format: ${avatarUrl}`)
-      return avatarUrl
-    }
-
+  async #downloadAvatar(
+    userId: string,
+    avatarUrl: string
+  ): Promise<{ buffer: Buffer; contentType: string }> {
     this.logger.info(
       `Downloading avatar from external URL for ${userId}: ${avatarUrl}`
     )
@@ -211,16 +220,7 @@ export class MatrixProfileUpdater {
         `Downloaded avatar for ${userId}: ${buffer.length} bytes, type=${contentType}`
       )
 
-      // Upload to Matrix via the SDK's uploadContent (accepts Buffer)
-      const intent = this.apis.getIntent(userId)
-      const mxcUrl = await intent.matrixClient.uploadContent(
-        buffer,
-        contentType,
-        'avatar'
-      )
-
-      this.logger.info(`Uploaded avatar to Synapse for ${userId}: ${mxcUrl}`)
-      return mxcUrl
+      return { buffer, contentType }
     } catch (error) {
       clearTimeout(timeout)
 
@@ -235,7 +235,82 @@ export class MatrixProfileUpdater {
       }
 
       this.logger.error(
-        `Failed to download/upload avatar for ${userId} from ${avatarUrl}: ${
+        `Failed to download avatar for ${userId} from ${avatarUrl}: ${
+          error instanceof Error ? error.message : 'Unknown error'
+        }`
+      )
+      throw error
+    }
+  }
+
+  /**
+   * Resolves an avatar URL to an MXC URL.
+   * If the URL is already an MXC URL, returns it as-is.
+   * If the URL is an HTTP/HTTPS URL, downloads with timeout and size validation,
+   * then uploads it to Synapse using appropriate credentials based on retry mode.
+   * @param userId - The Matrix user ID (used for logging and intent)
+   * @param avatarUrl - The avatar URL to resolve (can be mxc:// or http(s)://)
+   * @returns The MXC URL for the avatar
+   * @throws {AvatarFetchError} If download times out, exceeds size limit, or HTTP error
+   */
+  async #resolveAvatarUrl(userId: string, avatarUrl: string): Promise<string> {
+    if (avatarUrl.startsWith('mxc://')) {
+      this.logger.debug(`Avatar URL is already MXC format: ${avatarUrl}`)
+      return avatarUrl
+    }
+
+    // Download the avatar first
+    const { buffer, contentType } = await this.#downloadAvatar(
+      userId,
+      avatarUrl
+    )
+
+    // In EXCLUSIVE mode, always upload using bot credentials
+    if (this.retryMode === SynapseAdminRetryMode.EXCLUSIVE) {
+      this.logger.debug(
+        `Using bot credentials for avatar upload (exclusive mode): ${userId}`
+      )
+      const mxcUrl = await this.apis.botUploadContent(
+        buffer,
+        contentType,
+        'avatar'
+      )
+      this.logger.info(`Uploaded avatar via bot for ${userId}: ${mxcUrl}`)
+      return mxcUrl
+    }
+
+    // Try uploading as the user first
+    try {
+      this.logger.debug(`Attempting avatar upload as user: ${userId}`)
+      const intent = this.apis.getIntent(userId)
+      const mxcUrl = await intent.matrixClient.uploadContent(
+        buffer,
+        contentType,
+        'avatar'
+      )
+      this.logger.info(`Uploaded avatar to Synapse for ${userId}: ${mxcUrl}`)
+      return mxcUrl
+    } catch (error: any) {
+      // In FALLBACK mode, try bot upload on M_FORBIDDEN
+      if (
+        (error?.errcode === 'M_FORBIDDEN' ||
+          error?.errcode === 'M_EXCLUSIVE') &&
+        this.retryMode === SynapseAdminRetryMode.FALLBACK
+      ) {
+        this.logger.info(
+          `Falling back to bot credentials for avatar upload: ${userId}`
+        )
+        const mxcUrl = await this.apis.botUploadContent(
+          buffer,
+          contentType,
+          'avatar'
+        )
+        this.logger.info(`Uploaded avatar via bot for ${userId}: ${mxcUrl}`)
+        return mxcUrl
+      }
+
+      this.logger.error(
+        `Failed to upload avatar for ${userId}: ${
           error instanceof Error ? error.message : 'Unknown error'
         }`
       )
@@ -280,7 +355,7 @@ export class MatrixProfileUpdater {
       )
 
       if (
-        err?.errcode === 'M_FORBIDDEN' &&
+        (err?.errcode === 'M_FORBIDDEN' || err?.errcode === 'M_EXCLUSIVE') &&
         this.retryMode === SynapseAdminRetryMode.FALLBACK
       ) {
         this.logger.info(`Falling back to admin API for avatar ${userId}`)
@@ -329,20 +404,22 @@ export class MatrixProfileUpdater {
   async processChanges(
     userId: string,
     oldPayload: SettingsPayload | null,
-    newPayload: SettingsPayload,
-    isNewUser: boolean
+    newPayload: SettingsPayload
   ): Promise<void> {
-    this.logger.debug(
-      `Processing changes for ${userId} (isNewUser=${isNewUser})`
-    )
+    this.logger.debug(`Processing changes for ${userId}`)
 
     const displayNameChanged =
-      isNewUser || oldPayload?.display_name !== newPayload.display_name
-    const avatarChanged = isNewUser || oldPayload?.avatar !== newPayload.avatar
+      oldPayload?.display_name !== newPayload.display_name
+    const avatarChanged = oldPayload?.avatar !== newPayload.avatar
 
     this.logger.debug(
       `Change detection: displayName=${displayNameChanged} (old="${oldPayload?.display_name}", new="${newPayload.display_name}"), avatar=${avatarChanged} (old="${oldPayload?.avatar}", new="${newPayload.avatar}")`
     )
+
+    if (!displayNameChanged && !avatarChanged) {
+      this.logger.debug(`No profile changes detected for ${userId}`)
+      return
+    }
 
     if (displayNameChanged && newPayload.display_name) {
       this.logger.debug(`Display name change detected for ${userId}`)
@@ -358,10 +435,6 @@ export class MatrixProfileUpdater {
       await this.updateAvatar(userId, newPayload.avatar)
     } else if (avatarChanged && !newPayload.avatar) {
       this.logger.warn(`Avatar changed but new value is empty for ${userId}`)
-    }
-
-    if (!displayNameChanged && !avatarChanged) {
-      this.logger.debug(`No profile changes detected for ${userId}`)
     }
   }
 }

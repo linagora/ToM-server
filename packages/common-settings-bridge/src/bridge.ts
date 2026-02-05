@@ -1,4 +1,4 @@
-import { Bridge, Logger } from 'matrix-appservice-bridge'
+import { Bridge, Logger, type Intent } from 'matrix-appservice-bridge'
 import type { ConsumeMessage, Channel } from 'amqplib'
 import { AMQPConnector } from '@twake/amqp-connector'
 import { Database } from '@twake/db'
@@ -19,7 +19,7 @@ import {
 import {
   MessageParseError,
   UserIdNotProvidedError,
-  type UserSettings,
+  type StoredUserSettings,
   type CommonSettingsMessage,
   type SettingsPayload
 } from './types'
@@ -82,7 +82,7 @@ function validateMessage(message: CommonSettingsMessage): ParsedMessage {
  * Determines whether an update should be applied based on version and timestamp.
  */
 function shouldApplyUpdate(
-  lastSettings: UserSettings | null,
+  lastSettings: StoredUserSettings | null,
   newVersion: number,
   newTimestamp: number
 ): boolean {
@@ -100,7 +100,7 @@ function shouldApplyUpdate(
  * Checks if an incoming update is an idempotent duplicate based on request ID.
  */
 function isIdempotentDuplicate(
-  lastSettings: UserSettings | null,
+  lastSettings: StoredUserSettings | null,
   newRequestId: string
 ): boolean {
   return lastSettings?.request_id === newRequestId
@@ -109,7 +109,7 @@ function isIdempotentDuplicate(
 /**
  * Formats a Unix timestamp (milliseconds) as an ISO 8601 string.
  */
-function formatTimestamp(timestamp: number): string {
+export function formatTimestamp(timestamp: number): string {
   return new Date(timestamp).toISOString()
 }
 
@@ -135,6 +135,7 @@ export class CommonSettingsBridge {
   readonly #config: BridgeConfig
   readonly #log: Logger
   #bridge!: Bridge
+  #botIntent!: Intent
   #adminApis!: any
   #db!: Database<UserSettingsTableName>
   #connector!: AMQPConnector
@@ -263,61 +264,45 @@ export class CommonSettingsBridge {
    * @param channel - The AMQP channel for acknowledgment
    */
   async #handleMessage(msg: ConsumeMessage, channel: Channel): Promise<void> {
-    this.#log.debug('Received AMQP message')
-
     const rawContent = msg.content.toString()
-    this.#log.debug(`Message content length: ${rawContent.length} bytes`)
 
-    // Parse message
+    this.#log.debug(`Received message (${rawContent.length} bytes)`)
+
+    /* Parse and validate */
     const message = parseMessage(rawContent)
-
-    if (message === null) {
-      this.#log.error('Failed to parse message content')
+    if (!message) {
+      this.#log.error('Failed to parse message')
       if (
         process.env.NODE_ENV === 'development' ||
         process.env.LOG_RAW_MESSAGES === 'true'
       ) {
-        this.#log.debug(
-          `Raw message content: ${rawContent.substring(0, 200)}...`
-        )
-      } else {
-        this.#log.debug(
-          'Raw message content omitted (enable LOG_RAW_MESSAGES=true to view)'
-        )
+        this.#log.debug(`Raw content: ${rawContent.substring(0, 200)}...`)
       }
       throw new MessageParseError()
     }
 
-    // Validate message
     let parsed: ParsedMessage
     try {
       parsed = validateMessage(message)
-    } catch (error) {
-      this.#log.error(
-        `Message validation failed: ${
-          error instanceof Error ? error.message : 'Unknown error'
-        }`
-      )
-      throw error
+    } catch (err) {
+      this.#log.error('Message validation failed', err)
+      throw err
     }
 
     const { userId, version, timestamp, requestId, source, payload } = parsed
 
     this.#log.info(
-      `Processing settings update for user: ${userId} (source=${source}, version=${version}, request_id=${requestId}, timestamp=${formatTimestamp(
+      `Processing update for ${userId} (source=${source}, v=${version}, req=${requestId}, ts=${formatTimestamp(
         timestamp
       )})`
     )
-    this.#log.debug(
-      `Settings update contains: displayName=${!!payload.display_name}, avatar=${!!payload.avatar}, email=${!!payload.email}, phone=${!!payload.phone}`
-    )
 
-    // Handle degraded mode (database unavailable)
+    /* Degraded mode - no database available */
     if (!this.#isDatabaseAvailable) {
       this.#log.debug(
         `Degraded mode: applying update for ${userId} without idempotency checks`
       )
-      await this.#profileUpdater.processChanges(userId, null, payload, true)
+      await this.#profileUpdater.processChanges(userId, null, payload)
       this.#log.info(
         `Successfully processed settings for user: ${userId} (degraded mode)`
       )
@@ -326,8 +311,7 @@ export class CommonSettingsBridge {
 
     // Track whether profile has been updated to avoid double-processing
     let profileUpdated = false
-    let lastSettings: UserSettings | null = null
-    let isNewUser = true
+    let lastSettings: StoredUserSettings | null = null
 
     // Try to get settings from database (with error handling)
     try {
@@ -364,8 +348,6 @@ export class CommonSettingsBridge {
             : 'new user'
         } -> new version=${version}, timestamp=${formatTimestamp(timestamp)})`
       )
-
-      isNewUser = lastSettings === null
     } catch (error) {
       // Database error during read/check - switch to degraded mode
       const errorMsg = error instanceof Error ? error.message : String(error)
@@ -389,8 +371,7 @@ export class CommonSettingsBridge {
     await this.#profileUpdater.processChanges(
       userId,
       lastSettings?.payload ?? null,
-      payload,
-      isNewUser
+      payload
     )
     profileUpdated = true
 
@@ -446,6 +427,17 @@ export class CommonSettingsBridge {
       getIntent: (userId: string) => this.#bridge.getIntent(userId),
       adminUpsertUser: async (userId: string, data: Record<string, string>) => {
         await this.#adminApis.upsertUser(userId, data)
+      },
+      botUploadContent: async (
+        content: Buffer,
+        contentType: string,
+        fileName?: string
+      ) => {
+        return await this.#botIntent.matrixClient.uploadContent(
+          content,
+          contentType,
+          fileName
+        )
       }
     }
   }
@@ -473,12 +465,12 @@ export class CommonSettingsBridge {
       this.#log.info(`Bot user ID: ${botUserId}`)
 
       this.#log.debug('Ensuring bot is registered...')
-      const botIntent = this.#bridge.getIntent(botUserId)
-      await botIntent.ensureRegistered()
+      this.#botIntent = this.#bridge.getIntent(botUserId)
+      await this.#botIntent.ensureRegistered()
       this.#log.debug('Bot registration confirmed')
 
       this.#log.debug('Initializing admin APIs...')
-      this.#adminApis = botIntent.matrixClient.adminApis.synapse
+      this.#adminApis = this.#botIntent.matrixClient.adminApis.synapse
 
       this.#log.debug('Checking admin privileges...')
       const isAdmin = await this.#adminApis.isSelfAdmin()
