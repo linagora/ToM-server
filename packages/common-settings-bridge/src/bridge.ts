@@ -300,15 +300,11 @@ export class CommonSettingsBridge {
    * @returns The SynapseAdminRetryMode enum value
    */
   #getAdminRetryMode(): SynapseAdminRetryMode {
-    const modeString = this.#config.synapse?.adminRetryMode
-    switch (modeString) {
-      case 'exclusive':
-        return SynapseAdminRetryMode.EXCLUSIVE
-      case 'fallback':
-        return SynapseAdminRetryMode.FALLBACK
-      default:
-        return SynapseAdminRetryMode.DISABLED
-    }
+    const mode = this.#config.synapse?.adminRetryMode
+    const validModes = Object.values(SynapseAdminRetryMode)
+    return validModes.includes(mode as SynapseAdminRetryMode)
+      ? (mode as SynapseAdminRetryMode)
+      : SynapseAdminRetryMode.DISABLED
   }
 
   /**
