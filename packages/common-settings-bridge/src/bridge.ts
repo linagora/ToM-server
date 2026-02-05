@@ -5,6 +5,7 @@ import { Database } from '@twake/db'
 import type * as logger from '@twake/logger'
 import {
   SynapseAdminRetryMode,
+  createLoggerAdapter,
   type BridgeConfig,
   type UserSettingsTableName
 } from './types'
@@ -86,14 +87,7 @@ export class CommonSettingsBridge {
       `Database config: engine=${dbConfig.database_engine}, host=${dbConfig.database_host}, name=${dbConfig.database_name}, user=${dbConfig.database_user}, ssl=${dbConfig.database_ssl}, vacuumDelay=${dbConfig.database_vacuum_delay}s`
     )
 
-    const consoleLogger = {
-      error: (...args: unknown[]) => this.#log.error('[DB]', ...args),
-      warn: (...args: unknown[]) => this.#log.warn('[DB]', ...args),
-      info: (...args: unknown[]) => this.#log.info('[DB]', ...args),
-      debug: (...args: unknown[]) => this.#log.debug('[DB]', ...args),
-      silly: (...args: unknown[]) => this.#log.debug('[DB][SILLY]', ...args),
-      close: () => {}
-    }
+    const dbLogger = createLoggerAdapter(this.#log, 'DB')
 
     const tables: Record<UserSettingsTableName, string> = {
       usersettings:
@@ -102,7 +96,7 @@ export class CommonSettingsBridge {
 
     this.#db = new Database<UserSettingsTableName>(
       dbConfig,
-      consoleLogger as logger.TwakeLogger,
+      dbLogger as logger.TwakeLogger,
       tables
     )
 
@@ -116,22 +110,14 @@ export class CommonSettingsBridge {
   #initAmqpConnector(): void {
     this.#log.debug('Initializing AMQP connector...')
 
-    const consoleLogger = {
-      error: (...args: unknown[]) => this.#log.error('[DB]', ...args),
-      warn: (...args: unknown[]) => this.#log.warn('[DB]', ...args),
-      info: (...args: unknown[]) => this.#log.info('[DB]', ...args),
-      debug: (...args: unknown[]) => this.#log.debug('[DB]', ...args),
-      silly: (...args: unknown[]) => this.#log.debug('[DB][SILLY]', ...args),
-      close: () => {}
-    }
-
+    const amqpLogger = createLoggerAdapter(this.#log, 'AMQP')
     const rabbitConfig = this.#config.rabbitmq
 
     this.#log.debug(
       `RabbitMQ config: host=${rabbitConfig.host}, exchange=${rabbitConfig.exchange}, queue=${rabbitConfig.queue}, routingKey=${rabbitConfig.routingKey}`
     )
 
-    this.#connector = new AMQPConnector(consoleLogger as logger.TwakeLogger)
+    this.#connector = new AMQPConnector(amqpLogger as logger.TwakeLogger)
       .withConfig(rabbitConfig)
       .withExchange(rabbitConfig.exchange, { durable: true })
       .withQueue(
