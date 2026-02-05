@@ -16,8 +16,63 @@ import {
   MatrixProfileUpdater,
   type MatrixApis
 } from './matrix-profile-updater'
-import { ParsedMessage, parseMessage, validateMessage } from './message-handler'
-import { MessageParseError, type UserSettings } from './types'
+import {
+  MessageParseError,
+  UserIdNotProvidedError,
+  type UserSettings,
+  type CommonSettingsMessage,
+  type SettingsPayload
+} from './types'
+
+// =============================================================================
+// Message handling helpers (inlined from message-handler.ts)
+// =============================================================================
+
+/**
+ * Represents a validated and parsed message ready for processing.
+ */
+interface ParsedMessage {
+  userId: string
+  version: number
+  timestamp: number
+  requestId: string
+  source: string
+  payload: SettingsPayload
+}
+
+/**
+ * Attempts to parse a JSON string into a CommonSettingsMessage object.
+ */
+function parseMessage(raw: string): CommonSettingsMessage | null {
+  try {
+    return JSON.parse(raw) as CommonSettingsMessage
+  } catch (error) {
+    return null
+  }
+}
+
+/**
+ * Validates a CommonSettingsMessage and extracts required fields.
+ */
+function validateMessage(message: CommonSettingsMessage): ParsedMessage {
+  if (!message.request_id) {
+    throw new MessageParseError('Message missing required request_id field')
+  }
+  if (message.timestamp === undefined || message.timestamp === null) {
+    throw new MessageParseError('Message missing required timestamp field')
+  }
+  if (!message.payload?.matrix_id) {
+    throw new UserIdNotProvidedError()
+  }
+  return {
+    userId: message.payload.matrix_id,
+    version: message.version ?? 1,
+    timestamp: message.timestamp,
+    requestId: message.request_id,
+    source: message.source,
+    payload: message.payload
+  }
+}
 
 // =============================================================================
 // Version management helpers (inlined from version-manager.ts)
@@ -33,7 +88,11 @@ function shouldApplyUpdate(
 ): boolean {
   if (!lastSettings) return true
   if (newVersion > lastSettings.version) return true
-  if (newVersion === lastSettings.version && newTimestamp > lastSettings.timestamp) return true
+  if (
+    newVersion === lastSettings.version &&
+    newTimestamp > lastSettings.timestamp
+  )
+    return true
   return false
 }
 
