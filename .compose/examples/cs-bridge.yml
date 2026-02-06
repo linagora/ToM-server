@@ -234,6 +234,8 @@ services:
       - SMTP_PORT=2525
       - SMTP_SENDER=no-reply@docker.internal
 
+      - FEATURE_COMMON_SETTINGS_ENABLED=true
+
       - LOG_LEVEL=silly
       - LOG_TRANSPORTS=Console
     labels:

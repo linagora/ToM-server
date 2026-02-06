@@ -79,6 +79,7 @@ function main() {
     console.log('Leave matrix_id empty to exit.')
 
     let version = 1
+    let language = 'en'
 
     while (true) {
       const matrix_id = await ask('Enter matrix_id (e.g., @user:matrix.org): ')
@@ -102,6 +103,7 @@ function main() {
 
       const display_name = await ask('Enter new display_name (optional): ')
       const avatar = await ask('Enter new avatar URL (optional): ')
+      language = await ask(`Enter new language (optional): (${language}) `)
 
       const payload = {
         matrix_id
@@ -113,6 +115,10 @@ function main() {
 
       if (avatar) {
         payload.avatar = avatar
+      }
+
+      if (language) {
+        payload.language = language
       }
 
       try {
