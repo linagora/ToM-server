@@ -20,7 +20,6 @@
 
 ## Allow source files
 !packages/amqp-connector/src/
-!packages/common-settings/src/
 !packages/common-settings-bridge/src/
 !packages/config-parser/src/
 !packages/crypto/src/
