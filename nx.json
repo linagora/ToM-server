@@ -1,5 +1,5 @@
 {
-  "defaultBase": "master",
+  "defaultBase": "dev",
   "$schema": "./node_modules/nx/schemas/nx-schema.json",
   "namedInputs": {
     "default": [

@@ -126,12 +126,6 @@ export default (
    *            IANA time‑zone identifier (e.g. `Europe/Paris`). Present only
    *            when common settings are enabled and a value is stored.
    *          example: "Europe/Paris"
-   *        active:
-   *          type: boolean
-   *          description: |
-   *            Whether the user has an active Matrix profile. Present only when
-   *            meaningful user data exists (not just uid).
-   *          example: true
    */
 
   /**
@@ -164,52 +158,6 @@ export default (
     requireLdap,
     authenticator,
     userInfoController.get
-  )
-
-  /**
-   * @openapi
-   * /_twake/v1/user_info/batch:
-   *  post:
-   *    tags:
-   *      - User Info
-   *    description: Get multiple user profiles in batch
-   *    summary: Retrieve user information for multiple users in a single request
-   *    requestBody:
-   *      required: true
-   *      content:
-   *        application/json:
-   *          schema:
-   *            type: object
-   *            required:
-   *              - uids
-   *            properties:
-   *              uids:
-   *                type: array
-   *                items:
-   *                  type: string
-   *                description: Array of Matrix user IDs
-   *                example: ["@alice:example.com", "@bob:example.com"]
-   *    responses:
-   *      200:
-   *        description: User information for requested users
-   *        content:
-   *          application/json:
-   *            schema:
-   *              type: object
-   *              additionalProperties:
-   *                $ref: '#/components/schemas/UserInfo'
-   *      400:
-   *        description: Invalid request (missing or invalid uids)
-   *      401:
-   *        description: Unauthorized
-   *      500:
-   *        description: Internal server error
-   */
-  router.post(
-    `${PATH}/batch`,
-    requireLdap,
-    authenticator,
-    userInfoController.getMany
   )
 
   /**

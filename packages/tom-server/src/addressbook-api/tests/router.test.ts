@@ -4,23 +4,19 @@ import type { AuthRequest, Config } from '../../types'
 import IdServer from '../../identity-server'
 import type { ConfigDescription } from '@twake/config-parser'
 import type { TwakeLogger } from '@twake/logger'
-import {
-  IdentityServerDb,
-  type MatrixDB,
-  type UserDB
-} from '@twake/matrix-identity-server'
+import { IdentityServerDb, type MatrixDB } from '@twake/matrix-identity-server'
 import router, { PATH } from '../routes'
 import errorMiddleware from '../../utils/middlewares/error.middleware'
 import JEST_PROCESS_ROOT_PATH from '../../../jest.globals'
 import fs from 'fs'
 import path from 'path'
 import supertest from 'supertest'
-import type { IUserInfoService } from '../../user-info-api/types'
 
 const mockLogger: Partial<TwakeLogger> = {
   debug: jest.fn(),
   error: jest.fn(),
   warn: jest.fn(),
+  info: jest.fn(),
   close: jest.fn()
 }
 
@@ -28,6 +24,7 @@ jest
   .spyOn(IdentityServerDb.prototype, 'get')
   .mockResolvedValue([{ data: '"test"' }])
 
+// Use in-memory databases to avoid conflicts between parallel test workers
 const idServer = new IdServer(
   {
     get: jest.fn()
@@ -35,11 +32,11 @@ const idServer = new IdServer(
   {} as unknown as Config,
   {
     database_engine: 'sqlite',
-    database_host: 'test.db',
+    database_host: ':memory:',
     rate_limiting_window: 5000,
     rate_limiting_nb_requests: 10,
     template_dir: './templates',
-    userdb_host: './tokens.db',
+    userdb_host: ':memory:',
     features: {
       common_settings: { enabled: false },
       user_profile: {
@@ -55,21 +52,6 @@ const idServer = new IdServer(
 )
 
 const app = express()
-const userDBMock = {
-  get: jest.fn(),
-  getAll: jest.fn(),
-  match: jest.fn(),
-  close: jest.fn(),
-  ready: Promise.resolve()
-}
-
-const userInfoServiceMock = {
-  get: jest.fn(),
-  getMany: jest.fn(),
-  getVisibility: jest.fn(),
-  updateVisibility: jest.fn()
-}
-
 const middlewareSpy = jest.fn().mockImplementation((_req, _res, next) => {
   next()
 })
@@ -79,9 +61,7 @@ jest.mock('../middlewares', () => {
     return {
       validateContactsCreation: middlewareSpy,
       validateContactUpdate: middlewareSpy,
-      checkContactOwnership: middlewareSpy,
-      enrichWithUserDBContacts: middlewareSpy,
-      enrichWithUserInfo: middlewareSpy
+      checkContactOwnership: middlewareSpy
     }
   }
 })
@@ -118,10 +98,7 @@ describe('the addressbook API router', () => {
           router(
             idServer.conf,
             idServer.db,
-            userDBMock as unknown as UserDB,
             idServer.authenticate,
-            userInfoServiceMock as unknown as IUserInfoService,
-            undefined,
             idServer.logger
           )
         )
@@ -136,15 +113,6 @@ describe('the addressbook API router', () => {
 
   afterAll(() => {
     idServer.cleanJobs()
-
-    const pathFilesToDelete = [
-      path.join(JEST_PROCESS_ROOT_PATH, 'test.db'),
-      path.join(JEST_PROCESS_ROOT_PATH, 'tokens.db')
-    ]
-
-    pathFilesToDelete.forEach((path) => {
-      if (fs.existsSync(path)) fs.unlinkSync(path)
-    })
   })
 
   it('should reject if rate limit is exceeded', async () => {

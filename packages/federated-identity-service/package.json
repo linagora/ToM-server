@@ -33,9 +33,7 @@
     "*.md"
   ],
   "scripts": {
-    "build": "npm run build:lib && npm run build:example",
-    "build:example": "rollup -p @rollup/plugin-typescript -e express,@twake/federated-identity-service -m -o example/federated-identity-service.js example/federated-identity-service.ts",
-    "build:lib": "rollup -c",
+    "build": "rollup -c",
     "start": "node example/federated-identity-service.js",
     "test": "LOG_TRANSPORTS=File LOG_FILE=/dev/null jest"
   },

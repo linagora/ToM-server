@@ -4,7 +4,6 @@ import {
   type TwakeLogger
 } from '@twake/logger'
 import type { AuthenticationFunction, Config, TwakeDB } from '../../types'
-import type { UserDB } from '@twake/matrix-identity-server'
 import { Router } from 'express'
 import authMiddleware from '../../utils/middlewares/auth.middleware'
 import AddressbookApiController from '../controllers'
@@ -17,11 +16,10 @@ export const PATH = '/_twake/addressbook'
 export default (
   config: Config,
   db: TwakeDB,
-  userDB: UserDB,
   authenticator: AuthenticationFunction,
-  userInfoService: IUserInfoService,
+  defaultLogger?: TwakeLogger,
   addressbookService?: IAddressbookService,
-  defaultLogger?: TwakeLogger
+  userInfoService?: IUserInfoService
 ): Router => {
   const logger = defaultLogger ?? getLogger(config as unknown as LoggerConfig)
   const router = Router()
@@ -29,15 +27,10 @@ export default (
   const controller = new AddressbookApiController(
     db,
     logger,
-    addressbookService
-  )
-  const middleware = new AddressBookApiMiddleware(
-    db,
-    logger,
-    userDB,
-    config,
+    addressbookService,
     userInfoService
   )
+  const middleware = new AddressBookApiMiddleware(db, logger)
 
   /**
    * @openapi
@@ -90,16 +83,10 @@ export default (
    *  get:
    *   tags:
    *   - Addressbook
-   *   summary: List all contacts in the addressbook
-   *   description: |
-   *     Returns all contacts with enriched user information.
-   *     - Contacts from local server are enriched with userinfo service data
-   *     - Display names and active status updated from Matrix profiles
-   *     - Remote server contacts returned as-is
-   *     - When additional features are enabled, contacts from UserDB are included
+   *   description: List all contacts in the addressbook
    *   responses:
    *    200:
-   *      description: List of contacts with enriched data
+   *      description: List of contacts
    *      content:
    *        application/json:
    *          schema:
@@ -113,13 +100,7 @@ export default (
    *    500:
    *      description: Internal server error
    */
-  router.get(
-    PATH,
-    authenticate,
-    middleware.enrichWithUserDBContacts,
-    middleware.enrichWithUserInfo,
-    controller.listAddressbook
-  )
+  router.get(PATH, authenticate, controller.listAddressbook)
 
   /**
    * @openapi

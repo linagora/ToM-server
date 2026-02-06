@@ -33,9 +33,7 @@
     "*.md"
   ],
   "scripts": {
-    "build": "npm run build:lib && npm run build:example",
-    "build:example": "rollup -p @rollup/plugin-typescript -e express,@twake/server -m -o example/tom-server.js example/tom-server.ts",
-    "build:lib": "rollup -c",
+    "build": "rollup -c",
     "watch": "rollup -c -w",
     "start": "node example/tom-server.js",
     "test": "LOG_TRANSPORTS=File LOG_FILE=/dev/null jest"

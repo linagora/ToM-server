@@ -43,6 +43,7 @@ class SQLite<T extends string> extends SQL<T> implements IdDbBackend<T> {
             if (db == null) {
               throw new Error('Database not created')
             }
+            logger.info('[IdentityServerDb:SQLite] connected.')
             createTables(
               this,
               tables,

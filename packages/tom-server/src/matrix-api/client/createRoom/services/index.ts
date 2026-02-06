@@ -35,7 +35,7 @@ export default class RoomService {
     private readonly config: Config,
     private readonly logger: TwakeLogger
   ) {
-    this.logger.debug('RoomService initialized.', {
+    this.logger.info('[RoomService] initialized.', {
       matrixHost: this.config.matrix_internal_host
     })
   }

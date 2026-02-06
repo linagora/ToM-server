@@ -44,7 +44,6 @@ REST API Endpoints documentation is available on https://linagora.github.io/ToM-
 
 * [@twake/matrix-identity-server](./packages/matrix-identity-server):
   [Matrix Identity Service](https://spec.matrix.org/v1.6/identity-service-api/) implementation for Node.js
-* [@twake/matrix-invite](./packages/matrix-invite): matrix invitation web application
 * [@twake/server](./packages/tom-server): the main Twake Chat Server, extends [@twake/matrix-identity-server](./packages/matrix-identity-server)
 * [@twake/federated-identity-service](./packages/federated-identity-service): Twake Federated Identity Service
 * [@twake/config-parser](./packages/config-parser): simple file parser that uses also environment variables
@@ -53,7 +52,6 @@ REST API Endpoints documentation is available on https://linagora.github.io/ToM-
 * [@twake/utils](.packages/utils): utilitary methods for Twake Chat
 * [matrix-resolve](./packages/matrix-resolve): resolve a Matrix "server name" into base URL following
   [Matrix specification](https://spec.matrix.org/latest/server-server-api/#server-discovery)
-* [@twake/retry-promise](packages/retry-promise): simple module extending javascript Promise with retry strategy
 
 ## Requirements
 

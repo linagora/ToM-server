@@ -1,13 +1,7 @@
-import { createRequestHandler } from '@remix-run/express'
-import { installGlobals } from '@remix-run/node'
 import TomServer from '@twake/server'
-import MatrixIdentityServer from '@twake/matrix-identity-server'
-import { CommonSettingsService } from '@twake/common-settings'
 import express from 'express'
 import path from 'node:path'
 import { fileURLToPath } from 'url'
-
-installGlobals()
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -34,15 +28,6 @@ const appServerConf = {
   sender_localpart: process.env.SENDER_LOCALPART
 }
 
-const rabbitmqConf = {
-  host: process.env.RABBITMQ_HOST || 'localhost',
-  port: process.env.RABBITMQ_PORT || 5672,
-  vhost: process.env.RABBITMQ_VHOST || '/',
-  username: process.env.RABBITMQ_USER || 'guest',
-  password: process.env.RABBITMQ_PASSWORD || 'guest',
-  tls: _parseBooleanEnv(process.env.RABBITMQ_TLS, false)
-}
-
 const featuresConf = {
   common_settings: {
     enabled: _parseBooleanEnv(
@@ -51,16 +36,7 @@ const featuresConf = {
     ),
     application_url:
       process.env.FEATURE_COMMON_SETTINGS_APPLICATION_URL ||
-      `https://{username}-settings.${process.env.SERVER_NAME}`,
-    queue: process.env.FEATURE_COMMON_SETTINGS_QUEUE || 'settings.queue',
-    routingKey:
-      process.env.FEATURE_COMMON_SETTINGS_ROUTING_KEY || 'settings.routing.key',
-    exchange:
-      process.env.FEATURE_COMMON_SETTINGS_EXCHANGE || 'settings.exchange',
-    deadLetterExchange:
-      process.env.FEATURE_COMMON_SETTINGS_DEAD_LETTER_EXCHANGE,
-    deadLetterRoutingKey:
-      process.env.FEATURE_COMMON_SETTINGS_DEAD_LETTER_ROUTING_KEY
+      `https://{username}-settings.${process.env.SERVER_NAME}`
   },
   matrix_profile_updates_allowed: _parseBooleanEnv(
     process.env.FEATURE_MATRIX_PROFILE_UPDATES_ALLOWED,
@@ -197,7 +173,6 @@ let conf = {
   smtp_server: process.env.SMTP_SERVER || 'localhost',
   smtp_port: process.env.SMTP_PORT || 25,
   twake_chat: twakeChatConf,
-  rabbitmq: rabbitmqConf,
   features: featuresConf
 }
 
@@ -254,33 +229,16 @@ if (process.env.CROWDSEC_URI) {
   )
 }
 
-app.use(
-  '/assets',
-  express.static('./landing/build/client/assets', {
-    immutable: true,
-    maxAge: '1y'
-  })
-)
-
-app.use(express.static('./landing/build/client', { maxAge: '1h' }))
-
-app.get(
-  '/',
-  createRequestHandler({
-    build: await import('./landing/build/server/index.js')
-  })
-)
+app.get('/', (req, res) => {
+  res.sendFile(
+    path.join(__dirname, 'packages', 'tom-server', 'static', 'landing.html')
+  )
+})
 
 Promise.all(promises)
   .then(async () => {
-    const idServer = new MatrixIdentityServer(
-      conf,
-      undefined,
-      undefined,
-      undefined,
-      tomServer.db,
-      true
-    )
+    // Reuse the existing idServer from tomServer to avoid duplicate UserDB initialization
+    const idServer = tomServer.idServer
     return idServer.ready.then(() => {
       app.use(tomServer.endpoints)
 
@@ -295,16 +253,7 @@ Promise.all(promises)
 
       const port = process.argv[2] != null ? parseInt(process.argv[2]) : 3000
       console.log(`ToM-Server listening on port: ${port}`)
-      app.listen(port, '0.0.0.0', async () => {
-        if (conf.features.common_settings.enabled === true) {
-          const commonSettingsServiceI = new CommonSettingsService(
-            conf,
-            tomServer.logger,
-            tomServer.db
-          )
-          await commonSettingsServiceI.start()
-        }
-      })
+      app.listen(port, '0.0.0.0')
     })
   })
   .catch((e) => {

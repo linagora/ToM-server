@@ -1,6 +1,4 @@
 import type { NextFunction, Response, Request } from 'express'
-import type { UserDB } from '@twake/matrix-identity-server'
-import type { AuthRequest } from '../types'
 
 export interface Contact {
   id: string
@@ -8,24 +6,6 @@ export interface Contact {
   display_name: string
   active: boolean
   addressbook_id: string
-}
-
-// Extend AuthRequest to include enrichment function
-export interface EnrichedAuthRequest extends AuthRequest {
-  enrichContacts?: (
-    addressbookId: string,
-    contacts: Contact[]
-  ) => Promise<Contact[]>
-  enrichWithUserInfo?: (
-    contacts: Contact[],
-    viewer?: string
-  ) => Promise<Contact[]>
-}
-
-// Type for userDB row
-export interface UserDBRow {
-  uid: string
-  cn: string
 }
 
 export interface AddressBook {
@@ -54,11 +34,37 @@ export interface AddressbookListResponse {
   contacts: Contact[]
 }
 
+// Extended contact with enrichment data from UserInfoService
+export interface EnrichedContact extends Contact {
+  // Enrichment fields
+  avatar_url?: string
+  last_name?: string
+  first_name?: string
+  emails?: string[]
+  phones?: string[]
+  language?: string
+  timezone?: string
+  workplaceFqdn?: string
+  // Deprecated fields for backward compatibility
+  displayName?: string
+  cn?: string
+  sn?: string
+  givenName?: string
+  givenname?: string
+  mail?: string
+  mobile?: string
+}
+
 export interface IAddressbookService {
   /**
    * list the contacts of an addressbook
+   * @param owner - The owner of the addressbook
+   * @param includeUserDbContacts - Whether to include UserDB contacts (default: true)
    */
-  list(owner: string): Promise<AddressbookListResponse>
+  list(
+    owner: string,
+    includeUserDbContacts?: boolean
+  ): Promise<AddressbookListResponse>
 
   /**
    * Deletes an addressbook

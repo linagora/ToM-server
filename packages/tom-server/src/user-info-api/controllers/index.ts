@@ -10,6 +10,7 @@ import { type TwakeDB, type AuthRequest, type Config } from '../../types'
 import UserInfoService from '../services'
 import { errCodes } from '@twake/utils'
 import type { TwakeLogger } from '@twake/logger'
+import type { IAddressbookService } from '../../addressbook-api/types'
 
 class UserInfoController implements IUserInfoController {
   private readonly userInfoService: IUserInfoService
@@ -20,11 +21,19 @@ class UserInfoController implements IUserInfoController {
     private readonly matrixDB: MatrixDB,
     private readonly config: Config,
     private readonly logger: TwakeLogger,
-    userInfoService?: IUserInfoService
+    userInfoService?: IUserInfoService,
+    addressbookService?: IAddressbookService
   ) {
     this.userInfoService =
       userInfoService ??
-      new UserInfoService(userdb, db, matrixDB, config, logger)
+      new UserInfoService(
+        userdb,
+        db,
+        matrixDB,
+        config,
+        logger,
+        addressbookService
+      )
   }
 
   /**
@@ -59,41 +68,6 @@ class UserInfoController implements IUserInfoController {
         res.status(403).json({ error: errCodes.forbidden })
         return
       }
-      next(error)
-    }
-  }
-
-  /**
-   * Fetches user info for multiple user ids in batch
-   *
-   * @param {AuthRequest} req the request object
-   * @param {Response} res the response object
-   * @param {NextFunction} next the next handler
-   */
-  getMany = async (
-    req: AuthRequest,
-    res: Response,
-    next: NextFunction
-  ): Promise<void> => {
-    try {
-      const { uids } = req.body
-      if (req.userId == null) {
-        res.status(400).json({ error: errCodes.missingParams })
-        return
-      }
-
-      if (!uids || !Array.isArray(uids)) {
-        res.status(400).json({ error: errCodes.invalidParam })
-        return
-      }
-
-      const userInfoMap = await this.userInfoService.getMany(uids, req.userId)
-
-      // Convert Map to plain object for JSON response
-      const result = Object.fromEntries(userInfoMap)
-
-      res.status(200).json(result)
-    } catch (error) {
       next(error)
     }
   }

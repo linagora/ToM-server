@@ -1,0 +1,177 @@
+{
+  "apacheAuthnLevel": 3,
+  "applicationList": {
+    "matrix": {
+      "catname": "Matrix Clients",
+      "Twake": {
+        "options": {
+          "description": "Twake Web Client",
+          "display": "on",
+          "logo": "demo.png",
+          "name": "Twake",
+          "uri": "https://chat.docker.internal/"
+        },
+        "type": "application"
+      },
+      "type": "category"
+    }
+  },
+  "authChoiceParam": "lmAuth",
+  "authentication": "LDAP",
+  "cfgAuthor": "ToM Server",
+  "cfgDate": "1705420800",
+  "cfgNum": "1",
+  "cfgVersion": "2.0.16",
+  "userDB": "Same",
+  "passwordDB": "LDAP",
+  "domain": "docker.internal",
+  "portal": "https://auth.docker.internal/",
+  "cookieName": "lemonldap",
+  "securedCookie": 1,
+  "httpOnly": 1,
+  "timeout": 72000,
+  "timeoutActivity": 0,
+  "key": "^vmTGvh{+]5!ToB?",
+  "ldapServer": "ldap",
+  "ldapPort": 389,
+  "ldapBase": "dc=docker,dc=internal",
+  "ldapExportedVars": {
+    "uid": "uid",
+    "cn": "cn",
+    "mail": "mail"
+  },
+  "ldapGroupAttributeName": "member",
+  "ldapGroupAttributeNameGroup": "dn",
+  "ldapGroupAttributeNameSearch": "cn",
+  "ldapGroupAttributeNameUser": "dn",
+  "ldapGroupObjectClass": "groupOfNames",
+  "ldapIOTimeout": 10,
+  "ldapPwdEnc": "utf-8",
+  "ldapSearchDeref": "find",
+  "ldapTimeout": 10,
+  "ldapVerify": "none",
+  "ldapVersion": 3,
+  "managerDn": "",
+  "managerPassword": "",
+  "globalStorage": "Apache::Session::File",
+  "globalStorageOptions": {
+    "Directory": "/var/lib/lemonldap-ng/sessions",
+    "LockDirectory": "/var/lib/lemonldap-ng/sessions/lock",
+    "generateModule": "Lemonldap::NG::Common::Apache::Session::Generate::SHA256"
+  },
+  "localSessionStorage": "Cache::FileCache",
+  "localSessionStorageOptions": {
+    "cache_depth": 3,
+    "cache_root": "/var/lib/lemonldap-ng/cache",
+    "default_expires_in": 600,
+    "directory_umask": "007",
+    "namespace": "lemonldap-ng-sessions"
+  },
+  "persistentStorage": "Apache::Session::File",
+  "persistentStorageOptions": {
+    "Directory": "/var/lib/lemonldap-ng/psessions",
+    "LockDirectory": "/var/lib/lemonldap-ng/psessions/lock"
+  },
+  "issuerDBOpenIDConnectActivation": 1,
+  "issuerDBOpenIDConnectPath": "^/oauth2/",
+  "issuerDBOpenIDConnectRule": 1,
+  "oidcServiceAllowAuthorizationCodeFlow": 1,
+  "oidcServiceAllowImplicitFlow": 0,
+  "oidcServiceAuthorizationCodeExpiration": 60,
+  "oidcServiceAccessTokenExpiration": 3600,
+  "oidcServiceIDTokenExpiration": 3600,
+  "oidcServiceIgnoreScopeForClaims": 1,
+  "oidcServiceMetaDataAuthorizeURI": "authorize",
+  "oidcServiceMetaDataTokenURI": "token",
+  "oidcServiceMetaDataUserInfoURI": "userinfo",
+  "oidcServiceMetaDataJWKSURI": "jwks",
+  "oidcServiceMetaDataEndSessionURI": "logout",
+  "oidcServiceMetaDataRegistrationURI": "register",
+  "oidcServiceMetaDataIntrospectionURI": "introspect",
+  "oidcServiceMetaDataBackChannelURI": "blogout",
+  "oidcServiceMetaDataCheckSessionURI": "checksession.html",
+  "oidcServiceKeyIdSig": "llng-sso-key",
+  "oidcServiceKeyTypeSig": "RSA",
+  "oidcServicePrivateKeySig": "-----BEGIN RSA PRIVATE KEY-----\nMIIEowIBAAKCAQEA0Z3VS5JJcds3xfn/ygWyF8PbnGy0AHB7MjeK/rwJsEH8E9PL\npSIVHMYFuvtmYZ3X5sT0uvdYlI1qlSy9WfWwhJOwOeDBgVaBWqyPJvwiaqF1K7XL\nmxxV5aP2GRrP3lMNoFOgSox3kHa5R/seBMCK8kTXk9JJneyuBF8nPj31RIoCMoHn\nqbEYT7V8YPVXJQPIW8Ls+CV7C/Vo3eYj2pFaOpTlTbySwg6NlkOYfmkcyMOxYvuq\nkmVMSdJr6tZjKwLDRD9KEhNFDlVzTfDJhNQdvHQlwv8j8L2rHMq8JJQgNJ0O9WvK\nNFdRjWJJry0e3BaZPYi3F2VxUj8FHdzJTXPEuQIDAQABAoIBAC0fiNRHJSB/vm8W\nsSCT7WzUHqGffYZ55Yzj9wIc4P7OY0nF7S6I7j5Ufx8i2vYZm3/h0DRb09sWvwey\nWPWj0601GqXK8ZKpjWHIZGQURFPpU04TErLsKEfbDAtGPaJfLgbxH1K5kM/YQFH6\nf9K3BL6K0v8F8UhYI8Ljvblum6tON5jWENSvnUnJHOro8H0mPQYpWOzLcOGlvrAM\nIjJWDCU5kLJQyiPaHq4jEKZ+QCzkdXWi5kYsMj0jJevTcXRdvHIEP1LeX0vqyF7c\nvfClo7M5HJfLsWa3KxJv7p6CrElb3j4dZJFv6yjbifmSHLiLy39EdQK1c/GV4nm3\nKrRRawECgYEA8xPqpltOxJsnhkm9aW1ZLSYCP7CdHBHjBMU2EMO/A8HAfwWgbOpM\nhoqNYdTjJcEsfug0pJD7rDHVNvo+M7A+7bazaxDBizDhSjvqKsXgD0v/lFpTfaqS\nLh8woTIHfVF2DDRJiVMIqYCftaYEiVMTpV/Rq8Rr1R/FlpDj+p+R4pkCgYEA3Iwm\nbvHqF6qpJPY9Z+c7D15XsJMS/YCSI1Z6ToQ1OOxb8FW5OIaylFC4KszUxoQkJjzA\nDZkOSt/MPdR1bJt1z02M+XMQLEAI8QUIP2WxYlaCzaWnIqfI9akEhgseqh/GVDNJ\nIhOLkpZpE8HVwdBrV29Py0NOlezrPdInK21ynAECgYEAwKYsNbKkfOSb4Z0JwghI\nvqJo62JL8J1ERw5DlxahLaJlPHYqgxjhBPIlaVPWIuy8S14oRLqXLLDv2cEGqfoC\nzqsY37qXba9dBfS0tj/6kG2p61L7I4vBmEzIR4VZ5vdNskV6bpCGO/aSOAu4pKwx\n3cQ0j3bFgkL8sXlbEfOTMikCgYBPgT1P8CgNRyi9M6jWDNwGdZ6F7cNlrHqPIS3S\n1uSFWwygNu6nzlhJNmPsTXoAHkKb7cLaOPtNl0DYkN/f5DYwqpvlP7rBbNWiAcwM\nJsrCrBrYph6hfwxjFmCK2e6R6XmllOROOx1P7CnoCD1HSrHfTmGGCSKrqycKXVPZ\nFVD0AQKBgGR2gQh9fnHrDBheL70kMqR7aUrUTWqHDVZR4za9ruXaLvUSvSLmSxjB\nn5djn72KTmPMqNnLFmJK5ZXKLHX/rvTKaYbV85kMxvmSg/DRhB/PKVNA7XqJl60T\nvbD3ZLz0lkdcyNeXLeu7mTdL0ntS7Mpi6f2w+LSuCLuWKfZ9sGgn\n-----END RSA PRIVATE KEY-----",
+  "oidcServicePublicKeySig": "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA0Z3VS5JJcds3xfn/ygWy\nF8PbnGy0AHB7MjeK/rwJsEH8E9PLpSIVHMYFuvtmYZ3X5sT0uvdYlI1qlSy9WfWw\nhJOwOeDBgVaBWqyPJvwiaqF1K7XLmxxV5aP2GRrP3lMNoFOgSox3kHa5R/seBMCK\n8kTXk9JJneyuBF8nPj31RIoCMoHnqbEYT7V8YPVXJQPIW8Ls+CV7C/Vo3eYj2pFa\nOpTlTbySwg6NlkOYfmkcyMOxYvuqkmVMSdJr6tZjKwLDRD9KEhNFDlVzTfDJhNQd\nvHQlwv8j8L2rHMq8JJQgNJ0O9WvKNFdRjWJJry0e3BaZPYi3F2VxUj8FHdzJTXPE\nuQIDAQAB\n-----END PUBLIC KEY-----",
+  "oidcRPMetaDataExportedVars": {
+    "matrix": {
+      "email": "mail",
+      "family_name": "cn",
+      "given_name": "cn",
+      "name": "cn",
+      "nickname": "uid",
+      "preferred_username": "uid"
+    }
+  },
+  "oidcRPMetaDataOptions": {
+    "matrix": {
+      "oidcRPMetaDataOptionsAccessTokenClaims": 0,
+      "oidcRPMetaDataOptionsAccessTokenJWT": 0,
+      "oidcRPMetaDataOptionsAccessTokenSignAlg": "RS256",
+      "oidcRPMetaDataOptionsAllowClientCredentialsGrant": 0,
+      "oidcRPMetaDataOptionsAllowOffline": 0,
+      "oidcRPMetaDataOptionsAllowPasswordGrant": 0,
+      "oidcRPMetaDataOptionsBypassConsent": 1,
+      "oidcRPMetaDataOptionsClientID": "synapse",
+      "oidcRPMetaDataOptionsClientSecret": "synapse-secret",
+      "oidcRPMetaDataOptionsIDTokenForceClaims": 0,
+      "oidcRPMetaDataOptionsIDTokenSignAlg": "RS256",
+      "oidcRPMetaDataOptionsLogoutBypassConfirm": 0,
+      "oidcRPMetaDataOptionsLogoutSessionRequired": 1,
+      "oidcRPMetaDataOptionsLogoutType": "back",
+      "oidcRPMetaDataOptionsLogoutUrl": "https://matrix.docker.internal/_synapse/client/oidc/backchannel_logout",
+      "oidcRPMetaDataOptionsPublic": 0,
+      "oidcRPMetaDataOptionsRedirectUris": "https://matrix.docker.internal/_synapse/client/oidc/callback",
+      "oidcRPMetaDataOptionsRefreshToken": 0,
+      "oidcRPMetaDataOptionsRequirePKCE": 0
+    }
+  },
+  "locationRules": {
+    "auth.docker.internal": {
+      "(?#errors)^/lmerror/": "accept",
+      "(?#oidc)^/oauth2/": "accept",
+      "(?#wellknown)^/\\.well-known/": "accept",
+      "default": "accept"
+    }
+  },
+  "exportedHeaders": {},
+  "vhostOptions": {
+    "auth.docker.internal": {
+      "vhostPort": 80,
+      "vhostHttps": 0
+    }
+  },
+  "macros": {
+    "UA": "$ENV{HTTP_USER_AGENT}",
+    "_whatToTrace": "$_auth eq 'SAML' ? lc($_user.'@'.$_idpConfKey) : $_auth eq 'OpenIDConnect' ? lc($_user.'@'.$_oidc_OP) : lc($_user)"
+  },
+  "whatToTrace": "_whatToTrace",
+  "corsEnabled": 1,
+  "corsAllow_Credentials": "true",
+  "corsAllow_Headers": "*",
+  "corsAllow_Methods": "POST,GET",
+  "corsAllow_Origin": "*",
+  "corsExpose_Headers": "*",
+  "corsMax_Age": "86400",
+  "https": 1,
+  "portalSkin": "bootstrap",
+  "portalDisplayLogout": 1,
+  "portalDisplayChangePassword": 1,
+  "portalDisplayAppslist": 1,
+  "portalDisplayLoginHistory": 1,
+  "portalCheckLogins": 1,
+  "loginHistoryEnabled": 1,
+  "successLoginNumber": 5,
+  "failedLoginNumber": 5,
+  "checkXSS": 1,
+  "requireToken": 1,
+  "formTimeout": 120,
+  "lwpOpts": {
+    "timeout": 10
+  },
+  "lwpSslOpts": {
+    "SSL_verify_mode": 0,
+    "verify_hostname": 0
+  }
+}

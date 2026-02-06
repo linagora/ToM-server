@@ -3,19 +3,14 @@ import type { AuthRequest } from '../types'
 
 export interface IUserInfoController {
   get: (req: AuthRequest, res: Response, next: NextFunction) => Promise<void>
-  getMany: (
-    req: AuthRequest,
-    res: Response,
-    next: NextFunction
-  ) => Promise<void>
 }
 
 export interface IUserInfoService {
   get: (id: string, viewer?: string) => Promise<UserInformation | null>
-  getMany: (
+  getBatch: (
     ids: string[],
     viewer?: string
-  ) => Promise<Map<string, UserInformation | null>>
+  ) => Promise<Map<string, UserInformation>>
   getVisibility: (id: string) => Promise<UserProfileSettingsPayloadT | null>
   updateVisibility: (
     id: string,
@@ -36,7 +31,6 @@ export interface UserInformation {
   language?: string
   timezone?: string
   workplaceFqdn?: string
-  active?: boolean
 }
 
 export interface SettingsPayload {

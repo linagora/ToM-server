@@ -1,9 +1,7 @@
-import type { AuthRequest, TwakeDB, Config } from '../../types'
-import type { UserDB } from '@twake/matrix-identity-server'
+import type { AuthRequest, TwakeDB } from '../../types'
 import type { Response, NextFunction } from 'express'
 import Middleware from '../middlewares'
 import { type TwakeLogger } from '@twake/logger'
-import type { IUserInfoService } from '../../user-info-api/types'
 
 let mockRequest: Partial<AuthRequest>
 let mockResponse: Partial<Response>
@@ -17,41 +15,16 @@ const dbMock = {
   getCount: jest.fn()
 }
 
-const userDBMock = {
-  get: jest.fn(),
-  getAll: jest.fn(),
-  match: jest.fn(),
-  close: jest.fn(),
-  ready: Promise.resolve()
-}
-
-const configMock = {
-  server_name: 'example.com',
-  additional_features: false
-}
-
 const loggerMock = {
   info: jest.fn(),
   error: jest.fn(),
-  warn: jest.fn(),
-  debug: jest.fn(),
-  silly: jest.fn()
-}
-
-const userInfoServiceMock = {
-  get: jest.fn(),
-  getMany: jest.fn(),
-  getVisibility: jest.fn(),
-  updateVisibility: jest.fn()
+  warn: jest.fn()
 }
 
 const nextFunction: NextFunction = jest.fn()
 const addressbookApiMiddleware = new Middleware(
   dbMock as unknown as TwakeDB,
-  loggerMock as unknown as TwakeLogger,
-  userDBMock as unknown as UserDB,
-  configMock as unknown as Config,
-  userInfoServiceMock as unknown as IUserInfoService
+  loggerMock as unknown as TwakeLogger
 )
 
 beforeEach(() => {

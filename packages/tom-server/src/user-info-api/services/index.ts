@@ -65,7 +65,7 @@ class UserInfoService implements IUserInfoService {
     )
       this.defaultVisibilitySettings.visible_fields.push(ProfileField.Phone)
 
-    this.logger.debug('[UserInfoService] Initialized.', {})
+    this.logger.info('[UserInfoService] Initialized.', {})
   }
 
   /**
@@ -78,80 +78,82 @@ class UserInfoService implements IUserInfoService {
     viewer?: string
   ): Promise<UserInformation | null> => {
     this.logger.debug(`[UserInfoService].get: Gathering information on: ${id}`)
-    try {
-      // ------------------------------------------------------------------
-      // 0 - Initialize the result container
-      // ------------------------------------------------------------------
-      const result: Partial<UserInformation & SettingsPayload> = { uid: id }
 
-      const userIdLocalPart = getLocalPart(id)
-      if (!userIdLocalPart) {
-        this.logger.warn('[UserInfoService].get: Provided id is not valid')
+    return this.getBatch([id], viewer).then((result) => {
+      if (result.has(id)) {
+        return result.get(id) as UserInformation
+      } else {
+        this.logger.info(
+          `[UserInfoService].get: No user information found for: ${id}`
+        )
         return null
       }
+    })
+  }
 
-      // ------------------------------------------------------------------
-      // 1 - Visibility checks
-      // ------------------------------------------------------------------
-      const {
-        visibility: idProfileVisibility,
-        visible_fields: idProfileVisibleFields
-      } = (await this.getVisibility(id)) || this.defaultVisibilitySettings
-      const isMyProfile = id === viewer
-      const isIdProfileVisibleForViewer = async () => {
-        if (idProfileVisibility === ProfileVisibility.Public) {
-          this.logger.info(
-            '[UserInfoService].get: Visibility check: targeted profile is Public'
-          )
-          return true
-        }
-        if (idProfileVisibility === ProfileVisibility.Private) {
-          this.logger.info(
-            '[UserInfoService].get: Visibility check: targeted profile is Private'
-          )
-          return false
-        }
-        if (!viewer) {
-          this.logger.info(
-            '[UserInfoService].get: Visibility check: targeted profile is limited to Contacts but viewer is not set'
-          )
-          return false
-        }
+  /**
+   * Retrieves user information for multiple users in batch (optimized for performance)
+   * @param {string[]} ids Array of user IDs to fetch
+   * @param {string} viewer Optional viewer ID for visibility checks
+   * @returns {Promise<Map<string, UserInformation>>} Map of user ID to user information
+   */
+  getBatch = async (
+    ids: string[],
+    viewer?: string
+  ): Promise<Map<string, UserInformation>> => {
+    this.logger.debug(
+      `[UserInfoService].getBatch: Gathering information on ${ids.length} users`
+    )
 
-        this.logger.debug(
-          '[UserInfoService].get: Visibility check: Obtaining targeted profile contacts...'
-        )
-        const ab = await this.addressBookService.list(id)
-        this.logger.debug(
-          '[UserInfoService].get: Visibility check: Checking if viewer is in the contact list of target'
-        )
-        return ab ? ab.contacts.some((c) => c.mxid === viewer) : false
+    const result = new Map<string, UserInformation>()
+
+    if (ids.length === 0) {
+      return result
+    }
+
+    try {
+      // Build mapping of full ID to local part
+      const idToLocalPart = new Map<string, string>()
+      const localPartToId = new Map<string, string>()
+      for (const id of ids) {
+        const localPart = getLocalPart(id)
+        if (localPart) {
+          idToLocalPart.set(id, localPart)
+          localPartToId.set(localPart, id)
+        }
       }
-      const isIdProfileVisible =
-        isMyProfile || (await isIdProfileVisibleForViewer())
-      this.logger.info(
-        '[UserInfoService].get: Visibility check:',
-        isIdProfileVisible
-          ? 'Viewer can inspect targeted profile'
-          : 'Viewer has no rights to inspect targeted profile'
-      )
+
+      const localParts = Array.from(idToLocalPart.values())
+      const validIds = Array.from(idToLocalPart.keys())
+
+      if (localParts.length === 0) {
+        this.logger.warn(
+          '[UserInfoService].getBatch: No valid user IDs provided'
+        )
+        return result
+      }
 
       // ------------------------------------------------------------------
-      // 2 - Parallel fetches from the **four** sources
+      // 1 - Batch fetch from all sources in parallel
       // ------------------------------------------------------------------
       const matrixPromise = (async () => {
         const rows = (await this.matrixDb.get(
           'profiles',
-          ['displayname', 'avatar_url'],
-          { user_id: userIdLocalPart }
-        )) as unknown as Array<{ displayname: string; avatar_url?: string }>
-        return rows?.[0] ?? null
+          ['user_id', 'displayname', 'avatar_url'],
+          { user_id: localParts }
+        )) as unknown as Array<{
+          user_id: string
+          displayname: string
+          avatar_url?: string
+        }>
+        return rows ?? []
       })()
 
       const directoryPromise = (async () => {
         const rows = (await this.userDb.get(
           'users',
           [
+            'uid',
             'cn',
             'sn',
             'givenname',
@@ -160,215 +162,280 @@ class UserInfoService implements IUserInfoService {
             'mobile',
             'workplaceFqdn'
           ],
-          { uid: userIdLocalPart }
+          { uid: localParts }
         )) as unknown as Array<Record<string, string | string[]>>
-        return rows?.[0] ?? null
+        return rows ?? []
       })()
 
       const settingsPromise = (async () => {
         if (!this.enableCommonSettings) {
-          return null
+          return []
         }
         const rows = (await this.db.get('usersettings', ['*'], {
-          matrix_id: id
+          matrix_id: validIds
         })) as unknown as UserSettings[]
-        return rows?.[0]?.settings || null
+        return rows ?? []
       })()
 
-      const addressbookListPromise = (async () => {
+      // Fetch profile visibility settings for all users
+      const profileSettingsPromise = (async () => {
+        const rows = (await this.db.get('profileSettings', ['*'], {
+          matrix_id: validIds
+        })) as unknown as UserProfileSettingsT[]
+        return rows ?? []
+      })()
+
+      // Fetch viewer's addressbook once (if viewer is set)
+      const viewerAddressbookPromise = (async () => {
         if (!viewer) return null
-        if (viewer === id) return null // Viewer is not in their ab
         try {
           const ab = await this.addressBookService.list(viewer)
-          if (!ab) {
-            this.logger.warn('No addressbook found!')
-            return null
-          }
-          const matched = ab.contacts.find((c) => c.mxid === id)
-          return matched || null
+          return ab ?? null
         } catch (e) {
-          this.logger.warn('Address‑book lookup failed', { error: e })
+          this.logger.warn(
+            '[UserInfoService].getBatch: Address-book lookup failed',
+            { error: e }
+          )
           return null
         }
       })()
 
-      const [matrixRow, directoryRow, settingsRow, addressbookResponse] =
-        await Promise.all([
-          matrixPromise,
-          directoryPromise,
-          settingsPromise,
-          addressbookListPromise
-        ])
+      const [
+        matrixRows,
+        directoryRows,
+        settingsRows,
+        profileSettingsRows,
+        viewerAddressbook
+      ] = await Promise.all([
+        matrixPromise,
+        directoryPromise,
+        settingsPromise,
+        profileSettingsPromise,
+        viewerAddressbookPromise
+      ])
 
-      // ------------------------------------------------------------------
-      // 3 - Early‑exit when matrix profile is missing and the flag is off
-      // ------------------------------------------------------------------
-      if (!matrixRow && !this.enableAdditionalFeatures && !addressbookResponse)
-        return null
-
-      // ------------------------------------------------------------------
-      // 4 - Matrix profile (highest precedence)
-      // ------------------------------------------------------------------
-      if (matrixRow) {
-        result.display_name = matrixRow.displayname
-        if (matrixRow.avatar_url) result.avatar_url = matrixRow.avatar_url
-      }
-
-      // ------------------------------------------------------------------
-      // 5 - User‑DB (directory) – second precedence
-      // ------------------------------------------------------------------
-      if (directoryRow) {
-        if (!result.display_name && directoryRow.cn)
-          result.display_name = directoryRow.cn as string
-        if (directoryRow.sn) {
-          result.sn = directoryRow.sn as string
-          result.last_name = directoryRow.sn as string
-        }
-        if (directoryRow.givenname != null || directoryRow.givenName != null) {
-          result.givenName = (directoryRow.givenname ??
-            directoryRow.givenName) as string
-          result.first_name = (directoryRow.givenname ??
-            directoryRow.givenName) as string
-        }
-        if (
-          directoryRow.mail &&
-          (isMyProfile ||
-            (isIdProfileVisible &&
-              idProfileVisibleFields.includes(ProfileField.Email)))
-        )
-          result.emails = [directoryRow.mail as string]
-        if (
-          directoryRow.mobile &&
-          (isMyProfile ||
-            (isIdProfileVisible &&
-              idProfileVisibleFields.includes(ProfileField.Phone)))
-        )
-          result.phones = [directoryRow.mobile as string]
-        if (directoryRow.workplaceFqdn)
-          result.workplaceFqdn = directoryRow.workplaceFqdn as string
-      }
-
-      // ------------------------------------------------------------------
-      // 6 - Common settings – third precedence
-      // ------------------------------------------------------------------
-      if (settingsRow) {
-        if (settingsRow.display_name)
-          result.display_name = settingsRow.display_name
-        if (settingsRow.last_name) {
-          result.last_name = settingsRow.last_name
-          result.sn = settingsRow.last_name
-        }
-        if (settingsRow.first_name) {
-          result.first_name = settingsRow.first_name
-          result.givenName = settingsRow.first_name
-        }
-        if (
-          settingsRow.email &&
-          (isMyProfile ||
-            (isIdProfileVisible &&
-              idProfileVisibleFields.includes(ProfileField.Email)))
-        )
-          if (
-            result.emails &&
-            Array.isArray(result.emails) &&
-            !result.emails?.includes(settingsRow.email)
-          )
-            result.emails.push(settingsRow.email)
-          else result.emails = [settingsRow.email]
-        if (
-          settingsRow.phone &&
-          (isMyProfile ||
-            (isIdProfileVisible &&
-              idProfileVisibleFields.includes(ProfileField.Phone)))
-        )
-          if (
-            result.phones &&
-            Array.isArray(result.phones) &&
-            !result.phones?.includes(settingsRow.phone)
-          )
-            result.phones.push(settingsRow.phone)
-          else result.phones = [settingsRow.phone]
-        if (settingsRow.language) result.language = settingsRow.language
-        if (settingsRow.timezone) result.timezone = settingsRow.timezone
-      }
-
-      // ------------------------------------------------------------------
-      // 7 - Address‑book (fourth source) – merge only missing fields
-      // ------------------------------------------------------------------
-      if (addressbookResponse) {
-        result.display_name = addressbookResponse.display_name
-        // If addressbook has an active field, use it (takes precedence)
-        if (addressbookResponse.active !== undefined) {
-          result.active = addressbookResponse.active
-        }
-      }
-
-      // ------------------------------------------------------------------
-      // 8 - Active status - true if user has Matrix profile, false otherwise
-      // ------------------------------------------------------------------
-      // Only set active based on Matrix profile if not already set from addressbook
-      // AND if we have meaningful data (not just uid)
-      // A user is considered "active" if they have a Matrix profile (matrixRow exists)
-      // This matches the logic in _search.ts where active users have profiles
-      if (
-        result.active === undefined &&
-        (matrixRow || directoryRow || settingsRow || addressbookResponse)
-      ) {
-        result.active = !!matrixRow
-      }
-
-      // ------------------------------------------------------------------
-      // 9 - Clean‑up – drop undefined / null values
-      // ------------------------------------------------------------------
-      const finalResult = Object.fromEntries(
-        Object.entries(result).filter(([_, v]) => v != null)
+      this.logger.debug(
+        `[UserInfoService].getBatch: Fetched ${matrixRows.length} matrix profiles, ${directoryRows.length} directory entries, ${settingsRows.length} settings`
       )
 
-      // If we only have the uid (nothing else useful) we treat it as “no data”.
-      if (Object.keys(finalResult).length === 1 && finalResult.uid != null) {
-        return null
+      // ------------------------------------------------------------------
+      // 2 - Build lookup maps for efficient merging
+      // ------------------------------------------------------------------
+      const matrixMap = new Map<
+        string,
+        { displayname: string; avatar_url?: string }
+      >()
+      for (const row of matrixRows) {
+        if (row.user_id) {
+          matrixMap.set(row.user_id, row)
+        }
       }
 
-      return finalResult as unknown as UserInformation
-    } catch (error) {
-      throw new Error(
-        `Error getting user info ${JSON.stringify({ cause: error })}`,
-        { cause: error as Error }
+      const directoryMap = new Map<string, Record<string, string | string[]>>()
+      for (const row of directoryRows) {
+        if (row.uid) {
+          directoryMap.set(row.uid as string, row)
+        }
+      }
+
+      const settingsMap = new Map<string, SettingsPayload>()
+      for (const row of settingsRows) {
+        if (row.matrix_id && row.settings) {
+          settingsMap.set(row.matrix_id, row.settings)
+        }
+      }
+
+      const profileSettingsMap = new Map<string, UserProfileSettingsPayloadT>()
+      for (const row of profileSettingsRows) {
+        if (row.matrix_id) {
+          profileSettingsMap.set(row.matrix_id, {
+            visibility: row.visibility,
+            visible_fields: row.visible_fields
+          })
+        }
+      }
+
+      const addressbookContactMap = new Map<string, { display_name: string }>()
+      if (viewerAddressbook?.contacts) {
+        for (const contact of viewerAddressbook.contacts) {
+          if (contact.mxid) {
+            addressbookContactMap.set(contact.mxid, contact)
+          }
+        }
+      }
+
+      // ------------------------------------------------------------------
+      // 3 - Merge data for each user
+      // ------------------------------------------------------------------
+      for (const id of validIds) {
+        const localPart = idToLocalPart.get(id)
+        if (!localPart) continue
+
+        const userInfo: Partial<UserInformation> = { uid: id }
+
+        const matrixRow = matrixMap.get(localPart)
+        const directoryRow = directoryMap.get(localPart)
+        const settingsRow = settingsMap.get(id)
+        const addressbookContact = addressbookContactMap.get(id)
+
+        // Skip if no data from any source (unless additional features enabled)
+        if (
+          !matrixRow &&
+          !this.enableAdditionalFeatures &&
+          !addressbookContact
+        ) {
+          continue
+        }
+
+        // ------------------------------------------------------------------
+        // Visibility checks for this user
+        // ------------------------------------------------------------------
+        const isMyProfile = id === viewer
+        const profileSettings =
+          profileSettingsMap.get(id) ?? this.defaultVisibilitySettings
+        const idProfileVisibility = profileSettings.visibility
+        const idProfileVisibleFields = profileSettings.visible_fields ?? []
+
+        // Determine if the profile is visible to the viewer
+        let isIdProfileVisible = isMyProfile
+        if (!isMyProfile) {
+          if (idProfileVisibility === ProfileVisibility.Public) {
+            isIdProfileVisible = true
+          } else if (idProfileVisibility === ProfileVisibility.Private) {
+            isIdProfileVisible = false
+          } else if (
+            idProfileVisibility === ProfileVisibility.Contacts &&
+            viewer
+          ) {
+            // TODO: Implement contacts check - The use of a bloom filter or similar mechanism could be handy here
+            // For now we are only allowing access:
+            //   - if viewer and target are on the same domain
+            // AND
+            //   - if additional features are enabled
+            isIdProfileVisible =
+              this.enableAdditionalFeatures &&
+              viewer.endsWith(`:${this.config.server_name}`) &&
+              id.endsWith(`:${this.config.server_name}`)
+          }
+        }
+
+        // Matrix profile (highest precedence)
+        if (matrixRow) {
+          if (matrixRow.displayname)
+            userInfo.display_name = matrixRow.displayname
+          if (matrixRow.avatar_url) userInfo.avatar_url = matrixRow.avatar_url
+        }
+
+        // Directory (second precedence)
+        if (directoryRow) {
+          if (!userInfo.display_name && directoryRow.cn) {
+            userInfo.display_name = directoryRow.cn as string
+          }
+          if (directoryRow.sn) {
+            userInfo.sn = directoryRow.sn as string
+            userInfo.last_name = directoryRow.sn as string
+          }
+          if (
+            directoryRow.givenname != null ||
+            directoryRow.givenName != null
+          ) {
+            userInfo.givenName = (directoryRow.givenname ??
+              directoryRow.givenName) as string
+            userInfo.first_name = (directoryRow.givenname ??
+              directoryRow.givenName) as string
+          }
+          // Apply visibility checks for email/phone
+          if (
+            directoryRow.mail &&
+            (isMyProfile ||
+              (isIdProfileVisible &&
+                idProfileVisibleFields.includes(ProfileField.Email)))
+          ) {
+            userInfo.emails = [directoryRow.mail as string]
+          }
+          if (
+            directoryRow.mobile &&
+            (isMyProfile ||
+              (isIdProfileVisible &&
+                idProfileVisibleFields.includes(ProfileField.Phone)))
+          ) {
+            userInfo.phones = [directoryRow.mobile as string]
+          }
+          if (directoryRow.workplaceFqdn) {
+            userInfo.workplaceFqdn = directoryRow.workplaceFqdn as string
+          }
+        }
+
+        // Settings (third precedence)
+        if (settingsRow) {
+          if (settingsRow.display_name) {
+            userInfo.display_name = settingsRow.display_name
+          }
+          if (settingsRow.last_name) {
+            userInfo.last_name = settingsRow.last_name
+            userInfo.sn = settingsRow.last_name
+          }
+          if (settingsRow.first_name) {
+            userInfo.first_name = settingsRow.first_name
+            userInfo.givenName = settingsRow.first_name
+          }
+          // Apply visibility checks for email/phone from settings
+          if (
+            settingsRow.email &&
+            (isMyProfile ||
+              (isIdProfileVisible &&
+                idProfileVisibleFields.includes(ProfileField.Email)))
+          ) {
+            if (
+              userInfo.emails &&
+              !userInfo.emails.includes(settingsRow.email)
+            ) {
+              userInfo.emails.push(settingsRow.email)
+            } else if (!userInfo.emails) {
+              userInfo.emails = [settingsRow.email]
+            }
+          }
+          if (
+            settingsRow.phone &&
+            (isMyProfile ||
+              (isIdProfileVisible &&
+                idProfileVisibleFields.includes(ProfileField.Phone)))
+          ) {
+            if (
+              userInfo.phones &&
+              !userInfo.phones.includes(settingsRow.phone)
+            ) {
+              userInfo.phones.push(settingsRow.phone)
+            } else if (!userInfo.phones) {
+              userInfo.phones = [settingsRow.phone]
+            }
+          }
+          if (settingsRow.language) userInfo.language = settingsRow.language
+          if (settingsRow.timezone) userInfo.timezone = settingsRow.timezone
+        }
+
+        // Addressbook (fourth source) - override display_name if present
+        if (addressbookContact?.display_name) {
+          userInfo.display_name = addressbookContact.display_name
+        }
+
+        // Only add if we have more than just uid
+        if (Object.keys(userInfo).length > 1) {
+          result.set(id, userInfo as UserInformation)
+        }
+      }
+
+      this.logger.info(
+        `[UserInfoService].getBatch: Returning ${result.size} user info records`
       )
-    }
-  }
 
-  /**
-   * Retrieves user information for multiple users in batch
-   * @param {string[]} ids Array of user IDs
-   * @param {string} viewer Optional viewer ID for visibility checks
-   * @returns {Promise<Map<string, UserInformation | null>>} Map of user IDs to their information
-   */
-  getMany = async (
-    ids: string[],
-    viewer?: string
-  ): Promise<Map<string, UserInformation | null>> => {
-    this.logger.debug(
-      `[UserInfoService].getMany: Gathering information for ${ids.length} users`
-    )
-    const results = new Map<string, UserInformation | null>()
-
-    if (!ids || ids.length === 0) {
-      return results
-    }
-
-    try {
-      // For now, use individual get() calls
-      // TODO: Optimize with batch queries in future
-      for (const id of ids) {
-        const userInfo = await this.get(id, viewer)
-        results.set(id, userInfo)
-      }
-
-      return results
+      return result
     } catch (error) {
+      this.logger.error('[UserInfoService].getBatch: Error fetching batch', {
+        error
+      })
       throw new Error(
-        `Error getting batch user info ${JSON.stringify({ cause: error })}`,
+        `Error getting batch user info: ${JSON.stringify({ cause: error })}`,
         { cause: error as Error }
       )
     }

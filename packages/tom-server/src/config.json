@@ -246,21 +246,10 @@
       "creator_becomes": 90
     }
   },
-  "rabbitmq": {
-    "host": "localhost",
-    "port": 5672,
-    "vhost": "/",
-    "username": "guest",
-    "password": "guest",
-    "tls": false
-  },
   "features": {
     "common_settings": {
       "enabled": false,
-      "application_url": "https://{username}-settings.localhost",
-      "queue": "settings.queue",
-      "routingKey": "settings.routing.key",
-      "exchange": "exchange.exchange"
+      "application_url": "https://{username}-settings.localhost"
     },
     "matrix_profile_updates_allowed": true,
     "user_profile": {

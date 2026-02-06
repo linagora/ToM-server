@@ -46,7 +46,7 @@ const tables: Record<Collections, string> = {
   userQuotas: 'user_id varchar(64) PRIMARY KEY, size int',
   invitations:
     'id varchar(64) PRIMARY KEY, sender varchar(64), recipient varchar(64), medium varchar(64), expiration varchar(64), accessed int, room_id varchar(64), matrix_id varchar(64)',
-  addressbooks: 'id varchar(64) PRIMARY KEY, owner varchar(64) UNIQUE NOT NULL',
+  addressbooks: 'id varchar(64) PRIMARY KEY, owner varchar(64)',
   contacts:
     'id varchar(64) PRIMARY KEY, addressbook_id varchar(64), mxid varchar(64), display_name varchar(64), active int'
 }
@@ -259,13 +259,14 @@ class IdentityServerDb<T extends string = never>
     this.ready = new Promise((resolve, reject) => {
       this.db.ready
         .then(() => {
+          this.logger.info('[IdentityServerDb] initialized.')
           this.dbMaintenance(conf.database_vacuum_delay)
           resolve()
         })
         .catch((e) => {
           /* istanbul ignore next */
           console.error({ e })
-          this.logger.error('Database initialization failed')
+          this.logger.error('[IdentityServerDb] Database initialization failed')
           /* istanbul ignore next */
           reject(e)
         })

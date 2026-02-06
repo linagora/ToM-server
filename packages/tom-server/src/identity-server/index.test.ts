@@ -45,34 +45,43 @@ let app: express.Application
 let federatedIdentityToken: string
 
 jest.mock('../user-info-api/services', () => {
+  const createUserInfo = (address: string) => {
+    const baseUid = address.replace(/^@/, '').split(':')[0]
+    const domain = address.includes(':') ? address.split(':')[1] : 'example.com'
+    const givenName =
+      baseUid.charAt(0).toUpperCase() + baseUid.slice(1).toLowerCase()
+    const sn = givenName
+
+    return {
+      uid: baseUid,
+      display_name: sn,
+      avatar_url: '',
+      sn,
+      last_name: sn,
+      givenName,
+      first_name: givenName,
+      emails: [`${baseUid}@${domain}`],
+      phones: [],
+      language: 'en',
+      timezone: 'UTC'
+    }
+  }
+
   return jest.fn().mockImplementation(() => ({
     get: jest.fn(async (address: string, viewer: string) => {
       if (!address || typeof address !== 'string') {
         throw new Error('Invalid address')
       }
-
-      const baseUid = address.replace(/^@/, '').split(':')[0]
-      const domain = address.includes(':')
-        ? address.split(':')[1]
-        : 'example.com'
-
-      const givenName =
-        baseUid.charAt(0).toUpperCase() + baseUid.slice(1).toLowerCase()
-      const sn = givenName
-
-      return {
-        uid: baseUid,
-        display_name: sn,
-        avatar_url: '',
-        sn,
-        last_name: sn,
-        givenName,
-        first_name: givenName,
-        emails: [`${baseUid}@${domain}`],
-        phones: [],
-        language: 'en',
-        timezone: 'UTC'
+      return createUserInfo(address)
+    }),
+    getBatch: jest.fn(async (addresses: string[], viewer: string) => {
+      const result = new Map()
+      for (const address of addresses) {
+        if (address && typeof address === 'string') {
+          result.set(address, createUserInfo(address))
+        }
       }
+      return result
     })
   }))
 })

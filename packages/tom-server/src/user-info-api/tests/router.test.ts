@@ -56,12 +56,6 @@ const controllerGetSpy = jest.fn().mockImplementation((_req, res, _next) => {
   res.status(200).send('OK')
 })
 
-const controllerGetManySpy = jest
-  .fn()
-  .mockImplementation((_req, res, _next) => {
-    res.status(200).send('OK')
-  })
-
 const controllerUpdateVisibilitySpy = jest
   .fn()
   .mockImplementation((_req, res, _next) => {
@@ -76,7 +70,6 @@ jest.mock('../controllers/index.ts', () => {
   return function () {
     return {
       get: controllerGetSpy,
-      getMany: controllerGetManySpy,
       getVisibility: controllerGetSpy,
       updateVisibility: controllerUpdateVisibilitySpy
     }
