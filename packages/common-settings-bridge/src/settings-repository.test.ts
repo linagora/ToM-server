@@ -1,4 +1,4 @@
-import { SettingsPayload, UserSettingsTableName } from './types'
+import { ISettingsPayload, UserSettingsTableName } from './types'
 
 // Mock the dependencies at module load time
 jest.mock('@twake/db', () => ({
@@ -57,8 +57,8 @@ describe('SettingsRepository', () => {
   })
 
   const createTestPayload = (
-    overrides: Partial<SettingsPayload> = {}
-  ): SettingsPayload => ({
+    overrides: Partial<ISettingsPayload> = {}
+  ): ISettingsPayload => ({
     matrix_id: '@user:example.com',
     display_name: 'Test User',
     avatar: 'mxc://example.com/avatar123',

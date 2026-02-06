@@ -21,7 +21,7 @@ import {
   UserIdNotProvidedError,
   type StoredUserSettings,
   type CommonSettingsMessage,
-  type SettingsPayload
+  type ISettingsPayload
 } from './types'
 
 // =============================================================================
@@ -37,7 +37,7 @@ interface ParsedMessage {
   timestamp: number
   requestId: string
   source: string
-  payload: SettingsPayload
+  payload: ISettingsPayload
 }
 
 /**
@@ -381,9 +381,14 @@ export class CommonSettingsBridge {
     if (this.#isDatabaseAvailable && profileUpdated) {
       try {
         const isNewUser = lastSettings === null
+        // Merge new payload with previous settings to preserve unchanged fields
+        const mergedPayload: ISettingsPayload = {
+          ...(lastSettings?.payload ?? {}),
+          ...payload
+        }
         await this.#settingsRepository.saveSettings(
           userId,
-          payload,
+          mergedPayload,
           version,
           timestamp,
           requestId,
