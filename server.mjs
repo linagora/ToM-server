@@ -1,5 +1,4 @@
 import TomServer from '@twake/server'
-import { CommonSettingsService } from '@twake/common-settings'
 import express from 'express'
 import path from 'node:path'
 import { fileURLToPath } from 'url'
@@ -29,15 +28,6 @@ const appServerConf = {
   sender_localpart: process.env.SENDER_LOCALPART
 }
 
-const rabbitmqConf = {
-  host: process.env.RABBITMQ_HOST || 'localhost',
-  port: process.env.RABBITMQ_PORT || 5672,
-  vhost: process.env.RABBITMQ_VHOST || '/',
-  username: process.env.RABBITMQ_USER || 'guest',
-  password: process.env.RABBITMQ_PASSWORD || 'guest',
-  tls: _parseBooleanEnv(process.env.RABBITMQ_TLS, false)
-}
-
 const featuresConf = {
   common_settings: {
     enabled: _parseBooleanEnv(
@@ -46,16 +36,7 @@ const featuresConf = {
     ),
     application_url:
       process.env.FEATURE_COMMON_SETTINGS_APPLICATION_URL ||
-      `https://{username}-settings.${process.env.SERVER_NAME}`,
-    queue: process.env.FEATURE_COMMON_SETTINGS_QUEUE || 'settings.queue',
-    routingKey:
-      process.env.FEATURE_COMMON_SETTINGS_ROUTING_KEY || 'settings.routing.key',
-    exchange:
-      process.env.FEATURE_COMMON_SETTINGS_EXCHANGE || 'settings.exchange',
-    deadLetterExchange:
-      process.env.FEATURE_COMMON_SETTINGS_DEAD_LETTER_EXCHANGE,
-    deadLetterRoutingKey:
-      process.env.FEATURE_COMMON_SETTINGS_DEAD_LETTER_ROUTING_KEY
+      `https://{username}-settings.${process.env.SERVER_NAME}`
   },
   matrix_profile_updates_allowed: _parseBooleanEnv(
     process.env.FEATURE_MATRIX_PROFILE_UPDATES_ALLOWED,
@@ -192,7 +173,6 @@ let conf = {
   smtp_server: process.env.SMTP_SERVER || 'localhost',
   smtp_port: process.env.SMTP_PORT || 25,
   twake_chat: twakeChatConf,
-  rabbitmq: rabbitmqConf,
   features: featuresConf
 }
 
@@ -273,20 +253,7 @@ Promise.all(promises)
 
       const port = process.argv[2] != null ? parseInt(process.argv[2]) : 3000
       console.log(`ToM-Server listening on port: ${port}`)
-      app.listen(port, '0.0.0.0', async () => {
-        if (conf.features.common_settings.enabled === true) {
-          console.warn(
-            'Common Settings integrated feature is now deprecated in favor of @twake/common-settings-service package.',
-            'We recommend turning off this feature and switching to the new deployment using the standalone service.'
-          )
-          const commonSettingsServiceI = new CommonSettingsService(
-            conf,
-            tomServer.logger,
-            tomServer.db
-          )
-          await commonSettingsServiceI.start()
-        }
-      })
+      app.listen(port, '0.0.0.0')
     })
   })
   .catch((e) => {

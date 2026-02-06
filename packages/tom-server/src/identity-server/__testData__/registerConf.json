@@ -175,23 +175,10 @@
       }
     }
   },
-  "rabbitmq": {
-    "host": "localhost",
-    "port": 5672,
-    "vhost": "/",
-    "username": "guest",
-    "password": "guest",
-    "tls": false
-  },
   "features": {
     "common_settings": {
       "enabled": true,
-      "application_url": "https://{username}-settings.localhost",
-      "queue": "settings.queue",
-      "routingKey": "settings.routing.key",
-      "exchange": "exchange.exchange",
-      "deadLetterExchange": "settings.dead.letter.exchange",
-      "deadLetterRoutingKey": "settings.dead.letter.routing.key"
+      "application_url": "https://{username}-settings.localhost"
     },
     "matrix_profile_updates_allowed": false,
     "user_profile": {

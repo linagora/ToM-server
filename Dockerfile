@@ -26,8 +26,6 @@ COPY packages/utils/package.json ./packages/utils/
 COPY packages/matrix-resolve/package.json ./packages/matrix-resolve/
 COPY packages/matrix-identity-server/package.json ./packages/matrix-identity-server/
 COPY packages/tom-server/package.json ./packages/tom-server/
-COPY packages/amqp-connector/package.json ./packages/amqp-connector/
-COPY packages/common-settings/package.json ./packages/common-settings/
 
 # Install all dependencies (cached unless package.json changes)
 RUN npm ci --ignore-scripts
@@ -59,12 +57,6 @@ COPY packages/tom-server/tsconfig.json packages/tom-server/rollup.config.js ./pa
 COPY packages/tom-server/templates ./packages/tom-server/templates
 COPY packages/tom-server/static ./packages/tom-server/static
 
-COPY packages/amqp-connector/src ./packages/amqp-connector/src
-COPY packages/amqp-connector/tsconfig.json packages/amqp-connector/rollup.config.js ./packages/amqp-connector/
-
-COPY packages/common-settings/src ./packages/common-settings/src
-COPY packages/common-settings/tsconfig.json packages/common-settings/rollup.config.js ./packages/common-settings/
-
 # Copy server entry point
 COPY server.mjs ./
 
@@ -76,9 +68,7 @@ RUN npm rebuild && \
     npm run build --workspace=@twake/utils && \
     npm run build --workspace=matrix-resolve && \
     npm run build --workspace=@twake/matrix-identity-server && \
-    npm run build --workspace=@twake/server && \
-    npm run build --workspace=@twake/amqp-connector && \
-    npm run build --workspace=@twake/common-settings
+    npm run build --workspace=@twake/server
 
 # -----------------------------------------------------------------------------
 # Stage 2: Production dependencies
@@ -98,8 +88,6 @@ COPY packages/utils/package.json ./packages/utils/
 COPY packages/matrix-resolve/package.json ./packages/matrix-resolve/
 COPY packages/matrix-identity-server/package.json ./packages/matrix-identity-server/
 COPY packages/tom-server/package.json ./packages/tom-server/
-COPY packages/amqp-connector/package.json ./packages/amqp-connector/
-COPY packages/common-settings/package.json ./packages/common-settings/
 
 # Install production dependencies only
 RUN npm ci --omit=dev --ignore-scripts && npm rebuild
@@ -137,12 +125,6 @@ COPY --from=builder /usr/src/app/packages/tom-server/dist ./packages/tom-server/
 COPY --from=builder /usr/src/app/packages/tom-server/package.json ./packages/tom-server/
 COPY --from=builder /usr/src/app/packages/tom-server/templates ./packages/tom-server/templates
 COPY --from=builder /usr/src/app/packages/tom-server/static ./packages/tom-server/static
-
-COPY --from=builder /usr/src/app/packages/amqp-connector/dist ./packages/amqp-connector/dist
-COPY --from=builder /usr/src/app/packages/amqp-connector/package.json ./packages/amqp-connector/
-
-COPY --from=builder /usr/src/app/packages/common-settings/dist ./packages/common-settings/dist
-COPY --from=builder /usr/src/app/packages/common-settings/package.json ./packages/common-settings/
 
 # Copy root files
 COPY --from=builder /usr/src/app/server.mjs ./

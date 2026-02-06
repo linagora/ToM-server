@@ -97,17 +97,6 @@ Applications can be configured via:
 | ------------- | ------------------------- | ------- | ------------ |
 | `OIDC_ISSUER` | OpenID Connect issuer URL | -       | **required** |
 
-### RabbitMQ
-
-| Name                | Description           | Default   | Status     |
-| ------------------- | --------------------- | --------- | ---------- |
-| `RABBITMQ_HOST`     | RabbitMQ host         | localhost | _optional_ |
-| `RABBITMQ_PORT`     | RabbitMQ port         | 5672      | _optional_ |
-| `RABBITMQ_VHOST`    | RabbitMQ virtual host | /         | _optional_ |
-| `RABBITMQ_USER`     | RabbitMQ username     | guest     | _optional_ |
-| `RABBITMQ_PASSWORD` | RabbitMQ password     | guest     | _optional_ |
-| `RABBITMQ_TLS`      | Enable RabbitMQ TLS   | false     | _optional_ |
-
 ### SMTP
 
 | Name                      | Description             | Default   | Status     |
