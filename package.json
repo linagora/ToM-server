@@ -41,7 +41,6 @@
   },
   "dependencies": {
     "@twake/amqp-connector": "^0.0.1",
-    "@twake/common-settings": "^0.0.1",
     "@twake/logger": "^0.0.1",
     "dotenv": "^17.2.3",
     "express": "^4.18.2",
