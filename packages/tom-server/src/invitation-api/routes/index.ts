@@ -3,7 +3,12 @@ import {
   type TwakeLogger,
   type Config as LoggerConfig
 } from '@twake/logger'
-import type { AuthenticationFunction, Config, TwakeDB } from '../../types'
+import type {
+  AuthenticationFunction,
+  Config,
+  TwakeDB,
+  ITokenService
+} from '../../types'
 import { Router } from 'express'
 import bodyParser from 'body-parser'
 import InvitationApiController from '../controllers'
@@ -11,21 +16,38 @@ import invitationApiMiddleware from '../middlewares'
 import authMiddleware from '../../utils/middlewares/auth.middleware'
 import CookieAuthenticator from '../../utils/middlewares/cookie-auth.middleware'
 import errorMiddleware from '../../utils/middlewares/error.middleware'
+import { MatrixDB, UserDB } from '@twake/matrix-identity-server'
+import UserInfoService from '../../user-info-api/services'
 
 export const PATH = '/_twake/v1/invite'
 
 export default (
   config: Config,
   db: TwakeDB,
+  userdb: UserDB,
+  matrixdb: MatrixDB,
   authenticator: AuthenticationFunction,
-  defaultLogger?: TwakeLogger
+  defaultLogger?: TwakeLogger,
+  userInfoService?: UserInfoService,
+  tokenService?: ITokenService
 ): Router => {
   const logger = defaultLogger ?? getLogger(config as unknown as LoggerConfig)
   const router = Router()
   const authenticate = authMiddleware(authenticator, logger)
-  const controller = new InvitationApiController(db, logger, config)
+  const controller = new InvitationApiController(
+    db,
+    userdb,
+    matrixdb,
+    logger,
+    config,
+    userInfoService
+  )
   const middleware = new invitationApiMiddleware(db, logger, config)
-  const cookieAuthMiddleware = new CookieAuthenticator(config, logger)
+  const cookieAuthMiddleware = new CookieAuthenticator(
+    config,
+    logger,
+    tokenService
+  )
 
   router.use(bodyParser.json())
   router.use(PATH, middleware.checkFeatureEnabled)

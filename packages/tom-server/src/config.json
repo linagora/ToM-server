@@ -51,16 +51,6 @@
   "matrix_database_ssl": false,
   "matrix_database_user": null,
   "oidc_issuer": "",
-  "opensearch_ca_cert_path": "",
-  "opensearch_host": "localhost",
-  "opensearch_is_activated": true,
-  "opensearch_max_retries": 7,
-  "opensearch_number_of_shards": 5,
-  "opensearch_number_of_replicas": 1,
-  "opensearch_password": "admin",
-  "opensearch_ssl": false,
-  "opensearch_user": "admin",
-  "opensearch_wait_for_active_shards": "1",
   "pepperCron": "0 0 * * *",
   "policies": null,
   "rate_limiting_window": 600000,
@@ -84,9 +74,6 @@
   "userdb_user": "",
   "template_dir": "./templates",
   "sender_localpart": "twake",
-  "registration_file_path": "registration.yaml",
-  "namespaces": { "users": [] },
-  "push_ephemeral": true,
   "sms_api_url": "",
   "sms_api_login": "",
   "sms_api_key": "",
@@ -259,22 +246,20 @@
       "creator_becomes": 90
     }
   },
-  "rabbitmq": {
-    "host": "localhost",
-    "port": 5672,
-    "vhost": "/",
-    "username": "guest",
-    "password": "guest",
-    "tls": false
-  },
   "features": {
     "common_settings": {
       "enabled": false,
-      "application_url": "https://{username}-settings.localhost",
-      "queue": "settings.queue",
-      "routingKey": "settings.routing.key",
-      "exchange": "exchange.exchange"
+      "application_url": "https://{username}-settings.localhost"
     },
-    "matrix_profile_updates_allowed": true
+    "matrix_profile_updates_allowed": true,
+    "user_profile": {
+      "default_visibility_settings": {
+        "visibility": "private",
+        "visible_fields": []
+      }
+    },
+    "user_directory": {
+      "enabled": false
+    }
   }
 }

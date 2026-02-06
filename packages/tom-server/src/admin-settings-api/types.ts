@@ -1,7 +1,10 @@
 import type { ApiRequestHandler } from '../types'
 
 export interface IAdminSettingsService {
-  updateUserInformation: (userId: string, payload: UserInformationPayload) => Promise<void>
+  updateUserInformation: (
+    userId: string,
+    payload: UserInformationPayload
+  ) => Promise<void>
 }
 
 export interface IAdminSettingsController {
@@ -13,10 +16,10 @@ export interface IAdminSettingsMiddleware {
 }
 
 export interface UserInformationPayload {
-  displayName?: string;
-  avatarUrl?: string;
+  displayName?: string
+  avatarUrl?: string
 }
 
 export interface UploadUserAvatarResponse {
-  content_uri?: string;
+  content_uri?: string
 }

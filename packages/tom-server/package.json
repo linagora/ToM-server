@@ -33,16 +33,12 @@
     "*.md"
   ],
   "scripts": {
-    "build": "npm run build:lib && npm run build:example",
-    "build:example": "rollup -p @rollup/plugin-typescript -e express,@twake/server -m -o example/tom-server.js example/tom-server.ts",
-    "build:lib": "rollup -c",
+    "build": "rollup -c",
     "watch": "rollup -c -w",
     "start": "node example/tom-server.js",
     "test": "LOG_TRANSPORTS=File LOG_FILE=/dev/null jest"
   },
   "dependencies": {
-    "@opensearch-project/opensearch": "^2.5.0",
-    "@twake/matrix-application-server": "*",
     "@twake/matrix-identity-server": "*",
     "@twake/utils": "*",
     "ldapts": "^7.1.0",
@@ -59,5 +55,13 @@
   },
   "devDependencies": {
     "@types/qrcode": "^1.5.5"
+  },
+  "engines": {
+    "node": "18.20.8",
+    "npm": "10.8.2"
+  },
+  "volta": {
+    "node": "18.20.8",
+    "npm": "10.8.2"
   }
 }

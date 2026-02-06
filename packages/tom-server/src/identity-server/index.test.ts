@@ -44,6 +44,48 @@ let app: express.Application
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 let federatedIdentityToken: string
 
+jest.mock('../user-info-api/services', () => {
+  const createUserInfo = (address: string) => {
+    const baseUid = address.replace(/^@/, '').split(':')[0]
+    const domain = address.includes(':') ? address.split(':')[1] : 'example.com'
+    const givenName =
+      baseUid.charAt(0).toUpperCase() + baseUid.slice(1).toLowerCase()
+    const sn = givenName
+
+    return {
+      uid: baseUid,
+      display_name: sn,
+      avatar_url: '',
+      sn,
+      last_name: sn,
+      givenName,
+      first_name: givenName,
+      emails: [`${baseUid}@${domain}`],
+      phones: [],
+      language: 'en',
+      timezone: 'UTC'
+    }
+  }
+
+  return jest.fn().mockImplementation(() => ({
+    get: jest.fn(async (address: string, viewer: string) => {
+      if (!address || typeof address !== 'string') {
+        throw new Error('Invalid address')
+      }
+      return createUserInfo(address)
+    }),
+    getBatch: jest.fn(async (addresses: string[], viewer: string) => {
+      const result = new Map()
+      for (const address of addresses) {
+        if (address && typeof address === 'string') {
+          result.set(address, createUserInfo(address))
+        }
+      }
+      return result
+    })
+  }))
+})
+
 beforeAll((done) => {
   const conf: Config = {
     ...defaultConfig,
@@ -216,10 +258,14 @@ describe('Using Matrix Token', () => {
           val: 'who'
         })
       expect(response.status).toBe(200)
-      expect(response.body).toEqual({
-        matches: [{ uid: 'dwho', address: '@dwho:example.com' }],
-        inactive_matches: []
-      })
+      expect(response.body.matches).toHaveLength(1)
+      expect(response.body.matches[0]).toEqual(
+        expect.objectContaining({
+          uid: '@dwho:example.com',
+          address: '@dwho:example.com'
+        })
+      )
+      expect(response.body.inactive_matches).toEqual([])
     })
 
     it('should find user when searching by matrix address', async () => {
@@ -233,10 +279,15 @@ describe('Using Matrix Token', () => {
           val: '@dwho:example.com'
         })
       expect(response.status).toBe(200)
-      expect(response.body).toEqual({
-        matches: [{ uid: 'dwho', address: '@dwho:example.com', sn: 'Dwho' }],
-        inactive_matches: []
-      })
+      expect(response.body.matches).toHaveLength(1)
+      expect(response.body.matches[0]).toEqual(
+        expect.objectContaining({
+          uid: '@dwho:example.com',
+          address: '@dwho:example.com',
+          sn: 'Dwho'
+        })
+      )
+      expect(response.body.inactive_matches).toEqual([])
     })
 
     it('should respect limit', async () => {
@@ -251,15 +302,20 @@ describe('Using Matrix Token', () => {
           limit: 4
         })
       expect(response.status).toBe(200)
-      expect(response.body).toEqual({
-        matches: [],
-        inactive_matches: [
-          { uid: 'user00', address: '@user00:example.com' },
-          { uid: 'user01', address: '@user01:example.com' },
-          { uid: 'user02', address: '@user02:example.com' },
-          { uid: 'user03', address: '@user03:example.com' }
-        ]
-      })
+      expect(response.body.matches).toEqual([])
+      expect(response.body.inactive_matches).toHaveLength(4)
+      expect(response.body.inactive_matches[0]).toEqual(
+        expect.objectContaining({ uid: '@user00:example.com' })
+      )
+      expect(response.body.inactive_matches[1]).toEqual(
+        expect.objectContaining({ uid: '@user01:example.com' })
+      )
+      expect(response.body.inactive_matches[2]).toEqual(
+        expect.objectContaining({ uid: '@user02:example.com' })
+      )
+      expect(response.body.inactive_matches[3]).toEqual(
+        expect.objectContaining({ uid: '@user03:example.com' })
+      )
     })
 
     it('should respect limit and offset', async () => {
@@ -275,15 +331,26 @@ describe('Using Matrix Token', () => {
           offset: 3
         })
       expect(response.status).toBe(200)
-      expect(response.body).toEqual({
-        matches: [],
-        inactive_matches: [
-          { uid: 'user03', address: '@user03:example.com' },
-          { uid: 'user04', address: '@user04:example.com' },
-          { uid: 'user05', address: '@user05:example.com' },
-          { uid: 'user06', address: '@user06:example.com' }
-        ]
-      })
+      expect(response.body.matches).toEqual([])
+      expect(response.body.inactive_matches).toHaveLength(4)
+      expect(response.body.inactive_matches[0]).toEqual(
+        expect.objectContaining({ uid: '@user03:example.com' })
+      )
+      expect(response.body.inactive_matches[1]).toEqual(
+        expect.objectContaining({ uid: '@user04:example.com' })
+      )
+      expect(response.body.inactive_matches[2]).toEqual(
+        expect.objectContaining({
+          uid: '@user05:example.com',
+          address: '@user05:example.com'
+        })
+      )
+      expect(response.body.inactive_matches[3]).toEqual(
+        expect.objectContaining({
+          uid: '@user06:example.com',
+          address: '@user06:example.com'
+        })
+      )
     })
   })
 
@@ -339,7 +406,12 @@ describe('Using Matrix Token', () => {
                   timestamp
                 )
                 expect(response.body).toEqual({
-                  deleted: [{ uid: 'user04', address: '@user04:example.com' }],
+                  deleted: [
+                    {
+                      uid: 'user04',
+                      address: '@user04:example.com'
+                    }
+                  ],
                   new: [
                     {
                       uid: 'user07',

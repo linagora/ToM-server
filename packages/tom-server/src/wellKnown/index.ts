@@ -273,7 +273,9 @@ class WellKnown {
   constructor(conf: Config) {
     // eslint-disable-next-line @typescript-eslint/no-misused-promises
     this._wellKnownClient = async (_req, res) => {
-      const matrixConfig = await this._getConfigFromMatrixServer(conf.matrix_internal_host)
+      const matrixConfig = await this._getConfigFromMatrixServer(
+        conf.matrix_internal_host
+      )
       const wellKnown: WellKnownType = {
         'm.homeserver': {
           base_url: `https://${conf.matrix_server}/`
@@ -362,7 +364,7 @@ class WellKnown {
 
   private readonly _getConfigFromMatrixServer = async (
     matrixServer: string
-  ) : Promise<any> => {
+  ): Promise<any> => {
     try {
       const apiUrl = buildUrl(matrixServer, '.well-known/matrix/client')
       const res = await fetch(apiUrl)

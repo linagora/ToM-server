@@ -53,5 +53,13 @@
   "scripts": {
     "build": "rollup -c",
     "test": "jest"
+  },
+  "engines": {
+    "node": "18.20.8",
+    "npm": "10.8.2"
+  },
+  "volta": {
+    "node": "18.20.8",
+    "npm": "10.8.2"
   }
 }

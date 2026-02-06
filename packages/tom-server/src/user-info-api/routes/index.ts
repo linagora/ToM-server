@@ -11,13 +11,15 @@ import authMiddleware from '../../utils/middlewares/auth.middleware'
 import UserInfoController from '../controllers'
 import checkLdapMiddleware from '../middlewares/require-ldap'
 import { type MatrixDB } from '@twake/matrix-identity-server'
+import type { IUserInfoService } from '../types'
 export const PATH = '/_twake/v1/user_info'
 
 export default (
   idServer: IdServer,
   config: Config,
   matrixDB: MatrixDB,
-  defaultLogger?: TwakeLogger
+  defaultLogger?: TwakeLogger,
+  userInfoService?: IUserInfoService
 ): Router => {
   const logger = defaultLogger ?? getLogger(config as unknown as LoggerConfig)
   const router = Router()
@@ -27,7 +29,8 @@ export default (
     idServer.db,
     matrixDB,
     config,
-    logger
+    logger,
+    userInfoService
   )
   const requireLdap = checkLdapMiddleware(config, logger)
 
@@ -78,7 +81,7 @@ export default (
    *          items:
    *            type: string
    *            example: "+1 234 567 8910"
-   *        mail:
+   *        emails:
    *          type: array
    *          description: |
    *            List of e‑mail addresses associated with the user in the local
@@ -90,10 +93,22 @@ export default (
    *        sn:
    *          type: string
    *          description: |
-   *            Surname (family name) from the UserDB. Present only when the
+   *            *DEPRECATED* Surname (family name) from the UserDB. Present only when the
    *            UserDB contains this attribute.
    *          example: "Doe"
+   *        last_name:
+   *          type: string
+   *          description: |
+   *            Given name (first name) from the UserDB. Present only when the
+   *            UserDB contains this attribute.
+   *          example: "John"
    *        givenName:
+   *          type: string
+   *          description: |
+   *            *DEPRECATED* Surname (family name) from the UserDB. Present only when the
+   *            UserDB contains this attribute.
+   *          example: "Doe"
+   *        first_name:
    *          type: string
    *          description: |
    *            Given name (first name) from the UserDB. Present only when the
@@ -143,6 +158,57 @@ export default (
     requireLdap,
     authenticator,
     userInfoController.get
+  )
+
+  /**
+   * @openapi
+   * /_twake/v1/user_info/{userId}/visibility:
+   *  get:
+   *    tags:
+   *      - User Info
+   *    description: Get user info visibility
+   *    parameters:
+   *      - $ref: '#/components/parameters/userId'
+   *    responses:
+   *      200:
+   *        description: User info visibility settings found
+   *        content:
+   *          application/json:
+   *            schema:
+   *              UserInfoVisibilitySettings:
+   *                type: object
+   *                description: Representation of the User Information Visibility Settings
+   *                required:
+   *                  - visibility
+   *                  - visible_fields
+   *                properties:
+   *                  visibility:
+   *                    type: string
+   *                    description: Defines who can access the selected fields
+   *                    enum:
+   *                      - public
+   *                      - private
+   *                      - contacts
+   *                    example: contacts
+   *                  visible_fields:
+   *                    type: array
+   *                    description: Name of the fields visible according to visibility
+   *                    uniqueItems: true
+   *                    maxItems: 2
+   *                    items:
+   *                      type: string
+   *                      enum:
+   *                        - email
+   *                        - phone
+   *      404:
+   *        description: User info not found
+   *      500:
+   *        description: Internal server error
+   */
+  router.get(
+    `${PATH}/:userId/visibility`,
+    requireLdap,
+    userInfoController.getVisibility
   )
 
   router.post(

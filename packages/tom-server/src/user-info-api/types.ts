@@ -7,6 +7,11 @@ export interface IUserInfoController {
 
 export interface IUserInfoService {
   get: (id: string, viewer?: string) => Promise<UserInformation | null>
+  getBatch: (
+    ids: string[],
+    viewer?: string
+  ) => Promise<Map<string, UserInformation>>
+  getVisibility: (id: string) => Promise<UserProfileSettingsPayloadT | null>
   updateVisibility: (
     id: string,
     visibilitySettings: UserProfileSettingsT
@@ -16,15 +21,16 @@ export interface IUserInfoService {
 export interface UserInformation {
   uid: string
   display_name?: string
-  avatar?: string
+  avatar_url?: string
   sn?: string
   last_name?: string
   givenName?: string
   first_name?: string
-  mails?: string[]
+  emails?: string[]
   phones?: string[]
   language?: string
   timezone?: string
+  workplaceFqdn?: string
 }
 
 export interface SettingsPayload {

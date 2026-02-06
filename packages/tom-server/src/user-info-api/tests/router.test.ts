@@ -16,7 +16,9 @@ jest
   .mockResolvedValue([{ data: '"test"' }])
 
 const matrixDBMock: Partial<MatrixDB> = {
-  get: jest.fn().mockResolvedValue([{ displayname: "", avatar_url: 'avatar_url' }])
+  get: jest
+    .fn()
+    .mockResolvedValue([{ displayname: '', avatar_url: 'avatar_url' }])
 } as unknown as Partial<MatrixDB>
 
 const idServer = new IdServer(
@@ -28,7 +30,17 @@ const idServer = new IdServer(
     rate_limiting_window: 10000,
     rate_limiting_nb_requests: 100,
     template_dir: './templates',
-    userdb_host: './tokens.db'
+    userdb_host: './tokens.db',
+    features: {
+      common_settings: { enabled: false },
+      user_profile: {
+        default_visibility_settings: {
+          visibility: 'private',
+          visible_fields: []
+        }
+      },
+      user_directory: { enabled: true }
+    }
   } as unknown as ConfigDescription
 )
 
@@ -44,9 +56,11 @@ const controllerGetSpy = jest.fn().mockImplementation((_req, res, _next) => {
   res.status(200).send('OK')
 })
 
-const controllerUpdateVisibilitySpy = jest.fn().mockImplementation((_req, res, _next) => {
-  res.status(200).send('OK')
-})
+const controllerUpdateVisibilitySpy = jest
+  .fn()
+  .mockImplementation((_req, res, _next) => {
+    res.status(200).send('OK')
+  })
 
 jest.mock('../middlewares/require-ldap.ts', () => {
   return () => middlewareSpy
@@ -56,6 +70,7 @@ jest.mock('../controllers/index.ts', () => {
   return function () {
     return {
       get: controllerGetSpy,
+      getVisibility: controllerGetSpy,
       updateVisibility: controllerUpdateVisibilitySpy
     }
   }
@@ -65,7 +80,9 @@ describe('the user info API Router', () => {
   beforeAll((done) => {
     idServer.ready
       .then(() => {
-        app.use(router(idServer, {} as unknown as Config, matrixDBMock as MatrixDB))
+        app.use(
+          router(idServer, {} as unknown as Config, matrixDBMock as MatrixDB)
+        )
         done()
       })
       .catch((e) => {

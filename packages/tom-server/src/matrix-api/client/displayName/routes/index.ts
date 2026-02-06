@@ -21,7 +21,7 @@ export default (
   defaultLogger?: TwakeLogger
 ): Router => {
   const logger = defaultLogger ?? getLogger(config as unknown as LoggerConfig)
-  const router = Router({mergeParams: true}) // merge params with parent router to get userId
+  const router = Router({ mergeParams: true }) // merge params with parent router to get userId
   const controller = new DisplayNameController(config, logger)
   const authenticate = authMiddleware(authenticator, logger)
 

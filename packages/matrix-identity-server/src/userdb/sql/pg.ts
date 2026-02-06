@@ -46,6 +46,7 @@ class UserDBPg extends Pg<Collections> implements UserDBBackend {
           }
           try {
             this.db = new pg.Pool(opts)
+            logger.info('[UserDBPg] initialized.')
             resolve()
           } catch (e) {
             logger.error('Unable to connect to Pg database')

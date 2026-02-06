@@ -10,6 +10,7 @@ import { type TwakeDB, type AuthRequest, type Config } from '../../types'
 import UserInfoService from '../services'
 import { errCodes } from '@twake/utils'
 import type { TwakeLogger } from '@twake/logger'
+import type { IAddressbookService } from '../../addressbook-api/types'
 
 class UserInfoController implements IUserInfoController {
   private readonly userInfoService: IUserInfoService
@@ -19,15 +20,20 @@ class UserInfoController implements IUserInfoController {
     private readonly db: TwakeDB,
     private readonly matrixDB: MatrixDB,
     private readonly config: Config,
-    private readonly logger: TwakeLogger
+    private readonly logger: TwakeLogger,
+    userInfoService?: IUserInfoService,
+    addressbookService?: IAddressbookService
   ) {
-    this.userInfoService = new UserInfoService(
-      userdb,
-      db,
-      matrixDB,
-      config,
-      logger
-    )
+    this.userInfoService =
+      userInfoService ??
+      new UserInfoService(
+        userdb,
+        db,
+        matrixDB,
+        config,
+        logger,
+        addressbookService
+      )
   }
 
   /**
@@ -89,7 +95,36 @@ class UserInfoController implements IUserInfoController {
         await this.userInfoService.updateVisibility(userId, updatedSettings)
 
       if (userVisibilitySettings === undefined) {
-        res.status(500).json({ error: errCodes.badJson })
+        res.status(500).json({ error: errCodes.unknown })
+        return
+      }
+
+      res.status(200).json({ ...userVisibilitySettings })
+    } catch (error) {
+      next(error)
+    }
+  }
+
+  /**
+   * Gets the visibility settings of the user info
+   *
+   * @param {AuthRequest} req the request object
+   * @param {Response} res the response object
+   * @param {NextFunction} next the next handler
+   */
+  getVisibility = async (
+    req: AuthRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
+    try {
+      const { userId } = req.params
+      const userVisibilitySettings = await this.userInfoService.getVisibility(
+        userId
+      )
+
+      if (userVisibilitySettings === null) {
+        res.status(404).json({ error: errCodes.notFound })
         return
       }
 

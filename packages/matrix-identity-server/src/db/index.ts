@@ -10,7 +10,6 @@ export type SupportedDatabases = 'sqlite' | 'pg'
 
 export type Collections =
   | 'accessTokens'
-  | 'activeContacts'
   | 'attempts'
   | 'oneTimeTokens'
   | 'hashes'
@@ -18,13 +17,10 @@ export type Collections =
   | 'keys'
   | 'longTermKeypairs'
   | 'mappings'
-  | 'privateNotes'
-  | 'roomTags'
   | 'shortTermKeypairs'
   | 'userHistory'
   | 'userPolicies'
   | 'userQuotas'
-  | 'activeContacts'
   | 'invitations'
   | 'addressbooks'
   | 'contacts'
@@ -33,7 +29,6 @@ const cleanByExpires: Collections[] = ['oneTimeTokens', 'attempts']
 
 const tables: Record<Collections, string> = {
   accessTokens: 'id varchar(64) PRIMARY KEY, data text',
-  activeContacts: 'userId text PRIMARY KEY, contacts text',
   attempts: 'email text PRIMARY KEY, expires int, attempt int',
   oneTimeTokens: 'id varchar(64) PRIMARY KEY, expires int, data text',
   hashes:
@@ -44,10 +39,6 @@ const tables: Record<Collections, string> = {
     'name text PRIMARY KEY, keyID varchar(64), public text, private text',
   mappings:
     'client_secret varchar(255) PRIMARY KEY, session_id varchar(12), medium varchar(8), valid integer, address text, submit_time integer, send_attempt integer',
-  privateNotes:
-    'id varchar(64) PRIMARY KEY, authorId varchar(64), content text, targetId varchar(64)',
-  roomTags:
-    'id varchar(64) PRIMARY KEY, authorId varchar(64), content text, roomId varchar(64)',
   shortTermKeypairs:
     'keyID varchar(64) PRIMARY KEY, public text, private text, active integer',
   userHistory: 'address text PRIMARY KEY, active integer, timestamp integer',
@@ -268,13 +259,14 @@ class IdentityServerDb<T extends string = never>
     this.ready = new Promise((resolve, reject) => {
       this.db.ready
         .then(() => {
+          this.logger.info('[IdentityServerDb] initialized.')
           this.dbMaintenance(conf.database_vacuum_delay)
           resolve()
         })
         .catch((e) => {
           /* istanbul ignore next */
           console.error({ e })
-          this.logger.error('Database initialization failed')
+          this.logger.error('[IdentityServerDb] Database initialization failed')
           /* istanbul ignore next */
           reject(e)
         })

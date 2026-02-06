@@ -1,10 +1,6 @@
 export const tables = {
   recoveryWords: 'userId text PRIMARY KEY, words TEXT',
   matrixTokens: 'id varchar(64) PRIMARY KEY, data text',
-  privateNotes:
-    'id varchar(64) PRIMARY KEY, authorId varchar(64), content text, targetId varchar(64)',
-  roomTags:
-    'id varchar(64) PRIMARY KEY, authorId varchar(64), content text, roomId varchar(64)',
   userQuotas: 'user_id varchar(64) PRIMARY KEY, size int',
   rooms: 'id varchar(64) PRIMARY KEY, filter varchar(64)',
   invitations:
@@ -13,7 +9,7 @@ export const tables = {
   contacts:
     'id varchar(64) PRIMARY KEY, addressbook_id varchar(64), mxid varchar(64), display_name varchar(64), active int',
   usersettings:
-    'matrix_id varchar(64) PRIMARY KEY, settings jsonb, version int',
+    "matrix_id varchar(64) PRIMARY KEY, settings jsonb, version int DEFAULT 1, timestamp bigint DEFAULT 0, request_id varchar(255) DEFAULT ''",
   profileSettings:
     'matrix_id varchar(64) PRIMARY KEY, visibility VARCHAR(20) NOT NULL, visible_fields TEXT[] NOT NULL'
 }

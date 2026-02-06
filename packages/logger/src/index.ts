@@ -19,7 +19,12 @@ export const getLogger = (
     confDesc ??
     defaultConfDesc.logging
   // Parsing the configuration using the new config parser with using environment variables enabled
-  const loggingConf = configParser(confDesc, getConfigurationFile(conf), true, false)
+  const loggingConf = configParser(
+    confDesc,
+    getConfigurationFile(conf),
+    true,
+    false
+  )
   return createLogger(
     new TwakeLoggerOptions(loggingConf).convertToWinstonLoggerOptions()
   )

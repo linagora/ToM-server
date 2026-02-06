@@ -17,6 +17,8 @@ import {
 import { buildUrl } from '../../utils'
 import NotificationService from '../../utils/services/notification-service'
 import { buildEmailBody, buildSmsBody } from '../../utils/helpers'
+import UserInfoService from '../../user-info-api/services'
+import type { MatrixDB, UserDB } from '@twake/matrix-identity-server'
 
 export default class InvitationService implements IInvitationService {
   private readonly INVITATION_TABLE = 'invitations'
@@ -25,13 +27,21 @@ export default class InvitationService implements IInvitationService {
   private readonly MATRIX_USER_PATH = '/_matrix/client/v3/user'
 
   private notificationService: INotificationService
+  private readonly userInfoService: UserInfoService
 
   constructor(
+    userdb: UserDB,
     private readonly db: TwakeDB,
+    matrixdb: MatrixDB,
     private readonly logger: TwakeLogger,
-    private readonly config: Config
+    private readonly config: Config,
+    userInfoService?: UserInfoService
   ) {
     this.notificationService = new NotificationService(config, logger)
+    this.userInfoService =
+      userInfoService ??
+      new UserInfoService(userdb, db, matrixdb, config, logger)
+    this.logger.info('[InvitationService] Initialized.', {})
   }
 
   /**
@@ -44,7 +54,10 @@ export default class InvitationService implements IInvitationService {
     try {
       return this._getUserInvitations(userId)
     } catch (error) {
-      this.logger.error(`Failed to list invitations`, error)
+      this.logger.error(
+        `[InvitationService][list] Failed to list invitations`,
+        error
+      )
 
       throw Error('Failed to list invitations')
     }
@@ -61,21 +74,45 @@ export default class InvitationService implements IInvitationService {
 
     try {
       const { medium, recipient, sender } = payload
+      this.logger.info(
+        `[InvitationService][invite] sending invitation to ${recipient}`
+      )
+      this.logger.debug(
+        `[InvitationService][invite] sending invitation with: ${JSON.stringify(
+          payload
+        )}`
+      )
 
       token = await this._createInvitation(payload)
       const link = this._getInvitationUrl(token)
+      this.logger.info(
+        `[InvitationService][invite] Invitation token generated successfully for ${recipient}`
+      )
+      this.logger.debug(
+        `[InvitationService][invite] token: ${token} for ${recipient}`
+      )
+
+      this.logger.info(
+        `[InvitationService][invite] Invitation link generated successfully for ${recipient}`
+      )
+      this.logger.debug(
+        `[InvitationService][invite] link: ${link} for ${recipient}`
+      )
 
       await this._deliverInvitation(sender, recipient, medium, link)
 
       return token
     } catch (error) {
-      this.logger.error(`Failed to send invitation`, error)
+      this.logger.error(
+        `[InvitationService][invite] Failed to send invitation`,
+        error
+      )
 
       if (token) {
         await this._removeInvitation(token)
       }
 
-      throw Error('Failed to send invitation')
+      throw Error('[InvitationService][invite] Failed to send invitation')
     }
   }
 
@@ -111,7 +148,10 @@ export default class InvitationService implements IInvitationService {
         await this._processInvitation(invitation, userId, authorization)
       }
     } catch (error) {
-      this.logger.error(`Failed to accept invitation`, error)
+      this.logger.error(
+        `[InvitationService][accept] Failed to accept invitation`,
+        error
+      )
 
       throw Error('Failed to accept invitation')
     }
@@ -133,7 +173,10 @@ export default class InvitationService implements IInvitationService {
 
       return { link: this._getInvitationUrl(invite.id), id: invite.id }
     } catch (error) {
-      this.logger.error(`Failed to generate invitation link`, error)
+      this.logger.error(
+        `[InvitationService][generateLink] Failed to generate invitation link`,
+        error
+      )
 
       throw Error('Failed to generate invitation link')
     }
@@ -149,7 +192,10 @@ export default class InvitationService implements IInvitationService {
     try {
       return this._getInvitationById(token)
     } catch (error) {
-      this.logger.error(`Failed to get invitation status`, error)
+      this.logger.error(
+        `[InvitationService][getInvitationStatus] Failed to get invitation status`,
+        error
+      )
 
       throw error
     }
@@ -165,7 +211,10 @@ export default class InvitationService implements IInvitationService {
     try {
       await this.db.deleteEqual(this.INVITATION_TABLE, 'id', token)
     } catch (error) {
-      this.logger.error(`Failed to remove invitation`, error)
+      this.logger.error(
+        `[InvitationService][removeInvitation] Failed to remove invitation`,
+        error
+      )
 
       throw new Error('Failed to remove invitation', { cause: error })
     }
@@ -192,7 +241,10 @@ export default class InvitationService implements IInvitationService {
 
       return token
     } catch (error) {
-      this.logger.error(`Failed to create invitation`, error)
+      this.logger.error(
+        `[InvitationService][_createInvitation] Failed to create invitation`,
+        error
+      )
 
       throw Error('Failed to create invitation')
     }
@@ -229,7 +281,10 @@ export default class InvitationService implements IInvitationService {
       if (response.status !== 200) {
         const resp = await response.json()
 
-        this.logger.error('Failed to create room', resp)
+        this.logger.error(
+          '[InvitationService][_createPrivateChat] Failed to create room',
+          resp
+        )
 
         throw Error('Failed to create room')
       }
@@ -238,7 +293,10 @@ export default class InvitationService implements IInvitationService {
 
       return room_id
     } catch (error) {
-      this.logger.error(`Failed to create room`, error)
+      this.logger.error(
+        `[InvitationService][_createPrivateChat] Failed to create room`,
+        error
+      )
 
       throw Error('Failed to create room')
     }
@@ -279,12 +337,18 @@ export default class InvitationService implements IInvitationService {
       if (response.status !== 200) {
         const resp = await response.json()
 
-        this.logger.error('Failed to mark room as direct message', resp)
+        this.logger.error(
+          '[InvitationService][_markPrivateChatAsDirectMessage] Failed to mark room as direct message',
+          resp
+        )
 
         throw Error('Failed to mark room as DM')
       }
     } catch (error) {
-      this.logger.error(`Failed to mark room as direct message`, error)
+      this.logger.error(
+        `[InvitationService][_markPrivateChatAsDirectMessage]Failed to mark room as direct message`,
+        error
+      )
 
       throw Error('Failed to mark room as direct message')
     }
@@ -317,7 +381,10 @@ export default class InvitationService implements IInvitationService {
         ...(invitation.matrix_id ? { matrix_id: invitation.matrix_id } : {})
       }
     } catch (error) {
-      this.logger.error(`Failed to get invitation`, error)
+      this.logger.error(
+        `[InvitationService][_getInvitationById] Failed to get invitation`,
+        error
+      )
 
       throw Error('Failed to get invitation')
     }
@@ -344,7 +411,10 @@ export default class InvitationService implements IInvitationService {
         ...(invitation.matrix_id ? { matrix_id: invitation.matrix_id } : {})
       }))
     } catch (error) {
-      this.logger.error(`Failed to list invitations`, error)
+      this.logger.error(
+        `[InvitationService][_getUserInvitations]Failed to list invitations`,
+        error
+      )
 
       throw Error('Failed to list invitations')
     }
@@ -370,11 +440,16 @@ export default class InvitationService implements IInvitationService {
         try {
           this._processInvitation(invitation, userId, authorization)
         } catch (error) {
-          this.logger.error(`Failed to process invitation`)
+          this.logger.error(
+            `[InvitationService][_processInvitationsToAddress] Failed to process invitation`
+          )
         }
       }
     } catch (error) {
-      this.logger.error(`Failed to process invitations`, error)
+      this.logger.error(
+        `[InvitationService][_processInvitationsToAddress] Failed to process invitations`,
+        error
+      )
 
       throw Error('Failed to process invitations')
     }
@@ -424,7 +499,10 @@ export default class InvitationService implements IInvitationService {
         id
       )
     } catch (error) {
-      this.logger.error(`Failed to process invitation: ${id}`, error)
+      this.logger.error(
+        `[InvitationService][_processInvitation] Failed to process invitation: ${id}`,
+        error
+      )
     }
   }
 
@@ -450,7 +528,10 @@ export default class InvitationService implements IInvitationService {
           expiration: parseInt(expiration)
         }))
     } catch (error) {
-      this.logger.error(`Failed to list invitations`, error)
+      this.logger.error(
+        `[InvitationService][_listPendingInvitationsToAddress] Failed to list invitations`,
+        error
+      )
 
       throw Error('Failed to list invitations')
     }
@@ -483,7 +564,10 @@ export default class InvitationService implements IInvitationService {
 
       return null
     } catch (error) {
-      this.logger.error(`Failed to list user invitations to address`, error)
+      this.logger.error(
+        `[InvitationService][_getPendingUserInvitesToAddress] Failed to list user invitations to address`,
+        error
+      )
 
       return null
     }
@@ -514,7 +598,7 @@ export default class InvitationService implements IInvitationService {
       return null
     } catch (error) {
       this.logger.error(
-        `Failed to list generated user invitations to address`,
+        `[InvitationService][_getPreviouslyGeneratedInviteToAddress] Failed to list generated user invitations to address`,
         error
       )
 
@@ -525,6 +609,7 @@ export default class InvitationService implements IInvitationService {
   /**
    * Delivers an invitation to the threepid
    *
+   * @param {string} sender - Sender user ID
    * @param {string} to - User address
    * @param {string} medium - Invitation medium
    * @param {string} link - Invitation link
@@ -536,46 +621,244 @@ export default class InvitationService implements IInvitationService {
     medium: medium,
     link: string
   ): Promise<void> => {
-    try {
-      if (medium === 'email') {
-        const lang = 'en'; // TODO: invitee language
-        const emailTemplatePath = `${this.config.template_dir}/emailInvitation_${lang}.tpl`
+    this.logger.info(
+      `[InvitationService][_deliverInvitation] Sending invitation to ${to} via ${medium}`
+    )
+    this.logger.silly(
+      `[InvitationService][_deliverInvitation] Invitation link: ${link}`
+    )
 
-        const text = buildEmailBody(
-          emailTemplatePath,
-          sender,
-          to,
-          link,
-          this.notificationService.emailFrom
-        )
+    const senderName = await this._resolveSenderName(sender)
 
-        const emailOptions: SendMailOptions = {
-          from: this.notificationService.emailFrom,
-          to,
-          subject: 'Invitation to join Twake Workplace',
-          text
-        }
-
-        await this.notificationService.sendEmail(emailOptions)
-      } else if (medium === 'phone') {
-        
-        // Specific to french numbers
-        const smsFooter = /^\+33\d{9}$/.test(to) ? SMS_FOOTERS.FR : "";
-
-        const smsTemplatePath = `${this.config.template_dir}/3pidSmsInvitation.tpl`
-        const text = buildSmsBody(smsTemplatePath, sender, link, smsFooter)
-
-        if (!text) {
-          throw Error('Failed to build SMS body')
-        }
-
-        await this.notificationService.sendSMS(to, text)
-      }
-    } catch (error) {
-      this.logger.error(`Failed to deliver invitation`, error)
-
-      throw Error('Failed to deliver invitation')
+    if (medium === 'email') {
+      await this._sendEmailInvitation(senderName, to, link)
+    } else if (medium === 'phone') {
+      await this._sendSmsInvitation(senderName, to, link)
+    } else {
+      this.logger.error(
+        `[InvitationService][_deliverInvitation] Unsupported medium: ${medium}`,
+        { sender, to, medium, link }
+      )
+      throw new Error(`Unsupported medium: ${medium}`)
     }
+
+    this.logger.info(
+      `[InvitationService][_deliverInvitation] Successfully sent invitation to ${to} via ${medium}`
+    )
+  }
+
+  /**
+   * Resolves sender display name from user ID
+   *
+   * @param {string} sender - Sender user ID
+   * @returns {Promise<string>} - Sender display name or user ID fallback
+   */
+  private readonly _resolveSenderName = async (
+    sender: string
+  ): Promise<string> => {
+    try {
+      this.logger.silly(
+        `[InvitationService][_resolveSenderName] Fetching sender info for: ${sender}`
+      )
+      const senderUserInfo = await this.userInfoService.get(sender)
+      const senderName = senderUserInfo?.display_name || sender
+
+      this.logger.debug(
+        `[InvitationService][_resolveSenderName] Resolved sender name: ${senderName}`
+      )
+      return senderName
+    } catch (error) {
+      this.logger.warn(
+        `[InvitationService][_resolveSenderName] Failed to get sender info for ${sender}, using sender ID`,
+        { error, sender }
+      )
+      return sender
+    }
+  }
+
+  /**
+   * Builds email template configuration
+   *
+   * @param {string} lang - Language code
+   * @returns {object} - Email template configuration
+   */
+  private readonly _buildEmailTemplateConfig = (lang: string) => {
+    const templateDir = `${this.config.template_dir}/${lang}/email/invitation`
+    const assetsDir = `${templateDir}/assets`
+    const cidDomain = 'invite.twake.app'
+
+    this.logger.silly(
+      `[InvitationService][_buildEmailTemplateConfig] Template directory: ${templateDir}`
+    )
+
+    return {
+      htmlPath: `${templateDir}/body.min.html`,
+      textPath: `${templateDir}/body.txt`,
+      attachments: [
+        {
+          filename: 'hero.jpg',
+          path: `${assetsDir}/hero.jpg`,
+          cid: `hero@${cidDomain}`
+        },
+        {
+          filename: 'icon.jpg',
+          path: `${assetsDir}/icon.jpg`,
+          cid: `icon@${cidDomain}`
+        }
+      ]
+    }
+  }
+
+  /**
+   * Builds email content (text and HTML)
+   *
+   * @param {object} templateConfig - Email template configuration
+   * @param {string} senderName - Sender display name
+   * @param {string} to - Recipient email
+   * @param {string} link - Invitation link
+   * @returns {object} - Email content with text and html
+   */
+  private readonly _buildEmailContent = (
+    templateConfig: ReturnType<typeof this._buildEmailTemplateConfig>,
+    senderName: string,
+    to: string,
+    link: string
+  ) => {
+    this.logger.silly(
+      `[InvitationService][_buildEmailContent] Building text body from: ${templateConfig.textPath}`
+    )
+    const text = buildEmailBody(
+      templateConfig.textPath,
+      senderName,
+      to,
+      link,
+      this.notificationService.emailFrom
+    )
+
+    this.logger.silly(
+      `[InvitationService][_buildEmailContent] Building HTML body from: ${templateConfig.htmlPath}`
+    )
+    const html = buildEmailBody(
+      templateConfig.htmlPath,
+      senderName,
+      to,
+      link,
+      this.notificationService.emailFrom
+    )
+
+    if (!text || !html) {
+      throw new Error('Failed to build email content: text or html is empty')
+    }
+
+    this.logger.debug(
+      `[InvitationService][_buildEmailContent] Email content prepared successfully`
+    )
+
+    return { text, html }
+  }
+
+  /**
+   * Sends email invitation
+   *
+   * @param {string} senderName - Sender display name
+   * @param {string} to - Recipient email
+   * @param {string} link - Invitation link
+   * @returns {Promise<void>}
+   */
+  private readonly _sendEmailInvitation = async (
+    senderName: string,
+    to: string,
+    link: string
+  ): Promise<void> => {
+    const lang = 'en' // TODO: invitee language
+    this.logger.debug(
+      `[InvitationService][_sendEmailInvitation] Using language: ${lang} for ${to}`
+    )
+
+    const templateConfig = this._buildEmailTemplateConfig(lang)
+    const { text, html } = this._buildEmailContent(
+      templateConfig,
+      senderName,
+      to,
+      link
+    )
+
+    const emailOptions: SendMailOptions = {
+      from: this.notificationService.emailFrom,
+      to,
+      subject: 'Invitation to join Twake Workplace',
+      text,
+      html,
+      attachments: templateConfig.attachments
+    }
+
+    this.logger.debug(
+      `[InvitationService][_sendEmailInvitation] Sending email to ${to} from "${senderName}" with ${templateConfig.attachments.length} attachments`
+    )
+
+    await this.notificationService.sendEmail(emailOptions)
+    this.logger.info(
+      `[InvitationService][_sendEmailInvitation] Successfully sent email invitation to ${to}`
+    )
+  }
+
+  /**
+   * Determines SMS footer based on recipient phone number
+   *
+   * @param {string} phoneNumber - Recipient phone number
+   * @returns {string} - SMS footer
+   */
+  private readonly _getSmsFooter = (phoneNumber: string): string => {
+    const isFrenchNumber = /^\+33\d{9}$/.test(phoneNumber)
+    const footer = isFrenchNumber ? SMS_FOOTERS.FR : ''
+
+    this.logger.silly(
+      `[InvitationService][_getSmsFooter] Phone ${phoneNumber} is ${
+        isFrenchNumber ? '' : 'not '
+      }French, footer: "${footer}"`
+    )
+
+    return footer
+  }
+
+  /**
+   * Sends SMS invitation
+   *
+   * @param {string} senderName - Sender display name
+   * @param {string} to - Recipient phone number
+   * @param {string} link - Invitation link
+   * @returns {Promise<void>}
+   */
+  private readonly _sendSmsInvitation = async (
+    senderName: string,
+    to: string,
+    link: string
+  ): Promise<void> => {
+    const smsFooter = this._getSmsFooter(to)
+    const smsTemplatePath = `${this.config.template_dir}/3pidSmsInvitation.tpl`
+
+    this.logger.silly(
+      `[InvitationService][_sendSmsInvitation] Building SMS body from: ${smsTemplatePath}`
+    )
+
+    const text = buildSmsBody(smsTemplatePath, senderName, link, smsFooter)
+
+    if (!text) {
+      this.logger.error(
+        `[InvitationService][_sendSmsInvitation] SMS body is empty after building from template`,
+        { senderName, to, link, smsTemplatePath }
+      )
+      throw new Error('SMS body is empty after building from template')
+    }
+
+    this.logger.debug(
+      `[InvitationService][_sendSmsInvitation] Sending SMS to ${to} from "${senderName}"`
+    )
+
+    await this.notificationService.sendSMS(to, text)
+    this.logger.info(
+      `[InvitationService][_sendSmsInvitation] Successfully sent SMS invitation to ${to}`
+    )
   }
 
   /**
@@ -601,7 +884,10 @@ export default class InvitationService implements IInvitationService {
     try {
       await this.db.deleteEqual(this.INVITATION_TABLE, 'id', token)
     } catch (error) {
-      this.logger.error(`Failed to remove invitation`, error)
+      this.logger.error(
+        `[InvitationService][_removeInvitation] Failed to remove invitation`,
+        error
+      )
     }
   }
 }

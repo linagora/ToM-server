@@ -131,10 +131,7 @@ describe('twakeConfig - Basic Cases', () => {
       })
     })
 
-    const res: Configuration = twakeConfig(
-      createTestConfigDesc(),
-      mockFilePath
-    )
+    const res: Configuration = twakeConfig(createTestConfigDesc(), mockFilePath)
     expect(res).toEqual({
       STRING_KEY: 'fileString',
       NUMBER_KEY: 200,
@@ -392,16 +389,16 @@ describe('twakeConfig - Hard Cases (Complex Coercion & Defaults)', () => {
   test('Array coercion with empty string items', () => {
     process.env.ARRAY_KEY = 'item1,,item2'
 
-
     const res = twakeConfig(createTestConfigDesc(), undefined, true)
     expect(res.ARRAY_KEY).toEqual(['item1', 'item2'])
 
-
     process.env.ARRAY_KEY = ''
-    expect(() => twakeConfig(createTestConfigDesc(), undefined, true))
-      .toThrow(ConfigCoercionError)
-    expect(() => twakeConfig(createTestConfigDesc(), undefined, true))
-      .toThrow(/Empty string values are not allowed/)
+    expect(() => twakeConfig(createTestConfigDesc(), undefined, true)).toThrow(
+      ConfigCoercionError
+    )
+    expect(() => twakeConfig(createTestConfigDesc(), undefined, true)).toThrow(
+      /Empty string values are not allowed/
+    )
   })
 
   test('Default value is a string but needs coercion to target type', async () => {
@@ -475,11 +472,13 @@ describe('twakeConfig - Edge Cases and Error Handling', () => {
   test('Should throw ConfigCoercionError if environment variable is empty string', () => {
     process.env.STRING_KEY = ''
 
-    expect(() => twakeConfig(createTestConfigDesc(), undefined, true))
-      .toThrow(ConfigCoercionError)
+    expect(() => twakeConfig(createTestConfigDesc(), undefined, true)).toThrow(
+      ConfigCoercionError
+    )
 
-    expect(() => twakeConfig(createTestConfigDesc(), undefined, true))
-      .toThrow(/Empty string values are not allowed/)
+    expect(() => twakeConfig(createTestConfigDesc(), undefined, true)).toThrow(
+      /Empty string values are not allowed/
+    )
   })
 
   test('Should fall back to default if environment variable is null/undefined (not set)', () => {
@@ -497,13 +496,13 @@ describe('twakeConfig - Edge Cases and Error Handling', () => {
       UNWANTED_KEY_FROM_OBJECT: 'bad'
     }
 
-    expect(() => twakeConfig(createTestConfigDesc(), initialConfig))
-      .toThrow(UnacceptedKeyError)
+    expect(() => twakeConfig(createTestConfigDesc(), initialConfig)).toThrow(
+      UnacceptedKeyError
+    )
 
-    expect(() => twakeConfig(createTestConfigDesc(), initialConfig))
-      .toThrow(
-        "Configuration key 'UNWANTED_KEY_FROM_OBJECT' isn't accepted as it's not defined in the ConfigDescription."
-      )
+    expect(() => twakeConfig(createTestConfigDesc(), initialConfig)).toThrow(
+      "Configuration key 'UNWANTED_KEY_FROM_OBJECT' isn't accepted as it's not defined in the ConfigDescription."
+    )
   })
 
   test('Should throw UnacceptedKeyError for unwanted key in defaultConfigurationFile (JSON file)', () => {
@@ -514,60 +513,50 @@ describe('twakeConfig - Edge Cases and Error Handling', () => {
         unwanted_value: 'bad'
       })
     })
-    expect(
-      () => twakeConfig(createTestConfigDesc(), mockFilePath)
-    ).toThrow(UnacceptedKeyError)
-    expect(
-      () => twakeConfig(createTestConfigDesc(), mockFilePath)
-    ).toThrow(
+    expect(() => twakeConfig(createTestConfigDesc(), mockFilePath)).toThrow(
+      UnacceptedKeyError
+    )
+    expect(() => twakeConfig(createTestConfigDesc(), mockFilePath)).toThrow(
       "Configuration key 'unwanted_value' isn't accepted as it's not defined in the ConfigDescription."
     )
   })
 
   test('Should throw ConfigCoercionError for invalid boolean format from environment variable', () => {
     process.env.BOOLEAN_KEY = 'not_a_boolean'
-    expect(
-      () => twakeConfig(createTestConfigDesc(), undefined, true)
-    ).toThrow(ConfigCoercionError)
-    expect(
-      () => twakeConfig(createTestConfigDesc(), undefined, true)
-    ).toThrow(
+    expect(() => twakeConfig(createTestConfigDesc(), undefined, true)).toThrow(
+      ConfigCoercionError
+    )
+    expect(() => twakeConfig(createTestConfigDesc(), undefined, true)).toThrow(
       /Configuration error for 'BOOLEAN_KEY' from environment variable 'BOOLEAN_KEY': Invalid boolean format for value: 'not_a_boolean'/
     )
   })
 
   test('Should throw ConfigCoercionError for invalid number format from environment variable', () => {
     process.env.NUMBER_KEY = 'not_a_number'
-    expect(
-      () => twakeConfig(createTestConfigDesc(), undefined, true)
-    ).toThrow(ConfigCoercionError)
-    expect(
-      () => twakeConfig(createTestConfigDesc(), undefined, true)
-    ).toThrow(
+    expect(() => twakeConfig(createTestConfigDesc(), undefined, true)).toThrow(
+      ConfigCoercionError
+    )
+    expect(() => twakeConfig(createTestConfigDesc(), undefined, true)).toThrow(
       /Configuration error for 'NUMBER_KEY' from environment variable 'NUMBER_KEY': Invalid number format for value: 'not_a_number'/
     )
   })
 
   test('Should throw ConfigCoercionError for invalid JSON format from environment variable (JSON type)', () => {
     process.env.JSON_KEY = '{invalid json'
-    expect(
-      () => twakeConfig(createTestConfigDesc(), undefined, true)
-    ).toThrow(ConfigCoercionError)
-    expect(
-      () => twakeConfig(createTestConfigDesc(), undefined, true)
-    ).toThrow(
+    expect(() => twakeConfig(createTestConfigDesc(), undefined, true)).toThrow(
+      ConfigCoercionError
+    )
+    expect(() => twakeConfig(createTestConfigDesc(), undefined, true)).toThrow(
       /Configuration error for 'JSON_KEY' from environment variable 'JSON_KEY': Invalid JSON format for value: '\{invalid json'/
     )
   })
 
   test('Should throw ConfigCoercionError for invalid JSON format from environment variable (OBJECT type)', () => {
     process.env.OBJECT_KEY = 'invalid object json'
-    expect(
-      () => twakeConfig(createTestConfigDesc(), undefined, true)
-    ).toThrow(ConfigCoercionError)
-    expect(
-      () => twakeConfig(createTestConfigDesc(), undefined, true)
-    ).toThrow(
+    expect(() => twakeConfig(createTestConfigDesc(), undefined, true)).toThrow(
+      ConfigCoercionError
+    )
+    expect(() => twakeConfig(createTestConfigDesc(), undefined, true)).toThrow(
       /Configuration error for 'OBJECT_KEY' from environment variable 'OBJECT_KEY': Invalid JSON format for value: 'invalid object json'/
     )
   })
@@ -575,21 +564,21 @@ describe('twakeConfig - Edge Cases and Error Handling', () => {
   test('Should throw FileReadParseError if config file is not found', () => {
     const nonExistentPath = 'non_existent_config.json'
 
-      ; (fs.existsSync as jest.Mock).mockReturnValue(false)
-      ; (fs.promises.readFile as jest.Mock).mockImplementation(() => {
-        const error = new Error(
-          `ENOENT: no such file or directory, open '${nonExistentPath}'`
-        )
-          ; (error as any).code = 'ENOENT'
-        throw error
-      })
+    ;(fs.existsSync as jest.Mock).mockReturnValue(false)
+    ;(fs.promises.readFile as jest.Mock).mockImplementation(() => {
+      const error = new Error(
+        `ENOENT: no such file or directory, open '${nonExistentPath}'`
+      )
+      ;(error as any).code = 'ENOENT'
+      throw error
+    })
 
-    expect(() => twakeConfig(createTestConfigDesc(), nonExistentPath))
-      .toThrow(FileReadParseError)
+    expect(() => twakeConfig(createTestConfigDesc(), nonExistentPath)).toThrow(
+      FileReadParseError
+    )
 
     expect(consoleWarnSpy).not.toHaveBeenCalled()
   })
-
 
   test('Should throw FileReadParseError if config file contains invalid JSON', () => {
     const invalidJsonPath = 'invalid.json'
@@ -597,12 +586,12 @@ describe('twakeConfig - Edge Cases and Error Handling', () => {
       [invalidJsonPath]: '{ "key": "value", "another": }'
     })
 
-    expect(() => twakeConfig(createTestConfigDesc(), invalidJsonPath))
-      .toThrow(FileReadParseError)
+    expect(() => twakeConfig(createTestConfigDesc(), invalidJsonPath)).toThrow(
+      FileReadParseError
+    )
 
     expect(consoleWarnSpy).not.toHaveBeenCalled()
   })
-
 
   test('Should handle null default values correctly', async () => {
     const res: Configuration = twakeConfig(createTestConfigDesc())
@@ -632,11 +621,7 @@ describe('twakeConfig - Edge Cases and Error Handling', () => {
       MY_REQUIRED_KEY: { type: 'string', required: true }
     }
     process.env.MY_REQUIRED_KEY = 'present'
-    const res: Configuration = twakeConfig(
-      descWithRequired,
-      undefined,
-      true
-    )
+    const res: Configuration = twakeConfig(descWithRequired, undefined, true)
     expect(res.MY_REQUIRED_KEY).toBe('present')
   })
 

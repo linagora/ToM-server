@@ -14,13 +14,15 @@ const dbMock = {
 const loggerMock = {
   info: jest.fn(),
   error: jest.fn(),
-  warn: jest.fn()
+  debug: jest.fn(),
+  warn: jest.fn(),
+  silly: jest.fn()
 }
 
 const AUTHORIZATION = 'Bearer test'
 
 beforeEach(() => {
-  jest.resetAllMocks()
+  jest.clearAllMocks()
 })
 
 const sendSMSMock = jest.fn()
@@ -31,7 +33,8 @@ jest.mock('../../utils/services/notification-service.ts', () => {
   return function () {
     return {
       sendSMS: sendSMSMock,
-      sendEmail: sendEmailMock
+      sendEmail: sendEmailMock,
+      emailFrom: 'test@example.com'
     }
   }
 })
@@ -44,9 +47,42 @@ jest.mock('../../utils/services/token-service.ts', () => {
   }
 })
 
+jest.mock('../../utils/helpers', () => ({
+  buildSmsBody: jest.fn(() => 'SMS body'),
+  buildEmailBody: jest.fn(() => 'Email body')
+}))
+
+jest.mock('../../user-info-api/services', () => {
+  return jest.fn().mockImplementation(() => {
+    return {
+      get: jest.fn().mockResolvedValue({ display_name: 'Test User' })
+    }
+  })
+})
+
+const userdbMock = {
+  get: jest.fn(),
+  getAll: jest.fn(),
+  insert: jest.fn(),
+  update: jest.fn(),
+  deleteEqual: jest.fn(),
+  getCount: jest.fn()
+}
+
+const matrixdbMock = {
+  get: jest.fn(),
+  getAll: jest.fn(),
+  insert: jest.fn(),
+  update: jest.fn(),
+  deleteEqual: jest.fn(),
+  getCount: jest.fn()
+}
+
 describe('the Invitation API service', () => {
   const invitationService = new Service(
+    userdbMock as any,
     dbMock as unknown as TwakeDB,
+    matrixdbMock as any,
     loggerMock as unknown as TwakeLogger,
     {
       matrix_server: 'localhost',
@@ -54,7 +90,15 @@ describe('the Invitation API service', () => {
       signup_url: 'https://signup.example.com/?app=chat',
       template_dir: './templates',
       matrix_admin_login: 'login',
-      matrix_admin_password: 'password'
+      matrix_admin_password: 'password',
+      features: {
+        user_profile: {
+          default_visibility_settings: {
+            visibility: 'private',
+            visible_fields: []
+          }
+        }
+      }
     } as unknown as Config
   )
 
@@ -104,6 +148,7 @@ describe('the Invitation API service', () => {
 
   describe('the invite method', () => {
     it('should send an invitation and insert it into the database', async () => {
+      dbMock.insert.mockResolvedValue(undefined)
       sendSMSMock.mockResolvedValue(true)
 
       await invitationService.invite({
@@ -119,6 +164,7 @@ describe('the Invitation API service', () => {
     })
 
     it('should send an SMS notification', async () => {
+      dbMock.insert.mockResolvedValue(undefined)
       sendSMSMock.mockResolvedValue(true)
 
       await invitationService.invite({
@@ -402,6 +448,7 @@ describe('the Invitation API service', () => {
     })
 
     it('should throw an error if the database operation fails', async () => {
+      dbMock.get.mockResolvedValue([]) // No previously generated invitations
       dbMock.insert.mockRejectedValue(new Error('test'))
 
       await expect(
@@ -414,6 +461,7 @@ describe('the Invitation API service', () => {
     })
 
     it('should insert the invitation into the database', async () => {
+      dbMock.get.mockResolvedValue([]) // No previously generated invitations
       dbMock.insert.mockResolvedValue({ id: 'test' })
 
       await invitationService.generateLink({

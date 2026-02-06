@@ -1,16 +1,20 @@
 import type { TwakeLogger } from '@twake/logger'
 import type { IAdminSettingsController, IAdminSettingsService } from '../types'
-import type { Config } from '../../types'
+import type { Config, ITokenService } from '../../types'
 import type { NextFunction, Response, Request } from 'express'
-import AdminService from '../services'
+import AdminSettingsService from '../services'
 
 export default class AdminSettingsrController
   implements IAdminSettingsController
 {
   private readonly adminService: IAdminSettingsService
 
-  constructor(config: Config, private readonly logger: TwakeLogger) {
-    this.adminService = new AdminService(config, logger)
+  constructor(
+    config: Config,
+    private readonly logger: TwakeLogger,
+    tokenService?: ITokenService
+  ) {
+    this.adminService = new AdminSettingsService(config, logger, tokenService)
   }
 
   /**
@@ -32,9 +36,7 @@ export default class AdminSettingsrController
 
       // Validate that the user ID is present
       if (userId.length === 0) {
-        res
-          .status(400)
-          .json({ message: 'Missing user ID' })
+        res.status(400).json({ message: 'Missing user ID' })
         return
       }
 
