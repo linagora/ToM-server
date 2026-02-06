@@ -46,23 +46,10 @@ export type Config = MConfig & {
     private_channel: PowerLevelEventContent
     public_channel: PowerLevelEventContent
   }
-  rabbitmq: {
-    host: string
-    port: number
-    vhost: string
-    username: string
-    password: string
-    tls: boolean
-  }
   features: {
     common_settings: {
       enabled: boolean
       application_url: string
-      exchange: string
-      queue: string
-      routingKey: string
-      deadLetterExchange?: string
-      deadLetterRoutingKey?: string
     }
     matrix_profile_updates_allowed: boolean
     user_profile: {
@@ -236,14 +223,6 @@ export interface TwakeChatEnvironmentConfig {
 export interface FeatureCommonSettingsConfig {
   enabled: boolean
   application_url: string
-}
-
-export interface CommonSettingsConfig extends FeatureCommonSettingsConfig {
-  queue: string
-  routingKey: string
-  exchange: string
-  deadLetterExchange: string
-  deadLetterRoutingKey: string
 }
 
 export interface TwakeChatConfig extends TwakeChatEnvironmentConfig {
