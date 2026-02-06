@@ -5,7 +5,13 @@ import {
   ISettingsPayload,
   StoredUserSettings
 } from './types'
-import { formatTimestamp } from './bridge'
+
+/**
+ * Formats a Unix timestamp (milliseconds) as an ISO 8601 string.
+ */
+function formatTimestamp(timestamp: number): string {
+  return new Date(timestamp).toISOString()
+}
 
 export class SettingsPayload implements ISettingsPayload {
   readonly #language?: string
@@ -78,12 +84,12 @@ export class SettingsPayload implements ISettingsPayload {
     return parsed as Record<string, unknown>
   }
 
-  /* Validate optional string field */
+  /* Validate optional string field - treats null and undefined as absent */
   static #validateOptionalString(
     value: unknown,
     fieldName: string
   ): string | undefined {
-    if (value === undefined) {
+    if (value === null || value === undefined) {
       return undefined
     }
 
@@ -131,9 +137,9 @@ export class SettingsPayload implements ISettingsPayload {
     return this.#display_name
   }
 
-  /* Create instance from plain object */
+  /* Create plain object from ISettingsPayload (validates and returns clean object) */
   static fromObject(obj: ISettingsPayload): ISettingsPayload {
-    return new SettingsPayload(JSON.stringify(obj))
+    return new SettingsPayload(JSON.stringify(obj)).toObject()
   }
 
   /* Serialize back to JSON */
@@ -223,19 +229,24 @@ export class SettingsRepository {
         return null
       }
 
+      // Safely parse timestamp from DB (may be string or number)
+      const rawTs = dbRow.timestamp
+      const tsNum = rawTs == null ? undefined : Number(rawTs)
+      const validTimestamp = Number.isFinite(tsNum) ? tsNum! : 0
+
       this.#logger.debug(
         `Found existing settings for ${userId}: version=${
           dbRow.version
-        }, timestamp=${formatTimestamp(
-          parseInt(dbRow.timestamp as string, 10)
-        )}, request_id=${dbRow.request_id}`
+        }, timestamp=${
+          Number.isFinite(tsNum) ? formatTimestamp(tsNum!) : 'unknown'
+        }, request_id=${dbRow.request_id}`
       )
 
       return {
         nickname: dbRow.matrix_id as string,
         payload: parsedSettings,
         version: dbRow.version as number,
-        timestamp: parseInt(dbRow.timestamp as string, 10),
+        timestamp: validTimestamp,
         request_id: dbRow.request_id as string
       }
     } catch (error) {
@@ -338,9 +349,14 @@ export class SettingsRepository {
    */
   #safeParsePayload(raw: string): ISettingsPayload | null {
     try {
-      this.#logger.debug(`Parsing settings payload from database: ${raw}`)
-      return new SettingsPayload(raw).toObject()
+      const parsed = new SettingsPayload(raw).toObject()
+      // Log only non-PII identifier for debugging
+      this.#logger.debug(
+        `Successfully parsed settings payload for ${parsed.matrix_id}`
+      )
+      return parsed
     } catch (error) {
+      // Do not log raw payload to avoid PII exposure
       this.#logger.warn(
         `Failed to parse settings payload from database: ${
           error instanceof Error ? error.message : 'Unknown error'
