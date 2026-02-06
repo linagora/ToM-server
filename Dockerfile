@@ -87,8 +87,10 @@ FROM node:18.20.8-alpine AS deps
 
 WORKDIR /usr/src/app
 
-# Copy package files
-COPY package*.json lerna.json ./
+# Copy root package files for workspace setup
+COPY package.json package-lock.json lerna.json ./
+
+# Copy only required workspace package.json files first (for better caching)
 COPY packages/config-parser/package.json ./packages/config-parser/
 COPY packages/crypto/package.json ./packages/crypto/
 COPY packages/logger/package.json ./packages/logger/
