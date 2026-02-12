@@ -240,11 +240,16 @@ export interface CreateRoomPayload {
   is_direct: boolean
   name: string
   power_level_content_override: PowerLevelEventContent
-  preset: 'private_chat' | 'public_chat' | 'trusted_private_chat'
+  preset?:
+    | 'private_chat'
+    | 'public_chat'
+    | 'trusted_private_chat'
+    | 'private_channel'
+    | 'public_channel'
   room_alias_name: string
   room_version: string
   topic: string
-  visibility: 'public' | 'private'
+  visibility?: 'public' | 'private'
 }
 
 export type CreationContent = Content
@@ -285,6 +290,8 @@ export interface PowerLevelEventContent {
     'm.room.history_visibility': number
     'm.room.power_levels': number
     'm.room.encryption': number
+    'm.room.server_acl'?: number
+    'm.room.tombstone'?: number
   }
   users?: Record<string, number>
   creator_becomes?: number

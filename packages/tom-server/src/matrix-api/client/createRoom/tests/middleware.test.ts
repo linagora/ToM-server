@@ -12,8 +12,19 @@ const loggerMock = {
   warn: jest.fn()
 }
 
+const validPresets = [
+  'private_chat',
+  'public_chat',
+  'trusted_private_chat',
+  'private_channel',
+  'public_channel'
+]
+
 const nextFunction: NextFunction = jest.fn()
-const middleware = new Middleware(loggerMock as unknown as TwakeLogger)
+const middleware = new Middleware(
+  loggerMock as unknown as TwakeLogger,
+  validPresets
+)
 
 beforeEach(() => {
   mockRequest = {
