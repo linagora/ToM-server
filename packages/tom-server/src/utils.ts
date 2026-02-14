@@ -1,3 +1,5 @@
+import { buildUrl as builder } from '@twake/utils'
+
 export const tables = {
   recoveryWords: 'userId text PRIMARY KEY, words TEXT',
   matrixTokens: 'id varchar(64) PRIMARY KEY, data text',
@@ -38,14 +40,15 @@ export const buildUrl = (base: string, path: string): string => {
     formattedUrl = `https://${formattedUrl}`
   }
 
-  const baseUrl = new URL(formattedUrl)
+  // const baseUrl = new URL(formattedUrl)
 
-  if (!baseUrl.pathname.endsWith('/')) {
-    baseUrl.pathname += '/'
-  }
+  // if (!baseUrl.pathname.endsWith('/')) {
+  //   baseUrl.pathname += '/'
+  // }
 
-  const processedPath = path.startsWith('/') ? path.slice(1) : path
-  const finalUrl = new URL(processedPath, baseUrl.href)
+  // const processedPath = path.startsWith('/') ? path.slice(1) : path
+  // const finalUrl = new URL(processedPath, baseUrl.href)
 
-  return finalUrl.toString()
+  // return finalUrl.toString()
+  return builder(formattedUrl, path)
 }
