@@ -11,9 +11,11 @@ import router from '../routes'
 import supertest from 'supertest'
 
 const loggerMock = {
-  info: jest.fn(),
   error: jest.fn(),
-  warn: jest.fn()
+  warn: jest.fn(),
+  info: jest.fn(),
+  debug: jest.fn(),
+  silly: jest.fn()
 }
 
 jest.mock('../middlewares/index.ts', () => {
@@ -27,17 +29,19 @@ jest.mock('../middlewares/index.ts', () => {
 
   return function () {
     return {
-      checkPayload: passiveMiddlewareMock
+      checkPayload: passiveMiddlewareMock,
+      bypassIfSpace: passiveMiddlewareMock,
+      validatePreset: passiveMiddlewareMock
     }
   }
 })
 
-const spyMock = jest.fn()
+const mockCreate = jest.fn()
 
 jest.mock('../services/index.ts', () => {
   return function () {
     return {
-      create: spyMock
+      create: mockCreate
     }
   }
 })
@@ -91,7 +95,7 @@ describe('the createRoom controller', () => {
         } satisfies Partial<CreateRoomPayload>)
         .set('Authorization', 'Bearer test')
 
-      expect(spyMock).toHaveBeenCalledWith(
+      expect(mockCreate).toHaveBeenCalledWith(
         {
           invite: ['@test:example.com'],
           name: 'test',
@@ -103,7 +107,7 @@ describe('the createRoom controller', () => {
     })
 
     it('should return the reponse ( status and data ) of the service', async () => {
-      spyMock.mockResolvedValueOnce({
+      mockCreate.mockResolvedValueOnce({
         status: 200,
         json: async () => ({ room_id: 'test' })
       })
@@ -124,7 +128,7 @@ describe('the createRoom controller', () => {
     })
 
     it('should return 500 if something wrong happens', async () => {
-      spyMock.mockRejectedValueOnce(new Error('test'))
+      mockCreate.mockRejectedValueOnce(new Error('test'))
 
       const response = await supertest(app)
         .post('/')
