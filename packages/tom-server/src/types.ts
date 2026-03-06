@@ -39,13 +39,6 @@ export type Config = MConfig & {
   admin_access_token: string
   signup_url: string
   twake_chat: TwakeChatEnvironmentConfig
-  room_permissions: {
-    direct_chat: PowerLevelEventContent
-    private_group_chat: PowerLevelEventContent
-    public_group_chat: PowerLevelEventContent
-    private_channel: PowerLevelEventContent
-    public_channel: PowerLevelEventContent
-  }
   features: {
     common_settings: {
       enabled: boolean
@@ -60,6 +53,17 @@ export type Config = MConfig & {
     }
     user_directory: {
       enabled: boolean
+    }
+    createroom_proxy?: {
+      enabled?: boolean
+      on_failure?: {
+        max_retries?: number
+        nuke_room?: boolean
+      }
+      default_preset?: string
+      encryption?: 'allowed' | 'enforced' | 'disabled'
+      is_direct_mask?: DirectChatMask
+      presets?: PresetConfig[]
     }
   }
 }
@@ -240,11 +244,11 @@ export interface CreateRoomPayload {
   is_direct: boolean
   name: string
   power_level_content_override: PowerLevelEventContent
-  preset: 'private_chat' | 'public_chat' | 'trusted_private_chat'
+  preset?: string
   room_alias_name: string
   room_version: string
   topic: string
-  visibility: 'public' | 'private'
+  visibility?: 'public' | 'private'
 }
 
 export type CreationContent = Content
@@ -285,10 +289,28 @@ export interface PowerLevelEventContent {
     'm.room.history_visibility': number
     'm.room.power_levels': number
     'm.room.encryption': number
+    'm.room.server_acl'?: number
+    'm.room.tombstone'?: number
   }
   users?: Record<string, number>
   creator_becomes?: number
+  synapse_preset?: string
+  default_visibility?: 'public' | 'private'
+  allow_is_direct?: boolean
 }
+
+export type DirectChatMask = {
+  ban?: number
+  invite?: number
+  kick?: number
+  redact?: number
+  state_default?: number
+  users_default?: number
+  creator_becomes?: number
+  events?: Partial<PowerLevelEventContent['events']>
+}
+
+export type PresetConfig = PowerLevelEventContent & { name: string }
 
 export type Content = Record<
   string,

@@ -32,6 +32,11 @@ export default class CreateRoomController {
 
       const roomOwner = req.userId ?? ''
 
+      this.logger.debug('[createRoom] Request received', {
+        roomOwner,
+        body: req.body
+      })
+
       if (roomOwner.length === 0) {
         this.logger.error(`Missing room owner`)
         res.status(400).json({ message: 'Missing room owner' })

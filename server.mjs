@@ -23,6 +23,22 @@ const _parseBooleanEnv = (variable, defaultValue) => {
   return val === 'true' || val === '1'
 }
 
+/**
+ * Parses a JSON environment variable
+ *
+ * @param {string} variable - The environment variable to parse
+ * @returns {any|undefined} The parsed value, or undefined if not set or invalid
+ */
+const _parseJsonEnv = (variable) => {
+  if (!variable) return undefined
+  try {
+    return JSON.parse(variable)
+  } catch {
+    console.warn(`Failed to parse JSON env var value: ${variable}`)
+    return undefined
+  }
+}
+
 const appServerConf = {
   base_url: process.env.BASE_URL,
   sender_localpart: process.env.SENDER_LOCALPART
@@ -57,6 +73,28 @@ const featuresConf = {
   },
   user_directory: {
     enabled: _parseBooleanEnv(process.env.FEATURE_USER_DIRECTORY_ENABLED, false)
+  },
+  createroom_proxy: {
+    enabled: _parseBooleanEnv(
+      process.env.FEATURE_CREATEROOM_PROXY_ENABLED,
+      false
+    ),
+    on_failure: {
+      max_retries: process.env.FEATURE_CREATEROOM_PROXY_MAX_RETRIES
+        ? parseInt(process.env.FEATURE_CREATEROOM_PROXY_MAX_RETRIES, 10)
+        : 3,
+      nuke_room: _parseBooleanEnv(
+        process.env.FEATURE_CREATEROOM_PROXY_NUKE_ROOM,
+        true
+      )
+    },
+    default_preset:
+      process.env.FEATURE_CREATEROOM_PROXY_DEFAULT_PRESET ?? 'private_chat',
+    encryption: process.env.FEATURE_CREATEROOM_PROXY_ENCRYPTION ?? 'allowed',
+    is_direct_mask: _parseJsonEnv(
+      process.env.FEATURE_CREATEROOM_PROXY_IS_DIRECT_MASK
+    ),
+    presets: _parseJsonEnv(process.env.FEATURE_CREATEROOM_PROXY_PRESETS)
   }
 }
 
