@@ -2,7 +2,8 @@ import type { TwakeLogger } from '@twake/logger'
 import type { Config } from '../../../../types'
 import type {
   CreateRoomPayload,
-  PowerLevelEventContent
+  PowerLevelEventContent,
+  PresetConfig
 } from '../../../../types'
 import { buildUrl } from '../../../../utils'
 
@@ -25,6 +26,10 @@ export default class RoomService {
   // API path for updating room power levels (state event)
   private readonly POWER_LEVEL_STATE_PATH =
     '/_matrix/client/v3/rooms/{roomId}/state/m.room.power_levels'
+  private readonly ROOM_DIRECTORY_PATH =
+    '/_matrix/client/v3/directory/room/{alias}'
+  private readonly BAN_PATH = '/_matrix/client/v3/rooms/{roomId}/ban'
+  private readonly LEAVE_PATH = '/_matrix/client/v3/rooms/{roomId}/leave'
 
   /**
    * Constructs a new RoomService instance.
@@ -38,6 +43,33 @@ export default class RoomService {
     this.logger.info('[RoomService] initialized.', {
       matrixHost: this.config.matrix_internal_host
     })
+    this.logger.debug('[RoomService] createroom_proxy config', {
+      encryption: this.config.features?.createroom_proxy?.encryption,
+      defaultPreset: this.config.features?.createroom_proxy?.default_preset,
+      presets: this.validPresets,
+      hasIsDirectMask: !!this.config.features?.createroom_proxy?.is_direct_mask
+    })
+  }
+
+  private get maxRetries(): number {
+    return this.config.features?.createroom_proxy?.on_failure?.max_retries ?? 3
+  }
+
+  private get nukeRoom(): boolean {
+    return this.config.features?.createroom_proxy?.on_failure?.nuke_room ?? true
+  }
+
+  private get validPresets(): string[] {
+    return (this.config.features?.createroom_proxy?.presets ?? []).map(
+      (p) => p.name
+    )
+  }
+
+  /** Finds a preset config entry by name. */
+  private _findPreset = (name: string): PresetConfig | undefined => {
+    return (this.config.features?.createroom_proxy?.presets ?? []).find(
+      (p) => p.name === name
+    )
   }
 
   /**
@@ -65,108 +97,139 @@ export default class RoomService {
     })
 
     try {
-      // 1. Prepare the request body for room creation, including power level overrides.
-      // This step also determines the power level to which the owner will be demoted.
       const { body, ownerDemotionLevel } = this._prepareCreateRoomBody(
         payload,
         roomOwner
       )
-      this.logger.debug(
-        'Prepared room creation request body and owner demotion level.',
-        {
-          bodyKeys: Object.keys(body || {}),
-          ownerDemotionLevel: ownerDemotionLevel ?? 'N/A'
-        }
-      )
 
-      // 2. Construct the full API URL for room creation.
       const apiUrl = buildUrl(
         this.config.matrix_internal_host,
         this.CREATE_ROOM_API_PATH
       )
+
       this.logger.info('Sending room creation request to Matrix API.', {
         url: apiUrl
       })
-      this.logger.silly('Performing fetch call for room creation.', {
-        method: 'POST',
-        url: apiUrl,
-        headers: JSON.stringify({
-          'Content-Type': 'application/json',
-          Authorization: 'Bearer [masked]'
-        }), // Masking token for logs
-        body: JSON.stringify(body)
-      })
 
-      // Execute the API call to create the room.
-      const response = await fetch(apiUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: authorization // Use the actual authorization token
-        },
-        body: JSON.stringify(body)
-      })
+      // Attempt room creation with retry only on transport-level failures
+      let response: Response | undefined
+      let roomId: string | undefined
+      let lastTransportError: unknown
 
-      // Check if the API call was successful.
-      if (!response.ok) {
+      for (let attempt = 0; attempt <= this.maxRetries; attempt++) {
+        if (attempt > 0) {
+          this.logger.info(`Retrying room creation (attempt ${attempt}).`)
+
+          // Alias guard: if alias provided, check if room was already created
+          if (body.room_alias_name) {
+            const recovered = await this._recoverRoomByAlias(
+              body.room_alias_name,
+              authorization
+            )
+            if (recovered !== undefined) {
+              roomId = recovered
+              this.logger.info(
+                'Room already exists via alias guard, skipping retry.',
+                { roomId }
+              )
+              break
+            }
+          }
+        }
+
+        try {
+          response = await fetch(apiUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: authorization
+            },
+            body: JSON.stringify(body)
+          })
+
+          // Any HTTP response (including 5xx) is not retried
+          break
+        } catch (transportError) {
+          lastTransportError = transportError
+          this.logger.warn(
+            `Transport error on room creation attempt ${attempt}.`,
+            { error: transportError }
+          )
+          if (attempt === this.maxRetries) {
+            this.logger.error(
+              'All retries exhausted for room creation due to transport errors.'
+            )
+            throw transportError
+          }
+        }
+      }
+
+      if (response === undefined && roomId === undefined) {
+        throw lastTransportError
+      }
+
+      // Room recovered from alias guard — proceed directly to demotion
+      if (roomId !== undefined) {
+        if (ownerDemotionLevel !== undefined) {
+          await this._demoteRoomOwnerWithRetry(
+            roomId,
+            authorization,
+            roomOwner,
+            ownerDemotionLevel,
+            payload.invite ?? []
+          )
+        }
+        return new Response(JSON.stringify({ room_id: roomId }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' }
+        })
+      }
+
+      if (!response!.ok) {
         this.logger.warn(
           'Matrix API responded with an error during room creation.',
           {
-            status: response.status,
-            statusText: response.statusText,
-            responseBody: await response.clone().text() // Clone to read text without consuming original response
+            status: response!.status,
+            statusText: response!.statusText,
+            responseBody: await response!.clone().text()
           }
         )
-        // Return the non-OK response from the API directly for the caller to handle.
-        return response
+        return response!
       }
 
       this.logger.info('Room creation request completed successfully.')
-      this.logger.debug('Received successful response from Matrix API.', {
-        status: response.status,
-        ok: response.ok,
-        statusText: response.statusText
-      })
 
-      // 3. Extract the room ID from the successful response and proceed with owner demotion.
-      // Clone the response before consuming its body, as the original response needs to be returned.
-      const createData = (await response.clone().json()) as { room_id: string }
-      const roomId = createData.room_id
+      const createData = (await response!.clone().json()) as {
+        room_id: string
+      }
+      roomId = createData.room_id
       this.logger.info(`Room created with ID: ${roomId}.`)
 
-      // Demote the room owner if a specific demotion level was determined.
       if (ownerDemotionLevel !== undefined) {
         this.logger.info(
           `Demoting room owner ${roomOwner} to power level ${ownerDemotionLevel}.`
         )
-        await this._demoteRoomOwner(
+        await this._demoteRoomOwnerWithRetry(
           roomId,
           authorization,
           roomOwner,
-          ownerDemotionLevel
-        )
-      } else {
-        this.logger.debug(
-          'No specific demotion level for room owner determined, skipping demotion.'
+          ownerDemotionLevel,
+          payload.invite ?? []
         )
       }
 
-      this.logger.silly('Exiting RoomService.create method with API response.')
-      return response // Return the original successful response from room creation.
+      return response!
     } catch (error: any) {
-      // Catch any unhandled exceptions during the process.
       this.logger.error(
         'Failed to create room due to an unhandled exception.',
         {
           message: error.message,
           stack: error.stack,
           errorName: error.name,
-          // Include payload and auth details for debugging, carefully masking sensitive info
           originalPayloadKeys: Object.keys(payload || {}),
           authPreview: authorization.substring(0, 15) + '...'
         }
       )
-      // Return a generic 500 response for internal server errors.
       return new Response('Failed to create room due to an internal error.', {
         status: 500
       })
@@ -175,8 +238,8 @@ export default class RoomService {
 
   /**
    * Prepares the request body for room creation, including initial power level overrides.
-   * This function calculates initial power levels for invited users and the room owner,
-   * and determines the owner's demotion level after room creation.
+   * This function normalizes the payload, calculates initial power levels for invited users
+   * and the room owner, and determines the owner's demotion level after room creation.
    *
    * @param payload - The initial room creation payload.
    * @param roomOwner - The ID of the room owner.
@@ -194,109 +257,213 @@ export default class RoomService {
       roomOwner
     })
 
-    // Start with a deep clone of the original payload to avoid modifying the input object.
-    let body: Partial<CreateRoomPayload> = deepClone(payload)
+    const normalizedPayload = this._normalizePayload(payload)
+
+    this.logger.debug('Payload normalized.', {
+      originalPreset: payload.preset,
+      normalizedPreset: normalizedPayload.preset,
+      normalizedVisibility: normalizedPayload.visibility,
+      normalizedIsDirect: normalizedPayload.is_direct
+    })
+
+    const matrixPreset = this._mapPresetForMatrix(normalizedPayload.preset)
+
+    if (matrixPreset !== normalizedPayload.preset) {
+      this.logger.info('Preset mapped for Matrix server compatibility.', {
+        originalPreset: normalizedPayload.preset,
+        mappedPreset: matrixPreset
+      })
+    }
+
+    let body: Partial<CreateRoomPayload> = {
+      ...normalizedPayload,
+      preset: matrixPreset
+    }
+
     let ownerDemotionLevel: number | undefined
 
-    // Determine the base power level content based on room preset or direct chat status.
-    const defaultPowerLevelContent = this._getDefaultPowerLevelContent(payload)
-    this.logger.debug(
-      'Determined default power level content for room creation.',
-      {
-        preset: payload.preset,
-        content: defaultPowerLevelContent
-          ? JSON.stringify(defaultPowerLevelContent)
-          : 'undefined'
-      }
-    )
+    const defaultPowerLevelContent =
+      this._getDefaultPowerLevelContent(normalizedPayload)
 
     if (defaultPowerLevelContent) {
-      // Deep clone the default power level content from config to allow modification
-      // (e.g., deleting creator_becomes) without affecting the original config object.
       const currentPowerLevelContent = deepClone(defaultPowerLevelContent)
 
-      // Extract the 'creator_becomes' level and remove it from the content,
-      // as it's a custom field not part of the standard Matrix power_levels event.
       ownerDemotionLevel = this._extractCreatorBecomes(currentPowerLevelContent)
-      this.logger.debug(
-        'Extracted owner demotion level from power level content.',
-        { level: ownerDemotionLevel }
-      )
-
-      // Identify invited users from the payload.
-      const invitedUsers = Array.isArray(payload.invite) ? payload.invite : []
-      this.logger.debug(
-        'Identified invited users for initial power level assignment.',
-        { count: invitedUsers.length }
-      )
-
-      // Get the initial users defined in the power level content (if any).
-      const initialUsers = currentPowerLevelContent.users || {}
-      this.logger.silly('Initial explicit users in power level content.', {
-        users: JSON.stringify(initialUsers)
+      this.logger.debug('Extracted owner demotion level.', {
+        ownerDemotionLevel: ownerDemotionLevel ?? 'N/A'
       })
 
-      // Calculate the updated user power levels for the initial room state.
-      // This ensures the room owner starts at 100 and other invited users get default levels.
+      const invitedUsers = Array.isArray(payload.invite) ? payload.invite : []
+      const initialUsers = currentPowerLevelContent.users || {}
+
       const updatedUsers = invitedUsers
-        .filter((invitedUser) => !(invitedUser in initialUsers)) // Only process users not already explicitly defined
+        .filter((invitedUser) => !(invitedUser in initialUsers))
         .reduce(
           (usersMap, invitedUser) => {
-            // Assign power level: 100 for the room owner, default for others.
             const level =
               invitedUser === roomOwner
                 ? 100
-                : currentPowerLevelContent.users_default ?? 0 // Use users_default or 0 if not defined
-            this.logger.silly(
-              'Assigning initial power level to invited user.',
-              { invitedUser, level }
-            )
+                : currentPowerLevelContent.users_default ?? 0
             return { ...usersMap, [invitedUser]: level }
           },
           { ...initialUsers, [roomOwner]: 100 }
-        ) // Ensure room owner is explicitly set to 100
+        )
 
-      // Apply the calculated updated user power levels to the content.
       currentPowerLevelContent.users = updatedUsers
-      this.logger.debug(
-        'Updated power level content with initial user levels.',
-        {
-          updatedUsers: JSON.stringify(updatedUsers)
-        }
-      )
 
-      // Update the main request body with the prepared power level content override.
-      // The original code used `power_level_content_override` directly on the payload.
       body = {
         ...body,
         power_level_content_override: currentPowerLevelContent
       }
-      this.logger.debug(
-        'Final request body updated with power_level_content_override.',
-        {
-          powerLevelContent: JSON.stringify(currentPowerLevelContent)
-        }
-      )
     } else {
       this.logger.warn(
-        'No default power level content determined. Room will be created without explicit power level overrides from preset.'
+        'No default power level content determined. Room will use Matrix server defaults.'
       )
     }
 
-    this.logger.silly('Exiting _prepareCreateRoomBody method.')
+    this._applyEncryptionPolicy(body)
+
+    this.logger.debug('[createRoom] Final body to send to Synapse', {
+      body: JSON.stringify(body)
+    })
+
     return { body, ownerDemotionLevel }
   }
 
   /**
-   * Demotes the room owner's power level after room creation.
-   * This method fetches the current power levels of the room and then sends an update
-   * to set the owner's power level to the specified value, preserving other settings.
+   * Enforces the encryption policy from config on the room creation body.
+   * - 'enforced': injects m.room.encryption initial state event if not already present
+   * - 'disabled': removes any m.room.encryption from initial_state
+   * - 'allowed' (default): no-op
    *
-   * @param roomId - The ID of the created room.
-   * @param authorization - The authorization header.
-   * @param roomOwner - The Matrix user ID of the room owner.
-   * @param powerLevel - The target power level for the room owner.
+   * @param body - The payload to be sent to the homeserver containing the room creation settings
    * @private
+   */
+  private _applyEncryptionPolicy = (body: Partial<CreateRoomPayload>): void => {
+    const policy =
+      this.config.features?.createroom_proxy?.encryption ?? 'allowed'
+
+    if (policy === 'allowed') return
+
+    if (policy === 'enforced') {
+      const alreadySet = (body.initial_state ?? []).some(
+        (e) => e.type === 'm.room.encryption'
+      )
+      if (!alreadySet) {
+        body.initial_state = [
+          ...(body.initial_state ?? []),
+          {
+            type: 'm.room.encryption',
+            state_key: '',
+            content: { algorithm: 'm.megolm.v1.aes-sha2' }
+          }
+        ]
+        this.logger.info(
+          'Encryption enforced: injected m.room.encryption event.'
+        )
+      }
+      return
+    }
+
+    if (policy === 'disabled') {
+      body.initial_state = (body.initial_state ?? []).filter(
+        (e) => e.type !== 'm.room.encryption'
+      )
+      this.logger.info(
+        'Encryption disabled: stripped m.room.encryption from initial_state.'
+      )
+    }
+  }
+
+  /**
+   * Demotes the room owner after creation, with retry and optional nuke on failure.
+   */
+  private _demoteRoomOwnerWithRetry = async (
+    roomId: string,
+    authorization: string,
+    roomOwner: string,
+    powerLevel: number,
+    invitees: string[]
+  ): Promise<void> => {
+    let lastError: unknown
+
+    for (let attempt = 0; attempt <= this.maxRetries; attempt++) {
+      try {
+        await this._demoteRoomOwner(
+          roomId,
+          authorization,
+          roomOwner,
+          powerLevel
+        )
+        return
+      } catch (err) {
+        lastError = err
+        this.logger.warn(
+          `Demotion attempt ${attempt} failed for room ${roomId}.`,
+          { err }
+        )
+      }
+    }
+
+    this.logger.error('All demotion retries exhausted.', {
+      roomId,
+      lastError
+    })
+
+    if (this.nukeRoom) {
+      this.logger.info('Nuking room: banning invitees and leaving.', {
+        roomId
+      })
+      await this._nukeRoom(roomId, authorization, roomOwner, invitees)
+    }
+
+    throw new Error('Impossible to apply requested preset permissions')
+  }
+
+  /**
+   * Bans all invitees and makes the owner leave the room (nuke on demotion failure).
+   */
+  private _nukeRoom = async (
+    roomId: string,
+    authorization: string,
+    roomOwner: string,
+    invitees: string[]
+  ): Promise<void> => {
+    const banUrl = buildUrl(
+      this.config.matrix_internal_host,
+      this.BAN_PATH.replace('{roomId}', encodeURIComponent(roomId))
+    )
+    const leaveUrl = buildUrl(
+      this.config.matrix_internal_host,
+      this.LEAVE_PATH.replace('{roomId}', encodeURIComponent(roomId))
+    )
+    const headers = {
+      'Content-Type': 'application/json',
+      Authorization: authorization
+    }
+
+    for (const userId of invitees) {
+      if (userId === roomOwner) continue
+      try {
+        await fetch(banUrl, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ user_id: userId })
+        })
+      } catch (err) {
+        this.logger.warn(`Failed to ban ${userId} during nuke.`, { err })
+      }
+    }
+
+    try {
+      await fetch(leaveUrl, { method: 'POST', headers, body: '{}' })
+    } catch (err) {
+      this.logger.warn('Failed to leave room during nuke.', { err })
+    }
+  }
+
+  /**
+   * Demotes the room owner's power level after room creation.
    */
   private _demoteRoomOwner = async (
     roomId: string,
@@ -304,13 +471,6 @@ export default class RoomService {
     roomOwner: string,
     powerLevel: number
   ): Promise<void> => {
-    this.logger.silly('Entering _demoteRoomOwner method.', {
-      roomId,
-      roomOwner,
-      powerLevel
-    })
-
-    // Construct the API URL for updating room power levels.
     const powerLevelUrl = buildUrl(
       this.config.matrix_internal_host,
       this.POWER_LEVEL_STATE_PATH.replace(
@@ -319,152 +479,199 @@ export default class RoomService {
       )
     )
 
-    try {
-      // First, fetch the current power levels to ensure we don't accidentally overwrite
-      // other power level settings (e.g., m.room.join_rules, events, etc.).
-      this.logger.debug(
-        'Fetching current power levels before demotion to ensure safe update.',
-        { url: powerLevelUrl }
+    const currentPowerLevelsResponse = await fetch(powerLevelUrl, {
+      method: 'GET',
+      headers: { Authorization: authorization }
+    })
+
+    if (!currentPowerLevelsResponse.ok) {
+      const errorBody = await currentPowerLevelsResponse.clone().text()
+      this.logger.error('Failed to fetch current power levels for demotion.', {
+        status: currentPowerLevelsResponse.status,
+        statusText: currentPowerLevelsResponse.statusText,
+        responseBody: errorBody
+      })
+      throw new Error(
+        `Failed to fetch current room power levels: ${currentPowerLevelsResponse.status} ${currentPowerLevelsResponse.statusText}`
       )
-      const currentPowerLevelsResponse = await fetch(powerLevelUrl, {
+    }
+
+    const currentPowerLevels: PowerLevelEventContent =
+      (await currentPowerLevelsResponse.json()) as PowerLevelEventContent
+
+    const demotionContent: PowerLevelEventContent = {
+      ...currentPowerLevels,
+      users: {
+        ...(currentPowerLevels.users || {}),
+        [roomOwner]: powerLevel
+      }
+    }
+
+    const response = await fetch(powerLevelUrl, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: authorization
+      },
+      body: JSON.stringify(demotionContent)
+    })
+
+    if (!response.ok) {
+      this.logger.warn(
+        `Failed to demote room owner (${roomOwner}) after creation.`,
+        {
+          status: response.status,
+          statusText: response.statusText,
+          responseBody: await response.clone().text()
+        }
+      )
+      throw new Error(
+        `Demotion PUT failed: ${response.status} ${response.statusText}`
+      )
+    }
+
+    this.logger.info(
+      `Successfully demoted room owner (${roomOwner}) to ${powerLevel}.`
+    )
+  }
+
+  /**
+   * Attempts to recover an existing room's ID via its alias.
+   * Returns the room_id if found, undefined otherwise.
+   */
+  private _recoverRoomByAlias = async (
+    roomAlias: string,
+    authorization: string
+  ): Promise<string | undefined> => {
+    try {
+      const encodedAlias = encodeURIComponent(
+        `#${roomAlias}:${this.config.server_name}`
+      )
+      const url = buildUrl(
+        this.config.matrix_internal_host,
+        this.ROOM_DIRECTORY_PATH.replace('{alias}', encodedAlias)
+      )
+      const response = await fetch(url, {
         method: 'GET',
         headers: { Authorization: authorization }
       })
-
-      if (!currentPowerLevelsResponse.ok) {
-        // If fetching current power levels fails, log an error and throw to stop the demotion.
-        const errorBody = await currentPowerLevelsResponse.clone().text()
-        this.logger.error(
-          'Failed to fetch current power levels for demotion. Cannot proceed with update.',
-          {
-            status: currentPowerLevelsResponse.status,
-            statusText: currentPowerLevelsResponse.statusText,
-            responseBody: errorBody
-          }
-        )
-        // Throw an error to indicate a critical failure in fetching necessary state.
-        throw new Error(
-          `Failed to fetch current room power levels: ${currentPowerLevelsResponse.status} ${currentPowerLevelsResponse.statusText}`
-        )
-      }
-
-      let currentPowerLevels: PowerLevelEventContent =
-        (await currentPowerLevelsResponse.json()) as PowerLevelEventContent
-      this.logger.debug('Successfully fetched current power levels.', {
-        currentLevels: JSON.stringify(currentPowerLevels)
-      })
-
-      // Prepare the content for demotion.
-      // This merges the new owner power level with existing power level settings.
-      const demotionContent: PowerLevelEventContent = {
-        ...currentPowerLevels, // Preserve existing power level settings like `events`, `state_default`, etc.
-        users: {
-          ...(currentPowerLevels.users || {}), // Preserve existing user-specific power levels
-          [roomOwner]: powerLevel // Set the new power level for the owner
+      if (response.ok) {
+        const data = (await response.json()) as { room_id?: string }
+        if (data.room_id) {
+          return data.room_id
         }
       }
+    } catch {
+      // Alias lookup failure is non-fatal
+    }
+    return undefined
+  }
 
-      this.logger.debug('Constructed body for owner demotion.', {
-        body: JSON.stringify(demotionContent)
-      })
-      this.logger.info(
-        `Sending power level update to demote owner ${roomOwner} to ${powerLevel}.`
+  /**
+   * Normalizes the room creation payload by applying defaults and enforcing business rules.
+   *
+   * @param payload - The original room creation payload
+   * @returns Normalized payload with preset, visibility, and is_direct set
+   * @private
+   */
+  private _normalizePayload = (
+    payload: Partial<CreateRoomPayload>
+  ): Partial<CreateRoomPayload> & {
+    preset: string
+    visibility: 'public' | 'private'
+    is_direct: boolean
+  } => {
+    let preset = payload.preset
+    let visibility = payload.visibility
+    let is_direct = payload.is_direct
+
+    if (preset && !this.validPresets.includes(preset)) {
+      this.logger.warn(
+        'Unknown preset value, treating as if no preset was provided.',
+        { preset }
       )
+      preset = undefined
+    }
 
-      // Send the PUT request to update the room's power levels.
-      const response = await fetch(powerLevelUrl, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: authorization
-        },
-        body: JSON.stringify(demotionContent)
-      })
+    if (!visibility && !preset) {
+      const defaultPreset =
+        this.config.features?.createroom_proxy?.default_preset ?? 'private_chat'
+      preset = this.validPresets.includes(defaultPreset)
+        ? defaultPreset
+        : 'private_chat'
+      visibility = this._getVisibilityFromPreset(preset as string)
+    } else if (!visibility && preset) {
+      visibility = this._getVisibilityFromPreset(preset)
+    } else if (visibility && !preset) {
+      preset = visibility === 'public' ? 'public_chat' : 'private_chat'
+    }
 
-      if (!response.ok) {
-        this.logger.warn(
-          `Failed to demote room owner (${roomOwner}) after creation.`,
-          {
-            status: response.status,
-            statusText: response.statusText,
-            responseBody: await response.clone().text()
-          }
-        )
-      } else {
-        this.logger.info(
-          `Successfully demoted room owner (${roomOwner}) to ${powerLevel}.`
-        )
-      }
-    } catch (err: any) {
-      // Catch any exceptions during the demotion process.
-      this.logger.error(`Exception while demoting room owner (${roomOwner}).`, {
-        message: err.message,
-        stack: err.stack,
-        errorName: err.name
-      })
-      // Re-throw the error to propagate the failure up the call stack if it's a critical issue.
-      throw err
-    } finally {
-      this.logger.silly('Exiting _demoteRoomOwner method.')
+    const presetConfig = preset ? this._findPreset(preset) : undefined
+    const allowIsDirect = presetConfig?.allow_is_direct ?? false
+
+    if (is_direct === true && !allowIsDirect) {
+      this.logger.warn(
+        'is_direct=true not allowed for this preset, forcing to false.',
+        { preset, originalIsDirect: is_direct }
+      )
+    }
+
+    is_direct = allowIsDirect && is_direct === true
+
+    return {
+      ...payload,
+      preset: preset!,
+      visibility: visibility!,
+      is_direct
     }
   }
 
   /**
-   * Determines the default power level content based on the room creation payload's preset
-   * or whether it's a direct chat.
+   * Determines the appropriate power level configuration based on the room preset and is_direct flag.
    *
-   * @param payload - The room creation payload.
-   * @returns The appropriate PowerLevelEventContent object from the configuration,
-   * or `undefined` if an error occurs during determination.
+   * Logic:
+   * 1. Select base preset configuration from config
+   * 2. If is_direct=true and preset allows it, apply is_direct overrides
+   * 3. Channel presets use their specific configurations
+   *
+   * @param payload - The normalized room creation payload
+   * @returns The appropriate PowerLevelEventContent, or undefined on error
    * @private
    */
   private _getDefaultPowerLevelContent = (
     payload: Partial<CreateRoomPayload>
   ): PowerLevelEventContent | undefined => {
-    this.logger.silly('Entering _getDefaultPowerLevelContent method.', {
-      payloadKeys: Object.keys(payload || {}),
-      inviteLength: payload.invite?.length || 0,
-      preset: payload.preset
-    })
-
     try {
-      const { preset } = payload
-      // A direct chat is typically defined as having exactly one invitee (the other user).
-      const isDirect = payload.invite && payload.invite.length === 1
-      this.logger.debug(
-        'Checking conditions for default power level content.',
-        {
-          preset,
-          isDirect
-        }
-      )
+      const { preset, is_direct } = payload
 
-      if (isDirect) {
-        this.logger.silly('Returning direct_chat permissions from config.')
-        return this.config.room_permissions.direct_chat
-      } else if (preset === 'public_chat') {
-        this.logger.silly(
-          'Returning public_group_chat permissions from config.'
+      const basePowerLevels = preset ? this._findPreset(preset) : undefined
+
+      if (!basePowerLevels) {
+        this.logger.warn(
+          'No power level config found for preset, using private_chat fallback.',
+          { preset }
         )
-        return this.config.room_permissions.public_group_chat
+        return this._findPreset('private_chat')
       }
 
-      // Default to private_group_chat permissions if no other conditions are met.
-      this.logger.silly(
-        'Returning private_group_chat permissions (default) from config.'
-      )
-      return this.config.room_permissions.private_group_chat
+      // Apply is_direct overrides only when the preset allows it (per config)
+      if (is_direct === true && (basePowerLevels.allow_is_direct ?? false)) {
+        this.logger.info('Applying is_direct power level overrides.', {
+          preset
+        })
+        return this._applyDirectChatOverrides(basePowerLevels)
+      }
+
+      return basePowerLevels
     } catch (error: any) {
       this.logger.error(
-        'Failed to get default power level content due to an exception.',
+        'Exception occurred while determining power level content.',
         {
           message: error.message,
           stack: error.stack,
-          errorName: error.name
+          preset: payload.preset
         }
       )
-      // Returning undefined allows the calling function to proceed without a power level override,
-      // relying on Matrix server defaults.
       return undefined
     }
   }
@@ -480,20 +687,58 @@ export default class RoomService {
    * @private
    */
   private _extractCreatorBecomes = (
-    powerLevelContent: PowerLevelEventContent
+    powerLevelContent: PowerLevelEventContent & { name?: string }
   ): number => {
-    this.logger.silly('Entering _extractCreatorBecomes method.', {
-      contentKeys: Object.keys(powerLevelContent || {})
-    })
-
-    // Use a nullish coalescing operator to provide a default of 90 if creator_becomes is undefined or null.
     const level = powerLevelContent.creator_becomes ?? 90
     delete powerLevelContent.creator_becomes
-    this.logger.debug(
-      'Extracted and removed creator_becomes from power level content.',
-      { level }
-    )
-    this.logger.silly('Exiting _extractCreatorBecomes method.')
+    delete powerLevelContent.synapse_preset
+    delete powerLevelContent.default_visibility
+    delete powerLevelContent.allow_is_direct
+    delete powerLevelContent.name
     return level
+  }
+
+  /**
+   * Derives the visibility setting from a given preset.
+   */
+  private _getVisibilityFromPreset = (preset: string): 'public' | 'private' => {
+    return this._findPreset(preset)?.default_visibility ?? 'private'
+  }
+
+  /**
+   * Maps a ToM preset name to the Matrix-compatible preset name.
+   * Reads synapse_preset from the preset's own config entry; falls back to the preset name itself.
+   */
+  private _mapPresetForMatrix = (preset: string): string => {
+    return this._findPreset(preset)?.synapse_preset ?? preset
+  }
+
+  /**
+   * Applies is_direct power level overrides from config to the base preset configuration.
+   * Only keys present in the is_direct config block override base preset values.
+   *
+   * @param basePowerLevels - The base power levels from the preset configuration
+   * @returns Power levels with is_direct overrides applied
+   * @private
+   */
+  private _applyDirectChatOverrides = (
+    basePowerLevels: PowerLevelEventContent
+  ): PowerLevelEventContent => {
+    const { events: maskEvents, ...topLevelMask } =
+      this.config.features?.createroom_proxy?.is_direct_mask ?? {}
+    const overriddenLevels = deepClone(basePowerLevels)
+
+    Object.assign(overriddenLevels, topLevelMask)
+
+    if (maskEvents) {
+      overriddenLevels.events = { ...overriddenLevels.events, ...maskEvents }
+    }
+
+    this.logger.debug('is_direct overrides applied successfully.', {
+      originalUsersDefault: basePowerLevels.users_default,
+      newUsersDefault: overriddenLevels.users_default
+    })
+
+    return overriddenLevels
   }
 }
