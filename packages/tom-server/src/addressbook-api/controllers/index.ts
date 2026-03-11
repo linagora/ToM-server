@@ -27,12 +27,12 @@ export default class AddressbookApiController
    * Enriches contacts with additional user information from UserInfoService.
    *
    * @param {Contact[]} contacts - Array of contacts to enrich
-   * @param {string} viewer - The viewer's user ID for visibility checks
+   * @param {string?} viewer - The viewer's user ID for visibility checks
    * @returns {Promise<EnrichedContact[]>} Array of enriched contacts
    */
   private async _enrichContacts(
-    contacts: { mxid: string; [key: string]: any }[],
-    viewer: string
+    contacts: Contact[],
+    viewer?: string
   ): Promise<EnrichedContact[]> {
     if (!this.userInfoService || contacts.length === 0) {
       this.logger.debug(
@@ -58,6 +58,7 @@ export default class AddressbookApiController
         const enriched: EnrichedContact = { ...contact } as EnrichedContact
 
         if (userInfo) {
+          const prevDisplayName = contact.display_name
           // Enrichment fields
           enriched.avatar_url = userInfo.avatar_url || ''
           enriched.last_name = userInfo.last_name || ''
@@ -77,6 +78,14 @@ export default class AddressbookApiController
           enriched.givenname = userInfo.first_name || ''
           enriched.mail = userInfo.emails?.at(0) || ''
           enriched.mobile = userInfo.phones?.at(0) || ''
+
+          this.logger.debug(
+            `[AddressbookApiController._enrichContacts] mxid=${contact.mxid} display_name: "${prevDisplayName}" -> "${enriched.displayName}"`
+          )
+        } else {
+          this.logger.debug(
+            `[AddressbookApiController._enrichContacts] mxid=${contact.mxid} no user info found, keeping stored display_name="${contact.display_name}"`
+          )
         }
 
         return enriched
@@ -179,17 +188,31 @@ export default class AddressbookApiController
   ): Promise<void> => {
     try {
       const { id } = req.params
+      const viewer = req.userId
+
+      this.logger.debug(
+        `[AddressbookApiController.fetchContact] Fetching contact id=${id} viewer=${viewer}`
+      )
 
       const contact = await this.service.getContact(id)
 
       if (!contact) {
-        this.logger.error('Contact not found')
-
+        this.logger.error(
+          `[AddressbookApiController.fetchContact] Contact not found id=${id}`
+        )
         res.status(404).json({ message: 'Contact not found' })
         return
       }
 
-      res.status(200).json(contact)
+      const [enrichedContact] = await this._enrichContacts([contact], viewer)
+
+      this.logger.info(
+        `[AddressbookApiController.fetchContact] Returning contact id=${id} mxid=${
+          enrichedContact.mxid
+        } display_name="${enrichedContact.displayName ?? contact.display_name}"`
+      )
+
+      res.status(200).json(enrichedContact)
     } catch (error) {
       next(error)
     }
