@@ -4658,7 +4658,11 @@ describe('User Info Service GET with: No feature flags ON', () => {
     afterEach(() => {
       // Verify addressbook service was called when viewer is provided
       if (VIEWER_MXID !== MATRIX_MXID) {
-        expect(addressBookServiceMock.list).toHaveBeenCalledWith(VIEWER_MXID)
+        expect(addressBookServiceMock.list).toHaveBeenCalledTimes(1)
+        expect(addressBookServiceMock.list).toHaveBeenCalledWith(
+          VIEWER_MXID,
+          false
+        )
       }
     })
 
@@ -7345,7 +7349,7 @@ describe('User Info Service getBatch', () => {
 
     // Addressbook should be fetched exactly once
     expect(addressBookServiceMock.list).toHaveBeenCalledTimes(1)
-    expect(addressBookServiceMock.list).toHaveBeenCalledWith(viewerMxid)
+    expect(addressBookServiceMock.list).toHaveBeenCalledWith(viewerMxid, false)
 
     // User1 should have addressbook name override
     expect(result.get(MXID_1)!.display_name).toBe('Addressbook Name for User1')
