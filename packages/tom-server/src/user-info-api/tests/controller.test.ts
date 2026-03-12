@@ -71,6 +71,7 @@ describe('the user info API controller', () => {
     getMock.mockImplementation(
       async () =>
         ({
+          display_name: 'David',
           givenName: 'David',
           sn: 'Who',
           uid: '@dwho:docker.localhost'
