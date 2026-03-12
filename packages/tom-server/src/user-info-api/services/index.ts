@@ -191,7 +191,7 @@ class UserInfoService implements IUserInfoService {
       const viewerAddressbookPromise = (async () => {
         if (!viewer) return null
         try {
-          const ab = await this.addressBookService.list(viewer)
+          const ab = await this.addressBookService.list(viewer, false) // We only list personal contacts not company provided
           return ab ?? null
         } catch (e) {
           this.logger.warn(

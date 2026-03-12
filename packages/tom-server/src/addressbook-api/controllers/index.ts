@@ -60,6 +60,7 @@ export default class AddressbookApiController
         if (userInfo) {
           const prevDisplayName = contact.display_name
           // Enrichment fields
+          enriched.display_name = userInfo.display_name || ''
           enriched.avatar_url = userInfo.avatar_url || ''
           enriched.last_name = userInfo.last_name || ''
           enriched.first_name = userInfo.first_name || ''
