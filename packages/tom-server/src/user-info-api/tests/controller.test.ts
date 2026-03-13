@@ -71,6 +71,7 @@ describe('the user info API controller', () => {
     getMock.mockImplementation(
       async () =>
         ({
+          display_name: 'David',
           givenName: 'David',
           sn: 'Who',
           uid: '@dwho:docker.localhost'
@@ -81,6 +82,7 @@ describe('the user info API controller', () => {
 
     expect(response.status).toEqual(200)
     expect(response.body).toEqual({
+      display_name: 'David',
       givenName: 'David',
       sn: 'Who',
       uid: '@dwho:docker.localhost'

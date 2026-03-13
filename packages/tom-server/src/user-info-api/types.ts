@@ -18,19 +18,22 @@ export interface IUserInfoService {
   ) => Promise<UserProfileSettingsT | undefined>
 }
 
-export interface UserInformation {
-  uid: string
-  display_name?: string
+export interface UserEnrichmentFields {
+  display_name: string
   avatar_url?: string
-  sn?: string
   last_name?: string
-  givenName?: string
   first_name?: string
   emails?: string[]
   phones?: string[]
   language?: string
   timezone?: string
   workplaceFqdn?: string
+}
+
+export interface UserInformation extends UserEnrichmentFields {
+  uid: string
+  sn?: string
+  givenName?: string
 }
 
 export interface SettingsPayload {
