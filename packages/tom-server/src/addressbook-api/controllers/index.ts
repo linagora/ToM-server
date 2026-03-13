@@ -202,7 +202,15 @@ export default class AddressbookApiController
         return
       }
 
-      res.status(200).json(contact)
+      const [enrichedContact] = await this._enrichContacts([contact], viewer)
+
+      this.logger.info(
+        `[AddressbookApiController.fetchContact] Returning contact id=${id} mxid=${
+          enrichedContact.mxid
+        }`
+      )
+
+      res.status(200).json(enrichedContact)
     } catch (error) {
       next(error)
     }
