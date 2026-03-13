@@ -179,12 +179,18 @@ export default class AddressbookApiController
   ): Promise<void> => {
     try {
       const { id } = req.params
+      const viewer = req.userId
+
+      this.logger.debug(
+        `[AddressbookApiController.fetchContact] Fetching contact id=${id} viewer=${viewer}`
+      )
 
       const contact = await this.service.getContact(id)
 
       if (!contact) {
-        this.logger.error('Contact not found')
-
+        this.logger.error(
+          `[AddressbookApiController.fetchContact] Contact not found id=${id}`
+        )
         res.status(404).json({ message: 'Contact not found' })
         return
       }

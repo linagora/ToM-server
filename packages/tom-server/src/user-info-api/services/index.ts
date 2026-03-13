@@ -102,7 +102,9 @@ class UserInfoService implements IUserInfoService {
     viewer?: string
   ): Promise<Map<string, UserInformation>> => {
     this.logger.debug(
-      `[UserInfoService].getBatch: Gathering information on ${ids.length} users`
+      `[UserInfoService].getBatch: Gathering information on ${ids.length} user${
+        ids.length > 1 ? 's' : ''
+      }`
     )
 
     const result = new Map<string, UserInformation>()
@@ -321,17 +323,32 @@ class UserInfoService implements IUserInfoService {
 
         // Matrix profile (highest precedence)
         if (matrixRow) {
-          if (matrixRow.displayname)
+          if (matrixRow.displayname) {
+            this.logger.debug(
+              `[UserInfoService].getBatch: mxid=${id} display_name source=matrix value="${matrixRow.displayname}"`
+            )
             userInfo.display_name = matrixRow.displayname
-          if (matrixRow.avatar_url) userInfo.avatar_url = matrixRow.avatar_url
+          }
+          if (matrixRow.avatar_url) {
+            this.logger.debug(
+              `[UserInfoService].getBatch: mxid=${id} avatar_url source=matrix value="${matrixRow.avatar_url}"`
+            )
+            userInfo.avatar_url = matrixRow.avatar_url
+          }
         }
 
         // Directory (second precedence)
         if (directoryRow) {
           if (!userInfo.display_name && directoryRow.cn) {
+            this.logger.debug(
+              `[UserInfoService].getBatch: mxid=${id} display_name source=directory (matrix empty) value="${directoryRow.cn}"`
+            )
             userInfo.display_name = directoryRow.cn as string
           }
           if (directoryRow.sn) {
+            this.logger.debug(
+              `[UserInfoService].getBatch: mxid=${id} sn source=directory value="${directoryRow.sn}"`
+            )
             userInfo.sn = directoryRow.sn as string
             userInfo.last_name = directoryRow.sn as string
           }
@@ -339,10 +356,13 @@ class UserInfoService implements IUserInfoService {
             directoryRow.givenname != null ||
             directoryRow.givenName != null
           ) {
-            userInfo.givenName = (directoryRow.givenname ??
+            const givenName = (directoryRow.givenname ??
               directoryRow.givenName) as string
-            userInfo.first_name = (directoryRow.givenname ??
-              directoryRow.givenName) as string
+            this.logger.debug(
+              `[UserInfoService].getBatch: mxid=${id} givenName source=directory value="${givenName}"`
+            )
+            userInfo.givenName = givenName
+            userInfo.first_name = givenName
           }
           // Apply visibility checks for email/phone
           if (
@@ -351,6 +371,11 @@ class UserInfoService implements IUserInfoService {
               (isIdProfileVisible &&
                 idProfileVisibleFields.includes(ProfileField.Email)))
           ) {
+            this.logger.debug(
+              `[UserInfoService].getBatch: mxid=${id} email source=directory value="${String(
+                directoryRow.mail
+              ).replace(/^(.).*(@.+)$/, '$1***$2')}"`
+            )
             userInfo.emails = [directoryRow.mail as string]
           }
           if (
@@ -359,9 +384,17 @@ class UserInfoService implements IUserInfoService {
               (isIdProfileVisible &&
                 idProfileVisibleFields.includes(ProfileField.Phone)))
           ) {
+            this.logger.debug(
+              `[UserInfoService].getBatch: mxid=${id} phone source=directory value="${String(
+                directoryRow.mobile
+              ).replace(/^.+(.{4})$/, '***$1')}"`
+            )
             userInfo.phones = [directoryRow.mobile as string]
           }
           if (directoryRow.workplaceFqdn) {
+            this.logger.debug(
+              `[UserInfoService].getBatch: mxid=${id} workplaceFqdn source=directory value="${directoryRow.workplaceFqdn}"`
+            )
             userInfo.workplaceFqdn = directoryRow.workplaceFqdn as string
           }
         }
@@ -369,13 +402,22 @@ class UserInfoService implements IUserInfoService {
         // Settings (third precedence)
         if (settingsRow) {
           if (settingsRow.display_name) {
+            this.logger.debug(
+              `[UserInfoService].getBatch: mxid=${id} display_name source=settings value="${settingsRow.display_name}"`
+            )
             userInfo.display_name = settingsRow.display_name
           }
           if (settingsRow.last_name) {
+            this.logger.debug(
+              `[UserInfoService].getBatch: mxid=${id} sn source=settings value="${settingsRow.last_name}"`
+            )
             userInfo.last_name = settingsRow.last_name
             userInfo.sn = settingsRow.last_name
           }
           if (settingsRow.first_name) {
+            this.logger.debug(
+              `[UserInfoService].getBatch: mxid=${id} givenName source=settings value="${settingsRow.first_name}"`
+            )
             userInfo.first_name = settingsRow.first_name
             userInfo.givenName = settingsRow.first_name
           }
@@ -390,8 +432,18 @@ class UserInfoService implements IUserInfoService {
               userInfo.emails &&
               !userInfo.emails.includes(settingsRow.email)
             ) {
+              this.logger.debug(
+                `[UserInfoService].getBatch: mxid=${id} email source=settings value="${String(
+                  settingsRow.email
+                ).replace(/^(.).*(@.+)$/, '$1***$2')}" (appended)`
+              )
               userInfo.emails.push(settingsRow.email)
             } else if (!userInfo.emails) {
+              this.logger.debug(
+                `[UserInfoService].getBatch: mxid=${id} email source=settings value="${String(
+                  settingsRow.email
+                ).replace(/^(.).*(@.+)$/, '$1***$2')}"`
+              )
               userInfo.emails = [settingsRow.email]
             }
           }
@@ -405,17 +457,40 @@ class UserInfoService implements IUserInfoService {
               userInfo.phones &&
               !userInfo.phones.includes(settingsRow.phone)
             ) {
+              this.logger.debug(
+                `[UserInfoService].getBatch: mxid=${id} phone source=settings value="${String(
+                  settingsRow.phone
+                ).replace(/^.+(.{4})$/, '***$1')}" (appended)`
+              )
               userInfo.phones.push(settingsRow.phone)
             } else if (!userInfo.phones) {
+              this.logger.debug(
+                `[UserInfoService].getBatch: mxid=${id} phone source=settings value="${String(
+                  settingsRow.phone
+                ).replace(/^.+(.{4})$/, '***$1')}"`
+              )
               userInfo.phones = [settingsRow.phone]
             }
           }
-          if (settingsRow.language) userInfo.language = settingsRow.language
-          if (settingsRow.timezone) userInfo.timezone = settingsRow.timezone
+          if (settingsRow.language) {
+            this.logger.debug(
+              `[UserInfoService].getBatch: mxid=${id} language source=settings value="${settingsRow.language}"`
+            )
+            userInfo.language = settingsRow.language
+          }
+          if (settingsRow.timezone) {
+            this.logger.debug(
+              `[UserInfoService].getBatch: mxid=${id} timezone source=settings value="${settingsRow.timezone}"`
+            )
+            userInfo.timezone = settingsRow.timezone
+          }
         }
 
         // Addressbook (fourth source) - override display_name if present
         if (addressbookContact?.display_name) {
+          this.logger.debug(
+            `[UserInfoService].getBatch: mxid=${id} display_name source=addressbook (overrides previous) value="${addressbookContact.display_name}"`
+          )
           userInfo.display_name = addressbookContact.display_name
         }
 
