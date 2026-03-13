@@ -669,3 +669,4 @@ test-output
 *.db-journal
 
 **/*.last-run.json
+**/nul
