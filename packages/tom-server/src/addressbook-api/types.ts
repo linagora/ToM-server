@@ -1,4 +1,5 @@
 import type { NextFunction, Response, Request } from 'express'
+import type { UserEnrichmentFields } from '../user-info-api/types'
 
 export interface Contact {
   id: string
@@ -35,16 +36,7 @@ export interface AddressbookListResponse {
 }
 
 // Extended contact with enrichment data from UserInfoService
-export interface EnrichedContact extends Contact {
-  // Enrichment fields
-  avatar_url?: string
-  last_name?: string
-  first_name?: string
-  emails?: string[]
-  phones?: string[]
-  language?: string
-  timezone?: string
-  workplaceFqdn?: string
+export interface EnrichedContact extends Contact, UserEnrichmentFields {
   // Deprecated fields for backward compatibility
   displayName?: string
   cn?: string
