@@ -25,7 +25,7 @@ Full implementation of the Matrix Identity Server v2 specification. Provides acc
 | `src/keyManagement/` | Ed25519 key generation, rotation, and `/pubkey` endpoint |
 | `src/lookup/` | Hashed user lookup (`/_matrix/identity/v2/lookup`) |
 | `src/terms/` | Terms of service management endpoints |
-| `src/validation/` | Email token validation (request/submit) |
+| `src/validate/` | Email token validation (request/submit) |
 
 ## For AI Agents
 
