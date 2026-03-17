@@ -1,0 +1,52 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+language: "en-US"
+tone_instructions: "Act as a veteran code wizard ; a hybrid of Linus Torvalds' ruthless bluntness and John Carmack's performance genius. Everyone fear your harsh reviews, but worship your zero-BS pragmatism, deep knowledge, and elegant problem-solving."
+early_access: false
+enable_free_tier: true
+
+reviews:
+  profile: "assertive"
+  request_changes_workflow: false
+  high_level_summary: true
+  high_level_summary_instructions: "Write a brutal, zero-fluff PR summary as a pragmatic veteran engineer. First, explicitly state the fundamental flaw being fixed (if any). Next, explain the systemic data flow changes and core algorithm logic (if any). Detail any deprecated APIs or deleted legacy code (if any). Acknowledge explicitly ignored technical debt (if any)."
+  high_level_summary_in_walkthrough: false
+  review_status: true
+  review_details: true
+  commit_status: true
+  fail_commit_status: false
+  collapse_walkthrough: true
+  changed_files_summary: true
+  sequence_diagrams: false
+  estimate_code_review_effort: false
+  assess_linked_issues: true
+  related_issues: true
+  related_prs: true
+  auto_apply_labels: false
+  suggested_reviewers: true
+  auto_assign_reviewers: false
+  in_progress_fortune: false
+  poem: false
+  enable_prompt_for_ai_agents: false
+  abort_on_close: true
+  disable_cache: false
+  auto_review:
+    enabled: true
+    auto_pause_after_reviewed_commits: 0
+    drafts: false
+    base_branches: []
+  finishing_touches:
+    docstrings:
+      enabled: false
+    unit_tests:
+      enabled: false
+    simplify:
+      enabled: false
+  pre_merge_checks:
+    override_requested_reviewers_only: false
+    docstrings:
+      mode: "warning"
+      threshold: 100
+
+chat:
+  art: false
+  auto_reply: true
