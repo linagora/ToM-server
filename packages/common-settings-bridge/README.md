@@ -125,8 +125,8 @@ Shared Types & Errors:
 
 ## Prerequisites
 
-- **Node.js**: v18.20.8 (as specified in package.json)
-- **npm**: v10.8.2 or compatible
+- **Node.js**: v24.14.0 (as specified in package.json)
+- **npm**: v11.9.0 or compatible
 - **Synapse**: Running Matrix/Synapse instance with application service support
 - **RabbitMQ**: Instance with topic exchange configured
 - **Database**: PostgreSQL or SQLite with `usersettings` table
