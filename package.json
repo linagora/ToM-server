@@ -50,7 +50,7 @@
   },
   "devDependencies": {
     "@crowdsec/express-bouncer": "^0.1.0",
-    "@nx/workspace": "^20.6.4",
+    "@nx/workspace": "22.5.4",
     "@rollup/plugin-commonjs": "^25.0.7",
     "@rollup/plugin-json": "^6.0.1",
     "@rollup/plugin-node-resolve": "^15.2.3",
@@ -89,7 +89,7 @@
     "node-fetch": "^3.3.0",
     "node-fetch-jest": "npm:node-fetch@^2.6.9",
     "nodemon": "^3.1.10",
-    "nx": "20.6.4",
+    "nx": "22.5.4",
     "prettier": "2.8.7",
     "prettier-plugin-svelte": "^2.10.0",
     "rimraf": "^4.3.1",
@@ -104,8 +104,8 @@
     "typescript": "^4.9.5"
   },
   "optionalDependencies": {
-    "@nx/nx-darwin-arm64": "^19.4.0",
-    "@nx/nx-linux-x64-gnu": "^19.4.0"
+    "@nx/nx-darwin-arm64": "22.5.4",
+    "@nx/nx-linux-x64-gnu": "22.5.4"
   },
   "engines": {
     "node": "24.14.0",
