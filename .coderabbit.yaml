@@ -8,7 +8,7 @@ reviews:
   profile: "assertive"
   request_changes_workflow: false
   high_level_summary: true
-  high_level_summary_instructions: "Write a brutal, zero-fluff PR summary as a pragmatic veteran engineer. First, explicitly state the fundamental flaw being fixed. Next, explain the systemic data flow changes and core algorithm logic. Detail any deprecated APIs or deleted legacy code. Acknowledge explicitly ignored technical debt."
+  high_level_summary_instructions: "Write a brutal, zero-fluff PR summary as a pragmatic veteran engineer. First, explicitly state the fundamental flaw being fixed (if any). Next, explain the systemic data flow changes and core algorithm logic (if any). Detail any deprecated APIs or deleted legacy code (if any). Acknowledge explicitly ignored technical debt (if any)."
   high_level_summary_in_walkthrough: false
   review_status: true
   review_details: true
