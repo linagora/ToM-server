@@ -16,7 +16,7 @@ Closes #
 
 ### Code
 - [ ] Tests pass (`npm test`)
-- [ ] Linter is clean (`npm run format:fix`)
+- [ ] Linter is clean (`npm run check`)
 - [ ] No new `any` introduced
 - [ ] No dead code or commented-out blocks
 - [ ] All other style rules per [CODING_STYLE.md](../CODING_STYLE.md)

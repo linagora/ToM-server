@@ -137,7 +137,7 @@ Labels are applied by maintainers. You do not need to set them yourself, but und
 
 - The issue you are fixing or the feature you are building should exist as an issue first. If it doesn't, open one and let it get triaged before investing time in a PR.
 - Make sure all tests pass locally: `npm test`.
-- Make sure the linter is clean: `npm run format:check`.
+- Make sure the linter is clean: `npm run check`.
 
 ### Opening a PR
 
@@ -161,7 +161,7 @@ A good PR:
 
 Commits follow the [Conventional Commits](https://www.conventionalcommits.org/) specification via **[convco](https://convco.github.io/)**. All commit messages must be written in **English**.
 
-```
+```text
 <type>(<scope>): <description>
 
 [optional body — explain why, not what]
@@ -173,7 +173,7 @@ Commits follow the [Conventional Commits](https://www.conventionalcommits.org/) 
 
 **Scope** is the module or package name: `addressbook`, `identity-server`, `kernel`, etc.
 
-```
+```text
 feat(addressbook): add phonebook import endpoint
 fix(user-info): respect admin field policy floor in public mode
 refactor(identity): extract facade from monolithic service
@@ -203,7 +203,7 @@ Then add your public key to your GitHub account under **Settings → SSH and GPG
 
 ### Branch naming
 
-```
+```text
 <type>/<scope>/<short-description>
 
 feat/addressbook/phonebook-import
