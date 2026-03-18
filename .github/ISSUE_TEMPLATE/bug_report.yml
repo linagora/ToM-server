@@ -1,0 +1,89 @@
+name: Bug report
+description: Something does not behave as expected.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before filing: search open and closed issues to avoid duplicates.
+        Fill every required field — incomplete reports will be closed.
+
+  - type: dropdown
+    id: package
+    attributes:
+      label: Package
+      description: Which package is affected?
+      options:
+        - identity-server
+        - federation-server
+        - tom-server
+        - configuration
+        - "Not sure / multiple"
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Output of `npm list` or the package version from `package.json`.
+      placeholder: "e.g. 1.4.2"
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: A clear summary of what is wrong.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Exact steps that reliably trigger the bug.
+      placeholder: |
+        1. Start the server with config ...
+        2. Send request POST /...
+        3. Observe ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behaviour
+      description: What should have happened?
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behaviour
+      description: What happened instead? Include error messages, stack traces, or logs.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      options:
+        - "severity::critical — entire project cannot be used"
+        - "severity::major — some important parts cannot be used"
+        - "severity::moderate — some parts cannot be used"
+        - "severity::minor — some parts are inconvenient to use"
+        - "severity::cosmetic — usage is not impacted"
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Node.js version, OS, relevant config, links to related issues, etc.
+    validations:
+      required: false
