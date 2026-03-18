@@ -16,8 +16,13 @@ jobs:
     name: Lint
     uses: ./.github/workflows/_lint.yml
 
+  build:
+    name: Build
+    uses: ./.github/workflows/_build-affected.yml
+
   test:
     name: Test
+    needs: [build]
     uses: ./.github/workflows/_test-ci.yml
 
   security:

@@ -2,11 +2,6 @@ name: Build
 description: Build packages and upload artifacts
 
 inputs:
-  skip-nx-cache:
-    description: 'Skip nx cache when running tests'
-    required: false
-    type: boolean
-    default: false
   upload-artifacts:
     description: Whether to upload dist artifacts
     default: 'false'
@@ -15,7 +10,7 @@ runs:
   using: composite
   steps:
     - name: Build all packages
-      run: npx nx run-many -t build ${{ inputs.skip-nx-cache && '-- --skip-nx-cache' || '' }}
+      run: npx nx affected -t build
       shell: bash
 
     - name: Upload dist artifacts

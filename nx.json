@@ -15,58 +15,24 @@
   "targetDefaults": {
     "build": {
       "cache": true,
-      "dependsOn": [
-        "^build"
-      ],
-      "outputs": [
-        "{projectRoot}/dist"
-      ]
+      "dependsOn": ["^build"],
+      "outputs": ["{projectRoot}/dist"]
     },
     "test": {
       "cache": true,
-      "dependsOn": [
-        "^test"
-      ]
-    },
-    "dev": {
-      "dependsOn": []
-    },
-    "dev:node": {
-      "dependsOn": []
-    },
-    "dev:remix": {
-      "dependsOn": []
-    },
-    "start": {
-      "dependsOn": []
-    },
-    "typecheck": {
-      "dependsOn": []
-    },
-    "build:example": {
-      "dependsOn": []
-    },
-    "build:lib": {
-      "dependsOn": []
+      "dependsOn": ["^build"]
     },
     "check": {
-      "dependsOn": []
+      "cache": true,
+      "inputs": [
+        "{projectRoot}/**/*.js",
+        "{projectRoot}/**/*.jsx",
+        "{projectRoot}/**/*.ts",
+        "{projectRoot}/**/*.tsx",
+        "{workspaceRoot}/biome.json"
+      ]
     },
-    "check:watch": {
-      "dependsOn": []
-    },
-    "format": {
-      "dependsOn": []
-    },
-    "lint": {
-      "dependsOn": []
-    },
-    "preview": {
-      "dependsOn": []
-    },
-    "test:unit": {
-      "dependsOn": []
-    }
+    "dev": { "dependsOn": [] }
   },
   "useInferencePlugins": false
 }

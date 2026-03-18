@@ -15,7 +15,7 @@ permissions:
 
 jobs:
   test:
-    name: Test
+    name: Test Affected Packages
     runs-on: ubuntu-latest
     steps:
       - name: Setup hosts
@@ -33,4 +33,4 @@ jobs:
         uses: nrwl/nx-set-shas@v4
 
       - name: Run tests on affected packages
-        run: npx nx affected -t test
+        run: npx nx affected -t test ${{ inputs.skip-nx-cache && '-- --skip-nx-cache' || '' }}

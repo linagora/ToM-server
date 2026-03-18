@@ -35,7 +35,8 @@
   ],
   "scripts": {
     "build": "rollup -c",
-    "test": "jest"
+    "test": "jest",
+    "check": "biome check ."
   },
   "dependencies": {
     "@twake/config-parser": "*",

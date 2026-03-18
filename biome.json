@@ -9,7 +9,7 @@
 
   "files": {
     "ignoreUnknown": true,
-    "includes": ["packages/**/*.js", "packages/**/*.ts"]
+    "includes": ["packages/**/*.{js,jsx,ts,tsx}"]
   },
 
   "formatter": {

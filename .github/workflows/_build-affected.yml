@@ -1,15 +1,19 @@
-name: Lint
+name: Build
 
 on:
   workflow_call:
+    inputs:
+      upload-artifacts:
+        type: boolean
+        default: false
 
 permissions:
   actions: read
   contents: read
 
 jobs:
-  lint:
-    name: Lint
+  build:
+    name: Build Affected Packages
     runs-on: ubuntu-latest
     continue-on-error: true
     steps:
@@ -24,5 +28,7 @@ jobs:
       - name: Setup Nx SHAs
         uses: nrwl/nx-set-shas@v4
 
-      - name: Run lint
-        run: npx nx affected -t check
+      - name: Build
+        uses: ./.github/actions/build-affected
+        with:
+          upload-artifacts: ${{ inputs.upload-artifacts }}

@@ -37,7 +37,8 @@
   "scripts": {
     "build": "rollup -c",
     "start": "node example/identity-server.js",
-    "test": "LOG_TRANSPORTS=File LOG_FILE=/dev/null jest"
+    "test": "LOG_TRANSPORTS=File LOG_FILE=/dev/null jest",
+    "check": "biome check ."
   },
   "dependencies": {
     "@twake/config-parser": "*",

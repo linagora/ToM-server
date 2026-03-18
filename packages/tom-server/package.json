@@ -36,7 +36,8 @@
     "build": "rollup -c",
     "watch": "rollup -c -w",
     "start": "node example/tom-server.js",
-    "test": "LOG_TRANSPORTS=File LOG_FILE=/dev/null jest"
+    "test": "LOG_TRANSPORTS=File LOG_FILE=/dev/null jest",
+    "check": "biome check ."
   },
   "dependencies": {
     "@twake/matrix-identity-server": "*",
