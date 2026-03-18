@@ -16,7 +16,7 @@ GitHub Actions CI/CD workflow definitions. Uses a reusable workflow pattern wher
 | `_build.yml` | Reusable: runs `npm build` and validates compilation |
 | `_test.yml` | Reusable: runs `npm test` with coverage |
 | `_test-ci.yml` | Reusable: CI-optimized test run (with caching) |
-| `_lint.yml` | Reusable: runs ESLint and Prettier checks |
+| `_lint.yml` | Reusable: runs Biome checks |
 | `_security.yml` | Reusable: njsscan + dependency audit |
 | `_docker-publish.yml` | Reusable: builds and pushes Docker image to registry |
 | `_docs.yml` | Reusable: deploys Swagger docs to GitHub Pages |

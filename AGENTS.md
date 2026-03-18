@@ -17,7 +17,7 @@ ToM-Server (Twake on Matrix Server) is a npm monorepo that implements a Matrix I
 | `docker-compose.yml` | Main compose file for local development stack |
 | `Dockerfile` | Container image for the main tom-server package |
 | `.env.example` | Template for required environment variables |
-| `.eslintrc.cjs` | ESLint rules (TypeScript + Prettier) |
+| `biome.json` | Formatter rules |
 | `README.md` | Project overview and setup instructions |
 | `TODO.md` | In-progress work notes |
 | `flake.nix` | Nix development environment definition |

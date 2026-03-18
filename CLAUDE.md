@@ -20,10 +20,6 @@ cd packages/tom-server && npm run test
 # Run tests matching a pattern (from within a package directory)
 npx jest --testPathPattern="addressbook"
 
-# Lint
-npm run lint
-npm run lint-fix
-
 # Format check / fix
 npm run format:check
 npm run format:fix
