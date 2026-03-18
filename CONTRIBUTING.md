@@ -136,12 +136,13 @@ Labels are applied by maintainers. You do not need to set them yourself, but und
 ### Before opening a PR
 
 - The issue you are fixing or the feature you are building should exist as an issue first. If it doesn't, open one and let it get triaged before investing time in a PR.
+- Build packages locally first (fresh checkout): `npm run build`.
 - Make sure all tests pass locally: `npm test`.
 - Make sure the linter is clean: `npm run check`.
 
 ### Opening a PR
 
-Use the [PR template](.github/PULL_REQUEST_TEMPLATE.md). Link the issue it resolves with `Closes #<number>` in the description.
+Use the [PR template](.github/pull_request_template.md). Link the issue it resolves with `Closes #<number>` in the description.
 
 A good PR:
 - Addresses **one concern**. A PR that fixes a bug, refactors unrelated code, and updates dependencies is three PRs.
