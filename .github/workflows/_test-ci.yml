@@ -33,4 +33,4 @@ jobs:
         uses: nrwl/nx-set-shas@v4
 
       - name: Run tests on affected packages
-        run: npx nx affected -t test ${{ inputs.skip-nx-cache && '-- --skip-nx-cache' || '' }}
+        run: npx nx affected -t test ${{ inputs.skip-nx-cache && '--skip-nx-cache' || '' }}

@@ -30,4 +30,4 @@ jobs:
         uses: ./.github/actions/setup-node
 
       - name: Run all tests
-        run: npx nx run-many -t test ${{ inputs.skip-nx-cache && '-- --skip-nx-cache' || '' }}
+        run: npx nx run-many -t test ${{ inputs.skip-nx-cache && '--skip-nx-cache' || '' }}

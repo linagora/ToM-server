@@ -17,7 +17,7 @@ runs:
       if: inputs.upload-artifacts == 'true'
       uses: actions/upload-artifact@v4
       with:
-        name: dist-artifacts
+        name: dist-artifacts-${{ github.run_id }}
         path: |
           packages/*/dist
         retention-days: 1
