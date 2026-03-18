@@ -14,10 +14,17 @@ body:
       label: Package
       description: Which package is affected?
       options:
-        - identity-server
-        - federation-server
+        - amqp-connector
+        - common-settings-bridge
+        - config-parser
+        - crypto
+        - db
+        - federated-identity-service
+        - logger
+        - matrix-identity-server
+        - matrix-resolve
         - tom-server
-        - configuration
+        - utils
         - "Not sure / multiple"
     validations:
       required: true
