@@ -3,12 +3,12 @@ description: Build packages and upload artifacts
 
 inputs:
   skip-nx-cache:
-    description: 'Skip nx cache when builing'
+    description: "Skip nx cache when building"
     required: false
-    default: 'false'
+    default: "false"
   upload-artifacts:
     description: Whether to upload dist artifacts
-    default: 'false'
+    default: "false"
 
 runs:
   using: composite

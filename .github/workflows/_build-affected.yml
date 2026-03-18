@@ -3,6 +3,11 @@ name: Build
 on:
   workflow_call:
     inputs:
+      skip-nx-cache:
+        description: "Skip nx cache when building"
+        required: false
+        type: boolean
+        default: false
       upload-artifacts:
         type: boolean
         default: false
@@ -30,4 +35,5 @@ jobs:
       - name: Build
         uses: ./.github/actions/build-affected
         with:
+          skip-nx-cache: ${{ inputs.skip-nx-cache }}
           upload-artifacts: ${{ inputs.upload-artifacts }}
