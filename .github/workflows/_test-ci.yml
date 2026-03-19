@@ -4,10 +4,13 @@ on:
   workflow_call:
     inputs:
       skip-nx-cache:
-        description: 'Skip nx cache when running tests'
+        description: "Skip nx cache when running tests"
         required: false
         type: boolean
         default: false
+    secrets:
+      NX_CLOUD_ACCESS_TOKEN:
+        required: true
 
 permissions:
   actions: read
@@ -34,3 +37,5 @@ jobs:
 
       - name: Run tests on affected packages
         run: npx nx affected -t test ${{ inputs.skip-nx-cache && '--skip-nx-cache' || '' }}
+        env:
+          NX_CLOUD_ACCESS_TOKEN: ${{ secrets.NX_CLOUD_ACCESS_TOKEN }}

@@ -6,7 +6,6 @@
     "sharedGlobals": [],
     "production": ["default"]
   },
-  "nxCloudAccessToken": "M2I1MTEwZWMtMTlmZS00ZmQwLWIxOTEtMTc5ODA2NjhlNmJjfHJlYWQ=",
   "targetDefaults": {
     "build": {
       "cache": true,
@@ -27,7 +26,10 @@
         "{workspaceRoot}/biome.json"
       ]
     },
-    "dev": { "dependsOn": [] }
+    "dev": {
+      "dependsOn": []
+    }
   },
-  "useInferencePlugins": false
+  "useInferencePlugins": false,
+  "nxCloudId": "67a2162cb7a06c469a8df1a3"
 }

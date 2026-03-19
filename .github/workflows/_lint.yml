@@ -2,6 +2,9 @@ name: Lint
 
 on:
   workflow_call:
+    secrets:
+      NX_CLOUD_ACCESS_TOKEN:
+        required: false
 
 permissions:
   actions: read
@@ -26,3 +29,5 @@ jobs:
 
       - name: Run lint
         run: npx nx affected -t check
+        env:
+          NX_CLOUD_ACCESS_TOKEN: ${{ secrets.NX_CLOUD_ACCESS_TOKEN }}
