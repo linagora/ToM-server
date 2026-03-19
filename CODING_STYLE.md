@@ -2,7 +2,7 @@
 
 ## Preface
 
-This document describes *A* preferred way of writing JavaScript and TypeScript. Not *THE*
+This document describes _A_ preferred way of writing JavaScript and TypeScript. Not _THE_
 preferred way. A coding style is inherently subjective, or at best the product of a team
 consensus. Any claim that a stylistic rule is objectively correct, in the absence of
 measurable justification, is a matter of opinion. This document tries to be honest about
@@ -46,7 +46,7 @@ discussions are open.
 ## 1. Indentation and Formatting
 
 **2 spaces.** Not 4. Not tabs. Not "whatever Prettier defaults to on my machine."
-2 spaces. The specific number is a convention; the requirement for *one shared number*
+2 spaces. The specific number is a convention; the requirement for _one shared number_
 is not. Mixed indentation produces broken diffs and impossible-to-read rebases.
 Pick one and enforce it with a formatter — then stop thinking about it.
 
@@ -57,8 +57,7 @@ Putting the brace on a new line wastes vertical space and makes diffs noisier �
 
 ```ts
 // Non-standard — brace on new line, contradicts formatter defaults and wastes a line.
-function calculateTotal(items: Item[])
-{
+function calculateTotal(items: Item[]) {
   return items.reduce((sum, item) => sum + item.price, 0);
 }
 
@@ -78,7 +77,7 @@ noise in code review and less ambiguity in `git blame`.
 const config = {
   host: "localhost",
   port: 8080,
-  retries: 3,   // trailing comma — cleaner diffs, no other reason needed.
+  retries: 3, // trailing comma — cleaner diffs, no other reason needed.
 };
 ```
 
@@ -104,11 +103,16 @@ sub-expressions. The names carry meaning the line length cannot.
 
 ```ts
 // Over the limit — and the real problem is that the expression is doing two things at once.
-const result = users.filter(u => u.isActive && u.role !== "guest").map(u => ({ ...u, displayName: `${u.firstName} ${u.lastName}` }));
+const result = users
+  .filter((u) => u.isActive && u.role !== "guest")
+  .map((u) => ({ ...u, displayName: `${u.firstName} ${u.lastName}` }));
 
 // Each step is named and independently readable.
-const activeNonGuests = users.filter(u => u.isActive && u.role !== "guest");
-const withDisplayName = (u: User) => ({ ...u, displayName: `${u.firstName} ${u.lastName}` });
+const activeNonGuests = users.filter((u) => u.isActive && u.role !== "guest");
+const withDisplayName = (u: User) => ({
+  ...u,
+  displayName: `${u.firstName} ${u.lastName}`,
+});
 const result = activeNonGuests.map(withDisplayName);
 ```
 
@@ -138,12 +142,12 @@ Do not apply this to every `const`. A `const` in a function body is not a
 "constant" in this sense; it is a local binding.
 
 ```ts
-const MAX_RETRY_ATTEMPTS = 3;             // Module-level, truly invariant — correct.
+const MAX_RETRY_ATTEMPTS = 3; // Module-level, truly invariant — correct.
 const BASE_API_URL = "https://api.x.com"; // Module-level, truly invariant — correct.
 
 function fetchUser(id: string): Promise<User> {
-  const cacheKey = `user:${id}`;          // Local binding — camelCase is correct here.
-  const CACHE_KEY = `user:${id}`;         // SCREAMING_SNAKE for a local binding is misleading.
+  const cacheKey = `user:${id}`; // Local binding — camelCase is correct here.
+  const CACHE_KEY = `user:${id}`; // SCREAMING_SNAKE for a local binding is misleading.
   // ...
 }
 ```
@@ -215,12 +219,12 @@ If your function is more than a one-liner, annotate the return type.
 ```ts
 // No return type — the contract is implicit and fragile.
 function getActiveUsers(users: User[]) {
-  return users.filter(u => u.isActive);
+  return users.filter((u) => u.isActive);
 }
 
 // Return type as explicit contract.
 function getActiveUsers(users: User[]): User[] {
-  return users.filter(u => u.isActive);
+  return users.filter((u) => u.isActive);
 }
 ```
 
@@ -246,9 +250,7 @@ For functions that perform actions with no natural data return, use the
 `ActionResult` type:
 
 ```ts
-type ActionResult =
-  | { success: true }
-  | { success: false; error: string };
+type ActionResult = { success: true } | { success: false; error: string };
 ```
 
 The caller decides what to do with the outcome. That is the caller's job.
@@ -466,7 +468,12 @@ function toDirection(raw: string): Result<Direction, string> {
   if ((DIRECTIONS as readonly string[]).includes(raw)) {
     return { ok: true, value: raw as Direction }; // safe — membership confirmed above
   }
-  return { ok: false, error: `Unknown direction: "${raw}". Expected one of: ${DIRECTIONS.join(", ")}` };
+  return {
+    ok: false,
+    error: `Unknown direction: "${raw}". Expected one of: ${DIRECTIONS.join(
+      ", "
+    )}`,
+  };
 }
 ```
 
@@ -484,7 +491,7 @@ choice; do not drift into either pattern by default.
 ### Maximum 2 levels of nesting. No exceptions.
 
 A function body is level zero. A block inside it is level one. A block inside
-*that* is level two. There is no level three.
+_that_ is level two. There is no level three.
 
 The reason is measurable: the cognitive cost of reading code is proportional to
 the number of conditions a reader must hold in their head simultaneously to
@@ -521,13 +528,11 @@ function isProcessableItem(item: OrderItem): boolean {
 function processValidOrder(order: Order): ProcessedOrder[] {
   return order.items
     .filter(isProcessableItem)
-    .map(item => transformItem(item, order));
+    .map((item) => transformItem(item, order));
 }
 
 function processOrders(orders: Order[]): ProcessedOrder[] {
-  return orders
-    .filter(order => order.isValid)
-    .flatMap(processValidOrder);
+  return orders.filter((order) => order.isValid).flatMap(processValidOrder);
 }
 ```
 
@@ -574,7 +579,7 @@ This section is not optional. Read it fully. The majority of JavaScript error
 handling in production codebases is inconsistent — `try/catch` scattered without
 a coherent model, errors swallowed into log statements that nobody reads, or
 exceptions thrown for outcomes that are entirely expected. None of that is error
-*handling*; it is error *deferral*.
+_handling_; it is error _deferral_.
 
 ### The Core Distinction: Exceptions vs. Results
 
@@ -582,7 +587,7 @@ One question determines the correct approach:
 
 - **Is the failure a valid, expected outcome of this operation?**
   Encode it in the return type. Use the `Result` pattern or `ActionResult`.
-  Do *not* throw. Throwing for an expected outcome forces every caller into
+  Do _not_ throw. Throwing for an expected outcome forces every caller into
   `try/catch` for a routine code path — that is the wrong abstraction.
 
 - **Is the failure a violation of an invariant — something that cannot happen
@@ -618,14 +623,13 @@ business rule evaluation — use a typed Result. This makes the failure visible
 at the call site without exceptions.
 
 ```ts
-type Result<T, E = Error> =
-  | { ok: true; value: T }
-  | { ok: false; error: E };
+type Result<T, E = Error> = { ok: true; value: T } | { ok: false; error: E };
 
 function parsePositiveInt(raw: string): Result<number, string> {
   const n = parseInt(raw, 10);
   if (isNaN(n)) return { ok: false, error: `"${raw}" is not a valid integer` };
-  if (n <= 0) return { ok: false, error: `Expected positive integer, got ${n}` };
+  if (n <= 0)
+    return { ok: false, error: `Expected positive integer, got ${n}` };
   return { ok: true, value: n };
 }
 
@@ -693,7 +697,7 @@ is gone, and the caller proceeds as if nothing happened.
 // Hidden — no evidence the error occurred.
 try {
   await syncData();
-} catch (e) { }
+} catch (e) {}
 
 // Logged and discarded — the log exists, the error does not propagate.
 try {
@@ -707,8 +711,10 @@ try {
   await syncData();
 } catch (err) {
   throw new Error(
-    `Data sync failed during nightly job: ${err instanceof Error ? err.message : String(err)}`,
-    { cause: err },
+    `Data sync failed during nightly job: ${
+      err instanceof Error ? err.message : String(err)
+    }`,
+    { cause: err }
   );
 }
 ```
@@ -746,22 +752,22 @@ cast the caught value to `Error` without checking; use `instanceof` first.
 returned. This makes it the correct place for deterministic resource release:
 closing a file handle, releasing a lock, resetting a loading indicator. It is the
 wrong place for conditional branching or outcome-dependent logic, because
-`finally` has no reliable way to know *why* it is running. If your `finally`
+`finally` has no reliable way to know _why_ it is running. If your `finally`
 block contains an `if`, that logic belongs in the `try` or `catch` instead.
 
 ### Summary: The decision table.
 
-| Situation | Approach |
-|---|---|
-| Action completed — no data to return | Return `ActionResult` (`{ success: true }`) |
-| Action failed — expected domain outcome | Return `ActionResult` (`{ success: false, error }`) |
-| Function produces data | Return `Result<T, string>` — value or typed error |
-| "Invalid input" — caller's contract violation | Throw `TypeError` or `ValidationError` |
-| "Database unreachable" — infrastructure failure | Throw, catch at the boundary |
-| "This should never happen" — invariant violation | Throw `Error` with assertion message |
-| Wrapping a caught error for more context | Rethrow with `{ cause: err }` |
-| Returning `void` | Never |
-| Swallowing an error silently | Never |
+| Situation                                        | Approach                                            |
+| ------------------------------------------------ | --------------------------------------------------- |
+| Action completed — no data to return             | Return `ActionResult` (`{ success: true }`)         |
+| Action failed — expected domain outcome          | Return `ActionResult` (`{ success: false, error }`) |
+| Function produces data                           | Return `Result<T, string>` — value or typed error   |
+| "Invalid input" — caller's contract violation    | Throw `TypeError` or `ValidationError`              |
+| "Database unreachable" — infrastructure failure  | Throw, catch at the boundary                        |
+| "This should never happen" — invariant violation | Throw `Error` with assertion message                |
+| Wrapping a caught error for more context         | Rethrow with `{ cause: err }`                       |
+| Returning `void`                                 | Never                                               |
+| Swallowing an error silently                     | Never                                               |
 
 ## 8. Modules and Imports
 
@@ -809,7 +815,7 @@ structure.
 
 ## 9. Comments
 
-### Comments explain *why*, not *what*.
+### Comments explain _why_, not _what_.
 
 A comment that restates what the code does provides no information the code does
 not already provide. It doubles the surface area that must be kept in sync — the
@@ -817,7 +823,7 @@ code and the comment can drift, and when they do, the comment actively misleads.
 If you feel the need to explain what a line does, that is a signal the code is
 unclear. Make the code clearer.
 
-A comment that explains *why* something is done the way it is provides
+A comment that explains _why_ something is done the way it is provides
 information the code cannot express on its own: constraints, historical context,
 non-obvious performance reasons, intentional asymmetries.
 
@@ -834,7 +840,7 @@ const lineTotal = price * quantity;
 
 ### Document your contracts, not your mechanics.
 
-JSDoc on exported functions communicates what the function *guarantees* to its
+JSDoc on exported functions communicates what the function _guarantees_ to its
 callers: what inputs it requires, what it returns under which conditions, and
 what a caller is expected to do with failures. It is not a place to describe
 the implementation.
@@ -919,9 +925,9 @@ and easier to refactor.
 // outside their own step; the error handler applies to all steps uniformly.
 function loadDashboard(userId: string): Promise<Dashboard> {
   return fetchUser(userId)
-    .then(user => fetchPermissions(user.roleId))
-    .then(permissions => fetchWidgets(permissions))
-    .then(widgets => buildDashboard(widgets));
+    .then((user) => fetchPermissions(user.roleId))
+    .then((permissions) => fetchWidgets(permissions))
+    .then((widgets) => buildDashboard(widgets));
 }
 
 // Sequential and flat — each value is named and available to all subsequent steps.
@@ -963,8 +969,8 @@ intent explicit to the reader.
 sendAnalyticsEvent(event);
 
 // Explicit intent, failure acknowledged.
-sendAnalyticsEvent(event).catch(err =>
-  logger.warn({ err }, "Analytics event failed — non-critical, continuing"),
+sendAnalyticsEvent(event).catch((err) =>
+  logger.warn({ err }, "Analytics event failed — non-critical, continuing")
 );
 ```
 
@@ -1068,5 +1074,5 @@ reasoning is sound, not when the preference is strong.
 
 > Write code as if the reviewer knows where you live.
 
-*This guide is maintained by the engineering team. Propose changes via pull
-request. Rule changes require a stated reason and a review.*
+_This guide is maintained by the engineering team. Propose changes via pull
+request. Rule changes require a stated reason and a review._

@@ -45,6 +45,7 @@ Search existing issues (open and closed) before filing a new one. If you find a 
 Use the appropriate [issue template](.github/ISSUE_TEMPLATE). Fill every field — sparse issues get closed or deprioritised. The template will guide you through what is needed depending on whether you are reporting a bug or proposing a feature.
 
 A good issue:
+
 - Has a **clear, specific title** (not "something is broken" or "idea").
 - For bugs: includes **steps to reproduce**, **expected behaviour**, and **actual behaviour**.
 - For features: describes the **use case** first, then the proposed solution.
@@ -57,77 +58,77 @@ Labels are applied by maintainers. You do not need to set them yourself, but und
 <details>
 <summary><strong>Status</strong> — where an issue currently stands</summary>
 
-| Label | Description |
-|-------|-------------|
-| `backlog` | Not yet planned for doing. |
+| Label                | Description                                                                                  |
+| -------------------- | -------------------------------------------------------------------------------------------- |
+| `backlog`            | Not yet planned for doing.                                                                   |
 | `blocked-externally` | Cannot progress because an external service or library we depend on has a bug or limitation. |
-| `discussion` | More discussion is required before classification or implementation can be started. |
-| `duplicate` | This issue or pull request already exists. |
-| `wontfix` | Out of scope for the project, or cannot be done. |
+| `discussion`         | More discussion is required before classification or implementation can be started.          |
+| `duplicate`          | This issue or pull request already exists.                                                   |
+| `wontfix`            | Out of scope for the project, or cannot be done.                                             |
 
 </details>
 
 <details>
 <summary><strong>Type</strong> — what kind of work the issue represents</summary>
 
-| Label | Description |
-|-------|-------------|
-| `bug` | Something does not behave as expected. |
-| `chore` | Modification that does not relate to a bug fix, a new feature, or a documentation update. |
-| `dependencies` | Pull requests that update a dependency file. |
-| `deployment` | Issues related to deployment, CI/CD, or other kinds of automation. |
-| `documentation` | Documentation improvements or problems. |
-| `feature` | High-level feature/use-case description (implementation is split into multiple sub-issues). |
-| `javascript` | Pull requests that update JavaScript code. |
-| `security` | Security risk to users of the project. |
+| Label           | Description                                                                                 |
+| --------------- | ------------------------------------------------------------------------------------------- |
+| `bug`           | Something does not behave as expected.                                                      |
+| `chore`         | Modification that does not relate to a bug fix, a new feature, or a documentation update.   |
+| `dependencies`  | Pull requests that update a dependency file.                                                |
+| `deployment`    | Issues related to deployment, CI/CD, or other kinds of automation.                          |
+| `documentation` | Documentation improvements or problems.                                                     |
+| `feature`       | High-level feature/use-case description (implementation is split into multiple sub-issues). |
+| `javascript`    | Pull requests that update JavaScript code.                                                  |
+| `security`      | Security risk to users of the project.                                                      |
 
 </details>
 
 <details>
 <summary><strong>Contribution difficulty</strong> — how much project knowledge is required</summary>
 
-| Label | Description |
-|-------|-------------|
-| `contribution::easy` | Well explained and requires little project knowledge. Good first issue. |
-| `contribution::medium` | Well explained, but requires some project knowledge. |
-| `contribution::hard` | Well explained, but requires a strong understanding of the project. |
+| Label                  | Description                                                             |
+| ---------------------- | ----------------------------------------------------------------------- |
+| `contribution::easy`   | Well explained and requires little project knowledge. Good first issue. |
+| `contribution::medium` | Well explained, but requires some project knowledge.                    |
+| `contribution::hard`   | Well explained, but requires a strong understanding of the project.     |
 
 </details>
 
 <details>
 <summary><strong>Priority</strong> — how urgently the team wants this addressed</summary>
 
-| Label | Description |
-|-------|-------------|
+| Label              | Description                             |
+| ------------------ | --------------------------------------- |
 | `priority::urgent` | We want to do this as soon as possible. |
-| `priority::high` | We want to do this soon. |
-| `priority::normal` | Base priority (optional). |
-| `priority::low` | Implementation is not time-sensitive. |
+| `priority::high`   | We want to do this soon.                |
+| `priority::normal` | Base priority (optional).               |
+| `priority::low`    | Implementation is not time-sensitive.   |
 
 </details>
 
 <details>
 <summary><strong>Severity</strong> — how badly a bug affects users (bugs only)</summary>
 
-| Label | Description |
-|-------|-------------|
-| `severity::critical` | The entire project cannot be used. |
-| `severity::major` | Some important parts of the project cannot be used. |
-| `severity::moderate` | Some parts of the project cannot be used. |
-| `severity::minor` | Some parts of the project are inconvenient to use. |
-| `severity::cosmetic` | Usage is not impacted. |
+| Label                | Description                                         |
+| -------------------- | --------------------------------------------------- |
+| `severity::critical` | The entire project cannot be used.                  |
+| `severity::major`    | Some important parts of the project cannot be used. |
+| `severity::moderate` | Some parts of the project cannot be used.           |
+| `severity::minor`    | Some parts of the project are inconvenient to use.  |
+| `severity::cosmetic` | Usage is not impacted.                              |
 
 </details>
 
 <details>
 <summary><strong>Package</strong> — which part of the monorepo is affected</summary>
 
-| Label | Description |
-|-------|-------------|
-| `package::identity-server` | Affects the identity server package. |
+| Label                        | Description                            |
+| ---------------------------- | -------------------------------------- |
+| `package::identity-server`   | Affects the identity server package.   |
 | `package::federation-server` | Affects the federation server package. |
-| `package::tom-server` | Affects the TOM server package. |
-| `package::configuration` | Anything related to the config-parser. |
+| `package::tom-server`        | Affects the TOM server package.        |
+| `package::configuration`     | Anything related to the config-parser. |
 
 </details>
 
@@ -145,6 +146,7 @@ Labels are applied by maintainers. You do not need to set them yourself, but und
 Use the [PR template](.github/pull_request_template.md). Link the issue it resolves with `Closes #<number>` in the description.
 
 A good PR:
+
 - Addresses **one concern**. A PR that fixes a bug, refactors unrelated code, and updates dependencies is three PRs.
 - Has a **description that explains why**, not just what changed. Reviewers can read the diff; they can't read your reasoning.
 - Keeps the scope as **small as reasonably possible**. Smaller PRs get reviewed faster and merged sooner.
@@ -215,4 +217,4 @@ docs/contributing/pr-process
 
 Branch names use **kebab-case** and mirror the commit type and scope.
 
-*This guide is a living document. If a convention doesn't serve the project, challenge it in a PR — don't silently ignore it.*
+_This guide is a living document. If a convention doesn't serve the project, challenge it in a PR — don't silently ignore it._
