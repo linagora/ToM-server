@@ -212,13 +212,13 @@ export default class TokenService implements ITokenService {
       )
 
       const location = response.headers.get('location')
-      const cookies = response.headers.get('set-cookie')
+      const cookies = this.extractCookies(response)
 
       if (location === null) {
         throw new Error('No location found in the response')
       }
 
-      if (cookies === null) {
+      if (cookies.length === 0) {
         throw new Error('No session cookies found in the response')
       }
 
@@ -232,13 +232,14 @@ export default class TokenService implements ITokenService {
   /**
    * Fetches the login token using SSO
    *
-   * @param {string} location - The location to fetch the login token from.
-   * @param {string} sessionCookies - The session cookies to be used for authentication.
-   * @param {string} authCookie - The auth cookie to be used for authentication ( ex lemonldap ).
+   * The redirect chain crosses origins (auth provider → Matrix), so we must
+   * handle redirects manually to send the right cookies to each server.
+   * Node.js fetch strips cookies on cross-origin redirects.
+   *
+   * @param {string} location - The auth provider URL to initiate the login flow.
+   * @param {string} sessionCookies - The Matrix session cookies for the OIDC callback.
+   * @param {string} authCookie - The auth cookie for the auth provider (e.g. lemonldap).
    * @returns {Promise<string | null>} The login token or null if an error occurs.
-   * @memberof QRCodeTokenService
-   * @example
-   * const loginToken = await getLoginToken(location, sessionCookies, authCookie);
    */
   getLoginToken = async (
     location: string,
@@ -246,13 +247,50 @@ export default class TokenService implements ITokenService {
     authCookie: string
   ): Promise<string | null> => {
     try {
-      const response = await fetch(location, {
+      // Step 1: Visit auth provider with auth cookie only (manual redirect)
+      const authResponse = await fetch(location, {
         headers: {
-          Cookie: `${sessionCookies}; ${authCookie}`
-        }
+          Cookie: authCookie
+        },
+        redirect: 'manual'
       })
 
-      const responseText = await response.text()
+      const callbackUrl = authResponse.headers.get('location')
+      await authResponse.body?.cancel()
+
+      if (callbackUrl === null) {
+        throw new Error('No callback URL in auth provider response')
+      }
+
+      const matrixOrigin = new URL(this.matrixUrl).origin
+
+      if (new URL(callbackUrl).origin !== matrixOrigin) {
+        throw new Error('Unexpected callback origin: expected Matrix server')
+      }
+
+      // Step 2: Follow callback to Matrix with session cookies
+      const callbackResponse = await fetch(callbackUrl, {
+        headers: {
+          Cookie: sessionCookies
+        },
+        redirect: 'manual'
+      })
+
+      // Check redirect URL (Synapse may redirect to redirectUrl?loginToken=xxx)
+      const redirectLocation = callbackResponse.headers.get('location')
+
+      if (redirectLocation !== null) {
+        const url = new URL(redirectLocation)
+        const loginToken = url.searchParams.get('loginToken')
+
+        if (loginToken !== null) {
+          await callbackResponse.body?.cancel()
+          return loginToken
+        }
+      }
+
+      // Check body (Synapse may return HTML with embedded loginToken)
+      const responseText = await callbackResponse.text()
       const loginTokenMatch = responseText.match(/loginToken=(.+?)['"]/)
 
       if (loginTokenMatch === null) {
@@ -294,9 +332,9 @@ export default class TokenService implements ITokenService {
         body: new URLSearchParams({ user, password, token })
       })
 
-      const cookie = response.headers.get('set-cookie')
+      const cookie = this.extractCookies(response)
 
-      if (!cookie) {
+      if (cookie.length === 0) {
         throw new Error('No auth cookie found in the response')
       }
 
@@ -305,6 +343,19 @@ export default class TokenService implements ITokenService {
       this.logger.error('Failed to fetch auth cookie', { error })
       return null
     }
+  }
+
+  /**
+   * Extracts cookie name=value pairs from a response's Set-Cookie headers.
+   * Strips cookie attributes (Domain, Path, HttpOnly, etc.) and joins
+   * multiple cookies with '; ' for use in a Cookie request header.
+   */
+  private extractCookies = (response: Response): string => {
+    return response.headers
+      .getSetCookie()
+      .map((cookie) => cookie.split(';')[0].trim())
+      .filter((cookie) => cookie.length > 0)
+      .join('; ')
   }
 
   /**
