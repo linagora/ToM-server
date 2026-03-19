@@ -6,7 +6,7 @@
     "sharedGlobals": [],
     "production": ["default"]
   },
-  "nxCloudAccessToken": "MDE1ZWJkYTktMzFhMi00NGZiLWFhMGMtZTM0NDU5ZWI3MGY2fHJlYWQtd3JpdGU=",
+  "nxCloudAccessToken": "M2I1MTEwZWMtMTlmZS00ZmQwLWIxOTEtMTc5ODA2NjhlNmJjfHJlYWQ=",
   "targetDefaults": {
     "build": {
       "cache": true,
