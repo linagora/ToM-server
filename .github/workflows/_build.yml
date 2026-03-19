@@ -4,7 +4,7 @@ on:
   workflow_call:
     inputs:
       skip-nx-cache:
-        description: 'Skip nx cache when building'
+        description: "Skip nx cache when building"
         required: false
         type: boolean
         default: false
@@ -28,9 +28,6 @@ jobs:
 
       - name: Setup Node.js
         uses: ./.github/actions/setup-node
-
-      - name: Setup Nx SHAs
-        uses: nrwl/nx-set-shas@v4
 
       - name: Build
         uses: ./.github/actions/build
