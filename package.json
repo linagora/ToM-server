@@ -45,7 +45,7 @@
   "devDependencies": {
     "@biomejs/biome": "2.4.8",
     "@crowdsec/express-bouncer": "^0.1.0",
-    "@nx/workspace": "^20.6.4",
+    "@nx/workspace": "22.6.1",
     "@rollup/plugin-commonjs": "^25.0.7",
     "@rollup/plugin-json": "^6.0.1",
     "@rollup/plugin-node-resolve": "^15.2.3",
@@ -76,7 +76,7 @@
     "node-fetch": "^3.3.0",
     "node-fetch-jest": "npm:node-fetch@^2.6.9",
     "nodemon": "^3.1.10",
-    "nx": "20.6.4",
+    "nx": "22.6.1",
     "rimraf": "^4.3.1",
     "rollup": "^3.18.0",
     "rollup-plugin-cleaner": "^1.0.0",
