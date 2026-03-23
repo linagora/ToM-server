@@ -5,8 +5,8 @@
  */
 export class AMQPConnectorError extends Error {
   constructor(message: string) {
-    super(message)
-    this.name = 'AMQPConnectorError'
+    super(message);
+    this.name = "AMQPConnectorError";
   }
 }
 
@@ -17,8 +17,8 @@ export class AMQPConnectorError extends Error {
  */
 export class ExchangeNotSpecifiedError extends AMQPConnectorError {
   constructor() {
-    super('Exchange must be specified')
-    this.name = 'ExchangeNotSpecifiedError'
+    super("Exchange must be specified");
+    this.name = "ExchangeNotSpecifiedError";
   }
 }
 
@@ -29,8 +29,8 @@ export class ExchangeNotSpecifiedError extends AMQPConnectorError {
  */
 export class QueueNotSpecifiedError extends AMQPConnectorError {
   constructor() {
-    super('Queue must be specified')
-    this.name = 'QueueNotSpecifiedError'
+    super("Queue must be specified");
+    this.name = "QueueNotSpecifiedError";
   }
 }
 /**
@@ -40,7 +40,7 @@ export class QueueNotSpecifiedError extends AMQPConnectorError {
  */
 export class MessageHandlerNotProvidedError extends AMQPConnectorError {
   constructor() {
-    super('Message handler must be provided')
-    this.name = 'MessageHandlerNotProvidedError'
+    super("Message handler must be provided");
+    this.name = "MessageHandlerNotProvidedError";
   }
 }
