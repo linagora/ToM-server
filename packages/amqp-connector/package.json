@@ -7,7 +7,7 @@
   "scripts": {
     "build": "rollup -c",
     "watch": "rollup -c -w",
-    "test": "LOG_TRANSPORTS=File LOG_FILE=/dev/null jest",
+    "test": "cross-env LOG_TRANSPORTS=File LOG_FILE=/dev/null jest",
     "check": "biome check ."
   },
   "author": [
