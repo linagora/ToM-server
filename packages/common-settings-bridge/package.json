@@ -7,8 +7,9 @@
   "scripts": {
     "build": "rollup -c",
     "watch": "rollup -c -w",
-    "test": "jest",
-    "start": "node dist/index.js"
+    "test": "LOG_TRANSPORTS=File LOG_FILE=/dev/null jest",
+    "start": "node dist/index.js",
+    "check": "biome check ."
   },
   "author": {
     "name": "Pierre 'McFly' Marty",

@@ -14,7 +14,7 @@ runs:
   using: composite
   steps:
     - name: Build all packages
-      run: npx nx run-many -t build ${{ inputs.skip-nx-cache == 'true' && '--skip-nx-cache' || '' }}
+      run: npx nx affected -t build ${{ inputs.skip-nx-cache == 'true' && '--skip-nx-cache' || '' }}
       shell: bash
 
     - name: Upload dist artifacts
