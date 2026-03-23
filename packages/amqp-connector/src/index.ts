@@ -83,7 +83,7 @@ export class AMQPConnector {
   withQueue(queue: string, options: Options.AssertQueue = { durable: true }, routingKey?: string): this {
     this.queue = queue;
     this.queueOptions = options;
-    if (routingKey) this.routingKey = routingKey;
+    if (routingKey !== null && routingKey !== undefined) this.routingKey = routingKey;
     return this;
   }
 
@@ -137,7 +137,7 @@ export class AMQPConnector {
 
     if (this.queue === null || this.queue === undefined) throw new QueueNotSpecifiedError();
 
-    if (this.onMessageHandler === null) throw new MessageHandlerNotProvidedError();
+    if (this.onMessageHandler === null || this.onMessageHandler === undefined) throw new MessageHandlerNotProvidedError();
 
     // Clear any pending reconnect timer to avoid overlapping connection attempts
     if (this.reconnectTimeoutId !== null) {

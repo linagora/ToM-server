@@ -936,7 +936,7 @@ describe("AMQPConnector Reconnection", () => {
       mockCreateChannel.mockImplementation(() => Promise.resolve(createMockChannel()));
 
       // Slow down connect to simulate race condition
-      let resolveConnect: (value: any) => void;
+      let resolveConnect!: (value: any) => void;
       mockConnect.mockImplementation(
         () =>
           new Promise((resolve) => {
@@ -996,7 +996,7 @@ describe("AMQPConnector Reconnection", () => {
       await connector.build();
 
       // Make next connect slow
-      let resolveReconnect: (value: any) => void;
+      let resolveReconnect!: (value: any) => void;
       mockConnect.mockImplementationOnce(
         () =>
           new Promise((resolve) => {
