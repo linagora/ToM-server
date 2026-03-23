@@ -83,7 +83,7 @@ export class AMQPConnector {
   withQueue(queue: string, options: Options.AssertQueue = { durable: true }, routingKey?: string): this {
     this.queue = queue;
     this.queueOptions = options;
-    if (routingKey !== null) this.routingKey = routingKey;
+    if (routingKey) this.routingKey = routingKey;
     return this;
   }
 
@@ -206,7 +206,7 @@ export class AMQPConnector {
    * @returns Promise that resolves when cleanup is complete
    */
   private async cleanupResources(): Promise<void> {
-    if (this.consumerTag !== null && this.channel !== null) {
+    if (this.consumerTag && this.channel) {
       try {
         await this.channel.cancel(this.consumerTag);
       } catch {
@@ -236,11 +236,11 @@ export class AMQPConnector {
    * @returns Promise that resolves when the channel is set up
    */
   private async setupChannel(): Promise<void> {
-    if (this.connection === null) {
+    if (!this.connection) {
       throw new Error("Cannot setup channel without connection");
     }
 
-    if (this.exchange === null || this.queue === null) {
+    if (!this.exchange || !this.queue) {
       throw new Error("Cannot setup channel: exchange or queue not configured");
     }
 
@@ -265,7 +265,7 @@ export class AMQPConnector {
       this.consumerTag = undefined;
 
       // Recreate channel if connection still exists and not intentionally closing
-      if (!this.isIntentionalClose && this.connection !== null) {
+      if (!this.isIntentionalClose && this.connection) {
         this.logger?.info("[AMQPConnector] Attempting to recreate channel...");
         this.setupChannel().catch((error) => {
           this.logger?.error(`[AMQPConnector] Failed to recreate channel: ${(error as Error).message}`);
@@ -284,11 +284,11 @@ export class AMQPConnector {
    */
   private createMessageConsumer(): (msg: amqplib.ConsumeMessage | null) => Promise<void> {
     // eslint-disable-next-line @typescript-eslint/no-misused-promises
-    return async (msg) => {
-      if (msg !== null) {
+    return async (msg: amqplib.ConsumeMessage | null): Promise<void> => {
+      if (msg) {
         // Capture channel reference to avoid race conditions
         const channel = this.channel;
-        if (channel === null) {
+        if (!channel) {
           this.logger?.warn(
             "[AMQPConnector] Message received but channel is unavailable. Message will be redelivered.",
           );
@@ -311,7 +311,7 @@ export class AMQPConnector {
    * Note: Channel event handlers are set up in setupChannel().
    */
   private setupConnectionEventHandlers(): void {
-    if (this.connection === null) return;
+    if (!this.connection) return;
 
     this.connection.on("error", (error: Error) => {
       this.logger?.error(`[AMQPConnector] Connection error: ${error.message}`);
