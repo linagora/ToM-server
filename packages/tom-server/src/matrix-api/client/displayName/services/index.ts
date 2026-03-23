@@ -6,7 +6,7 @@ export default class DisplayNameService {
     private readonly config: Config,
     private readonly logger: TwakeLogger
   ) {
-    this.logger.debug('DisplayNameService initialized.')
+    this.logger.info('[DisplayNameService] initialized.')
   }
 
   public update = async (

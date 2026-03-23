@@ -6,15 +6,34 @@ export interface IUserInfoController {
 }
 
 export interface IUserInfoService {
-  get: (id: string) => Promise<UserInformation | null>
+  get: (id: string, viewer?: string) => Promise<UserInformation | null>
+  getBatch: (
+    ids: string[],
+    viewer?: string
+  ) => Promise<Map<string, UserInformation>>
+  getVisibility: (id: string) => Promise<UserProfileSettingsPayloadT | null>
+  updateVisibility: (
+    id: string,
+    visibilitySettings: UserProfileSettingsT
+  ) => Promise<UserProfileSettingsT | undefined>
 }
 
-export interface UserInformation {
-  uid: string
-  givenName: string
-  sn: string
-  mails?: string[]
+export interface UserEnrichmentFields {
+  display_name: string
+  avatar_url?: string
+  last_name?: string
+  first_name?: string
+  emails?: string[]
   phones?: string[]
+  language?: string
+  timezone?: string
+  workplaceFqdn?: string
+}
+
+export interface UserInformation extends UserEnrichmentFields {
+  uid: string
+  sn?: string
+  givenName?: string
 }
 
 export interface SettingsPayload {
@@ -33,4 +52,32 @@ export interface UserSettings {
   matrix_id: string
   settings: SettingsPayload
   version: number
+}
+
+export enum ProfileField {
+  Phone = 'phone',
+  Email = 'email'
+}
+
+export enum ProfileVisibility {
+  Public = 'public',
+  Contacts = 'contacts',
+  Private = 'private'
+}
+
+export interface UserProfileSettingsPayloadT {
+  visibility: ProfileVisibility
+  visible_fields: ProfileField[]
+}
+
+export type UserProfileSettingsT = {
+  matrix_id: string
+} & UserProfileSettingsPayloadT
+
+export class ForbiddenError extends Error {
+  status = 403
+  constructor(message = 'Forbidden') {
+    super(message)
+    this.name = 'ForbiddenError'
+  }
 }

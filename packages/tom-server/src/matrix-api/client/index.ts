@@ -25,11 +25,14 @@ export default (
 ): Router => {
   const router = Router()
   const logger = defaultLogger ?? getLogger(config as unknown as LoggerConfig)
-  const createRoomAPI = CreateRoomAPI(config, authenticator, logger)
   const displayNameAPI = DisplayNameAPI(config, authenticator, logger)
 
   router.use(bodyParser.json())
-  router.use(`${PATH}/createRoom`, createRoomAPI)
+
+  if (config.features?.createroom_proxy?.enabled !== false) {
+    const createRoomAPI = CreateRoomAPI(config, authenticator, logger)
+    router.use(`${PATH}/createRoom`, createRoomAPI)
+  }
   router.use(`${PATH}/profile/:userId/displayname`, displayNameAPI)
 
   return router

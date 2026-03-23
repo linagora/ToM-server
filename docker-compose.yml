@@ -1,184 +1,94 @@
 services:
-  auth:
-    image: yadd/lemonldap-ng-full
+  traefik:
+    image: traefik:v2.11
+    restart: unless-stopped
+    command:
+      - "--api.insecure=true"
+      - "--api.dashboard=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--providers.file.directory=/etc/traefik/dynamic"
+      - "--providers.file.watch=true"
+      - "--entrypoints.web.address=:80"
+      - "--log.level=INFO"
+    ports:
+      - "80:80"
+      - "8080:8080"
     volumes:
-      - ./.compose/lemon/lmConf-sqlite.json:/var/lib/lemonldap-ng/conf/lmConf-1.json
-      - ./.compose/lemon/ssl.conf:/etc/nginx/sites-enabled/0000default.conf
-      - ./.compose/lemon/root.conf:/etc/nginx/sites-enabled/root.conf
-      - ./.compose/synapse/wellknownserver.conf:/var/www/matrix-server.json
-      - ./.compose/synapse/wellknownclient.conf:/var/www/matrix-client.json
-      - ./.compose/ssl:/etc/nginx/ssl
-      - ./.compose/lemon/lemon.db:/db/lemon.db
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./.compose/traefik/dynamic:/etc/traefik/dynamic:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  ldap:
+    image: osixia/openldap:1.5.0
     environment:
-      - SSODOMAIN=docker.localhost
-      - PORTAL=https://auth.docker.localhost
-      - LOGLEVEL=debug
-      - LOGGER=stderr
-      - USERLOGGER=stderr
-    deploy:
-      mode: replicated
-      replicas: 1
-      restart_policy:
-        condition: on-failure
-    networks:
-      frontend:
-        aliases:
-          - auth
+      LDAP_ORGANISATION: "Docker"
+      LDAP_DOMAIN: "docker.internal"
+      LDAP_ADMIN_PASSWORD: "admin"
+      LDAP_CONFIG_PASSWORD: "config"
+      LDAP_READONLY_USER: "false"
+      LDAP_RFC2307BIS_SCHEMA: "false"
+      LDAP_BACKEND: "mdb"
+      LDAP_TLS: "false"
+      LDAP_LOG_LEVEL: "256"
+      LDAP_REMOVE_CONFIG_AFTER_SETUP: "false"
+      DISABLE_CHOWN: "true"
+    ports:
+      - "389:389"
+    volumes:
+      - ./.compose/ldap/bootstrap:/container/service/slapd/assets/config/bootstrap/ldif/custom
+    healthcheck:
+      test: ["CMD-SHELL", "ldapsearch -x -b 'dc=docker,dc=internal' -H ldap://localhost || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  smtp:
+    image: changemakerstudiosus/papercut-smtp:latest
+    ports:
+      - "2525:25"
 
   synapse:
-    image: matrixdotorg/synapse
+    image: matrixdotorg/synapse:v1.119.0
     restart: unless-stopped
-    env_file:
-      - path: ./.compose/.env
-        required: true
-    volumes:
-      - ./.compose/synapse:/data
-      - ./.compose/synapse/homeserver-sqlite.yaml:/data/homeserver.yaml
-      - ./.compose/ssl:/etc/ssl/certs
     depends_on:
-      auth:
+      postgres:
+        condition: service_healthy
+      traefik:
         condition: service_started
-    networks:
-      frontend:
-        aliases:
-          - synapse
-
-  tom:
-    image: tom
-    build:
-      context: ./
-      dockerfile: ./Dockerfile
-    volumes:
-      # - ./.compose/tom:/opt/twake/db/
-      - ./.compose/lemon:/opt/lemon/db/
-      - ./.compose/synapse:/opt/synapse/db/
-    depends_on:
-      synapse:
-        condition: service_started
-    # ports:
-    #   - 3000:3000
-    #   - 9229:9229
-    networks:
-      frontend:
-        aliases:
-          - tom.server
-    environment:
-      # - NODE_OPTIONS="--inspect=0.0.0.0:9229"
-      - NODE_TLS_REJECT_UNAUTHORIZED=0
-
-      - SERVER_NAME=docker.localhost
-      - BASE_URL=https://tom.docker.localhost
-      - OIDC_ISSUER=https://auth.docker.localhost
-      - TRUSTED_PROXIES=uniquelocal
-
-      - ADDITIONAL_FEATURES=true
-      - FEDERATED_IDENTITY_SERVICES=fed.docker.localhost
-
-      - CRON_SERVICE=true
-      - UPDATE_FEDERATED_IDENTITY_HASHES_CRON=0-59/2 * * * *
-      - UPDATE_USERS_CRON=1-59/2 * * * *
-
-      - DATABASE_ENGINE=sqlite
-      # - DATABASE_HOST=/opt/twake/db/tom.db
-      - DATABASE_HOST=file:tom?mode=memory&cache=shared
-
-      - USERDB_ENGINE=sqlite
-      - USERDB_HOST=/opt/lemon/db/lemon.db
-
-      - MATRIX_INTERNAL_HOST=http://synapse:8008
-      - MATRIX_SERVER=matrix.docker.localhost
-      - MATRIX_DATABASE_ENGINE=sqlite
-      - MATRIX_DATABASE_HOST=/opt/synapse/db/homeserver.db
-
-      - SMS_API_KEY=SOME_SECRET_KEY
-      - SMS_API_LOGIN=login@domain.com
-      - SMS_API_URL=https://api.octopush.com/v1/public
-
-      - LOG_LEVEL=silly
-      - LOG_TRANSPORTS=Console
-
-  fed:
-    build:
-      context: ./
-      dockerfile: ./packages/federated-identity-service/Dockerfile
-    volumes:
-      # - ./.compose/fed:/opt/twake/db/
-      # - ./.compose/lemon:/opt/lemon/db/       ## Uncomment to enable local userDB
-      - ./.compose/synapse:/opt/synapse/db/
-    # ports:
-    #   - 3001:3001
-    #   - 9229:9229
-    networks:
-      frontend:
-        aliases:
-          - fed.server
-    environment:
-      # - NODE_OPTIONS="--inspect=0.0.0.0:9229"
-      - NODE_TLS_REJECT_UNAUTHORIZED=0
-
-      - BASE_URL=https://fed.docker.localhost
-      - SERVER_NAME=docker.localhost
-      - TRUSTED_PROXIES=uniquelocal
-      - TRUSTED_SERVERS_ADDRESSES=172.0.0.0/8
-
-      - ADDITIONAL_FEATURES=true
-
-      - CRON_SERVICE=true
-      # - UPDATE_FEDERATED_IDENTITY_HASHES_CRON=0-59/2 * * * *
-      # - UPDATE_USERS_CRON=1-59/2 * * * *
-
-      - DATABASE_ENGINE=sqlite
-      # - DATABASE_HOST=/opt/twake/db/fed.db
-      - DATABASE_HOST=file:fed?mode=memory&cache=shared
-
-      ## For storing the federated identity raw users
-      # - USERDB_ENGINE=sqlite                  ## Uncomment to enable local userDB
-      # - USERDB_HOST=/opt/lemon/db/lemon.db    ## Uncomment to enable local userDB
-
-      - LOG_LEVEL=silly
-      - LOG_TRANSPORTS=Console
-
-  chat:
-    image: linagora/twake-web
-    volumes:
-      - ./.compose/chat/config.json:/usr/share/nginx/html/web/config.json
-      - ./.compose/ssl:/etc/nginx/ssl
-    # ports:
-    #   - 80:80
-    networks:
-      - frontend
-
-  haproxy:
-    image: haproxy:2.6-bookworm
     ports:
-      - 443:443
+      - "8008:8008"
     volumes:
-      # Reverse proxy routing configuration
-      - ./.compose/haproxy/haproxy.tom+fed+chat.cfg:/usr/local/etc/haproxy/haproxy.cfg
-      - ./.compose/haproxy/cors.lua:/usr/local/etc/haproxy/cors.lua
-      - ./.compose/haproxy/lua_endpoint_to_function.map_rewrite.cfg:/usr/local/etc/haproxy/lua_endpoint_to_function.map_rewrite.cfg
-      - ./.compose/haproxy/lua_endpoint_to_worker.map_rewrite.lua:/usr/local/etc/haproxy/lua_endpoint_to_worker.map_rewrite.lua
-      - ./.compose/haproxy/synapse_worker_endpoint_indexer.lua:/usr/local/etc/haproxy/synapse_worker_endpoint_indexer.lua
-      # HTTPS SSL Certs
-      - ./.compose/ssl/both.pem:/etc/ssl/certs/both.pem
-    sysctls:
-      - net.ipv4.ip_unprivileged_port_start=0
-    depends_on:
-      - auth
-      - synapse
-      - tom
-      - fed
-      - chat
-    networks:
-      frontend:
-        aliases:
-          - auth.docker.localhost
-          - chat.docker.localhost
-          - matrix.docker.localhost
-          - tom.docker.localhost
-          - fed.docker.localhost
-          - docker.localhost
+      - ./.compose/synapse/.data:/data
+      - ./.compose/synapse/pgsql.yaml:/data/homeserver.yaml:ro
+      - ./.compose/synapse/docker.internal.log.config:/data/docker.internal.log.config:ro
+      - ./.compose/synapse/docker.internal.signing.key:/data/docker.internal.signing.key:ro
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.synapse.rule=Host(`matrix.docker.internal`)"
+      - "traefik.http.routers.synapse.entrypoints=web"
+      - "traefik.http.services.synapse.loadbalancer.server.port=8008"
 
-networks:
-  frontend:
-    name: frontend
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: twake
+      POSTGRES_PASSWORD: twake_password
+      POSTGRES_DB: postgres
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./.compose/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U twake"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+volumes:
+  postgres-data:

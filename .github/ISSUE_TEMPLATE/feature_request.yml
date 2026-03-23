@@ -1,0 +1,67 @@
+name: Feature request
+description: Propose a new feature or use case.
+labels: ["feature"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before filing: search open and closed issues to avoid duplicates.
+        Describe the use case first — proposed solutions without a use case will be closed.
+
+  - type: dropdown
+    id: package
+    attributes:
+      label: Package
+      description: Which package would this affect?
+      options:
+        - amqp-connector
+        - common-settings-bridge
+        - config-parser
+        - crypto
+        - db
+        - federated-identity-service
+        - logger
+        - matrix-identity-server
+        - matrix-resolve
+        - tom-server
+        - utils
+        - "Not sure / multiple"
+    validations:
+      required: true
+
+  - type: textarea
+    id: use_case
+    attributes:
+      label: Use case
+      description: |
+        What are you trying to do and why can't you do it today?
+        Start with the problem, not the solution.
+      placeholder: "As a ... I need to ... because ..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: |
+        How do you think this should be solved? API shape, config options, behaviour details.
+        If you're not sure, leave this blank and let the discussion shape it.
+    validations:
+      required: false
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: What other approaches did you consider, and why did you rule them out?
+    validations:
+      required: false
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Links to related issues, prior art, external specs, etc.
+    validations:
+      required: false

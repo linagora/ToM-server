@@ -25,6 +25,8 @@ class UserDBSQLite extends SQLite<Collections> implements UserDBBackend {
           /* istanbul ignore if */
           if (db == null) {
             reject(new Error('Database not created'))
+          } else {
+            this.logger.info('[UserDBSQLite] initialized.')
           }
           db.run(
             'CREATE TABLE IF NOT EXISTS users (uid varchar(255), mobile text, mail test)'

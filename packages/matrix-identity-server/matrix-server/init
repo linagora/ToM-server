@@ -13,7 +13,7 @@ docker run -it --rm \
     -e SYNAPSE_REPORT_STATS=no \
     -e UID=$MYUID \
     -e GID=$MYGID \
-    matrixdotorg/synapse:latest generate
+    matrixdotorg/synapse:v1.119.0 generate
 
 chmod 644 synapse-data/example.com.signing.key
 mkdir -p synapse-data/media_store

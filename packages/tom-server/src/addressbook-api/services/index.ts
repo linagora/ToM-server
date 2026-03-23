@@ -1,6 +1,8 @@
 import { v7 as uuidv7 } from 'uuid'
 import { TwakeLogger } from '@twake/logger'
-import { TwakeDB } from '../../types'
+import type { UserDB } from '@twake/matrix-identity-server'
+import { toMatrixId } from '@twake/utils'
+import type { Config, TwakeDB } from '../../types'
 import type {
   AddressBook,
   AddressbookListResponse,
@@ -11,21 +13,38 @@ import type {
 } from '../types'
 
 export class AddressbookService implements IAddressbookService {
+  private readonly enableAdditionalFeatures: boolean
+  private readonly serverName: string
+
   constructor(
     private readonly db: TwakeDB,
-    private readonly logger: TwakeLogger
+    private readonly logger: TwakeLogger,
+    private readonly userDb?: UserDB,
+    private readonly config?: Config
   ) {
-    this.logger.debug('[AddressbookService] Initialized.', {})
+    this.enableAdditionalFeatures =
+      this.config?.additional_features === true ||
+      process.env.ADDITIONAL_FEATURES === 'true'
+    this.serverName = this.config?.server_name ?? ''
+    this.logger.info('[AddressbookService] Initialized.', {
+      additionalFeatures: this.enableAdditionalFeatures
+    })
   }
 
   /**
    * list the addressbook of an owner
    *
    * @param {string} owner - The owner of the addressbook
-   * @returns {Promise<AddressbookListResponse[]>}
+   * @returns {Promise<AddressbookListResponse>}
    */
-  public list = async (owner: string): Promise<AddressbookListResponse> => {
-    this.logger.silly('[AddressbookService.list] Entering method.', { owner })
+  public list = async (
+    owner: string,
+    includeUserDbContacts: boolean = true
+  ): Promise<AddressbookListResponse> => {
+    this.logger.silly('[AddressbookService.list] Entering method.', {
+      owner,
+      includeUserDbContacts
+    })
     try {
       this.logger.debug(
         '[AddressbookService.list] Attempting to get or create user addressbook.'
@@ -36,17 +55,60 @@ export class AddressbookService implements IAddressbookService {
         owner
       })
 
+      // 1. Get addressbook contacts from database
       this.logger.debug(
         '[AddressbookService.list] Attempting to list contacts for addressbook.'
       )
-      const contacts = await this._listAddressbookContacts(userAddressbook.id)
+      const addressbookContacts = await this._listAddressbookContacts(
+        userAddressbook.id
+      )
+      this.logger.debug(
+        `[AddressbookService.list] Got ${addressbookContacts.length} addressbook contacts.`
+      )
+
+      // 2. Get UserDB contacts (if additional_features enabled and requested)
+      const userDbContacts = includeUserDbContacts
+        ? await this._getUserDbContacts()
+        : []
+      this.logger.debug(
+        `[AddressbookService.list] Got ${userDbContacts.length} UserDB contacts.`
+      )
+
+      // 3. Deduplicate: addressbook contacts take precedence
+      const addressbookMxids = new Set(addressbookContacts.map((c) => c.mxid))
+      const uniqueUserDbContacts = userDbContacts.filter(
+        (c) => !addressbookMxids.has(c.mxid)
+      )
+      const deduplicatedCount =
+        userDbContacts.length - uniqueUserDbContacts.length
+      if (deduplicatedCount > 0) {
+        this.logger.debug(
+          `[AddressbookService.list] ${deduplicatedCount} UserDB contacts deduplicated (already in addressbook).`
+        )
+      }
+
+      // 4. Merge contacts
+      const allContacts = [...addressbookContacts, ...uniqueUserDbContacts]
+
+      // 5. Sort by display_name
+      const sortedContacts = this._sortByStringField(
+        allContacts,
+        'display_name',
+        true
+      )
+
       this.logger.info(
-        `[AddressbookService.list] Got ${contacts.length} contacts for owner.`,
-        { owner, contactsCount: contacts.length }
+        `[AddressbookService.list] Got ${sortedContacts.length} total contacts for owner.`,
+        {
+          owner,
+          addressbookCount: addressbookContacts.length,
+          userDbCount: uniqueUserDbContacts.length,
+          totalCount: sortedContacts.length
+        }
       )
       this.logger.silly(
         `[AddressbookService.list] Retrieved contacts: ${JSON.stringify(
-          contacts
+          sortedContacts
         )}`
       )
 
@@ -54,7 +116,7 @@ export class AddressbookService implements IAddressbookService {
       return {
         id: userAddressbook.id,
         owner,
-        contacts
+        contacts: sortedContacts
       }
     } catch (error: any) {
       this.logger.error(
@@ -158,7 +220,7 @@ export class AddressbookService implements IAddressbookService {
         throw new Error('Contact not found')
       }
 
-      const contact = { ...queryResult[0], active: !!queryResult[0].active }
+      const contact = this._normalizeContact(queryResult[0])
       this.logger.info('[AddressbookService.getContact] Contact found.', {
         contactId,
         contactMxid: contact.mxid
@@ -332,10 +394,7 @@ export class AddressbookService implements IAddressbookService {
         throw new Error('Contact not found or failed to update')
       }
 
-      const resultContact = {
-        ...updatedContact[0],
-        active: !!updatedContact[0].active
-      }
+      const resultContact = this._normalizeContact(updatedContact[0])
       this.logger.info(
         '[AddressbookService.updateContact] Contact updated successfully.',
         {
@@ -452,7 +511,7 @@ export class AddressbookService implements IAddressbookService {
         throw new Error('Failed to insert contact: no data returned')
       }
 
-      const resultContact = { ...created[0], active: !!created[0].active }
+      const resultContact = this._normalizeContact(created[0])
       this.logger.info(
         '[AddressbookService._insertContact] Contact inserted successfully.',
         { contactId: resultContact.id, contactMxid: resultContact.mxid }
@@ -492,52 +551,187 @@ export class AddressbookService implements IAddressbookService {
    */
   private _listAddressbookContacts = async (id: string): Promise<Contact[]> => {
     this.logger.silly(
-      '[AddressbookService._listAddressbookContacts] Entering method.',
-      {
-        addressbookId: id
-      }
+      '[AddressbookService._listAddressbookContacts] Entering.',
+      { addressbookId: id }
     )
-    try {
-      this.logger.debug(
-        '[AddressbookService._listAddressbookContacts] Querying database for contacts.',
-        { addressbookId: id }
-      )
-      const contacts = (await this.db.get('contacts', ['*'], {
-        addressbook_id: id
-      })) as unknown as Contact[]
 
-      const mappedContacts = contacts.map((contact: Contact) => ({
-        ...contact,
-        active: !!contact.active
-      }))
-      this.logger.info(
-        '[AddressbookService._listAddressbookContacts] Contacts retrieved and mapped.',
-        { addressbookId: id, contactsCount: mappedContacts.length }
-      )
-      this.logger.silly(
-        `[AddressbookService._listAddressbookContacts] Mapped contacts: ${JSON.stringify(
-          mappedContacts
-        )}`
-      )
-      this.logger.silly(
-        '[AddressbookService._listAddressbookContacts] Exiting method (success).'
-      )
-      return mappedContacts
+    // Fetch from DB with localized error handling
+    let rawContacts: Contact[]
+    try {
+      rawContacts = await this._fetchContactsFromDb(id)
     } catch (error: any) {
       this.logger.error(
-        '[AddressbookService._listAddressbookContacts] Failed to list addressbook contacts.',
+        '[AddressbookService._listAddressbookContacts] DB fetch failed.',
         {
           addressbookId: id,
-          message: error.message,
-          stack: error.stack,
-          errorName: error.name
+          message: error.message
         }
-      )
-      this.logger.silly(
-        '[AddressbookService._listAddressbookContacts] Exiting method (error).'
       )
       return []
     }
+
+    // Filter valid contacts (filters both invalid IDs and mxids)
+    const validContacts = rawContacts.filter((c) =>
+      this._validateContactData(c)
+    )
+    const invalidCount = rawContacts.length - validContacts.length
+
+    if (invalidCount > 0) {
+      this.logger.warn(
+        '[AddressbookService._listAddressbookContacts] Filtered out invalid contacts.',
+        { addressbookId: id, invalidCount, totalContacts: rawContacts.length }
+      )
+    }
+
+    // Early return if no valid contacts
+    if (validContacts.length === 0) {
+      this.logger.info(
+        '[AddressbookService._listAddressbookContacts] No valid contacts found.',
+        { addressbookId: id, rawCount: rawContacts.length }
+      )
+      this.logger.silly(
+        '[AddressbookService._listAddressbookContacts] Exiting (no valid contacts).',
+        { addressbookId: id }
+      )
+      return []
+    }
+
+    // Normalize and process
+    const normalized = validContacts.map((c) => this._normalizeContact(c))
+
+    // Sort by ID (UUID v7 timestamp) to keep earliest created contacts during deduplication
+    const sortedById = this._sortByStringField(normalized, 'id', true)
+
+    // Deduplicate by mxid (keep first occurrence = earliest created)
+    const deduplicated = this._deduplicateByMxid(sortedById)
+    const duplicateCount = normalized.length - deduplicated.length
+
+    if (duplicateCount > 0) {
+      this.logger.info(
+        '[AddressbookService._listAddressbookContacts] Removed duplicate contacts.',
+        { addressbookId: id, duplicatesRemoved: duplicateCount }
+      )
+    }
+
+    // Sort by display name for final output
+    const result = this._sortByStringField(deduplicated, 'display_name', true)
+
+    this.logger.info(
+      '[AddressbookService._listAddressbookContacts] Contacts retrieved and sanitized.',
+      {
+        addressbookId: id,
+        rawCount: rawContacts.length,
+        validCount: result.length,
+        invalidFiltered: invalidCount,
+        duplicatesRemoved: duplicateCount
+      }
+    )
+
+    this.logger.silly(
+      '[AddressbookService._listAddressbookContacts] Exiting.',
+      { addressbookId: id }
+    )
+    return result
+  }
+
+  /**
+   * Validates that a contact has all required fields with correct types.
+   *
+   * @param {Contact} contact - The contact to validate
+   * @returns {boolean} True if contact has valid id and mxid, false otherwise
+   */
+  private _validateContactData(contact: Contact): boolean {
+    return !!(
+      contact?.id &&
+      typeof contact.id === 'string' &&
+      contact?.mxid &&
+      typeof contact.mxid === 'string'
+    )
+  }
+
+  /**
+   * Normalizes contact data by converting active field to boolean.
+   *
+   * @param {Contact} contact - The contact to normalize
+   * @returns {Contact} Normalized contact with active as boolean
+   */
+  private _normalizeContact(contact: Contact): Contact {
+    return {
+      ...contact,
+      active: !!contact.active
+    }
+  }
+
+  /**
+   * Generic string field sorter with null/empty handling.
+   * Sorts contacts by a specified string field, with configurable handling of empty values.
+   *
+   * @param {Contact[]} contacts - Array of contacts to sort
+   * @param {keyof Contact} field - Field name to sort by
+   * @param {boolean} emptyLast - If true, empty values sorted to end; if false, to beginning
+   * @returns {Contact[]} New sorted array (does not mutate original)
+   */
+  private _sortByStringField(
+    contacts: Contact[],
+    field: keyof Contact,
+    emptyLast: boolean = true
+  ): Contact[] {
+    return [...contacts].sort((a, b) => {
+      const valueA = a?.[field] as string | null | undefined
+      const valueB = b?.[field] as string | null | undefined
+
+      const strA = valueA ?? ''
+      const strB = valueB ?? ''
+
+      // Handle empty values
+      if (!strA && !strB) return 0
+      if (!strA) return emptyLast ? 1 : -1
+      if (!strB) return emptyLast ? -1 : 1
+
+      return strA.localeCompare(strB)
+    })
+  }
+
+  /**
+   * Removes duplicate contacts based on mxid, keeping the first occurrence.
+   * Assumes contacts are already sorted by creation time (UUID v7 timestamp).
+   *
+   * @param {Contact[]} contacts - Array of contacts (should be sorted by id first)
+   * @returns {Contact[]} Deduplicated array keeping earliest created contact per mxid
+   */
+  private _deduplicateByMxid(contacts: Contact[]): Contact[] {
+    const seen = new Set<string>()
+
+    return contacts.filter((contact) => {
+      if (seen.has(contact.mxid)) return false
+      seen.add(contact.mxid)
+      return true
+    })
+  }
+
+  /**
+   * Fetches contacts from database and validates response type.
+   *
+   * @param {string} addressbookId - The addressbook ID to fetch contacts for
+   * @returns {Promise<Contact[]>} Array of contacts from database
+   * @throws {Error} If database returns non-array value
+   */
+  private async _fetchContactsFromDb(
+    addressbookId: string
+  ): Promise<Contact[]> {
+    const contacts = (await this.db.get('contacts', ['*'], {
+      addressbook_id: addressbookId
+    })) as unknown as Contact[]
+
+    if (!Array.isArray(contacts)) {
+      this.logger.error(
+        '[AddressbookService._fetchContactsFromDb] Database returned invalid data type.',
+        { addressbookId, receivedType: typeof contacts }
+      )
+      throw new Error('Invalid database response: expected array of contacts')
+    }
+
+    return contacts
   }
 
   /**
@@ -575,40 +769,134 @@ export class AddressbookService implements IAddressbookService {
           '[AddressbookService._getOrCreateUserAddressBook] Existing addressbook found.',
           { addressbookId: userAddressbook.id }
         )
+        this.logger.silly(
+          '[AddressbookService._getOrCreateUserAddressBook] Exiting method (success).'
+        )
+        return userAddressbook
       }
     } catch (error: any) {
-      this.logger.warn(
-        '[AddressbookService._getOrCreateUserAddressBook] Failed to fetch user addressbook, will try to create one.',
-        { owner, message: error.message }
+      this.logger.debug(
+        '[AddressbookService._getOrCreateUserAddressBook] No existing addressbook found, will create one.',
+        { owner }
       )
     }
 
-    // Create if it doesn’t exist
+    // Create if it doesn't exist - using retry logic to handle race conditions
     if (userAddressbook == null) {
-      this.logger.info(
-        '[AddressbookService._getOrCreateUserAddressBook] Addressbook not found, creating a new one.'
-      )
-      userAddressbook = await this._createUserAddressBook(owner)
-      // Throw an error is we couldn't get or create an addressbook
+      const maxRetries = 3
+      for (let attempt = 0; attempt < maxRetries; attempt++) {
+        try {
+          this.logger.info(
+            '[AddressbookService._getOrCreateUserAddressBook] Creating addressbook (attempt ' +
+              (attempt + 1) +
+              '/' +
+              maxRetries +
+              ')'
+          )
+          userAddressbook = await this._createUserAddressBook(owner)
+
+          if (userAddressbook != null) {
+            this.logger.info(
+              '[AddressbookService._getOrCreateUserAddressBook] Successfully created new addressbook.',
+              { addressbookId: userAddressbook.id }
+            )
+            break
+          }
+        } catch (error: any) {
+          // If creation failed due to duplicate key constraint, try fetching again
+          if (this._isDuplicateKeyError(error)) {
+            this.logger.warn(
+              '[AddressbookService._getOrCreateUserAddressBook] Duplicate key error on attempt ' +
+                (attempt + 1) +
+                ', fetching existing addressbook.',
+              { owner, error: error.message }
+            )
+
+            try {
+              userAddressbook = await this._getUserAddressBook(owner)
+              if (userAddressbook) {
+                this.logger.info(
+                  '[AddressbookService._getOrCreateUserAddressBook] Found addressbook after duplicate error.',
+                  { addressbookId: userAddressbook.id }
+                )
+                break
+              }
+            } catch (fetchError: any) {
+              this.logger.warn(
+                '[AddressbookService._getOrCreateUserAddressBook] Failed to fetch after duplicate error.',
+                { owner, error: fetchError.message }
+              )
+            }
+
+            // Wait before retry (exponential backoff: 100ms, 200ms, 400ms)
+            if (attempt < maxRetries - 1) {
+              const delayMs = Math.pow(2, attempt) * 100
+              this.logger.debug(
+                '[AddressbookService._getOrCreateUserAddressBook] Waiting ' +
+                  delayMs +
+                  'ms before retry'
+              )
+              await new Promise((resolve) => setTimeout(resolve, delayMs))
+            }
+          } else {
+            // For non-duplicate errors, rethrow immediately
+            this.logger.error(
+              '[AddressbookService._getOrCreateUserAddressBook] Non-duplicate error during creation.',
+              { owner, error: error.message, stack: error.stack }
+            )
+            this.logger.silly(
+              '[AddressbookService._getOrCreateUserAddressBook] Exiting method (error).'
+            )
+            throw error
+          }
+        }
+      }
+
+      // Throw an error if we couldn't get or create an addressbook after all retries
       if (userAddressbook == null) {
         this.logger.error(
-          '[AddressbookService._getOrCreateUserAddressBook] Failed to get or create addressbook after attempt.'
+          '[AddressbookService._getOrCreateUserAddressBook] Failed to get or create addressbook after all attempts.'
         )
         this.logger.silly(
-          '[AddressbookService._getOrCreateUserAddressBook] Exiting method (error during creation).'
+          '[AddressbookService._getOrCreateUserAddressBook] Exiting method (error after retries).'
         )
-        throw new Error('Failed to get or create addressbook')
+        throw new Error(
+          'Failed to get or create addressbook after multiple attempts'
+        )
       }
-      this.logger.info(
-        '[AddressbookService._getOrCreateUserAddressBook] Successfully created new addressbook.',
-        { addressbookId: userAddressbook.id }
-      )
     }
 
     this.logger.silly(
       '[AddressbookService._getOrCreateUserAddressBook] Exiting method (success).'
     )
     return userAddressbook
+  }
+
+  /**
+   * Helper to detect duplicate key errors from database
+   *
+   * @param {any} error - The error to check
+   * @returns {boolean} True if this is a duplicate key error
+   */
+  private _isDuplicateKeyError(error: any): boolean {
+    if (!error) return false
+
+    const message = error.message?.toLowerCase() || ''
+
+    // SQLite duplicate key errors
+    if (
+      message.includes('unique constraint') ||
+      message.includes('sqlite_constraint')
+    ) {
+      return true
+    }
+
+    // PostgreSQL duplicate key errors
+    if (message.includes('duplicate key') || error.code === '23505') {
+      return true
+    }
+
+    return false
   }
 
   /**
@@ -686,64 +974,128 @@ export class AddressbookService implements IAddressbookService {
    */
   private _createUserAddressBook = async (
     owner: string
-  ): Promise<AddressBook | undefined> => {
+  ): Promise<AddressBook> => {
     this.logger.silly(
       '[AddressbookService._createUserAddressBook] Entering method.',
       {
         owner
       }
     )
-    try {
-      const id = uuidv7()
-      this.logger.debug(
-        '[AddressbookService._createUserAddressBook] Generated new UUID for addressbook.',
-        { addressbookId: id }
-      )
-      this.logger.debug(
-        '[AddressbookService._createUserAddressBook] Inserting new addressbook into database.',
+    const id = uuidv7()
+    this.logger.debug(
+      '[AddressbookService._createUserAddressBook] Generated new UUID for addressbook.',
+      { addressbookId: id }
+    )
+    this.logger.debug(
+      '[AddressbookService._createUserAddressBook] Inserting new addressbook into database.',
+      { owner, addressbookId: id }
+    )
+    const addressbook = (await this.db.insert('addressbooks', {
+      owner,
+      id
+    })) as unknown as AddressBook[]
+
+    if (!addressbook || !addressbook.length) {
+      this.logger.error(
+        '[AddressbookService._createUserAddressBook] Database insert returned no created addressbook.',
         { owner, addressbookId: id }
       )
-      const addressbook = (await this.db.insert('addressbooks', {
-        owner,
-        id
-      })) as unknown as AddressBook[]
+      throw new Error('Failed to create addressbook: no data returned')
+    }
 
-      if (!addressbook || !addressbook.length) {
-        this.logger.error(
-          '[AddressbookService._createUserAddressBook] Database insert returned no created addressbook.',
-          { owner, addressbookId: id }
-        )
-        throw new Error('Failed to create addressbook: no data returned')
-      }
+    const result = addressbook[0]
+    this.logger.info(
+      '[AddressbookService._createUserAddressBook] Addressbook created successfully.',
+      { addressbookId: result.id, owner }
+    )
+    this.logger.silly(
+      `[AddressbookService._createUserAddressBook] Created addressbook details: ${JSON.stringify(
+        result
+      )}`
+    )
+    this.logger.silly(
+      '[AddressbookService._createUserAddressBook] Exiting method (success).'
+    )
+    return result
+  }
 
-      const result = addressbook[0]
-      this.logger.info(
-        '[AddressbookService._createUserAddressBook] Addressbook created successfully.',
-        { addressbookId: result.id, owner }
-      )
-      this.logger.silly(
-        `[AddressbookService._createUserAddressBook] Created addressbook details: ${JSON.stringify(
-          result
-        )}`
-      )
-      this.logger.silly(
-        '[AddressbookService._createUserAddressBook] Exiting method (success).'
-      )
-      return result
-    } catch (error: any) {
-      this.logger.error(
-        '[AddressbookService._createUserAddressBook] Failed to create user addressbook.',
+  /**
+   * Fetches all users from UserDB and converts them to virtual Contact objects.
+   * Only runs when additional_features is enabled.
+   *
+   * @returns {Promise<Contact[]>} Array of contacts from UserDB
+   */
+  private async _getUserDbContacts(): Promise<Contact[]> {
+    if (!this.enableAdditionalFeatures || !this.userDb || !this.serverName) {
+      this.logger.debug(
+        '[AddressbookService._getUserDbContacts] Skipping - feature disabled or missing dependencies',
         {
-          owner,
-          message: error.message,
-          stack: error.stack,
-          errorName: error.name
+          additionalFeatures: this.enableAdditionalFeatures,
+          hasUserDb: !!this.userDb,
+          hasServerName: !!this.serverName
         }
       )
-      this.logger.silly(
-        '[AddressbookService._createUserAddressBook] Exiting method (error).'
+      return []
+    }
+
+    try {
+      this.logger.debug(
+        '[AddressbookService._getUserDbContacts] Fetching all users from UserDB'
       )
-      return undefined
+      const userDbEntries = await this.userDb.getAll('users', [
+        'uid',
+        'cn',
+        'displayName',
+        'sn',
+        'givenName',
+        'mail',
+        'mobile'
+      ])
+
+      if (!Array.isArray(userDbEntries) || userDbEntries.length === 0) {
+        this.logger.debug(
+          '[AddressbookService._getUserDbContacts] No UserDB entries found'
+        )
+        return []
+      }
+
+      const contacts: Contact[] = []
+      for (const entry of userDbEntries) {
+        const uid = entry.uid as string
+        if (!uid) continue
+
+        try {
+          const mxid = toMatrixId(uid, this.serverName)
+          const displayName = (entry.cn || entry.displayName || uid) as string
+
+          contacts.push({
+            id: uid,
+            mxid,
+            display_name: displayName,
+            active: true,
+            addressbook_id: ''
+          })
+        } catch (e: any) {
+          this.logger.warn(
+            '[AddressbookService._getUserDbContacts] Invalid uid, skipping',
+            { uid, error: e.message }
+          )
+        }
+      }
+
+      this.logger.info(
+        `[AddressbookService._getUserDbContacts] Converted ${contacts.length} UserDB entries to contacts`
+      )
+      return contacts
+    } catch (error: any) {
+      this.logger.error(
+        '[AddressbookService._getUserDbContacts] Failed to fetch UserDB entries',
+        {
+          message: error.message,
+          stack: error.stack
+        }
+      )
+      return []
     }
   }
 

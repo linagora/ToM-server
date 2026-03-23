@@ -1,0 +1,10 @@
+dn: ou=users,dc=docker,dc=internal
+objectClass: top
+objectClass: organizationalUnit
+ou: users
+
+dn: cn=readers,ou=users,dc=docker,dc=internal
+objectClass: groupOfNames
+cn: readers
+member: uid=dwho,ou=users,dc=docker,dc=internal
+member: uid=rtyler,ou=users,dc=docker,dc=internal

@@ -15,7 +15,6 @@
   "key_delay": 3600,
   "keys_depth": 5,
   "mail_link_delay": 7200,
-  "opensearch_is_activated": false,
   "server_name": "example.com",
   "smtp_sender": "yadd@debian.org",
   "smtp_server": "localhost",
@@ -46,26 +45,18 @@
   "template_dir": "./templates",
   "userdb_engine": "sqlite",
   "userdb_host": "./src/identity-server/__testData__/terms.db",
-  "registration_file_path": "registration.yaml",
   "sender_localpart": "twake",
-  "rabbitmq": {
-    "host": "localhost",
-    "port": 5672,
-    "vhost": "/",
-    "username": "guest",
-    "password": "guest",
-    "tls": false
-  },
   "features": {
     "common_settings": {
       "enabled": true,
-      "application_url": "https://{username}-settings.localhost",
-      "queue": "settings.queue",
-      "routingKey": "settings.routing.key",
-      "exchange": "exchange.exchange",
-      "deadLetterExchange": "settings.dead.letter.exchange",
-      "deadLetterRoutingKey": "settings.dead.letter.routing.key"
+      "application_url": "https://{username}-settings.localhost"
     },
-    "matrix_profile_updates_allowed": false
+    "matrix_profile_updates_allowed": false,
+    "user_profile": {
+      "default_visibility_settings": {
+        "visibility": "private",
+        "visible_fields": []
+      }
+    }
   }
 }

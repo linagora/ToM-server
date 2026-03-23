@@ -43,6 +43,7 @@ class SQLite<T extends string> extends SQL<T> implements IdDbBackend<T> {
             if (db == null) {
               throw new Error('Database not created')
             }
+            logger.info('[IdentityServerDb:SQLite] connected.')
             createTables(
               this,
               tables,
@@ -63,11 +64,21 @@ class SQLite<T extends string> extends SQL<T> implements IdDbBackend<T> {
 
   rawQuery(query: string): Promise<void> {
     return new Promise((resolve, reject) => {
-      this.db?.run(query, (err) => {
-        /* istanbul ignore else */
+      if (this.db == null) {
+        this.logger.error('[SQLite][rawQuery] DB not ready')
+        reject(new Error('DB not ready'))
+        return
+      }
+      this.logger.debug('[SQLite][rawQuery] Executing query', { query })
+      this.db.run(query, (err) => {
         if (err == null) {
+          this.logger.debug('[SQLite][rawQuery] Query successful', { query })
           resolve()
         } else {
+          this.logger.error('[SQLite][rawQuery] Query failed', {
+            query,
+            error: err
+          })
           reject(err)
         }
       })
@@ -86,6 +97,7 @@ class SQLite<T extends string> extends SQL<T> implements IdDbBackend<T> {
     return new Promise((resolve, reject) => {
       /* istanbul ignore if */
       if (this.db == null) {
+        this.logger.error('[SQLite][insert] DB not ready', { table })
         throw new Error('Wait for database to be ready')
       }
       const names: string[] = []
@@ -94,24 +106,45 @@ class SQLite<T extends string> extends SQL<T> implements IdDbBackend<T> {
         names.push(k)
         vals.push(values[k])
       })
-      const stmt = this.db.prepare(
-        `INSERT INTO ${table}(${names.join(',')}) VALUES(${names
-          .map((v) => '?')
-          .join(',')}) RETURNING *;`
-      )
+      const query = `INSERT INTO ${table}(${names.join(',')}) VALUES(${names
+        .map((v) => '?')
+        .join(',')}) RETURNING *;`
+      this.logger.debug('[SQLite][insert] Executing', {
+        table,
+        fields: names,
+        query
+      })
+      const stmt = this.db.prepare(query)
       stmt.all(
         vals,
         (err: string, rows: Array<Record<string, string | number>>) => {
           /* istanbul ignore if */
           if (err != null) {
+            this.logger.error('[SQLite][insert] Failed', {
+              table,
+              fields: names,
+              values: vals,
+              query,
+              error: err
+            })
             reject(err)
           } else {
+            this.logger.debug('[SQLite][insert] Successful', {
+              table,
+              rowCount: rows.length
+            })
             resolve(rows)
           }
         }
       )
       stmt.finalize((err) => {
-        reject(err)
+        if (err) {
+          this.logger.error('[SQLite][insert] Statement finalize failed', {
+            table,
+            error: err
+          })
+          reject(err)
+        }
       })
     })
   }
@@ -125,6 +158,7 @@ class SQLite<T extends string> extends SQL<T> implements IdDbBackend<T> {
     return new Promise((resolve, reject) => {
       /* istanbul ignore if */
       if (this.db == null) {
+        this.logger.error('[SQLite][update] DB not ready', { table, field })
         throw new Error('Wait for database to be ready')
       }
       const names: string[] = []
@@ -134,24 +168,46 @@ class SQLite<T extends string> extends SQL<T> implements IdDbBackend<T> {
         vals.push(values[k])
       })
       vals.push(value)
-      const stmt = this.db.prepare(
-        `UPDATE ${table} SET ${names.join(
-          '=?,'
-        )}=? WHERE ${field}=? RETURNING *;`
-      )
+      const query = `UPDATE ${table} SET ${names.join(
+        '=?,'
+      )}=? WHERE ${field}=? RETURNING *;`
+      this.logger.debug('[SQLite][update] Executing', {
+        table,
+        fields: names,
+        whereField: field,
+        query
+      })
+      const stmt = this.db.prepare(query)
       stmt.all(
         vals,
         (err: string, rows: Array<Record<string, string | number>>) => {
           /* istanbul ignore if */
           if (err != null) {
+            this.logger.error('[SQLite][update] Failed', {
+              table,
+              fields: names,
+              whereField: field,
+              query,
+              error: err
+            })
             reject(err)
           } else {
+            this.logger.debug('[SQLite][update] Successful', {
+              table,
+              rowCount: rows.length
+            })
             resolve(rows)
           }
         }
       )
       stmt.finalize((err) => {
-        reject(err)
+        if (err) {
+          this.logger.error('[SQLite][update] Statement finalize failed', {
+            table,
+            error: err
+          })
+          reject(err)
+        }
       })
     })
   }
@@ -166,6 +222,10 @@ class SQLite<T extends string> extends SQL<T> implements IdDbBackend<T> {
     return new Promise((resolve, reject) => {
       /* istanbul ignore if */
       if (this.db == null) {
+        this.logger.error('[SQLite][updateAnd] DB not ready', {
+          table,
+          conditions: [condition1.field, condition2.field]
+        })
         throw new Error('Wait for database to be ready')
       }
       const names = Object.keys(values)
@@ -173,16 +233,32 @@ class SQLite<T extends string> extends SQL<T> implements IdDbBackend<T> {
       vals.push(condition1.value, condition2.value)
 
       const setClause = names.map((name) => `${name} = ?`).join(', ')
-      const stmt = this.db.prepare(
-        `UPDATE ${table} SET ${setClause} WHERE ${condition1.field} = ? AND ${condition2.field} = ? RETURNING *;`
-      )
+      const query = `UPDATE ${table} SET ${setClause} WHERE ${condition1.field} = ? AND ${condition2.field} = ? RETURNING *;`
+      this.logger.debug('[SQLite][updateAnd] Executing', {
+        table,
+        fields: names,
+        whereFields: [condition1.field, condition2.field],
+        query
+      })
+      const stmt = this.db.prepare(query)
 
       stmt.all(
         vals,
         (err: string, rows: Array<Record<string, string | number>>) => {
           if (err != null) {
+            this.logger.error('[SQLite][updateAnd] Failed', {
+              table,
+              fields: names,
+              whereFields: [condition1.field, condition2.field],
+              query,
+              error: err
+            })
             reject(err)
           } else {
+            this.logger.debug('[SQLite][updateAnd] Successful', {
+              table,
+              rowCount: rows.length
+            })
             resolve(rows)
           }
         }
@@ -191,6 +267,10 @@ class SQLite<T extends string> extends SQL<T> implements IdDbBackend<T> {
       stmt.finalize((err) => {
         // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
         if (err) {
+          this.logger.error(
+            'UPDATE with AND conditions statement finalize failed',
+            { table, error: err }
+          )
           reject(err)
         }
       })
@@ -317,24 +397,48 @@ class SQLite<T extends string> extends SQL<T> implements IdDbBackend<T> {
 
         if (order != null) condition += ` ORDER BY ${order}`
 
+        const query = `SELECT ${fields.join(',')} FROM ${tables.join(
+          ','
+        )} ${condition}`
+        this.logger.debug('[SQLite][_get] Executing SELECT', {
+          tables,
+          fields,
+          condition,
+          query
+        })
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
         // @ts-ignore never undefined
-        const stmt = this.db.prepare(
-          `SELECT ${fields.join(',')} FROM ${tables.join(',')} ${condition}`
-        )
+        const stmt = this.db.prepare(query)
         stmt.all(
           values,
           (err: string, rows: Array<Record<string, string | number>>) => {
             /* istanbul ignore if */
             if (err != null) {
+              this.logger.error('[SQLite][_get] SELECT failed', {
+                tables,
+                fields,
+                condition,
+                query,
+                error: err
+              })
               reject(err)
             } else {
+              this.logger.debug('[SQLite][_get] SELECT successful', {
+                tables,
+                rowCount: rows.length
+              })
               resolve(rows)
             }
           }
         )
         stmt.finalize((err) => {
-          reject(err)
+          if (err) {
+            this.logger.error('[SQLite][_get] Statement finalize failed', {
+              tables,
+              error: err
+            })
+            reject(err)
+          }
         })
       }
     })
@@ -561,28 +665,52 @@ class SQLite<T extends string> extends SQL<T> implements IdDbBackend<T> {
 
         if (order != null) condition += ` ORDER BY ${order}`
 
+        const query = `SELECT ${fields.join(
+          ','
+        )}, ${minmax}(${targetField}) AS max_${targetFieldAlias} FROM ${tables.join(
+          ','
+        )} ${condition} HAVING COUNT(*) > 0` // HAVING COUNT(*) > 0 is to avoid returning a row with NULL values
+        this.logger.debug(`Executing ${minmax} query`, {
+          tables,
+          targetField,
+          fields,
+          condition,
+          query
+        })
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
         // @ts-ignore never undefined
-        const stmt = this.db.prepare(
-          `SELECT ${fields.join(
-            ','
-          )}, ${minmax}(${targetField}) AS max_${targetFieldAlias} FROM ${tables.join(
-            ','
-          )} ${condition} HAVING COUNT(*) > 0` // HAVING COUNT(*) > 0 is to avoid returning a row with NULL values
-        )
+        const stmt = this.db.prepare(query)
         stmt.all(
           values,
           (err: string, rows: Array<Record<string, string | number>>) => {
             /* istanbul ignore if */
             if (err != null) {
+              this.logger.error(`${minmax} query failed`, {
+                tables,
+                targetField,
+                fields,
+                condition,
+                query,
+                error: err
+              })
               reject(err)
             } else {
+              this.logger.debug(`${minmax} query successful`, {
+                tables,
+                rowCount: rows.length
+              })
               resolve(rows)
             }
           }
         )
         stmt.finalize((err) => {
-          reject(err)
+          if (err) {
+            this.logger.error(`${minmax} statement finalize failed`, {
+              tables,
+              error: err
+            })
+            reject(err)
+          }
         })
       }
     })
@@ -690,6 +818,7 @@ class SQLite<T extends string> extends SQL<T> implements IdDbBackend<T> {
     return new Promise((resolve, reject) => {
       /* istanbul ignore if */
       if (this.db == null) {
+        this.logger.error('[SQLite][match] DB not ready', { table })
         reject(new Error('Wait for database to be ready'))
       } else {
         if (typeof searchFields !== 'object') searchFields = [searchFields]
@@ -698,22 +827,47 @@ class SQLite<T extends string> extends SQL<T> implements IdDbBackend<T> {
         const values = searchFields.map(() => `%${value}%`)
         let condition = searchFields.map((f) => `${f} LIKE ?`).join(' OR ')
         if (order != null) condition += `ORDER BY ${order}`
-        const stmt = this.db.prepare(
-          `SELECT ${fields.join(',')} FROM ${table} WHERE ${condition}`
-        )
+        const query = `SELECT ${fields.join(
+          ','
+        )} FROM ${table} WHERE ${condition}`
+        this.logger.debug('[SQLite][match] Executing LIKE query', {
+          table,
+          searchFields,
+          value,
+          fields,
+          query
+        })
+        const stmt = this.db.prepare(query)
         stmt.all(
           values,
           (err: string, rows: Array<Record<string, string | number>>) => {
             /* istanbul ignore if */
             if (err != null) {
+              this.logger.error('[SQLite][match] Query failed', {
+                table,
+                searchFields,
+                value,
+                query,
+                error: err
+              })
               reject(err)
             } else {
+              this.logger.debug('[SQLite][match] Query successful', {
+                table,
+                rowCount: rows.length
+              })
               resolve(rows)
             }
           }
         )
         stmt.finalize((err) => {
-          reject(err)
+          if (err) {
+            this.logger.error('[SQLite][match] Statement finalize failed', {
+              table,
+              error: err
+            })
+            reject(err)
+          }
         })
       }
     })
@@ -723,19 +877,48 @@ class SQLite<T extends string> extends SQL<T> implements IdDbBackend<T> {
     return new Promise((resolve, reject) => {
       /* istanbul ignore if */
       if (this.db == null) {
+        this.logger.error('[SQLite][deleteEqual] DB not ready', {
+          table,
+          field
+        })
         reject(new Error('Wait for database to be ready'))
       } else {
-        const stmt = this.db.prepare(`DELETE FROM ${table} WHERE ${field}=?`)
+        const query = `DELETE FROM ${table} WHERE ${field}=?`
+        this.logger.debug('[SQLite][deleteEqual] Executing', {
+          table,
+          field,
+          query
+        })
+        const stmt = this.db.prepare(query)
         stmt.all([value], (err, rows) => {
           /* istanbul ignore if */
           if (err != null) {
+            this.logger.error('DELETE failed', {
+              table,
+              field,
+              query,
+              error: err
+            })
             reject(err)
           } else {
+            this.logger.debug('[SQLite][deleteEqual] Successful', {
+              table,
+              field
+            })
             resolve()
           }
         })
         stmt.finalize((err) => {
-          reject(err)
+          if (err) {
+            this.logger.error(
+              '[SQLite][deleteEqual] Statement finalize failed',
+              {
+                table,
+                error: err
+              }
+            )
+            reject(err)
+          }
         })
       }
     })
@@ -755,21 +938,41 @@ class SQLite<T extends string> extends SQL<T> implements IdDbBackend<T> {
     return new Promise((resolve, reject) => {
       /* istanbul ignore if */
       if (this.db == null) {
+        this.logger.error('[SQLite][deleteEqualAnd] DB not ready', { table })
         reject(new Error('Wait for database to be ready'))
       } else {
-        const stmt = this.db.prepare(
-          `DELETE FROM ${table} WHERE ${condition1.field}=? AND ${condition2.field}=?`
-        )
+        const query = `DELETE FROM ${table} WHERE ${condition1.field}=? AND ${condition2.field}=?`
+        this.logger.debug('[SQLite][deleteEqualAnd] Executing', {
+          table,
+          conditions: [condition1.field, condition2.field],
+          query
+        })
+        const stmt = this.db.prepare(query)
         stmt.all([condition1.value, condition2.value], (err, rows) => {
           /* istanbul ignore if */
           if (err != null) {
+            this.logger.error('[SQLite][deleteEqualAnd] Failed', {
+              table,
+              conditions: [condition1.field, condition2.field],
+              query,
+              error: err
+            })
             reject(err)
           } else {
+            this.logger.debug('[SQLite][deleteEqualAnd] Successful', {
+              table
+            })
             resolve()
           }
         })
         stmt.finalize((err) => {
-          reject(err)
+          if (err) {
+            this.logger.error(
+              'DELETE with AND conditions statement finalize failed',
+              { table, error: err }
+            )
+            reject(err)
+          }
         })
       }
     })
@@ -783,19 +986,45 @@ class SQLite<T extends string> extends SQL<T> implements IdDbBackend<T> {
     return new Promise((resolve, reject) => {
       /* istanbul ignore if */
       if (this.db == null) {
+        this.logger.error('[SQLite][deleteLowerThan] DB not ready', {
+          table,
+          field
+        })
         throw new Error('Wait for database to be ready')
       }
-      const stmt = this.db.prepare(`DELETE FROM ${table} WHERE ${field}<?`)
+      const query = `DELETE FROM ${table} WHERE ${field}<?`
+      this.logger.debug('[SQLite][deleteLowerThan] Executing', {
+        table,
+        field,
+        query
+      })
+      const stmt = this.db.prepare(query)
       stmt.all([value], (err) => {
         /* istanbul ignore if */
         if (err != null) {
+          this.logger.error('[SQLite][deleteLowerThan] Failed', {
+            table,
+            field,
+            query,
+            error: err
+          })
           reject(err)
         } else {
+          this.logger.debug('[SQLite][deleteLowerThan] Successful', {
+            table,
+            field
+          })
           resolve()
         }
       })
       stmt.finalize((err) => {
-        reject(err)
+        if (err) {
+          this.logger.error(
+            'DELETE with < condition statement finalize failed',
+            { table, error: err }
+          )
+          reject(err)
+        }
       })
     })
   }
@@ -814,6 +1043,7 @@ class SQLite<T extends string> extends SQL<T> implements IdDbBackend<T> {
     return new Promise((resolve, reject) => {
       // istanbul ignore if
       if (this.db == null) {
+        this.logger.error('[SQLite][deleteWhere] DB not ready', { table })
         reject(new Error('Wait for database to be ready'))
       } else {
         if (!Array.isArray(conditions)) conditions = [conditions]
@@ -834,23 +1064,47 @@ class SQLite<T extends string> extends SQL<T> implements IdDbBackend<T> {
             .join(' AND ')
         }
 
+        const query = `DELETE FROM ${table} WHERE ${condition}`
+        this.logger.debug('[SQLite][deleteWhere] Executing', {
+          table,
+          conditions: filters,
+          operators,
+          query
+        })
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
         // @ts-ignore never undefined
-        const stmt = this.db.prepare(`DELETE FROM ${table} WHERE ${condition}`)
+        const stmt = this.db.prepare(query)
 
         stmt.all(
           values, // The statement fills the values properly.
           (err: string) => {
             /* istanbul ignore if */
             if (err != null) {
+              this.logger.error('[SQLite][deleteWhere] Failed', {
+                table,
+                conditions: filters,
+                operators,
+                values,
+                query,
+                error: err
+              })
               reject(err)
             } else {
+              this.logger.debug('[SQLite][deleteWhere] Successful', {
+                table
+              })
               resolve()
             }
           }
         )
         stmt.finalize((err) => {
-          reject(err)
+          if (err) {
+            this.logger.error(
+              'DELETE with WHERE conditions statement finalize failed',
+              { table, error: err }
+            )
+            reject(err)
+          }
         })
       }
     })

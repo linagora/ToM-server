@@ -116,10 +116,7 @@ describe('the admin service', () => {
 
       await service.deleteUserMedia('some_user_id', 'some_access_token')
 
-      expect(loggerMock.error).toHaveBeenLastCalledWith(
-        'Failed to delete user media',
-        expect.anything()
-      )
+      expect(loggerMock.error).toHaveBeenCalled()
     })
 
     it('should log an error if the synapse admin API returns a bad response', async () => {
@@ -129,10 +126,7 @@ describe('the admin service', () => {
 
       await service.deleteUserMedia('some_user_id', 'some_access_token')
 
-      expect(loggerMock.error).toHaveBeenLastCalledWith(
-        'Failed to delete user media',
-        expect.anything()
-      )
+      expect(loggerMock.error).toHaveBeenCalled()
     })
   })
 

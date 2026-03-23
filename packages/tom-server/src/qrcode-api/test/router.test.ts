@@ -29,7 +29,17 @@ const idServer = new IdServer(
     rate_limiting_nb_requests: 10,
     template_dir: `${JEST_PROCESS_ROOT_PATH}/templates`,
     userdb_host: './tokens.db',
-    qr_code_url: 'https://example.com'
+    qr_code_url: 'https://example.com',
+    features: {
+      common_settings: { enabled: false },
+      user_profile: {
+        default_visibility_settings: {
+          visibility: 'private',
+          visible_fields: []
+        }
+      },
+      user_directory: { enabled: true }
+    }
   } as unknown as ConfigDescription
 )
 

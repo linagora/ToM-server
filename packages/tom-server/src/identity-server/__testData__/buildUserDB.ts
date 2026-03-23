@@ -10,9 +10,9 @@ interface Config {
 let created = false
 
 const createQuery =
-  'CREATE TABLE IF NOT EXISTS users (uid varchar(8), mobile varchar(12), mail varchar(32), sn varchar(32))'
+  'CREATE TABLE IF NOT EXISTS users (uid varchar(8), mobile varchar(12), mail varchar(32), sn varchar(32), cn varchar(64), displayName varchar(64), givenName varchar(32))'
 const insertQuery =
-  "INSERT INTO users VALUES('dwho', '33612345678', 'dwho@example.com', 'Dwho')"
+  "INSERT INTO users VALUES('dwho', '33612345678', 'dwho@example.com', 'Dwho', 'Doctor Who', 'Doctor Who', 'Doctor')"
 
 // eslint-disable-next-line @typescript-eslint/promise-function-async
 const buildUserDB = (conf: Config, recreate?: boolean): Promise<void> => {
@@ -27,69 +27,115 @@ const buildUserDB = (conf: Config, recreate?: boolean): Promise<void> => {
           if (err != null) {
             reject(err)
           } else {
-            matrixDb.run(
-              "INSERT INTO users VALUES('@dwho:example.com', '', 0)",
-              (err) => {
-                if (err != null) {
-                  reject(err)
-                } else {
-                  matrixDb.close((err) => {
-                    /* istanbul ignore if */
+            // Insert only dwho into matrixDb (user00-user30 should be inactive)
+            const matrixUserInserts = [
+              "INSERT INTO users VALUES('@dwho:example.com', '', 0)"
+            ]
+
+            const insertMatrixUsersSequentially = (index: number): void => {
+              if (index >= matrixUserInserts.length) {
+                matrixDb.run(
+                  'CREATE TABLE IF NOT EXISTS profiles (user_id text, displayname text)',
+                  (err) => {
                     if (err != null) {
-                      console.error(err)
                       reject(err)
                     } else {
-                      const userDb = new sqlite3.Database(conf.userdb_host)
-                      userDb.run(createQuery, (err) => {
-                        if (err != null) {
-                          reject(err)
-                        } else {
-                          Promise.all(
-                            // eslint-disable-next-line @typescript-eslint/promise-function-async
-                            Array.from(Array(31).keys()).map(
-                              (v: string | number) => {
-                                // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
-                                // @ts-ignore v is first a number
-                                if (v < 10) v = `0${v}`
-                                return new Promise((_resolve, _reject) => {
-                                  userDb.run(
-                                    `INSERT INTO users VALUES('user${v}', '', 'user${v}@example.com', 'User${v}')`,
-                                    (err) => {
-                                      err != null
-                                        ? _reject(err)
-                                        : _resolve(true)
-                                    }
-                                  )
-                                })
-                              }
-                            )
-                          )
-                            .then(() => {
-                              userDb.run(insertQuery, (err) => {
+                      // Insert only dwho into profiles (user00-user30 should be inactive)
+                      const profileInserts = [
+                        "INSERT INTO profiles VALUES('@dwho:example.com', 'Dwho')"
+                      ]
+
+                      const insertProfilesSequentially = (
+                        index: number
+                      ): void => {
+                        if (index >= profileInserts.length) {
+                          matrixDb.close((err) => {
+                            /* istanbul ignore if */
+                            if (err != null) {
+                              console.error(err)
+                              reject(err)
+                            } else {
+                              const userDb = new sqlite3.Database(
+                                conf.userdb_host
+                              )
+                              userDb.run(createQuery, (err) => {
                                 if (err != null) {
                                   reject(err)
                                 } else {
-                                  userDb.close((err) => {
-                                    /* istanbul ignore if */
-                                    if (err != null) {
-                                      console.error(err)
-                                      reject(err)
-                                    } else {
-                                      created = true
-                                      resolve()
-                                    }
-                                  })
+                                  Promise.all(
+                                    // eslint-disable-next-line @typescript-eslint/promise-function-async
+                                    Array.from(Array(31).keys()).map(
+                                      (v: string | number) => {
+                                        // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
+                                        // @ts-ignore v is first a number
+                                        if (v < 10) v = `0${v}`
+                                        return new Promise(
+                                          (_resolve, _reject) => {
+                                            userDb.run(
+                                              `INSERT INTO users VALUES('user${v}', '', 'user${v}@example.com', 'User${v}', 'User ${v}', 'User ${v}', 'User')`,
+                                              (err) => {
+                                                err != null
+                                                  ? _reject(err)
+                                                  : _resolve(true)
+                                              }
+                                            )
+                                          }
+                                        )
+                                      }
+                                    )
+                                  )
+                                    .then(() => {
+                                      userDb.run(insertQuery, (err) => {
+                                        if (err != null) {
+                                          reject(err)
+                                        } else {
+                                          userDb.close((err) => {
+                                            /* istanbul ignore if */
+                                            if (err != null) {
+                                              console.error(err)
+                                              reject(err)
+                                            } else {
+                                              created = true
+                                              resolve()
+                                            }
+                                          })
+                                        }
+                                      })
+                                    })
+                                    .catch(reject)
                                 }
                               })
-                            })
-                            .catch(reject)
+                            }
+                          })
+                          return
                         }
-                      })
+
+                        matrixDb.run(profileInserts[index], (err) => {
+                          if (err != null) {
+                            reject(err)
+                          } else {
+                            insertProfilesSequentially(index + 1)
+                          }
+                        })
+                      }
+
+                      insertProfilesSequentially(0)
                     }
-                  })
-                }
+                  }
+                )
+                return
               }
-            )
+
+              matrixDb.run(matrixUserInserts[index], (err) => {
+                if (err != null) {
+                  reject(err)
+                } else {
+                  insertMatrixUsersSequentially(index + 1)
+                }
+              })
+            }
+
+            insertMatrixUsersSequentially(0)
           }
         }
       )

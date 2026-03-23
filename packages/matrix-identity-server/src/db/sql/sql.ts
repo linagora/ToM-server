@@ -25,16 +25,18 @@ abstract class SQL<T extends string> {
   db?: SQLiteDatabase | PgDatabase
   ready: Promise<void>
   cleanJob?: NodeJS.Timeout
+  protected readonly logger: TwakeLogger
 
   constructor(
     conf: Config,
-    private readonly logger: TwakeLogger,
+    logger: TwakeLogger,
     tables?: Record<T, string>,
     indexes?: Partial<Record<T, string[]>>,
     initializeValues?: Partial<
       Record<T, Array<Record<string, string | number>>>
     >
   ) {
+    this.logger = logger
     // @ts-expect-error method is defined in child class
     this.ready = this.createDatabases(
       conf,

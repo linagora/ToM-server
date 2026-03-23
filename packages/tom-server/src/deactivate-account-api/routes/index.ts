@@ -5,7 +5,7 @@ import {
   type Config as LoggerConfig,
   type TwakeLogger
 } from '@twake/logger'
-import type { Config } from '../../types'
+import type { Config, ITokenService } from '../../types'
 import DeactivateUserController from '../controllers'
 import DeactivateUserMiddleware from '../middlewares'
 
@@ -14,11 +14,12 @@ export const PATH = '/_twake/admin/deactivate-user'
 export default (
   config: Config,
   db: MatrixDBBackend,
-  defaultLogger?: TwakeLogger
+  defaultLogger?: TwakeLogger,
+  tokenService?: ITokenService
 ): Router => {
   const logger = defaultLogger ?? getLogger(config as unknown as LoggerConfig)
   const router = Router()
-  const controller = new DeactivateUserController(config, logger)
+  const controller = new DeactivateUserController(config, logger, tokenService)
   const middleware = new DeactivateUserMiddleware(config, db, logger)
 
   /**

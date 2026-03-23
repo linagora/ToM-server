@@ -61,8 +61,6 @@ export const matrixResolve = (name: string): Promise<string | string[]> => {
       .then((res) => {
         // istanbul ignore if
         if (!(res as WellKnownMatrixServer)['m.server']) {
-          console.info('Bad .well-known/matrix/server response', res)
-          console.debug('Trying with DNS')
           dnsResolve(name, resolve, reject)
           return
         }
@@ -196,8 +194,6 @@ export class MatrixResolve {
                 resolve()
               })
               .catch((e) => {
-                // istanbul ignore next
-                console.error('Unable to load toad-cache', e)
                 // istanbul ignore next
                 reject(e)
               })

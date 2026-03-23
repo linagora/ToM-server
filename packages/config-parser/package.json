@@ -52,6 +52,15 @@
   ],
   "scripts": {
     "build": "rollup -c",
-    "test": "jest"
+    "test": "LOG_TRANSPORTS=File LOG_FILE=/dev/null jest",
+    "check": "biome check ."
+  },
+  "engines": {
+    "node": "18.20.8",
+    "npm": "10.8.2"
+  },
+  "volta": {
+    "node": "18.20.8",
+    "npm": "10.8.2"
   }
 }

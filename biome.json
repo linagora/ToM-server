@@ -1,0 +1,118 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.4.8/schema.json",
+
+  "vcs": {
+    "enabled": true,
+    "clientKind": "git",
+    "useIgnoreFile": true
+  },
+
+  "files": {
+    "ignoreUnknown": true,
+    "includes": ["packages/**/*.{js,jsx,ts,tsx}"]
+  },
+
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 120,
+    "lineEnding": "lf"
+  },
+
+  "javascript": {
+    "formatter": {
+      "semicolons": "always",
+      "trailingCommas": "all",
+      "quoteStyle": "double",
+      "arrowParentheses": "always"
+    }
+  },
+
+  "assist": {
+    "enabled": true,
+    "actions": {
+      "source": {
+        "organizeImports": "on"
+      }
+    }
+  },
+
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "recommended": true,
+
+      "correctness": {
+        "noUnusedVariables": "error",
+        "noUnusedImports": "error",
+        "noUnusedFunctionParameters": "warn"
+      },
+
+      "suspicious": {
+        "noExplicitAny": "error",
+        "noDoubleEquals": {
+          "level": "error",
+          "options": { "ignoreNull": false }
+        },
+        "noConsole": "error",
+        "noTsIgnore": "error",
+        "noVar": "error",
+        "noConfusingVoidType": "error",
+        "useAwait": "error",
+        "useErrorMessage": "warn"
+      },
+
+      "complexity": {
+        "noForEach": "warn",
+        "useArrowFunction": "error",
+        "useOptionalChain": "warn",
+        "noStaticOnlyClass": "error",
+        "noUselessCatch": "error",
+        "noUselessCatchBinding": "error",
+        "noExcessiveCognitiveComplexity": {
+          "level": "warn",
+          "options": { "maxAllowedComplexity": 10 }
+        },
+        "noExcessiveLinesPerFunction": {
+          "level": "warn",
+          "options": {
+            "maxLines": 40,
+            "skipBlankLines": true
+          }
+        },
+        "useMaxParams": {
+          "level": "error",
+          "options": { "max": 5 }
+        }
+      },
+
+      "style": {
+        "useConst": "error",
+        "useTemplate": "error",
+        "noUselessElse": "error",
+        "noEnum": "warn",
+        "useImportType": "warn",
+        "useExportType": "warn",
+        "useThrowNewError": "error",
+        "useThrowOnlyError": "error",
+        "useNodejsImportProtocol": "warn",
+        "useShorthandFunctionType": "warn",
+        "useDefaultParameterLast": "warn"
+      },
+
+      "nursery": {
+        "noFloatingPromises": "error",
+        "noMisusedPromises": "warn",
+        "useErrorCause": "warn",
+        "noForIn": "error",
+        "useExplicitType": "warn"
+      },
+
+      "performance": {
+        "noBarrelFile": "warn",
+        "noReExportAll": "warn"
+      }
+    }
+  }
+}

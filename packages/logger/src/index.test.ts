@@ -41,7 +41,9 @@ describe('Logger', () => {
           )
           .toString()
       )
-      expect(() => getLogger(conf)).toThrow("Configuration key 'falsy' isn't accepted as it's not defined in the ConfigDescription.")
+      expect(() => getLogger(conf)).toThrow(
+        "Configuration key 'falsy' isn't accepted as it's not defined in the ConfigDescription."
+      )
     })
 
     it('should throw an error if log_level is not a string', () => {
@@ -1394,8 +1396,8 @@ describe('Logger', () => {
         logging: {
           ...confDesc.logging,
           log_transports: {
-            type: "array",
-            required: false,
+            type: 'array',
+            required: false
           }
         }
       }
@@ -1524,11 +1526,11 @@ describe('Logger', () => {
         logging: {
           ...confDesc.logging,
           rejection_handlers: {
-            type: "array",
+            type: 'array',
             required: false
           },
           exception_handlers: {
-            type: "array",
+            type: 'array',
             required: false
           }
         }
@@ -1569,11 +1571,11 @@ describe('Logger', () => {
         logging: {
           ...confDesc.logging,
           rejection_handlers: {
-            type: "array",
+            type: 'array',
             required: false
           },
           exception_handlers: {
-            type: "array",
+            type: 'array',
             required: false
           }
         }

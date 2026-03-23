@@ -61,7 +61,7 @@ describe('AdminSettingsrController', () => {
 
   it('should return 400 if no fields to update are provided', async () => {
     req.body = {}
-    
+
     await controller.handle(req, res, next)
     expect(res.status).toHaveBeenCalledWith(400)
     expect(res.json).toHaveBeenCalledWith({

@@ -1,4 +1,5 @@
 import type { NextFunction, Response, Request } from 'express'
+import type { UserEnrichmentFields } from '../user-info-api/types'
 
 export interface Contact {
   id: string
@@ -34,11 +35,28 @@ export interface AddressbookListResponse {
   contacts: Contact[]
 }
 
+// Extended contact with enrichment data from UserInfoService
+export interface EnrichedContact extends Contact, UserEnrichmentFields {
+  // Deprecated fields for backward compatibility
+  displayName?: string
+  cn?: string
+  sn?: string
+  givenName?: string
+  givenname?: string
+  mail?: string
+  mobile?: string
+}
+
 export interface IAddressbookService {
   /**
    * list the contacts of an addressbook
+   * @param owner - The owner of the addressbook
+   * @param includeUserDbContacts - Whether to include UserDB contacts (default: true)
    */
-  list(owner: string): Promise<AddressbookListResponse>
+  list(
+    owner: string,
+    includeUserDbContacts?: boolean
+  ): Promise<AddressbookListResponse>
 
   /**
    * Deletes an addressbook

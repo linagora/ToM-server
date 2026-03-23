@@ -44,20 +44,14 @@ REST API Endpoints documentation is available on https://linagora.github.io/ToM-
 
 * [@twake/matrix-identity-server](./packages/matrix-identity-server):
   [Matrix Identity Service](https://spec.matrix.org/v1.6/identity-service-api/) implementation for Node.js
-* [@twake/matrix-client-server](./packages/matrix-client-server/):
-  [Matrix Client-Server](https://spec.matrix.org/v1.11/client-server-api/) implementation for Node.js
-* [@twake/matrix-invite](./packages/matrix-invite): matrix invitation web application
 * [@twake/server](./packages/tom-server): the main Twake Chat Server, extends [@twake/matrix-identity-server](./packages/matrix-identity-server)
 * [@twake/federated-identity-service](./packages/federated-identity-service): Twake Federated Identity Service
 * [@twake/config-parser](./packages/config-parser): simple file parser that uses also environment variables
 * [@twake/crypto](./packages/crypto): cryptographic methods for Twake Chat
 * [@twake/logger](./packages/logger): logger for Twake
 * [@twake/utils](.packages/utils): utilitary methods for Twake Chat
-* [@twake/matrix-application-server](./packages/matrix-application-server): implements
-  [Matrix Application Service API](https://spec.matrix.org/v1.6/application-service-api/)
 * [matrix-resolve](./packages/matrix-resolve): resolve a Matrix "server name" into base URL following
   [Matrix specification](https://spec.matrix.org/latest/server-server-api/#server-discovery)
-* [@twake/retry-promise](packages/retry-promise): simple module extending javascript Promise with retry strategy
 
 ## Requirements
 
@@ -68,6 +62,57 @@ REST API Endpoints documentation is available on https://linagora.github.io/ToM-
 * `npm run build`: build all packages
 * `npm run test`: test all packages
 * `node ./server.mjs`: run the server
+
+## Development Setup
+
+Follow these steps to start the project in development mode:
+
+### 1. Copy environment file
+
+Create a local `.env` file based on the provided example:
+
+```bash
+cp .env.example .env
+```
+
+You can adjust any variables inside `.env` as needed (e.g., database credentials, API keys, etc.).
+
+### 2. Start required services
+
+Use the provided Docker Compose file to start the local dependencies (PostgreSQL, LDAP, etc.):
+
+```bash
+docker compose -f .compose/examples/dev.pgsql+ldap.yml up -d
+```
+
+This runs all necessary backend services in the background.
+To stop them later:
+
+```bash
+docker compose -f .compose/examples/dev.pgsql+ldap.yml down
+```
+
+### 3. Run the development environment
+
+Start the local dev environment (watchers + server auto-reload):
+
+```bash
+npm run dev
+```
+
+This will:
+
+* Watch and rebuild all packages automatically (`lerna run watch`)
+* Launch the backend server via `nodemon`
+* Load environment variables from `.env` automatically
+
+### 4. Access and debug
+
+Once started:
+
+* The server should be running at the URL printed in the console (e.g. `http://localhost:3000`)
+* Any code changes in `packages/` will trigger automatic rebuilds and server restarts
+
 
 ## Copyright and license
 

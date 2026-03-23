@@ -12,8 +12,19 @@ class MatrixDBSQLite extends SQLite<Collections> implements MatrixDBBackend {
       Record<Collections, Array<Record<string, string | number>>>
     >
   ): Promise<void> {
-    if (this.db != null) return Promise.resolve()
+    if (this.db != null) {
+      this.logger.debug(
+        '[MatrixDBSQLite][createDatabases] Database already initialized'
+      )
+      return Promise.resolve()
+    }
     return new Promise((resolve, reject) => {
+      this.logger.debug(
+        '[MatrixDBSQLite][createDatabases] Initializing database connection',
+        {
+          path: conf.matrix_database_host
+        }
+      )
       import('sqlite3')
         .then((sqlite3) => {
           // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
@@ -25,12 +36,29 @@ class MatrixDBSQLite extends SQLite<Collections> implements MatrixDBBackend {
           ))
           /* istanbul ignore if */
           if (db == null) {
+            this.logger.error(
+              '[MatrixDBSQLite][createDatabases] Database not created',
+              {
+                path: conf.matrix_database_host
+              }
+            )
             reject(new Error('Database not created'))
+          } else {
+            this.logger.info(
+              'MatrixDB SQLite database connection established',
+              { path: conf.matrix_database_host }
+            )
+            resolve()
           }
-          resolve()
         })
         .catch((e) => {
           /* istanbul ignore next */
+          this.logger.error(
+            '[MatrixDBSQLite][createDatabases] Unable to load sqlite3 module',
+            {
+              error: e
+            }
+          )
           reject(e)
         })
     })

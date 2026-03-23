@@ -1,365 +1,606 @@
-import { TwakeLogger } from '@twake/logger'
-import bodyParser from 'body-parser'
-import express, { NextFunction } from 'express'
-import router, { PATH } from '../routes'
+import type { TwakeLogger } from '@twake/logger'
+import type { MatrixDB, UserDB } from '@twake/matrix-identity-server'
+import type { Response, NextFunction } from 'express'
+import InvitationApiController from '../controllers'
 import type { AuthRequest, Config, TwakeDB } from '../../types'
-import supertest from 'supertest'
-import { InvitationRequestPayload } from '../types'
+import type {
+  InvitationRequestPayload,
+  GenerateInvitationLinkRequestPayload,
+  IInvitationService,
+  InvitationResponse
+} from '../types'
 
-const EXPIRATION = 24 * 60 * 60 * 1000 // 24 hours
-
-const app = express()
-
-const dbMock = {
-  get: jest.fn(),
-  getAll: jest.fn(),
-  insert: jest.fn(),
-  update: jest.fn(),
-  deleteEqual: jest.fn(),
-  getCount: jest.fn()
+const mockInvitationService: jest.Mocked<IInvitationService> = {
+  invite: jest.fn(),
+  accept: jest.fn(),
+  list: jest.fn(),
+  generateLink: jest.fn(),
+  getInvitationStatus: jest.fn(),
+  removeInvitation: jest.fn()
 }
 
-const loggerMock = {
-  info: jest.fn(),
-  error: jest.fn(),
-  warn: jest.fn()
-}
+jest.mock('../services', () => {
+  return jest.fn().mockImplementation(() => mockInvitationService)
+})
 
-const authenticatorMock = jest
-  .fn()
-  .mockImplementation((_req, _res, callbackMethod) => {
-    callbackMethod({ sub: 'test' }, 'test')
+jest.mock('../../user-info-api/services', () => {
+  return jest.fn().mockImplementation(() => ({
+    get: jest.fn().mockResolvedValue({ display_name: 'Test User' }),
+    getVisibility: jest.fn(),
+    updateVisibility: jest.fn()
+  }))
+})
+
+jest.mock('../../utils/services/notification-service', () => {
+  return jest.fn().mockImplementation(() => ({
+    sendEmail: jest.fn(),
+    sendSMS: jest.fn(),
+    emailFrom: 'noreply@example.com'
+  }))
+})
+
+describe('InvitationApiController', () => {
+  let controller: InvitationApiController
+  let mockRequest: Partial<AuthRequest>
+  let mockResponse: Partial<Response>
+  let mockNext: NextFunction
+  let statusSpy: jest.Mock
+  let jsonSpy: jest.Mock
+
+  const dbMock = {
+    get: jest.fn(),
+    insert: jest.fn(),
+    update: jest.fn(),
+    deleteEqual: jest.fn()
+  } as unknown as TwakeDB
+
+  const userDbMock = {} as unknown as UserDB
+  const matrixDbMock = {} as unknown as MatrixDB
+
+  const loggerMock = {
+    info: jest.fn(),
+    error: jest.fn(),
+    debug: jest.fn(),
+    warn: jest.fn()
+  } as unknown as TwakeLogger
+
+  const configMock = {
+    matrix_server: 'https://matrix.example.com',
+    signup_url: 'https://signup.example.com'
+  } as unknown as Config
+
+  beforeEach(() => {
+    jest.clearAllMocks()
+
+    controller = new InvitationApiController(
+      dbMock,
+      userDbMock,
+      matrixDbMock,
+      loggerMock,
+      configMock
+    )
+
+    statusSpy = jest.fn().mockReturnThis()
+    jsonSpy = jest.fn().mockReturnThis()
+
+    mockResponse = {
+      status: statusSpy,
+      json: jsonSpy
+    }
+    mockNext = jest.fn()
   })
 
-jest.mock('../middlewares/index.ts', () => {
-  const passiveMiddlewareMock = (
-    _req: AuthRequest,
-    _res: Response,
-    next: NextFunction
-  ): void => {
-    next()
-  }
-
-  return function () {
-    return {
-      checkInvitationPayload: passiveMiddlewareMock,
-      checkInvitation: passiveMiddlewareMock,
-      rateLimitInvitations: passiveMiddlewareMock,
-      checkInvitationOwnership: passiveMiddlewareMock,
-      checkGenerateInvitationLinkPayload: passiveMiddlewareMock,
-      checkFeatureEnabled: passiveMiddlewareMock
+  describe('sendInvitation', () => {
+    const validPayload: InvitationRequestPayload = {
+      contact: 'recipient@example.com',
+      medium: 'email'
     }
-  }
-})
 
-jest.mock('../../utils/middlewares/cookie-auth.middleware', () => {
-  const passiveMiddlewareMock = (
-    _req: AuthRequest,
-    _res: Response,
-    next: NextFunction
-  ): void => {
-    next()
-  }
+    beforeEach(() => {
+      mockRequest = {
+        body: validPayload,
+        userId: '@sender:example.com',
+        headers: { authorization: 'Bearer test-token' }
+      }
+    })
 
-  return function () {
-    return {
-      authenticateWithCookie: passiveMiddlewareMock
-    }
-  }
-})
+    it('should return 200 with invitation id when successful', async () => {
+      mockInvitationService.invite.mockResolvedValue('invitation-id-123')
 
-const spyMock = jest.fn()
+      await controller.sendInvitation(
+        mockRequest as AuthRequest,
+        mockResponse as Response,
+        mockNext
+      )
 
-jest.mock('../services/index.ts', () => {
-  return function () {
-    return {
-      invite: spyMock,
-      accept: spyMock,
-      list: spyMock,
-      generateLink: spyMock,
-      getInvitationStatus: spyMock,
-      removeInvitation: spyMock
-    }
-  }
-})
-
-app.use(bodyParser.json())
-app.use(bodyParser.urlencoded({ extended: true }))
-app.use(
-  router(
-    {
-      matrix_server: 'http://localhost:789',
-      base_url: 'http://localhost',
-      signup_url: 'http://example.com/?app=chat',
-      sms_api_url: 'http://sms.example.com/api'
-    } as unknown as Config,
-    dbMock as unknown as TwakeDB,
-    authenticatorMock,
-    loggerMock as unknown as TwakeLogger
-  )
-)
-
-describe('the invitation API controller', () => {
-  describe('the sendInvitation method', () => {
-    it('should try to send an invitation', async () => {
-      const response = await supertest(app)
-        .post(PATH)
-        .send({
-          contact: '+21625555888',
-          medium: 'phone'
-        } satisfies InvitationRequestPayload)
-        .set('Authorization', 'Bearer test')
-
-      expect(spyMock).toHaveBeenCalledWith({
-        recipient: '+21625555888',
-        medium: 'phone',
-        sender: 'test'
+      expect(statusSpy).toHaveBeenCalledWith(200)
+      expect(jsonSpy).toHaveBeenCalledWith({
+        message: 'Invitation sent',
+        id: 'invitation-id-123'
       })
-
-      expect(response.status).toBe(200)
+      expect(mockNext).not.toHaveBeenCalled()
     })
 
-    it('should return a 400 if the sender is missing', async () => {
-      const response = await supertest(app)
-        .post(PATH)
-        .send({
-          contact: '+21625555888',
-          medium: 'phone'
-        } satisfies InvitationRequestPayload)
+    it('should return 400 when sender is missing', async () => {
+      mockRequest.userId = undefined
 
-      expect(response.status).toBe(400)
+      await controller.sendInvitation(
+        mockRequest as AuthRequest,
+        mockResponse as Response,
+        mockNext
+      )
+
+      expect(statusSpy).toHaveBeenCalledWith(400)
+      expect(jsonSpy).toHaveBeenCalledWith({
+        message: 'Sender is required'
+      })
     })
 
-    it('should return a 400 if the authorization header is missing', async () => {
-      const response = await supertest(app)
-        .post(PATH)
-        .send({
-          contact: '+21625555888',
-          medium: 'phone'
-        } satisfies InvitationRequestPayload)
+    it('should return 400 when authorization header is missing', async () => {
+      mockRequest.headers = {}
 
-      expect(response.status).toBe(400)
-    })
+      await controller.sendInvitation(
+        mockRequest as AuthRequest,
+        mockResponse as Response,
+        mockNext
+      )
 
-    it('should return a 500 if something wrong happens', async () => {
-      spyMock.mockRejectedValue(new Error('test'))
-
-      const response = await supertest(app)
-        .post(PATH)
-        .send({
-          contact: '+21625555888',
-          medium: 'phone'
-        } satisfies InvitationRequestPayload)
-        .set('Authorization', 'Bearer test')
-
-      expect(response.status).toBe(500)
-    })
-  })
-
-  describe('the acceptInvitation method', () => {
-    afterEach(() => {
-      spyMock.mockClear()
-    })
-
-    it('should try to accept an invitation', async () => {
-      spyMock.mockClear()
-      spyMock.mockResolvedValue('Invitation accepted')
-
-      const response = await supertest(app)
-        .get(`${PATH}/token`)
-        .set('Authorization', 'Bearer test')
-
-      expect(spyMock).toHaveBeenCalledWith('token', 'test', 'Bearer test')
-      expect(response.status).toBe(200)
-      expect(response.body).toEqual({ message: 'Invitation accepted' })
-    })
-
-    it('should return a 500 if something wrong happens', async () => {
-      spyMock.mockClear()
-      spyMock.mockRejectedValue(new Error('something wrong happens'))
-
-      const response = await supertest(app)
-        .get(`${PATH}/test`)
-        .set('Authorization', 'Bearer test')
-
-      expect(response.status).toBe(500)
-    })
-
-    it('should return a 400 if the authorization header is missing', async () => {
-      const response = await supertest(app).get(`${PATH}/token`)
-
-      expect(response.status).toBe(400)
-      expect(response.body).toEqual({
+      expect(statusSpy).toHaveBeenCalledWith(400)
+      expect(jsonSpy).toHaveBeenCalledWith({
         message: 'Authorization header is required'
       })
     })
-  })
 
-  describe('the listInvitations method', () => {
-    it('should return the list of invitations', async () => {
-      const sampleInvitation = {
-        id: 'test',
-        sender: 'test',
-        recipient: 'test',
-        medium: 'phone',
-        expiration: Date.now() + EXPIRATION,
-        accessed: false
+    it('should delegate error handling to error middleware', async () => {
+      const error = new Error('Service error')
+      mockInvitationService.invite.mockRejectedValue(error)
+
+      await controller.sendInvitation(
+        mockRequest as AuthRequest,
+        mockResponse as Response,
+        mockNext
+      )
+
+      expect(mockNext).toHaveBeenCalledWith(error)
+      expect(statusSpy).not.toHaveBeenCalled()
+    })
+
+    it('should handle email with special characters', async () => {
+      mockRequest.body = {
+        contact: 'user+tag@example.com',
+        medium: 'email'
       }
+      mockInvitationService.invite.mockResolvedValue('invitation-id-123')
 
-      spyMock.mockResolvedValue([sampleInvitation])
+      await controller.sendInvitation(
+        mockRequest as AuthRequest,
+        mockResponse as Response,
+        mockNext
+      )
 
-      const response = await supertest(app)
-        .get(`${PATH}/list`)
-        .set('Authorization', 'Bearer test')
-
-      expect(response.status).toBe(200)
-      expect(response.body).toEqual({
-        invitations: [sampleInvitation]
-      })
+      expect(statusSpy).toHaveBeenCalledWith(200)
+      expect(jsonSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: 'invitation-id-123'
+        })
+      )
     })
 
-    it('should return a 500 if something wrong happens', async () => {
-      spyMock.mockRejectedValue(new Error('error'))
+    it('should handle phone number contacts', async () => {
+      mockRequest.body = {
+        contact: '+33612345678',
+        medium: 'phone'
+      }
+      mockInvitationService.invite.mockResolvedValue('invitation-id-456')
 
-      const response = await supertest(app)
-        .get(`${PATH}/list`)
-        .set('Authorization', 'Bearer test')
+      await controller.sendInvitation(
+        mockRequest as AuthRequest,
+        mockResponse as Response,
+        mockNext
+      )
 
-      expect(response.status).toBe(500)
+      expect(statusSpy).toHaveBeenCalledWith(200)
+      expect(jsonSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: 'invitation-id-456'
+        })
+      )
     })
   })
 
-  describe('the generateInvitationLink method', () => {
-    it('should attempt to generate an invitation link', async () => {
-      spyMock.mockResolvedValue({
-        link: 'https://localhost/?invitation_token=test',
-        id: 'test'
-      })
-
-      const response = await supertest(app)
-        .post(`${PATH}/generate`)
-        .set('Authorization', 'Bearer test')
-        .send({
-          contact: '+21625555888',
-          medium: 'phone'
-        } satisfies InvitationRequestPayload)
-
-      expect(response.status).toBe(200)
-      expect(response.body).toEqual({ link: expect.any(String), id: 'test' })
+  describe('acceptInvitation', () => {
+    beforeEach(() => {
+      mockRequest = {
+        params: { id: 'invitation-123' },
+        userId: '@user:example.com',
+        headers: { authorization: 'Bearer test-token' }
+      }
     })
 
-    it('should return a 500 if something wrong happens', async () => {
-      spyMock.mockRejectedValue(new Error('error'))
+    it('should return 200 with success message when accepted', async () => {
+      mockInvitationService.accept.mockResolvedValue(undefined)
 
-      const response = await supertest(app)
-        .post(`${PATH}/generate`)
-        .set('Authorization', 'Bearer test')
-        .send({
-          contact: '+21625555888',
-          medium: 'phone'
-        } satisfies InvitationRequestPayload)
+      await controller.acceptInvitation(
+        mockRequest as AuthRequest,
+        mockResponse as Response,
+        mockNext
+      )
 
-      expect(response.status).toBe(500)
+      expect(statusSpy).toHaveBeenCalledWith(200)
+      expect(jsonSpy).toHaveBeenCalledWith({
+        message: 'Invitation accepted'
+      })
+      expect(mockNext).not.toHaveBeenCalled()
     })
 
-    describe('without 3pid ( unknown user )', () => {
-      it('should generate an invitation link without a body', async () => {
-        spyMock.mockResolvedValue({
-          link: 'https://localhost/?invitation_token=test',
-          id: 'test'
-        })
+    it('should return 400 when invitation id is empty', async () => {
+      mockRequest.params = { id: '' }
 
-        const response = await supertest(app)
-          .post(`${PATH}/generate`)
-          .set('Authorization', 'Bearer test')
-          .send()
+      await controller.acceptInvitation(
+        mockRequest as AuthRequest,
+        mockResponse as Response,
+        mockNext
+      )
 
-        expect(response.status).toBe(200)
-        expect(response.body).toEqual({
-          link: expect.any(String),
-          id: 'test'
-        })
+      expect(statusSpy).toHaveBeenCalledWith(400)
+      expect(jsonSpy).toHaveBeenCalledWith({
+        message: 'Invitation id is required'
       })
+    })
 
-      it('should generate an invitation link with an empty body', async () => {
-        spyMock.mockResolvedValue({
-          link: 'https://localhost/?invitation_token=test',
-          id: 'test'
-        })
+    it('should return 400 when authorization header is missing', async () => {
+      mockRequest.headers = {}
 
-        const response = await supertest(app)
-          .post(`${PATH}/generate`)
-          .set('Authorization', 'Bearer test')
-          .send({})
+      await controller.acceptInvitation(
+        mockRequest as AuthRequest,
+        mockResponse as Response,
+        mockNext
+      )
 
-        expect(response.status).toBe(200)
-        expect(response.body).toEqual({
-          link: expect.any(String),
-          id: 'test'
-        })
+      expect(statusSpy).toHaveBeenCalledWith(400)
+      expect(jsonSpy).toHaveBeenCalledWith({
+        message: 'Authorization header is required'
       })
+    })
+
+    it('should return 400 when userId is missing', async () => {
+      mockRequest.userId = undefined
+
+      await controller.acceptInvitation(
+        mockRequest as AuthRequest,
+        mockResponse as Response,
+        mockNext
+      )
+
+      expect(statusSpy).toHaveBeenCalledWith(400)
+      expect(jsonSpy).toHaveBeenCalledWith({
+        message: 'User id is required'
+      })
+    })
+
+    it('should delegate error handling to error middleware', async () => {
+      const error = new Error('Service error')
+      mockInvitationService.accept.mockRejectedValue(error)
+
+      await controller.acceptInvitation(
+        mockRequest as AuthRequest,
+        mockResponse as Response,
+        mockNext
+      )
+
+      expect(mockNext).toHaveBeenCalledWith(error)
+      expect(statusSpy).not.toHaveBeenCalled()
     })
   })
 
-  describe('the getInvitationStatus method', () => {
-    it('should attempt to get the invitation status', async () => {
-      spyMock.mockResolvedValue({
-        id: 'test',
-        sender: 'test',
-        recipient: 'test',
-        medium: 'phone',
-        expiration: `${EXPIRATION}`,
-        accessed: false
-      })
+  describe('listInvitations', () => {
+    beforeEach(() => {
+      mockRequest = {
+        userId: '@user:example.com'
+      }
+    })
 
-      const response = await supertest(app)
-        .get(`${PATH}/test/status`)
-        .set('Authorization', 'Bearer test')
-
-      expect(response.status).toBe(200)
-      expect(response.body).toEqual({
-        invitation: {
-          id: 'test',
-          sender: 'test',
-          recipient: 'test',
-          medium: 'phone',
-          expiration: `${EXPIRATION}`,
+    it('should return 200 with invitations list', async () => {
+      const mockInvitations: InvitationResponse[] = [
+        {
+          id: 'invite-1',
+          sender: '@user:example.com',
+          recipient: 'test@example.com',
+          medium: 'email',
+          expiration: Date.now() + 86400000,
           accessed: false
         }
+      ]
+      mockInvitationService.list.mockResolvedValue(mockInvitations)
+
+      await controller.listInvitations(
+        mockRequest as AuthRequest,
+        mockResponse as Response,
+        mockNext
+      )
+
+      expect(statusSpy).toHaveBeenCalledWith(200)
+      expect(jsonSpy).toHaveBeenCalledWith({
+        invitations: mockInvitations
       })
     })
 
-    it('should return a 500 if something wrong happens', async () => {
-      spyMock.mockRejectedValue(new Error('error'))
+    it('should return 400 when userId is missing', async () => {
+      mockRequest.userId = undefined
 
-      const response = await supertest(app)
-        .get(`${PATH}/test/status`)
-        .set('Authorization', 'Bearer test')
+      await controller.listInvitations(
+        mockRequest as AuthRequest,
+        mockResponse as Response,
+        mockNext
+      )
 
-      expect(response.status).toBe(500)
+      expect(statusSpy).toHaveBeenCalledWith(400)
+      expect(jsonSpy).toHaveBeenCalledWith({
+        message: 'User id is required'
+      })
+    })
+
+    it('should return empty array when no invitations exist', async () => {
+      mockInvitationService.list.mockResolvedValue([])
+
+      await controller.listInvitations(
+        mockRequest as AuthRequest,
+        mockResponse as Response,
+        mockNext
+      )
+
+      expect(statusSpy).toHaveBeenCalledWith(200)
+      expect(jsonSpy).toHaveBeenCalledWith({
+        invitations: []
+      })
+    })
+
+    it('should delegate error handling to error middleware', async () => {
+      const error = new Error('Service error')
+      mockInvitationService.list.mockRejectedValue(error)
+
+      await controller.listInvitations(
+        mockRequest as AuthRequest,
+        mockResponse as Response,
+        mockNext
+      )
+
+      expect(mockNext).toHaveBeenCalledWith(error)
+      expect(statusSpy).not.toHaveBeenCalled()
     })
   })
 
-  describe('the removeInvitation method', () => {
-    it('should attempt to remove an invitation', async () => {
-      spyMock.mockResolvedValue('Invitation removed')
-
-      const response = await supertest(app)
-        .delete(`${PATH}/test`)
-        .set('Authorization', 'Bearer test')
-
-      expect(response.status).toBe(200)
-      expect(response.body).toEqual({ message: 'Invitation removed' })
+  describe('generateInvitationLink', () => {
+    beforeEach(() => {
+      mockRequest = {
+        body: {
+          contact: 'test@example.com',
+          medium: 'email'
+        } as GenerateInvitationLinkRequestPayload,
+        userId: '@user:example.com'
+      }
     })
 
-    it('should return a 500 if something wrong happens', async () => {
-      spyMock.mockRejectedValue(new Error('error'))
+    it('should return 200 with link and id', async () => {
+      mockInvitationService.generateLink.mockResolvedValue({
+        link: 'https://signup.example.com/?invitation_token=abc123',
+        id: 'invite-123'
+      })
 
-      const response = await supertest(app)
-        .delete(`${PATH}/test`)
-        .set('Authorization', 'Bearer test')
+      await controller.generateInvitationLink(
+        mockRequest as AuthRequest,
+        mockResponse as Response,
+        mockNext
+      )
 
-      expect(response.status).toBe(500)
+      expect(statusSpy).toHaveBeenCalledWith(200)
+      expect(jsonSpy).toHaveBeenCalledWith({
+        link: 'https://signup.example.com/?invitation_token=abc123',
+        id: 'invite-123'
+      })
+    })
+
+    it('should support generic link without contact and medium', async () => {
+      mockRequest.body = {}
+      mockInvitationService.generateLink.mockResolvedValue({
+        link: 'https://signup.example.com/?invitation_token=xyz789',
+        id: 'invite-456'
+      })
+
+      await controller.generateInvitationLink(
+        mockRequest as AuthRequest,
+        mockResponse as Response,
+        mockNext
+      )
+
+      expect(statusSpy).toHaveBeenCalledWith(200)
+      expect(jsonSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          link: expect.stringContaining('invitation_token=')
+        })
+      )
+    })
+
+    it('should support link generation with phone number', async () => {
+      mockRequest.body = {
+        contact: '+33612345678',
+        medium: 'phone'
+      }
+      mockInvitationService.generateLink.mockResolvedValue({
+        link: 'https://signup.example.com/?invitation_token=def456',
+        id: 'invite-789'
+      })
+
+      await controller.generateInvitationLink(
+        mockRequest as AuthRequest,
+        mockResponse as Response,
+        mockNext
+      )
+
+      expect(statusSpy).toHaveBeenCalledWith(200)
+      expect(jsonSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: 'invite-789'
+        })
+      )
+    })
+
+    it('should delegate error handling when sender is missing', async () => {
+      mockRequest.userId = undefined
+
+      await controller.generateInvitationLink(
+        mockRequest as AuthRequest,
+        mockResponse as Response,
+        mockNext
+      )
+
+      expect(mockNext).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: 'Sender is required'
+        })
+      )
+      expect(statusSpy).not.toHaveBeenCalled()
+    })
+
+    it('should delegate error handling to error middleware', async () => {
+      const error = new Error('Service error')
+      mockInvitationService.generateLink.mockRejectedValue(error)
+
+      await controller.generateInvitationLink(
+        mockRequest as AuthRequest,
+        mockResponse as Response,
+        mockNext
+      )
+
+      expect(mockNext).toHaveBeenCalledWith(error)
+      expect(statusSpy).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('getInvitationStatus', () => {
+    beforeEach(() => {
+      mockRequest = {
+        params: { id: 'invitation-123' }
+      }
+    })
+
+    it('should return 200 with invitation status', async () => {
+      const mockInvitation: InvitationResponse = {
+        id: 'invitation-123',
+        sender: '@user:example.com',
+        recipient: 'test@example.com',
+        medium: 'email',
+        expiration: Date.now() + 86400000,
+        accessed: false
+      }
+      mockInvitationService.getInvitationStatus.mockResolvedValue(
+        mockInvitation
+      )
+
+      await controller.getInvitationStatus(
+        mockRequest as AuthRequest,
+        mockResponse as Response,
+        mockNext
+      )
+
+      expect(statusSpy).toHaveBeenCalledWith(200)
+      expect(jsonSpy).toHaveBeenCalledWith({
+        invitation: mockInvitation
+      })
+    })
+
+    it('should return 400 when invitation id is empty', async () => {
+      mockRequest.params = { id: '' }
+
+      await controller.getInvitationStatus(
+        mockRequest as AuthRequest,
+        mockResponse as Response,
+        mockNext
+      )
+
+      expect(statusSpy).toHaveBeenCalledWith(400)
+      expect(jsonSpy).toHaveBeenCalledWith({
+        message: 'Invitation id is required'
+      })
+    })
+
+    it('should include matrix_id in response when invitation is accepted', async () => {
+      const mockInvitation: InvitationResponse = {
+        id: 'invitation-123',
+        sender: '@user:example.com',
+        recipient: 'test@example.com',
+        medium: 'email',
+        expiration: Date.now() + 86400000,
+        accessed: true,
+        matrix_id: '@newuser:example.com'
+      }
+      mockInvitationService.getInvitationStatus.mockResolvedValue(
+        mockInvitation
+      )
+
+      await controller.getInvitationStatus(
+        mockRequest as AuthRequest,
+        mockResponse as Response,
+        mockNext
+      )
+
+      expect(jsonSpy).toHaveBeenCalledWith({
+        invitation: expect.objectContaining({
+          matrix_id: '@newuser:example.com',
+          accessed: true
+        })
+      })
+    })
+
+    it('should delegate error handling to error middleware', async () => {
+      const error = new Error('Service error')
+      mockInvitationService.getInvitationStatus.mockRejectedValue(error)
+
+      await controller.getInvitationStatus(
+        mockRequest as AuthRequest,
+        mockResponse as Response,
+        mockNext
+      )
+
+      expect(mockNext).toHaveBeenCalledWith(error)
+      expect(statusSpy).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('removeInvitation', () => {
+    beforeEach(() => {
+      mockRequest = {
+        params: { id: 'invitation-123' }
+      }
+    })
+
+    it('should return 200 with success message when removed', async () => {
+      mockInvitationService.removeInvitation.mockResolvedValue(undefined)
+
+      await controller.removeInvitation(
+        mockRequest as AuthRequest,
+        mockResponse as Response,
+        mockNext
+      )
+
+      expect(statusSpy).toHaveBeenCalledWith(200)
+      expect(jsonSpy).toHaveBeenCalledWith({
+        message: 'Invitation removed'
+      })
+    })
+
+    it('should delegate error handling to error middleware', async () => {
+      const error = new Error('Service error')
+      mockInvitationService.removeInvitation.mockRejectedValue(error)
+
+      await controller.removeInvitation(
+        mockRequest as AuthRequest,
+        mockResponse as Response,
+        mockNext
+      )
+
+      expect(mockNext).toHaveBeenCalledWith(error)
+      expect(statusSpy).not.toHaveBeenCalled()
     })
   })
 })

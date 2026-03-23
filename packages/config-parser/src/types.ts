@@ -53,7 +53,6 @@ export type OldConfigDescription = Record<
  */
 export type ConfigDescription = NewConfigDescription | OldConfigDescription
 
-
 /**
  * Defines the possible types for the default configuration file input.
  * It can be an object representing configuration or a file path.

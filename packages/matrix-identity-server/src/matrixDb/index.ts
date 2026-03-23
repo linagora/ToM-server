@@ -21,21 +21,21 @@ type Get = (
   fields?: string[],
   filterFields?: Record<string, string | number | Array<string | number>>
 ) => Promise<DbGetResult>
-/*
+
 type Match = (
   table: Collections,
   fields: string[],
   searchFields: string[],
   value: string | number
 ) => Promise<DbGetResult>
-*/
+
 type GetAll = (table: Collections, fields: string[]) => Promise<DbGetResult>
 
 export interface MatrixDBBackend {
   ready: Promise<void>
   get: Get
   getAll: GetAll
-  // match: Match
+  match: Match
   close: () => void
 }
 
@@ -65,6 +65,7 @@ class MatrixDB implements MatrixDBBackend {
     this.ready = new Promise((resolve, reject) => {
       this.db.ready
         .then(() => {
+          this.logger.info('[MatrixDB] initialized.')
           resolve()
         })
         /* istanbul ignore next */
@@ -83,6 +84,15 @@ class MatrixDB implements MatrixDBBackend {
     filterFields?: Record<string, string | number | Array<string | number>>
   ): Promise<DbGetResult> => {
     return await this.db.get(table, fields, filterFields)
+  }
+
+  match = async (
+    table: Collections,
+    fields: string[],
+    searchFields: string[],
+    value: string | number
+  ): Promise<DbGetResult> => {
+    return await this.db.match(table, fields, searchFields, value)
   }
 
   close(): void {

@@ -1,0 +1,5 @@
+{
+  "application_name": "Twake Chat (SSO)",
+  "application_welcome_message": "Welcome to Twake Chat with SSO!",
+  "homeserver": "https://matrix.docker.internal"
+}

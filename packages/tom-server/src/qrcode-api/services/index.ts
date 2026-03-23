@@ -7,7 +7,9 @@ export default class QRCodeService implements IQRCodeService {
   constructor(
     private readonly config: Config,
     private readonly logger: TwakeLogger
-  ) {}
+  ) {
+    this.logger.info('[QRCodeService] initialized.')
+  }
 
   /**
    * Generates a QR code as a string in SVG format.

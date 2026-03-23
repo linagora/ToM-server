@@ -1,0 +1,27 @@
+name: Build
+description: Build packages and upload artifacts
+
+inputs:
+  skip-nx-cache:
+    description: "Skip nx cache when building"
+    required: false
+    default: "false"
+  upload-artifacts:
+    description: Whether to upload dist artifacts
+    default: "false"
+
+runs:
+  using: composite
+  steps:
+    - name: Build all packages
+      run: npx nx run-many -t build ${{ inputs.skip-nx-cache == 'true' && '--skip-nx-cache' || '' }}
+      shell: bash
+
+    - name: Upload dist artifacts
+      if: inputs.upload-artifacts == 'true'
+      uses: actions/upload-artifact@v4
+      with:
+        name: dist-artifacts-${{ github.run_id }}
+        path: |
+          packages/*/dist
+        retention-days: 1

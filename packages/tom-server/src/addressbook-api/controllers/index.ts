@@ -1,16 +1,108 @@
 import { TwakeLogger } from '@twake/logger'
 import { AuthRequest, TwakeDB } from '../../types'
-import type { IAddressbookApiController, IAddressbookService } from '../types'
+import type {
+  Contact,
+  EnrichedContact,
+  IAddressbookApiController,
+  IAddressbookService
+} from '../types'
 import { AddressbookService } from '../services'
 import type { NextFunction, Response } from 'express'
+import type {
+  IUserInfoService,
+  UserInformation
+} from '../../user-info-api/types'
 
 export default class AddressbookApiController
   implements IAddressbookApiController
 {
   private readonly service: IAddressbookService
 
-  constructor(db: TwakeDB, private readonly logger: TwakeLogger) {
-    this.service = new AddressbookService(db, logger)
+  constructor(
+    db: TwakeDB,
+    private readonly logger: TwakeLogger,
+    addressbookService?: IAddressbookService,
+    private readonly userInfoService?: IUserInfoService
+  ) {
+    this.service = addressbookService ?? new AddressbookService(db, logger)
+  }
+
+  /**
+   * Enriches contacts with additional user information from UserInfoService.
+   *
+   * @param {Contact[]} contacts - Array of contacts to enrich
+   * @param {string?} viewer - The viewer's user ID for visibility checks
+   * @returns {Promise<EnrichedContact[]>} Array of enriched contacts
+   */
+  private async _enrichContacts(
+    contacts: Contact[],
+    viewer?: string
+  ): Promise<EnrichedContact[]> {
+    if (!this.userInfoService || contacts.length === 0) {
+      this.logger.debug(
+        '[AddressbookApiController._enrichContacts] Skipping enrichment - no service or no contacts',
+        {
+          hasUserInfoService: !!this.userInfoService,
+          contactsCount: contacts.length
+        }
+      )
+      return contacts.map((c) => ({ ...c } as EnrichedContact))
+    }
+
+    const mxids = contacts.map((c) => c.mxid)
+
+    try {
+      this.logger.debug(
+        `[AddressbookApiController._enrichContacts] Enriching ${mxids.length} contacts`
+      )
+      const userInfoMap = await this.userInfoService.getBatch(mxids, viewer)
+
+      const enrichedContacts: EnrichedContact[] = contacts.map((contact) => {
+        const userInfo: UserInformation | undefined = userInfoMap.get(
+          contact.mxid
+        )
+
+        if (!userInfo) {
+          this.logger.debug(
+            `... mxid=${contact.mxid} no user info found, keeping stored display_name="${contact.display_name}"`
+          )
+          return { ...contact } as EnrichedContact
+        }
+
+        const displayName =
+          userInfo.display_name || (contact.display_name as string)
+
+        const enriched: EnrichedContact = {
+          ...contact,
+          ...userInfo, // spreads all shared UserEnrichmentFields directly
+          // Override/resolve conflicts and fill defaults
+          display_name: displayName,
+          displayName,
+          cn: displayName,
+          sn: userInfo.sn || '',
+          givenName: userInfo.givenName || userInfo.first_name || '',
+          givenname: userInfo.first_name || '',
+          mail: userInfo.emails?.at(0) || '',
+          mobile: userInfo.phones?.at(0) || ''
+        }
+
+        return enriched
+      })
+
+      this.logger.info(
+        `[AddressbookApiController._enrichContacts] Enriched ${enrichedContacts.length} contacts with user info`
+      )
+      return enrichedContacts
+    } catch (error: any) {
+      this.logger.error(
+        '[AddressbookApiController._enrichContacts] Enrichment failed, returning non-enriched contacts',
+        {
+          message: error.message,
+          stack: error.stack
+        }
+      )
+      return contacts.map((c) => ({ ...c } as EnrichedContact))
+    }
   }
 
   /**
@@ -36,7 +128,16 @@ export default class AddressbookApiController
 
       const addressbook = await this.service.list(owner)
 
-      res.status(200).json(addressbook)
+      // Enrich contacts with user info
+      const enrichedContacts = await this._enrichContacts(
+        addressbook.contacts,
+        owner
+      )
+
+      res.status(200).json({
+        ...addressbook,
+        contacts: enrichedContacts
+      })
     } catch (error) {
       next(error)
     }
@@ -85,17 +186,29 @@ export default class AddressbookApiController
   ): Promise<void> => {
     try {
       const { id } = req.params
+      const viewer = req.userId
+
+      this.logger.debug(
+        `[AddressbookApiController.fetchContact] Fetching contact id=${id} viewer=${viewer}`
+      )
 
       const contact = await this.service.getContact(id)
 
       if (!contact) {
-        this.logger.error('Contact not found')
-
+        this.logger.error(
+          `[AddressbookApiController.fetchContact] Contact not found id=${id}`
+        )
         res.status(404).json({ message: 'Contact not found' })
         return
       }
 
-      res.status(200).json(contact)
+      const [enrichedContact] = await this._enrichContacts([contact], viewer)
+
+      this.logger.info(
+        `[AddressbookApiController.fetchContact] Returning contact id=${id} mxid=${enrichedContact.mxid}`
+      )
+
+      res.status(200).json(enrichedContact)
     } catch (error) {
       next(error)
     }

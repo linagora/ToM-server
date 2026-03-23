@@ -24,6 +24,7 @@ export default class NotificationService implements INotificationService {
     this.emailService = new EmailService(config)
     this.smsService = new SmsService(config, logger)
     this.emailFrom = this.emailService.from
+    this.logger.info('[NotificationService] initialized.')
   }
 
   /**

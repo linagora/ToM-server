@@ -13,7 +13,7 @@ export class AMQPConnectorError extends Error {
 /**
  * Error thrown when the queue is not specified.
  * @class QueueNotSpecifiedError
- * @extends AMQPConnectorError 
+ * @extends AMQPConnectorError
  */
 export class ExchangeNotSpecifiedError extends AMQPConnectorError {
   constructor() {
@@ -25,7 +25,7 @@ export class ExchangeNotSpecifiedError extends AMQPConnectorError {
 /**
  * Error thrown when the queue is not specified.
  * @class QueueNotSpecifiedError
- * @extends AMQPConnectorError 
+ * @extends AMQPConnectorError
  */
 export class QueueNotSpecifiedError extends AMQPConnectorError {
   constructor() {

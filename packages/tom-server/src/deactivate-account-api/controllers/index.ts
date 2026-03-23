@@ -1,16 +1,24 @@
 import type { TwakeLogger } from '@twake/logger'
 import type { IAdminService, IDeactivateUserController } from '../types'
-import type { Config } from '../../types'
+import type { Config, ITokenService } from '../../types'
 import type { NextFunction, Response, Request } from 'express'
-import AdminService from '../services'
+import DeactivateAccountService from '../services'
 
 export default class DeactivateUserController
   implements IDeactivateUserController
 {
   private adminService: IAdminService
 
-  constructor(config: Config, private readonly logger: TwakeLogger) {
-    this.adminService = new AdminService(config, logger)
+  constructor(
+    config: Config,
+    private readonly logger: TwakeLogger,
+    tokenService?: ITokenService
+  ) {
+    this.adminService = new DeactivateAccountService(
+      config,
+      logger,
+      tokenService
+    )
   }
 
   /**

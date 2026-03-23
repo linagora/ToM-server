@@ -30,6 +30,7 @@ export default class SmsService implements ISMSService {
       'api-login': sms_api_login as string,
       'api-key': sms_api_key as string
     }
+    this.logger.info('[SmsService] initialized.')
   }
 
   /**

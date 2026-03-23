@@ -16,9 +16,11 @@ const mockLogger: Partial<TwakeLogger> = {
   debug: jest.fn(),
   error: jest.fn(),
   warn: jest.fn(),
+  info: jest.fn(),
   close: jest.fn()
 }
 
+// Use in-memory databases to avoid conflicts between parallel test workers
 const idServer = new IdServer(
   {
     get: jest.fn()
@@ -26,11 +28,21 @@ const idServer = new IdServer(
   {} as unknown as Config,
   {
     database_engine: 'sqlite',
-    database_host: 'test.db',
+    database_host: ':memory:',
     rate_limiting_window: 5000,
     rate_limiting_nb_requests: 10,
     template_dir: './templates',
-    userdb_host: './tokens.db'
+    userdb_host: ':memory:',
+    features: {
+      common_settings: { enabled: false },
+      user_profile: {
+        default_visibility_settings: {
+          visibility: 'private',
+          visible_fields: []
+        }
+      },
+      user_directory: { enabled: true }
+    }
   } as unknown as ConfigDescription,
   mockLogger as TwakeLogger
 )
@@ -84,15 +96,6 @@ describe('the Deactivate account API router', () => {
 
   afterAll(() => {
     idServer.cleanJobs()
-
-    const pathFilesToDelete = [
-      path.join(JEST_PROCESS_ROOT_PATH, 'test.db'),
-      path.join(JEST_PROCESS_ROOT_PATH, 'tokens.db')
-    ]
-
-    pathFilesToDelete.forEach((path) => {
-      if (fs.existsSync(path)) fs.unlinkSync(path)
-    })
   })
 
   it('should call the validation middleware', async () => {

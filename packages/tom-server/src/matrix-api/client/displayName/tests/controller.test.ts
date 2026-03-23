@@ -85,8 +85,7 @@ describe('DisplayNameController', () => {
     expect(mockRes.status).toHaveBeenCalledWith(403)
     expect(mockRes.json).toHaveBeenCalledWith({
       errcode: errCodes.forbidden,
-      error:
-        'You are not allowed to change the display name of another user'
+      error: 'You are not allowed to change the display name of another user'
     })
   })
 

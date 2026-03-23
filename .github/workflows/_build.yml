@@ -1,0 +1,41 @@
+name: Build
+
+on:
+  workflow_call:
+    inputs:
+      skip-nx-cache:
+        description: "Skip nx cache when building"
+        required: false
+        type: boolean
+        default: false
+      upload-artifacts:
+        type: boolean
+        default: false
+    secrets:
+      NX_CLOUD_ACCESS_TOKEN:
+        required: false
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    env:
+      NX_CLOUD_ACCESS_TOKEN: ${{ secrets.NX_CLOUD_ACCESS_TOKEN }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: ./.github/actions/setup-node
+
+      - name: Build
+        uses: ./.github/actions/build
+        with:
+          skip-nx-cache: ${{ inputs.skip-nx-cache }}
+          upload-artifacts: ${{ inputs.upload-artifacts }}

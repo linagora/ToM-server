@@ -9,4 +9,4 @@ We’re excited to have you join us!
 Best regards,
 Twake Chat
 
-STOP au 30101
+__footer__

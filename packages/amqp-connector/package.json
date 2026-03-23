@@ -7,12 +7,13 @@
   "scripts": {
     "build": "rollup -c",
     "watch": "rollup -c -w",
-    "test": "jest"
+    "test": "LOG_TRANSPORTS=File LOG_FILE=/dev/null jest",
+    "check": "biome check ."
   },
   "author": [
     {
-    "name": "Montassar GHANMI",
-    "email": "mghanmi@linagora.com"
+      "name": "Montassar GHANMI",
+      "email": "mghanmi@linagora.com"
     }
   ],
   "license": "AGPL-3.0-or-later",
@@ -22,5 +23,13 @@
   },
   "devDependencies": {
     "@types/amqplib": "^0.10.7"
+  },
+  "engines": {
+    "node": "18.20.8",
+    "npm": "10.8.2"
+  },
+  "volta": {
+    "node": "18.20.8",
+    "npm": "10.8.2"
   }
 }

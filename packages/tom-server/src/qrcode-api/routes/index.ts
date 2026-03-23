@@ -5,7 +5,7 @@ import {
   type Config as LoggerConfig
 } from '@twake/logger'
 import type IdServer from '../../identity-server'
-import { type Config } from '../../types'
+import { type Config, type ITokenService } from '../../types'
 import { Router } from 'express'
 import authMiddleware from '../../utils/middlewares/auth.middleware'
 import QRCodeApiController from '../controllers'
@@ -15,12 +15,13 @@ export const PATH = '/_twake/v1/qrcode'
 export default (
   idServer: IdServer,
   config: Config,
-  defaultLogger?: TwakeLogger
+  defaultLogger?: TwakeLogger,
+  tokenService?: ITokenService
 ): Router => {
   const logger = defaultLogger ?? getLogger(config as unknown as LoggerConfig)
   const router = Router()
   const authenticator = authMiddleware(idServer.authenticate, logger)
-  const qrCodeController = new QRCodeApiController(logger, config)
+  const qrCodeController = new QRCodeApiController(logger, config, tokenService)
 
   /**
    * @openapi

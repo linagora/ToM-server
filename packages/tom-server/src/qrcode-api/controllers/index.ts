@@ -9,9 +9,14 @@ class QRCodeApiController implements IQRCodeApiController {
   private readonly qrCodeService: IQRCodeService
   private readonly tokenService: ITokenService
 
-  constructor(private readonly logger: TwakeLogger, config: Config) {
+  constructor(
+    private readonly logger: TwakeLogger,
+    config: Config,
+    tokenService?: ITokenService
+  ) {
     this.qrCodeService = new QRCodeService(config, logger)
-    this.tokenService = new TokenService(config, logger, 'qrcode')
+    this.tokenService =
+      tokenService ?? new TokenService(config, logger, 'qrcode')
   }
 
   /**

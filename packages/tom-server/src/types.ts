@@ -1,4 +1,3 @@
-import { type Config as MASConfig } from '@twake/matrix-application-server'
 import {
   type IdentityServerDb,
   type Config as MConfig,
@@ -11,72 +10,63 @@ import {
 import { type NextFunction, type Request, type Response } from 'express'
 import type { PathOrFileDescriptor } from 'fs'
 import type { SendMailOptions } from 'nodemailer'
+import { UserProfileSettingsPayloadT } from './user-info-api/types'
 
 export type expressAppHandler = _expressAppHandler
 export type AuthenticationFunction = MUtils.AuthenticationFunction
 
-export type Config = MConfig &
-  MASConfig & {
-    jitsiBaseUrl: string
-    jitsiJwtAlgorithm: string
-    jitsiJwtIssuer: string
-    jitsiJwtSecret: string
-    jitsiPreferredDomain: string
-    jitsiUseJwt: boolean
-    matrix_server: string
-    matrix_internal_host: string
-    matrix_database_host: string
-    oidc_issuer?: string
-    opensearch_ca_cert_path?: string
-    opensearch_host?: string
-    opensearch_is_activated?: boolean
-    opensearch_max_retries?: number
-    opensearch_number_of_shards?: number
-    opensearch_number_of_replicas?: number
-    opensearch_password?: string
-    opensearch_ssl?: boolean
-    opensearch_user?: string
-    opensearch_wait_for_active_shards?: string
-    sms_api_key?: string
-    sms_api_login?: string
-    sms_api_url?: string
-    qr_code_url?: string
-    invitation_redirect_url?: string
-    chat_url?: string
-    auth_url?: string
-    matrix_admin_login: string
-    matrix_admin_password: string
-    admin_access_token: string
-    signup_url: string
-    twake_chat: TwakeChatEnvironmentConfig
-    room_permissions: {
-      direct_chat: PowerLevelEventContent
-      private_group_chat: PowerLevelEventContent
-      public_group_chat: PowerLevelEventContent
-      private_channel: PowerLevelEventContent
-      public_channel: PowerLevelEventContent
+export type Config = MConfig & {
+  sender_localpart: string
+  jitsiBaseUrl: string
+  jitsiJwtAlgorithm: string
+  jitsiJwtIssuer: string
+  jitsiJwtSecret: string
+  jitsiPreferredDomain: string
+  jitsiUseJwt: boolean
+  matrix_server: string
+  matrix_internal_host: string
+  matrix_database_host: string
+  oidc_issuer?: string
+  sms_api_key?: string
+  sms_api_login?: string
+  sms_api_url?: string
+  qr_code_url?: string
+  invitation_redirect_url?: string
+  chat_url?: string
+  auth_url?: string
+  matrix_admin_login: string
+  matrix_admin_password: string
+  admin_access_token: string
+  signup_url: string
+  twake_chat: TwakeChatEnvironmentConfig
+  features: {
+    common_settings: {
+      enabled: boolean
+      application_url: string
     }
-    rabbitmq: {
-      host: string
-      port: number
-      vhost: string
-      username: string
-      password: string
-      tls: boolean
-    }
-    features: {
-      common_settings: {
-        enabled: boolean
-        application_url: string
-        exchange: string
-        queue: string
-        routingKey: string
-        deadLetterExchange?: string
-        deadLetterRoutingKey?: string
+    matrix_profile_updates_allowed: boolean
+    user_profile: {
+      default_visibility_settings: {
+        visibility: string
+        visible_fields: string[]
       }
-      matrix_profile_updates_allowed: boolean
+    }
+    user_directory: {
+      enabled: boolean
+    }
+    createroom_proxy?: {
+      enabled?: boolean
+      on_failure?: {
+        max_retries?: number
+        nuke_room?: boolean
+      }
+      default_preset?: string
+      encryption?: 'allowed' | 'enforced' | 'disabled'
+      is_direct_mask?: DirectChatMask
+      presets?: PresetConfig[]
     }
   }
+}
 
 export interface AuthRequest extends Request {
   userId?: string
@@ -94,14 +84,13 @@ export type TwakeDB = IdentityServerDb<twakeDbCollections>
 export type twakeDbCollections =
   | 'recoveryWords'
   | 'matrixTokens'
-  | 'privateNotes'
-  | 'roomTags'
   | 'userQuotas'
   | 'rooms'
   | 'invitations'
   | 'addressbooks'
   | 'contacts'
   | 'usersettings'
+  | 'profileSettings'
 
 export type ApiRequestHandler = (
   req: Request,
@@ -240,14 +229,6 @@ export interface FeatureCommonSettingsConfig {
   application_url: string
 }
 
-export interface CommonSettingsConfig extends FeatureCommonSettingsConfig {
-  queue: string
-  routingKey: string
-  exchange: string
-  deadLetterExchange: string
-  deadLetterRoutingKey: string
-}
-
 export interface TwakeChatConfig extends TwakeChatEnvironmentConfig {
   default_homeserver: string
   homeserver: string
@@ -263,11 +244,11 @@ export interface CreateRoomPayload {
   is_direct: boolean
   name: string
   power_level_content_override: PowerLevelEventContent
-  preset: 'private_chat' | 'public_chat' | 'trusted_private_chat'
+  preset?: string
   room_alias_name: string
   room_version: string
   topic: string
-  visibility: 'public' | 'private'
+  visibility?: 'public' | 'private'
 }
 
 export type CreationContent = Content
@@ -308,10 +289,28 @@ export interface PowerLevelEventContent {
     'm.room.history_visibility': number
     'm.room.power_levels': number
     'm.room.encryption': number
+    'm.room.server_acl'?: number
+    'm.room.tombstone'?: number
   }
   users?: Record<string, number>
   creator_becomes?: number
+  synapse_preset?: string
+  default_visibility?: 'public' | 'private'
+  allow_is_direct?: boolean
 }
+
+export type DirectChatMask = {
+  ban?: number
+  invite?: number
+  kick?: number
+  redact?: number
+  state_default?: number
+  users_default?: number
+  creator_becomes?: number
+  events?: Partial<PowerLevelEventContent['events']>
+}
+
+export type PresetConfig = PowerLevelEventContent & { name: string }
 
 export type Content = Record<
   string,
