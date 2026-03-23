@@ -8,6 +8,7 @@ describe('Utils methods', () => {
 
   beforeEach(() => {
     nextFunction = jest.fn()
+    mockRequest = {}
     mockResponse = {
       setHeader: jest.fn(),
       status: jest.fn(),
