@@ -59,7 +59,7 @@
     "@types/js-yaml": "^4.0.5",
     "@types/ldapjs": "^2.2.5",
     "@types/lodash": "^4.14.197",
-    "@types/node": "^18.19.130",
+    "@types/node": "^25.5.0",
     "@types/node-cron": "^3.0.7",
     "@types/nodemailer": "^6.4.7",
     "@types/pg": "^8.6.6",
@@ -85,7 +85,7 @@
     "testcontainers": "^10.6.0",
     "toad-cache": "^3.3.0",
     "ts-jest": "^29.1.0",
-    "typescript": "^4.9.5"
+    "typescript": "^5.9.3"
   },
   "engines": {
     "node": "24.14.0",
