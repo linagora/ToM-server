@@ -23,7 +23,7 @@ jest.mock("matrix-appservice-bridge", () => {
 import { SettingsRepository } from "./settings-repository";
 
 // Type-only imports to avoid runtime module resolution issues in tests
-type Database<T> = {
+type Database<_T> = {
   get: jest.Mock;
   insert: jest.Mock;
   update: jest.Mock;

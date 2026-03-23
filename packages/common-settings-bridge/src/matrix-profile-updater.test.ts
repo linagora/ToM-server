@@ -319,8 +319,8 @@ describe("MatrixProfileUpdater", () => {
         const httpUrl = "https://example.com/slow-avatar.png";
 
         // Mock fetch to simulate abort
-        (global.fetch as jest.Mock).mockImplementation((url, options) => {
-          return new Promise((resolve, reject) => {
+        (global.fetch as jest.Mock).mockImplementation((_url, options) => {
+          return new Promise((_resolve, reject) => {
             // Simulate the abort signal behavior
             if (options?.signal) {
               options.signal.addEventListener("abort", () => {

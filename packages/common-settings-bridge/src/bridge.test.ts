@@ -1,7 +1,7 @@
 import { AMQPConnector } from "@twake/amqp-connector";
 import { Database } from "@twake/db";
 import type { Channel, ConsumeMessage } from "amqplib";
-import { Bridge, type Intent, Logger } from "matrix-appservice-bridge";
+import { Bridge, type Intent } from "matrix-appservice-bridge";
 import { CommonSettingsBridge } from "./bridge";
 import { MatrixProfileUpdater } from "./matrix-profile-updater";
 import { SettingsRepository } from "./settings-repository";

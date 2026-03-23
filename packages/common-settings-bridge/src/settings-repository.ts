@@ -197,7 +197,7 @@ export class SettingsRepository {
 
       // Safely parse timestamp from DB (may be string or number)
       const rawTs = dbRow.timestamp;
-      const tsNum = rawTs == null ? undefined : Number(rawTs);
+      const tsNum = rawTs === null ? undefined : Number(rawTs);
       const validTimestamp = Number.isFinite(tsNum) ? tsNum! : 0;
 
       this.#logger.debug(

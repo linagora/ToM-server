@@ -49,7 +49,7 @@ function setupRegistration(reg: AppServiceRegistration): void {
 /**
  * Entry point for starting the bridge from the CLI.
  */
-function startBridge(port: number | null, config: Record<string, unknown> | null): void {
+function startBridge(_port: number | null, config: Record<string, unknown> | null): void {
   if (!config) {
     log.error("==========================================");
     log.error("ERROR: No configuration provided");

@@ -44,7 +44,7 @@ interface ParsedMessage {
 function parseMessage(raw: string): CommonSettingsMessage | null {
   try {
     return JSON.parse(raw) as CommonSettingsMessage;
-  } catch (error) {
+  } catch {
     return null;
   }
 }
@@ -238,7 +238,7 @@ export class CommonSettingsBridge {
    * @param msg - The AMQP message containing settings data
    * @param channel - The AMQP channel for acknowledgment
    */
-  async #handleMessage(msg: ConsumeMessage, channel: Channel): Promise<void> {
+  async #handleMessage(msg: ConsumeMessage, _channel: Channel): Promise<void> {
     const rawContent = msg.content.toString();
 
     this.#log.debug(`Received message (${rawContent.length} bytes)`);
