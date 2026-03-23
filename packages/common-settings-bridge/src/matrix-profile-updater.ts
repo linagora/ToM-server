@@ -1,25 +1,24 @@
-import { type Logger, type Intent } from 'matrix-appservice-bridge'
-import { SynapseAdminRetryMode, type ISettingsPayload } from './types'
-import { AvatarFetchError } from './types'
+import type { Intent, Logger } from "matrix-appservice-bridge";
+import { AvatarFetchError, type ISettingsPayload, SynapseAdminRetryMode } from "./types";
 
 /**
  * Default maximum allowed avatar file size (5MB).
  * Prevents memory exhaustion from malicious or oversized external URLs.
  */
-export const DEFAULT_MAX_AVATAR_BYTES = 5 * 1024 * 1024
+export const DEFAULT_MAX_AVATAR_BYTES = 5 * 1024 * 1024;
 
 /**
  * Default timeout for fetching external avatar URLs (10 seconds).
  * Prevents indefinite hangs on slow or unresponsive servers.
  */
-export const DEFAULT_AVATAR_FETCH_TIMEOUT_MS = 10_000
+export const DEFAULT_AVATAR_FETCH_TIMEOUT_MS = 10_000;
 
 /**
  * Configuration for avatar upload behavior.
  */
 export interface AvatarConfig {
-  readonly maxSizeBytes: number
-  readonly fetchTimeoutMs: number
+  readonly maxSizeBytes: number;
+  readonly fetchTimeoutMs: number;
 }
 
 /**
@@ -32,14 +31,14 @@ export interface MatrixApis {
    * @param userId - The Matrix user ID
    * @returns Intent object for the user
    */
-  getIntent(userId: string): Intent
+  getIntent(userId: string): Intent;
 
   /**
    * Upserts a user via the Synapse admin API.
    * @param userId - The Matrix user ID
    * @param data - User data to update (displayname, avatar_url, etc.)
    */
-  adminUpsertUser(userId: string, data: Record<string, string>): Promise<void>
+  adminUpsertUser(userId: string, data: Record<string, string>): Promise<void>;
 
   /**
    * Uploads content to Matrix using the bot's credentials.
@@ -49,11 +48,7 @@ export interface MatrixApis {
    * @param fileName - Optional file name
    * @returns The MXC URL of the uploaded content
    */
-  botUploadContent(
-    content: Buffer,
-    contentType: string,
-    fileName?: string
-  ): Promise<string>
+  botUploadContent(content: Buffer, contentType: string, fileName?: string): Promise<string>;
 }
 
 /**
@@ -72,8 +67,8 @@ export class MatrixProfileUpdater {
     private readonly logger: Logger,
     private readonly avatarConfig: AvatarConfig = {
       maxSizeBytes: DEFAULT_MAX_AVATAR_BYTES,
-      fetchTimeoutMs: DEFAULT_AVATAR_FETCH_TIMEOUT_MS
-    }
+      fetchTimeoutMs: DEFAULT_AVATAR_FETCH_TIMEOUT_MS,
+    },
   ) {}
 
   /**
@@ -83,50 +78,37 @@ export class MatrixProfileUpdater {
    * @param userId - The Matrix user ID to update
    * @param newDisplayname - The new display name to set
    */
-  async updateDisplayName(
-    userId: string,
-    newDisplayname: string
-  ): Promise<void> {
-    this.logger.debug(
-      `Updating display name for ${userId} (retryMode=${this.retryMode})`
-    )
+  async updateDisplayName(userId: string, newDisplayname: string): Promise<void> {
+    this.logger.debug(`Updating display name for ${userId} (retryMode=${this.retryMode})`);
 
     if (this.retryMode === SynapseAdminRetryMode.EXCLUSIVE) {
-      this.logger.debug(
-        `Using admin API exclusively for display name update: ${userId}`
-      )
-      await this.#updateDisplayNameAdmin(userId, newDisplayname)
-      return
+      this.logger.debug(`Using admin API exclusively for display name update: ${userId}`);
+      await this.#updateDisplayNameAdmin(userId, newDisplayname);
+      return;
     }
 
-    const intent = this.apis.getIntent(userId)
+    const intent = this.apis.getIntent(userId);
 
     try {
-      this.logger.debug(
-        `Attempting standard API display name update for ${userId}`
-      )
-      await intent.setDisplayName(newDisplayname)
-      this.logger.info(
-        `Updated display name for ${userId} to "${newDisplayname}"`
-      )
+      this.logger.debug(`Attempting standard API display name update for ${userId}`);
+      await intent.setDisplayName(newDisplayname);
+      this.logger.info(`Updated display name for ${userId} to "${newDisplayname}"`);
     } catch (err: any) {
       this.logger.warn(
         `Failed to update display name via standard API for ${userId}: ${
-          err?.errcode || err?.message || 'Unknown error'
-        }`
-      )
+          err?.errcode || err?.message || "Unknown error"
+        }`,
+      );
 
       if (
-        (err?.errcode === 'M_FORBIDDEN' || err?.errcode === 'M_EXCLUSIVE') &&
+        (err?.errcode === "M_FORBIDDEN" || err?.errcode === "M_EXCLUSIVE") &&
         this.retryMode === SynapseAdminRetryMode.FALLBACK
       ) {
-        this.logger.info(`Falling back to admin API for display name ${userId}`)
-        await this.#updateDisplayNameAdmin(userId, newDisplayname)
+        this.logger.info(`Falling back to admin API for display name ${userId}`);
+        await this.#updateDisplayNameAdmin(userId, newDisplayname);
       } else {
-        this.logger.error(
-          `Cannot update display name for ${userId}, exhausted all methods`
-        )
-        throw err
+        this.logger.error(`Cannot update display name for ${userId}, exhausted all methods`);
+        throw err;
       }
     }
   }
@@ -137,24 +119,19 @@ export class MatrixProfileUpdater {
    * @param userId - The Matrix user ID to update
    * @param newDisplayname - The new display name to set
    */
-  async #updateDisplayNameAdmin(
-    userId: string,
-    newDisplayname: string
-  ): Promise<void> {
-    this.logger.debug(`Calling admin API to update display name for ${userId}`)
+  async #updateDisplayNameAdmin(userId: string, newDisplayname: string): Promise<void> {
+    this.logger.debug(`Calling admin API to update display name for ${userId}`);
 
     try {
-      await this.apis.adminUpsertUser(userId, { displayname: newDisplayname })
-      this.logger.info(
-        `Updated display name via admin API for ${userId} to "${newDisplayname}"`
-      )
+      await this.apis.adminUpsertUser(userId, { displayname: newDisplayname });
+      this.logger.info(`Updated display name via admin API for ${userId} to "${newDisplayname}"`);
     } catch (error) {
       this.logger.error(
         `Admin API failed to update display name for ${userId}: ${
-          error instanceof Error ? error.message : 'Unknown error'
-        }`
-      )
-      throw error
+          error instanceof Error ? error.message : "Unknown error"
+        }`,
+      );
+      throw error;
     }
   }
 
@@ -165,81 +142,63 @@ export class MatrixProfileUpdater {
    * @returns Object containing the buffer and content type
    * @throws {AvatarFetchError} If download times out, exceeds size limit, or HTTP error
    */
-  async #downloadAvatar(
-    userId: string,
-    avatarUrl: string
-  ): Promise<{ buffer: Buffer; contentType: string }> {
-    this.logger.info(
-      `Downloading avatar from external URL for ${userId}: ${avatarUrl}`
-    )
+  async #downloadAvatar(userId: string, avatarUrl: string): Promise<{ buffer: Buffer; contentType: string }> {
+    this.logger.info(`Downloading avatar from external URL for ${userId}: ${avatarUrl}`);
 
-    const controller = new AbortController()
+    const controller = new AbortController();
     // Validate and sanitize timeout value to prevent DoS attacks
     // Ensures timeout is a positive finite number within reasonable bounds
     const timeoutMs = Math.max(
       1000, // Minimum 1 second
       Math.min(
         60_000, // Maximum 60 seconds
-        Number(this.avatarConfig.fetchTimeoutMs) ||
-          DEFAULT_AVATAR_FETCH_TIMEOUT_MS
-      )
-    )
-    const timeout = setTimeout(() => controller.abort(), timeoutMs)
+        Number(this.avatarConfig.fetchTimeoutMs) || DEFAULT_AVATAR_FETCH_TIMEOUT_MS,
+      ),
+    );
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
     try {
-      const response = await fetch(avatarUrl, { signal: controller.signal })
-      clearTimeout(timeout)
+      const response = await fetch(avatarUrl, { signal: controller.signal });
+      clearTimeout(timeout);
 
       if (!response.ok) {
-        throw new AvatarFetchError(
-          `HTTP ${response.status}: ${response.statusText}`
-        )
+        throw new AvatarFetchError(`HTTP ${response.status}: ${response.statusText}`);
       }
 
       // Pre-check content-length header if available
-      const contentLength = Number(response.headers.get('content-length') || 0)
+      const contentLength = Number(response.headers.get("content-length") || 0);
       if (contentLength > this.avatarConfig.maxSizeBytes) {
-        throw new AvatarFetchError(
-          `Avatar too large: ${contentLength} bytes (max ${this.avatarConfig.maxSizeBytes})`
-        )
+        throw new AvatarFetchError(`Avatar too large: ${contentLength} bytes (max ${this.avatarConfig.maxSizeBytes})`);
       }
 
-      const contentType = response.headers.get('content-type') ?? 'image/png'
+      const contentType = response.headers.get("content-type") ?? "image/png";
 
       // Download and validate actual size
-      const arrayBuffer = await response.arrayBuffer()
-      const buffer = Buffer.from(arrayBuffer)
+      const arrayBuffer = await response.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
 
       if (buffer.length > this.avatarConfig.maxSizeBytes) {
-        throw new AvatarFetchError(
-          `Avatar too large: ${buffer.length} bytes (max ${this.avatarConfig.maxSizeBytes})`
-        )
+        throw new AvatarFetchError(`Avatar too large: ${buffer.length} bytes (max ${this.avatarConfig.maxSizeBytes})`);
       }
 
-      this.logger.debug(
-        `Downloaded avatar for ${userId}: ${buffer.length} bytes, type=${contentType}`
-      )
+      this.logger.debug(`Downloaded avatar for ${userId}: ${buffer.length} bytes, type=${contentType}`);
 
-      return { buffer, contentType }
+      return { buffer, contentType };
     } catch (error) {
-      clearTimeout(timeout)
+      clearTimeout(timeout);
 
-      if (error instanceof Error && error.name === 'AbortError') {
-        const timeoutError = new AvatarFetchError(
-          `Avatar fetch timed out after ${timeoutMs}ms`
-        )
-        this.logger.error(
-          `Failed to download avatar for ${userId} from ${avatarUrl}: ${timeoutError.message}`
-        )
-        throw timeoutError
+      if (error instanceof Error && error.name === "AbortError") {
+        const timeoutError = new AvatarFetchError(`Avatar fetch timed out after ${timeoutMs}ms`);
+        this.logger.error(`Failed to download avatar for ${userId} from ${avatarUrl}: ${timeoutError.message}`);
+        throw timeoutError;
       }
 
       this.logger.error(
         `Failed to download avatar for ${userId} from ${avatarUrl}: ${
-          error instanceof Error ? error.message : 'Unknown error'
-        }`
-      )
-      throw error
+          error instanceof Error ? error.message : "Unknown error"
+        }`,
+      );
+      throw error;
     }
   }
 
@@ -254,67 +213,45 @@ export class MatrixProfileUpdater {
    * @throws {AvatarFetchError} If download times out, exceeds size limit, or HTTP error
    */
   async #resolveAvatarUrl(userId: string, avatarUrl: string): Promise<string> {
-    if (avatarUrl.startsWith('mxc://')) {
-      this.logger.debug(`Avatar URL is already MXC format: ${avatarUrl}`)
-      return avatarUrl
+    if (avatarUrl.startsWith("mxc://")) {
+      this.logger.debug(`Avatar URL is already MXC format: ${avatarUrl}`);
+      return avatarUrl;
     }
 
     // Download the avatar first
-    const { buffer, contentType } = await this.#downloadAvatar(
-      userId,
-      avatarUrl
-    )
+    const { buffer, contentType } = await this.#downloadAvatar(userId, avatarUrl);
 
     // In EXCLUSIVE mode, always upload using bot credentials
     if (this.retryMode === SynapseAdminRetryMode.EXCLUSIVE) {
-      this.logger.debug(
-        `Using bot credentials for avatar upload (exclusive mode): ${userId}`
-      )
-      const mxcUrl = await this.apis.botUploadContent(
-        buffer,
-        contentType,
-        'avatar'
-      )
-      this.logger.info(`Uploaded avatar via bot for ${userId}: ${mxcUrl}`)
-      return mxcUrl
+      this.logger.debug(`Using bot credentials for avatar upload (exclusive mode): ${userId}`);
+      const mxcUrl = await this.apis.botUploadContent(buffer, contentType, "avatar");
+      this.logger.info(`Uploaded avatar via bot for ${userId}: ${mxcUrl}`);
+      return mxcUrl;
     }
 
     // Try uploading as the user first
     try {
-      this.logger.debug(`Attempting avatar upload as user: ${userId}`)
-      const intent = this.apis.getIntent(userId)
-      const mxcUrl = await intent.matrixClient.uploadContent(
-        buffer,
-        contentType,
-        'avatar'
-      )
-      this.logger.info(`Uploaded avatar to Synapse for ${userId}: ${mxcUrl}`)
-      return mxcUrl
+      this.logger.debug(`Attempting avatar upload as user: ${userId}`);
+      const intent = this.apis.getIntent(userId);
+      const mxcUrl = await intent.matrixClient.uploadContent(buffer, contentType, "avatar");
+      this.logger.info(`Uploaded avatar to Synapse for ${userId}: ${mxcUrl}`);
+      return mxcUrl;
     } catch (error: any) {
       // In FALLBACK mode, try bot upload on M_FORBIDDEN
       if (
-        (error?.errcode === 'M_FORBIDDEN' ||
-          error?.errcode === 'M_EXCLUSIVE') &&
+        (error?.errcode === "M_FORBIDDEN" || error?.errcode === "M_EXCLUSIVE") &&
         this.retryMode === SynapseAdminRetryMode.FALLBACK
       ) {
-        this.logger.info(
-          `Falling back to bot credentials for avatar upload: ${userId}`
-        )
-        const mxcUrl = await this.apis.botUploadContent(
-          buffer,
-          contentType,
-          'avatar'
-        )
-        this.logger.info(`Uploaded avatar via bot for ${userId}: ${mxcUrl}`)
-        return mxcUrl
+        this.logger.info(`Falling back to bot credentials for avatar upload: ${userId}`);
+        const mxcUrl = await this.apis.botUploadContent(buffer, contentType, "avatar");
+        this.logger.info(`Uploaded avatar via bot for ${userId}: ${mxcUrl}`);
+        return mxcUrl;
       }
 
       this.logger.error(
-        `Failed to upload avatar for ${userId}: ${
-          error instanceof Error ? error.message : 'Unknown error'
-        }`
-      )
-      throw error
+        `Failed to upload avatar for ${userId}: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
+      throw error;
     }
   }
 
@@ -327,44 +264,36 @@ export class MatrixProfileUpdater {
    * @param avatarUrl - The avatar URL to set (can be mxc:// or http(s)://)
    */
   async updateAvatar(userId: string, avatarUrl: string): Promise<void> {
-    const resolvedUrl = await this.#resolveAvatarUrl(userId, avatarUrl)
+    const resolvedUrl = await this.#resolveAvatarUrl(userId, avatarUrl);
 
-    this.logger.debug(
-      `Updating avatar for ${userId} (retryMode=${this.retryMode})`
-    )
+    this.logger.debug(`Updating avatar for ${userId} (retryMode=${this.retryMode})`);
 
     if (this.retryMode === SynapseAdminRetryMode.EXCLUSIVE) {
-      this.logger.debug(
-        `Using admin API exclusively for avatar update: ${userId}`
-      )
-      await this.#updateAvatarAdmin(userId, resolvedUrl)
-      return
+      this.logger.debug(`Using admin API exclusively for avatar update: ${userId}`);
+      await this.#updateAvatarAdmin(userId, resolvedUrl);
+      return;
     }
 
-    const intent = this.apis.getIntent(userId)
+    const intent = this.apis.getIntent(userId);
 
     try {
-      this.logger.debug(`Attempting standard API avatar update for ${userId}`)
-      await intent.setAvatarUrl(resolvedUrl)
-      this.logger.info(`Updated avatar for ${userId} to "${resolvedUrl}"`)
+      this.logger.debug(`Attempting standard API avatar update for ${userId}`);
+      await intent.setAvatarUrl(resolvedUrl);
+      this.logger.info(`Updated avatar for ${userId} to "${resolvedUrl}"`);
     } catch (err: any) {
       this.logger.warn(
-        `Failed to update avatar via standard API for ${userId}: ${
-          err?.errcode || err?.message || 'Unknown error'
-        }`
-      )
+        `Failed to update avatar via standard API for ${userId}: ${err?.errcode || err?.message || "Unknown error"}`,
+      );
 
       if (
-        (err?.errcode === 'M_FORBIDDEN' || err?.errcode === 'M_EXCLUSIVE') &&
+        (err?.errcode === "M_FORBIDDEN" || err?.errcode === "M_EXCLUSIVE") &&
         this.retryMode === SynapseAdminRetryMode.FALLBACK
       ) {
-        this.logger.info(`Falling back to admin API for avatar ${userId}`)
-        await this.#updateAvatarAdmin(userId, resolvedUrl)
+        this.logger.info(`Falling back to admin API for avatar ${userId}`);
+        await this.#updateAvatarAdmin(userId, resolvedUrl);
       } else {
-        this.logger.error(
-          `Cannot update avatar for ${userId}, exhausted all methods`
-        )
-        throw err
+        this.logger.error(`Cannot update avatar for ${userId}, exhausted all methods`);
+        throw err;
       }
     }
   }
@@ -376,20 +305,16 @@ export class MatrixProfileUpdater {
    * @param avatarUrl - The new avatar MXC URL to set
    */
   async #updateAvatarAdmin(userId: string, avatarUrl: string): Promise<void> {
-    this.logger.debug(`Calling admin API to update avatar for ${userId}`)
+    this.logger.debug(`Calling admin API to update avatar for ${userId}`);
 
     try {
-      await this.apis.adminUpsertUser(userId, { avatar_url: avatarUrl })
-      this.logger.info(
-        `Updated avatar via admin API for ${userId} to "${avatarUrl}"`
-      )
+      await this.apis.adminUpsertUser(userId, { avatar_url: avatarUrl });
+      this.logger.info(`Updated avatar via admin API for ${userId} to "${avatarUrl}"`);
     } catch (error) {
       this.logger.error(
-        `Admin API failed to update avatar for ${userId}: ${
-          error instanceof Error ? error.message : 'Unknown error'
-        }`
-      )
-      throw error
+        `Admin API failed to update avatar for ${userId}: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
+      throw error;
     }
   }
 
@@ -404,37 +329,34 @@ export class MatrixProfileUpdater {
   async processChanges(
     userId: string,
     oldPayload: ISettingsPayload | null,
-    newPayload: ISettingsPayload
+    newPayload: ISettingsPayload,
   ): Promise<void> {
-    this.logger.debug(`Processing changes for ${userId}`)
+    this.logger.debug(`Processing changes for ${userId}`);
 
-    const displayNameChanged =
-      oldPayload?.display_name !== newPayload.display_name
-    const avatarChanged = oldPayload?.avatar !== newPayload.avatar
+    const displayNameChanged = oldPayload?.display_name !== newPayload.display_name;
+    const avatarChanged = oldPayload?.avatar !== newPayload.avatar;
 
     this.logger.debug(
-      `Change detection: displayName=${displayNameChanged} (old="${oldPayload?.display_name}", new="${newPayload.display_name}"), avatar=${avatarChanged} (old="${oldPayload?.avatar}", new="${newPayload.avatar}")`
-    )
+      `Change detection: displayName=${displayNameChanged} (old="${oldPayload?.display_name}", new="${newPayload.display_name}"), avatar=${avatarChanged} (old="${oldPayload?.avatar}", new="${newPayload.avatar}")`,
+    );
 
     if (!displayNameChanged && !avatarChanged) {
-      this.logger.debug(`No profile changes detected for ${userId}`)
-      return
+      this.logger.debug(`No profile changes detected for ${userId}`);
+      return;
     }
 
     if (displayNameChanged && newPayload.display_name) {
-      this.logger.debug(`Display name change detected for ${userId}`)
-      await this.updateDisplayName(userId, newPayload.display_name)
+      this.logger.debug(`Display name change detected for ${userId}`);
+      await this.updateDisplayName(userId, newPayload.display_name);
     } else if (displayNameChanged && !newPayload.display_name) {
-      this.logger.warn(
-        `Display name changed but new value is empty for ${userId}`
-      )
+      this.logger.warn(`Display name changed but new value is empty for ${userId}`);
     }
 
     if (avatarChanged && newPayload.avatar) {
-      this.logger.debug(`Avatar change detected for ${userId}`)
-      await this.updateAvatar(userId, newPayload.avatar)
+      this.logger.debug(`Avatar change detected for ${userId}`);
+      await this.updateAvatar(userId, newPayload.avatar);
     } else if (avatarChanged && !newPayload.avatar) {
-      this.logger.warn(`Avatar changed but new value is empty for ${userId}`)
+      this.logger.warn(`Avatar changed but new value is empty for ${userId}`);
     }
   }
 }
