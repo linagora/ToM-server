@@ -57,7 +57,8 @@ Putting the brace on a new line wastes vertical space and makes diffs noisier â€
 
 ```ts
 // Non-standard â€” brace on new line, contradicts formatter defaults and wastes a line.
-function calculateTotal(items: Item[]) {
+function calculateTotal(items: Item[])
+{
   return items.reduce((sum, item) => sum + item.price, 0);
 }
 
@@ -382,13 +383,17 @@ always an alternative: a proper type, a discriminated union, `unknown` with a
 guard, or a generic. Every `any` is a deliberate hole in your safety net.
 
 ```ts
-// Disables type checking for input and output simultaneously.
+// Disables type checking for both input and output.
 function parseConfig(raw: any): any { ... }
 
-// Forces the author to think about the actual shape of the data.
-function parseConfig(raw: unknown): AppConfig {
+// Forces the compiler to verify the shape before use.
+type Result =
+  | { ok: true; value: T }
+  | { ok: false; error: E };
+
+function parseConfig(raw: unknown): Result {
   if (!isAppConfig(raw)) return { ok: false, error: "Invalid config shape" };
-  return raw;
+  return { ok: true, value: raw };
 }
 ```
 
