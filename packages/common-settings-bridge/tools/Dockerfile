@@ -1,7 +1,7 @@
 # Minimal Dockerfile for send-message.mjs tool
 # This Dockerfile is optimized for size and simplicity for a single script tool.
 
-FROM node:18.20.8-slim
+FROM node:24.14.0-slim
 
 WORKDIR /usr/src/app
 

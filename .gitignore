@@ -670,3 +670,5 @@ test-output
 
 **/*.last-run.json
 **/nul
+
+.claude/worktrees
