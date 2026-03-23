@@ -1,4 +1,4 @@
-import { type Channel, type ConsumeMessage } from 'amqplib'
+import type { Channel, ConsumeMessage } from "amqplib";
 
 /**
  * AMQP configuration interface
@@ -11,12 +11,12 @@ import { type Channel, type ConsumeMessage } from 'amqplib'
  * @returns void
  */
 export interface AmqpConfig {
-  host: string
-  port: number
-  vhost: string
-  username: string
-  password: string
-  tls?: boolean
+  host: string;
+  port: number;
+  vhost: string;
+  username: string;
+  password: string;
+  tls?: boolean;
 }
 
 /**
@@ -25,19 +25,16 @@ export interface AmqpConfig {
  * @param channel - The channel the message was received on
  * @returns void
  */
-export type MessageHandler = (
-  msg: ConsumeMessage,
-  channel: Channel
-) => Promise<void> | void
+export type MessageHandler = (msg: ConsumeMessage, channel: Channel) => Promise<void> | void;
 
 /**
  * Connection state enum for tracking AMQPConnector status
  */
 export enum ConnectionState {
-  Disconnected = 'disconnected',
-  Connecting = 'connecting',
-  Connected = 'connected',
-  Reconnecting = 'reconnecting'
+  Disconnected = "disconnected",
+  Connecting = "connecting",
+  Connected = "connected",
+  Reconnecting = "reconnecting",
 }
 
 /**
@@ -49,11 +46,11 @@ export enum ConnectionState {
  * @property backoffMultiplier - Multiplier for exponential backoff (default: 2)
  */
 export interface ReconnectionConfig {
-  enabled?: boolean
-  initialDelayMs?: number
-  maxDelayMs?: number
-  maxRetries?: number
-  backoffMultiplier?: number
+  enabled?: boolean;
+  initialDelayMs?: number;
+  maxDelayMs?: number;
+  maxRetries?: number;
+  backoffMultiplier?: number;
 }
 
 /**
@@ -64,5 +61,5 @@ export const DEFAULT_RECONNECTION_CONFIG: Required<ReconnectionConfig> = {
   initialDelayMs: 1000,
   maxDelayMs: 30000,
   maxRetries: 0,
-  backoffMultiplier: 2
-}
+  backoffMultiplier: 2,
+};
