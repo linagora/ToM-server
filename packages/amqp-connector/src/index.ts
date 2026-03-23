@@ -140,7 +140,7 @@ export class AMQPConnector {
     if (this.onMessageHandler === null || this.onMessageHandler === undefined) throw new MessageHandlerNotProvidedError();
 
     // Clear any pending reconnect timer to avoid overlapping connection attempts
-    if (this.reconnectTimeoutId !== null) {
+    if (this.reconnectTimeoutId !== null && this.reconnectTimeoutId !== undefined) {
       clearTimeout(this.reconnectTimeoutId);
       this.reconnectTimeoutId = undefined;
     }
@@ -215,7 +215,7 @@ export class AMQPConnector {
       this.consumerTag = undefined;
     }
 
-    if (this.reconnectTimeoutId !== null) {
+    if (this.reconnectTimeoutId !== null && this.reconnectTimeoutId !== undefined) {
       clearTimeout(this.reconnectTimeoutId);
       this.reconnectTimeoutId = undefined;
     }
