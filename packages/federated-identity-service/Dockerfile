@@ -6,7 +6,7 @@
 # -----------------------------------------------------------------------------
 # Stage 1: Builder - Install dependencies and build
 # -----------------------------------------------------------------------------
-FROM node:18.20.8-alpine AS builder
+FROM node:24.14.0-alpine AS builder
 
 # Update image and install build tools
 RUN apk update && apk upgrade && \
@@ -70,7 +70,7 @@ RUN npm rebuild && \
 # -----------------------------------------------------------------------------
 # Stage 2: Production dependencies
 # -----------------------------------------------------------------------------
-FROM node:18.20.8-alpine AS deps
+FROM node:24.14.0-alpine AS deps
 
 WORKDIR /usr/src/app
 
@@ -92,7 +92,7 @@ RUN npm ci --omit=dev --ignore-scripts && npm rebuild
 # -----------------------------------------------------------------------------
 # Stage 3: Final runtime image
 # -----------------------------------------------------------------------------
-FROM node:18.20.8-alpine AS runtime
+FROM node:24.14.0-alpine AS runtime
 
 WORKDIR /usr/src/app
 

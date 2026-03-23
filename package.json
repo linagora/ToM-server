@@ -45,7 +45,7 @@
   "devDependencies": {
     "@biomejs/biome": "2.4.8",
     "@crowdsec/express-bouncer": "^0.1.0",
-    "@nx/workspace": "^20.6.4",
+    "@nx/workspace": "22.6.1",
     "@rollup/plugin-commonjs": "^25.0.7",
     "@rollup/plugin-json": "^6.0.1",
     "@rollup/plugin-node-resolve": "^15.2.3",
@@ -59,7 +59,7 @@
     "@types/js-yaml": "^4.0.5",
     "@types/ldapjs": "^2.2.5",
     "@types/lodash": "^4.14.197",
-    "@types/node": "^18.19.130",
+    "@types/node": "^24",
     "@types/node-cron": "^3.0.7",
     "@types/nodemailer": "^6.4.7",
     "@types/pg": "^8.6.6",
@@ -67,16 +67,15 @@
     "@types/validator": "^13.11.7",
     "concurrently": "^9.2.1",
     "docker-compose": "^0.24.3",
-    "esbuild": "^0.25.0",
     "jest": "^29.5.0",
     "js-nacl": "^1.4.0",
     "ldapjs": "^2.3.3",
-    "lerna": "^8.2.1",
+    "lerna": "^9.0.7",
     "moment": "^2.29.4",
     "node-fetch": "^3.3.0",
     "node-fetch-jest": "npm:node-fetch@^2.6.9",
     "nodemon": "^3.1.10",
-    "nx": "20.6.4",
+    "nx": "22.6.1",
     "rimraf": "^4.3.1",
     "rollup": "^3.18.0",
     "rollup-plugin-cleaner": "^1.0.0",
@@ -86,18 +85,14 @@
     "testcontainers": "^10.6.0",
     "toad-cache": "^3.3.0",
     "ts-jest": "^29.1.0",
-    "typescript": "^4.9.5"
-  },
-  "optionalDependencies": {
-    "@nx/nx-darwin-arm64": "^19.4.0",
-    "@nx/nx-linux-x64-gnu": "^19.4.0"
+    "typescript": "^5.9.3"
   },
   "engines": {
-    "node": "18.20.8",
-    "npm": "10.8.2"
+    "node": "24.14.0",
+    "npm": "11.9.0"
   },
   "volta": {
-    "node": "18.20.8",
-    "npm": "10.8.2"
+    "node": "24.14.0",
+    "npm": "11.9.0"
   }
 }

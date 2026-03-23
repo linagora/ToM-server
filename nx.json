@@ -2,19 +2,31 @@
   "defaultBase": "dev",
   "$schema": "./node_modules/nx/schemas/nx-schema.json",
   "namedInputs": {
-    "default": ["{projectRoot}/**/*", "sharedGlobals"],
+    "default": [
+      "{projectRoot}/**/*",
+      "sharedGlobals"
+    ],
     "sharedGlobals": [],
-    "production": ["default"]
+    "production": [
+      "default"
+    ]
   },
   "targetDefaults": {
     "build": {
       "cache": true,
-      "dependsOn": ["^build"],
-      "outputs": ["{projectRoot}/dist"]
+      "dependsOn": [
+        "^build"
+      ],
+      "outputs": [
+        "{projectRoot}/dist"
+      ]
     },
     "test": {
       "cache": true,
-      "dependsOn": ["^build", "^test"]
+      "dependsOn": [
+        "^build",
+        "^test"
+      ]
     },
     "check": {
       "cache": true,
@@ -31,5 +43,6 @@
     }
   },
   "useInferencePlugins": false,
-  "nxCloudId": "67a2162cb7a06c469a8df1a3"
+  "nxCloudId": "67a2162cb7a06c469a8df1a3",
+  "analytics": false
 }
