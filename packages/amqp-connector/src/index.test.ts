@@ -335,14 +335,14 @@ describe("AMQPConnector Reconnection", () => {
 
   describe("Automatic Reconnection", () => {
     let connectionCloseCallback: () => void;
-    let connectionErrorCallback: (error: Error) => void;
+    let _connectionErrorCallback: (error: Error) => void;
 
     beforeEach(() => {
       mockConnectionOn.mockImplementation((event: string, callback: any) => {
         if (event === "close") {
           connectionCloseCallback = callback;
         } else if (event === "error") {
-          connectionErrorCallback = callback;
+          _connectionErrorCallback = callback;
         }
       });
     });
@@ -682,7 +682,7 @@ describe("AMQPConnector Reconnection", () => {
 
   describe("Channel-only reconnection", () => {
     let channelCloseCallback: () => void;
-    let connectionCloseCallback: () => void;
+    let _connectionCloseCallback: () => void;
 
     beforeEach(() => {
       mockChannelOn.mockImplementation((event: string, callback: any) => {
@@ -692,7 +692,7 @@ describe("AMQPConnector Reconnection", () => {
       });
       mockConnectionOn.mockImplementation((event: string, callback: any) => {
         if (event === "close") {
-          connectionCloseCallback = callback;
+          _connectionCloseCallback = callback;
         }
       });
     });
@@ -957,7 +957,7 @@ describe("AMQPConnector Reconnection", () => {
       const closePromise = connector.close();
 
       // Now resolve the connect
-      resolveConnect!(createMockConnection());
+      resolveConnect?.(createMockConnection());
 
       // Both should complete
       await Promise.all([buildPromise, closePromise]);
@@ -1014,7 +1014,7 @@ describe("AMQPConnector Reconnection", () => {
       const closePromise = connector.close();
 
       // Resolve the reconnect
-      resolveReconnect!(createMockConnection());
+      resolveReconnect?.(createMockConnection());
 
       await closePromise;
       await jest.advanceTimersByTimeAsync(0);
