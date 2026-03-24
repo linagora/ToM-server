@@ -1,4 +1,4 @@
-import jestConfigBase from '../../jest-base.config.js'
+import jestConfigBase from "../../jest-base.config.js";
 
 export default {
   ...jestConfigBase,
@@ -9,9 +9,9 @@ export default {
       branches: 50,
       functions: 20,
       lines: 65,
-      statements: 65
-    }
+      statements: 65,
+    },
   },
   // Setup manual mocks
-  modulePathIgnorePatterns: ['<rootDir>/dist/']
-}
+  modulePathIgnorePatterns: ["<rootDir>/dist/"],
+};
