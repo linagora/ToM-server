@@ -9,7 +9,7 @@ export class Hash {
   ready: Promise<void>;
   nacl?: Nacl;
   constructor() {
-    this.ready = new Promise((resolve, reject) => {
+    this.ready = new Promise((resolve, _reject) => {
       void _nacl.instantiate((nacl) => {
         this.nacl = nacl;
         resolve();
@@ -19,7 +19,8 @@ export class Hash {
 
   private _hash(method: ((s: Uint8Array) => Uint8Array) | undefined, ...str: string[]): string {
     /* istanbul ignore if */
-    if (this.nacl == null || method == null) throw new Error("Not initialized");
+    if (this.nacl === null || this.nacl === undefined || method === null || method === undefined)
+      throw new Error("Not initialized");
     return Buffer.from(method(this.nacl.encode_utf8(str.join(" "))))
       .toString("base64")
       .replace(/=+$/, "")
@@ -132,7 +133,7 @@ export const generateKeyPair = (
 };
 
 export const canonicalJson = (value: any): string => {
-  return JSON.stringify(value, (key, val) =>
+  return JSON.stringify(value, (_key, val) =>
     typeof val === "object" && val !== null && !Array.isArray(val)
       ? Object.keys(val)
           .sort()
