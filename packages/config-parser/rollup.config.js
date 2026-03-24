@@ -1,3 +1,3 @@
-import config from '../../rollup-template.js'
+import config from "../../rollup-template.js";
 
-export default config(['fs'])
+export default config(["fs"]);
