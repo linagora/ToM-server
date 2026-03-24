@@ -118,8 +118,14 @@ const applyEnvironmentVariables = (config: Configuration, desc: NewConfigDescrip
 const applyDefaultValues = (config: Configuration, desc: NewConfigDescription): void => {
   Object.keys(desc).forEach((key: string) => {
     const configProp = desc[key];
-    if (!config[key] && configProp.default !== undefined) {
-      if (typeof configProp.default === "string" && configProp.type !== "string" && configProp.type !== "array") {
+    if (config[key] === undefined) {
+      if (configProp.default === undefined) {
+        config[key] = undefined;
+      } else if (
+        typeof configProp.default === "string" &&
+        configProp.type !== "string" &&
+        configProp.type !== "array"
+      ) {
         try {
           config[key] = coerceValue(configProp.default, configProp.type);
         } catch (e: unknown) {

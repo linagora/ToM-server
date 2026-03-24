@@ -4,8 +4,8 @@ import { ConfigCoercionError, FileReadParseError, MissingRequiredConfigError, Un
 import twakeConfig from "./index";
 import type { ConfigDescription, Configuration } from "./types";
 
-jest.mock("fs", () => ({
-  ...jest.requireActual("fs"),
+jest.mock("node:fs", () => ({
+  ...jest.requireActual("node:fs"),
   readFileSync: jest.fn(),
   existsSync: jest.fn(),
   writeFileSync: jest.fn(),
