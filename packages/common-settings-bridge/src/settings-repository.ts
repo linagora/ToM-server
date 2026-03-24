@@ -1,145 +1,116 @@
-import { Database, DbGetResult } from '@twake/db'
-import { Logger } from 'matrix-appservice-bridge'
-import {
-  UserSettingsTableName,
-  ISettingsPayload,
-  StoredUserSettings
-} from './types'
+import type { Database, DbGetResult } from "@twake/db";
+import type { Logger } from "matrix-appservice-bridge";
+import type { ISettingsPayload, StoredUserSettings, UserSettingsTableName } from "./types";
 
 /**
  * Formats a Unix timestamp (milliseconds) as an ISO 8601 string.
  */
 function formatTimestamp(timestamp: number): string {
-  return new Date(timestamp).toISOString()
+  return new Date(timestamp).toISOString();
 }
 
 export class SettingsPayload implements ISettingsPayload {
-  readonly #language?: string
-  readonly #timezone?: string
-  readonly #avatar?: string
-  readonly #last_name?: string
-  readonly #first_name?: string
-  readonly #email?: string
-  readonly #phone?: string
-  readonly #matrix_id: string
-  readonly #display_name?: string
+  readonly #language?: string;
+  readonly #timezone?: string;
+  readonly #avatar?: string;
+  readonly #last_name?: string;
+  readonly #first_name?: string;
+  readonly #email?: string;
+  readonly #phone?: string;
+  readonly #matrix_id: string;
+  readonly #display_name?: string;
 
   constructor(jsonString: string) {
-    const data = SettingsPayload.#parseJSON(jsonString)
+    const data = SettingsPayload.#parseJSON(jsonString);
 
     /* Validate required field */
-    if (typeof data.matrix_id !== 'string' || data.matrix_id.length === 0) {
-      throw new Error('matrix_id is required and must be a non-empty string')
+    if (typeof data.matrix_id !== "string" || data.matrix_id.length === 0) {
+      throw new Error("matrix_id is required and must be a non-empty string");
     }
 
-    this.#matrix_id = data.matrix_id
+    this.#matrix_id = data.matrix_id;
 
     /* Parse optional string fields */
-    this.#language = SettingsPayload.#validateOptionalString(
-      data.language,
-      'language'
-    )
-    this.#timezone = SettingsPayload.#validateOptionalString(
-      data.timezone,
-      'timezone'
-    )
-    this.#avatar = SettingsPayload.#validateOptionalString(
-      data.avatar,
-      'avatar'
-    )
-    this.#last_name = SettingsPayload.#validateOptionalString(
-      data.last_name,
-      'last_name'
-    )
-    this.#first_name = SettingsPayload.#validateOptionalString(
-      data.first_name,
-      'first_name'
-    )
-    this.#email = SettingsPayload.#validateOptionalString(data.email, 'email')
-    this.#phone = SettingsPayload.#validateOptionalString(data.phone, 'phone')
-    this.#display_name = SettingsPayload.#validateOptionalString(
-      data.display_name,
-      'display_name'
-    )
+    this.#language = SettingsPayload.#validateOptionalString(data.language, "language");
+    this.#timezone = SettingsPayload.#validateOptionalString(data.timezone, "timezone");
+    this.#avatar = SettingsPayload.#validateOptionalString(data.avatar, "avatar");
+    this.#last_name = SettingsPayload.#validateOptionalString(data.last_name, "last_name");
+    this.#first_name = SettingsPayload.#validateOptionalString(data.first_name, "first_name");
+    this.#email = SettingsPayload.#validateOptionalString(data.email, "email");
+    this.#phone = SettingsPayload.#validateOptionalString(data.phone, "phone");
+    this.#display_name = SettingsPayload.#validateOptionalString(data.display_name, "display_name");
   }
 
   /* Parse and validate JSON string */
   static #parseJSON(jsonString: string): Record<string, unknown> {
-    let parsed: unknown
+    let parsed: unknown;
 
     try {
-      parsed = JSON.parse(jsonString)
+      parsed = JSON.parse(jsonString);
     } catch (err) {
-      throw new Error(
-        `Invalid JSON string: ${
-          err instanceof Error ? err.message : String(err)
-        }`
-      )
+      throw new Error(`Invalid JSON string: ${err instanceof Error ? err.message : String(err)}`);
     }
 
-    if (!parsed || typeof parsed !== 'object') {
-      throw new Error('Parsed JSON must be an object')
+    if (!parsed || typeof parsed !== "object") {
+      throw new Error("Parsed JSON must be an object");
     }
 
-    return parsed as Record<string, unknown>
+    return parsed as Record<string, unknown>;
   }
 
   /* Validate optional string field - treats null and undefined as absent */
-  static #validateOptionalString(
-    value: unknown,
-    fieldName: string
-  ): string | undefined {
+  static #validateOptionalString(value: unknown, fieldName: string): string | undefined {
     if (value === null || value === undefined) {
-      return undefined
+      return undefined;
     }
 
-    if (typeof value !== 'string') {
-      throw new Error(`${fieldName} must be a string`)
+    if (typeof value !== "string") {
+      throw new Error(`${fieldName} must be a string`);
     }
 
-    return value
+    return value;
   }
 
   /* Getters for all fields */
   get language(): string | undefined {
-    return this.#language
+    return this.#language;
   }
 
   get timezone(): string | undefined {
-    return this.#timezone
+    return this.#timezone;
   }
 
   get avatar(): string | undefined {
-    return this.#avatar
+    return this.#avatar;
   }
 
   get last_name(): string | undefined {
-    return this.#last_name
+    return this.#last_name;
   }
 
   get first_name(): string | undefined {
-    return this.#first_name
+    return this.#first_name;
   }
 
   get email(): string | undefined {
-    return this.#email
+    return this.#email;
   }
 
   get phone(): string | undefined {
-    return this.#phone
+    return this.#phone;
   }
 
   get matrix_id(): string {
-    return this.#matrix_id
+    return this.#matrix_id;
   }
 
   get display_name(): string | undefined {
-    return this.#display_name
+    return this.#display_name;
   }
 
   /* Create plain object from ISettingsPayload (validates and returns clean object) */
   static fromObject(obj: ISettingsPayload): ISettingsPayload {
-    return new SettingsPayload(JSON.stringify(obj)).toObject()
+    return new SettingsPayload(JSON.stringify(obj)).toObject();
   }
 
   /* Serialize back to JSON */
@@ -153,8 +124,8 @@ export class SettingsPayload implements ISettingsPayload {
       ...(this.#first_name && { first_name: this.#first_name }),
       ...(this.#email && { email: this.#email }),
       ...(this.#phone && { phone: this.#phone }),
-      ...(this.#display_name && { display_name: this.#display_name })
-    })
+      ...(this.#display_name && { display_name: this.#display_name }),
+    });
   }
 
   /* Get plain object representation */
@@ -168,8 +139,8 @@ export class SettingsPayload implements ISettingsPayload {
       ...(this.#first_name && { first_name: this.#first_name }),
       ...(this.#email && { email: this.#email }),
       ...(this.#phone && { phone: this.#phone }),
-      ...(this.#display_name && { display_name: this.#display_name })
-    }
+      ...(this.#display_name && { display_name: this.#display_name }),
+    };
   }
 }
 
@@ -179,8 +150,8 @@ export class SettingsPayload implements ISettingsPayload {
  * including JSON serialization/deserialization and error handling.
  */
 export class SettingsRepository {
-  readonly #db: Database<UserSettingsTableName>
-  readonly #logger: Logger
+  readonly #db: Database<UserSettingsTableName>;
+  readonly #logger: Logger;
 
   /**
    * Creates a new SettingsRepository instance.
@@ -188,8 +159,8 @@ export class SettingsRepository {
    * @param logger - Logger instance for diagnostic output
    */
   constructor(db: Database<UserSettingsTableName>, logger: Logger) {
-    this.#db = db
-    this.#logger = logger
+    this.#db = db;
+    this.#logger = logger;
   }
 
   /**
@@ -201,61 +172,52 @@ export class SettingsRepository {
    * @throws Error if database query fails
    */
   async getUserSettings(userId: string): Promise<StoredUserSettings | null> {
-    this.#logger.debug(`Looking up user settings for ${userId}`)
+    this.#logger.debug(`Looking up user settings for ${userId}`);
 
     try {
       const result: DbGetResult = await this.#db.get(
-        'usersettings',
-        ['matrix_id', 'settings', 'version', 'timestamp', 'request_id'],
-        { matrix_id: userId }
-      )
+        "usersettings",
+        ["matrix_id", "settings", "version", "timestamp", "request_id"],
+        { matrix_id: userId },
+      );
 
       if (result.length === 0) {
-        this.#logger.debug(`No existing settings found for ${userId}`)
-        return null
+        this.#logger.debug(`No existing settings found for ${userId}`);
+        return null;
       }
 
-      const dbRow: Record<string, unknown> = result[0]
-      const settingsRaw =
-        typeof dbRow.settings === 'string'
-          ? dbRow.settings
-          : JSON.stringify(dbRow.settings)
-      const parsedSettings = this.#safeParsePayload(settingsRaw)
+      const dbRow: Record<string, unknown> = result[0];
+      const settingsRaw = typeof dbRow.settings === "string" ? dbRow.settings : JSON.stringify(dbRow.settings);
+      const parsedSettings = this.#safeParsePayload(settingsRaw);
 
       if (parsedSettings === null) {
-        this.#logger.warn(
-          `Settings for ${userId} in database are corrupted, treating as new user`
-        )
-        return null
+        this.#logger.warn(`Settings for ${userId} in database are corrupted, treating as new user`);
+        return null;
       }
 
       // Safely parse timestamp from DB (may be string or number)
-      const rawTs = dbRow.timestamp
-      const tsNum = rawTs == null ? undefined : Number(rawTs)
-      const validTimestamp = Number.isFinite(tsNum) ? tsNum! : 0
+      const rawTs = dbRow.timestamp;
+      const tsNum = rawTs === null ? undefined : Number(rawTs);
+      const validTimestamp = Number.isFinite(tsNum) ? tsNum! : 0;
 
       this.#logger.debug(
-        `Found existing settings for ${userId}: version=${
-          dbRow.version
-        }, timestamp=${
-          Number.isFinite(tsNum) ? formatTimestamp(tsNum!) : 'unknown'
-        }, request_id=${dbRow.request_id}`
-      )
+        `Found existing settings for ${userId}: version=${dbRow.version}, timestamp=${
+          Number.isFinite(tsNum) ? formatTimestamp(tsNum!) : "unknown"
+        }, request_id=${dbRow.request_id}`,
+      );
 
       return {
         nickname: dbRow.matrix_id as string,
         payload: parsedSettings,
         version: dbRow.version as number,
         timestamp: validTimestamp,
-        request_id: dbRow.request_id as string
-      }
+        request_id: dbRow.request_id as string,
+      };
     } catch (error) {
       this.#logger.error(
-        `Error retrieving settings for ${userId}: ${
-          error instanceof Error ? error.message : 'Unknown error'
-        }`
-      )
-      throw error
+        `Error retrieving settings for ${userId}: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
+      throw error;
     }
   }
 
@@ -277,67 +239,60 @@ export class SettingsRepository {
     version: number,
     timestamp: number,
     requestId: string,
-    isNewUser: boolean
+    isNewUser: boolean,
   ): Promise<void> {
     const cacheData = {
       matrix_id: userId,
       settings: JSON.stringify(payload),
       version,
       timestamp,
-      request_id: requestId
-    }
+      request_id: requestId,
+    };
 
     if (isNewUser) {
-      this.#logger.debug(`Inserting new cache entry for ${userId}`)
+      this.#logger.debug(`Inserting new cache entry for ${userId}`);
       try {
-        await this.#db.insert('usersettings', cacheData)
-        this.#logger.debug(`Successfully inserted cache entry for ${userId}`)
+        await this.#db.insert("usersettings", cacheData);
+        this.#logger.debug(`Successfully inserted cache entry for ${userId}`);
       } catch (error) {
         // Handle TOCTOU race: another request may have inserted first
-        const errorMsg =
-          error instanceof Error ? error.message.toLowerCase() : ''
-        const errorCode = (error as any)?.code
+        const errorMsg = error instanceof Error ? error.message.toLowerCase() : "";
+        const errorCode = (error as any)?.code;
         const isDuplicateKey =
-          errorMsg.includes('duplicate') ||
-          errorMsg.includes('unique') ||
-          errorMsg.includes('constraint') ||
-          errorCode === '23505' // PostgreSQL unique violation
+          errorMsg.includes("duplicate") ||
+          errorMsg.includes("unique") ||
+          errorMsg.includes("constraint") ||
+          errorCode === "23505"; // PostgreSQL unique violation
 
         if (isDuplicateKey) {
           this.#logger.debug(
-            `Duplicate key on insert for ${userId}, falling back to update (concurrent insert detected)`
-          )
-          await this.#db.update('usersettings', cacheData, 'matrix_id', userId)
-          this.#logger.debug(
-            `Successfully updated cache entry for ${userId} (after insert race)`
-          )
+            `Duplicate key on insert for ${userId}, falling back to update (concurrent insert detected)`,
+          );
+          await this.#db.update("usersettings", cacheData, "matrix_id", userId);
+          this.#logger.debug(`Successfully updated cache entry for ${userId} (after insert race)`);
         } else {
           this.#logger.error(
-            `Failed to insert cache entry for ${userId}: ${
-              error instanceof Error ? error.message : 'Unknown error'
-            }`
-          )
-          throw error
+            `Failed to insert cache entry for ${userId}: ${error instanceof Error ? error.message : "Unknown error"}`,
+          );
+          throw error;
         }
       }
     } else {
-      this.#logger.debug(`Updating cache entry for ${userId}`)
+      this.#logger.debug(`Updating cache entry for ${userId}`);
       try {
-        await this.#db.update('usersettings', cacheData, 'matrix_id', userId)
-        this.#logger.debug(`Successfully updated cache entry for ${userId}`)
+        await this.#db.update("usersettings", cacheData, "matrix_id", userId);
+        this.#logger.debug(`Successfully updated cache entry for ${userId}`);
       } catch (error) {
         this.#logger.error(
-          `Failed to update cache entry for ${userId}: ${
-            error instanceof Error ? error.message : 'Unknown error'
-          }`
-        )
-        throw error
+          `Failed to update cache entry for ${userId}: ${error instanceof Error ? error.message : "Unknown error"}`,
+        );
+        throw error;
       }
     }
 
     this.#logger.debug(
-      `Cache updated for ${userId}: version=${version}, timestamp=${timestamp}, request_id=${requestId}`
-    )
+      `Cache updated for ${userId}: version=${version}, timestamp=${timestamp}, request_id=${requestId}`,
+    );
   }
 
   /**
@@ -349,20 +304,16 @@ export class SettingsRepository {
    */
   #safeParsePayload(raw: string): ISettingsPayload | null {
     try {
-      const parsed = new SettingsPayload(raw).toObject()
+      const parsed = new SettingsPayload(raw).toObject();
       // Log only non-PII identifier for debugging
-      this.#logger.debug(
-        `Successfully parsed settings payload for ${parsed.matrix_id}`
-      )
-      return parsed
+      this.#logger.debug(`Successfully parsed settings payload for ${parsed.matrix_id}`);
+      return parsed;
     } catch (error) {
       // Do not log raw payload to avoid PII exposure
       this.#logger.warn(
-        `Failed to parse settings payload from database: ${
-          error instanceof Error ? error.message : 'Unknown error'
-        }`
-      )
-      return null
+        `Failed to parse settings payload from database: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
+      return null;
     }
   }
 }

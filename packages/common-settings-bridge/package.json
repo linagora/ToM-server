@@ -7,7 +7,7 @@
   "scripts": {
     "build": "rollup -c",
     "watch": "rollup -c -w",
-    "test": "LOG_TRANSPORTS=File LOG_FILE=/dev/null jest",
+    "test": "cross-env LOG_TRANSPORTS=File LOG_FILE=/dev/null jest",
     "start": "node dist/index.js",
     "check": "biome check ."
   },
@@ -20,7 +20,7 @@
     "@twake/amqp-connector": "*",
     "@twake/db": "*",
     "@twake/logger": "*",
-    "matrix-appservice-bridge": "^9.0.1"
+    "matrix-appservice-bridge": "^11.2.0"
   },
   "engines": {
     "node": "24.14.0",
