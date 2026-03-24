@@ -1,3 +1,3 @@
-import config from '../../rollup-template.js'
+import config from "../../rollup-template.js";
 
-export default config(['js-nacl'])
+export default config(["js-nacl"]);
