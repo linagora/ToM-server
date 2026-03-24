@@ -1,4 +1,4 @@
-import fs from "fs";
+import fs from "node:fs";
 import {
   ConfigCoercionError,
   FileReadParseError,
@@ -15,7 +15,7 @@ import type {
   ConfigValueType,
   NewConfigDescription,
 } from "./types";
-import { oldParser } from "./utils";
+import { isTruthy, oldParser } from "./utils";
 
 /**
  * Coerces a string value to the target type.
@@ -30,7 +30,7 @@ const coerceValue = (value: string, targetType: ConfigValueType): any => {
   switch (targetType) {
     case "number": {
       const num = parseFloat(value);
-      if (isNaN(num)) {
+      if (Number.isNaN(num)) {
         throw new InvalidNumberFormatError(value);
       }
       return num;
@@ -55,7 +55,6 @@ const coerceValue = (value: string, targetType: ConfigValueType): any => {
         const error = e instanceof Error ? e : new Error(String(e));
         throw new InvalidJsonFormatError(value, error);
       }
-    case "string":
     default:
       return value;
   }
@@ -119,7 +118,7 @@ const applyEnvironmentVariables = (config: Configuration, desc: NewConfigDescrip
 const applyDefaultValues = (config: Configuration, desc: NewConfigDescription): void => {
   Object.keys(desc).forEach((key: string) => {
     const configProp = desc[key];
-    if (config[key] == null && configProp.default !== undefined) {
+    if (!config[key] && configProp.default !== undefined) {
       if (typeof configProp.default === "string" && configProp.type !== "string" && configProp.type !== "array") {
         try {
           config[key] = coerceValue(configProp.default, configProp.type);
@@ -191,12 +190,12 @@ const twakeConfig = (
   useOldParser: boolean = true,
 ): Configuration => {
   // Determine if we should use the old parser
-  const shouldUseOldParser = useOldParser && process.env.TWAKE_CONFIG_PARSER_NEW == null;
+  const shouldUseOldParser = useOldParser && !isTruthy(process.env.TWAKE_CONFIG_PARSER_NEW);
 
   // Start with an empty config
   let config: Configuration = {};
 
-  if (defaultConfigurationFile != null) {
+  if (defaultConfigurationFile) {
     if (typeof defaultConfigurationFile === "string") {
       config = loadConfigFromFile(defaultConfigurationFile);
     } else {

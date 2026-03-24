@@ -1,5 +1,5 @@
-import fs from "fs";
-import path from "path";
+import fs from "node:fs";
+import path from "node:path";
 import { ConfigCoercionError, FileReadParseError, MissingRequiredConfigError, UnacceptedKeyError } from "./errors";
 import twakeConfig from "./index";
 import type { ConfigDescription, Configuration } from "./types";

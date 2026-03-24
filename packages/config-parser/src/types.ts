@@ -1,4 +1,4 @@
-import type fs from "fs";
+import type fs from "node:fs";
 
 /**
  * Defines the possible types for configuration values.

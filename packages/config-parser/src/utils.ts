@@ -9,11 +9,11 @@ export const oldParser = (desc: ConfigDescription, res: Configuration): void => 
   // Parse wanted keys
   Object.keys(desc).forEach((key: string) => {
     // If environment variable exists, it overrides current value
-    if (process.env[key.toUpperCase()] != null && process.env[key.toUpperCase()] !== "") {
+    if (process.env[key.toUpperCase()] && process.env[key.toUpperCase()] !== "") {
       res[key] = process.env[key.toUpperCase()];
     } else {
       // if default value exists use it
-      if (res[key] == null && desc[key] != null) {
+      if (!res[key] && desc[key]) {
         res[key] = desc[key];
       }
     }
@@ -25,3 +25,6 @@ export const oldParser = (desc: ConfigDescription, res: Configuration): void => 
     }
   });
 };
+
+export const isTruthy = (value: string | null | undefined): boolean =>
+  ["1", "true", "on", "enable", "enabled", "active", "activated"].includes(value?.toLowerCase() ?? "");
