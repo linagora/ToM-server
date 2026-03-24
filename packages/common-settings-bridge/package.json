@@ -20,7 +20,7 @@
     "@twake/amqp-connector": "*",
     "@twake/db": "*",
     "@twake/logger": "*",
-    "matrix-appservice-bridge": "^9.0.1"
+    "matrix-appservice-bridge": "^11.2.0"
   },
   "engines": {
     "node": "24.14.0",

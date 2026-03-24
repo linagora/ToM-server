@@ -1,6 +1,7 @@
 import { AMQPConnector } from "@twake/amqp-connector";
 import { Database } from "@twake/db";
 import type * as logger from "@twake/logger";
+import type { SynapseAdminApis } from "@vector-im/matrix-bot-sdk";
 import type { Channel, ConsumeMessage } from "amqplib";
 import { Bridge, type Intent, Logger } from "matrix-appservice-bridge";
 import {
@@ -115,7 +116,7 @@ export class CommonSettingsBridge {
   readonly #log: Logger;
   #bridge!: Bridge;
   #botIntent!: Intent;
-  #adminApis!: any;
+  #adminApis!: SynapseAdminApis;
   #db!: Database<UserSettingsTableName>;
   #connector!: AMQPConnector;
   #settingsRepository!: SettingsRepository;
