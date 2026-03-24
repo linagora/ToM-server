@@ -239,3 +239,54 @@ the changed surface area. Audit `bridge.test.ts` to confirm coverage of:
 
 If any of these are not exercised, add targeted tests or extend the shared mock to
 eliminate the dependency on the real v11 implementation.
+
+## Config Parser
+
+### `index.ts` — Align `loadConfigFromFile` Signature with `ConfigurationFile` Contract
+
+`ConfigurationFile` is declared as `fs.PathOrFileDescriptor` (`string | number | Buffer | URL`),
+but `loadConfigFromFile` only accepts `string`. This creates a silent failure path:
+numeric file descriptors, `Buffer`, and `URL` objects bypass the file loader and fall
+through to `JSON.parse` instead. The truthiness guard is also broken for `0`, which
+is a valid file descriptor.
+
+`fs.readFileSync()` natively handles the full union, so widening the loader to match
+the declared contract is straightforward:
+
+```diff
+-const loadConfigFromFile = (filePath: string): Configuration => {
++const loadConfigFromFile = (filePath: fs.PathOrFileDescriptor): Configuration => {
+```
+
+And update the type guard accordingly:
+
+```diff
+-  if (defaultConfigurationFile) {
+-    if (typeof defaultConfigurationFile === "string") {
++  if (defaultConfigurationFile !== undefined) {
++    if (
++      typeof defaultConfigurationFile === "string" ||
++      typeof defaultConfigurationFile === "number" ||
++      defaultConfigurationFile instanceof URL ||
++      Buffer.isBuffer(defaultConfigurationFile)
++    ) {
+       config = loadConfigFromFile(defaultConfigurationFile);
+```
+
+Alternatively, narrow `ConfigurationFile` to `object | string | undefined` in
+`types.ts` if the other variants are never actually needed.
+
+### `index.ts` — Re-export Error Classes from the Package Entry Point
+
+`package.json` only exposes `./dist/index.js`, so error types living in `./errors`
+are effectively private to consumers. Anyone relying on `instanceof` checks is forced
+into an undocumented deep import that the export map does not publish. Re-export all
+error classes from `src/index.ts` so they are part of the stable public API.
+
+### `utils.ts` — Throw `UnacceptedKeyError` Instead of Raw `Error`
+
+The legacy parser path throws a generic `Error` for invalid keys, while the new path
+throws `UnacceptedKeyError`. This makes the two paths diverge for the same invalid
+input and breaks `instanceof` handling for callers who catch `UnacceptedKeyError`.
+Replace the raw `throw new Error(...)` in `utils.ts` with `throw new UnacceptedKeyError(...)`
+to keep error types consistent across both code paths.
