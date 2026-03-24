@@ -136,7 +136,8 @@ function isBridgeConfig(obj: unknown): obj is BridgeConfig {
 ### `matrix-profile-updater.ts` — Replace `catch (err: any)` with `unknown` (Biome `noExplicitAny`)
 
 `catch (err: any)` at lines 96, 239, and 283 triggers `noExplicitAny`. Switch to
-`unknown` and narrow manually:
+`unknown` and narrow via a shared `MatrixError` type guard (preferred over inline
+narrowing at each catch site — see below):
 
 ```diff
 -    } catch (err: any) {
@@ -156,8 +157,19 @@ function isBridgeConfig(obj: unknown): obj is BridgeConfig {
        ) {
 ```
 
-Alternatively, define a `MatrixError` interface with `errcode?: string` and use a
-type guard.
+Define a shared `MatrixError` interface and type guard once (e.g. in `types.ts`) to
+DRY up all three catch blocks:
+
+```typescript
+interface MatrixError extends Error {
+  errcode?: string;
+  statusCode?: number;
+}
+
+function isMatrixError(err: unknown): err is MatrixError {
+  return err instanceof Error && "errcode" in err;
+}
+```
 
 ### `settings-repository.ts` — Preserve Error Cause When Wrapping (`useErrorCause`)
 
@@ -203,3 +215,27 @@ enum SynapseAdminRetryMode { FALLBACK = "fallback", DISABLED = "disabled" }
 const SynapseAdminRetryMode = { FALLBACK: "fallback", DISABLED: "disabled" } as const;
 type SynapseAdminRetryMode = typeof SynapseAdminRetryMode[keyof typeof SynapseAdminRetryMode];
 ```
+
+### `bridge.ts` — Make `DB_READY_TIMEOUT_MS` Configurable
+
+`DB_READY_TIMEOUT_MS = 30000` is hardcoded. In environments with slow cold-starts
+(large containerized deployments, spinning disks) this may be too tight without a
+code change. Expose it as a `database.connectionTimeoutMs` config option instead.
+
+### Tests — Verify `bridge.test.ts` Covers `matrix-appservice-bridge` v11 Surface
+
+The shared mock at `__mocks__/matrix-appservice-bridge.ts` only exports `Logger`,
+`Bridge`, and `Intent` — `AppServiceRegistration` and `Cli` are absent. This is
+currently papered over by inline `jest.mock` calls in `index.test.ts`, which provide
+working implementations of the missing exports.
+
+The real risk: `bridge.test.ts` imports the **real** `Bridge` and `Intent` from v11.
+If v11 broke any of those APIs the tests would only catch it if they actually exercise
+the changed surface area. Audit `bridge.test.ts` to confirm coverage of:
+
+- `Bridge.run()`
+- `getIntent()` chaining
+- Event handler registration
+
+If any of these are not exercised, add targeted tests or extend the shared mock to
+eliminate the dependency on the real v11 implementation.
