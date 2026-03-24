@@ -13,7 +13,7 @@ export const oldParser = (desc: ConfigDescription, res: Configuration): void => 
       res[key] = process.env[key.toUpperCase()];
     } else {
       // if default value exists use it
-      if (!res[key] && desc[key]) {
+      if ((res[key] === null || res[key] === undefined) && desc[key]) {
         res[key] = desc[key];
       }
     }
