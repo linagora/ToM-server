@@ -1,21 +1,21 @@
-import fs from 'fs'
+import fs from "node:fs";
 import {
-  type ConfigValueType,
-  type ConfigDescription,
-  type ConfigurationFile,
-  type Configuration,
-  type NewConfigDescription
-} from './types'
-import {
-  InvalidNumberFormatError,
+  ConfigCoercionError,
+  FileReadParseError,
   InvalidBooleanFormatError,
   InvalidJsonFormatError,
-  FileReadParseError,
+  InvalidNumberFormatError,
+  MissingRequiredConfigError,
   UnacceptedKeyError,
-  ConfigCoercionError,
-  MissingRequiredConfigError
-} from './errors'
-import { oldParser } from './utils'
+} from "./errors";
+import type {
+  ConfigDescription,
+  Configuration,
+  ConfigurationFile,
+  ConfigValueType,
+  NewConfigDescription,
+} from "./types";
+import { isTruthy, oldParser } from "./utils";
 
 /**
  * Coerces a string value to the target type.
@@ -28,38 +28,37 @@ import { oldParser } from './utils'
  */
 const coerceValue = (value: string, targetType: ConfigValueType): any => {
   switch (targetType) {
-    case 'number': {
-      const num = parseFloat(value)
-      if (isNaN(num)) {
-        throw new InvalidNumberFormatError(value)
+    case "number": {
+      const num = parseFloat(value);
+      if (Number.isNaN(num)) {
+        throw new InvalidNumberFormatError(value);
       }
-      return num
+      return num;
     }
-    case 'boolean': {
-      const lowerValue = value.toLowerCase().trim()
-      if (lowerValue === 'true' || lowerValue === '1') {
-        return true
+    case "boolean": {
+      const lowerValue = value.toLowerCase().trim();
+      if (lowerValue === "true" || lowerValue === "1") {
+        return true;
       }
-      if (lowerValue === 'false' || lowerValue === '0') {
-        return false
+      if (lowerValue === "false" || lowerValue === "0") {
+        return false;
       }
-      throw new InvalidBooleanFormatError(value)
+      throw new InvalidBooleanFormatError(value);
     }
-    case 'array':
-      return value.split(/[,\s]+/).filter((s) => s.length > 0)
-    case 'json':
-    case 'object':
+    case "array":
+      return value.split(/[,\s]+/).filter((s) => s.length > 0);
+    case "json":
+    case "object":
       try {
-        return JSON.parse(value)
+        return JSON.parse(value);
       } catch (e: unknown) {
-        const error = e instanceof Error ? e : new Error(String(e))
-        throw new InvalidJsonFormatError(value, error)
+        const error = e instanceof Error ? e : new Error(String(e));
+        throw new InvalidJsonFormatError(value, error);
       }
-    case 'string':
     default:
-      return value
+      return value;
   }
-}
+};
 
 /**
  * Loads configuration from a specified file path.
@@ -69,13 +68,13 @@ const coerceValue = (value: string, targetType: ConfigValueType): any => {
  */
 const loadConfigFromFile = (filePath: string): Configuration => {
   try {
-    const fileContent = fs.readFileSync(filePath, 'utf8')
-    return JSON.parse(fileContent)
+    const fileContent = fs.readFileSync(filePath, "utf8");
+    return JSON.parse(fileContent);
   } catch (e: unknown) {
-    const error = e instanceof Error ? e : new Error(String(e))
-    throw new FileReadParseError(filePath, error)
+    const error = e instanceof Error ? e : new Error(String(e));
+    throw new FileReadParseError(filePath, error);
   }
-}
+};
 
 /**
  * Applies environment variable overrides to the configuration.
@@ -84,36 +83,30 @@ const loadConfigFromFile = (filePath: string): Configuration => {
  * @param {boolean} useEnv - Whether to enable environment variable overrides.
  * @throws {ConfigCoercionError} if an environment variable value cannot be coerced to the expected type or is an empty string.
  */
-const applyEnvironmentVariables = (
-  config: Configuration,
-  desc: NewConfigDescription,
-  useEnv: boolean
-): void => {
+const applyEnvironmentVariables = (config: Configuration, desc: NewConfigDescription, useEnv: boolean): void => {
   Object.keys(desc).forEach((key: string) => {
-    const configProp = desc[key]
-    const envVarName = key.toUpperCase()
-    const envValue = process.env[envVarName]
+    const configProp = desc[key];
+    const envVarName = key.toUpperCase();
+    const envValue = process.env[envVarName];
 
-    if (useEnv && process.env.hasOwnProperty(envVarName)) {
-      if (envValue === '') {
+    if (useEnv && Object.hasOwn(process.env, envVarName)) {
+      if (envValue === "") {
         throw new ConfigCoercionError(
           key,
-          'environment',
-          new Error(
-            'Empty string values are not allowed for this configuration key from environment variables.'
-          )
-        )
+          "environment",
+          new Error("Empty string values are not allowed for this configuration key from environment variables."),
+        );
       }
 
       try {
-        config[key] = coerceValue(envValue as string, configProp.type)
+        config[key] = coerceValue(envValue as string, configProp.type);
       } catch (e: unknown) {
-        const error = e instanceof Error ? e : new Error(String(e))
-        throw new ConfigCoercionError(key, 'environment', error)
+        const error = e instanceof Error ? e : new Error(String(e));
+        throw new ConfigCoercionError(key, "environment", error);
       }
     }
-  })
-}
+  });
+};
 
 /**
  * Applies default values from ConfigDescription if a key is not already set.
@@ -122,40 +115,36 @@ const applyEnvironmentVariables = (
  * @param {ConfigDescription} desc - The ConfigDescription for default values and type information.
  * @throws {ConfigCoercionError} if a default value string cannot be coerced to its expected type.
  */
-const applyDefaultValues = (
-  config: Configuration,
-  desc: NewConfigDescription
-): void => {
+const applyDefaultValues = (config: Configuration, desc: NewConfigDescription): void => {
   Object.keys(desc).forEach((key: string) => {
-    const configProp = desc[key]
-    if (config[key] == null && configProp.default !== undefined) {
-      if (
-        typeof configProp.default === 'string' &&
-        configProp.type !== 'string' &&
-        configProp.type !== 'array'
-      ) {
-        try {
-          config[key] = coerceValue(configProp.default, configProp.type)
-        } catch (e: unknown) {
-          const error = e instanceof Error ? e : new Error(String(e))
-          throw new ConfigCoercionError(key, 'default', error)
-        }
+    const configProp = desc[key];
+    if (config[key] === undefined) {
+      if (configProp.default === undefined) {
+        config[key] = undefined;
       } else if (
-        typeof configProp.default === 'string' &&
-        configProp.type === 'array'
+        typeof configProp.default === "string" &&
+        configProp.type !== "string" &&
+        configProp.type !== "array"
       ) {
         try {
-          config[key] = coerceValue(configProp.default, configProp.type)
+          config[key] = coerceValue(configProp.default, configProp.type);
         } catch (e: unknown) {
-          const error = e instanceof Error ? e : new Error(String(e))
-          throw new ConfigCoercionError(key, 'default', error)
+          const error = e instanceof Error ? e : new Error(String(e));
+          throw new ConfigCoercionError(key, "default", error);
+        }
+      } else if (typeof configProp.default === "string" && configProp.type === "array") {
+        try {
+          config[key] = coerceValue(configProp.default, configProp.type);
+        } catch (e: unknown) {
+          const error = e instanceof Error ? e : new Error(String(e));
+          throw new ConfigCoercionError(key, "default", error);
         }
       } else {
-        config[key] = configProp.default
+        config[key] = configProp.default;
       }
     }
-  })
-}
+  });
+};
 
 /**
  * Validates that all keys in the final configuration are defined in the ConfigDescription.
@@ -163,16 +152,13 @@ const applyDefaultValues = (
  * @param {ConfigDescription} desc - The ConfigDescription.
  * @throws {UnacceptedKeyError} if an unexpected key is found in the configuration.
  */
-const validateUnwantedKeys = (
-  config: Configuration,
-  desc: NewConfigDescription
-): void => {
+const validateUnwantedKeys = (config: Configuration, desc: NewConfigDescription): void => {
   Object.keys(config).forEach((key: string) => {
     if (desc[key] === undefined) {
-      throw new UnacceptedKeyError(key)
+      throw new UnacceptedKeyError(key);
     }
-  })
-}
+  });
+};
 
 /**
  * Validates that all required configuration keys are present in the final configuration.
@@ -180,17 +166,14 @@ const validateUnwantedKeys = (
  * @param {ConfigDescription} desc - The ConfigDescription.
  * @throws {MissingRequiredConfigError} if a required key is missing.
  */
-const validateRequiredKeys = (
-  config: Configuration,
-  desc: NewConfigDescription
-): void => {
+const validateRequiredKeys = (config: Configuration, desc: NewConfigDescription): void => {
   Object.keys(desc).forEach((key: string) => {
-    const configProp = desc[key]
+    const configProp = desc[key];
     if ((configProp.required ?? false) && config[key] === undefined) {
-      throw new MissingRequiredConfigError(key)
+      throw new MissingRequiredConfigError(key);
     }
-  })
-}
+  });
+};
 
 /**
  * Loads and consolidates application configuration from multiple sources.
@@ -210,43 +193,39 @@ const twakeConfig = (
   desc: ConfigDescription,
   defaultConfigurationFile?: ConfigurationFile,
   useEnv: boolean = false,
-  useOldParser: boolean = true
+  useOldParser: boolean = true,
 ): Configuration => {
   // Determine if we should use the old parser
-  const shouldUseOldParser =
-    useOldParser && process.env.TWAKE_CONFIG_PARSER_NEW == null
+  const shouldUseOldParser = useOldParser && !isTruthy(process.env.TWAKE_CONFIG_PARSER_NEW);
 
   // Start with an empty config
-  let config: Configuration = {}
+  let config: Configuration = {};
 
-  if (defaultConfigurationFile != null) {
-    if (typeof defaultConfigurationFile === 'string') {
-      config = loadConfigFromFile(defaultConfigurationFile)
+  if (defaultConfigurationFile) {
+    if (typeof defaultConfigurationFile === "string") {
+      config = loadConfigFromFile(defaultConfigurationFile);
     } else {
-      config = shouldUseOldParser
-        ? defaultConfigurationFile
-        : JSON.parse(JSON.stringify(defaultConfigurationFile))
+      config = shouldUseOldParser ? defaultConfigurationFile : JSON.parse(JSON.stringify(defaultConfigurationFile));
     }
   }
 
   if (shouldUseOldParser) {
     // Use old parser by default unless explicitly opting into the new parser
-    oldParser(desc, config)
-    return config
-  } else {
-    // New parser
-    // Ensure desc is treated as NewConfigDescription
-    const newDesc = desc as NewConfigDescription
-
-    applyEnvironmentVariables(config, newDesc, useEnv)
-    applyDefaultValues(config, newDesc)
-    validateUnwantedKeys(config, newDesc)
-    validateRequiredKeys(config, newDesc)
+    oldParser(desc, config);
+    return config;
   }
+  // New parser
+  // Ensure desc is treated as NewConfigDescription
+  const newDesc = desc as NewConfigDescription;
 
-  return config
-}
+  applyEnvironmentVariables(config, newDesc, useEnv);
+  applyDefaultValues(config, newDesc);
+  validateUnwantedKeys(config, newDesc);
+  validateRequiredKeys(config, newDesc);
 
-export type { ConfigDescription } from './types'
+  return config;
+};
 
-export default twakeConfig
+export type { ConfigDescription } from "./types";
+
+export default twakeConfig;
