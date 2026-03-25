@@ -290,3 +290,48 @@ throws `UnacceptedKeyError`. This makes the two paths diverge for the same inval
 input and breaks `instanceof` handling for callers who catch `UnacceptedKeyError`.
 Replace the raw `throw new Error(...)` in `utils.ts` with `throw new UnacceptedKeyError(...)`
 to keep error types consistent across both code paths.
+
+## Crypto
+
+### `index.ts` — Fix Polynomial ReDoS Risk in `toBase64Url` (line 60)
+
+The `/=+$/` regex runs on uncontrolled input and is flagged as a polynomial regular
+expression. While the practical risk is low for typical Base64 strings, it can cause
+excessive backtracking on crafted inputs with long runs of `=`-like characters.
+
+Replace the regex chain with a single-pass string manipulation that avoids
+backtracking entirely:
+
+```diff
+ export function toBase64Url(base64: string): string {
+-  return base64.replace(/=+$/, "").replace(/\//g, "_").replace(/\+/g, "-");
++  return base64
++    .replace(/\+/g, "-")
++    .replace(/\//g, "_")
++    .replace(/=+$/, "");
+ }
+```
+
+Or avoid regex altogether for the padding strip:
+
+```typescript
+export function toBase64Url(base64: string): string {
+  const stripped = base64.endsWith("=")
+    ? base64.slice(0, base64.length - (base64.length - base64.replace(/=+$/, "").length))
+    : base64;
+  return stripped.replace(/\+/g, "-").replace(/\//g, "_");
+}
+```
+
+The cleanest approach is to trim padding with a simple index scan:
+
+```typescript
+export function toBase64Url(base64: string): string {
+  let end = base64.length;
+  while (end > 0 && base64[end - 1] === "=") end--;
+  return base64.slice(0, end).replace(/\+/g, "-").replace(/\//g, "_");
+}
+```
+
+This is O(n) with no backtracking and satisfies static analysis tools flagging
+polynomial regex on uncontrolled data.
