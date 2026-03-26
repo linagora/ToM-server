@@ -26,7 +26,7 @@ class Pg<T extends string> extends SQL<T> implements DbBackend<T> {
           .then((pg) => {
             // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
             // @ts-expect-error
-            if (pg.Database === null) pg = pg.default;
+            if (!pg.Database) pg = pg.default;
             if (
               !conf.database_host ||
               !conf.database_user ||
@@ -82,7 +82,7 @@ class Pg<T extends string> extends SQL<T> implements DbBackend<T> {
         const query = `SELECT EXISTS (SELECT FROM pg_tables WHERE tablename='${table.toLowerCase()}')`;
         this.logger.debug("[Pg][exists] Checking table", { table });
         this.db.query(query, (err, res) => {
-          if (err === null) {
+          if (err === null || err === undefined) {
             this.logger.debug("[Pg][exists] Check completed", {
               table,
               exists: res.rows[0].exists,

@@ -26,10 +26,10 @@ class SQLite<T extends string> extends SQL<T> implements DbBackend<T> {
           .then((sqlite3) => {
             // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
             // @ts-expect-error
-            if (sqlite3.Database === null) sqlite3 = sqlite3.default;
+            if (!sqlite3.Database) sqlite3 = sqlite3.default;
             const db = (this.db = new sqlite3.Database(conf.database_host));
             /* istanbul ignore if */
-            if (db === null) {
+            if (!db) {
               throw new Error("Database not created");
             }
             logger.info("[Db:SQLite] connected.");
@@ -52,7 +52,7 @@ class SQLite<T extends string> extends SQL<T> implements DbBackend<T> {
       }
       this.logger.debug("[SQLite][rawQuery] Executing query", { query });
       this.db.run(query, (err) => {
-        if (err === null) {
+        if (err === null || err === undefined) {
           this.logger.debug("[SQLite][rawQuery] Query successful", { query });
           resolve();
         } else {
@@ -1115,7 +1115,7 @@ class SQLite<T extends string> extends SQL<T> implements DbBackend<T> {
        * SQLite doesn't support parameterized DEFAULT in ALTER TABLE,
        * so we must use literal values with proper escaping
        */
-      if (column.default === null) {
+      if (column.default === null || column.default === undefined) {
         query += " DEFAULT NULL";
       } else if (typeof column.default === "number") {
         query += ` DEFAULT ${column.default}`;
