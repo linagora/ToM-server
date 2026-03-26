@@ -743,7 +743,7 @@ class SQLite<T extends string> extends SQL<T> implements DbBackend<T> {
         if (fields.length === 0) fields = ["*"];
         const values = searchFields.map(() => `%${value}%`);
         let condition = searchFields.map((f) => `${f} LIKE ?`).join(" OR ");
-        if (order) condition += `ORDER BY ${order}`;
+        if (order) condition += ` ORDER BY ${order}`;
         const query = `SELECT ${fields.join(",")} FROM ${table} WHERE ${condition}`;
         this.logger.debug("[SQLite][match] Executing LIKE query", {
           table,
