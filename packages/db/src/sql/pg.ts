@@ -28,10 +28,10 @@ class Pg<T extends string> extends SQL<T> implements DbBackend<T> {
             // @ts-expect-error
             if (pg.Database === null) pg = pg.default;
             if (
-              conf.database_host === null ||
-              conf.database_user === null ||
-              conf.database_password === null ||
-              conf.database_name === null
+              !conf.database_host ||
+              !conf.database_user ||
+              !conf.database_password ||
+              !conf.database_name
             ) {
               throw new Error("database_name, database_user and database_password are required when using Postgres");
             }
