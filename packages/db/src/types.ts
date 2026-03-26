@@ -1,4 +1,4 @@
-import type { ConnectionOptions } from "tls";
+import type { ConnectionOptions } from "node:tls";
 
 export type SupportedDatabases = "sqlite" | "pg";
 

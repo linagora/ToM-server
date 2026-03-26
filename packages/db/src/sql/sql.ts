@@ -32,11 +32,11 @@ abstract class SQL<T extends string> {
   getCount(table: T, field: string, value?: string | number | string[]): Promise<number> {
     return new Promise((resolve, reject) => {
       const args: any[] = [table, [`count(${field}) as count`]];
-      if (value != null) args.push({ [field]: value });
+      if (value !== null) args.push({ [field]: value });
       // @ts-expect-error implemented later
       this.get(...args)
         .then((rows: Array<Record<string, string>>) => {
-          resolve(parseInt(rows[0].count));
+          resolve(parseInt(rows[0].count, 10));
         })
         .catch((e: any) => {
           /* istanbul ignore next */

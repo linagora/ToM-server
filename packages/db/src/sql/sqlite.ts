@@ -19,17 +19,17 @@ class SQLite<T extends string> extends SQL<T> implements DbBackend<T> {
     logger: TwakeLogger,
   ): Promise<void> {
     return new Promise((resolve, reject) => {
-      if (this.db != null) {
+      if (this.db !== null) {
         createTables(this, tables, indexes, initializeValues, logger, resolve, reject);
       } else {
         import("sqlite3")
           .then((sqlite3) => {
             // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
             // @ts-expect-error
-            if (sqlite3.Database == null) sqlite3 = sqlite3.default;
+            if (sqlite3.Database === null) sqlite3 = sqlite3.default;
             const db = (this.db = new sqlite3.Database(conf.database_host));
             /* istanbul ignore if */
-            if (db == null) {
+            if (db === null) {
               throw new Error("Database not created");
             }
             logger.info("[Db:SQLite] connected.");
@@ -45,14 +45,14 @@ class SQLite<T extends string> extends SQL<T> implements DbBackend<T> {
 
   rawQuery(query: string): Promise<void> {
     return new Promise((resolve, reject) => {
-      if (this.db == null) {
+      if (!this.db) {
         this.logger.error("[SQLite][rawQuery] DB not ready");
         reject(new Error("DB not ready"));
         return;
       }
       this.logger.debug("[SQLite][rawQuery] Executing query", { query });
       this.db.run(query, (err) => {
-        if (err == null) {
+        if (err === null) {
           this.logger.debug("[SQLite][rawQuery] Query successful", { query });
           resolve();
         } else {
@@ -74,7 +74,7 @@ class SQLite<T extends string> extends SQL<T> implements DbBackend<T> {
   insert(table: T, values: Record<string, string | number>): Promise<DbGetResult> {
     return new Promise((resolve, reject) => {
       /* istanbul ignore if */
-      if (this.db == null) {
+      if (!this.db) {
         this.logger.error("[SQLite][insert] DB not ready", { table });
         throw new Error("Wait for database to be ready");
       }
@@ -84,7 +84,7 @@ class SQLite<T extends string> extends SQL<T> implements DbBackend<T> {
         names.push(k);
         vals.push(values[k]);
       });
-      const query = `INSERT INTO ${table}(${names.join(",")}) VALUES(${names.map((v) => "?").join(",")}) RETURNING *;`;
+      const query = `INSERT INTO ${table}(${names.join(",")}) VALUES(${names.map((_v) => "?").join(",")}) RETURNING *;`;
       this.logger.debug("[SQLite][insert] Executing", {
         table,
         fields: names,
@@ -93,7 +93,7 @@ class SQLite<T extends string> extends SQL<T> implements DbBackend<T> {
       const stmt = this.db.prepare(query);
       stmt.all(vals, (err: string, rows: Array<Record<string, string | number>>) => {
         /* istanbul ignore if */
-        if (err != null) {
+        if (err !== null) {
           this.logger.error("[SQLite][insert] Failed", {
             table,
             fields: names,
@@ -130,7 +130,7 @@ class SQLite<T extends string> extends SQL<T> implements DbBackend<T> {
   ): Promise<DbGetResult> {
     return new Promise((resolve, reject) => {
       /* istanbul ignore if */
-      if (this.db == null) {
+      if (!this.db) {
         this.logger.error("[SQLite][update] DB not ready", { table, field });
         throw new Error("Wait for database to be ready");
       }
@@ -151,7 +151,7 @@ class SQLite<T extends string> extends SQL<T> implements DbBackend<T> {
       const stmt = this.db.prepare(query);
       stmt.all(vals, (err: string, rows: Array<Record<string, string | number>>) => {
         /* istanbul ignore if */
-        if (err != null) {
+        if (err !== null) {
           this.logger.error("[SQLite][update] Failed", {
             table,
             fields: names,
@@ -189,7 +189,7 @@ class SQLite<T extends string> extends SQL<T> implements DbBackend<T> {
   ): Promise<DbGetResult> {
     return new Promise((resolve, reject) => {
       /* istanbul ignore if */
-      if (this.db == null) {
+      if (!this.db) {
         this.logger.error("[SQLite][updateAnd] DB not ready", {
           table,
           conditions: [condition1.field, condition2.field],
@@ -211,7 +211,7 @@ class SQLite<T extends string> extends SQL<T> implements DbBackend<T> {
       const stmt = this.db.prepare(query);
 
       stmt.all(vals, (err: string, rows: Array<Record<string, string | number>>) => {
-        if (err != null) {
+        if (err !== null) {
           this.logger.error("[SQLite][updateAnd] Failed", {
             table,
             fields: names,
@@ -255,12 +255,12 @@ class SQLite<T extends string> extends SQL<T> implements DbBackend<T> {
   ): Promise<DbGetResult> {
     return new Promise((resolve, reject) => {
       /* istanbul ignore if */
-      if (this.db == null) {
+      if (!this.db) {
         reject(new Error("Wait for database to be ready"));
       } else {
         let condition: string = "";
         const values: string[] = [];
-        if (fields == null || fields.length === 0) {
+        if (!fields || fields.length === 0) {
           fields = ["*"];
         } else {
           // Generate aliases for fields containing periods
@@ -282,7 +282,7 @@ class SQLite<T extends string> extends SQL<T> implements DbBackend<T> {
           let localCondition = "";
 
           Object.keys(filterFields)
-            .filter((key) => filterFields[key] != null && filterFields[key].toString() !== [].toString())
+            .filter((key) => filterFields[key] !== null && filterFields[key].toString() !== [].toString())
             .forEach((key) => {
               localCondition += localCondition !== "" ? " AND " : "";
               if (Array.isArray(filterFields[key])) {
@@ -303,19 +303,19 @@ class SQLite<T extends string> extends SQL<T> implements DbBackend<T> {
         };
 
         const condition1 =
-          op1 != null && filterFields1 != null && Object.keys(filterFields1).length > 0
+          op1 && filterFields1 && Object.keys(filterFields1).length > 0
             ? buildCondition(op1, filterFields1)
             : "";
         const condition2 =
-          op2 != null && linkop1 != null && filterFields2 != null && Object.keys(filterFields2).length > 0
+          op2 && linkop1 && filterFields2 && Object.keys(filterFields2).length > 0
             ? buildCondition(op2, filterFields2)
             : "";
         const condition3 =
-          op3 != null && linkop2 != null && filterFields3 != null && Object.keys(filterFields3).length > 0
+          op3 && linkop2 && filterFields3 && Object.keys(filterFields3).length > 0
             ? buildCondition(op3, filterFields3)
             : "";
 
-        condition += condition1 !== "" ? "WHERE " + condition1 : "";
+        condition += condition1 !== "" ? `WHERE ${condition1}` : "";
         condition +=
           condition2 !== ""
             ? // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
@@ -327,10 +327,10 @@ class SQLite<T extends string> extends SQL<T> implements DbBackend<T> {
               (condition !== "" ? ` ${linkop2} ` : "WHERE ") + condition3
             : "";
 
-        if (joinFields != null) {
+        if (joinFields) {
           let joinCondition = "";
           Object.keys(joinFields)
-            .filter((key) => joinFields[key] != null && joinFields[key].toString() !== [].toString())
+            .filter((key) => joinFields[key] && joinFields[key].toString() !== [].toString())
             .forEach((key) => {
               joinCondition += joinCondition !== "" ? " AND " : "";
               joinCondition += `${key}=${joinFields[key]}`;
@@ -339,7 +339,7 @@ class SQLite<T extends string> extends SQL<T> implements DbBackend<T> {
           condition += joinCondition;
         }
 
-        if (order != null) condition += ` ORDER BY ${order}`;
+        if (order) condition += ` ORDER BY ${order}`;
 
         const query = `SELECT ${fields.join(",")} FROM ${tables.join(",")} ${condition}`;
         this.logger.debug("[SQLite][_get] Executing SELECT", {
@@ -348,12 +348,10 @@ class SQLite<T extends string> extends SQL<T> implements DbBackend<T> {
           condition,
           query,
         });
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
-        // @ts-expect-error never undefined
         const stmt = this.db.prepare(query);
         stmt.all(values, (err: string, rows: Array<Record<string, string | number>>) => {
           /* istanbul ignore if */
-          if (err != null) {
+          if (err !== null) {
             this.logger.error("[SQLite][_get] SELECT failed", {
               tables,
               fields,
@@ -511,12 +509,12 @@ class SQLite<T extends string> extends SQL<T> implements DbBackend<T> {
   ): Promise<DbGetResult> {
     return new Promise((resolve, reject) => {
       /* istanbul ignore if */
-      if (this.db == null) {
+      if (!this.db) {
         reject(new Error("Wait for database to be ready"));
       } else {
         let condition: string = "";
         const values: string[] = [];
-        if (fields == null || fields.length === 0) {
+        if (!fields || fields.length === 0) {
           fields = ["*"];
         } else {
           // Generate aliases for fields containing periods
@@ -539,7 +537,7 @@ class SQLite<T extends string> extends SQL<T> implements DbBackend<T> {
           let localCondition = "";
 
           Object.keys(filterFields)
-            .filter((key) => filterFields[key] != null && filterFields[key].toString() !== [].toString())
+            .filter((key) => filterFields[key] !== null && filterFields[key].toString() !== [].toString())
             .forEach((key) => {
               localCondition += localCondition !== "" ? " AND " : "";
               if (Array.isArray(filterFields[key])) {
@@ -560,25 +558,25 @@ class SQLite<T extends string> extends SQL<T> implements DbBackend<T> {
         };
 
         const condition1 =
-          op1 != null && filterFields1 != null && Object.keys(filterFields1).length > 0
+          op1 && filterFields1 && Object.keys(filterFields1).length > 0
             ? buildCondition(op1, filterFields1)
             : "";
         const condition2 =
-          op2 != null && linkop != null && filterFields2 != null && Object.keys(filterFields2).length > 0
+          op2 && linkop && filterFields2 && Object.keys(filterFields2).length > 0
             ? buildCondition(op2, filterFields2)
             : "";
 
-        condition += condition1 !== "" ? "WHERE " + condition1 : "";
+        condition += condition1 !== "" ? `WHERE ${condition1}` : "";
         condition +=
           condition2 !== ""
             ? // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
               (condition !== "" ? ` ${linkop} ` : "WHERE ") + condition2
             : "";
 
-        if (joinFields != null) {
+        if (joinFields) {
           let joinCondition = "";
           Object.keys(joinFields)
-            .filter((key) => joinFields[key] != null && joinFields[key].toString() !== [].toString())
+            .filter((key) => joinFields[key] && joinFields[key].toString() !== [].toString())
             .forEach((key) => {
               joinCondition += joinCondition !== "" ? " AND " : "";
               joinCondition += `${key}=${joinFields[key]}`;
@@ -587,7 +585,7 @@ class SQLite<T extends string> extends SQL<T> implements DbBackend<T> {
           condition += joinCondition;
         }
 
-        if (order != null) condition += ` ORDER BY ${order}`;
+        if (order) condition += ` ORDER BY ${order}`;
 
         const query = `SELECT ${fields.join(
           ",",
@@ -601,12 +599,10 @@ class SQLite<T extends string> extends SQL<T> implements DbBackend<T> {
           condition,
           query,
         });
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
-        // @ts-expect-error never undefined
         const stmt = this.db.prepare(query);
         stmt.all(values, (err: string, rows: Array<Record<string, string | number>>) => {
           /* istanbul ignore if */
-          if (err != null) {
+          if (err !== null) {
             this.logger.error(`${minmax} query failed`, {
               tables,
               targetField,
@@ -738,7 +734,7 @@ class SQLite<T extends string> extends SQL<T> implements DbBackend<T> {
   ): Promise<DbGetResult> {
     return new Promise((resolve, reject) => {
       /* istanbul ignore if */
-      if (this.db == null) {
+      if (!this.db) {
         this.logger.error("[SQLite][match] DB not ready", { table });
         reject(new Error("Wait for database to be ready"));
       } else {
@@ -747,7 +743,7 @@ class SQLite<T extends string> extends SQL<T> implements DbBackend<T> {
         if (fields.length === 0) fields = ["*"];
         const values = searchFields.map(() => `%${value}%`);
         let condition = searchFields.map((f) => `${f} LIKE ?`).join(" OR ");
-        if (order != null) condition += `ORDER BY ${order}`;
+        if (order !== null) condition += `ORDER BY ${order}`;
         const query = `SELECT ${fields.join(",")} FROM ${table} WHERE ${condition}`;
         this.logger.debug("[SQLite][match] Executing LIKE query", {
           table,
@@ -759,7 +755,7 @@ class SQLite<T extends string> extends SQL<T> implements DbBackend<T> {
         const stmt = this.db.prepare(query);
         stmt.all(values, (err: string, rows: Array<Record<string, string | number>>) => {
           /* istanbul ignore if */
-          if (err != null) {
+          if (err !== null) {
             this.logger.error("[SQLite][match] Query failed", {
               table,
               searchFields,
@@ -792,7 +788,7 @@ class SQLite<T extends string> extends SQL<T> implements DbBackend<T> {
   deleteEqual(table: T, field: string, value: string | number): Promise<void> {
     return new Promise((resolve, reject) => {
       /* istanbul ignore if */
-      if (this.db == null) {
+      if (!this.db) {
         this.logger.error("[SQLite][deleteEqual] DB not ready", {
           table,
           field,
@@ -806,9 +802,9 @@ class SQLite<T extends string> extends SQL<T> implements DbBackend<T> {
           query,
         });
         const stmt = this.db.prepare(query);
-        stmt.all([value], (err, rows) => {
+        stmt.all([value], (err, _rows) => {
           /* istanbul ignore if */
-          if (err != null) {
+          if (err !== null) {
             this.logger.error("DELETE failed", {
               table,
               field,
@@ -850,7 +846,7 @@ class SQLite<T extends string> extends SQL<T> implements DbBackend<T> {
   ): Promise<void> {
     return new Promise((resolve, reject) => {
       /* istanbul ignore if */
-      if (this.db == null) {
+      if (!this.db) {
         this.logger.error("[SQLite][deleteEqualAnd] DB not ready", { table });
         reject(new Error("Wait for database to be ready"));
       } else {
@@ -861,9 +857,9 @@ class SQLite<T extends string> extends SQL<T> implements DbBackend<T> {
           query,
         });
         const stmt = this.db.prepare(query);
-        stmt.all([condition1.value, condition2.value], (err, rows) => {
+        stmt.all([condition1.value, condition2.value], (err, _rows) => {
           /* istanbul ignore if */
-          if (err != null) {
+          if (err !== null) {
             this.logger.error("[SQLite][deleteEqualAnd] Failed", {
               table,
               conditions: [condition1.field, condition2.field],
@@ -891,7 +887,7 @@ class SQLite<T extends string> extends SQL<T> implements DbBackend<T> {
   deleteLowerThan(table: T, field: string, value: string | number): Promise<void> {
     return new Promise((resolve, reject) => {
       /* istanbul ignore if */
-      if (this.db == null) {
+      if (!this.db) {
         this.logger.error("[SQLite][deleteLowerThan] DB not ready", {
           table,
           field,
@@ -907,7 +903,7 @@ class SQLite<T extends string> extends SQL<T> implements DbBackend<T> {
       const stmt = this.db.prepare(query);
       stmt.all([value], (err) => {
         /* istanbul ignore if */
-        if (err != null) {
+        if (err !== null) {
           this.logger.error("[SQLite][deleteLowerThan] Failed", {
             table,
             field,
@@ -942,7 +938,7 @@ class SQLite<T extends string> extends SQL<T> implements DbBackend<T> {
     // Adaptation of the method get, with the delete keyword, 'AND' instead of 'OR', and with filters instead of fields
     return new Promise((resolve, reject) => {
       // istanbul ignore if
-      if (this.db == null) {
+      if (!this.db) {
         this.logger.error("[SQLite][deleteWhere] DB not ready", { table });
         reject(new Error("Wait for database to be ready"));
       } else {
@@ -953,7 +949,7 @@ class SQLite<T extends string> extends SQL<T> implements DbBackend<T> {
         const operators = conditions.map((c) => c.operator);
 
         let condition: string = "";
-        if (values != null && values.length > 0 && filters.length === values.length) {
+        if (values !== null && values.length > 0 && filters.length === values.length) {
           // Verifies that values have at least one element, and as much filter names
           condition = filters.map((filt, i) => `${filt}${operators[i] ?? "="}?`).join(" AND ");
         }
@@ -965,15 +961,13 @@ class SQLite<T extends string> extends SQL<T> implements DbBackend<T> {
           operators,
           query,
         });
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
-        // @ts-expect-error never undefined
         const stmt = this.db.prepare(query);
 
         stmt.all(
           values, // The statement fills the values properly.
           (err: string) => {
             /* istanbul ignore if */
-            if (err != null) {
+            if (err !== null) {
               this.logger.error("[SQLite][deleteWhere] Failed", {
                 table,
                 conditions: filters,

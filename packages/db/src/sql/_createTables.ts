@@ -23,7 +23,7 @@ function createTables<T extends string>(
                 // eslint-disable-next-line @typescript-eslint/promise-function-async
                 .then(() =>
                   Promise.all(
-                    ((indexes[table] as string[]) != null ? (indexes[table] as string[]) : []).map<
+                    ((indexes[table] as string[]) !== null ? (indexes[table] as string[]) : []).map<
                       Promise<any>
                       // eslint-disable-next-line @typescript-eslint/promise-function-async
                     >((index) =>
@@ -37,7 +37,7 @@ function createTables<T extends string>(
                 // eslint-disable-next-line @typescript-eslint/promise-function-async
                 .then(() =>
                   Promise.all(
-                    (initializeValues[table] != null
+                    (initializeValues[table] !== null
                       ? (initializeValues[table] as Array<Record<string, string | number>>)
                       : []
                     ).map<

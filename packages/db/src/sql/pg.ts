@@ -19,19 +19,19 @@ class Pg<T extends string> extends SQL<T> implements DbBackend<T> {
     logger: TwakeLogger,
   ): Promise<void> {
     return new Promise((resolve, reject) => {
-      if (this.db != null) {
+      if (this.db !== null) {
         createTables(this, tables, indexes, initializeValues, logger, resolve, reject);
       } else {
         import("pg")
           .then((pg) => {
             // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
             // @ts-expect-error
-            if (pg.Database == null) pg = pg.default;
+            if (pg.Database === null) pg = pg.default;
             if (
-              conf.database_host == null ||
-              conf.database_user == null ||
-              conf.database_password == null ||
-              conf.database_name == null
+              conf.database_host === null ||
+              conf.database_user === null ||
+              conf.database_password === null ||
+              conf.database_name === null
             ) {
               throw new Error("database_name, database_user and database_password are required when using Postgres");
             }
@@ -45,7 +45,7 @@ class Pg<T extends string> extends SQL<T> implements DbBackend<T> {
             // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
             if (conf.database_host.match(/^(.*):(\d+)/)) {
               opts.host = RegExp.$1;
-              opts.port = parseInt(RegExp.$2);
+              opts.port = parseInt(RegExp.$2, 10);
             }
             try {
               this.db = new pg.Pool(opts);
@@ -65,7 +65,7 @@ class Pg<T extends string> extends SQL<T> implements DbBackend<T> {
   }
 
   rawQuery(query: string): Promise<any> {
-    if (this.db == null) {
+    if (!this.db) {
       this.logger.error("[Pg][rawQuery] DB not ready");
       return Promise.reject(new Error("DB not ready"));
     }
@@ -78,11 +78,11 @@ class Pg<T extends string> extends SQL<T> implements DbBackend<T> {
 
   exists(table: T): Promise<boolean> {
     return new Promise((resolve, reject) => {
-      if (this.db != null) {
+      if (this.db) {
         const query = `SELECT EXISTS (SELECT FROM pg_tables WHERE tablename='${table.toLowerCase()}')`;
         this.logger.debug("[Pg][exists] Checking table", { table });
         this.db.query(query, (err, res) => {
-          if (err == null) {
+          if (err === null) {
             this.logger.debug("[Pg][exists] Check completed", {
               table,
               exists: res.rows[0].exists,
@@ -106,7 +106,7 @@ class Pg<T extends string> extends SQL<T> implements DbBackend<T> {
   insert(table: T, values: Record<string, string | number>): Promise<DbGetResult> {
     return new Promise((resolve, reject) => {
       /* istanbul ignore if */
-      if (this.db == null) {
+      if (!this.db) {
         this.logger.error("[Pg][insert] DB not ready", { table });
         throw new Error("Wait for database to be ready");
       }
@@ -117,7 +117,7 @@ class Pg<T extends string> extends SQL<T> implements DbBackend<T> {
         vals.push(values[k]);
       });
       const query = `INSERT INTO ${table}(${names.join(",")}) VALUES(${names
-        .map((v, i) => `$${i + 1}`)
+        .map((_v, i) => `$${i + 1}`)
         .join(",")}) RETURNING *;`;
       this.logger.debug("[Pg][insert] Executing", {
         table,
@@ -153,7 +153,7 @@ class Pg<T extends string> extends SQL<T> implements DbBackend<T> {
   ): Promise<DbGetResult> {
     return new Promise((resolve, reject) => {
       /* istanbul ignore if */
-      if (this.db == null) {
+      if (!this.db) {
         this.logger.error("[Pg][update] DB not ready", { table, field });
         reject(new Error("Wait for database to be ready"));
       } else {
@@ -203,7 +203,7 @@ class Pg<T extends string> extends SQL<T> implements DbBackend<T> {
   ): Promise<DbGetResult> {
     return new Promise((resolve, reject) => {
       /* istanbul ignore if */
-      if (this.db == null) {
+      if (!this.db) {
         this.logger.error("[Pg][updateAnd] DB not ready", {
           table,
           conditions: [condition1.field, condition2.field],
@@ -266,12 +266,12 @@ class Pg<T extends string> extends SQL<T> implements DbBackend<T> {
   ): Promise<DbGetResult> {
     return new Promise((resolve, reject) => {
       /* istanbul ignore if */
-      if (this.db == null) {
+      if (!this.db) {
         reject(new Error("Wait for database to be ready"));
       } else {
         let condition: string = "";
         const values: string[] = [];
-        if (fields == null || fields.length === 0) {
+        if (!fields || fields.length === 0) {
           fields = ["*"];
         } else {
           // Generate aliases for fields containing periods
@@ -293,7 +293,7 @@ class Pg<T extends string> extends SQL<T> implements DbBackend<T> {
           let localCondition = "";
 
           Object.keys(filterFields)
-            .filter((key) => filterFields[key] != null && filterFields[key].toString() !== [].toString())
+            .filter((key) => filterFields[key] !== null && filterFields[key].toString() !== [].toString())
             .forEach((key) => {
               localCondition += localCondition !== "" ? " AND " : "";
               if (Array.isArray(filterFields[key])) {
@@ -314,19 +314,19 @@ class Pg<T extends string> extends SQL<T> implements DbBackend<T> {
         };
 
         const condition1 =
-          op1 != null && filterFields1 != null && Object.keys(filterFields1).length > 0
+          op1 && filterFields1 && Object.keys(filterFields1).length > 0
             ? buildCondition(op1, filterFields1)
             : "";
         const condition2 =
-          op2 != null && linkop1 != null && filterFields2 != null && Object.keys(filterFields2).length > 0
+          op2 && linkop1 && filterFields2 && Object.keys(filterFields2).length > 0
             ? buildCondition(op2, filterFields2)
             : "";
         const condition3 =
-          op3 != null && linkop2 != null && filterFields3 != null && Object.keys(filterFields3).length > 0
+          op3 && linkop2 && filterFields3 && Object.keys(filterFields3).length > 0
             ? buildCondition(op3, filterFields3)
             : "";
 
-        condition += condition1 !== "" ? "WHERE " + condition1 : "";
+        condition += condition1 !== "" ? `WHERE ${condition1}` : "";
         condition +=
           condition2 !== ""
             ? // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
@@ -338,10 +338,10 @@ class Pg<T extends string> extends SQL<T> implements DbBackend<T> {
               (condition !== "" ? ` ${linkop2} ` : "WHERE ") + condition3
             : "";
 
-        if (joinFields != null) {
+        if (joinFields) {
           let joinCondition = "";
           Object.keys(joinFields)
-            .filter((key) => joinFields[key] != null && joinFields[key].toString() !== [].toString())
+            .filter((key) => joinFields[key] && joinFields[key].toString() !== [].toString())
             .forEach((key) => {
               joinCondition += joinCondition !== "" ? " AND " : "";
               joinCondition += `${key}=${joinFields[key]}`;
@@ -350,7 +350,7 @@ class Pg<T extends string> extends SQL<T> implements DbBackend<T> {
           condition += joinCondition;
         }
 
-        if (order != null) condition += ` ORDER BY ${order}`;
+        if (order !== null) condition += ` ORDER BY ${order}`;
 
         const query = `SELECT ${fields.join(",")} FROM ${tables.join(",")} ${condition}`;
         this.logger.debug("[Pg][_get] Executing SELECT", {
@@ -509,12 +509,12 @@ class Pg<T extends string> extends SQL<T> implements DbBackend<T> {
   ): Promise<DbGetResult> {
     return new Promise((resolve, reject) => {
       /* istanbul ignore if */
-      if (this.db == null) {
+      if (!this.db) {
         reject(new Error("Wait for database to be ready"));
       } else {
         let condition: string = "";
         const values: string[] = [];
-        if (fields == null || fields.length === 0) {
+        if (!fields || fields.length === 0) {
           fields = ["*"];
         } else {
           // Generate aliases for fields containing periods
@@ -537,7 +537,7 @@ class Pg<T extends string> extends SQL<T> implements DbBackend<T> {
           let localCondition = "";
 
           Object.keys(filterFields)
-            .filter((key) => filterFields[key] != null && filterFields[key].toString() !== [].toString())
+            .filter((key) => filterFields[key] !== null && filterFields[key].toString() !== [].toString())
             .forEach((key) => {
               localCondition += localCondition !== "" ? " AND " : "";
               if (Array.isArray(filterFields[key])) {
@@ -558,25 +558,25 @@ class Pg<T extends string> extends SQL<T> implements DbBackend<T> {
         };
 
         const condition1 =
-          op1 != null && filterFields1 != null && Object.keys(filterFields1).length > 0
+          op1 && filterFields1 && Object.keys(filterFields1).length > 0
             ? buildCondition(op1, filterFields1)
             : "";
         const condition2 =
-          op2 != null && linkop != null && filterFields2 != null && Object.keys(filterFields2).length > 0
+          op2 && linkop && filterFields2 && Object.keys(filterFields2).length > 0
             ? buildCondition(op2, filterFields2)
             : "";
 
-        condition += condition1 !== "" ? "WHERE " + condition1 : "";
+        condition += condition1 !== "" ? `WHERE ${condition1}` : "";
         condition +=
           condition2 !== ""
             ? // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
               (condition ? ` ${linkop} ` : "WHERE ") + condition2
             : "";
 
-        if (joinFields != null) {
+        if (joinFields) {
           let joinCondition = "";
           Object.keys(joinFields)
-            .filter((key) => joinFields[key] != null && joinFields[key].toString() !== [].toString())
+            .filter((key) => joinFields[key] && joinFields[key].toString() !== [].toString())
             .forEach((key) => {
               joinCondition += joinCondition !== "" ? " AND " : "";
               joinCondition += `${key}=${joinFields[key]}`;
@@ -585,7 +585,7 @@ class Pg<T extends string> extends SQL<T> implements DbBackend<T> {
           condition += joinCondition;
         }
 
-        if (order != null) condition += ` ORDER BY ${order}`;
+        if (order) condition += ` ORDER BY ${order}`;
 
         const query = `SELECT ${fields.join(
           ",",
@@ -723,7 +723,7 @@ class Pg<T extends string> extends SQL<T> implements DbBackend<T> {
   ): Promise<DbGetResult> {
     return new Promise((resolve, reject) => {
       /* istanbul ignore if */
-      if (this.db == null) {
+      if (!this.db) {
         this.logger.error("[Pg][match] DB not ready", { table });
         reject(new Error("Wait for database to be ready"));
       } else {
@@ -732,7 +732,7 @@ class Pg<T extends string> extends SQL<T> implements DbBackend<T> {
         if (fields.length === 0) fields = ["*"];
         const values = searchFields.map(() => (value ? `%${value}%` : "%"));
         let condition = searchFields.map((f, i) => `${f} LIKE $${i + 1}`).join(" OR ");
-        if (order != null) condition += ` ORDER BY ${order}`;
+        if (order) condition += ` ORDER BY ${order}`;
 
         const query = `SELECT ${fields.join(",")} FROM ${table} WHERE ${condition}`;
         this.logger.debug("[Pg][match] Executing LIKE query", {
@@ -766,7 +766,7 @@ class Pg<T extends string> extends SQL<T> implements DbBackend<T> {
 
   deleteEqual(table: T, field: string, value: string | number): Promise<void> {
     return new Promise((resolve, reject) => {
-      if (this.db == null) {
+      if (!this.db) {
         this.logger.error("[Pg][deleteEqual] DB not ready", { table, field });
         reject(new Error("DB not ready"));
       } else {
@@ -788,7 +788,7 @@ class Pg<T extends string> extends SQL<T> implements DbBackend<T> {
         this.db.query(
           query,
           [value] as (string[] & Array<string | number>) | (number[] & Array<string | number>),
-          (err, rows) => {
+          (err, _rows) => {
             if (err) {
               this.logger.error("[Pg][deleteEqual] Failed", {
                 table,
@@ -822,7 +822,7 @@ class Pg<T extends string> extends SQL<T> implements DbBackend<T> {
     },
   ): Promise<void> {
     return new Promise((resolve, reject) => {
-      if (this.db == null) {
+      if (!this.db) {
         this.logger.error("[Pg][deleteEqualAnd] DB not ready", { table });
         reject(new Error("DB not ready"));
       } else {
@@ -883,7 +883,7 @@ class Pg<T extends string> extends SQL<T> implements DbBackend<T> {
 
   deleteLowerThan(table: T, field: string, value: string | number): Promise<void> {
     return new Promise((resolve, reject) => {
-      if (this.db == null) {
+      if (!this.db) {
         this.logger.error("[Pg][deleteLowerThan] DB not ready", {
           table,
           field,
@@ -932,7 +932,7 @@ class Pg<T extends string> extends SQL<T> implements DbBackend<T> {
 
   deleteWhere(table: T, conditions: ISQLCondition | ISQLCondition[]): Promise<void> {
     return new Promise((resolve, reject) => {
-      if (this.db == null) {
+      if (!this.db) {
         this.logger.error("[Pg][deleteWhere] DB not ready", { table });
         reject(new Error("Database not ready"));
       } else {
@@ -943,7 +943,7 @@ class Pg<T extends string> extends SQL<T> implements DbBackend<T> {
         const operators = conditions.map((c) => c.operator);
 
         let condition: string = "";
-        if (values != null && values.length > 0 && filters.length === values.length) {
+        if (values && values.length > 0 && filters.length === values.length) {
           // Verifies that values have at least one element, and as much filter names
           let i = 0;
           condition = filters
