@@ -19,7 +19,7 @@ class SQLite<T extends string> extends SQL<T> implements DbBackend<T> {
     logger: TwakeLogger,
   ): Promise<void> {
     return new Promise((resolve, reject) => {
-      if (this.db !== null) {
+      if (this.db) {
         createTables(this, tables, indexes, initializeValues, logger, resolve, reject);
       } else {
         import("sqlite3")
@@ -93,7 +93,7 @@ class SQLite<T extends string> extends SQL<T> implements DbBackend<T> {
       const stmt = this.db.prepare(query);
       stmt.all(vals, (err: string, rows: Array<Record<string, string | number>>) => {
         /* istanbul ignore if */
-        if (err !== null) {
+        if (err !== null && err !== undefined) {
           this.logger.error("[SQLite][insert] Failed", {
             table,
             fields: names,
@@ -151,7 +151,7 @@ class SQLite<T extends string> extends SQL<T> implements DbBackend<T> {
       const stmt = this.db.prepare(query);
       stmt.all(vals, (err: string, rows: Array<Record<string, string | number>>) => {
         /* istanbul ignore if */
-        if (err !== null) {
+        if (err !== null && err !== undefined) {
           this.logger.error("[SQLite][update] Failed", {
             table,
             fields: names,
@@ -211,7 +211,7 @@ class SQLite<T extends string> extends SQL<T> implements DbBackend<T> {
       const stmt = this.db.prepare(query);
 
       stmt.all(vals, (err: string, rows: Array<Record<string, string | number>>) => {
-        if (err !== null) {
+        if (err !== null && err !== undefined) {
           this.logger.error("[SQLite][updateAnd] Failed", {
             table,
             fields: names,
@@ -282,7 +282,7 @@ class SQLite<T extends string> extends SQL<T> implements DbBackend<T> {
           let localCondition = "";
 
           Object.keys(filterFields)
-            .filter((key) => filterFields[key] !== null && filterFields[key].toString() !== [].toString())
+            .filter((key) => filterFields[key] && filterFields[key].toString() !== [].toString())
             .forEach((key) => {
               localCondition += localCondition !== "" ? " AND " : "";
               if (Array.isArray(filterFields[key])) {
@@ -351,7 +351,7 @@ class SQLite<T extends string> extends SQL<T> implements DbBackend<T> {
         const stmt = this.db.prepare(query);
         stmt.all(values, (err: string, rows: Array<Record<string, string | number>>) => {
           /* istanbul ignore if */
-          if (err !== null) {
+          if (err !== null && err !== undefined) {
             this.logger.error("[SQLite][_get] SELECT failed", {
               tables,
               fields,
@@ -537,7 +537,7 @@ class SQLite<T extends string> extends SQL<T> implements DbBackend<T> {
           let localCondition = "";
 
           Object.keys(filterFields)
-            .filter((key) => filterFields[key] !== null && filterFields[key].toString() !== [].toString())
+            .filter((key) => filterFields[key] && filterFields[key].toString() !== [].toString())
             .forEach((key) => {
               localCondition += localCondition !== "" ? " AND " : "";
               if (Array.isArray(filterFields[key])) {
@@ -602,7 +602,7 @@ class SQLite<T extends string> extends SQL<T> implements DbBackend<T> {
         const stmt = this.db.prepare(query);
         stmt.all(values, (err: string, rows: Array<Record<string, string | number>>) => {
           /* istanbul ignore if */
-          if (err !== null) {
+          if (err !== null && err !== undefined) {
             this.logger.error(`${minmax} query failed`, {
               tables,
               targetField,
@@ -743,7 +743,7 @@ class SQLite<T extends string> extends SQL<T> implements DbBackend<T> {
         if (fields.length === 0) fields = ["*"];
         const values = searchFields.map(() => `%${value}%`);
         let condition = searchFields.map((f) => `${f} LIKE ?`).join(" OR ");
-        if (order !== null) condition += `ORDER BY ${order}`;
+        if (order) condition += `ORDER BY ${order}`;
         const query = `SELECT ${fields.join(",")} FROM ${table} WHERE ${condition}`;
         this.logger.debug("[SQLite][match] Executing LIKE query", {
           table,
@@ -755,7 +755,7 @@ class SQLite<T extends string> extends SQL<T> implements DbBackend<T> {
         const stmt = this.db.prepare(query);
         stmt.all(values, (err: string, rows: Array<Record<string, string | number>>) => {
           /* istanbul ignore if */
-          if (err !== null) {
+          if (err !== null && err !== undefined) {
             this.logger.error("[SQLite][match] Query failed", {
               table,
               searchFields,
@@ -804,7 +804,7 @@ class SQLite<T extends string> extends SQL<T> implements DbBackend<T> {
         const stmt = this.db.prepare(query);
         stmt.all([value], (err, _rows) => {
           /* istanbul ignore if */
-          if (err !== null) {
+          if (err !== null && err !== undefined) {
             this.logger.error("DELETE failed", {
               table,
               field,
@@ -859,7 +859,7 @@ class SQLite<T extends string> extends SQL<T> implements DbBackend<T> {
         const stmt = this.db.prepare(query);
         stmt.all([condition1.value, condition2.value], (err, _rows) => {
           /* istanbul ignore if */
-          if (err !== null) {
+          if (err !== null && err !== undefined) {
             this.logger.error("[SQLite][deleteEqualAnd] Failed", {
               table,
               conditions: [condition1.field, condition2.field],
@@ -903,7 +903,7 @@ class SQLite<T extends string> extends SQL<T> implements DbBackend<T> {
       const stmt = this.db.prepare(query);
       stmt.all([value], (err) => {
         /* istanbul ignore if */
-        if (err !== null) {
+        if (err !== null && err !== undefined) {
           this.logger.error("[SQLite][deleteLowerThan] Failed", {
             table,
             field,
@@ -949,7 +949,7 @@ class SQLite<T extends string> extends SQL<T> implements DbBackend<T> {
         const operators = conditions.map((c) => c.operator);
 
         let condition: string = "";
-        if (values !== null && values.length > 0 && filters.length === values.length) {
+        if (values && values.length > 0 && filters.length === values.length) {
           // Verifies that values have at least one element, and as much filter names
           condition = filters.map((filt, i) => `${filt}${operators[i] ?? "="}?`).join(" AND ");
         }
@@ -967,7 +967,7 @@ class SQLite<T extends string> extends SQL<T> implements DbBackend<T> {
           values, // The statement fills the values properly.
           (err: string) => {
             /* istanbul ignore if */
-            if (err !== null) {
+            if (err !== null && err !== undefined) {
               this.logger.error("[SQLite][deleteWhere] Failed", {
                 table,
                 conditions: filters,

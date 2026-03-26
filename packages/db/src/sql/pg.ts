@@ -19,7 +19,7 @@ class Pg<T extends string> extends SQL<T> implements DbBackend<T> {
     logger: TwakeLogger,
   ): Promise<void> {
     return new Promise((resolve, reject) => {
-      if (this.db !== null) {
+      if (this.db) {
         createTables(this, tables, indexes, initializeValues, logger, resolve, reject);
       } else {
         import("pg")
@@ -293,7 +293,7 @@ class Pg<T extends string> extends SQL<T> implements DbBackend<T> {
           let localCondition = "";
 
           Object.keys(filterFields)
-            .filter((key) => filterFields[key] !== null && filterFields[key].toString() !== [].toString())
+            .filter((key) => filterFields[key] && filterFields[key].toString() !== [].toString())
             .forEach((key) => {
               localCondition += localCondition !== "" ? " AND " : "";
               if (Array.isArray(filterFields[key])) {
@@ -350,7 +350,7 @@ class Pg<T extends string> extends SQL<T> implements DbBackend<T> {
           condition += joinCondition;
         }
 
-        if (order !== null) condition += ` ORDER BY ${order}`;
+        if (order) condition += ` ORDER BY ${order}`;
 
         const query = `SELECT ${fields.join(",")} FROM ${tables.join(",")} ${condition}`;
         this.logger.debug("[Pg][_get] Executing SELECT", {
@@ -537,7 +537,7 @@ class Pg<T extends string> extends SQL<T> implements DbBackend<T> {
           let localCondition = "";
 
           Object.keys(filterFields)
-            .filter((key) => filterFields[key] !== null && filterFields[key].toString() !== [].toString())
+            .filter((key) => filterFields[key] && filterFields[key].toString() !== [].toString())
             .forEach((key) => {
               localCondition += localCondition !== "" ? " AND " : "";
               if (Array.isArray(filterFields[key])) {
