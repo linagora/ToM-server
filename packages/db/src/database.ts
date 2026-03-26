@@ -1,14 +1,7 @@
-import { type TwakeLogger } from '@twake/logger'
-import {
-  type DatabaseConfig,
-  type DbGetResult,
-  type DbBackend,
-  type ISQLCondition,
-  type ColumnDefinition,
-  type ColumnInfo
-} from './types'
-import Pg from './sql/pg'
-import SQLite from './sql/sqlite'
+import type { TwakeLogger } from "@twake/logger";
+import Pg from "./sql/pg";
+import SQLite from "./sql/sqlite";
+import type { ColumnDefinition, ColumnInfo, DatabaseConfig, DbBackend, DbGetResult, ISQLCondition } from "./types";
 
 /**
  * Generic Database class that provides a unified interface for SQLite and PostgreSQL
@@ -17,68 +10,57 @@ import SQLite from './sql/sqlite'
  * @template T - Union type of table names (e.g., 'users' | 'settings')
  */
 class Database<T extends string> implements DbBackend<T> {
-  ready: Promise<void>
-  private readonly db: DbBackend<T>
-  private readonly logger: TwakeLogger
+  ready: Promise<void>;
+  private readonly db: DbBackend<T>;
+  private readonly logger: TwakeLogger;
 
   constructor(
     conf: DatabaseConfig,
     logger: TwakeLogger,
     tables: Record<T, string>,
     indexes?: Partial<Record<T, string[]>>,
-    initializeValues?: Partial<
-      Record<T, Array<Record<string, string | number>>>
-    >
+    initializeValues?: Partial<Record<T, Array<Record<string, string | number>>>>,
   ) {
-    this.logger = logger
+    this.logger = logger;
 
-    let Module: typeof SQLite | typeof Pg
+    let Module: typeof SQLite | typeof Pg;
     switch (conf.database_engine) {
-      case 'sqlite': {
-        Module = SQLite
-        break
+      case "sqlite": {
+        Module = SQLite;
+        break;
       }
-      case 'pg': {
-        Module = Pg
-        break
+      case "pg": {
+        Module = Pg;
+        break;
       }
       default: {
-        throw new Error(`Unsupported database type ${conf.database_engine}`)
+        throw new Error(`Unsupported database type ${conf.database_engine}`);
       }
     }
 
-    this.db = new Module<T>(
-      conf,
-      logger,
-      tables,
-      indexes ?? {},
-      initializeValues ?? {}
-    )
+    this.db = new Module<T>(conf, logger, tables, indexes ?? {}, initializeValues ?? {});
 
     this.ready = new Promise((resolve, reject) => {
       this.db.ready
         .then(() => {
-          this.logger.info('[Database] initialized.')
-          resolve()
+          this.logger.info("[Database] initialized.");
+          resolve();
         })
         .catch((e) => {
-          this.logger.error('[Database] initialization failed', e)
-          reject(e)
-        })
-    })
+          this.logger.error("[Database] initialization failed", e);
+          reject(e);
+        });
+    });
   }
 
   // eslint-disable-next-line @typescript-eslint/promise-function-async
   createDatabases(conf: DatabaseConfig, ...args: any): Promise<void> {
-    return this.db.createDatabases(conf, ...args)
+    return this.db.createDatabases(conf, ...args);
   }
 
   // eslint-disable-next-line @typescript-eslint/promise-function-async
-  insert(
-    table: T,
-    values: Record<string, string | number>
-  ): Promise<DbGetResult> {
-    return this.db.insert(table, values)
+  insert(table: T, values: Record<string, string | number>): Promise<DbGetResult> {
+    return this.db.insert(table, values);
   }
 
   // eslint-disable-next-line @typescript-eslint/promise-function-async
@@ -86,9 +68,9 @@ class Database<T extends string> implements DbBackend<T> {
     table: T,
     values: Record<string, string | number>,
     field: string,
-    value: string | number
+    value: string | number,
   ): Promise<DbGetResult> {
-    return this.db.update(table, values, field, value)
+    return this.db.update(table, values, field, value);
   }
 
   // eslint-disable-next-line @typescript-eslint/promise-function-async
@@ -96,9 +78,9 @@ class Database<T extends string> implements DbBackend<T> {
     table: T,
     values: Record<string, string | number>,
     condition1: { field: string; value: string | number },
-    condition2: { field: string; value: string | number }
+    condition2: { field: string; value: string | number },
   ): Promise<DbGetResult> {
-    return this.db.updateAnd(table, values, condition1, condition2)
+    return this.db.updateAnd(table, values, condition1, condition2);
   }
 
   // eslint-disable-next-line @typescript-eslint/promise-function-async
@@ -106,9 +88,9 @@ class Database<T extends string> implements DbBackend<T> {
     table: T,
     fields: string[],
     filterFields: Record<string, string | number | Array<string | number>>,
-    order?: string
+    order?: string,
   ): Promise<DbGetResult> {
-    return this.db.get(table, fields, filterFields, order)
+    return this.db.get(table, fields, filterFields, order);
   }
 
   // eslint-disable-next-line @typescript-eslint/promise-function-async
@@ -117,9 +99,9 @@ class Database<T extends string> implements DbBackend<T> {
     fields: string[],
     filterFields: Record<string, string | number | Array<string | number>>,
     joinFields: Record<string, string>,
-    order?: string
+    order?: string,
   ): Promise<DbGetResult> {
-    return this.db.getJoin(tables, fields, filterFields, joinFields, order)
+    return this.db.getJoin(tables, fields, filterFields, joinFields, order);
   }
 
   // eslint-disable-next-line @typescript-eslint/promise-function-async
@@ -128,15 +110,9 @@ class Database<T extends string> implements DbBackend<T> {
     fields: string[],
     filterFields1: Record<string, string | number | Array<string | number>>,
     filterFields2: Record<string, string | number | Array<string | number>>,
-    order?: string
+    order?: string,
   ): Promise<DbGetResult> {
-    return this.db.getWhereEqualOrDifferent(
-      table,
-      fields,
-      filterFields1,
-      filterFields2,
-      order
-    )
+    return this.db.getWhereEqualOrDifferent(table, fields, filterFields1, filterFields2, order);
   }
 
   // eslint-disable-next-line @typescript-eslint/promise-function-async
@@ -145,15 +121,9 @@ class Database<T extends string> implements DbBackend<T> {
     fields: string[],
     filterFields1: Record<string, string | number | Array<string | number>>,
     filterFields2: Record<string, string | number | Array<string | number>>,
-    order?: string
+    order?: string,
   ): Promise<DbGetResult> {
-    return this.db.getWhereEqualAndHigher(
-      table,
-      fields,
-      filterFields1,
-      filterFields2,
-      order
-    )
+    return this.db.getWhereEqualAndHigher(table, fields, filterFields1, filterFields2, order);
   }
 
   // eslint-disable-next-line @typescript-eslint/promise-function-async
@@ -162,15 +132,9 @@ class Database<T extends string> implements DbBackend<T> {
     targetField: string,
     fields: string[],
     filterFields: Record<string, string | number | Array<string | number>>,
-    order?: string
+    order?: string,
   ): Promise<DbGetResult> {
-    return this.db.getMaxWhereEqual(
-      table,
-      targetField,
-      fields,
-      filterFields,
-      order
-    )
+    return this.db.getMaxWhereEqual(table, targetField, fields, filterFields, order);
   }
 
   // eslint-disable-next-line @typescript-eslint/promise-function-async
@@ -180,16 +144,9 @@ class Database<T extends string> implements DbBackend<T> {
     fields: string[],
     filterFields1: Record<string, string | number | Array<string | number>>,
     filterFields2: Record<string, string | number | Array<string | number>>,
-    order?: string
+    order?: string,
   ): Promise<DbGetResult> {
-    return this.db.getMaxWhereEqualAndLower(
-      table,
-      targetField,
-      fields,
-      filterFields1,
-      filterFields2,
-      order
-    )
+    return this.db.getMaxWhereEqualAndLower(table, targetField, fields, filterFields1, filterFields2, order);
   }
 
   // eslint-disable-next-line @typescript-eslint/promise-function-async
@@ -199,16 +156,9 @@ class Database<T extends string> implements DbBackend<T> {
     fields: string[],
     filterFields1: Record<string, string | number | Array<string | number>>,
     filterFields2: Record<string, string | number | Array<string | number>>,
-    order?: string
+    order?: string,
   ): Promise<DbGetResult> {
-    return this.db.getMinWhereEqualAndHigher(
-      table,
-      targetField,
-      fields,
-      filterFields1,
-      filterFields2,
-      order
-    )
+    return this.db.getMinWhereEqualAndHigher(table, targetField, fields, filterFields1, filterFields2, order);
   }
 
   // eslint-disable-next-line @typescript-eslint/promise-function-async
@@ -219,7 +169,7 @@ class Database<T extends string> implements DbBackend<T> {
     filterFields1: Record<string, string | number | Array<string | number>>,
     filterFields2: Record<string, string | number | Array<string | number>>,
     joinFields: Record<string, string>,
-    order?: string
+    order?: string,
   ): Promise<DbGetResult> {
     return this.db.getMaxWhereEqualAndLowerJoin(
       tables,
@@ -228,22 +178,18 @@ class Database<T extends string> implements DbBackend<T> {
       filterFields1,
       filterFields2,
       joinFields,
-      order
-    )
+      order,
+    );
   }
 
   // eslint-disable-next-line @typescript-eslint/promise-function-async
-  getCount(
-    table: T,
-    field: string,
-    value?: string | number | string[]
-  ): Promise<number> {
-    return this.db.getCount(table, field, value)
+  getCount(table: T, field: string, value?: string | number | string[]): Promise<number> {
+    return this.db.getCount(table, field, value);
   }
 
   // eslint-disable-next-line @typescript-eslint/promise-function-async
   getAll(table: T, fields: string[], order?: string): Promise<DbGetResult> {
-    return this.db.getAll(table, fields, order)
+    return this.db.getAll(table, fields, order);
   }
 
   // eslint-disable-next-line @typescript-eslint/promise-function-async
@@ -251,76 +197,64 @@ class Database<T extends string> implements DbBackend<T> {
     table: T,
     fields: string[],
     filterFields: Record<string, string | number | Array<string | number>>,
-    order?: string
+    order?: string,
   ): Promise<DbGetResult> {
-    return this.db.getHigherThan(table, fields, filterFields, order)
+    return this.db.getHigherThan(table, fields, filterFields, order);
   }
 
   // eslint-disable-next-line @typescript-eslint/promise-function-async
-  match(
-    table: T,
-    fields: string[],
-    searchFields: string[],
-    value: string | number
-  ): Promise<DbGetResult> {
-    return this.db.match(table, fields, searchFields, value)
+  match(table: T, fields: string[], searchFields: string[], value: string | number): Promise<DbGetResult> {
+    return this.db.match(table, fields, searchFields, value);
   }
 
   // eslint-disable-next-line @typescript-eslint/promise-function-async
   deleteEqual(table: T, field: string, value: string | number): Promise<void> {
-    return this.db.deleteEqual(table, field, value)
+    return this.db.deleteEqual(table, field, value);
   }
 
   // eslint-disable-next-line @typescript-eslint/promise-function-async
   deleteEqualAnd(
     table: T,
     condition1: {
-      field: string
-      value: string | number | Array<string | number>
+      field: string;
+      value: string | number | Array<string | number>;
     },
     condition2: {
-      field: string
-      value: string | number | Array<string | number>
-    }
+      field: string;
+      value: string | number | Array<string | number>;
+    },
   ): Promise<void> {
-    return this.db.deleteEqualAnd(table, condition1, condition2)
+    return this.db.deleteEqualAnd(table, condition1, condition2);
   }
 
   // eslint-disable-next-line @typescript-eslint/promise-function-async
-  deleteLowerThan(
-    table: T,
-    field: string,
-    value: string | number
-  ): Promise<void> {
-    return this.db.deleteLowerThan(table, field, value)
+  deleteLowerThan(table: T, field: string, value: string | number): Promise<void> {
+    return this.db.deleteLowerThan(table, field, value);
   }
 
   // eslint-disable-next-line @typescript-eslint/promise-function-async
-  deleteWhere(
-    table: T,
-    conditions: ISQLCondition | ISQLCondition[]
-  ): Promise<void> {
-    return this.db.deleteWhere(table, conditions)
+  deleteWhere(table: T, conditions: ISQLCondition | ISQLCondition[]): Promise<void> {
+    return this.db.deleteWhere(table, conditions);
   }
 
   // eslint-disable-next-line @typescript-eslint/promise-function-async
   getTableColumns(table: T): Promise<ColumnInfo[]> {
-    return this.db.getTableColumns(table)
+    return this.db.getTableColumns(table);
   }
 
   // eslint-disable-next-line @typescript-eslint/promise-function-async
   addColumn(table: T, column: ColumnDefinition): Promise<void> {
-    return this.db.addColumn(table, column)
+    return this.db.addColumn(table, column);
   }
 
   // eslint-disable-next-line @typescript-eslint/promise-function-async
   ensureColumns(table: T, columns: ColumnDefinition[]): Promise<void> {
-    return this.db.ensureColumns(table, columns)
+    return this.db.ensureColumns(table, columns);
   }
 
   close(): void {
-    this.db.close()
+    this.db.close();
   }
 }
 
-export default Database
+export default Database;
