@@ -1,7 +1,7 @@
+import type http from "node:http";
+import querystring from "node:querystring";
 import type { TwakeLogger } from "@twake/logger";
 import type { Request, Response } from "express";
-import type http from "http";
-import querystring from "querystring";
 import { epoch, isMatrixId, isValidUrl, jsonContent, send, toMatrixId, validateParameters } from "./index";
 
 describe("Utility Functions", () => {
@@ -315,7 +315,7 @@ describe("Utility Functions", () => {
       });
 
       it("should return false for Matrix IDs exceeding 255 characters", () => {
-        const longId = "@" + "a".repeat(250) + ":example.com";
+        const longId = `@${"a".repeat(250)}:example.com`;
         expect(longId.length).toBeGreaterThan(255);
         expect(isMatrixId(longId)).toBe(false);
       });

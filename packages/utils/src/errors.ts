@@ -142,6 +142,6 @@ export const errMsg = (code: keyof typeof errCodes, explanation?: string): objec
   const errCode = errCodes[code];
   return {
     errcode: errCode,
-    error: explanation != null ? explanation : defaultMsg(errCode),
+    error: explanation ?? defaultMsg(errCode),
   };
 };

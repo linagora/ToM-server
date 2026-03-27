@@ -1,8 +1,9 @@
 /* istanbul ignore file */
+
+import type http from "node:http";
+import querystring from "node:querystring";
 import type { TwakeLogger } from "@twake/logger";
 import type { NextFunction, Request, Response } from "express";
-import type http from "http";
-import querystring from "querystring";
 import { errMsg } from "./errors";
 
 export const hostnameRe =
@@ -41,7 +42,7 @@ export const jsonContent = (
     try {
       if (typeof content === "string") {
         // eslint-disable-next-line @typescript-eslint/prefer-optional-chain
-        if (req.headers["content-type"]?.match(/^application\/x-www-form-urlencoded/) != null) {
+        if (req.headers["content-type"]?.match(/^application\/x-www-form-urlencoded/)) {
           obj = querystring.parse(content);
         } else {
           obj = JSON.parse(content);
@@ -91,7 +92,7 @@ export const validateParameters: validateParametersType = (res, desc, content, l
   const additionalParameters: string[] = [];
   // Check for required parameters
   Object.keys(desc).forEach((key) => {
-    if (desc[key] && content[key] == null) {
+    if (desc[key] && !content[key]) {
       missingParameters.push(key);
     }
   });
@@ -100,7 +101,7 @@ export const validateParameters: validateParametersType = (res, desc, content, l
   } else {
     Object.keys(content).forEach((key) => {
       /* istanbul ignore if */
-      if (desc[key] == null) {
+      if (!desc[key]) {
         additionalParameters.push(key);
       }
     });
