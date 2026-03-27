@@ -14,6 +14,17 @@ class UserDBLDAP implements UserDBBackend {
 
   constructor(conf: Config, private readonly logger: TwakeLogger) {
     this.logger = logger
+
+    if (conf.ldap_uri == null || conf.ldap_uri.length === 0) {
+      const msg =
+        '[UserDBLDAP] userdb_engine is set to "ldap" but no LDAP URI is configured. ' +
+        'Set the "ldap_uri" option in your server configuration ' +
+        '(e.g. "ldap://localhost:389" or "ldaps://ldap.example.com"). ' +
+        'If you do not need LDAP, change userdb_engine to "sqlite" or "pg".'
+      this.logger.error(msg)
+      throw new Error(msg)
+    }
+
     this.base = conf.ldap_base != null ? conf.ldap_base : ''
     this.filter =
       conf.ldap_filter != null ? conf.ldap_filter : '(objectClass=*)'
@@ -23,14 +34,14 @@ class UserDBLDAP implements UserDBBackend {
       `[UserDBLDAP][constructor] Initializing with base: ${this.base}, filter: ${this.filter}`
     )
     this.logger.debug(
-      `[UserDBLDAP][constructor] LDAP URI: ${conf.ldap_uri ?? 'undefined'}`
+      `[UserDBLDAP][constructor] LDAP URI: ${conf.ldap_uri}`
     )
 
     this.ldap = (): Promise<Client> => {
       this.logger.silly('[UserDBLDAP][ldap] Creating new LDAP client instance')
       const client = new ldapts.Client({
         ...ldaptsOpts,
-        url: conf.ldap_uri != null ? conf.ldap_uri : ''
+        url: conf.ldap_uri
       })
       return new Promise((resolve, reject) => {
         if (
