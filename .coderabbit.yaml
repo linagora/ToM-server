@@ -22,7 +22,7 @@ reviews:
   related_issues: true
   related_prs: true
   suggested_labels: true
-  auto_apply_labels: true
+  auto_apply_labels: false
   labeling_instructions:
     # Type
     - label: "bug"
@@ -117,6 +117,6 @@ knowledge_base:
       - "**/AGENT.md"
       - "**/AGENTS.md"
       - "**/CLAUDE.md"
-      - "**/CODING_STYLE.md"
-      - "**/CONTRIBUTING.md"
-      - "**/README.md"
+      - "CODING_STYLE.md"
+      - "CONTRIBUTING.md"
+      - "README.md"
