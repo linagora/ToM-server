@@ -441,3 +441,31 @@ Biome flags functions exceeding a reasonable parameter count, and a 6-parameter
 signature is error-prone and hard to call correctly. This is pre-existing API surface,
 so it is out of scope for a formatting pass, but should be addressed as dedicated
 technical debt: consolidate into a single typed options object.
+
+## Matrix Resolve
+
+### `index.test.ts` — Remove Unused `DnsResolve` Type Import
+
+The `DnsResolve` type is imported but never referenced — likely left over from a
+previous iteration. Biome flags it as dead code. Either delete the import, or wire
+the type up if it was dropped by mistake.
+
+### `index.ts` — Wire Up or Delete `_prioritySort` (RFC 2782 Compliance)
+
+`_prioritySort` is defined but never called — the underscore prefix is silencing the
+linter without fixing the underlying issue. SRV records are not currently being sorted
+by priority, which violates RFC 2782: records with lower priority values must be
+preferred over higher ones.
+
+Two valid resolutions:
+
+1. **Use it** — sort records before mapping them to results:
+   ```typescript
+   records.sort(_prioritySort).map(...)
+   ```
+2. **Delete it** — if priority ordering is genuinely out of scope, remove the function
+   and document the deviation from RFC 2782 so future maintainers understand the
+   intentional trade-off.
+
+Leaving it as dead code is not a valid option: it gives a false impression that
+priority sorting is handled when it is not.
