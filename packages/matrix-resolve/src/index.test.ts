@@ -1,4 +1,3 @@
-import { resolve as dnsResolve, lookup } from "node:dns";
 import fetch from "node-fetch";
 import { MatrixResolve, matrixResolve, type WellKnownMatrixServer } from "./index";
 

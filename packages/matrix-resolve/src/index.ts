@@ -32,13 +32,13 @@ export const matrixResolve = (name: string): Promise<string | string[]> => {
     /* If the hostname is an IP literal, then that IP address should be used,
      * together with the given port number, or 8448 if no port is given. */
     let m = name.match(isIpLiteral);
-    if (m != null) {
+    if (m) {
       resolve(m[2] ? `https://${name}/` : `https://${name}:8448/`);
       return;
     }
 
     m = name.match(isHostname);
-    if (m == null) {
+    if (!m) {
       reject(new Error(`${name} isn't a valid hostname`));
       return;
     }
@@ -71,7 +71,7 @@ export const matrixResolve = (name: string): Promise<string | string[]> => {
         try {
           matrixServer = (res as WellKnownMatrixServer)["m.server"];
           m = matrixServer.match(isIpLiteral);
-          if (m != null) {
+          if (m) {
             resolve(m[2] ? `https://${matrixServer}/` : `https://${matrixServer}:8448/`);
             return;
           }
@@ -80,7 +80,7 @@ export const matrixResolve = (name: string): Promise<string | string[]> => {
              is present, an IP address is discovered by looking up CNAME, AAAA
              or A records for <delegated_hostname>. */
           m = matrixServer.match(isHostname);
-          if (m && m[2] != null) {
+          if (m && m[2]) {
             resolve(`https://${matrixServer}/`);
             return;
           }
@@ -103,12 +103,12 @@ export const matrixResolve = (name: string): Promise<string | string[]> => {
 
           // istanbul ignore next
           dnsResolve(matrixServer, resolve, reject);
-        } catch (e) {
+        } catch {
           // istanbul ignore next
           dnsResolve(name, resolve, reject);
         }
       })
-      .catch((e) => {
+      .catch((_e) => {
         dnsResolve(name, resolve, reject);
       });
   });
@@ -139,7 +139,7 @@ const dnsResolve = (
            * AAAA and A records. Requests are made to the resolved IP address
            * using port 8448 and a Host header containing the <hostname> */
           dns.lookup(name, (err) => {
-            if (err == null) {
+            if (!err) {
               resolve(`https://${name}:8448/`);
             } else {
               reject(new Error(`Unable to resolve ${name}: ${JSON.stringify(err)}`));
@@ -150,13 +150,13 @@ const dnsResolve = (
 };
 
 const dnsSrvResolve = (name: string): Promise<string | string[]> => {
-  const prioritySort = (a: SrvRecord, b: SrvRecord) => {
+  const _prioritySort = (a: SrvRecord, b: SrvRecord) => {
     // istanbul ignore next
     return b.priority - a.priority;
   };
   return new Promise((resolve, reject) => {
     dns.resolve(name, "SRV", (err, records) => {
-      if (err == null && records.length > 0) {
+      if (!err && records.length > 0) {
         const res = records.map((entry) => `https://${entry.name}:${entry.port}/`);
         resolve(res.length > 1 ? res : res[0]);
       } else {
@@ -172,7 +172,7 @@ export class MatrixResolve {
 
   constructor(args?: MatrixResolveArgs) {
     this.cacheReady = new Promise((resolve, reject) => {
-      if (args && args.cache) {
+      if (args?.cache) {
         args.cacheTtl ||= 600;
         args.cacheSize ||= 500;
         switch (args.cache) {
