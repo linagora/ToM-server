@@ -25,7 +25,7 @@ class SQLite<T extends string> extends SQL<T> implements DbBackend<T> {
           .then((sqlite3) => {
             // @ts-expect-error
             if (!sqlite3.Database) sqlite3 = sqlite3.default;
-            this.db = new sqlite3.Database(conf.database_host)
+            this.db = new sqlite3.Database(conf.database_host);
             const db = this.db;
             /* istanbul ignore if */
             if (!db) {
@@ -301,9 +301,7 @@ class SQLite<T extends string> extends SQL<T> implements DbBackend<T> {
         };
 
         const condition1 =
-          op1 && filterFields1 && Object.keys(filterFields1).length > 0
-            ? buildCondition(op1, filterFields1)
-            : "";
+          op1 && filterFields1 && Object.keys(filterFields1).length > 0 ? buildCondition(op1, filterFields1) : "";
         const condition2 =
           op2 && linkop1 && filterFields2 && Object.keys(filterFields2).length > 0
             ? buildCondition(op2, filterFields2)
@@ -314,14 +312,8 @@ class SQLite<T extends string> extends SQL<T> implements DbBackend<T> {
             : "";
 
         condition += condition1 !== "" ? `WHERE ${condition1}` : "";
-        condition +=
-          condition2 !== ""
-              (condition !== "" ? ` ${linkop1} ` : "WHERE ") + condition2
-            : "";
-        condition +=
-          condition3 !== ""
-              (condition !== "" ? ` ${linkop2} ` : "WHERE ") + condition3
-            : "";
+        condition += condition2 !== "" ? (condition !== "" ? ` ${linkop1} ` : "WHERE ") + condition2 : "";
+        condition += condition3 !== "" ? (condition !== "" ? ` ${linkop2} ` : "WHERE ") + condition3 : "";
 
         if (joinFields) {
           let joinCondition = "";
@@ -554,19 +546,14 @@ class SQLite<T extends string> extends SQL<T> implements DbBackend<T> {
         };
 
         const condition1 =
-          op1 && filterFields1 && Object.keys(filterFields1).length > 0
-            ? buildCondition(op1, filterFields1)
-            : "";
+          op1 && filterFields1 && Object.keys(filterFields1).length > 0 ? buildCondition(op1, filterFields1) : "";
         const condition2 =
           op2 && linkop && filterFields2 && Object.keys(filterFields2).length > 0
             ? buildCondition(op2, filterFields2)
             : "";
 
         condition += condition1 !== "" ? `WHERE ${condition1}` : "";
-        condition +=
-          condition2 !== ""
-              (condition !== "" ? ` ${linkop} ` : "WHERE ") + condition2
-            : "";
+        condition += condition2 !== "" ? (condition !== "" ? ` ${linkop} ` : "WHERE ") + condition2 : "";
 
         if (joinFields) {
           let joinCondition = "";
