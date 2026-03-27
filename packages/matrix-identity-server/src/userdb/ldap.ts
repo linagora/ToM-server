@@ -33,9 +33,9 @@ class UserDBLDAP implements UserDBBackend {
     this.logger.silly(
       `[UserDBLDAP][constructor] Initializing with base: ${this.base}, filter: ${this.filter}`
     )
-    this.logger.debug(
-      `[UserDBLDAP][constructor] LDAP URI: ${conf.ldap_uri}`
-    )
+    // Log that a URI is configured without revealing its value —
+    // LDAP URIs can embed credentials (ldap://user:pass@host).
+    this.logger.debug('[UserDBLDAP][constructor] LDAP URI is configured')
 
     this.ldap = (): Promise<Client> => {
       this.logger.silly('[UserDBLDAP][ldap] Creating new LDAP client instance')
