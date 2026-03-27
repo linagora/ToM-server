@@ -9,7 +9,7 @@ reviews:
   request_changes_workflow: false
   high_level_summary: true
   high_level_summary_instructions: "Write a brutal, zero-fluff PR summary as a pragmatic veteran engineer. First, explicitly state the fundamental flaw being fixed (if any). Next, explain the systemic data flow changes and core algorithm logic (if any). Detail any deprecated APIs or deleted legacy code (if any). Acknowledge explicitly ignored technical debt (if any)."
-  high_level_summary_in_walkthrough: false
+  high_level_summary_in_walkthrough: true
   review_status: true
   review_details: true
   commit_status: true
@@ -21,7 +21,66 @@ reviews:
   assess_linked_issues: true
   related_issues: true
   related_prs: true
+  suggested_labels: true
   auto_apply_labels: false
+  labeling_instructions:
+    # Type
+    - label: "bug"
+      instructions: "Apply when the PR fixes unintended or broken behavior."
+    - label: "chore"
+      instructions: "Apply when the PR contains maintenance work unrelated to bug fixes, features, or documentation."
+    - label: "dependencies"
+      instructions: "Apply when the PR updates dependency files (package.json, lockfiles, etc.)."
+    - label: "deployment"
+      instructions: "Apply when the PR touches CI/CD pipelines, deployment scripts, or automation configuration."
+    - label: "documentation"
+      instructions: "Apply when the PR improves or fixes documentation."
+    - label: "feature"
+      instructions: "Apply when the PR introduces a new high-level feature or use case."
+    - label: "javascript"
+      instructions: "Apply when the PR primarily changes JavaScript code."
+    - label: "security"
+      instructions: "Apply when the PR addresses a security risk to users."
+    # Status
+    - label: "backlog"
+      instructions: "Apply when the PR relates to work not yet planned or scheduled."
+    - label: "blocked-externally"
+      instructions: "Apply when the PR is blocked by a bug or limitation in an external service or library."
+    - label: "discussion"
+      instructions: "Apply when the PR requires more discussion before it can be classified or merged."
+    - label: "duplicate"
+      instructions: "Apply when the PR duplicates an existing issue or pull request."
+    - label: "wontfix"
+      instructions: "Apply when the PR addresses something out of scope or that cannot be done."
+    # Priority
+    - label: "priority::urgent"
+      instructions: "Apply when the PR addresses a critical issue that must be resolved as soon as possible."
+    - label: "priority::high"
+      instructions: "Apply when the PR addresses an important issue that should be resolved soon."
+    - label: "priority::normal"
+      instructions: "Apply when the PR has standard, base-level priority."
+    - label: "priority::low"
+      instructions: "Apply when the PR is not time-sensitive and can be addressed later."
+    # Severity (bugs only)
+    - label: "severity::critical"
+      instructions: "Apply when the PR fixes a bug that makes the entire project unusable."
+    - label: "severity::major"
+      instructions: "Apply when the PR fixes a bug that makes some important parts of the project unusable."
+    - label: "severity::moderate"
+      instructions: "Apply when the PR fixes a bug that makes some parts of the project unusable."
+    - label: "severity::minor"
+      instructions: "Apply when the PR fixes a bug that makes some parts of the project inconvenient to use."
+    - label: "severity::cosmetic"
+      instructions: "Apply when the PR fixes a bug that has no impact on usage."
+    # Package
+    - label: "package::identity-server"
+      instructions: "Apply when the PR contains changes to the identity server package."
+    - label: "package::federation-server"
+      instructions: "Apply when the PR contains changes to the federation server package."
+    - label: "package::tom-server"
+      instructions: "Apply when the PR contains changes to the TOM server package."
+    - label: "package::configuration"
+      instructions: "Apply when the PR contains changes related to the config-parser."
   suggested_reviewers: true
   auto_assign_reviewers: false
   in_progress_fortune: false
@@ -50,3 +109,14 @@ reviews:
 chat:
   art: false
   auto_reply: true
+
+knowledge_base:
+  code_guidelines:
+    enabled: true
+    filePatterns:
+      - "**/AGENT.md"
+      - "**/AGENTS.md"
+      - "**/CLAUDE.md"
+      - "CODING_STYLE.md"
+      - "CONTRIBUTING.md"
+      - "README.md"
