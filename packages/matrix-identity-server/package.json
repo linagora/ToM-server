@@ -37,7 +37,7 @@
   "scripts": {
     "build": "rollup -c",
     "start": "node example/identity-server.js",
-    "test": "LOG_TRANSPORTS=File LOG_FILE=/dev/null jest",
+    "test": "cross-env LOG_TRANSPORTS=File LOG_FILE=/dev/null jest",
     "check": "biome check ."
   },
   "dependencies": {
