@@ -17,15 +17,12 @@ function createTables<T extends string>(
       new Promise<void>((_resolve, _reject) => {
         db.exists(table)
           .then((count) => {
-            /* istanbul ignore else */ // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
             if (!count) {
               db.rawQuery(`CREATE TABLE ${table}(${tables[table]})`)
-                // eslint-disable-next-line @typescript-eslint/promise-function-async
                 .then(() =>
                   Promise.all(
                     (indexes[table] ? (indexes[table] as string[]) : []).map<
                       Promise<any>
-                      // eslint-disable-next-line @typescript-eslint/promise-function-async
                     >((index) =>
                       db.rawQuery(`CREATE INDEX i_${table}_${index} ON ${table} (${index})`).catch((e) => {
                         /* istanbul ignore next */
@@ -34,7 +31,6 @@ function createTables<T extends string>(
                     ),
                   ),
                 )
-                // eslint-disable-next-line @typescript-eslint/promise-function-async
                 .then(() =>
                   Promise.all(
                     (initializeValues[table]
@@ -42,7 +38,6 @@ function createTables<T extends string>(
                       : []
                     ).map<
                       Promise<any>
-                      // eslint-disable-next-line @typescript-eslint/promise-function-async
                     >((entry) => db.insert(table, entry)),
                   ),
                 )

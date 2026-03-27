@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/promise-function-async */
 import type { TwakeLogger } from "@twake/logger";
 import type { Database, Statement } from "sqlite3";
 import type { ColumnDefinition, ColumnInfo, DatabaseConfig, DbBackend, DbGetResult, ISQLCondition } from "../types";
@@ -24,10 +23,10 @@ class SQLite<T extends string> extends SQL<T> implements DbBackend<T> {
       } else {
         import("sqlite3")
           .then((sqlite3) => {
-            // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
             // @ts-expect-error
             if (!sqlite3.Database) sqlite3 = sqlite3.default;
-            const db = (this.db = new sqlite3.Database(conf.database_host));
+            this.db = new sqlite3.Database(conf.database_host)
+            const db = this.db;
             /* istanbul ignore if */
             if (!db) {
               throw new Error("Database not created");
@@ -230,7 +229,6 @@ class SQLite<T extends string> extends SQL<T> implements DbBackend<T> {
       });
 
       stmt.finalize((err) => {
-        // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
         if (err) {
           this.logger.error("UPDATE with AND conditions statement finalize failed", { table, error: err });
           reject(err);
@@ -318,12 +316,10 @@ class SQLite<T extends string> extends SQL<T> implements DbBackend<T> {
         condition += condition1 !== "" ? `WHERE ${condition1}` : "";
         condition +=
           condition2 !== ""
-            ? // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
               (condition !== "" ? ` ${linkop1} ` : "WHERE ") + condition2
             : "";
         condition +=
           condition3 !== ""
-            ? // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
               (condition !== "" ? ` ${linkop2} ` : "WHERE ") + condition3
             : "";
 
@@ -569,7 +565,6 @@ class SQLite<T extends string> extends SQL<T> implements DbBackend<T> {
         condition += condition1 !== "" ? `WHERE ${condition1}` : "";
         condition +=
           condition2 !== ""
-            ? // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
               (condition !== "" ? ` ${linkop} ` : "WHERE ") + condition2
             : "";
 
@@ -1115,7 +1110,7 @@ class SQLite<T extends string> extends SQL<T> implements DbBackend<T> {
        * SQLite doesn't support parameterized DEFAULT in ALTER TABLE,
        * so we must use literal values with proper escaping
        */
-      if (column.default === null || column.default === undefined) {
+      if (column.default === null) {
         query += " DEFAULT NULL";
       } else if (typeof column.default === "number") {
         query += ` DEFAULT ${column.default}`;

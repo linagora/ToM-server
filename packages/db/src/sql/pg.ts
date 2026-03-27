@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/strict-boolean-expressions */
-/* eslint-disable @typescript-eslint/promise-function-async */
 /* istanbul ignore file */
 import type { TwakeLogger } from "@twake/logger";
 import type { ClientConfig, Pool as PgPool } from "pg";
@@ -24,7 +22,6 @@ class Pg<T extends string> extends SQL<T> implements DbBackend<T> {
       } else {
         import("pg")
           .then((pg) => {
-            // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
             // @ts-expect-error
             if (!pg.Database) pg = pg.default;
             if (
@@ -42,7 +39,6 @@ class Pg<T extends string> extends SQL<T> implements DbBackend<T> {
               database: conf.database_name,
               ssl: conf.database_ssl,
             };
-            // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
             if (conf.database_host.match(/^(.*):(\d+)/)) {
               opts.host = RegExp.$1;
               opts.port = parseInt(RegExp.$2, 10);
@@ -329,12 +325,10 @@ class Pg<T extends string> extends SQL<T> implements DbBackend<T> {
         condition += condition1 !== "" ? `WHERE ${condition1}` : "";
         condition +=
           condition2 !== ""
-            ? // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
               (condition !== "" ? ` ${linkop1} ` : "WHERE ") + condition2
             : "";
         condition +=
           condition3 !== ""
-            ? // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
               (condition !== "" ? ` ${linkop2} ` : "WHERE ") + condition3
             : "";
 
@@ -569,7 +563,6 @@ class Pg<T extends string> extends SQL<T> implements DbBackend<T> {
         condition += condition1 !== "" ? `WHERE ${condition1}` : "";
         condition +=
           condition2 !== ""
-            ? // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
               (condition ? ` ${linkop} ` : "WHERE ") + condition2
             : "";
 
@@ -843,7 +836,6 @@ class Pg<T extends string> extends SQL<T> implements DbBackend<T> {
           });
           reject(
             new Error(
-              // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
               `Bad deleteAnd call, conditions: ${condition1.field}=${condition1.value}, ${condition2.field}=${condition2.value}`,
             ),
           );

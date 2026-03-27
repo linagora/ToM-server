@@ -53,17 +53,14 @@ class Database<T extends string> implements DbBackend<T> {
     });
   }
 
-  // eslint-disable-next-line @typescript-eslint/promise-function-async
   createDatabases(conf: DatabaseConfig, ...args: any): Promise<void> {
     return this.db.createDatabases(conf, ...args);
   }
 
-  // eslint-disable-next-line @typescript-eslint/promise-function-async
   insert(table: T, values: Record<string, string | number>): Promise<DbGetResult> {
     return this.db.insert(table, values);
   }
 
-  // eslint-disable-next-line @typescript-eslint/promise-function-async
   update(
     table: T,
     values: Record<string, string | number>,
@@ -73,7 +70,6 @@ class Database<T extends string> implements DbBackend<T> {
     return this.db.update(table, values, field, value);
   }
 
-  // eslint-disable-next-line @typescript-eslint/promise-function-async
   updateAnd(
     table: T,
     values: Record<string, string | number>,
@@ -83,7 +79,6 @@ class Database<T extends string> implements DbBackend<T> {
     return this.db.updateAnd(table, values, condition1, condition2);
   }
 
-  // eslint-disable-next-line @typescript-eslint/promise-function-async
   get(
     table: T,
     fields: string[],
@@ -93,7 +88,6 @@ class Database<T extends string> implements DbBackend<T> {
     return this.db.get(table, fields, filterFields, order);
   }
 
-  // eslint-disable-next-line @typescript-eslint/promise-function-async
   getJoin(
     tables: T[],
     fields: string[],
@@ -104,7 +98,6 @@ class Database<T extends string> implements DbBackend<T> {
     return this.db.getJoin(tables, fields, filterFields, joinFields, order);
   }
 
-  // eslint-disable-next-line @typescript-eslint/promise-function-async
   getWhereEqualOrDifferent(
     table: T,
     fields: string[],
@@ -115,7 +108,6 @@ class Database<T extends string> implements DbBackend<T> {
     return this.db.getWhereEqualOrDifferent(table, fields, filterFields1, filterFields2, order);
   }
 
-  // eslint-disable-next-line @typescript-eslint/promise-function-async
   getWhereEqualAndHigher(
     table: T,
     fields: string[],
@@ -126,7 +118,6 @@ class Database<T extends string> implements DbBackend<T> {
     return this.db.getWhereEqualAndHigher(table, fields, filterFields1, filterFields2, order);
   }
 
-  // eslint-disable-next-line @typescript-eslint/promise-function-async
   getMaxWhereEqual(
     table: T,
     targetField: string,
@@ -137,7 +128,6 @@ class Database<T extends string> implements DbBackend<T> {
     return this.db.getMaxWhereEqual(table, targetField, fields, filterFields, order);
   }
 
-  // eslint-disable-next-line @typescript-eslint/promise-function-async
   getMaxWhereEqualAndLower(
     table: T,
     targetField: string,
@@ -149,7 +139,6 @@ class Database<T extends string> implements DbBackend<T> {
     return this.db.getMaxWhereEqualAndLower(table, targetField, fields, filterFields1, filterFields2, order);
   }
 
-  // eslint-disable-next-line @typescript-eslint/promise-function-async
   getMinWhereEqualAndHigher(
     table: T,
     targetField: string,
@@ -161,7 +150,6 @@ class Database<T extends string> implements DbBackend<T> {
     return this.db.getMinWhereEqualAndHigher(table, targetField, fields, filterFields1, filterFields2, order);
   }
 
-  // eslint-disable-next-line @typescript-eslint/promise-function-async
   getMaxWhereEqualAndLowerJoin(
     tables: T[],
     targetField: string,
@@ -182,17 +170,14 @@ class Database<T extends string> implements DbBackend<T> {
     );
   }
 
-  // eslint-disable-next-line @typescript-eslint/promise-function-async
   getCount(table: T, field: string, value?: string | number | string[]): Promise<number> {
     return this.db.getCount(table, field, value);
   }
 
-  // eslint-disable-next-line @typescript-eslint/promise-function-async
   getAll(table: T, fields: string[], order?: string): Promise<DbGetResult> {
     return this.db.getAll(table, fields, order);
   }
 
-  // eslint-disable-next-line @typescript-eslint/promise-function-async
   getHigherThan(
     table: T,
     fields: string[],
@@ -202,17 +187,14 @@ class Database<T extends string> implements DbBackend<T> {
     return this.db.getHigherThan(table, fields, filterFields, order);
   }
 
-  // eslint-disable-next-line @typescript-eslint/promise-function-async
   match(table: T, fields: string[], searchFields: string[], value: string | number): Promise<DbGetResult> {
     return this.db.match(table, fields, searchFields, value);
   }
 
-  // eslint-disable-next-line @typescript-eslint/promise-function-async
   deleteEqual(table: T, field: string, value: string | number): Promise<void> {
     return this.db.deleteEqual(table, field, value);
   }
 
-  // eslint-disable-next-line @typescript-eslint/promise-function-async
   deleteEqualAnd(
     table: T,
     condition1: {
@@ -227,27 +209,22 @@ class Database<T extends string> implements DbBackend<T> {
     return this.db.deleteEqualAnd(table, condition1, condition2);
   }
 
-  // eslint-disable-next-line @typescript-eslint/promise-function-async
   deleteLowerThan(table: T, field: string, value: string | number): Promise<void> {
     return this.db.deleteLowerThan(table, field, value);
   }
 
-  // eslint-disable-next-line @typescript-eslint/promise-function-async
   deleteWhere(table: T, conditions: ISQLCondition | ISQLCondition[]): Promise<void> {
     return this.db.deleteWhere(table, conditions);
   }
 
-  // eslint-disable-next-line @typescript-eslint/promise-function-async
   getTableColumns(table: T): Promise<ColumnInfo[]> {
     return this.db.getTableColumns(table);
   }
 
-  // eslint-disable-next-line @typescript-eslint/promise-function-async
   addColumn(table: T, column: ColumnDefinition): Promise<void> {
     return this.db.addColumn(table, column);
   }
 
-  // eslint-disable-next-line @typescript-eslint/promise-function-async
   ensureColumns(table: T, columns: ColumnDefinition[]): Promise<void> {
     return this.db.ensureColumns(table, columns);
   }

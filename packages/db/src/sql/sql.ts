@@ -28,7 +28,6 @@ abstract class SQL<T extends string> {
     this.ready = this.createDatabases(conf, tables, indexes, initializeValues, this.logger);
   }
 
-  // eslint-disable-next-line @typescript-eslint/promise-function-async
   getCount(table: T, field: string, value?: string | number | string[]): Promise<number> {
     return new Promise((resolve, reject) => {
       const args: any[] = [table, [`count(${field}) as count`]];
@@ -45,7 +44,6 @@ abstract class SQL<T extends string> {
     });
   }
 
-  // eslint-disable-next-line @typescript-eslint/promise-function-async
   getAll(table: T, fields: string[], order?: string): Promise<DbGetResult> {
     // @ts-expect-error implemented later
     return this.get(table, fields, undefined, order);
