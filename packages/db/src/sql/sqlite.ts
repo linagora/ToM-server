@@ -280,7 +280,7 @@ class SQLite<T extends string> extends SQL<T> implements DbBackend<T> {
           let localCondition = "";
 
           Object.keys(filterFields)
-            .filter((key) => filterFields[key] && filterFields[key].toString() !== [].toString())
+            .filter((key) => filterFields[key] !== null && filterFields[key] !== undefined && filterFields[key].toString() !== [].toString())
             .forEach((key) => {
               localCondition += localCondition !== "" ? " AND " : "";
               if (Array.isArray(filterFields[key])) {
@@ -525,7 +525,7 @@ class SQLite<T extends string> extends SQL<T> implements DbBackend<T> {
           let localCondition = "";
 
           Object.keys(filterFields)
-            .filter((key) => filterFields[key] && filterFields[key].toString() !== [].toString())
+            .filter((key) => filterFields[key] !== null && filterFields[key] !== undefined && filterFields[key].toString() !== [].toString())
             .forEach((key) => {
               localCondition += localCondition !== "" ? " AND " : "";
               if (Array.isArray(filterFields[key])) {
