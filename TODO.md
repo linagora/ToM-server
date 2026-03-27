@@ -396,6 +396,31 @@ indefinitely. Compare against `pg.ts` lines 55–58, which correctly call `rejec
 +  }).catch((e) => { reject(e); });
 ```
 
+### `sql/pg.ts` + `sql/sqlite.ts` — Empty String Filter Values Silently Drop `WHERE` Constraints
+
+The nullish checks fixed `0`, but the `.toString() !== [].toString()` comparison is
+`"" !== ""` for empty strings — which evaluates to `false`, silently discarding the
+constraint. A caller querying `{ status: "" }` expecting `WHERE status = ''` gets a
+full table scan instead. This is a silent data leakage risk.
+
+The filter predicate must explicitly allow empty strings through:
+
+```diff
+-  .filter((key) => value.toString() !== [].toString())
++  .filter((key) => value !== null && value !== undefined)
+```
+
+Or, if array values need separate handling, be explicit about each case rather than
+relying on `toString()` coercion:
+
+```typescript
+const isValidFilterValue = (v: unknown): boolean =>
+  v !== null && v !== undefined && !Array.isArray(v);
+```
+
+Applies to both `pg.ts` and `sqlite.ts` — audit all filter predicate sites in both
+files for this pattern.
+
 ### `sql/sql.ts` — Remove `any` from `getCount()` Return Path
 
 Lines 33 and 40 in the shared base class pass `any` through the count helper. The
