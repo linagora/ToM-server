@@ -469,3 +469,48 @@ Two valid resolutions:
 
 Leaving it as dead code is not a valid option: it gives a false impression that
 priority sorting is handled when it is not.
+
+## Matrix Identity Server
+
+### `invitation/index.ts` — Do Not Leak Raw Exception Content to Clients (~line 383)
+
+The `catch (err)` block passes the raw exception directly into the client response
+via `errMsg('unknown', err as string)`. The actual error — which may contain stack
+traces, internal paths, or sensitive system details — is sent over the wire.
+
+The server already logs the real error via `idServer.logger.error`. Change the
+client-facing call to send a generic message instead:
+
+```diff
+-  send(res, 500, errMsg('unknown', err as string));
++  send(res, 500, errMsg('unknown'));
+```
+
+No control flow or status code changes. The full error remains in server logs only.
+
+## Utils
+
+### `utils.ts` — Sanitize Client-Visible Error Messages in `jsonContent`
+
+Two spots in `jsonContent` forward raw exception content to clients:
+
+**`catch (err)` block (lines 53–57):** The caught error is cast and sent as the
+`errMsg` detail string. Keep the existing `logger.error("JSON error", err)` log, but
+replace the client response with a safe, non-sensitive code:
+
+```diff
+-  send(res, 400, errMsg("unknown", err as string));
++  send(res, 400, errMsg("notJson"));
+```
+
+**`req.on("error", ...)` handler:** `err.message` is forwarded verbatim to the
+client. Replace with a generic message, keeping detailed info in server logs only:
+
+```diff
+-  send(res, 400, errMsg("unknown", err.message));
++  send(res, 400, errMsg("unknown"));
+```
+
+No new imports or error codes needed — `notJson`/`badJson` already exist in
+`errCodes`. These changes only sanitize the explanation text returned to clients;
+HTTP status codes and control flow are unchanged.
