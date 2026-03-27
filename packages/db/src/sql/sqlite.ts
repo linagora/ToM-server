@@ -1,221 +1,182 @@
-/* eslint-disable @typescript-eslint/promise-function-async */
-import { type TwakeLogger } from '@twake/logger'
-import { type Database, type Statement } from 'sqlite3'
-import {
-  type DatabaseConfig,
-  type DbGetResult,
-  type DbBackend,
-  type ISQLCondition,
-  type ColumnDefinition,
-  type ColumnInfo
-} from '../types'
-import createTables from './_createTables'
-import SQL from './sql'
+import type { TwakeLogger } from "@twake/logger";
+import type { Database, Statement } from "sqlite3";
+import type { ColumnDefinition, ColumnInfo, DatabaseConfig, DbBackend, DbGetResult, ISQLCondition } from "../types";
+import createTables from "./_createTables";
+import SQL from "./sql";
 
-export type SQLiteDatabase = Database
+export type SQLiteDatabase = Database;
 
-export type SQLiteStatement = Statement
+export type SQLiteStatement = Statement;
 
 class SQLite<T extends string> extends SQL<T> implements DbBackend<T> {
-  declare db?: SQLiteDatabase
+  declare db?: SQLiteDatabase;
   createDatabases(
     conf: DatabaseConfig,
     tables: Record<T, string>,
     indexes: Partial<Record<T, string[]>>,
-    initializeValues: Partial<
-      Record<T, Array<Record<string, string | number>>>
-    >,
-    logger: TwakeLogger
+    initializeValues: Partial<Record<T, Array<Record<string, string | number>>>>,
+    logger: TwakeLogger,
   ): Promise<void> {
     return new Promise((resolve, reject) => {
-      if (this.db != null) {
-        createTables(
-          this,
-          tables,
-          indexes,
-          initializeValues,
-          logger,
-          resolve,
-          reject
-        )
+      if (this.db) {
+        createTables(this, tables, indexes, initializeValues, logger, resolve, reject);
       } else {
-        import('sqlite3')
+        import("sqlite3")
           .then((sqlite3) => {
-            // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
-            // @ts-ignore
-            if (sqlite3.Database == null) sqlite3 = sqlite3.default
-            const db = (this.db = new sqlite3.Database(conf.database_host))
+            // @ts-expect-error
+            if (!sqlite3.Database) sqlite3 = sqlite3.default;
+            this.db = new sqlite3.Database(conf.database_host);
+            const db = this.db;
             /* istanbul ignore if */
-            if (db == null) {
-              throw new Error('Database not created')
+            if (!db) {
+              throw new Error("Database not created");
             }
-            logger.info('[Db:SQLite] connected.')
-            createTables(
-              this,
-              tables,
-              indexes,
-              initializeValues,
-              logger,
-              resolve,
-              reject
-            )
+            logger.info("[Db:SQLite] connected.");
+            createTables(this, tables, indexes, initializeValues, logger, resolve, reject);
           })
           .catch((e) => {
             /* istanbul ignore next */
-            throw e
-          })
+            throw e;
+          });
       }
-    })
+    });
   }
 
   rawQuery(query: string): Promise<void> {
     return new Promise((resolve, reject) => {
-      if (this.db == null) {
-        this.logger.error('[SQLite][rawQuery] DB not ready')
-        reject(new Error('DB not ready'))
-        return
+      if (!this.db) {
+        this.logger.error("[SQLite][rawQuery] DB not ready");
+        reject(new Error("DB not ready"));
+        return;
       }
-      this.logger.debug('[SQLite][rawQuery] Executing query', { query })
+      this.logger.debug("[SQLite][rawQuery] Executing query", { query });
       this.db.run(query, (err) => {
-        if (err == null) {
-          this.logger.debug('[SQLite][rawQuery] Query successful', { query })
-          resolve()
+        if (err === null || err === undefined) {
+          this.logger.debug("[SQLite][rawQuery] Query successful", { query });
+          resolve();
         } else {
-          this.logger.error('[SQLite][rawQuery] Query failed', {
+          this.logger.error("[SQLite][rawQuery] Query failed", {
             query,
-            error: err
-          })
-          reject(err)
+            error: err,
+          });
+          reject(err);
         }
-      })
-    })
+      });
+    });
   }
 
   exists(table: T): Promise<number> {
     // @ts-expect-error sqlite_master not listed in Collections
-    return this.getCount('sqlite_master', 'name', table)
+    return this.getCount("sqlite_master", "name", table);
   }
 
-  insert(
-    table: T,
-    values: Record<string, string | number>
-  ): Promise<DbGetResult> {
+  insert(table: T, values: Record<string, string | number>): Promise<DbGetResult> {
     return new Promise((resolve, reject) => {
       /* istanbul ignore if */
-      if (this.db == null) {
-        this.logger.error('[SQLite][insert] DB not ready', { table })
-        throw new Error('Wait for database to be ready')
+      if (!this.db) {
+        this.logger.error("[SQLite][insert] DB not ready", { table });
+        throw new Error("Wait for database to be ready");
       }
-      const names: string[] = []
-      const vals: Array<string | number> = []
+      const names: string[] = [];
+      const vals: Array<string | number> = [];
       Object.keys(values).forEach((k) => {
-        names.push(k)
-        vals.push(values[k])
-      })
-      const query = `INSERT INTO ${table}(${names.join(',')}) VALUES(${names
-        .map((v) => '?')
-        .join(',')}) RETURNING *;`
-      this.logger.debug('[SQLite][insert] Executing', {
+        names.push(k);
+        vals.push(values[k]);
+      });
+      const query = `INSERT INTO ${table}(${names.join(",")}) VALUES(${names.map((_v) => "?").join(",")}) RETURNING *;`;
+      this.logger.debug("[SQLite][insert] Executing", {
         table,
         fields: names,
-        query
-      })
-      const stmt = this.db.prepare(query)
-      stmt.all(
-        vals,
-        (err: string, rows: Array<Record<string, string | number>>) => {
-          /* istanbul ignore if */
-          if (err != null) {
-            this.logger.error('[SQLite][insert] Failed', {
-              table,
-              fields: names,
-              values: vals,
-              query,
-              error: err
-            })
-            reject(err)
-          } else {
-            this.logger.debug('[SQLite][insert] Successful', {
-              table,
-              rowCount: rows.length
-            })
-            resolve(rows)
-          }
+        query,
+      });
+      const stmt = this.db.prepare(query);
+      stmt.all(vals, (err: string, rows: Array<Record<string, string | number>>) => {
+        /* istanbul ignore if */
+        if (err !== null && err !== undefined) {
+          this.logger.error("[SQLite][insert] Failed", {
+            table,
+            fields: names,
+            values: vals,
+            query,
+            error: err,
+          });
+          reject(err);
+        } else {
+          this.logger.debug("[SQLite][insert] Successful", {
+            table,
+            rowCount: rows.length,
+          });
+          resolve(rows);
         }
-      )
+      });
       stmt.finalize((err) => {
         if (err) {
-          this.logger.error('[SQLite][insert] Statement finalize failed', {
+          this.logger.error("[SQLite][insert] Statement finalize failed", {
             table,
-            error: err
-          })
-          reject(err)
+            error: err,
+          });
+          reject(err);
         }
-      })
-    })
+      });
+    });
   }
 
   update(
     table: T,
     values: Record<string, string | number>,
     field: string,
-    value: string | number
+    value: string | number,
   ): Promise<DbGetResult> {
     return new Promise((resolve, reject) => {
       /* istanbul ignore if */
-      if (this.db == null) {
-        this.logger.error('[SQLite][update] DB not ready', { table, field })
-        throw new Error('Wait for database to be ready')
+      if (!this.db) {
+        this.logger.error("[SQLite][update] DB not ready", { table, field });
+        throw new Error("Wait for database to be ready");
       }
-      const names: string[] = []
-      const vals: Array<string | number> = []
+      const names: string[] = [];
+      const vals: Array<string | number> = [];
       Object.keys(values).forEach((k) => {
-        names.push(k)
-        vals.push(values[k])
-      })
-      vals.push(value)
-      const query = `UPDATE ${table} SET ${names.join(
-        '=?,'
-      )}=? WHERE ${field}=? RETURNING *;`
-      this.logger.debug('[SQLite][update] Executing', {
+        names.push(k);
+        vals.push(values[k]);
+      });
+      vals.push(value);
+      const query = `UPDATE ${table} SET ${names.join("=?,")}=? WHERE ${field}=? RETURNING *;`;
+      this.logger.debug("[SQLite][update] Executing", {
         table,
         fields: names,
         whereField: field,
-        query
-      })
-      const stmt = this.db.prepare(query)
-      stmt.all(
-        vals,
-        (err: string, rows: Array<Record<string, string | number>>) => {
-          /* istanbul ignore if */
-          if (err != null) {
-            this.logger.error('[SQLite][update] Failed', {
-              table,
-              fields: names,
-              whereField: field,
-              query,
-              error: err
-            })
-            reject(err)
-          } else {
-            this.logger.debug('[SQLite][update] Successful', {
-              table,
-              rowCount: rows.length
-            })
-            resolve(rows)
-          }
+        query,
+      });
+      const stmt = this.db.prepare(query);
+      stmt.all(vals, (err: string, rows: Array<Record<string, string | number>>) => {
+        /* istanbul ignore if */
+        if (err !== null && err !== undefined) {
+          this.logger.error("[SQLite][update] Failed", {
+            table,
+            fields: names,
+            whereField: field,
+            query,
+            error: err,
+          });
+          reject(err);
+        } else {
+          this.logger.debug("[SQLite][update] Successful", {
+            table,
+            rowCount: rows.length,
+          });
+          resolve(rows);
         }
-      )
+      });
       stmt.finalize((err) => {
         if (err) {
-          this.logger.error('[SQLite][update] Statement finalize failed', {
+          this.logger.error("[SQLite][update] Statement finalize failed", {
             table,
-            error: err
-          })
-          reject(err)
+            error: err,
+          });
+          reject(err);
         }
-      })
-    })
+      });
+    });
   }
 
   // TODO : Merge update and updateAnd into one function that takes an array of conditions as argument
@@ -223,64 +184,57 @@ class SQLite<T extends string> extends SQL<T> implements DbBackend<T> {
     table: T,
     values: Record<string, string | number>,
     condition1: { field: string; value: string | number },
-    condition2: { field: string; value: string | number }
+    condition2: { field: string; value: string | number },
   ): Promise<DbGetResult> {
     return new Promise((resolve, reject) => {
       /* istanbul ignore if */
-      if (this.db == null) {
-        this.logger.error('[SQLite][updateAnd] DB not ready', {
+      if (!this.db) {
+        this.logger.error("[SQLite][updateAnd] DB not ready", {
           table,
-          conditions: [condition1.field, condition2.field]
-        })
-        throw new Error('Wait for database to be ready')
+          conditions: [condition1.field, condition2.field],
+        });
+        throw new Error("Wait for database to be ready");
       }
-      const names = Object.keys(values)
-      const vals = Object.values(values)
-      vals.push(condition1.value, condition2.value)
+      const names = Object.keys(values);
+      const vals = Object.values(values);
+      vals.push(condition1.value, condition2.value);
 
-      const setClause = names.map((name) => `${name} = ?`).join(', ')
-      const query = `UPDATE ${table} SET ${setClause} WHERE ${condition1.field} = ? AND ${condition2.field} = ? RETURNING *;`
-      this.logger.debug('[SQLite][updateAnd] Executing', {
+      const setClause = names.map((name) => `${name} = ?`).join(", ");
+      const query = `UPDATE ${table} SET ${setClause} WHERE ${condition1.field} = ? AND ${condition2.field} = ? RETURNING *;`;
+      this.logger.debug("[SQLite][updateAnd] Executing", {
         table,
         fields: names,
         whereFields: [condition1.field, condition2.field],
-        query
-      })
-      const stmt = this.db.prepare(query)
+        query,
+      });
+      const stmt = this.db.prepare(query);
 
-      stmt.all(
-        vals,
-        (err: string, rows: Array<Record<string, string | number>>) => {
-          if (err != null) {
-            this.logger.error('[SQLite][updateAnd] Failed', {
-              table,
-              fields: names,
-              whereFields: [condition1.field, condition2.field],
-              query,
-              error: err
-            })
-            reject(err)
-          } else {
-            this.logger.debug('[SQLite][updateAnd] Successful', {
-              table,
-              rowCount: rows.length
-            })
-            resolve(rows)
-          }
+      stmt.all(vals, (err: string, rows: Array<Record<string, string | number>>) => {
+        if (err !== null && err !== undefined) {
+          this.logger.error("[SQLite][updateAnd] Failed", {
+            table,
+            fields: names,
+            whereFields: [condition1.field, condition2.field],
+            query,
+            error: err,
+          });
+          reject(err);
+        } else {
+          this.logger.debug("[SQLite][updateAnd] Successful", {
+            table,
+            rowCount: rows.length,
+          });
+          resolve(rows);
         }
-      )
+      });
 
       stmt.finalize((err) => {
-        // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
         if (err) {
-          this.logger.error(
-            'UPDATE with AND conditions statement finalize failed',
-            { table, error: err }
-          )
-          reject(err)
+          this.logger.error("UPDATE with AND conditions statement finalize failed", { table, error: err });
+          reject(err);
         }
-      })
-    })
+      });
+    });
   }
 
   _get(
@@ -295,171 +249,136 @@ class SQLite<T extends string> extends SQL<T> implements DbBackend<T> {
     linkop2?: string,
     filterFields3?: Record<string, string | number | Array<string | number>>,
     joinFields?: Record<string, string>,
-    order?: string
+    order?: string,
   ): Promise<DbGetResult> {
     return new Promise((resolve, reject) => {
       /* istanbul ignore if */
-      if (this.db == null) {
-        reject(new Error('Wait for database to be ready'))
+      if (!this.db) {
+        reject(new Error("Wait for database to be ready"));
       } else {
-        let condition: string = ''
-        const values: string[] = []
-        if (fields == null || fields.length === 0) {
-          fields = ['*']
+        let condition: string = "";
+        const values: string[] = [];
+        if (!fields || fields.length === 0) {
+          fields = ["*"];
         } else {
           // Generate aliases for fields containing periods
           fields = fields.map((field) => {
-            if (field.includes('.')) {
-              const alias = field.replace(/\./g, '_')
-              return `${field} AS ${alias}`
+            if (field.includes(".")) {
+              const alias = field.replace(/\./g, "_");
+              return `${field} AS ${alias}`;
             }
-            return field
-          })
+            return field;
+          });
         }
 
-        let index: number = 0
+        let index: number = 0;
 
         const buildCondition = (
           op: string,
-          filterFields: Record<string, string | number | Array<string | number>>
+          filterFields: Record<string, string | number | Array<string | number>>,
         ): string => {
-          let localCondition = ''
+          let localCondition = "";
 
           Object.keys(filterFields)
-            .filter(
-              (key) =>
-                filterFields[key] != null &&
-                filterFields[key].toString() !== [].toString()
-            )
+            .filter((key) => filterFields[key] !== null && filterFields[key] !== undefined && filterFields[key].toString() !== [].toString())
             .forEach((key) => {
-              localCondition += localCondition !== '' ? ' AND ' : ''
+              localCondition += localCondition !== "" ? " AND " : "";
               if (Array.isArray(filterFields[key])) {
-                localCondition += `(${(
-                  filterFields[key] as Array<string | number>
-                )
+                localCondition += `(${(filterFields[key] as Array<string | number>)
                   .map((val) => {
-                    index++
-                    values.push(val.toString())
-                    return `${key}${op}$${index}`
+                    index++;
+                    values.push(val.toString());
+                    return `${key}${op}$${index}`;
                   })
-                  .join(' OR ')})`
+                  .join(" OR ")})`;
               } else {
-                index++
-                values.push(filterFields[key].toString())
-                localCondition += `${key}${op}$${index}`
+                index++;
+                values.push(filterFields[key].toString());
+                localCondition += `${key}${op}$${index}`;
               }
-            })
-          return localCondition
-        }
+            });
+          return localCondition;
+        };
 
         const condition1 =
-          op1 != null &&
-          filterFields1 != null &&
-          Object.keys(filterFields1).length > 0
-            ? buildCondition(op1, filterFields1)
-            : ''
+          op1 && filterFields1 && Object.keys(filterFields1).length > 0 ? buildCondition(op1, filterFields1) : "";
         const condition2 =
-          op2 != null &&
-          linkop1 != null &&
-          filterFields2 != null &&
-          Object.keys(filterFields2).length > 0
+          op2 && linkop1 && filterFields2 && Object.keys(filterFields2).length > 0
             ? buildCondition(op2, filterFields2)
-            : ''
+            : "";
         const condition3 =
-          op3 != null &&
-          linkop2 != null &&
-          filterFields3 != null &&
-          Object.keys(filterFields3).length > 0
+          op3 && linkop2 && filterFields3 && Object.keys(filterFields3).length > 0
             ? buildCondition(op3, filterFields3)
-            : ''
+            : "";
 
-        condition += condition1 !== '' ? 'WHERE ' + condition1 : ''
-        condition +=
-          condition2 !== ''
-            ? // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-              (condition !== '' ? ` ${linkop1} ` : 'WHERE ') + condition2
-            : ''
-        condition +=
-          condition3 !== ''
-            ? // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-              (condition !== '' ? ` ${linkop2} ` : 'WHERE ') + condition3
-            : ''
+        condition += condition1 !== "" ? `WHERE ${condition1}` : "";
+        condition += condition2 !== "" ? (condition !== "" ? ` ${linkop1} ` : "WHERE ") + condition2 : "";
+        condition += condition3 !== "" ? (condition !== "" ? ` ${linkop2} ` : "WHERE ") + condition3 : "";
 
-        if (joinFields != null) {
-          let joinCondition = ''
+        if (joinFields) {
+          let joinCondition = "";
           Object.keys(joinFields)
-            .filter(
-              (key) =>
-                joinFields[key] != null &&
-                joinFields[key].toString() !== [].toString()
-            )
+            .filter((key) => joinFields[key] && joinFields[key].toString() !== [].toString())
             .forEach((key) => {
-              joinCondition += joinCondition !== '' ? ' AND ' : ''
-              joinCondition += `${key}=${joinFields[key]}`
-            })
-          condition += condition !== '' ? ' AND ' : 'WHERE '
-          condition += joinCondition
+              joinCondition += joinCondition !== "" ? " AND " : "";
+              joinCondition += `${key}=${joinFields[key]}`;
+            });
+          condition += condition !== "" ? " AND " : "WHERE ";
+          condition += joinCondition;
         }
 
-        if (order != null) condition += ` ORDER BY ${order}`
+        if (order) condition += ` ORDER BY ${order}`;
 
-        const query = `SELECT ${fields.join(',')} FROM ${tables.join(
-          ','
-        )} ${condition}`
-        this.logger.debug('[SQLite][_get] Executing SELECT', {
+        const query = `SELECT ${fields.join(",")} FROM ${tables.join(",")} ${condition}`;
+        this.logger.debug("[SQLite][_get] Executing SELECT", {
           tables,
           fields,
           condition,
-          query
-        })
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
-        // @ts-ignore never undefined
-        const stmt = this.db.prepare(query)
-        stmt.all(
-          values,
-          (err: string, rows: Array<Record<string, string | number>>) => {
-            /* istanbul ignore if */
-            if (err != null) {
-              this.logger.error('[SQLite][_get] SELECT failed', {
-                tables,
-                fields,
-                condition,
-                query,
-                error: err
-              })
-              reject(err)
-            } else {
-              this.logger.debug('[SQLite][_get] SELECT successful', {
-                tables,
-                rowCount: rows.length
-              })
-              resolve(rows)
-            }
+          query,
+        });
+        const stmt = this.db.prepare(query);
+        stmt.all(values, (err: string, rows: Array<Record<string, string | number>>) => {
+          /* istanbul ignore if */
+          if (err !== null && err !== undefined) {
+            this.logger.error("[SQLite][_get] SELECT failed", {
+              tables,
+              fields,
+              condition,
+              query,
+              error: err,
+            });
+            reject(err);
+          } else {
+            this.logger.debug("[SQLite][_get] SELECT successful", {
+              tables,
+              rowCount: rows.length,
+            });
+            resolve(rows);
           }
-        )
+        });
         stmt.finalize((err) => {
           if (err) {
-            this.logger.error('[SQLite][_get] Statement finalize failed', {
+            this.logger.error("[SQLite][_get] Statement finalize failed", {
               tables,
-              error: err
-            })
-            reject(err)
+              error: err,
+            });
+            reject(err);
           }
-        })
+        });
       }
-    })
+    });
   }
 
   get(
     table: T,
     fields?: string[],
     filterFields?: Record<string, string | number | Array<string | number>>,
-    order?: string
+    order?: string,
   ): Promise<DbGetResult> {
     return this._get(
       [table],
       fields,
-      '=',
+      "=",
       filterFields,
       undefined,
       undefined,
@@ -468,8 +387,8 @@ class SQLite<T extends string> extends SQL<T> implements DbBackend<T> {
       undefined,
       undefined,
       undefined,
-      order
-    )
+      order,
+    );
   }
 
   getJoin(
@@ -477,12 +396,12 @@ class SQLite<T extends string> extends SQL<T> implements DbBackend<T> {
     fields?: string[],
     filterFields?: Record<string, string | number | Array<string | number>>,
     joinFields?: Record<string, string>,
-    order?: string
+    order?: string,
   ): Promise<DbGetResult> {
     return this._get(
       tables,
       fields,
-      '=',
+      "=",
       filterFields,
       undefined,
       undefined,
@@ -491,20 +410,20 @@ class SQLite<T extends string> extends SQL<T> implements DbBackend<T> {
       undefined,
       undefined,
       joinFields,
-      order
-    )
+      order,
+    );
   }
 
   getHigherThan(
     table: T,
     fields?: string[],
     filterFields?: Record<string, string | number | Array<string | number>>,
-    order?: string
+    order?: string,
   ): Promise<DbGetResult> {
     return this._get(
       [table],
       fields,
-      '>',
+      ">",
       filterFields,
       undefined,
       undefined,
@@ -513,8 +432,8 @@ class SQLite<T extends string> extends SQL<T> implements DbBackend<T> {
       undefined,
       undefined,
       undefined,
-      order
-    )
+      order,
+    );
   }
 
   getWhereEqualOrDifferent(
@@ -522,22 +441,22 @@ class SQLite<T extends string> extends SQL<T> implements DbBackend<T> {
     fields?: string[],
     filterFields1?: Record<string, string | number | Array<string | number>>,
     filterFields2?: Record<string, string | number | Array<string | number>>,
-    order?: string
+    order?: string,
   ): Promise<DbGetResult> {
     return this._get(
       [table],
       fields,
-      '=',
+      "=",
       filterFields1,
-      '<>',
-      ' OR ',
+      "<>",
+      " OR ",
       filterFields2,
       undefined,
       undefined,
       undefined,
       undefined,
-      order
-    )
+      order,
+    );
   }
 
   getWhereEqualAndHigher(
@@ -545,26 +464,26 @@ class SQLite<T extends string> extends SQL<T> implements DbBackend<T> {
     fields?: string[],
     filterFields1?: Record<string, string | number | Array<string | number>>,
     filterFields2?: Record<string, string | number | Array<string | number>>,
-    order?: string
+    order?: string,
   ): Promise<DbGetResult> {
     return this._get(
       [table],
       fields,
-      '=',
+      "=",
       filterFields1,
-      '>',
-      ' AND ',
+      ">",
+      " AND ",
       filterFields2,
       undefined,
       undefined,
       undefined,
       undefined,
-      order
-    )
+      order,
+    );
   }
 
   _getMinMax(
-    minmax: 'MIN' | 'MAX',
+    minmax: "MIN" | "MAX",
     tables: T[],
     targetField: string,
     fields?: string[],
@@ -574,152 +493,126 @@ class SQLite<T extends string> extends SQL<T> implements DbBackend<T> {
     linkop?: string,
     filterFields2?: Record<string, string | number | Array<string | number>>,
     joinFields?: Record<string, string>,
-    order?: string
+    order?: string,
   ): Promise<DbGetResult> {
     return new Promise((resolve, reject) => {
       /* istanbul ignore if */
-      if (this.db == null) {
-        reject(new Error('Wait for database to be ready'))
+      if (!this.db) {
+        reject(new Error("Wait for database to be ready"));
       } else {
-        let condition: string = ''
-        const values: string[] = []
-        if (fields == null || fields.length === 0) {
-          fields = ['*']
+        let condition: string = "";
+        const values: string[] = [];
+        if (!fields || fields.length === 0) {
+          fields = ["*"];
         } else {
           // Generate aliases for fields containing periods
           fields = fields.map((field) => {
-            if (field.includes('.')) {
-              const alias = field.replace(/\./g, '_')
-              return `${field} AS ${alias}`
+            if (field.includes(".")) {
+              const alias = field.replace(/\./g, "_");
+              return `${field} AS ${alias}`;
             }
-            return field
-          })
+            return field;
+          });
         }
-        const targetFieldAlias: string = targetField.replace(/\./g, '_')
+        const targetFieldAlias: string = targetField.replace(/\./g, "_");
 
-        let index: number = 0
+        let index: number = 0;
 
         const buildCondition = (
           op: string,
-          filterFields: Record<string, string | number | Array<string | number>>
+          filterFields: Record<string, string | number | Array<string | number>>,
         ): string => {
-          let localCondition = ''
+          let localCondition = "";
 
           Object.keys(filterFields)
-            .filter(
-              (key) =>
-                filterFields[key] != null &&
-                filterFields[key].toString() !== [].toString()
-            )
+            .filter((key) => filterFields[key] !== null && filterFields[key] !== undefined && filterFields[key].toString() !== [].toString())
             .forEach((key) => {
-              localCondition += localCondition !== '' ? ' AND ' : ''
+              localCondition += localCondition !== "" ? " AND " : "";
               if (Array.isArray(filterFields[key])) {
-                localCondition += `(${(
-                  filterFields[key] as Array<string | number>
-                )
+                localCondition += `(${(filterFields[key] as Array<string | number>)
                   .map((val) => {
-                    index++
-                    values.push(val.toString())
-                    return `${key}${op}$${index}`
+                    index++;
+                    values.push(val.toString());
+                    return `${key}${op}$${index}`;
                   })
-                  .join(' OR ')})`
+                  .join(" OR ")})`;
               } else {
-                index++
-                values.push(filterFields[key].toString())
-                localCondition += `${key}${op}$${index}`
+                index++;
+                values.push(filterFields[key].toString());
+                localCondition += `${key}${op}$${index}`;
               }
-            })
-          return localCondition
-        }
+            });
+          return localCondition;
+        };
 
         const condition1 =
-          op1 != null &&
-          filterFields1 != null &&
-          Object.keys(filterFields1).length > 0
-            ? buildCondition(op1, filterFields1)
-            : ''
+          op1 && filterFields1 && Object.keys(filterFields1).length > 0 ? buildCondition(op1, filterFields1) : "";
         const condition2 =
-          op2 != null &&
-          linkop != null &&
-          filterFields2 != null &&
-          Object.keys(filterFields2).length > 0
+          op2 && linkop && filterFields2 && Object.keys(filterFields2).length > 0
             ? buildCondition(op2, filterFields2)
-            : ''
+            : "";
 
-        condition += condition1 !== '' ? 'WHERE ' + condition1 : ''
-        condition +=
-          condition2 !== ''
-            ? // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-              (condition !== '' ? ` ${linkop} ` : 'WHERE ') + condition2
-            : ''
+        condition += condition1 !== "" ? `WHERE ${condition1}` : "";
+        condition += condition2 !== "" ? (condition !== "" ? ` ${linkop} ` : "WHERE ") + condition2 : "";
 
-        if (joinFields != null) {
-          let joinCondition = ''
+        if (joinFields) {
+          let joinCondition = "";
           Object.keys(joinFields)
-            .filter(
-              (key) =>
-                joinFields[key] != null &&
-                joinFields[key].toString() !== [].toString()
-            )
+            .filter((key) => joinFields[key] && joinFields[key].toString() !== [].toString())
             .forEach((key) => {
-              joinCondition += joinCondition !== '' ? ' AND ' : ''
-              joinCondition += `${key}=${joinFields[key]}`
-            })
-          condition += condition !== '' ? ' AND ' : 'WHERE '
-          condition += joinCondition
+              joinCondition += joinCondition !== "" ? " AND " : "";
+              joinCondition += `${key}=${joinFields[key]}`;
+            });
+          condition += condition !== "" ? " AND " : "WHERE ";
+          condition += joinCondition;
         }
 
-        if (order != null) condition += ` ORDER BY ${order}`
+        if (order) condition += ` ORDER BY ${order}`;
 
         const query = `SELECT ${fields.join(
-          ','
+          ",",
         )}, ${minmax}(${targetField}) AS max_${targetFieldAlias} FROM ${tables.join(
-          ','
-        )} ${condition} HAVING COUNT(*) > 0` // HAVING COUNT(*) > 0 is to avoid returning a row with NULL values
+          ",",
+        )} ${condition} HAVING COUNT(*) > 0`; // HAVING COUNT(*) > 0 is to avoid returning a row with NULL values
         this.logger.debug(`Executing ${minmax} query`, {
           tables,
           targetField,
           fields,
           condition,
-          query
-        })
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
-        // @ts-ignore never undefined
-        const stmt = this.db.prepare(query)
-        stmt.all(
-          values,
-          (err: string, rows: Array<Record<string, string | number>>) => {
-            /* istanbul ignore if */
-            if (err != null) {
-              this.logger.error(`${minmax} query failed`, {
-                tables,
-                targetField,
-                fields,
-                condition,
-                query,
-                error: err
-              })
-              reject(err)
-            } else {
-              this.logger.debug(`${minmax} query successful`, {
-                tables,
-                rowCount: rows.length
-              })
-              resolve(rows)
-            }
+          query,
+        });
+        const stmt = this.db.prepare(query);
+        stmt.all(values, (err: string, rows: Array<Record<string, string | number>>) => {
+          /* istanbul ignore if */
+          if (err !== null && err !== undefined) {
+            this.logger.error(`${minmax} query failed`, {
+              tables,
+              targetField,
+              fields,
+              condition,
+              query,
+              error: err,
+            });
+            reject(err);
+          } else {
+            this.logger.debug(`${minmax} query successful`, {
+              tables,
+              rowCount: rows.length,
+            });
+            resolve(rows);
           }
-        )
+        });
         stmt.finalize((err) => {
           if (err) {
             this.logger.error(`${minmax} statement finalize failed`, {
               tables,
-              error: err
-            })
-            reject(err)
+              error: err,
+            });
+            reject(err);
           }
-        })
+        });
       }
-    })
+    });
   }
 
   getMaxWhereEqual(
@@ -727,21 +620,21 @@ class SQLite<T extends string> extends SQL<T> implements DbBackend<T> {
     targetField: string,
     fields?: string[],
     filterFields?: Record<string, string | number | Array<string | number>>,
-    order?: string
+    order?: string,
   ): Promise<DbGetResult> {
     return this._getMinMax(
-      'MAX',
+      "MAX",
       [table],
       targetField,
       fields,
-      '=',
+      "=",
       filterFields,
       undefined,
       undefined,
       undefined,
       undefined,
-      order
-    )
+      order,
+    );
   }
 
   getMaxWhereEqualAndLower(
@@ -750,21 +643,21 @@ class SQLite<T extends string> extends SQL<T> implements DbBackend<T> {
     fields?: string[],
     filterFields1?: Record<string, string | number | Array<string | number>>,
     filterFields2?: Record<string, string | number | Array<string | number>>,
-    order?: string
+    order?: string,
   ): Promise<DbGetResult> {
     return this._getMinMax(
-      'MAX',
+      "MAX",
       [table],
       targetField,
       fields,
-      '=',
+      "=",
       filterFields1,
-      '<',
-      ' AND ',
+      "<",
+      " AND ",
       filterFields2,
       undefined,
-      order
-    )
+      order,
+    );
   }
 
   getMinWhereEqualAndHigher(
@@ -773,21 +666,21 @@ class SQLite<T extends string> extends SQL<T> implements DbBackend<T> {
     fields?: string[],
     filterFields1?: Record<string, string | number | Array<string | number>>,
     filterFields2?: Record<string, string | number | Array<string | number>>,
-    order?: string
+    order?: string,
   ): Promise<DbGetResult> {
     return this._getMinMax(
-      'MIN',
+      "MIN",
       [table],
       targetField,
       fields,
-      '=',
+      "=",
       filterFields1,
-      '>',
-      ' AND ',
+      ">",
+      " AND ",
       filterFields2,
       undefined,
-      order
-    )
+      order,
+    );
   }
 
   getMaxWhereEqualAndLowerJoin(
@@ -797,21 +690,21 @@ class SQLite<T extends string> extends SQL<T> implements DbBackend<T> {
     filterFields1?: Record<string, string | number | Array<string | number>>,
     filterFields2?: Record<string, string | number | Array<string | number>>,
     joinFields?: Record<string, string>,
-    order?: string
+    order?: string,
   ): Promise<DbGetResult> {
     return this._getMinMax(
-      'MAX',
+      "MAX",
       tables,
       targetField,
       fields,
-      '=',
+      "=",
       filterFields1,
-      '<',
-      ' AND ',
+      "<",
+      " AND ",
       filterFields2,
       joinFields,
-      order
-    )
+      order,
+    );
   }
 
   match(
@@ -819,220 +712,202 @@ class SQLite<T extends string> extends SQL<T> implements DbBackend<T> {
     fields: string[],
     searchFields: string[],
     value: string | number,
-    order?: string
+    order?: string,
   ): Promise<DbGetResult> {
     return new Promise((resolve, reject) => {
       /* istanbul ignore if */
-      if (this.db == null) {
-        this.logger.error('[SQLite][match] DB not ready', { table })
-        reject(new Error('Wait for database to be ready'))
+      if (!this.db) {
+        this.logger.error("[SQLite][match] DB not ready", { table });
+        reject(new Error("Wait for database to be ready"));
       } else {
-        if (typeof searchFields !== 'object') searchFields = [searchFields]
-        if (typeof fields !== 'object') fields = [fields]
-        if (fields.length === 0) fields = ['*']
-        const values = searchFields.map(() => `%${value}%`)
-        let condition = searchFields.map((f) => `${f} LIKE ?`).join(' OR ')
-        if (order != null) condition += `ORDER BY ${order}`
-        const query = `SELECT ${fields.join(
-          ','
-        )} FROM ${table} WHERE ${condition}`
-        this.logger.debug('[SQLite][match] Executing LIKE query', {
+        if (typeof searchFields !== "object") searchFields = [searchFields];
+        if (typeof fields !== "object") fields = [fields];
+        if (fields.length === 0) fields = ["*"];
+        const values = searchFields.map(() => `%${value}%`);
+        let condition = searchFields.map((f) => `${f} LIKE ?`).join(" OR ");
+        if (order) condition += ` ORDER BY ${order}`;
+        const query = `SELECT ${fields.join(",")} FROM ${table} WHERE ${condition}`;
+        this.logger.debug("[SQLite][match] Executing LIKE query", {
           table,
           searchFields,
           value,
           fields,
-          query
-        })
-        const stmt = this.db.prepare(query)
-        stmt.all(
-          values,
-          (err: string, rows: Array<Record<string, string | number>>) => {
-            /* istanbul ignore if */
-            if (err != null) {
-              this.logger.error('[SQLite][match] Query failed', {
-                table,
-                searchFields,
-                value,
-                query,
-                error: err
-              })
-              reject(err)
-            } else {
-              this.logger.debug('[SQLite][match] Query successful', {
-                table,
-                rowCount: rows.length
-              })
-              resolve(rows)
-            }
+          query,
+        });
+        const stmt = this.db.prepare(query);
+        stmt.all(values, (err: string, rows: Array<Record<string, string | number>>) => {
+          /* istanbul ignore if */
+          if (err !== null && err !== undefined) {
+            this.logger.error("[SQLite][match] Query failed", {
+              table,
+              searchFields,
+              value,
+              query,
+              error: err,
+            });
+            reject(err);
+          } else {
+            this.logger.debug("[SQLite][match] Query successful", {
+              table,
+              rowCount: rows.length,
+            });
+            resolve(rows);
           }
-        )
+        });
         stmt.finalize((err) => {
           if (err) {
-            this.logger.error('[SQLite][match] Statement finalize failed', {
+            this.logger.error("[SQLite][match] Statement finalize failed", {
               table,
-              error: err
-            })
-            reject(err)
+              error: err,
+            });
+            reject(err);
           }
-        })
+        });
       }
-    })
+    });
   }
 
   deleteEqual(table: T, field: string, value: string | number): Promise<void> {
     return new Promise((resolve, reject) => {
       /* istanbul ignore if */
-      if (this.db == null) {
-        this.logger.error('[SQLite][deleteEqual] DB not ready', {
-          table,
-          field
-        })
-        reject(new Error('Wait for database to be ready'))
-      } else {
-        const query = `DELETE FROM ${table} WHERE ${field}=?`
-        this.logger.debug('[SQLite][deleteEqual] Executing', {
+      if (!this.db) {
+        this.logger.error("[SQLite][deleteEqual] DB not ready", {
           table,
           field,
-          query
-        })
-        const stmt = this.db.prepare(query)
-        stmt.all([value], (err, rows) => {
+        });
+        reject(new Error("Wait for database to be ready"));
+      } else {
+        const query = `DELETE FROM ${table} WHERE ${field}=?`;
+        this.logger.debug("[SQLite][deleteEqual] Executing", {
+          table,
+          field,
+          query,
+        });
+        const stmt = this.db.prepare(query);
+        stmt.all([value], (err, _rows) => {
           /* istanbul ignore if */
-          if (err != null) {
-            this.logger.error('DELETE failed', {
+          if (err !== null && err !== undefined) {
+            this.logger.error("DELETE failed", {
               table,
               field,
               query,
-              error: err
-            })
-            reject(err)
+              error: err,
+            });
+            reject(err);
           } else {
-            this.logger.debug('[SQLite][deleteEqual] Successful', {
+            this.logger.debug("[SQLite][deleteEqual] Successful", {
               table,
-              field
-            })
-            resolve()
+              field,
+            });
+            resolve();
           }
-        })
+        });
         stmt.finalize((err) => {
           if (err) {
-            this.logger.error(
-              '[SQLite][deleteEqual] Statement finalize failed',
-              {
-                table,
-                error: err
-              }
-            )
-            reject(err)
+            this.logger.error("[SQLite][deleteEqual] Statement finalize failed", {
+              table,
+              error: err,
+            });
+            reject(err);
           }
-        })
+        });
       }
-    })
+    });
   }
 
   deleteEqualAnd(
     table: T,
     condition1: {
-      field: string
-      value: string | number | Array<string | number>
+      field: string;
+      value: string | number | Array<string | number>;
     },
     condition2: {
-      field: string
-      value: string | number | Array<string | number>
-    }
+      field: string;
+      value: string | number | Array<string | number>;
+    },
   ): Promise<void> {
     return new Promise((resolve, reject) => {
       /* istanbul ignore if */
-      if (this.db == null) {
-        this.logger.error('[SQLite][deleteEqualAnd] DB not ready', { table })
-        reject(new Error('Wait for database to be ready'))
+      if (!this.db) {
+        this.logger.error("[SQLite][deleteEqualAnd] DB not ready", { table });
+        reject(new Error("Wait for database to be ready"));
       } else {
-        const query = `DELETE FROM ${table} WHERE ${condition1.field}=? AND ${condition2.field}=?`
-        this.logger.debug('[SQLite][deleteEqualAnd] Executing', {
+        const query = `DELETE FROM ${table} WHERE ${condition1.field}=? AND ${condition2.field}=?`;
+        this.logger.debug("[SQLite][deleteEqualAnd] Executing", {
           table,
           conditions: [condition1.field, condition2.field],
-          query
-        })
-        const stmt = this.db.prepare(query)
-        stmt.all([condition1.value, condition2.value], (err, rows) => {
+          query,
+        });
+        const stmt = this.db.prepare(query);
+        stmt.all([condition1.value, condition2.value], (err, _rows) => {
           /* istanbul ignore if */
-          if (err != null) {
-            this.logger.error('[SQLite][deleteEqualAnd] Failed', {
+          if (err !== null && err !== undefined) {
+            this.logger.error("[SQLite][deleteEqualAnd] Failed", {
               table,
               conditions: [condition1.field, condition2.field],
               query,
-              error: err
-            })
-            reject(err)
+              error: err,
+            });
+            reject(err);
           } else {
-            this.logger.debug('[SQLite][deleteEqualAnd] Successful', {
-              table
-            })
-            resolve()
+            this.logger.debug("[SQLite][deleteEqualAnd] Successful", {
+              table,
+            });
+            resolve();
           }
-        })
+        });
         stmt.finalize((err) => {
           if (err) {
-            this.logger.error(
-              'DELETE with AND conditions statement finalize failed',
-              { table, error: err }
-            )
-            reject(err)
+            this.logger.error("DELETE with AND conditions statement finalize failed", { table, error: err });
+            reject(err);
           }
-        })
+        });
       }
-    })
+    });
   }
 
-  deleteLowerThan(
-    table: T,
-    field: string,
-    value: string | number
-  ): Promise<void> {
+  deleteLowerThan(table: T, field: string, value: string | number): Promise<void> {
     return new Promise((resolve, reject) => {
       /* istanbul ignore if */
-      if (this.db == null) {
-        this.logger.error('[SQLite][deleteLowerThan] DB not ready', {
+      if (!this.db) {
+        this.logger.error("[SQLite][deleteLowerThan] DB not ready", {
           table,
-          field
-        })
-        throw new Error('Wait for database to be ready')
+          field,
+        });
+        throw new Error("Wait for database to be ready");
       }
-      const query = `DELETE FROM ${table} WHERE ${field}<?`
-      this.logger.debug('[SQLite][deleteLowerThan] Executing', {
+      const query = `DELETE FROM ${table} WHERE ${field}<?`;
+      this.logger.debug("[SQLite][deleteLowerThan] Executing", {
         table,
         field,
-        query
-      })
-      const stmt = this.db.prepare(query)
+        query,
+      });
+      const stmt = this.db.prepare(query);
       stmt.all([value], (err) => {
         /* istanbul ignore if */
-        if (err != null) {
-          this.logger.error('[SQLite][deleteLowerThan] Failed', {
+        if (err !== null && err !== undefined) {
+          this.logger.error("[SQLite][deleteLowerThan] Failed", {
             table,
             field,
             query,
-            error: err
-          })
-          reject(err)
+            error: err,
+          });
+          reject(err);
         } else {
-          this.logger.debug('[SQLite][deleteLowerThan] Successful', {
+          this.logger.debug("[SQLite][deleteLowerThan] Successful", {
             table,
-            field
-          })
-          resolve()
+            field,
+          });
+          resolve();
         }
-      })
+      });
       stmt.finalize((err) => {
         if (err) {
-          this.logger.error(
-            'DELETE with < condition statement finalize failed',
-            { table, error: err }
-          )
-          reject(err)
+          this.logger.error("DELETE with < condition statement finalize failed", { table, error: err });
+          reject(err);
         }
-      })
-    })
+      });
+    });
   }
 
   /**
@@ -1041,92 +916,78 @@ class SQLite<T extends string> extends SQL<T> implements DbBackend<T> {
    * @param {string} table - the table to delete from
    * @param {ISQLCondition | ISQLCondition[]} conditions - the list of filters, operators and values for sql conditions
    */
-  deleteWhere(
-    table: T,
-    conditions: ISQLCondition | ISQLCondition[]
-  ): Promise<void> {
+  deleteWhere(table: T, conditions: ISQLCondition | ISQLCondition[]): Promise<void> {
     // Adaptation of the method get, with the delete keyword, 'AND' instead of 'OR', and with filters instead of fields
     return new Promise((resolve, reject) => {
       // istanbul ignore if
-      if (this.db == null) {
-        this.logger.error('[SQLite][deleteWhere] DB not ready', { table })
-        reject(new Error('Wait for database to be ready'))
+      if (!this.db) {
+        this.logger.error("[SQLite][deleteWhere] DB not ready", { table });
+        reject(new Error("Wait for database to be ready"));
       } else {
-        if (!Array.isArray(conditions)) conditions = [conditions]
+        if (!Array.isArray(conditions)) conditions = [conditions];
 
-        const values = conditions.map((c) => c.value)
-        const filters = conditions.map((c) => c.field)
-        const operators = conditions.map((c) => c.operator)
+        const values = conditions.map((c) => c.value);
+        const filters = conditions.map((c) => c.field);
+        const operators = conditions.map((c) => c.operator);
 
-        let condition: string = ''
-        if (
-          values != null &&
-          values.length > 0 &&
-          filters.length === values.length
-        ) {
+        let condition: string = "";
+        if (values && values.length > 0 && filters.length === values.length) {
           // Verifies that values have at least one element, and as much filter names
-          condition = filters
-            .map((filt, i) => `${filt}${operators[i] ?? '='}?`)
-            .join(' AND ')
+          condition = filters.map((filt, i) => `${filt}${operators[i] ?? "="}?`).join(" AND ");
         }
 
-        const query = `DELETE FROM ${table} WHERE ${condition}`
-        this.logger.debug('[SQLite][deleteWhere] Executing', {
+        const query = `DELETE FROM ${table} WHERE ${condition}`;
+        this.logger.debug("[SQLite][deleteWhere] Executing", {
           table,
           conditions: filters,
           operators,
-          query
-        })
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
-        // @ts-ignore never undefined
-        const stmt = this.db.prepare(query)
+          query,
+        });
+        const stmt = this.db.prepare(query);
 
         stmt.all(
           values, // The statement fills the values properly.
           (err: string) => {
             /* istanbul ignore if */
-            if (err != null) {
-              this.logger.error('[SQLite][deleteWhere] Failed', {
+            if (err !== null && err !== undefined) {
+              this.logger.error("[SQLite][deleteWhere] Failed", {
                 table,
                 conditions: filters,
                 operators,
                 values,
                 query,
-                error: err
-              })
-              reject(err)
+                error: err,
+              });
+              reject(err);
             } else {
-              this.logger.debug('[SQLite][deleteWhere] Successful', {
-                table
-              })
-              resolve()
+              this.logger.debug("[SQLite][deleteWhere] Successful", {
+                table,
+              });
+              resolve();
             }
-          }
-        )
+          },
+        );
         stmt.finalize((err) => {
           if (err) {
-            this.logger.error(
-              'DELETE with WHERE conditions statement finalize failed',
-              { table, error: err }
-            )
-            reject(err)
+            this.logger.error("DELETE with WHERE conditions statement finalize failed", { table, error: err });
+            reject(err);
           }
-        })
+        });
       }
-    })
+    });
   }
 
   async getTableColumns(table: T): Promise<ColumnInfo[]> {
     if (!this.db) {
-      this.logger.error('[SQLite][getTableColumns] DB not ready', { table })
-      throw new Error('DB not ready')
+      this.logger.error("[SQLite][getTableColumns] DB not ready", { table });
+      throw new Error("DB not ready");
     }
 
-    const query = `PRAGMA table_info(${table})`
-    this.logger.debug('[SQLite][getTableColumns] Executing', { table, query })
+    const query = `PRAGMA table_info(${table})`;
+    this.logger.debug("[SQLite][getTableColumns] Executing", { table, query });
 
     /* Capture db reference to avoid undefined in callback */
-    const db = this.db
+    const db = this.db;
 
     return new Promise((resolve, reject) => {
       db.all(
@@ -1134,39 +995,39 @@ class SQLite<T extends string> extends SQL<T> implements DbBackend<T> {
         (
           err: Error | null,
           rows: Array<{
-            cid: number
-            name: string
-            type: string
-            notnull: number
-            dflt_value: string | null
-            pk: number
-          }>
+            cid: number;
+            name: string;
+            type: string;
+            notnull: number;
+            dflt_value: string | null;
+            pk: number;
+          }>,
         ) => {
           if (err) {
-            this.logger.error('[SQLite][getTableColumns] Failed', {
+            this.logger.error("[SQLite][getTableColumns] Failed", {
               table,
               query,
-              error: err
-            })
-            reject(err)
-            return
+              error: err,
+            });
+            reject(err);
+            return;
           }
 
           const columns: ColumnInfo[] = rows.map((row) => ({
             name: row.name,
             type: row.type,
-            defaultValue: row.dflt_value
-          }))
+            defaultValue: row.dflt_value,
+          }));
 
-          this.logger.debug('[SQLite][getTableColumns] Successful', {
+          this.logger.debug("[SQLite][getTableColumns] Successful", {
             table,
-            columnCount: columns.length
-          })
+            columnCount: columns.length,
+          });
 
-          resolve(columns)
-        }
-      )
-    })
+          resolve(columns);
+        },
+      );
+    });
   }
 
   /**
@@ -1174,14 +1035,14 @@ class SQLite<T extends string> extends SQL<T> implements DbBackend<T> {
    * Only allows alphanumeric characters and underscores, must start with letter or underscore.
    */
   #isValidIdentifier(name: string): boolean {
-    return /^[A-Za-z_][A-Za-z0-9_]*$/.test(name)
+    return /^[A-Za-z_][A-Za-z0-9_]*$/.test(name);
   }
 
   /**
    * Quotes an SQL identifier using double quotes, escaping any internal double quotes.
    */
   #quoteIdentifier(name: string): string {
-    return `"${name.replace(/"/g, '""')}"`
+    return `"${name.replace(/"/g, '""')}"`;
   }
 
   /**
@@ -1189,80 +1050,80 @@ class SQLite<T extends string> extends SQL<T> implements DbBackend<T> {
    */
   #isValidColumnType(type: string): boolean {
     const typePattern =
-      /^(varchar|char|text|int|integer|smallint|bigint|real|numeric|decimal|boolean|bool|date|time|timestamp|blob|json|jsonb)(\(\d+\))?$/i
-    return typePattern.test(type.trim())
+      /^(varchar|char|text|int|integer|smallint|bigint|real|numeric|decimal|boolean|bool|date|time|timestamp|blob|json|jsonb)(\(\d+\))?$/i;
+    return typePattern.test(type.trim());
   }
 
   async addColumn(table: T, column: ColumnDefinition): Promise<void> {
     if (!this.db) {
-      this.logger.error('[SQLite][addColumn] DB not ready', { table, column })
-      throw new Error('DB not ready')
+      this.logger.error("[SQLite][addColumn] DB not ready", { table, column });
+      throw new Error("DB not ready");
     }
 
     /* Validate identifiers to prevent SQL injection */
     if (!this.#isValidIdentifier(table)) {
-      this.logger.error('[SQLite][addColumn] Invalid table name', {
+      this.logger.error("[SQLite][addColumn] Invalid table name", {
         table,
-        column
-      })
-      throw new Error(`Invalid table name: ${table}`)
+        column,
+      });
+      throw new Error(`Invalid table name: ${table}`);
     }
 
     if (!this.#isValidIdentifier(column.name)) {
-      this.logger.error('[SQLite][addColumn] Invalid column name', {
+      this.logger.error("[SQLite][addColumn] Invalid column name", {
         table,
-        column
-      })
-      throw new Error(`Invalid column name: ${column.name}`)
+        column,
+      });
+      throw new Error(`Invalid column name: ${column.name}`);
     }
 
     if (!this.#isValidColumnType(column.type)) {
-      this.logger.error('[SQLite][addColumn] Invalid column type', {
+      this.logger.error("[SQLite][addColumn] Invalid column type", {
         table,
-        column
-      })
-      throw new Error(`Invalid column type: ${column.type}`)
+        column,
+      });
+      throw new Error(`Invalid column type: ${column.type}`);
     }
 
     /* Build query with quoted identifiers */
-    const quotedTable = this.#quoteIdentifier(table)
-    const quotedColumn = this.#quoteIdentifier(column.name)
-    let query = `ALTER TABLE ${quotedTable} ADD COLUMN ${quotedColumn} ${column.type}`
+    const quotedTable = this.#quoteIdentifier(table);
+    const quotedColumn = this.#quoteIdentifier(column.name);
+    let query = `ALTER TABLE ${quotedTable} ADD COLUMN ${quotedColumn} ${column.type}`;
 
     /* Handle default value - use parameterized query for safety */
-    const params: Array<string | number | null> = []
+    const params: Array<string | number | null> = [];
     if (column.default !== undefined) {
       /*
        * SQLite doesn't support parameterized DEFAULT in ALTER TABLE,
        * so we must use literal values with proper escaping
        */
       if (column.default === null) {
-        query += ' DEFAULT NULL'
-      } else if (typeof column.default === 'number') {
-        query += ` DEFAULT ${column.default}`
-      } else if (typeof column.default === 'boolean') {
-        query += ` DEFAULT ${column.default ? 1 : 0}`
+        query += " DEFAULT NULL";
+      } else if (typeof column.default === "number") {
+        query += ` DEFAULT ${column.default}`;
+      } else if (typeof column.default === "boolean") {
+        query += ` DEFAULT ${column.default ? 1 : 0}`;
       } else {
         /* For strings, use parameterized query via prepared statement */
-        params.push(column.default)
-        query += ' DEFAULT ?'
+        params.push(column.default);
+        query += " DEFAULT ?";
       }
     }
 
     /* Handle NOT NULL constraint if specified */
     if (column.notNull) {
-      query += ' NOT NULL'
+      query += " NOT NULL";
     }
 
-    this.logger.debug('[SQLite][addColumn] Executing', {
+    this.logger.debug("[SQLite][addColumn] Executing", {
       table,
       column,
       query,
-      params
-    })
+      params,
+    });
 
     /* Capture db reference to avoid undefined in callback */
-    const db = this.db
+    const db = this.db;
 
     return new Promise((resolve, reject) => {
       /*
@@ -1270,78 +1131,71 @@ class SQLite<T extends string> extends SQL<T> implements DbBackend<T> {
        * If we have params, we need to use a workaround or fall back to escaping.
        * For now, we'll escape the string properly.
        */
-      let finalQuery = query
-      if (params.length > 0 && typeof params[0] === 'string') {
+      let finalQuery = query;
+      if (params.length > 0 && typeof params[0] === "string") {
         /* Replace ? with properly escaped string literal */
-        const escapedValue = params[0].replace(/'/g, "''")
-        finalQuery = query.replace('?', `'${escapedValue}'`)
+        const escapedValue = params[0].replace(/'/g, "''");
+        finalQuery = query.replace("?", `'${escapedValue}'`);
       }
 
       db.run(finalQuery, (err) => {
         if (err) {
           /* Check for duplicate column error - make idempotent */
-          const errMessage = err.message?.toLowerCase() ?? ''
-          if (errMessage.includes('duplicate column name')) {
-            this.logger.debug(
-              '[SQLite][addColumn] Column already exists (idempotent)',
-              {
-                table,
-                column: column.name
-              }
-            )
-            resolve()
-            return
+          const errMessage = err.message?.toLowerCase() ?? "";
+          if (errMessage.includes("duplicate column name")) {
+            this.logger.debug("[SQLite][addColumn] Column already exists (idempotent)", {
+              table,
+              column: column.name,
+            });
+            resolve();
+            return;
           }
 
-          this.logger.error('[SQLite][addColumn] Failed', {
+          this.logger.error("[SQLite][addColumn] Failed", {
             table,
             column,
             query: finalQuery,
-            error: err
-          })
-          reject(err)
-          return
+            error: err,
+          });
+          reject(err);
+          return;
         }
 
-        this.logger.info('[SQLite][addColumn] Column added successfully', {
+        this.logger.info("[SQLite][addColumn] Column added successfully", {
           table,
-          column: column.name
-        })
-        resolve()
-      })
-    })
+          column: column.name,
+        });
+        resolve();
+      });
+    });
   }
 
   async ensureColumns(table: T, columns: ColumnDefinition[]): Promise<void> {
-    const existingColumns = await this.getTableColumns(table)
-    const existingNames = new Set(
-      existingColumns.map((c) => c.name.toLowerCase())
-    )
+    const existingColumns = await this.getTableColumns(table);
+    const existingNames = new Set(existingColumns.map((c) => c.name.toLowerCase()));
 
-    const missingColumns = columns.filter(
-      (col) => !existingNames.has(col.name.toLowerCase())
-    )
+    const missingColumns = columns.filter((col) => !existingNames.has(col.name.toLowerCase()));
 
     if (missingColumns.length === 0) {
-      this.logger.debug('[SQLite][ensureColumns] All columns exist', { table })
-      return
+      this.logger.debug("[SQLite][ensureColumns] All columns exist", { table });
+      return;
     }
 
-    this.logger.info('[SQLite][ensureColumns] Adding missing columns', {
+    this.logger.info("[SQLite][ensureColumns] Adding missing columns", {
       table,
-      columns: missingColumns.map((c) => c.name)
-    })
+      columns: missingColumns.map((c) => c.name),
+    });
 
     for (const col of missingColumns) {
-      await this.addColumn(table, col)
+      await this.addColumn(table, col);
     }
 
-    this.logger.info('[SQLite][ensureColumns] All columns ensured', { table })
+    this.logger.info("[SQLite][ensureColumns] All columns ensured", { table });
   }
 
   close(): void {
-    this.db?.close()
+    this.db?.close();
   }
 }
 
-export default SQLite
+export default SQLite;

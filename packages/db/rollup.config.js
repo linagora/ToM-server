@@ -1,8 +1,3 @@
-import config from '../../rollup-template.js'
+import config from "../../rollup-template.js";
 
-export default config([
-  '@twake/logger',
-  'pg',
-  'sqlite3',
-  'tls'
-])
+export default config(["@twake/logger", "pg", "sqlite3", "tls"]);
