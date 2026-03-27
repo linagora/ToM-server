@@ -92,7 +92,7 @@ export const validateParameters: validateParametersType = (res, desc, content, l
   const additionalParameters: string[] = [];
   // Check for required parameters
   Object.keys(desc).forEach((key) => {
-    if (desc[key] && !content[key]) {
+    if (desc[key] && (content[key] === null || content[key] === undefined)) {
       missingParameters.push(key);
     }
   });
@@ -101,7 +101,7 @@ export const validateParameters: validateParametersType = (res, desc, content, l
   } else {
     Object.keys(content).forEach((key) => {
       /* istanbul ignore if */
-      if (!desc[key]) {
+      if (desc[key] === null || desc[key] === undefined) {
         additionalParameters.push(key);
       }
     });
