@@ -35,7 +35,7 @@
   ],
   "scripts": {
     "build": "rollup -c",
-    "test": "LOG_TRANSPORTS=File LOG_FILE=/dev/null jest --passWithNoTests",
+    "test": "cross-env LOG_TRANSPORTS=File LOG_FILE=/dev/null jest --passWithNoTests",
     "check": "biome check ."
   },
   "dependencies": {

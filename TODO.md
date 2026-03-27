@@ -335,3 +335,109 @@ export function toBase64Url(base64: string): string {
 
 This is O(n) with no backtracking and satisfies static analysis tools flagging
 polynomial regex on uncontrolled data.
+
+## DB
+
+### `sql/pg.ts` — Extract `.then()` Callback to Reduce Cognitive Complexity (17 > 10)
+
+The `.then()` callback at line 25 does module interop, config validation, connection
+pool setup, error handling, and table creation all at once — cognitive complexity 17,
+CI limit 10. Extract into at least two private methods:
+
+- `#validateConfig(config)` — validates required fields and returns a typed pool config
+- `#createPool(config)` — constructs and returns the `pg.Pool` instance
+
+Keep the `.then()` callback as a thin orchestrator that calls these in sequence.
+
+### `sql/pg.ts` — Drop `async` from `addColumn` (No `await` Inside)
+
+`addColumn` is marked `async` but constructs and returns a manual `Promise` without
+any `await`. The `async` keyword adds a redundant wrapper `Promise` around an
+already-a-`Promise`. Either drop `async`, or refactor to use `await` internally for
+consistency with the rest of the codebase.
+
+### `sql/pg.ts` — Replace `forEach` with `for...of` (Biome `noForEach`)
+
+Biome rejects `.forEach()` in favour of `for...of`. Three identical patterns need
+converting: line 25 callback, lines 162–165, and lines 215–218.
+
+```diff
+-  items.forEach((item) => {
+-    // ...
+-  });
++  for (const item of items) {
++    // ...
++  }
+```
+
+### `sql/sqlite.ts` — Drop `async` from `getTableColumns` and `addColumn` (CI Blocker)
+
+Both methods are marked `async` but construct manual `Promise`s internally without
+using `await`. This is one of the 31 errors blocking the pipeline. The fix is a
+one-line removal:
+
+```diff
+-  async getTableColumns(table: T): Promise<ColumnInfo[]> {
++  getTableColumns(table: T): Promise<ColumnInfo[]> {
+```
+
+Same applies to `addColumn` and the pattern at lines 1075–1078. Alternatively,
+promisify `db.all` / `db.run` with `await` if a full async refactor is preferred.
+
+### `sql/sqlite.ts` — `this.ready` Hangs on `sqlite3` Load Failure
+
+The `.catch()` handler in the constructor rethrows into the void instead of calling
+`reject(e)`. If `import("sqlite3")` or `new sqlite3.Database()` fails, the `Promise`
+chain breaks silently and `this.ready` never resolves or rejects, hanging startup
+indefinitely. Compare against `pg.ts` lines 55–58, which correctly call `reject(e)`.
+
+```diff
+-  }).catch((e) => { throw e; });
++  }).catch((e) => { reject(e); });
+```
+
+### `sql/pg.ts` + `sql/sqlite.ts` — Empty String Filter Values Silently Drop `WHERE` Constraints
+
+The nullish checks fixed `0`, but the `.toString() !== [].toString()` comparison is
+`"" !== ""` for empty strings — which evaluates to `false`, silently discarding the
+constraint. A caller querying `{ status: "" }` expecting `WHERE status = ''` gets a
+full table scan instead. This is a silent data leakage risk.
+
+The filter predicate must explicitly allow empty strings through:
+
+```diff
+-  .filter((key) => value.toString() !== [].toString())
++  .filter((key) => value !== null && value !== undefined)
+```
+
+Or, if array values need separate handling, be explicit about each case rather than
+relying on `toString()` coercion:
+
+```typescript
+const isValidFilterValue = (v: unknown): boolean =>
+  v !== null && v !== undefined && !Array.isArray(v);
+```
+
+Applies to both `pg.ts` and `sqlite.ts` — audit all filter predicate sites in both
+files for this pattern.
+
+### `sql/sql.ts` — Remove `any` from `getCount()` Return Path
+
+Lines 33 and 40 in the shared base class pass `any` through the count helper. The
+method has exactly two call patterns — type them with a union and chain `.catch(reject)`
+directly to eliminate the `any`s without changing runtime behaviour.
+
+### `database.ts` — Fix `DbBackend` Interface Instead of Working Around It
+
+The wrapper in `database.ts` correctly delegates, but it is constrained by the
+`DbBackend<T>` interface in `types.ts`, which declares `createDatabases` as
+`...args: any`. Replace that signature with a properly typed one (or a typed overload
+alias if arguments vary by backend). Fixing the interface makes the wrapper strict
+automatically, rather than patching symptoms at the call site.
+
+### `types.ts` — Consolidate 6-Parameter Function into Options Object
+
+Biome flags functions exceeding a reasonable parameter count, and a 6-parameter
+signature is error-prone and hard to call correctly. This is pre-existing API surface,
+so it is out of scope for a formatting pass, but should be addressed as dedicated
+technical debt: consolidate into a single typed options object.
