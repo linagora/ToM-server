@@ -137,7 +137,8 @@ export class AMQPConnector {
 
     if (this.queue === null || this.queue === undefined) throw new QueueNotSpecifiedError();
 
-    if (this.onMessageHandler === null || this.onMessageHandler === undefined) throw new MessageHandlerNotProvidedError();
+    if (this.onMessageHandler === null || this.onMessageHandler === undefined)
+      throw new MessageHandlerNotProvidedError();
 
     // Clear any pending reconnect timer to avoid overlapping connection attempts
     if (this.reconnectTimeoutId !== null && this.reconnectTimeoutId !== undefined) {
