@@ -15,7 +15,7 @@ class UserDBLDAP implements UserDBBackend {
   constructor(conf: Config, private readonly logger: TwakeLogger) {
     this.logger = logger
 
-    if (conf.ldap_uri == null || conf.ldap_uri.length === 0) {
+    if (conf.ldap_uri == null || conf.ldap_uri.trim().length === 0) {
       const msg =
         '[UserDBLDAP] userdb_engine is set to "ldap" but no LDAP URI is configured. ' +
         'Set the "ldap_uri" option in your server configuration ' +
@@ -25,6 +25,8 @@ class UserDBLDAP implements UserDBBackend {
       throw new Error(msg)
     }
 
+    const ldapUri = conf.ldap_uri.trim()
+
     this.base = conf.ldap_base != null ? conf.ldap_base : ''
     this.filter =
       conf.ldap_filter != null ? conf.ldap_filter : '(objectClass=*)'
@@ -33,15 +35,18 @@ class UserDBLDAP implements UserDBBackend {
     this.logger.silly(
       `[UserDBLDAP][constructor] Initializing with base: ${this.base}, filter: ${this.filter}`
     )
-    // Log that a URI is configured without revealing its value —
-    // LDAP URIs can embed credentials (ldap://user:pass@host).
-    this.logger.debug('[UserDBLDAP][constructor] LDAP URI is configured')
+    // Log the raw URI for remote-deployment troubleshooting, but mask
+    // any embedded credentials (e.g. ldap://user:pass@host → ldap://user:***@host).
+    const maskedUri = ldapUri.replace(/(\/\/)([^:]+):([^@]+)@/, '$1$2:***@')
+    this.logger.debug(
+      `[UserDBLDAP][constructor] LDAP URI: ${maskedUri}`
+    )
 
     this.ldap = (): Promise<Client> => {
       this.logger.silly('[UserDBLDAP][ldap] Creating new LDAP client instance')
       const client = new ldapts.Client({
         ...ldaptsOpts,
-        url: conf.ldap_uri
+        url: ldapUri
       })
       return new Promise((resolve, reject) => {
         if (
@@ -105,9 +110,7 @@ class UserDBLDAP implements UserDBBackend {
             )}`
           )
           this.logger.error(
-            `[UserDBLDAP][constructor] Configuration - URI: ${
-              conf.ldap_uri ?? 'undefined'
-            }, Base: ${this.base}`
+            `[UserDBLDAP][constructor] Configuration - URI: ${maskedUri}, Base: ${this.base}`
           )
           resolve()
         })
