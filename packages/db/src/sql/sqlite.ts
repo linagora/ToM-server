@@ -412,40 +412,70 @@ class SQLite<T extends string> extends SQL<T> implements DbBackend<T> {
           condition,
           query
         })
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
-        // @ts-ignore never undefined
-        const stmt = this.db.prepare(query)
-        stmt.all(
-          values,
-          (err: string, rows: Array<Record<string, string | number>>) => {
-            /* istanbul ignore if */
-            if (err != null) {
-              this.logger.error('[SQLite][_get] SELECT failed', {
-                tables,
-                fields,
-                condition,
-                query,
-                error: err
-              })
-              reject(err)
-            } else {
-              this.logger.debug('[SQLite][_get] SELECT successful', {
-                tables,
-                rowCount: rows.length
-              })
-              resolve(rows)
+        try {
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
+          // @ts-ignore never undefined
+          const stmt = this.db.prepare(query, (prepErr: Error | null) => {
+            if (prepErr != null) {
+              this.logger.error(
+                '[SQLite][_get] Failed to prepare statement',
+                {
+                  tables,
+                  fields,
+                  condition,
+                  query,
+                  error: prepErr
+                }
+              )
+              reject(prepErr)
+              return
             }
-          }
-        )
-        stmt.finalize((err) => {
-          if (err) {
-            this.logger.error('[SQLite][_get] Statement finalize failed', {
-              tables,
-              error: err
+            stmt.all(
+              values,
+              (
+                err: string,
+                rows: Array<Record<string, string | number>>
+              ) => {
+                /* istanbul ignore if */
+                if (err != null) {
+                  this.logger.error('[SQLite][_get] SELECT failed', {
+                    tables,
+                    fields,
+                    condition,
+                    query,
+                    error: err
+                  })
+                  reject(err)
+                } else {
+                  this.logger.debug('[SQLite][_get] SELECT successful', {
+                    tables,
+                    rowCount: rows.length
+                  })
+                  resolve(rows)
+                }
+              }
+            )
+            stmt.finalize((err) => {
+              if (err) {
+                this.logger.error(
+                  '[SQLite][_get] Statement finalize failed',
+                  {
+                    tables,
+                    error: err
+                  }
+                )
+                reject(err)
+              }
             })
-            reject(err)
-          }
-        })
+          })
+        } catch (e) {
+          this.logger.error('[SQLite][_get] Failed to prepare statement', {
+            tables,
+            query,
+            error: e
+          })
+          reject(e)
+        }
       }
     })
   }
@@ -683,41 +713,70 @@ class SQLite<T extends string> extends SQL<T> implements DbBackend<T> {
           condition,
           query
         })
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
-        // @ts-ignore never undefined
-        const stmt = this.db.prepare(query)
-        stmt.all(
-          values,
-          (err: string, rows: Array<Record<string, string | number>>) => {
-            /* istanbul ignore if */
-            if (err != null) {
-              this.logger.error(`${minmax} query failed`, {
-                tables,
-                targetField,
-                fields,
-                condition,
-                query,
-                error: err
-              })
-              reject(err)
-            } else {
-              this.logger.debug(`${minmax} query successful`, {
-                tables,
-                rowCount: rows.length
-              })
-              resolve(rows)
+        try {
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
+          // @ts-ignore never undefined
+          const stmt = this.db.prepare(query, (prepErr: Error | null) => {
+            if (prepErr != null) {
+              this.logger.error(
+                `[SQLite] Failed to prepare ${minmax} statement`,
+                {
+                  tables,
+                  targetField,
+                  query,
+                  error: prepErr
+                }
+              )
+              reject(prepErr)
+              return
             }
-          }
-        )
-        stmt.finalize((err) => {
-          if (err) {
-            this.logger.error(`${minmax} statement finalize failed`, {
-              tables,
-              error: err
+            stmt.all(
+              values,
+              (
+                err: string,
+                rows: Array<Record<string, string | number>>
+              ) => {
+                /* istanbul ignore if */
+                if (err != null) {
+                  this.logger.error(`${minmax} query failed`, {
+                    tables,
+                    targetField,
+                    fields,
+                    condition,
+                    query,
+                    error: err
+                  })
+                  reject(err)
+                } else {
+                  this.logger.debug(`${minmax} query successful`, {
+                    tables,
+                    rowCount: rows.length
+                  })
+                  resolve(rows)
+                }
+              }
+            )
+            stmt.finalize((err) => {
+              if (err) {
+                this.logger.error(`${minmax} statement finalize failed`, {
+                  tables,
+                  error: err
+                })
+                reject(err)
+              }
             })
-            reject(err)
-          }
-        })
+          })
+        } catch (e) {
+          this.logger.error(
+            `[SQLite] Failed to prepare ${minmax} statement`,
+            {
+              tables,
+              query,
+              error: e
+            }
+          )
+          reject(e)
+        }
       }
     })
   }
