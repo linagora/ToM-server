@@ -23,6 +23,7 @@ export default async <T extends string = never>(
     const matrixDb: MatrixDBBackend = await initDatabase(conf, logger)
 
     const users = await getMatrixUsers(matrixDb)
+    const errors: Array<{ userId: string; error: unknown }> = []
     await Promise.all(
       users.map(async (user) => {
         try {
@@ -30,12 +31,24 @@ export default async <T extends string = never>(
 
           await saveUserUsage(db, user, usage)
         } catch (error) {
-          // istanbul ignore next
-          logger.warn('Failed to save user usage', error)
+          const cause = error instanceof Error ? error.cause : undefined
+          logger.error('Failed to save user usage', {
+            userId: user,
+            error,
+            cause
+          })
+          errors.push({ userId: user, error })
         }
       })
     )
     matrixDb.close()
+    if (errors.length > 0) {
+      throw Error(
+        `Failed to save usage for ${errors.length} user(s): ${errors
+          .map((e) => e.userId)
+          .join(', ')}`
+      )
+    }
   } catch (error) {
     // istanbul ignore next
     throw Error('Failed to check users quota', { cause: error })
@@ -113,6 +126,9 @@ const getUserUsage = async (
 
 /**
  * Saves the media usage for a given user in the database.
+ * Attempts an update first; falls back to insert if no record exists.
+ * This avoids data loss from the previous delete-then-insert pattern
+ * where a failed insert would leave the user with no quota record.
  *
  * @param {IdentityServerDb<T>} db -the identity server database instance.
  * @param {string} userId - the user id of which to save the usage for.
@@ -124,14 +140,22 @@ const saveUserUsage = async <T extends string = never>(
   size: number
 ): Promise<void> => {
   try {
-    await db.deleteEqual('userQuotas', 'user_id', userId)
+    const updated = await db.update(
+      'userQuotas',
+      { size } satisfies Omit<UserQuota, 'user_id'>,
+      'user_id',
+      userId
+    )
 
-    await db.insert('userQuotas', {
-      user_id: userId,
-      size
-    } satisfies UserQuota)
+    if (!Array.isArray(updated) || updated.length === 0) {
+      await db.insert('userQuotas', {
+        user_id: userId,
+        size
+      } satisfies UserQuota)
+    }
   } catch (error) {
-    // istanbul ignore next
-    throw Error('Failed to save user media usage', { cause: error })
+    throw Error(`Failed to save user media usage for ${userId}`, {
+      cause: error
+    })
   }
 }
