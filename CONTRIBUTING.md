@@ -8,6 +8,7 @@
 4. [Issues](#4-issues)
 5. [Pull Requests](#5-pull-requests)
 6. [Commits & Branches](#6-commits--branches)
+7. [Using AI Tools](#7-using-ai-tools)
 
 ## 1. Welcome
 
@@ -160,6 +161,16 @@ A good PR:
 
 ## 6. Commits & Branches
 
+### Commit clear intentions
+
+A commit is to be seen as an entry in a ledger. One can read it as "That day, That author, changed That part". Therefore we more than encourage our committers and contributers to commit as regularly as possible and to clearly identify their intents while doing so.
+
+A commit deemed as good contains just what it needs to be meaningful ; if your intention is to update the retry logic of a database transaction just commit the changes around that call, if that were to depend on another layer of abstraction such as the Database Interface, commit the changes of the said Interface first.
+
+This will allow you clearly decompose your modifications, enable smoother `git bisect` for troubleshooting, to better show your understanding of the changes and will allow everyone to carry on the modifications if needed.
+
+In addition of a clear track of changes, using atomic commits also allows neat cherry-picking strategy if the branch one were working on needs a split or partial merging.
+
 ### Commit messages
 
 Commits follow the [Conventional Commits](https://www.conventionalcommits.org/) specification via **[convco](https://convco.github.io/)**. All commit messages must be written in **English**.
@@ -218,3 +229,20 @@ docs/contributing/pr-process
 Branch names use **kebab-case** and mirror the commit type and scope.
 
 _This guide is a living document. If a convention doesn't serve the project, challenge it in a PR — don't silently ignore it._
+
+### 7. Using AI Tools
+
+The rise of AI makes it easier than ever to ship code, and we are happy for you to use your preferred tools to boost your productivity. However, we want to ensure our codebase remains healthy and understandable.
+
+We care deeply about the intent behind your changes. To ensure that every contributor truly understands their impact, we ask that:
+
+- **You write your own descriptions**: Please fill out PR and Issue templates manually.
+- **Humans do the talking**: We value your voice! Discussions and comments should be handled by you, not a bot.
+- **You own the code**: It’s easy to "slam" a codebase with AI-generated snippets, but you must be able to justify why a change was made in a specific way.
+
+*Note*: We use [CodeRabbit.ai](https://www.coderabbit.ai/) to help during code reviews. It remains available to help anyone and everyone meeting our expectations. Outside of this specific integration, please refrain from using AI to automate comments or replies.
+
+Submissions that don't follow these guidelines may take longer for to review. If you're unsure about anything, just reach out! :)
+
+Thank you again for joining the project,
+See you soon in the Commits!
