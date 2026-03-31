@@ -63,17 +63,56 @@ class MatrixDBPg extends Pg<Collections> implements MatrixDBBackend {
             opts.host = RegExp.$1
             opts.port = parseInt(RegExp.$2)
           }
+          const sslType =
+            opts.ssl == null || opts.ssl === false
+              ? 'disabled'
+              : opts.ssl === true
+              ? 'enabled'
+              : typeof opts.ssl === 'object'
+              ? 'object'
+              : `unexpected(${typeof opts.ssl}: ${String(opts.ssl)})`
+          this.logger.info(
+            '[MatrixDBPg][createDatabases] Creating connection pool',
+            {
+              host: opts.host,
+              port: opts.port,
+              database: opts.database,
+              ssl: sslType
+            }
+          )
           try {
             this.db = new pg.Pool(opts)
-            this.logger.info(
-              '[MatrixDBPg][createDatabases] Connection established',
-              {
-                host: opts.host,
-                port: opts.port,
-                database: opts.database
-              }
-            )
-            resolve()
+            this.db.on('error', (err) => {
+              this.logger.error(
+                '[MatrixDBPg] Pool background error',
+                {
+                  error: err.message,
+                  code: (err as NodeJS.ErrnoException).code
+                }
+              )
+            })
+            this.db
+              .query('SELECT 1')
+              .then(() => {
+                this.logger.info(
+                  '[MatrixDBPg][createDatabases] Connection verified',
+                  {
+                    host: opts.host,
+                    database: opts.database
+                  }
+                )
+                resolve()
+              })
+              .catch((err: NodeJS.ErrnoException) => {
+                this.logger.error(
+                  '[MatrixDBPg][createDatabases] Connection test failed',
+                  {
+                    error: err.message,
+                    code: err.code
+                  }
+                )
+                reject(err)
+              })
           } catch (e) {
             this.logger.error(
               '[MatrixDBPg][createDatabases] Unable to connect',

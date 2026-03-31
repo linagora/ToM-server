@@ -10,7 +10,12 @@ export const oldParser = (desc: ConfigDescription, res: Configuration): void => 
   Object.keys(desc).forEach((key: string) => {
     // If environment variable exists, it overrides current value
     if (process.env[key.toUpperCase()] && process.env[key.toUpperCase()] !== "") {
-      res[key] = process.env[key.toUpperCase()];
+      const raw = process.env[key.toUpperCase()] as string;
+      try {
+        res[key] = JSON.parse(raw);
+      } catch {
+        res[key] = raw;
+      }
     } else {
       // if default value exists use it
       if ((res[key] === null || res[key] === undefined) && desc[key] !== undefined) {
