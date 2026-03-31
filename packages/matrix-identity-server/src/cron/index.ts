@@ -42,7 +42,7 @@ class CronTasks<T extends string = never> {
 
       const cronTasks = [this._addUpdateHashesJob(conf, db, userDB, logger)];
 
-      if (conf.federated_identity_services != null && conf.federated_identity_services.length > 0) {
+      if (conf.federated_identity_services !== null && conf.federated_identity_services !== undefined && conf.federated_identity_services.length > 0) {
         logger.debug(`federated_identity_services set to [${conf.federated_identity_services.join(", ")}], add task`);
         cronTasks.push(this._addUpdateFederatedIdentityHashesJob(conf, userDB, logger));
       }
@@ -50,7 +50,7 @@ class CronTasks<T extends string = never> {
       logger.debug("Cron tasks initialized");
     } catch (error) {
       // istanbul ignore next
-      throw Error(`Failed to initialize cron tasks: ${error}`);
+      throw new Error(`Failed to initialize cron tasks: ${error}`);
     }
   };
 
@@ -127,9 +127,9 @@ class CronTasks<T extends string = never> {
         await updateHashes(conf, db, userDB, logger);
         _addJob();
       }
-    } catch (error) {
+    } catch {
       // istanbul ignore next
-      throw Error("Failed to add update hashes job");
+      throw new Error("Failed to add update hashes job");
     }
   };
 

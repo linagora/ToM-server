@@ -1,4 +1,4 @@
-import type { ConnectionOptions } from "tls";
+import type { ConnectionOptions } from "node:tls";
 import type { SupportedDatabases } from "./db";
 import type { Policies } from "./terms";
 import type { SupportedUserDatabases } from "./userdb";

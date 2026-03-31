@@ -196,10 +196,10 @@ class IdentityServerDb<T extends string = never> implements IdDbBackend<Collecti
       }
     }
 
-    const allTables = additionnalTables != null ? { ...tables, ...additionnalTables } : tables;
-    const allIndexes = additionnalIndexes != null ? { ...indexes, ...additionnalIndexes } : indexes;
+    const allTables = (additionnalTables !== null || additionnalTables !== undefined) ? { ...tables, ...additionnalTables } : tables;
+    const allIndexes = (additionnalIndexes !== null || additionnalIndexes !== undefined) ? { ...indexes, ...additionnalIndexes } : indexes;
     const allInitializeValues =
-      additionnalInitializeValues != null ? { ...initializeValues, ...additionnalInitializeValues } : initializeValues;
+      (additionnalInitializeValues !== null || additionnalInitializeValues !== undefined) ? { ...initializeValues, ...additionnalInitializeValues } : initializeValues;
     this.db = new Module<Collections | T>(
       conf,
       this.logger,
@@ -215,8 +215,6 @@ class IdentityServerDb<T extends string = never> implements IdDbBackend<Collecti
           resolve();
         })
         .catch((e) => {
-          /* istanbul ignore next */
-          console.error({ e });
           this.logger.error("[IdentityServerDb] Database initialization failed");
           /* istanbul ignore next */
           reject(e);
@@ -412,7 +410,7 @@ class IdentityServerDb<T extends string = never> implements IdDbBackend<Collecti
   // eslint-disable-next-line @typescript-eslint/promise-function-async
   createOneTimeToken(data: object, expires?: number, nextLink?: string): Promise<string> {
     /* istanbul ignore if */
-    if (this.db == null) {
+    if (this.db === null || this.db === undefined) {
       throw new Error("Wait for database to be ready");
     }
     // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
@@ -421,8 +419,8 @@ class IdentityServerDb<T extends string = never> implements IdDbBackend<Collecti
     }
     const id = randomString(64);
     // default: expires in 600 s
-    const expiresForDb = epoch() + 1000 * (expires != null && expires > 0 ? expires : 600);
-    return new Promise((resolve, reject) => {
+    const expiresForDb = epoch() + 1000 * (expires !== null && expires !== undefined && expires > 0 ? expires : 600);
+    return new Promise((resolve, _reject) => {
       this.db
         .insert("oneTimeTokens", {
           id,
@@ -448,7 +446,7 @@ class IdentityServerDb<T extends string = never> implements IdDbBackend<Collecti
   // eslint-disable-next-line @typescript-eslint/promise-function-async
   createInvitationToken(address: string, data: object): Promise<string> {
     /* istanbul ignore if */
-    if (this.db == null) {
+    if (this.db === null || this.db === undefined) {
       throw new Error("Wait for database to be ready");
     }
     const id = randomString(64);
@@ -478,7 +476,7 @@ class IdentityServerDb<T extends string = never> implements IdDbBackend<Collecti
    * @returns {Promise<invitationToken[]>} - list of invitation tokens
    */
   async listInvitationTokens(address: string): Promise<invitationToken[] | undefined> {
-    if (this.db == null) {
+    if (this.db === null || this.db === undefined) {
       throw new Error("Wait for database to be ready");
     }
 
@@ -486,10 +484,6 @@ class IdentityServerDb<T extends string = never> implements IdDbBackend<Collecti
       const tokenResults = await this.db.get("invitationTokens", ["data", "address", "id"], { address });
       return tokenResults.map((row) => JSON.parse(row.data as string));
     } catch (error) {
-      console.error(`Failed to list invitation tokens for address`, {
-        error,
-      });
-
       this.logger.error("Failed to get tokens", error);
     }
   }
@@ -497,7 +491,7 @@ class IdentityServerDb<T extends string = never> implements IdDbBackend<Collecti
   // eslint-disable-next-line @typescript-eslint/promise-function-async
   verifyInvitationToken(id: string): Promise<object> {
     /* istanbul ignore if */
-    if (this.db == null) {
+    if (this.db === null || this.db === undefined) {
       throw new Error("Wait for database to be ready");
     }
     return new Promise((resolve, reject) => {
@@ -522,7 +516,7 @@ class IdentityServerDb<T extends string = never> implements IdDbBackend<Collecti
   // eslint-disable-next-line @typescript-eslint/promise-function-async
   verifyToken(id: string): Promise<object> {
     /* istanbul ignore if */
-    if (this.db == null) {
+    if (this.db === null || this.db === undefined) {
       throw new Error("Wait for database to be ready");
     }
     return new Promise((resolve, reject) => {
@@ -533,7 +527,7 @@ class IdentityServerDb<T extends string = never> implements IdDbBackend<Collecti
           if (rows.length > 0 && (rows[0].expires as number) >= epoch()) {
             resolve(JSON.parse(rows[0].data as string));
           } else {
-            reject(new Error("Token expired" + (rows[0].expires as number).toString()));
+            reject(new Error(`Token expired${(rows[0].expires as number).toString()}`));
           }
         })
         .catch((e) => {
@@ -546,7 +540,7 @@ class IdentityServerDb<T extends string = never> implements IdDbBackend<Collecti
   verifyOneTimeToken(id: string): Promise<object> {
     let res: object;
     /* istanbul ignore if */
-    if (this.db == null) {
+    if (this.db === null || this.db === undefined) {
       throw new Error("Wait for database to be ready");
     }
     return new Promise((resolve, reject) => {
@@ -568,10 +562,10 @@ class IdentityServerDb<T extends string = never> implements IdDbBackend<Collecti
   // eslint-disable-next-line @typescript-eslint/promise-function-async
   deleteToken(id: string): Promise<void> {
     /* istanbul ignore if */
-    if (this.db == null) {
+    if (this.db === null || this.db === undefined) {
       throw new Error("Wait for database to be ready");
     }
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve, _reject) => {
       this.db
         .deleteEqual("oneTimeTokens", "id", id)
         .then(() => {
@@ -589,7 +583,7 @@ class IdentityServerDb<T extends string = never> implements IdDbBackend<Collecti
   // eslint-disable-next-line @typescript-eslint/promise-function-async
   getKeys(type: "current" | "previous"): Promise<keyPair> {
     /* istanbul ignore if */
-    if (this.db == null) {
+    if (this.db === null || this.db === undefined) {
       throw new Error("Wait for database to be ready");
     }
     return new Promise((resolve, reject) => {
@@ -619,7 +613,7 @@ class IdentityServerDb<T extends string = never> implements IdDbBackend<Collecti
    */
   async createKeypair(type: "longTerm" | "shortTerm", algorithm: "ed25519" | "curve25519"): Promise<keyPair> {
     /* istanbul ignore if */
-    if (this.db == null) {
+    if (this.db === null || this.db === undefined) {
       throw new Error("Wait for database to be ready");
     }
 
@@ -644,7 +638,6 @@ class IdentityServerDb<T extends string = never> implements IdDbBackend<Collecti
         }
       }
     } catch (error) {
-      console.error({ error });
       this.logger.error(`Failed to update ${type} Key Pair`, error);
     }
 
@@ -660,7 +653,6 @@ class IdentityServerDb<T extends string = never> implements IdDbBackend<Collecti
           resolve(keyPair);
         })
         .catch((err) => {
-          console.error({ err });
           /* istanbul ignore next */
           this.logger.error(`Failed to insert ${type} Key Pair`, err);
         });
@@ -671,10 +663,10 @@ class IdentityServerDb<T extends string = never> implements IdDbBackend<Collecti
   // eslint-disable-next-line @typescript-eslint/promise-function-async
   deleteKey(_keyID: string): Promise<void> {
     /* istanbul ignore if */
-    if (this.db == null) {
+    if (this.db === null || this.db === undefined) {
       throw new Error("Wait for database to be ready");
     }
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve, _reject) => {
       this.db
         .deleteEqual("shortTermKeypairs", "KeyID", _keyID)
         .then(() => {

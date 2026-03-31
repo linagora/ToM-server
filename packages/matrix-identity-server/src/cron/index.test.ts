@@ -1,6 +1,6 @@
+import fs from "node:fs";
+import path from "node:path";
 import { getLogger, type TwakeLogger } from "@twake/logger";
-import fs from "fs";
-import path from "path";
 import sqlite3 from "sqlite3";
 import defaultConfig from "../config.json";
 import IdentityServerDB from "../db";
@@ -31,42 +31,38 @@ let db: IdentityServerDB, userDB: UserDB, cronTasks: CronTasks;
 
 describe("cron tasks", () => {
   beforeAll(async () => {
-    try {
-      await new Promise<void>((resolve, reject) => {
-        const testdb = new sqlite3.Database(dbPath, async (err) => {
-          if (err !== null) {
-            reject(new Error(`Failed to open database: ${err.message}`));
-          }
+    await new Promise<void>((resolve, reject) => {
+      const testdb = new sqlite3.Database(dbPath, async (err) => {
+        if (err !== null) {
+          reject(new Error(`Failed to open database: ${err.message}`));
+        }
 
-          try {
-            await new Promise((resolve, reject) => {
-              testdb.run("CREATE TABLE IF NOT EXISTS users (name varchar(64) PRIMARY KEY)", (e: unknown) => {
-                if (e !== null) reject(new Error(`Failed to create table users: ${e as string}`));
-                resolve(true);
-              });
+        try {
+          await new Promise((resolve, reject) => {
+            testdb.run("CREATE TABLE IF NOT EXISTS users (name varchar(64) PRIMARY KEY)", (e: unknown) => {
+              if (e !== null) reject(new Error(`Failed to create table users: ${e as string}`));
+              resolve(true);
             });
+          });
 
-            resolve();
-          } catch (error) {
-            reject(Error("Failed to initialize test database"));
-          }
-        });
+          resolve();
+        } catch {
+          reject(Error("Failed to initialize test database"));
+        }
       });
-      db = new IdentityServerDB(conf, logger);
-      userDB = new UserDB(conf, logger);
-      await Promise.all([userDB.ready, db.ready]);
-      await new Promise<void>((resolve, reject) => {
-        // @ts-expect-error run is a sqlite3 method only
-        userDB.db.db.run(
-          "CREATE TABLE IF NOT EXISTS users (uid varchar(8), mobile varchar(12), mail varchar(32))",
-          () => {
-            resolve();
-          },
-        );
-      });
-    } catch (error) {
-      throw error;
-    }
+    });
+    db = new IdentityServerDB(conf, logger);
+    userDB = new UserDB(conf, logger);
+    await Promise.all([userDB.ready, db.ready]);
+    await new Promise<void>((resolve, _reject) => {
+      // @ts-expect-error run is a sqlite3 method only
+      userDB.db.db.run(
+        "CREATE TABLE IF NOT EXISTS users (uid varchar(8), mobile varchar(12), mail varchar(32))",
+        () => {
+          resolve();
+        },
+      );
+    });
   });
 
   afterAll(() => {
