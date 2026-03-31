@@ -63,26 +63,14 @@ class MatrixDBPg extends Pg<Collections> implements MatrixDBBackend {
             opts.host = RegExp.$1
             opts.port = parseInt(RegExp.$2)
           }
-          try {
-            this.db = new pg.Pool(opts)
-            this.logger.info(
-              '[MatrixDBPg][createDatabases] Connection established',
-              {
-                host: opts.host,
-                port: opts.port,
-                database: opts.database
-              }
-            )
-            resolve()
-          } catch (e) {
-            this.logger.error(
-              '[MatrixDBPg][createDatabases] Unable to connect',
-              {
-                error: e
-              }
-            )
-            reject(e)
-          }
+          this.createVerifiedPool(pg, opts, 'MatrixDBPg')
+            .then((pool) => {
+              this.db = pool
+              resolve()
+            })
+            .catch((e) => {
+              reject(e)
+            })
         })
         .catch((e) => {
           this.logger.error(
