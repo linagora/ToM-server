@@ -27,7 +27,7 @@ TypeScript source for `@twake/matrix-identity-server`. Organized into feature mo
 | `account/` | Account registration, login (`register.ts`), logout (`logout.ts`), account info (`index.ts`) |
 | `3pid/` | Third-party ID endpoints: get mappings (`index.ts`), bind (`bind.ts`), unbind (`unbind.ts`) |
 | `cache/` | Cache abstraction: factory (`index.ts`), memory cache (`memory.ts`), Redis cache (`redis.ts`) |
-| `cron/` | Scheduled jobs: pepper rotation (`changePepper.ts`), quota check (`check-quota.ts`), user sync (`updateUsers.ts`), federated hash update (`update-federated-identity-hashes.ts`) |
+| `cron/` | Scheduled jobs: pepper rotation (`changePepper.ts`), user sync (`updateUsers.ts`), federated hash update (`update-federated-identity-hashes.ts`) |
 | `db/` | Identity server DB: main class (`index.ts`), SQL implementations (`sql/pg.ts`, `sql/sqlite.ts`) |
 | `ephemeral_signing/` | Ephemeral Ed25519 signing endpoint (`index.ts`) |
 | `invitation/` | Room invitation via email/SMS (`index.ts`) |
