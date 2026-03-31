@@ -3,7 +3,6 @@ import { type expressAppHandler as _expressAppHandler, errCodes } from "@twake/u
 import type { NextFunction, Request, Response } from "express";
 import type { PathOrFileDescriptor } from "fs";
 import type { SendMailOptions } from "nodemailer";
-import { UserProfileSettingsPayloadT } from "./user-info-api/types";
 
 export type expressAppHandler = _expressAppHandler;
 export type AuthenticationFunction = MUtils.AuthenticationFunction;
