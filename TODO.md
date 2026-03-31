@@ -488,7 +488,84 @@ client-facing call to send a generic message instead:
 
 No control flow or status code changes. The full error remains in server logs only.
 
-## Utils
+### `cron/index.test.ts` — `Error()` Without `new` and Unused Catch Binding (line 51)
+
+Two issues on the same line, matching a pattern also present in production code:
+
+- `Error()` called without `new` — while it works at runtime, it is inconsistent and
+  flagged by linters. Use `new Error()`.
+- The catch binding is declared but never used. Drop it with an empty catch or omit
+  the binding:
+
+```diff
+-  } catch (err) {
++  } catch {
+```
+
+Clean these up as part of the same pass that fixes the production-code equivalent.
+
+### `cron/index.test.ts` — Useless Catch Block That Just Rethrows (lines 68–80)
+
+The catch block catches an error only to rethrow it unchanged. This adds noise and
+gives the misleading impression that errors are being handled. Either handle the error
+meaningfully or remove the try/catch entirely and let it propagate naturally:
+
+```diff
+-  try {
+     await somethingThatMayThrow();
+-  } catch (err) {
+-    throw err;
+-  }
+```
+
+### `db/index.ts` — Type the `Module` Variable Explicitly (No Implicit `any`)
+
+The `Module` variable is implicitly typed as `any`, which static analysis correctly
+flags. Add an explicit type annotation matching the shape of the dynamically imported
+module.
+
+### `db/index.ts` — `close()` Returns `void` in Violation of Coding Standards
+
+The style guide forbids `void` return types and requires every function to return a
+meaningful value or an `ActionResult`. `close()` is one of the few cases where `void`
+is pragmatically defensible, but a decision must be made and documented:
+
+- **Bend the rule:** Keep `void`, add an inline comment documenting the deliberate
+  exception for resource cleanup methods.
+- **Follow the standard:** Return a typed completion indicator:
+  ```typescript
+  close: () => { success: boolean };
+  ```
+
+## TOM Server
+
+### `utils.ts` — `TEXT[]` Is PostgreSQL-Only, Breaks SQLite Compatibility
+
+`TEXT[]` array syntax in shared table definitions is PostgreSQL-specific. SQLite has
+no native array type and will reject this schema, silently breaking SQLite support.
+Per project conventions, schema definitions must be split by driver:
+
+- **Cross-database option:** Use a `TEXT` column storing a serialised JSON array.
+- **Driver-split option:** Move the definition into `db/sql/pg.ts` and
+  `db/sql/sqlite.ts` separately, following the same pattern used for all other
+  driver-specific tables.
+
+### `types.ts` — Replace `Object` with `unknown` in `Content` Type
+
+`Object` in the `Content` type definition is a type-safety hole — it accepts
+anything and provides zero compile-time guarantees. Replace with a proper recursive
+type using `unknown`:
+
+```diff
+-  type Content = Object;
++  type Content = Record<string, unknown>;
+```
+
+Or, if the shape is truly recursive:
+
+```typescript
+type Content = { [key: string]: unknown | Content };
+```
 
 ### `utils.ts` — Sanitize Client-Visible Error Messages in `jsonContent`
 
