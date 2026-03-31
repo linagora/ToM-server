@@ -196,10 +196,10 @@ class IdentityServerDb<T extends string = never> implements IdDbBackend<Collecti
       }
     }
 
-    const allTables = (additionnalTables !== null || additionnalTables !== undefined) ? { ...tables, ...additionnalTables } : tables;
-    const allIndexes = (additionnalIndexes !== null || additionnalIndexes !== undefined) ? { ...indexes, ...additionnalIndexes } : indexes;
+    const allTables = (additionnalTables !== null && additionnalTables !== undefined) ? { ...tables, ...additionnalTables } : tables;
+    const allIndexes = (additionnalIndexes !== null && additionnalIndexes !== undefined) ? { ...indexes, ...additionnalIndexes } : indexes;
     const allInitializeValues =
-      (additionnalInitializeValues !== null || additionnalInitializeValues !== undefined) ? { ...initializeValues, ...additionnalInitializeValues } : initializeValues;
+      (additionnalInitializeValues !== null && additionnalInitializeValues !== undefined) ? { ...initializeValues, ...additionnalInitializeValues } : initializeValues;
     this.db = new Module<Collections | T>(
       conf,
       this.logger,
