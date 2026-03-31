@@ -12,6 +12,49 @@ export type PgDatabase = PgPool
 
 class Pg<T extends string> extends SQL<T> implements IdDbBackend<T> {
   declare db?: PgDatabase
+
+  protected createVerifiedPool(
+    pg: typeof import('pg'),
+    opts: ClientConfig,
+    label: string
+  ): Promise<PgPool> {
+    const sslType =
+      opts.ssl === null || opts.ssl === undefined || opts.ssl === false
+        ? 'disabled'
+        : opts.ssl === true
+        ? 'enabled'
+        : typeof opts.ssl === 'object'
+        ? 'object'
+        : `unexpected(${typeof opts.ssl}: ${String(opts.ssl)})`
+    this.logger.info(`[${label}] Creating connection pool`, {
+      host: opts.host,
+      port: opts.port,
+      database: opts.database,
+      ssl: sslType
+    })
+    const pool = new pg.Pool(opts)
+    pool.on('error', (err) => {
+      this.logger.error(`[${label}] Pool background error`, {
+        error: err.message,
+        code: (err as NodeJS.ErrnoException).code
+      })
+    })
+    return pool
+      .query('SELECT 1')
+      .then(() => {
+        this.logger.info(`[${label}] Connection verified`)
+        return pool
+      })
+      .catch((err: NodeJS.ErrnoException) => {
+        this.logger.error(`[${label}] Connection test failed`, {
+          error: err.message,
+          code: err.code
+        })
+        void pool.end()
+        throw err
+      })
+  }
+
   createDatabases(
     conf: Config,
     tables: Record<T, string>,
@@ -60,22 +103,22 @@ class Pg<T extends string> extends SQL<T> implements IdDbBackend<T> {
               opts.host = RegExp.$1
               opts.port = parseInt(RegExp.$2)
             }
-            try {
-              this.db = new pg.Pool(opts)
-              logger.info('[IdentityServerDb:Pg] connected.')
-              createTables(
-                this,
-                tables,
-                indexes,
-                initializeValues,
-                logger,
-                resolve,
-                reject
-              )
-            } catch (e) {
-              logger.error('Unable to connect to Pg database')
-              reject(e)
-            }
+            this.createVerifiedPool(pg, opts, 'IdentityServerDb:Pg')
+              .then((pool) => {
+                this.db = pool
+                createTables(
+                  this,
+                  tables,
+                  indexes,
+                  initializeValues,
+                  logger,
+                  resolve,
+                  reject
+                )
+              })
+              .catch((e) => {
+                reject(e)
+              })
           })
           .catch((e) => {
             logger.error('Unable to load pg module', e)
@@ -110,11 +153,12 @@ class Pg<T extends string> extends SQL<T> implements IdDbBackend<T> {
             })
             resolve(res.rows[0].exists)
           } else {
-            this.logger.warn('[Pg][exists] Check error, assuming false', {
+            this.logger.error('[Pg][exists] Check failed', {
               table,
-              error: err
+              error: err.message,
+              code: (err as NodeJS.ErrnoException).code
             })
-            resolve(false)
+            reject(err)
           }
         })
       } else {
