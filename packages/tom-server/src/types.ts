@@ -1,7 +1,7 @@
+import type { PathOrFileDescriptor } from "node:fs";
 import type { IdentityServerDb, Config as MConfig, Utils as MUtils } from "@twake/matrix-identity-server";
 import { type expressAppHandler as _expressAppHandler, errCodes } from "@twake/utils";
 import type { NextFunction, Request, Response } from "express";
-import type { PathOrFileDescriptor } from "fs";
 import type { SendMailOptions } from "nodemailer";
 
 export type expressAppHandler = _expressAppHandler;
