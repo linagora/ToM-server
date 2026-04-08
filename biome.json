@@ -33,7 +33,44 @@
     "enabled": true,
     "actions": {
       "source": {
-        "organizeImports": "on"
+        "organizeImports": {
+          "level": "on",
+          "options": {
+            "groups": [
+              [":BUN:", ":NODE:"],
+              ":BLANK_LINE:",
+              [
+                ":PACKAGE:",
+                ":PACKAGE_WITH_PROTOCOL:",
+                "!@twake",
+                "!@twake/**",
+                "!matrix-resolve",
+                "!tom-server",
+                "!tom-server-e2e"
+              ],
+              ":BLANK_LINE:",
+              ":URL:",
+              ":BLANK_LINE:",
+              [
+                "@twake/**",
+                "matrix-resolve",
+                "tom-server",
+                "tom-server-e2e",
+                "!@twake/federated-identity-service",
+                "!@twake/matrix-identity-server",
+                "!@twake/server"
+              ],
+              ":BLANK_LINE:",
+              [
+                "@twake/federated-identity-service",
+                "@twake/matrix-identity-server",
+                "@twake/server"
+              ],
+              ":BLANK_LINE:",
+              ":PATH:"
+            ]
+          }
+        }
       }
     }
   },
