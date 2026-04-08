@@ -43,7 +43,7 @@
     "@twake/matrix-identity-server": "*",
     "@twake/utils": "*",
     "ldapts": "^7.1.0",
-    "lodash": "^4.17.21",
+    "lodash": "^4.18.1",
     "pg": "^8.10.0",
     "qrcode": "^1.5.4",
     "redis": "^4.6.6",
