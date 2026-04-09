@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { loggerConfigSchema } from "../logger/schema";
+
 const DEFAULT_HOST: string = "0.0.0.0";
 const DEFAULT_PORT: number = 3000;
 
@@ -15,4 +17,5 @@ const serverConfigSchema = z.object({
 // biome-ignore lint/nursery/useExplicitType: Zod type is fragile to write by hand, we let TS infer it
 export const configSchema = z.object({
   ...serverConfigSchema.shape,
+  ...loggerConfigSchema.shape,
 });
