@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { i18nConfigSchema } from "../i18n/schema";
 import { loggerConfigSchema } from "../logger/schema";
 
 const DEFAULT_HOST: string = "0.0.0.0";
@@ -18,4 +19,5 @@ const serverConfigSchema = z.object({
 export const configSchema = z.object({
   ...serverConfigSchema.shape,
   ...loggerConfigSchema.shape,
+  ...i18nConfigSchema.shape,
 });
