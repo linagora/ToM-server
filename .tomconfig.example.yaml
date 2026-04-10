@@ -8,3 +8,6 @@ logger:
 i18n:
   locale: "en"
   localesPath: "./i18n"
+
+landing:
+  filePath: "./static/landing.html"

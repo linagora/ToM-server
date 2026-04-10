@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { i18nConfigSchema } from "../i18n/schema";
 import { loggerConfigSchema } from "../logger/schema";
+import { landingConfigSchema } from "../modules/landing/schema";
 
 const DEFAULT_HOST: string = "0.0.0.0";
 const DEFAULT_PORT: number = 3000;
@@ -20,4 +21,5 @@ export const configSchema = z.object({
   ...serverConfigSchema.shape,
   ...loggerConfigSchema.shape,
   ...i18nConfigSchema.shape,
+  ...landingConfigSchema.shape,
 });

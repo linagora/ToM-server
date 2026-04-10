@@ -6,6 +6,7 @@ import type { Config } from "./config/types";
 import { errorMiddleware } from "./errors/error-middleware";
 import { httpLogger } from "./middleware/http-logger";
 import { requestId } from "./middleware/request-id";
+import { createLandingRouter } from "./modules/landing/router";
 
 export function createApp(config: Config, logger: Logger): Express {
   const app = express();
@@ -14,6 +15,14 @@ export function createApp(config: Config, logger: Logger): Express {
   app.use(express.json());
   app.use(requestId());
   app.use(httpLogger(logger));
+
+  // --- Module routers ---
+
+  // --- Root Landing Page ---
+  const landingRouter = createLandingRouter(config.landing, logger);
+  if (landingRouter) {
+    app.use(landingRouter);
+  }
 
   // --- Error handler (single, terminal) ---
   app.use(errorMiddleware(config.i18n));

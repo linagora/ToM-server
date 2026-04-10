@@ -6,8 +6,8 @@ import type { Logger } from "winston";
 import { createApp } from "./app";
 import { loadConfig } from "./config/index";
 import type { Config } from "./config/types";
-import { createLogger } from "./logger/index";
 import { loadMessages } from "./i18n/index";
+import { createLogger } from "./logger/index";
 
 const configPath: string | undefined = process.argv.includes("--config")
   ? process.argv[process.argv.indexOf("--config") + 1]
