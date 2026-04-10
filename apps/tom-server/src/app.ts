@@ -1,3 +1,11 @@
+/**
+ * @file Express app factory.
+ *
+ * Mounts global middleware, telemetry endpoints, OpenAPI, module routers,
+ * and the terminal error handler. Returns the app instance — never starts
+ * listening. That is server.ts's job.
+ */
+import type { PrometheusExporter } from "@opentelemetry/exporter-prometheus";
 import type { Express } from "express";
 import express from "express";
 import type { Logger } from "winston";
@@ -8,7 +16,7 @@ import { httpLogger } from "./middleware/http-logger";
 import { requestId } from "./middleware/request-id";
 import { createLandingRouter } from "./modules/landing/router";
 
-export function createApp(config: Config, logger: Logger): Express {
+export function createApp(config: Config, logger: Logger, prometheusExporter: PrometheusExporter | undefined): Express {
   const app = express();
 
   // --- Global middleware (cross-cutting only) ---
@@ -16,11 +24,23 @@ export function createApp(config: Config, logger: Logger): Express {
   app.use(requestId());
   app.use(httpLogger(logger));
 
+  // --- Telemetry: Prometheus metrics endpoint ---
+  // PrometheusExporter provides its own Express-compatible handler.
+  // Undefined when telemetry is disabled (e.g., in tests).
+  if (prometheusExporter) {
+    logger.info(`Mounting Prometheus metrics endpoint at ${config.telemetry.metricsEndpoint}`);
+    app.get(config.telemetry.metricsEndpoint, prometheusExporter.getMetricsRequestHandler.bind(prometheusExporter));
+  }
+
   // --- Module routers ---
+  app.get("/api", (_req, res) => {
+    res.send({ message: "Welcome to tom-server!" });
+  });
 
   // --- Root Landing Page ---
   const landingRouter = createLandingRouter(config.landing, logger);
   if (landingRouter) {
+    logger.info("Mounting landing page router");
     app.use(landingRouter);
   }
 

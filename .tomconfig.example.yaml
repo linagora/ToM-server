@@ -11,3 +11,10 @@ i18n:
 
 landing:
   filePath: "./static/landing.html"
+
+telemetry:
+  enabled: false
+  metricsEndpoint: "/metrics"
+  # otlpEndpoint: "" # for OTLP export (e.g. Grafana Cloud)
+  traceSampleRatio: 1.0
+  diagLogLevel: "NONE"  # OTel internals (troubleshooting only) one of "NONE", "ERROR", "WARN", "INFO", "DEBUG"

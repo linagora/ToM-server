@@ -1,3 +1,5 @@
+import { telemetryConfigSchema } from "../telemetry/schema";
+
 import { z } from "zod";
 
 import { i18nConfigSchema } from "../i18n/schema";
@@ -22,4 +24,5 @@ export const configSchema = z.object({
   ...loggerConfigSchema.shape,
   ...i18nConfigSchema.shape,
   ...landingConfigSchema.shape,
+  ...telemetryConfigSchema.shape,
 });

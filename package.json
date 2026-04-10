@@ -33,6 +33,17 @@
     "dev": "concurrently -k \"npm run watch\" \"npm run serve\""
   },
   "dependencies": {
+    "@opentelemetry/api": "^1.9.1",
+    "@opentelemetry/auto-instrumentations-node": "^0.72.0",
+    "@opentelemetry/exporter-prometheus": "^0.214.0",
+    "@opentelemetry/exporter-trace-otlp-http": "^0.214.0",
+    "@opentelemetry/instrumentation-dns": "^0.57.0",
+    "@opentelemetry/instrumentation-fs": "^0.33.0",
+    "@opentelemetry/resources": "^2.6.1",
+    "@opentelemetry/sdk-metrics": "^2.6.1",
+    "@opentelemetry/sdk-node": "^0.214.0",
+    "@opentelemetry/sdk-trace-node": "^2.6.1",
+    "@opentelemetry/semantic-conventions": "^1.40.0",
     "@twake/amqp-connector": "^0.0.1",
     "@twake/logger": "^0.0.1",
     "axios": "^1.6.0",

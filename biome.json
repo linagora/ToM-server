@@ -37,6 +37,8 @@
           "level": "on",
           "options": {
             "groups": [
+              ["telemetry", "telemetry/**", "**/telemetry", "**/telemetry/**"],
+              ":BLANK_LINE:",
               [":BUN:", ":NODE:"],
               ":BLANK_LINE:",
               [
@@ -61,11 +63,7 @@
                 "!@twake/server"
               ],
               ":BLANK_LINE:",
-              [
-                "@twake/federated-identity-service",
-                "@twake/matrix-identity-server",
-                "@twake/server"
-              ],
+              ["@twake/federated-identity-service", "@twake/matrix-identity-server", "@twake/server"],
               ":BLANK_LINE:",
               ":PATH:"
             ]
