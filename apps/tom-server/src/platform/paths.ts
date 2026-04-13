@@ -46,8 +46,8 @@ const shareDirs: string[] = baseShareDirs.map((dir) => resolve(dir, APP_DIR));
 
 // biome-ignore lint/nursery/useExplicitType: Zod type is fragile to write by hand, we let TS infer it
 const searchOptionsSchema = z.object({
-  invert: z.boolean().default(false),
-  includeCwd: z.boolean().default(false),
+  invert: z.boolean().optional(),
+  includeCwd: z.boolean().optional(),
 });
 
 export type SearchOptions = z.infer<typeof searchOptionsSchema>;
