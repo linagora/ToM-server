@@ -1,17 +1,22 @@
 import { existsSync, readFileSync } from "node:fs";
+import { resolve } from "node:path";
 
 import deepmerge from "deepmerge";
 import yaml from "js-yaml";
 
-import { getConfigPaths } from "./paths";
+import { getConfigDirs } from "../platform/paths";
 import { configSchema } from "./schema";
 import type { Config } from "./types";
 
+const CONFIG_FILENAME = "config.yaml";
+const LOCAL_CONFIG_FILENAME = ".tomconfig.yaml";
+
 export function loadConfig(cliPath?: string): Config {
-  const paths = getConfigPaths();
-  if (cliPath) {
-    paths.push(cliPath);
-  }
+  const dirs = getConfigDirs();
+  const paths = dirs.map((dir) => resolve(dir, CONFIG_FILENAME));
+
+  paths.push(resolve(process.cwd(), LOCAL_CONFIG_FILENAME));
+  if (cliPath !== undefined) paths.push(cliPath);
 
   const layers: Record<string, unknown>[] = [];
 
