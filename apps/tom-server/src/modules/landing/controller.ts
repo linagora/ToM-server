@@ -1,5 +1,5 @@
-import { LandingPageNotFoundError } from "./errors.js";
-import type { LandingService } from "./service.js";
+import { LandingPageNotFoundError } from "./errors";
+import type { LandingService } from "./service";
 
 interface LandingOutput {
   filePath: string;

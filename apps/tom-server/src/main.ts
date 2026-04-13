@@ -10,8 +10,6 @@
 // --- Telemetry must initialize FIRST ---
 import { initTelemetry, shutdownTelemetry } from "./telemetry/index";
 
-import { resolve } from "node:path";
-
 import type { PrometheusExporter } from "@opentelemetry/exporter-prometheus";
 import type { Express } from "express";
 import type { Logger } from "winston";
@@ -28,7 +26,7 @@ const configPath: string | undefined = process.argv.includes("--config")
 
 const config: Config = loadConfig(configPath);
 const logger: Logger = createLogger(config.logger);
-loadMessages(resolve(config.i18n.localesPath), logger.child({ module: "i18n" }));
+loadMessages(config.i18n.locales_path, logger.child({ module: "i18n" }));
 
 // Boot telemetry before anything that imports express/pg
 const prometheusExporter: PrometheusExporter | undefined = initTelemetry(
@@ -36,10 +34,16 @@ const prometheusExporter: PrometheusExporter | undefined = initTelemetry(
   logger.child({ module: "telemetry" }),
 );
 
-const app: Express = createApp(config, logger, prometheusExporter);
+// Initialize app asynchronously and start server
+(async () => {
+  const app: Express = await createApp(config, logger, prometheusExporter);
 
-app.listen(config.port, config.host, () => {
-  logger.info(`tom listening on ${config.host}:${config.port}`);
+  app.listen(config.server.port, config.server.host, () => {
+    logger.info(`tom listening on ${config.server.host}:${config.server.port}`);
+  });
+})().catch((err) => {
+  logger.error("Failed to start application:", err);
+  process.exit(1);
 });
 
 // Graceful shutdown — flush pending spans and metrics

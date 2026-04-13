@@ -11,7 +11,7 @@ export class LandingService {
 
   constructor(config: LandingConfig, logger: Logger) {
     this.#log = logger.child({ module: "landing" });
-    const abs = resolve(config.filePath);
+    const abs = resolve(config.file_path);
 
     if (!existsSync(abs)) {
       this.#log.warn("landing page not found, route will not be mounted", { path: abs });

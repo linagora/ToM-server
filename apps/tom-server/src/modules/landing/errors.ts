@@ -1,5 +1,5 @@
-import { DomainError } from "../../errors/domain-error.js";
-import { NOT_FOUND } from "../../errors/error-codes.js";
+import { DomainError } from "../../errors/domain-error";
+import { NOT_FOUND } from "../../errors/error-codes";
 
 export class LandingPageNotFoundError extends DomainError {
   constructor(filePath: string) {

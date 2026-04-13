@@ -119,7 +119,7 @@ export function mapToLegacyConfig(config: Config): LegacyConfig {
     sms_api_key: config.sms.api_key,
 
     // --- Federation ---
-    is_federated_identity_service: config.federation.is_identity_service,
+    is_federated_identity_service: config.federation.is_federated_identity_service,
     federated_identity_services: config.federation.identity_services,
     update_federated_identity_hashes_cron: config.federation.sync_cron,
 

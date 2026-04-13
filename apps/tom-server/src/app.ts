@@ -15,8 +15,13 @@ import { errorMiddleware } from "./errors/error-middleware";
 import { httpLogger } from "./middleware/http-logger";
 import { requestId } from "./middleware/request-id";
 import { createLandingRouter } from "./modules/landing/router";
+import { createLegacyRouter } from "./modules/legacy/router";
 
-export function createApp(config: Config, logger: Logger, prometheusExporter: PrometheusExporter | undefined): Express {
+export async function createApp(
+  config: Config,
+  logger: Logger,
+  prometheusExporter: PrometheusExporter | undefined,
+): Promise<Express> {
   const app = express();
 
   // --- Global middleware (cross-cutting only) ---
@@ -28,14 +33,13 @@ export function createApp(config: Config, logger: Logger, prometheusExporter: Pr
   // PrometheusExporter provides its own Express-compatible handler.
   // Undefined when telemetry is disabled (e.g., in tests).
   if (prometheusExporter) {
-    logger.info(`Mounting Prometheus metrics endpoint at ${config.telemetry.metricsEndpoint}`);
-    app.get(config.telemetry.metricsEndpoint, prometheusExporter.getMetricsRequestHandler.bind(prometheusExporter));
+    logger.info(`Mounting Prometheus metrics endpoint at ${config.telemetry.metrics_endpoint}`);
+    app.get(config.telemetry.metrics_endpoint, prometheusExporter.getMetricsRequestHandler.bind(prometheusExporter));
   }
 
   // --- Module routers ---
-  app.get("/api", (_req, res) => {
-    res.send({ message: "Welcome to tom-server!" });
-  });
+  const legacyRouter = await createLegacyRouter(config, logger);
+  app.use(legacyRouter);
 
   // --- Root Landing Page ---
   const landingRouter = createLandingRouter(config.landing, logger);

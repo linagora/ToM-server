@@ -18,6 +18,8 @@ import { getNodeAutoInstrumentations } from "@opentelemetry/auto-instrumentation
 import { OTLPMetricExporter } from "@opentelemetry/exporter-metrics-otlp-http";
 import { PrometheusExporter } from "@opentelemetry/exporter-prometheus";
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
+import type { Instrumentation, InstrumentationConfig } from "@opentelemetry/instrumentation";
+import type { Resource } from "@opentelemetry/resources";
 import { resourceFromAttributes } from "@opentelemetry/resources";
 import { type MetricReader, PeriodicExportingMetricReader } from "@opentelemetry/sdk-metrics";
 import { NodeSDK } from "@opentelemetry/sdk-node";
@@ -44,69 +46,69 @@ let prometheusExporter: PrometheusExporter | undefined;
  * Returns the PrometheusExporter instance so the Express app can mount
  * the /metrics endpoint. Returns undefined if telemetry is disabled.
  */
+function setupDiagnosticLogger(level: string, logger: Logger): void {
+  if (level === "NONE") return;
+
+  logger.info(`Setting OTel diagnostic log level to ${level}`);
+  diag.setLogger(new DiagConsoleLogger(), DIAG_LEVELS[level]);
+}
+
+function createTelemetryResource(): Resource {
+  return resourceFromAttributes({
+    [ATTR_SERVICE_NAME]: "tom",
+    [ATTR_SERVICE_VERSION]: "0.0.0",
+  });
+}
+
+function createPrometheusExporter(logger: Logger): PrometheusExporter {
+  return new PrometheusExporter({ preventServerStart: true }, (error) => {
+    if (error) logger.error("Failed to start Prometheus exporter", error);
+  });
+}
+
+function createOtlpMetricReader(endpoint: string): PeriodicExportingMetricReader {
+  return new PeriodicExportingMetricReader({
+    exporter: new OTLPMetricExporter({ url: `${endpoint}/v1/metrics` }),
+    exportIntervalMillis: 15_000,
+  });
+}
+
+function createSpanProcessors(endpoint?: string): BatchSpanProcessor[] {
+  return endpoint ? [new BatchSpanProcessor(new OTLPTraceExporter({ url: `${endpoint}/v1/traces` }))] : [];
+}
+
+function getInstrumentations(): Instrumentation<InstrumentationConfig>[][] {
+  return [
+    getNodeAutoInstrumentations({
+      // Disable fs instrumentation — too noisy, no value for an API server
+      "@opentelemetry/instrumentation-fs": { enabled: false },
+      // Disable dns — adds latency tracking noise
+      "@opentelemetry/instrumentation-dns": { enabled: false },
+    }),
+  ];
+}
+
 export function initTelemetry(config: TelemetryConfig, logger: Logger): PrometheusExporter | undefined {
   if (!config.enabled) {
     logger.info("Telemetry is disabled");
     return undefined;
   }
 
-  // OTel diagnostic logging — useful for debugging instrumentation issues
-  if (config.diagLogLevel !== "NONE") {
-    logger.info(`Setting OTel diagnostic log level to ${config.diagLogLevel}`);
-    diag.setLogger(new DiagConsoleLogger(), DIAG_LEVELS[config.diagLogLevel]);
+  setupDiagnosticLogger(config.diag_log_level, logger);
+
+  prometheusExporter = createPrometheusExporter(logger);
+
+  const metricReaders: MetricReader[] = [prometheusExporter];
+  if (config.otlp_endpoint) {
+    logger.info(`OTLP endpoint configured: ${config.otlp_endpoint}`);
+    metricReaders.push(createOtlpMetricReader(config.otlp_endpoint));
   }
-
-  const resource = resourceFromAttributes({
-    [ATTR_SERVICE_NAME]: "tom",
-    [ATTR_SERVICE_VERSION]: "0.0.0",
-  });
-
-  // --- Metric readers ---
-  const metricReaders: MetricReader[] = [];
-
-  // Prometheus pull endpoint (Grafana scrapes this)
-  prometheusExporter = new PrometheusExporter(
-    {
-      preventServerStart: true, // We mount the endpoint on our Express app
-    },
-    (error) => {
-      if (error) {
-        logger.error("Failed to start Prometheus exporter", error);
-      }
-    },
-  );
-  metricReaders.push(prometheusExporter);
-
-  // Optional: OTLP push exporter (for Grafana Cloud, Tempo, etc.)
-  if (config.otlpEndpoint) {
-    logger.info(`OTLP endpoint configured: ${config.otlpEndpoint}`);
-    metricReaders.push(
-      new PeriodicExportingMetricReader({
-        exporter: new OTLPMetricExporter({ url: `${config.otlpEndpoint}/v1/metrics` }),
-        exportIntervalMillis: 15_000,
-      }),
-    );
-  }
-
-  // --- Trace exporter ---
-  // OTLP push if endpoint configured, otherwise traces are discarded
-  // (auto-instrumentation still runs for context propagation)
-  const spanProcessors = config.otlpEndpoint
-    ? [new BatchSpanProcessor(new OTLPTraceExporter({ url: `${config.otlpEndpoint}/v1/traces` }))]
-    : [];
 
   sdk = new NodeSDK({
-    resource,
-    metricReader: metricReaders[0],
-    spanProcessors,
-    instrumentations: [
-      getNodeAutoInstrumentations({
-        // Disable fs instrumentation — too noisy, no value for an API server
-        "@opentelemetry/instrumentation-fs": { enabled: false },
-        // Disable dns — adds latency tracking noise
-        "@opentelemetry/instrumentation-dns": { enabled: false },
-      }),
-    ],
+    resource: createTelemetryResource(),
+    metricReaders: metricReaders,
+    spanProcessors: createSpanProcessors(config.otlp_endpoint),
+    instrumentations: getInstrumentations(),
   });
 
   if (!sdk) {

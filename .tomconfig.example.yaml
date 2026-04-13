@@ -1,20 +1,261 @@
-host: "0.0.0.0"
-port: 3000
+# =============================================================================
+# ToM Server – configuration reference
+#
+# Required fields are marked [REQUIRED] and use <PLACEHOLDER> values.
+# Optional fields are commented out with their defaults shown.
+# Uncomment and change only what you need.
+# =============================================================================
 
-logger:
-  level: "info"
-  pretty: false
+# -----------------------------------------------------------------------------
+# Server
+# -----------------------------------------------------------------------------
+server:
+  # [REQUIRED] Matrix domain used in MXIDs (@user:example.com)
+  name: "<YOUR_MATRIX_DOMAIN>"
 
-i18n:
-  locale: "en"
-  localesPath: "./i18n"
+  # Public-facing URL of this identity server.
+  # Used in email templates and invitation links.
+  # base_url: ""                   # Default: ""
 
-landing:
-  filePath: "./static/landing.html"
+  # host: "0.0.0.0"                # Default: "0.0.0.0"
+  # port: 3000                     # Default: 3000
+  # trust_x_forwarded_for: false   # Default: false — enable behind a reverse proxy
+  # additional_features: false     # Default: false — enable extra company features
+  # enable_cron_jobs: false        # Default: false — master switch for all scheduled jobs
 
-telemetry:
-  enabled: false
-  metricsEndpoint: "/metrics"
-  # otlpEndpoint: "" # for OTLP export (e.g. Grafana Cloud)
-  traceSampleRatio: 1.0
-  diagLogLevel: "NONE"  # OTel internals (troubleshooting only) one of "NONE", "ERROR", "WARN", "INFO", "DEBUG"
+  # rate_limiting:
+  #   window_ms: 60000             # Default: 60000 (1 minute)
+  #   max_requests: 100            # Default: 100
+
+# -----------------------------------------------------------------------------
+# URLs – external endpoints referenced in emails, QR codes, redirects.
+# All optional, all default to "".
+# -----------------------------------------------------------------------------
+# urls:
+#   signup: ""
+#   chat: ""
+#   auth: ""
+#   qr_code: ""
+#   invitation_redirect: ""
+
+# -----------------------------------------------------------------------------
+# Synapse (homeserver integration)
+# -----------------------------------------------------------------------------
+synapse:
+  # [REQUIRED] Public URL of the homeserver
+  server_url: "<https://matrix.example.com>"
+
+  # internal_host: "http://localhost:8008"  # Default: "http://localhost:8008"
+
+  admin:
+    # [REQUIRED] Synapse admin credentials
+    login: "<ADMIN_USER>"
+    password: "<ADMIN_PASSWORD>"
+    # access_token: ""             # Default: "" — set if using token auth instead
+
+  database:
+    # [REQUIRED] Synapse database connection
+    host: "<SYNAPSE_DB_HOST>"
+    name: "<SYNAPSE_DB_NAME>"
+    user: "<SYNAPSE_DB_USER>"
+    password: "<SYNAPSE_DB_PASSWORD>"
+    # ssl: false                   # Default: false
+    # vacuum_delay: 3600           # Default: 3600 (seconds)
+
+# -----------------------------------------------------------------------------
+# ToM database
+# -----------------------------------------------------------------------------
+database:
+  # [REQUIRED] Tom's own database connection
+  host: "<TOM_DB_HOST>"
+  name: "<TOM_DB_NAME>"
+  user: "<TOM_DB_USER>"
+  password: "<TOM_DB_PASSWORD>"
+  # ssl: false                     # Default: false
+  # vacuum_delay: 3600             # Default: 3600 (seconds)
+
+# -----------------------------------------------------------------------------
+# Hash lookups (3PID → MXID pepper management)
+# All optional with sensible defaults.
+# -----------------------------------------------------------------------------
+# hash:
+#   rate_limit: 100                # Default: 100 — max hash lookup requests per rate window
+#   key_delay: 3600                # Default: 3600 — seconds before a new pepper key activates
+#   keys_depth: 3                  # Default: 3 — number of old pepper keys to retain
+#   pepper_cron: "0 0 * * *"      # Default: "0 0 * * *" — requires enable_cron_jobs: true
+
+# -----------------------------------------------------------------------------
+# Invitations
+# All optional.
+# -----------------------------------------------------------------------------
+# invitations:
+#   server_name: ""                # Default: "" — falls back to server.name
+
+# -----------------------------------------------------------------------------
+# Terms of service / policies
+# Optional. Uncomment and define policies per the Matrix spec.
+# -----------------------------------------------------------------------------
+# terms:
+#   policies:
+#     privacy_policy:
+#       version: "1.0"
+#       en:
+#         name: "Privacy Policy"
+#         url: "https://example.com/privacy"
+
+# -----------------------------------------------------------------------------
+# SMTP / email
+# Required if sending verification emails or invitations.
+# -----------------------------------------------------------------------------
+email:
+  # [REQUIRED] SMTP server hostname
+  smtp_host: "<SMTP_HOST>"
+
+  # smtp_port: 587                 # Default: 587
+  # tls: true                      # Default: true
+  # username: ""                   # Optional — omit for unauthenticated SMTP
+  # password: ""                   # Optional
+  # sender: ""                     # Optional — From address
+  # sender_localpart: "tom"        # Default: "tom"
+  # verify_certificate: true       # Default: true
+  # templates_dir: ""              # Default: "" — resolved from platform share dirs
+  # link_expiry: 3600              # Default: 3600 (seconds)
+
+# -----------------------------------------------------------------------------
+# LDAP
+# Optional. Entire section defaults to disabled.
+# -----------------------------------------------------------------------------
+# ldap:
+#   uri: "ldap://localhost:389"
+#   base: "dc=example,dc=com"
+#   user: ""
+#   password: ""
+#   filter: ""
+#   uid_field: "uid"               # Default: "uid"
+#   sync_cron: "0 */4 * * *"      # Default: "0 */4 * * *" — requires enable_cron_jobs: true
+#   client_options: {}             # Raw ldapts client options — optional
+
+# -----------------------------------------------------------------------------
+# Cache
+# Optional. Defaults to in-memory.
+# -----------------------------------------------------------------------------
+# cache:
+#   engine: "memory"               # Default: "memory" — "memory" | "redis"
+#   ttl: 3600                      # Default: 3600 (seconds)
+#   redis_uri: "redis://localhost:6379"  # Required when engine is "redis"
+
+# -----------------------------------------------------------------------------
+# SMS
+# Optional. Required only if using phone-based 3PID verification.
+# -----------------------------------------------------------------------------
+# sms:
+#   api_url: "https://api.octopush.com/v1/public"  # Default
+#   api_login: ""
+#   api_key: ""
+
+# -----------------------------------------------------------------------------
+# Federation
+# Optional. Disabled by default.
+# -----------------------------------------------------------------------------
+# federation:
+#   is_federated_identity_service: false     # Default: false
+#   identity_services: []                    # Default: []
+#   sync_cron: "0 */6 * * *"                 # Default: "0 */6 * * *" — requires enable_cron_jobs: true
+
+# -----------------------------------------------------------------------------
+# Jitsi
+# Optional. Disabled by default.
+# -----------------------------------------------------------------------------
+# jitsi:
+#   base_url: ""                   # Default: ""
+#   use_jwt: false                 # Default: false
+#   jwt_secret: ""
+#   jwt_issuer: ""
+#   jwt_algorithm: "HS256"         # Default: "HS256"
+#   preferred_domain: ""
+
+# -----------------------------------------------------------------------------
+# OIDC
+# Optional.
+# -----------------------------------------------------------------------------
+# oidc:
+#   issuer: "https://sso.example.com"
+
+# -----------------------------------------------------------------------------
+# Twake Chat (client environment config)
+# Optional. All fields have defaults. Uncomment to override.
+# -----------------------------------------------------------------------------
+# twake_chat:
+#   application_name: "Twake Chat"  # Default
+#   application_welcome_message: ""
+#   privacy_url: ""
+#   render_html: false             # Default: false
+#   hide_redacted_events: false    # Default: false
+#   hide_unknown_events: false     # Default: false
+#   issue_id: ""
+#   registration_url: ""
+#   twake_workplace_homeserver: ""
+#   app_grid_dashboard_available: false  # Default: false
+#   platform: ""
+#   default_max_upload_avatar_size_in_bytes: "10485760"  # Default: ~10MB
+#   dev_mode: false                # Default: false
+#   qr_code_download_url: ""
+#   enable_logs: false             # Default: false
+#   support_url: ""
+#   enable_invitations: false      # Default: false
+
+# -----------------------------------------------------------------------------
+# Features
+# Optional. All disabled by default.
+# -----------------------------------------------------------------------------
+# features:
+#   common_settings:
+#     enabled: false               # Default: false
+#     application_url: ""
+#   matrix_profile_updates_allowed: false  # Default: false
+#   user_profile:
+#     default_visibility_settings:
+#       visibility: "private"      # Default: "private"
+#       visible_fields: []         # Default: []
+#   user_directory:
+#     enabled: false               # Default: false
+#   createroom_proxy:              # Optional — omit entirely to disable
+#     enabled: false
+#     on_failure:
+#       max_retries: 3             # Default: 3
+#       nuke_room: false           # Default: false
+#     default_preset: ""
+#     encryption: "allowed"        # Default: "allowed" — "allowed" | "enforced" | "disabled"
+#     presets: []
+
+# -----------------------------------------------------------------------------
+# Logging
+# -----------------------------------------------------------------------------
+# logger:
+#   level: "info"                  # Default: "info"
+#   pretty: false                  # Default: false — enable for local dev only
+
+# -----------------------------------------------------------------------------
+# Internationalisation
+# -----------------------------------------------------------------------------
+# i18n:
+#   locale: "en"                   # Default: "en"
+#   locales_path: "/usr/share/twake/chat/tom/i18n"  # Default
+
+# -----------------------------------------------------------------------------
+# Landing page
+# Optional. If the file doesn't exist, the route is not mounted.
+# -----------------------------------------------------------------------------
+# landing:
+#   file_path: "/usr/share/twake/chat/tom/landing.html"  # Default
+
+# -----------------------------------------------------------------------------
+# Telemetry (OpenTelemetry)
+# Disabled by default.
+# -----------------------------------------------------------------------------
+# telemetry:
+#   enabled: false                 # Default: false
+#   metrics_endpoint: "/metrics"   # Default: "/metrics"
+#   otlp_endpoint: ""             # Optional — OTLP collector for push-based export
+#   trace_sample_ratio: 1.0        # Default: 1.0 (sample everything when enabled)
+#   diag_log_level: "NONE"        # Default: "NONE" — for OTel internal debugging

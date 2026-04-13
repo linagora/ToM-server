@@ -9,10 +9,6 @@ const defaultPath = (): string => {
 };
 
 // biome-ignore lint/nursery/useExplicitType: Zod type is fragile to write by hand, we let TS infer it
-export const landingConfigSchema = z.object({
-  landing: z
-    .object({
-      filePath: z.string(),
-    })
-    .default({ filePath: defaultPath() }),
+export const landingSettingsSchema = z.object({
+  file_path: z.string().default(defaultPath()),
 });

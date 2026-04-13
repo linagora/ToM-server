@@ -1,5 +1,5 @@
 import type { z } from "zod";
 
-import type { telemetryConfigSchema } from "./schema";
+import type { telemetrySettingsSchema } from "./schema";
 
-export type TelemetryConfig = z.infer<typeof telemetryConfigSchema>["telemetry"];
+export type TelemetryConfig = z.infer<typeof telemetrySettingsSchema>;
