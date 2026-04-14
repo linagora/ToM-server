@@ -31,6 +31,7 @@ export async function createApp(
 
   // --- Global middleware (cross-cutting only) ---
   app.use(express.json());
+  app.use(express.urlencoded({ extended: true }));
   app.use(requestId());
   app.use(httpLogger(logger));
 
