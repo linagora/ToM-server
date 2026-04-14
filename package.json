@@ -27,10 +27,7 @@
     "doc:arch": "dot -Tpng -o docs/arch.png docs/arch.dot",
     "check": "biome check .",
     "check:fix": "biome check --write .",
-    "test": "lerna run test",
-    "watch": "lerna run watch",
-    "serve": "nodemon",
-    "dev": "concurrently -k \"npm run watch\" \"npm run serve\""
+    "test": "lerna run test"
   },
   "dependencies": {
     "@opentelemetry/api": "^1.9.1",
