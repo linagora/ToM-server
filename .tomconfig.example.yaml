@@ -20,6 +20,7 @@ server:
   # host: "0.0.0.0"                # Default: "0.0.0.0"
   # port: 3000                     # Default: 3000
   # trust_x_forwarded_for: false   # Default: false — enable behind a reverse proxy
+  # trusted_proxies: []            # Default: [] — list of trusted proxies
   # additional_features: false     # Default: false — enable extra company features
   # enable_cron_jobs: false        # Default: false — master switch for all scheduled jobs
 

@@ -24,6 +24,11 @@ export async function createApp(
 ): Promise<Express> {
   const app = express();
 
+  if (config.server.trust_x_forwarded_for) {
+    const hops = config.server.trusted_proxies;
+    app.set("trust proxy", hops.length > 0 ? hops : true);
+  }
+
   // --- Global middleware (cross-cutting only) ---
   app.use(express.json());
   app.use(requestId());

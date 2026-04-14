@@ -10,6 +10,7 @@ const DEFAULT_HOST = "0.0.0.0";
 const DEFAULT_PORT = 3000;
 const MIN_ALLOWED_PORT = 1;
 const MAX_ALLOWED_PORT = 65535;
+const DEFAULT_TRUST_X_FORWARDED_FOR = false;
 
 const DEFAULT_RATE_LIMIT_WINDOW_MS = 60_000;
 const DEFAULT_RATE_LIMIT_MAX_REQUESTS = 100;
@@ -310,7 +311,8 @@ const serverSettingsSchema = z.object({
   base_url: z.string().default(""),
   host: z.string().default(DEFAULT_HOST),
   port: z.number().int().min(MIN_ALLOWED_PORT).max(MAX_ALLOWED_PORT).default(DEFAULT_PORT),
-  trust_x_forwarded_for: z.boolean().default(false),
+  trust_x_forwarded_for: z.boolean().default(DEFAULT_TRUST_X_FORWARDED_FOR),
+  trusted_proxies: z.array(z.string()).default([]),
   additional_features: z.boolean().default(false),
   enable_cron_jobs: z.boolean().default(false),
   rate_limiting: rateLimitingSchema.prefault({}),
@@ -459,7 +461,9 @@ const urlsConfigSchema = z.object({ urls: urlsSettingsSchema.prefault({}) });
 // biome-ignore lint/nursery/useExplicitType: Zod type is fragile to write by hand, we let TS infer it
 const hashConfigSchema = z.object({ hash: hashSettingsSchema.prefault({}) });
 // biome-ignore lint/nursery/useExplicitType: Zod type is fragile to write by hand, we let TS infer it
-const invitationsConfigSchema = z.object({ invitations: invitationsSettingsSchema.prefault({}) });
+const invitationsConfigSchema = z.object({
+  invitations: invitationsSettingsSchema.prefault({}),
+});
 // biome-ignore lint/nursery/useExplicitType: Zod type is fragile to write by hand, we let TS infer it
 const termsConfigSchema = z.object({ terms: termsSettingsSchema.prefault({}) });
 // biome-ignore lint/nursery/useExplicitType: Zod type is fragile to write by hand, we let TS infer it
@@ -469,24 +473,36 @@ const cacheConfigSchema = z.object({ cache: cacheSettingsSchema.prefault({}) });
 // biome-ignore lint/nursery/useExplicitType: Zod type is fragile to write by hand, we let TS infer it
 const smsConfigSchema = z.object({ sms: smsSettingsSchema.prefault({}) });
 // biome-ignore lint/nursery/useExplicitType: Zod type is fragile to write by hand, we let TS infer it
-const federationConfigSchema = z.object({ federation: federationSettingsSchema.prefault({}) });
+const federationConfigSchema = z.object({
+  federation: federationSettingsSchema.prefault({}),
+});
 // biome-ignore lint/nursery/useExplicitType: Zod type is fragile to write by hand, we let TS infer it
 const jitsiConfigSchema = z.object({ jitsi: jitsiSettingsSchema.prefault({}) });
 // biome-ignore lint/nursery/useExplicitType: Zod type is fragile to write by hand, we let TS infer it
 const oidcConfigSchema = z.object({ oidc: oidcSettingsSchema.prefault({}) });
 // biome-ignore lint/nursery/useExplicitType: Zod type is fragile to write by hand, we let TS infer it
-const twakeChatConfigSchema = z.object({ twake_chat: twakeChatSettingsSchema.prefault({}) });
+const twakeChatConfigSchema = z.object({
+  twake_chat: twakeChatSettingsSchema.prefault({}),
+});
 // biome-ignore lint/nursery/useExplicitType: Zod type is fragile to write by hand, we let TS infer it
-const featuresConfigSchema = z.object({ features: featuresSettingsSchema.prefault({}) });
+const featuresConfigSchema = z.object({
+  features: featuresSettingsSchema.prefault({}),
+});
 
 // biome-ignore lint/nursery/useExplicitType: Zod type is fragile to write by hand, we let TS infer it
-const loggerConfigSchema = z.object({ logger: loggerSettingsSchema.prefault({}) });
+const loggerConfigSchema = z.object({
+  logger: loggerSettingsSchema.prefault({}),
+});
 // biome-ignore lint/nursery/useExplicitType: Zod type is fragile to write by hand, we let TS infer it
 const i18nConfigSchema = z.object({ i18n: i18nSettingsSchema.prefault({}) });
 // biome-ignore lint/nursery/useExplicitType: Zod type is fragile to write by hand, we let TS infer it
-const landingConfigSchema = z.object({ landing: landingSettingsSchema.prefault({}) });
+const landingConfigSchema = z.object({
+  landing: landingSettingsSchema.prefault({}),
+});
 // biome-ignore lint/nursery/useExplicitType: Zod type is fragile to write by hand, we let TS infer it
-const telemetryConfigSchema = z.object({ telemetry: telemetrySettingsSchema.prefault({}) });
+const telemetryConfigSchema = z.object({
+  telemetry: telemetrySettingsSchema.prefault({}),
+});
 
 // biome-ignore lint/nursery/useExplicitType: Zod type is fragile to write by hand, we let TS infer it
 export const configSchema = z.object({
