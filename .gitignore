@@ -673,3 +673,4 @@ test-output
 
 .claude/worktrees
 .tomconfig.yaml
+.compose/ssl/certs/*

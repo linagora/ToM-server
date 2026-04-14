@@ -1,0 +1,27 @@
+# =============================================================================
+# Dev overrides — auto-loaded by `docker compose up`
+#
+# Tom runs on the host via `npx nx serve tom-server`.
+# Traefik routes tom.docker.internal → host.docker.internal:3000
+# via the file provider (dev.yml dynamic config).
+# =============================================================================
+
+services:
+
+  traefik:
+    # Add file provider to pick up mkcert TLS certs, CORS middleware,
+    # and the tom-local route (→ host.docker.internal:3000)
+    command:
+      - "--api.insecure=true"
+      - "--api.dashboard=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--providers.file.filename=/etc/traefik/dynamic.yaml"
+      - "--providers.file.watch=true"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
+      - "--entrypoints.websecure.address=:443"
+      - "--log.level=INFO"
+    volumes:
+      - ./.compose/traefik/dynamic/dev.yml:/etc/traefik/dynamic.yaml:ro

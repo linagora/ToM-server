@@ -1,0 +1,78 @@
+tls:
+  certificates:
+    - certFile: "/certs/docker.internal+1.pem"
+      keyFile: "/certs/docker.internal+1-key.pem"
+  stores:
+    default:
+      defaultCertificate:
+        certFile: "/certs/docker.internal+1.pem"
+        keyFile: "/certs/docker.internal+1-key.pem"
+
+http:
+  middlewares:
+    cors-policy:
+      headers:
+        accessControlAllowMethods:
+          - "GET"
+          - "OPTIONS"
+          - "POST"
+          - "PUT"
+          - "DELETE"
+          - "PATCH"
+        accessControlAllowOriginList:
+          - "https://app.element.io"
+          - "https://chat.docker.internal"
+          - "https://tom.docker.internal"
+          - "https://matrix.docker.internal"
+          - "https://auth.docker.internal"
+          - "https://fed.docker.internal"
+        accessControlAllowHeaders:
+          - "*"
+        accessControlAllowCredentials: true
+        accessControlMaxAge: 100
+        addVaryHeader: true
+
+  routers:
+    tom-direct:
+      rule: "Host(`tom.docker.internal`)"
+      entrypoints: ["websecure"]
+      tls: {}
+      priority: 110
+      middlewares: ["cors-policy@file"]
+      service: tom-local
+
+    tom-direct-http:
+      rule: "Host(`tom.docker.internal`)"
+      entrypoints: ["web"]
+      priority: 110
+      service: tom-local
+
+    tom-wellknown:
+      rule: "(Host(`matrix.docker.internal`) || Host(`docker.internal`)) && PathPrefix(`/.well-known/matrix/client`)"
+      entrypoints: ["websecure"]
+      tls: {}
+      priority: 100
+      middlewares: ["cors-policy@file"]
+      service: tom-local
+
+    tom-identity:
+      rule: "Host(`matrix.docker.internal`) && PathPrefix(`/_matrix/identity/v2`)"
+      entrypoints: ["websecure"]
+      tls: {}
+      priority: 90
+      middlewares: ["cors-policy@file"]
+      service: tom-local
+
+    tom-matrix-client:
+      rule: "Host(`matrix.docker.internal`) && PathPrefix(`/_matrix/client/v3/createRoom`)"
+      entrypoints: ["websecure"]
+      tls: {}
+      priority: 80
+      middlewares: ["cors-policy@file"]
+      service: tom-local
+
+  services:
+    tom-local:
+      loadBalancer:
+        servers:
+          - url: "http://host.docker.internal:3000"

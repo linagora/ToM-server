@@ -1,0 +1,123 @@
+# =============================================================================
+# apps/tom-server Dockerfile
+# Nx-based multi-stage build
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Stage 1: Builder - Install dependencies and build
+# -----------------------------------------------------------------------------
+FROM node:24.14.0-alpine AS builder
+
+# Update image and install build tools
+RUN apk update && apk upgrade && \
+    apk add --no-cache build-base python3 && \
+    rm -rf /var/cache/apk/*
+
+WORKDIR /usr/src/app
+
+# Copy root package files for workspace setup
+COPY package.json package-lock.json lerna.json ./
+
+# Copy workspace package.json files for dependency install caching
+COPY packages/config-parser/package.json ./packages/config-parser/
+COPY packages/crypto/package.json ./packages/crypto/
+COPY packages/logger/package.json ./packages/logger/
+COPY packages/utils/package.json ./packages/utils/
+COPY packages/matrix-resolve/package.json ./packages/matrix-resolve/
+COPY packages/matrix-identity-server/package.json ./packages/matrix-identity-server/
+COPY packages/tom-server/package.json ./packages/tom-server/
+
+# Install all dependencies (cached unless package.json changes)
+RUN npm ci --ignore-scripts
+
+# Copy Nx and build configuration
+COPY nx.json tsconfig-build.json rollup-template.js ./
+
+# Copy legacy package sources (@twake/server and its deps)
+COPY packages/config-parser/src ./packages/config-parser/src
+COPY packages/config-parser/tsconfig.json packages/config-parser/rollup.config.js ./packages/config-parser/
+
+COPY packages/crypto/src ./packages/crypto/src
+COPY packages/crypto/tsconfig.json packages/crypto/rollup.config.js ./packages/crypto/
+
+COPY packages/logger/src ./packages/logger/src
+COPY packages/logger/tsconfig.json packages/logger/rollup.config.js ./packages/logger/
+
+COPY packages/utils/src ./packages/utils/src
+COPY packages/utils/tsconfig.json packages/utils/rollup.config.js ./packages/utils/
+
+COPY packages/matrix-resolve/src ./packages/matrix-resolve/src
+COPY packages/matrix-resolve/tsconfig.json packages/matrix-resolve/rollup.config.js ./packages/matrix-resolve/
+
+COPY packages/matrix-identity-server/src ./packages/matrix-identity-server/src
+COPY packages/matrix-identity-server/tsconfig.json packages/matrix-identity-server/rollup.config.js ./packages/matrix-identity-server/
+
+COPY packages/tom-server/src ./packages/tom-server/src
+COPY packages/tom-server/tsconfig.json packages/tom-server/rollup.config.js ./packages/tom-server/
+COPY packages/tom-server/templates ./packages/tom-server/templates
+COPY packages/tom-server/static ./packages/tom-server/static
+
+# Copy apps/tom-server source
+COPY apps/tom-server ./apps/tom-server/
+
+# Rebuild native modules, build legacy packages, then build the Nx app
+# RUN npm rebuild && \
+    # npm run build --workspace=@twake/config-parser && \
+    # npm run build --workspace=@twake/crypto && \
+    # npm run build --workspace=@twake/logger && \
+    # npm run build --workspace=@twake/utils && \
+    # npm run build --workspace=matrix-resolve && \
+    # npm run build --workspace=@twake/matrix-identity-server && \
+    # npm run build --workspace=@twake/server && \
+RUN    npx nx build tom-server --no-tui --skip-nx-cache --verbose
+
+# -----------------------------------------------------------------------------
+# Stage 2: Runtime image
+# -----------------------------------------------------------------------------
+FROM node:24.14.0-alpine AS runtime
+
+WORKDIR /app
+
+# Copy the pruned build output (includes main.js, package.json,
+# package-lock.json, and workspace_modules/)
+COPY --from=builder /usr/src/app/dist/apps/tom-server/ ./
+
+COPY package.json package-lock.json ./
+
+# Copy built artifacts
+COPY --from=builder /usr/src/app/packages/config-parser/dist ./packages/config-parser/dist
+COPY --from=builder /usr/src/app/packages/config-parser/package.json ./packages/config-parser/
+
+COPY --from=builder /usr/src/app/packages/crypto/dist ./packages/crypto/dist
+COPY --from=builder /usr/src/app/packages/crypto/package.json ./packages/crypto/
+
+COPY --from=builder /usr/src/app/packages/logger/dist ./packages/logger/dist
+COPY --from=builder /usr/src/app/packages/logger/package.json ./packages/logger/
+
+COPY --from=builder /usr/src/app/packages/utils/dist ./packages/utils/dist
+COPY --from=builder /usr/src/app/packages/utils/package.json ./packages/utils/
+
+COPY --from=builder /usr/src/app/packages/matrix-resolve/dist ./packages/matrix-resolve/dist
+COPY --from=builder /usr/src/app/packages/matrix-resolve/package.json ./packages/matrix-resolve/
+
+COPY --from=builder /usr/src/app/packages/matrix-identity-server/dist ./packages/matrix-identity-server/dist
+COPY --from=builder /usr/src/app/packages/matrix-identity-server/package.json ./packages/matrix-identity-server/
+
+COPY --from=builder /usr/src/app/packages/tom-server/dist ./packages/tom-server/dist
+COPY --from=builder /usr/src/app/packages/tom-server/package.json ./packages/tom-server/
+
+# Install production dependencies from the pruned lockfile
+RUN npm ci --omit=dev --ignore-scripts && npm rebuild
+COPY package.json package-lock.json ./
+
+RUN sed -i 's/\r//' $(find -name package.json -not -path "./node_modules/*")
+
+# Install assets into system share directories (see docker.md for mount points)
+COPY i18n/ /usr/share/twake/chat/tom/i18n/
+COPY static/ /usr/share/twake/chat/tom/static/
+COPY assets/templates/ /usr/share/twake/chat/tom/templates/
+
+USER node
+
+EXPOSE 3000
+# CMD ["node", "main.js"]

@@ -1,0 +1,46 @@
+# Full reference: .tomconfig.example.yaml
+
+server:
+  name: "docker.internal"
+  base_url: "https://tom.docker.internal"
+  trust_x_forwarded_for: true
+  trusted_proxies:
+    - uniquelocal
+
+synapse:
+  server_url: "https://matrix.docker.internal"
+  internal_host: "http://synapse:8008"
+  admin:
+    login: "admin"
+    password: "change-me"
+  database:
+    host: "postgres"
+    name: "synapse"
+    user: "synapse_user"
+    password: "secretpassword"
+
+database:
+  host: "postgres"
+  name: "tom_db"
+  user: "twake"
+  password: "twake_password"
+
+ldap:
+  uri: "ldap://ldap"
+  base: "ou=users,dc=docker,dc=internal"
+  filter: "(objectClass=inetOrgPerson)"
+
+email:
+  smtp_host: "smtp"
+  smtp_port: 2525
+  tls: false
+  verify_certificate: false
+  sender: "no-reply@docker.internal"
+
+oidc:
+  issuer: "https://auth.docker.internal/"
+
+logger:
+  level: "silly"
+  transports:
+    - type: "console"
