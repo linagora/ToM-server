@@ -6,7 +6,7 @@
       "request": "launch",
       "name": "Debug tom-server with Nx",
       "runtimeExecutable": "npx",
-      "runtimeArgs": ["nx", "serve", "tom-server"],
+      "runtimeArgs": ["nx", "serve", "tom-server", "--no-tui"],
       "env": {
         "NODE_OPTIONS": "--inspect=9229"
       },
@@ -15,7 +15,8 @@
       "skipFiles": ["<node_internals>/**"],
       "sourceMaps": true,
       "outFiles": [
-        "${workspaceFolder}/apps/tom-server/dist/**/*.(m|c|)js",
+        "${workspaceFolder}/dist/apps/tom-server/**/*.(m|c|)js",
+        "${workspaceFolder}/packages/**/dist/**/*.(m|c|)js",
         "!**/node_modules/**"
       ]
     }
