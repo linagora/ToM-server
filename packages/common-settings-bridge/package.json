@@ -17,6 +17,7 @@
   },
   "license": "AGPL-3.0-or-later",
   "dependencies": {
+    "@alloc/quick-lru": "^5.2.0",
     "@twake/amqp-connector": "*",
     "@twake/db": "*",
     "@twake/logger": "*",

@@ -107,10 +107,10 @@ COPY --from=builder /usr/src/app/packages/tom-server/dist ./packages/tom-server/
 COPY --from=builder /usr/src/app/packages/tom-server/package.json ./packages/tom-server/
 
 # Install production dependencies from the pruned lockfile
-RUN npm ci --omit=dev --ignore-scripts && npm rebuild
-COPY package.json package-lock.json ./
+RUN npm ci --omit=dev --ignore-scripts # && npm rebuild
+# COPY package.json package-lock.json ./
 
-RUN sed -i 's/\r//' $(find -name package.json -not -path "./node_modules/*")
+# RUN sed -i 's/\r//' $(find -name package.json -not -path "./node_modules/*")
 
 # Install assets into system share directories (see docker.md for mount points)
 COPY i18n/ /usr/share/twake/chat/tom/i18n/
@@ -120,4 +120,4 @@ COPY assets/templates/ /usr/share/twake/chat/tom/templates/
 USER node
 
 EXPOSE 3000
-# CMD ["node", "main.js"]
+CMD ["node", "main.js"]
