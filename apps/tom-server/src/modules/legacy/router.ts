@@ -8,7 +8,6 @@ import TomServer from "@twake/server";
 
 import type { Config } from "../../config/types";
 import { getShareDirs } from "../../platform/paths";
-import { NoLegacyRouterMountedError } from "./errors";
 import { legacyConfigSchema } from "./schema";
 import type { LegacyConfig } from "./types";
 

@@ -1,5 +1,7 @@
 # =============================================================================
-# ToM Server – configuration reference
+# ToM Server – Standard Configuration Example
+#
+# This is the standard ToM server configuration for a single Matrix homeserver.
 #
 # Required fields are marked [REQUIRED] and use <PLACEHOLDER> values.
 # Optional fields are commented out with their defaults shown.
@@ -82,15 +84,15 @@ database:
 # hash:
 #   rate_limit: 100                # Default: 100 — max hash lookup requests per rate window
 #   key_delay: 3600                # Default: 3600 — seconds before a new pepper key activates
-#   keys_depth: 3                  # Default: 3 — number of old pepper keys to retain
-#   pepper_cron: "0 0 * * *"      # Default: "0 0 * * *" — requires enable_cron_jobs: true
+#   keys_depth: 5                  # Default: 5 — number of old pepper keys to retain
+#   pepper_cron: "0 0 * * *"       # Default: "0 0 * * *" — requires enable_cron_jobs: true
 
 # -----------------------------------------------------------------------------
 # Invitations
 # All optional.
 # -----------------------------------------------------------------------------
 # invitations:
-#   server_name: ""                # Default: "" — falls back to server.name
+#   server_name: "matrix.to"       # Default: "matrix.to"
 
 # -----------------------------------------------------------------------------
 # Terms of service / policies
@@ -117,7 +119,7 @@ email:
   # username: ""                   # Optional — omit for unauthenticated SMTP
   # password: ""                   # Optional
   # sender: ""                     # Optional — From address
-  # sender_localpart: "tom"        # Default: "tom"
+  # sender_localpart: "twake"      # Default: "twake"
   # verify_certificate: true       # Default: true
   # templates_dir: ""              # Default: "" — resolved from platform share dirs
   # link_expiry: 3600              # Default: 3600 (seconds)
@@ -133,7 +135,7 @@ email:
 #   password: ""
 #   filter: ""
 #   uid_field: "uid"               # Default: "uid"
-#   sync_cron: "0 */4 * * *"      # Default: "0 */4 * * *" — requires enable_cron_jobs: true
+#   sync_cron: "*/10 * * * *"      # Default: "*/10 * * * *" — requires enable_cron_jobs: true
 #   client_options: {}             # Raw ldapts client options — optional
 
 # -----------------------------------------------------------------------------
@@ -157,11 +159,13 @@ email:
 # -----------------------------------------------------------------------------
 # Federation
 # Optional. Disabled by default.
+# Set is_federated_identity_service: true to enable federation mode
 # -----------------------------------------------------------------------------
 # federation:
-#   is_federated_identity_service: false     # Default: false
-#   identity_services: []                    # Default: []
-#   sync_cron: "0 */6 * * *"                 # Default: "0 */6 * * *" — requires enable_cron_jobs: true
+#   is_federated_identity_service: false     # Default: false — set to true for federation service
+#   trusted_servers_addresses: []            # Default: [] — IP allowlist for trusted Matrix servers
+#   identity_services: []                    # Default: [] — list of peer identity services
+#   sync_cron: "*/10 * * * *"                # Default: "*/10 * * * *" — requires enable_cron_jobs: true
 
 # -----------------------------------------------------------------------------
 # Jitsi
@@ -190,15 +194,15 @@ email:
 #   application_name: "Twake Chat"  # Default
 #   application_welcome_message: ""
 #   privacy_url: ""
-#   render_html: false             # Default: false
+#   render_html: true              # Default: true
 #   hide_redacted_events: false    # Default: false
-#   hide_unknown_events: false     # Default: false
+#   hide_unknown_events: true      # Default: true
 #   issue_id: ""
 #   registration_url: ""
 #   twake_workplace_homeserver: ""
 #   app_grid_dashboard_available: false  # Default: false
 #   platform: ""
-#   default_max_upload_avatar_size_in_bytes: "10485760"  # Default: ~10MB
+#   default_max_upload_avatar_size_in_bytes: ""  # Default: "" (no limit)
 #   dev_mode: false                # Default: false
 #   qr_code_download_url: ""
 #   enable_logs: false             # Default: false
@@ -213,7 +217,7 @@ email:
 #   common_settings:
 #     enabled: false               # Default: false
 #     application_url: ""
-#   matrix_profile_updates_allowed: false  # Default: false
+#   matrix_profile_updates_allowed: true   # Default: true
 #   user_profile:
 #     default_visibility_settings:
 #       visibility: "private"      # Default: "private"
@@ -224,10 +228,10 @@ email:
 #     enabled: false
 #     on_failure:
 #       max_retries: 3             # Default: 3
-#       nuke_room: false           # Default: false
-#     default_preset: ""
+#       nuke_room: true            # Default: true
+#     default_preset: "private_chat"  # Default: "private_chat"
 #     encryption: "allowed"        # Default: "allowed" — "allowed" | "enforced" | "disabled"
-#     presets: []
+#     presets: []                  # See documentation for preset structure
 
 # -----------------------------------------------------------------------------
 # Logging

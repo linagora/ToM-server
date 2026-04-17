@@ -2,15 +2,17 @@
 # Dev overrides — auto-loaded by `docker compose up`
 #
 # Tom runs on the host via `npx nx serve tom-server`.
-# Traefik routes tom.docker.internal → host.docker.internal:3000
-# via the file provider (dev.yml dynamic config).
+# Federation service runs on the host via `npx nx serve tom-server --config .tomconfig.federation.yaml`
+# Traefik routes:
+#   - tom.docker.internal → host.docker.internal:3000
+#   - fed.docker.internal → host.docker.internal:3001
 # =============================================================================
 
 services:
 
   traefik:
     # Add file provider to pick up mkcert TLS certs, CORS middleware,
-    # and the tom-local route (→ host.docker.internal:3000)
+    # and the tom-local + fed-local routes
     command:
       - "--api.insecure=true"
       - "--api.dashboard=true"
@@ -25,3 +27,27 @@ services:
       - "--log.level=INFO"
     volumes:
       - ./.compose/traefik/dynamic/dev.yml:/etc/traefik/dynamic.yaml:ro
+
+  # Optional: Federation service database (if separate from main tom DB)
+  # Uncomment if you want isolated databases for tom and fed in dev mode
+  # postgres-fed:
+  #   image: postgres:16-alpine
+  #   restart: unless-stopped
+  #   environment:
+  #     POSTGRES_USER: twake
+  #     POSTGRES_PASSWORD: twake_password
+  #     POSTGRES_DB: twake_fed
+  #   volumes:
+  #     - postgres-fed-data:/var/lib/postgresql/data
+  #   ports:
+  #     - "5433:5432"
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "pg_isready -U twake"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 5
+  #     start_period: 10s
+
+# Uncomment if using postgres-fed above
+# volumes:
+#   postgres-fed-data:
