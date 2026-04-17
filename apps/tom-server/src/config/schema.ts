@@ -15,8 +15,6 @@ const DEFAULT_TRUST_X_FORWARDED_FOR = false;
 const DEFAULT_RATE_LIMIT_WINDOW_MS = 60_000;
 const DEFAULT_RATE_LIMIT_MAX_REQUESTS = 100;
 
-const DEFAULT_SYNAPSE_INTERNAL_HOST = "http://localhost:8008";
-
 const DEFAULT_DB_SSL = false;
 const DEFAULT_DB_VACUUM_DELAY = 3600;
 
@@ -330,7 +328,7 @@ const urlsSettingsSchema = z.object({
 // biome-ignore lint/nursery/useExplicitType: Zod type is fragile to write by hand, we let TS infer it
 const synapseSettingsSchema = z.object({
   server_url: z.url(), // REQUIRED
-  internal_host: z.url().default(DEFAULT_SYNAPSE_INTERNAL_HOST),
+  internal_host: z.url(), // REQUIRED
   admin: synapseAdminSchema, // REQUIRED
   database: databaseSettingsSchema, // REQUIRED
 });
