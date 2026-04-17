@@ -16,7 +16,7 @@ export function loadConfig(cliPath?: string): Config {
   const paths = dirs.map((dir) => resolve(dir, CONFIG_FILENAME));
 
   paths.push(resolve(process.cwd(), LOCAL_CONFIG_FILENAME));
-  if (cliPath !== undefined) paths.push(cliPath);
+  if (cliPath) paths.push(cliPath);
 
   const layers: Record<string, unknown>[] = [];
 

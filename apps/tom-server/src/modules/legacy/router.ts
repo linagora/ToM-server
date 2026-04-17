@@ -1,6 +1,5 @@
 import { resolve } from "node:path";
 
-// import { RequestHandler, Router } from "express";
 import { Router } from "express";
 import type { Logger } from "winston";
 
@@ -9,30 +8,43 @@ import TomServer from "@twake/server";
 
 import type { Config } from "../../config/types";
 import { getShareDirs } from "../../platform/paths";
+import { NoLegacyRouterMountedError } from "./errors";
 import { legacyConfigSchema } from "./schema";
 import type { LegacyConfig } from "./types";
 
-// function registerGetRoutes(router: Router, routes: Record<string, RequestHandler>): void {
-//   Object.keys(routes).forEach((k) => router.get(k, routes[k]));
-// }
-
-// function registerPostRoutes(router: Router, routes: Record<string, RequestHandler>): void {
-//   Object.keys(routes).forEach((k) => router.post(k, routes[k]));
-// }
-
-async function initializeLegacyRoutes(router: Router, config: LegacyConfig, logger: Logger): Promise<void> {
+async function mountTomRouter(config: LegacyConfig, logger: Logger): Promise<Router> {
   const tomServer = new TomServer(config, undefined, logger.child({ module: "ToM Legacy" }));
   await tomServer.ready;
+  logger.info("ToM legacy router ready");
 
-  router.use(tomServer.endpoints);
+  return tomServer.endpoints;
+}
 
-  // Conditionally mount federated identity service
-  if (config.is_federated_identity_service) {
-    const fedServer = new FederatedIdentityService(config, undefined, logger.child({ module: "Federated ToM Legacy" }));
-    await fedServer.ready;
-    router.use(fedServer.routes);
-    logger.info("federated identity service mounted");
+async function mountFederatedRouter(config: LegacyConfig, logger: Logger): Promise<Router> {
+  const fedServer = new FederatedIdentityService(config, undefined, logger.child({ module: "Federated Legacy" }));
+  await fedServer.ready;
+  logger.info("federated legacy router ready");
+  return fedServer.routes;
+}
+
+async function initializeLegacyRoutes(config: LegacyConfig, logger: Logger): Promise<Router> {
+  const legacyRouter: Router = Router();
+
+  if (config.matrix_database_engine && config.matrix_database_host) {
+    const tomRouter = await mountTomRouter(config, logger);
+    legacyRouter.use(tomRouter);
+  } else {
+    logger.warn("skipping ToM legacy router: matrix_database_engine and matrix_database_host not set");
   }
+
+  if (config.is_federated_identity_service) {
+    const fedRouter = await mountFederatedRouter(config, logger);
+    legacyRouter.use(fedRouter);
+  } else {
+    logger.warn("skipping federated legacy router: is_federated_identity_service not set");
+  }
+
+  return legacyRouter as Router;
 }
 
 function resolveTemplatesDir(configured: string): string {
@@ -64,16 +76,16 @@ export function mapToLegacyConfig(config: Config): LegacyConfig {
     invitation_redirect_url: config.urls.invitation_redirect,
 
     // --- Synapse ---
-    matrix_server: config.synapse.server_url.replace(/^https?:\/\//, ""),
-    matrix_internal_host: config.synapse.internal_host,
-    matrix_admin_login: config.synapse.admin.login,
-    matrix_admin_password: config.synapse.admin.password,
-    admin_access_token: config.synapse.admin.access_token,
-    matrix_database_host: config.synapse.database.host,
-    matrix_database_name: config.synapse.database.name,
-    matrix_database_user: config.synapse.database.user,
-    matrix_database_password: config.synapse.database.password,
-    matrix_database_ssl: config.synapse.database.ssl,
+    matrix_server: config.synapse?.server_url?.replace(/^https?:\/\//, "") ?? "",
+    matrix_internal_host: config.synapse?.internal_host ?? "",
+    matrix_admin_login: config.synapse?.admin?.login ?? "",
+    matrix_admin_password: config.synapse?.admin?.password ?? "",
+    admin_access_token: config.synapse?.admin?.access_token ?? "",
+    matrix_database_host: config.synapse?.database?.host ?? "",
+    matrix_database_name: config.synapse?.database?.name ?? "",
+    matrix_database_user: config.synapse?.database?.user ?? "",
+    matrix_database_password: config.synapse?.database?.password ?? "",
+    matrix_database_ssl: config.synapse?.database?.ssl ?? false,
 
     // --- Database ---
     database_host: config.database.host,
@@ -96,18 +108,19 @@ export function mapToLegacyConfig(config: Config): LegacyConfig {
     policies: config.terms.policies ?? null,
 
     // --- Email ---
-    smtp_server: config.email.smtp_host,
-    smtp_port: config.email.smtp_port,
-    smtp_tls: config.email.tls,
-    smtp_user: config.email.username,
-    smtp_password: config.email.password,
-    smtp_sender: config.email.sender,
-    sender_localpart: config.email.sender_localpart,
-    smtp_verify_certificate: config.email.verify_certificate,
-    template_dir: resolveTemplatesDir(config.email.templates_dir),
-    mail_link_delay: config.email.link_expiry,
+    smtp_server: config.email?.smtp_host ?? "",
+    smtp_port: config.email?.smtp_port ?? 587,
+    smtp_tls: config.email?.tls ?? true,
+    smtp_user: config.email?.username ?? "",
+    smtp_password: config.email?.password ?? "",
+    smtp_sender: config.email?.sender ?? "",
+    sender_localpart: config.email?.sender_localpart ?? "twake",
+    smtp_verify_certificate: config.email?.verify_certificate ?? true,
+    template_dir: resolveTemplatesDir(config.email?.templates_dir ?? ""),
+    mail_link_delay: config.email?.link_expiry ?? 3600,
 
     // --- LDAP ---
+    userdb_engine: config.ldap.uri ? "ldap" : null,
     ldap_uri: config.ldap.uri,
     ldap_base: config.ldap.base,
     ldap_user: config.ldap.user,
@@ -201,10 +214,8 @@ export function mapToLegacyConfig(config: Config): LegacyConfig {
 }
 
 export async function createLegacyRouter(config: Config, logger: Logger): Promise<Router> {
-  const router = Router();
-
-  await initializeLegacyRoutes(router, mapToLegacyConfig(config), logger.child({ module: "legacy" }));
+  const legacyRouter = await initializeLegacyRoutes(mapToLegacyConfig(config), logger.child({ module: "legacy" }));
   logger.info("legacy router ready");
 
-  return router;
+  return legacyRouter;
 }

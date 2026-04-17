@@ -20,27 +20,27 @@ const DEFAULT_DB_VACUUM_DELAY = 3600;
 
 const DEFAULT_HASH_RATE_LIMIT = 100;
 const DEFAULT_HASH_KEY_DELAY = 3600;
-const DEFAULT_HASH_KEYS_DEPTH = 3;
+const DEFAULT_HASH_KEYS_DEPTH = 5;
 const DEFAULT_HASH_PEPPER_CRON = "0 0 * * *";
 
 const DEFAULT_SMTP_PORT = 587;
-const DEFAULT_SENDER_LOCALPART = "tom";
+const DEFAULT_SENDER_LOCALPART = "twake";
 const DEFAULT_LINK_EXPIRY = 3600;
 
 const DEFAULT_LDAP_UID_FIELD = "uid";
-const DEFAULT_LDAP_SYNC_CRON = "0 */4 * * *";
+const DEFAULT_LDAP_SYNC_CRON = "*/10 * * * *";
 
 const DEFAULT_CACHE_ENGINE = "memory";
 const DEFAULT_CACHE_TTL = 3600;
 
 const DEFAULT_SMS_API_URL = "https://api.octopush.com/v1/public";
 
-const DEFAULT_FEDERATION_SYNC_CRON = "0 */6 * * *";
+const DEFAULT_FEDERATION_SYNC_CRON = "*/10 * * * *";
 
 const DEFAULT_JWT_ALGORITHM = "HS256";
 
 const DEFAULT_TWAKE_CHAT_APP_NAME = "Twake Chat";
-const DEFAULT_TWAKE_CHAT_MAX_AVATAR_SIZE = "10485760";
+const DEFAULT_TWAKE_CHAT_MAX_AVATAR_SIZE = "";
 
 const DEFAULT_VISIBILITY = "private";
 
@@ -229,8 +229,8 @@ const rateLimitingSchema = z.object({
 
 // biome-ignore lint/nursery/useExplicitType: Zod type is fragile to write by hand, we let TS infer it
 const synapseAdminSchema = z.object({
-  login: z.string(),
-  password: z.string(),
+  login: z.string().optional().default(""),
+  password: z.string().optional().default(""),
   access_token: z.string().default(""),
 });
 
@@ -327,10 +327,10 @@ const urlsSettingsSchema = z.object({
 
 // biome-ignore lint/nursery/useExplicitType: Zod type is fragile to write by hand, we let TS infer it
 const synapseSettingsSchema = z.object({
-  server_url: z.url(), // REQUIRED
-  internal_host: z.url(), // REQUIRED
-  admin: synapseAdminSchema, // REQUIRED
-  database: databaseSettingsSchema, // REQUIRED
+  server_url: z.url().optional().default(""),
+  internal_host: z.string().optional().default(""),
+  admin: synapseAdminSchema.optional(),
+  database: databaseSettingsSchema.optional(),
 });
 
 // biome-ignore lint/nursery/useExplicitType: Zod type is fragile to write by hand, we let TS infer it
@@ -343,7 +343,7 @@ const hashSettingsSchema = z.object({
 
 // biome-ignore lint/nursery/useExplicitType: Zod type is fragile to write by hand, we let TS infer it
 const invitationsSettingsSchema = z.object({
-  server_name: z.string().default(""),
+  server_name: z.string().default("matrix.to"),
 });
 
 // biome-ignore lint/nursery/useExplicitType: Zod type is fragile to write by hand, we let TS infer it
@@ -353,7 +353,7 @@ const termsSettingsSchema = z.object({
 
 // biome-ignore lint/nursery/useExplicitType: Zod type is fragile to write by hand, we let TS infer it
 const emailSettingsSchema = z.object({
-  smtp_host: z.string(), // REQUIRED
+  smtp_host: z.string().optional().default(""),
   smtp_port: z.number().int().default(DEFAULT_SMTP_PORT),
   tls: z.boolean().default(true),
   username: z.string().optional(),
@@ -419,9 +419,9 @@ const twakeChatSettingsSchema = z.object({
   application_name: z.string().default(DEFAULT_TWAKE_CHAT_APP_NAME),
   application_welcome_message: z.string().default(""),
   privacy_url: z.string().default(""),
-  render_html: z.boolean().default(false),
+  render_html: z.boolean().default(true),
   hide_redacted_events: z.boolean().default(false),
-  hide_unknown_events: z.boolean().default(false),
+  hide_unknown_events: z.boolean().default(true),
   issue_id: z.string().default(""),
   registration_url: z.string().default(""),
   twake_workplace_homeserver: z.string().default(""),
@@ -438,7 +438,7 @@ const twakeChatSettingsSchema = z.object({
 // biome-ignore lint/nursery/useExplicitType: Zod type is fragile to write by hand, we let TS infer it
 const featuresSettingsSchema = z.object({
   common_settings: commonSettingsSchema.prefault({}),
-  matrix_profile_updates_allowed: z.boolean().default(false),
+  matrix_profile_updates_allowed: z.boolean().default(true),
   user_profile: userProfileSchema.prefault({}),
   user_directory: userDirectorySchema.prefault({}),
   createroom_proxy: createroomProxySchema.optional(),
@@ -448,11 +448,11 @@ const featuresSettingsSchema = z.object({
 // biome-ignore lint/nursery/useExplicitType: Zod type is fragile to write by hand, we let TS infer it
 const serverConfigSchema = z.object({ server: serverSettingsSchema });
 // biome-ignore lint/nursery/useExplicitType: Zod type is fragile to write by hand, we let TS infer it
-const synapseConfigSchema = z.object({ synapse: synapseSettingsSchema });
+const synapseConfigSchema = z.object({ synapse: synapseSettingsSchema.prefault({}) });
 // biome-ignore lint/nursery/useExplicitType: Zod type is fragile to write by hand, we let TS infer it
 const databaseConfigSchema = z.object({ database: databaseSettingsSchema });
 // biome-ignore lint/nursery/useExplicitType: Zod type is fragile to write by hand, we let TS infer it
-const emailConfigSchema = z.object({ email: emailSettingsSchema });
+const emailConfigSchema = z.object({ email: emailSettingsSchema.prefault({}) });
 
 // Optional modules (Prefault passes empty object down)
 // biome-ignore lint/nursery/useExplicitType: Zod type is fragile to write by hand, we let TS infer it

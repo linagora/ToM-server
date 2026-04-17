@@ -154,13 +154,13 @@ const urlsConfigSchema = z.object({
 
 // biome-ignore lint/nursery/useExplicitType: Zod type is fragile to write by hand, we let TS infer it
 const synapseConfigSchema = z.object({
-  matrix_server: z.string(),
-  matrix_internal_host: z.string(),
-  matrix_admin_login: z.string(),
-  matrix_admin_password: z.string(),
-  admin_access_token: z.string(),
+  matrix_server: z.string().default(""),
+  matrix_internal_host: z.string().default(""),
+  matrix_admin_login: z.string().default(""),
+  matrix_admin_password: z.string().default(""),
+  admin_access_token: z.string().default(""),
   matrix_database_engine: z.literal("pg").nullable().optional().default("pg"),
-  matrix_database_host: z.string(),
+  matrix_database_host: z.string().default(""),
   matrix_database_name: z.string().nullable().optional(),
   matrix_database_password: z.string().nullable().optional(),
   matrix_database_ssl: connectionOptionsSchema.optional(),
@@ -201,16 +201,16 @@ const termsConfigSchema = z.object({
 
 // biome-ignore lint/nursery/useExplicitType: Zod type is fragile to write by hand, we let TS infer it
 const emailConfigSchema = z.object({
-  mail_link_delay: z.number(),
+  mail_link_delay: z.number().default(7200),
   smtp_password: z.string().optional(),
   smtp_port: z.number().optional(),
   smtp_sender: z.string().optional(),
-  smtp_server: z.string(),
+  smtp_server: z.string().default(""),
   smtp_tls: z.boolean().optional(),
   smtp_user: z.string().optional(),
   smtp_verify_certificate: z.boolean().optional(),
-  template_dir: z.string(),
-  sender_localpart: z.string(),
+  template_dir: z.string().default(""),
+  sender_localpart: z.string().default("twake"),
 });
 
 // biome-ignore lint/nursery/useExplicitType: Zod type is fragile to write by hand, we let TS infer it
@@ -223,7 +223,7 @@ const ldapConfigSchema = z.object({
   ldap_uid_field: z.string().optional(),
   ldapts_opts: z.record(z.string(), z.any()).optional(),
   update_users_cron: z.string().optional(),
-  userdb_engine: z.literal("ldap").optional().default("ldap"),
+  userdb_engine: z.literal("ldap").nullable(),
   userdb_host: z.string().optional(),
   userdb_name: z.string().optional(),
   userdb_password: z.string().optional(),
