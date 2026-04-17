@@ -249,6 +249,7 @@ const smsConfigSchema = z.object({
 const federationConfigSchema = z.object({
   federated_identity_services: z.array(z.string()).nullable().optional(),
   is_federated_identity_service: z.boolean(),
+  trusted_servers_addresses: z.array(z.string()),
   update_federated_identity_hashes_cron: z.string().optional(),
 });
 

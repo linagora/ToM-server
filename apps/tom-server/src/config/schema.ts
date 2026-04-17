@@ -394,6 +394,7 @@ const smsSettingsSchema = z.object({
 // biome-ignore lint/nursery/useExplicitType: Zod type is fragile to write by hand, we let TS infer it
 const federationSettingsSchema = z.object({
   is_federated_identity_service: z.boolean().default(false),
+  trusted_servers_addresses: z.array(z.string()).default([]),
   identity_services: z.array(z.string()).default([]),
   sync_cron: z.string().default(DEFAULT_FEDERATION_SYNC_CRON),
 });

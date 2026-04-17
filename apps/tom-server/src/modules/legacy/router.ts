@@ -4,6 +4,7 @@ import { resolve } from "node:path";
 import { Router } from "express";
 import type { Logger } from "winston";
 
+import FederatedIdentityService from "@twake/federated-identity-service";
 import TomServer from "@twake/server";
 
 import type { Config } from "../../config/types";
@@ -20,10 +21,18 @@ import type { LegacyConfig } from "./types";
 // }
 
 async function initializeLegacyRoutes(router: Router, config: LegacyConfig, logger: Logger): Promise<void> {
-  const tomServer = new TomServer(config, undefined, logger);
+  const tomServer = new TomServer(config, undefined, logger.child({ module: "ToM Legacy" }));
   await tomServer.ready;
 
   router.use(tomServer.endpoints);
+
+  // Conditionally mount federated identity service
+  if (config.is_federated_identity_service) {
+    const fedServer = new FederatedIdentityService(config, undefined, logger.child({ module: "Federated ToM Legacy" }));
+    await fedServer.ready;
+    router.use(fedServer.routes);
+    logger.info("federated identity service mounted");
+  }
 }
 
 function resolveTemplatesDir(configured: string): string {
@@ -120,6 +129,7 @@ export function mapToLegacyConfig(config: Config): LegacyConfig {
 
     // --- Federation ---
     is_federated_identity_service: config.federation.is_federated_identity_service,
+    trusted_servers_addresses: config.federation.trusted_servers_addresses,
     federated_identity_services: config.federation.identity_services,
     update_federated_identity_hashes_cron: config.federation.sync_cron,
 
