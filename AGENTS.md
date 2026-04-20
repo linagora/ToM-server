@@ -79,8 +79,15 @@ All inter-package dependencies are managed via npm workspace protocol.
 - `ldapts` — LDAP client for user directory integration
 - `tweetnacl` — NaCl cryptography (Ed25519/Curve25519)
 - `dotenv` — Environment variable loading
-- `concurrently` — Dev: parallel watch + serve
 - `lerna` — Monorepo build orchestration
 - `rollup` — Module bundler for all packages
 
 <!-- MANUAL: -->
+
+## Working on the Code
+
+This repo is advocating the use of guidelines for code contribution.
+Please refere to:
+
+- CODING_STYLE.md: for all code related rules
+- CONTRIBUTING.md: for all developer guidelines

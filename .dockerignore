@@ -20,7 +20,7 @@
 !packages/**/rollup.config.js
 
 ## Allow source files
-!apps/tom-server/src
+!apps/tom-server/src/
 !apps/tom-server/project.json
 !apps/tom-server/webpack.config.js
 !apps/tom-server/tsconfig.json

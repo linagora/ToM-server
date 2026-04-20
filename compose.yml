@@ -160,9 +160,8 @@ services:
       - ./.compose/ssl/certs:/etc/nginx/ssl:ro
       - llng_sys_config:/etc/lemonldap-ng
       - llng_var_config:/var/lib/lemonldap-ng/conf
-    tmpfs:
-      - /var/lib/lemonldap-ng/sessions
-      - /var/lib/lemonldap-ng/psessions
+      - llng_sessions:/var/lib/lemonldap-ng/sessions
+      - llng_psessions:/var/lib/lemonldap-ng/psessions
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost/ || exit 1"]
       interval: 10s
@@ -306,6 +305,8 @@ services:
 volumes:
   llng_sys_config:
   llng_var_config:
+  llng_sessions:
+  llng_psessions:
   postgres-data:
   rabbitmq-data:
   tom-twp-cs-bridge-data:

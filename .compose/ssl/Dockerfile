@@ -5,8 +5,12 @@ ARG TARGETARCH
 ARG DOMAINS="docker.internal *.docker.internal localhost"
 
 RUN apk add --no-cache openssl curl && \
-    curl -Lo /usr/local/bin/mkcert \
-      "https://github.com/FiloSottile/mkcert/releases/download/${MKCERT_VERSION}/mkcert-${MKCERT_VERSION}-linux-$([ "$TARGETARCH" = "arm64" ] && echo "arm64" || echo "amd64")" && \
+    case "${TARGETARCH}" in \
+      amd64|arm64) ARCH="${TARGETARCH}" ;; \
+      *) echo "Unsupported TARGETARCH: ${TARGETARCH}" >&2; exit 1 ;; \
+    esac && \
+    curl -fLo /usr/local/bin/mkcert \
+      "https://github.com/FiloSottile/mkcert/releases/download/${MKCERT_VERSION}/mkcert-${MKCERT_VERSION}-linux-${ARCH}" && \
     chmod +x /usr/local/bin/mkcert && \
     apk del curl
 

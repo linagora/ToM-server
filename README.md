@@ -94,7 +94,7 @@ npx nx test tom-server
 
 # Serve with auto-reload
 npx nx serve tom-server # loads system config + local .tomconfig.yaml
-npx nx serve tom-server --args="--config" --args="path/to/config.yaml" # at least expects the targeted config file
+npx nx serve tom-server --args="--config" --args="path/to/config.yaml" # loads as above + path/to/config.yaml file as final precedence
 ```
 
 ## Configuration

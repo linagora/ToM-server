@@ -8,7 +8,7 @@
       "runtimeExecutable": "npx",
       "runtimeArgs": ["nx", "serve", "tom-server", "--no-tui"],
       "env": {
-        "NODE_OPTIONS": "--inspect=9229"
+        "NODE_OPTIONS": "--inspect=0"
       },
       "console": "integratedTerminal",
       "internalConsoleOptions": "neverOpen",
