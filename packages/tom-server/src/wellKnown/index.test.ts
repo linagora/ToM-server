@@ -26,7 +26,8 @@ function buildConfig(
 ): WellKnownConfig {
   return {
     ...defaultConfig,
-    ...overrides
+    ...overrides,
+    base_url: 'https://remote.identity.url',
   } as WellKnownConfig
 }
 
