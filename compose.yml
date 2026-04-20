@@ -124,8 +124,8 @@ services:
     image: postgres:16-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_USER: twake
-      POSTGRES_PASSWORD: twake_password
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
       POSTGRES_DB: postgres
     volumes:
       - postgres-data:/var/lib/postgresql/data
@@ -158,6 +158,11 @@ services:
     volumes:
       - ./.compose/llng/lmConf-1.json:/var/lib/lemonldap-ng/conf/lmConf-1.json:ro
       - ./.compose/ssl/certs:/etc/nginx/ssl:ro
+      - llng_sys_config:/etc/lemonldap-ng
+      - llng_var_config:/var/lib/lemonldap-ng/conf
+    tmpfs:
+      - /var/lib/lemonldap-ng/sessions
+      - /var/lib/lemonldap-ng/psessions
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost/ || exit 1"]
       interval: 10s
@@ -299,6 +304,8 @@ services:
       - "traefik.http.middlewares.chat-redirect.redirectregex.permanent=true"
 
 volumes:
+  llng_sys_config:
+  llng_var_config:
   postgres-data:
-  tom-twp-cs-bridge-data:
   rabbitmq-data:
+  tom-twp-cs-bridge-data:

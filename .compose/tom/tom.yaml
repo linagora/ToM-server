@@ -1,4 +1,7 @@
+# Identity Service Configuration
 # Full reference: .tomconfig.example.yaml
+#
+# This configuration runs ToM as a full featured identity service.
 
 server:
   name: "docker.internal"
@@ -7,7 +10,8 @@ server:
   trusted_proxies:
     - uniquelocal
 
-  additional_features: false
+  additional_features: true
+  enable_cron_jobs: true
 
 synapse:
   server_url: "https://matrix.docker.internal"
@@ -39,8 +43,13 @@ email:
   verify_certificate: false
   sender: "no-reply@docker.internal"
 
+federation:
+  identity_services:
+    - "fed.docker.internal"
+  sync_cron: "*/1 * * * *"
+
+hash:
+  pepper_cron: "*/1 * * * *"
+
 oidc:
   issuer: "https://auth.docker.internal/"
-
-logger:
-  level: "silly"

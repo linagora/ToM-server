@@ -71,8 +71,37 @@ http:
       middlewares: ["cors-policy@file"]
       service: tom-local
 
+    # Federation service routes (when running on port 3001)
+    fed-direct:
+      rule: "Host(`fed.docker.internal`)"
+      entrypoints: ["websecure"]
+      tls: {}
+      priority: 110
+      middlewares: ["cors-policy@file"]
+      service: fed-local
+
+    fed-direct-http:
+      rule: "Host(`fed.docker.internal`)"
+      entrypoints: ["web"]
+      priority: 110
+      service: fed-local
+
+    fed-identity:
+      rule: "Host(`fed.docker.internal`) && PathPrefix(`/_matrix/identity/v2`)"
+      entrypoints: ["websecure"]
+      tls: {}
+      priority: 90
+      middlewares: ["cors-policy@file"]
+      service: fed-local
+
   services:
     tom-local:
       loadBalancer:
         servers:
           - url: "http://host.docker.internal:3000"
+    
+    fed-local:
+      loadBalancer:
+        servers:
+          - url: "http://host.docker.internal:3001"
+

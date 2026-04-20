@@ -1,5 +1,5 @@
 # =============================================================================
-# Deploy overrides — containerised tom-server
+# Deploy overrides — containerised tom-server with federation service
 #
 # Usage: docker compose -f compose.yml -f compose.deploy.yml up -d
 #
@@ -29,7 +29,7 @@ services:
       - ./.compose/traefik/dynamic/deploy.yml:/etc/traefik/dynamic.yaml:ro
 
   # ---------------------------------------------------------------------------
-  # ToM Server — containerised
+  # ToM Server — containerised (standard mode)
   # Config is loaded from /etc/twake/chat/tom/config.yaml (see docker.md)
   # ---------------------------------------------------------------------------
   tom:
@@ -48,7 +48,7 @@ services:
       - NODE_TLS_REJECT_UNAUTHORIZED=0
       - NODE_EXTRA_CA_CERTS=/certs/rootCA.pem
     volumes:
-      - ./.compose/tom/config.yaml:/etc/twake/chat/tom/config.yaml:ro
+      - ./.compose/tom/tom.yaml:/etc/twake/chat/tom/config.yaml:ro
       - ./.compose/ssl/certs:/certs:ro
     labels:
       - "traefik.enable=true"
@@ -82,3 +82,42 @@ services:
       - "traefik.http.routers.tom-matrix-client.middlewares=cors-policy@file"
 
       - "traefik.http.services.tom.loadbalancer.server.port=3000"
+
+  # ---------------------------------------------------------------------------
+  # ToM Federated Identity Service — containerised
+  # Runs as a standalone federation service with no LDAP or matrix connection
+  # Config is loaded from /etc/twake/chat/tom/fed.config.yaml
+  # ---------------------------------------------------------------------------
+  fed:
+    image: linagora/tom-server
+    build:
+      context: .
+      dockerfile: apps/tom-server/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres: { condition: service_healthy }
+      traefik: { condition: service_healthy }
+    environment:
+      - NODE_TLS_REJECT_UNAUTHORIZED=0
+      - NODE_EXTRA_CA_CERTS=/certs/rootCA.pem
+    volumes:
+      - ./.compose/tom/fed.yaml:/etc/twake/chat/tom/config.yaml:ro
+      - ./.compose/ssl/certs:/certs:ro
+    labels:
+      - "traefik.enable=true"
+
+      # Direct access via fed.docker.internal
+      - "traefik.http.routers.fed-direct.rule=Host(`fed.docker.internal`)"
+      - "traefik.http.routers.fed-direct.entrypoints=websecure"
+      - "traefik.http.routers.fed-direct.tls=true"
+      - "traefik.http.routers.fed-direct.priority=110"
+      - "traefik.http.routers.fed-direct.middlewares=cors-policy@file"
+
+      # Federation Identity Server API
+      - "traefik.http.routers.fed-identity.rule=Host(`fed.docker.internal`) && PathPrefix(`/_matrix/identity/v2`)"
+      - "traefik.http.routers.fed-identity.entrypoints=websecure"
+      - "traefik.http.routers.fed-identity.tls=true"
+      - "traefik.http.routers.fed-identity.priority=90"
+      - "traefik.http.routers.fed-identity.middlewares=cors-policy@file"
+
+      - "traefik.http.services.fed.loadbalancer.server.port=3000"

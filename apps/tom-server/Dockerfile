@@ -26,6 +26,7 @@ COPY packages/utils/package.json ./packages/utils/
 COPY packages/matrix-resolve/package.json ./packages/matrix-resolve/
 COPY packages/matrix-identity-server/package.json ./packages/matrix-identity-server/
 COPY packages/tom-server/package.json ./packages/tom-server/
+COPY packages/federated-identity-service/package.json ./packages/federated-identity-service/
 
 # Install all dependencies (cached unless package.json changes)
 RUN npm ci --ignore-scripts
@@ -54,22 +55,15 @@ COPY packages/matrix-identity-server/tsconfig.json packages/matrix-identity-serv
 
 COPY packages/tom-server/src ./packages/tom-server/src
 COPY packages/tom-server/tsconfig.json packages/tom-server/rollup.config.js ./packages/tom-server/
-COPY packages/tom-server/templates ./packages/tom-server/templates
-COPY packages/tom-server/static ./packages/tom-server/static
+
+COPY packages/federated-identity-service/src ./packages/federated-identity-service/src
+COPY packages/federated-identity-service/tsconfig.json packages/federated-identity-service/rollup.config.js ./packages/federated-identity-service/
 
 # Copy apps/tom-server source
 COPY apps/tom-server ./apps/tom-server/
 
 # Rebuild native modules, build legacy packages, then build the Nx app
-# RUN npm rebuild && \
-    # npm run build --workspace=@twake/config-parser && \
-    # npm run build --workspace=@twake/crypto && \
-    # npm run build --workspace=@twake/logger && \
-    # npm run build --workspace=@twake/utils && \
-    # npm run build --workspace=matrix-resolve && \
-    # npm run build --workspace=@twake/matrix-identity-server && \
-    # npm run build --workspace=@twake/server && \
-RUN    npx nx build tom-server --no-tui --skip-nx-cache --verbose
+RUN npx nx build tom-server --no-tui --skip-nx-cache --verbose
 
 # -----------------------------------------------------------------------------
 # Stage 2: Runtime image
@@ -105,6 +99,9 @@ COPY --from=builder /usr/src/app/packages/matrix-identity-server/package.json ./
 
 COPY --from=builder /usr/src/app/packages/tom-server/dist ./packages/tom-server/dist
 COPY --from=builder /usr/src/app/packages/tom-server/package.json ./packages/tom-server/
+
+COPY --from=builder /usr/src/app/packages/federated-identity-service/dist ./packages/federated-identity-service/dist
+COPY --from=builder /usr/src/app/packages/federated-identity-service/package.json ./packages/federated-identity-service/
 
 # Install production dependencies from the pruned lockfile
 RUN npm ci --omit=dev --ignore-scripts # && npm rebuild
