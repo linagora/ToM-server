@@ -34,6 +34,7 @@
   "key": "^vmTGvh{+]5!ToB?",
   "ldapServer": "ldap",
   "ldapPort": 389,
+  "ldapAuthnLevel": 2,
   "ldapBase": "dc=docker,dc=internal",
   "ldapExportedVars": {
     "uid": "uid",
@@ -49,7 +50,7 @@
   "ldapPwdEnc": "utf-8",
   "ldapSearchDeref": "find",
   "ldapTimeout": 10,
-  "ldapVerify": "none",
+  "ldapVerify": "require",
   "ldapVersion": 3,
   "managerDn": "",
   "managerPassword": "",
@@ -75,6 +76,7 @@
   "issuerDBOpenIDConnectActivation": 1,
   "issuerDBOpenIDConnectPath": "^/oauth2/",
   "issuerDBOpenIDConnectRule": 1,
+  "oidcAuthnLevel": 1,
   "oidcServiceAllowAuthorizationCodeFlow": 1,
   "oidcServiceAllowImplicitFlow": 0,
   "oidcServiceAuthorizationCodeExpiration": 60,
@@ -92,8 +94,10 @@
   "oidcServiceMetaDataCheckSessionURI": "checksession.html",
   "oidcServiceKeyIdSig": "llng-sso-key",
   "oidcServiceKeyTypeSig": "RSA",
-  "oidcServicePrivateKeySig": "-----BEGIN RSA PRIVATE KEY-----\nMIIEowIBAAKCAQEA0Z3VS5JJcds3xfn/ygWyF8PbnGy0AHB7MjeK/rwJsEH8E9PL\npSIVHMYFuvtmYZ3X5sT0uvdYlI1qlSy9WfWwhJOwOeDBgVaBWqyPJvwiaqF1K7XL\nmxxV5aP2GRrP3lMNoFOgSox3kHa5R/seBMCK8kTXk9JJneyuBF8nPj31RIoCMoHn\nqbEYT7V8YPVXJQPIW8Ls+CV7C/Vo3eYj2pFaOpTlTbySwg6NlkOYfmkcyMOxYvuq\nkmVMSdJr6tZjKwLDRD9KEhNFDlVzTfDJhNQdvHQlwv8j8L2rHMq8JJQgNJ0O9WvK\nNFdRjWJJry0e3BaZPYi3F2VxUj8FHdzJTXPEuQIDAQABAoIBAC0fiNRHJSB/vm8W\nsSCT7WzUHqGffYZ55Yzj9wIc4P7OY0nF7S6I7j5Ufx8i2vYZm3/h0DRb09sWvwey\nWPWj0601GqXK8ZKpjWHIZGQURFPpU04TErLsKEfbDAtGPaJfLgbxH1K5kM/YQFH6\nf9K3BL6K0v8F8UhYI8Ljvblum6tON5jWENSvnUnJHOro8H0mPQYpWOzLcOGlvrAM\nIjJWDCU5kLJQyiPaHq4jEKZ+QCzkdXWi5kYsMj0jJevTcXRdvHIEP1LeX0vqyF7c\nvfClo7M5HJfLsWa3KxJv7p6CrElb3j4dZJFv6yjbifmSHLiLy39EdQK1c/GV4nm3\nKrRRawECgYEA8xPqpltOxJsnhkm9aW1ZLSYCP7CdHBHjBMU2EMO/A8HAfwWgbOpM\nhoqNYdTjJcEsfug0pJD7rDHVNvo+M7A+7bazaxDBizDhSjvqKsXgD0v/lFpTfaqS\nLh8woTIHfVF2DDRJiVMIqYCftaYEiVMTpV/Rq8Rr1R/FlpDj+p+R4pkCgYEA3Iwm\nbvHqF6qpJPY9Z+c7D15XsJMS/YCSI1Z6ToQ1OOxb8FW5OIaylFC4KszUxoQkJjzA\nDZkOSt/MPdR1bJt1z02M+XMQLEAI8QUIP2WxYlaCzaWnIqfI9akEhgseqh/GVDNJ\nIhOLkpZpE8HVwdBrV29Py0NOlezrPdInK21ynAECgYEAwKYsNbKkfOSb4Z0JwghI\nvqJo62JL8J1ERw5DlxahLaJlPHYqgxjhBPIlaVPWIuy8S14oRLqXLLDv2cEGqfoC\nzqsY37qXba9dBfS0tj/6kG2p61L7I4vBmEzIR4VZ5vdNskV6bpCGO/aSOAu4pKwx\n3cQ0j3bFgkL8sXlbEfOTMikCgYBPgT1P8CgNRyi9M6jWDNwGdZ6F7cNlrHqPIS3S\n1uSFWwygNu6nzlhJNmPsTXoAHkKb7cLaOPtNl0DYkN/f5DYwqpvlP7rBbNWiAcwM\nJsrCrBrYph6hfwxjFmCK2e6R6XmllOROOx1P7CnoCD1HSrHfTmGGCSKrqycKXVPZ\nFVD0AQKBgGR2gQh9fnHrDBheL70kMqR7aUrUTWqHDVZR4za9ruXaLvUSvSLmSxjB\nn5djn72KTmPMqNnLFmJK5ZXKLHX/rvTKaYbV85kMxvmSg/DRhB/PKVNA7XqJl60T\nvbD3ZLz0lkdcyNeXLeu7mTdL0ntS7Mpi6f2w+LSuCLuWKfZ9sGgn\n-----END RSA PRIVATE KEY-----",
-  "oidcServicePublicKeySig": "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA0Z3VS5JJcds3xfn/ygWy\nF8PbnGy0AHB7MjeK/rwJsEH8E9PLpSIVHMYFuvtmYZ3X5sT0uvdYlI1qlSy9WfWw\nhJOwOeDBgVaBWqyPJvwiaqF1K7XLmxxV5aP2GRrP3lMNoFOgSox3kHa5R/seBMCK\n8kTXk9JJneyuBF8nPj31RIoCMoHnqbEYT7V8YPVXJQPIW8Ls+CV7C/Vo3eYj2pFa\nOpTlTbySwg6NlkOYfmkcyMOxYvuqkmVMSdJr6tZjKwLDRD9KEhNFDlVzTfDJhNQd\nvHQlwv8j8L2rHMq8JJQgNJ0O9WvKNFdRjWJJry0e3BaZPYi3F2VxUj8FHdzJTXPE\nuQIDAQAB\n-----END PUBLIC KEY-----",
+  "oidcServicePrivateKeyEnc": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQCI6kR7/n4mIMWC\nqC0b5Txes5IGAgd8SzIKsjG7KCI7UzhZgYhLyIOvz2Fg/CzHA8X6r8i2rqOXuLds\nNelepbj109gBnXILQinfRaxw3ui2Dkz8r+UJyTIF+sgmrkzLMYWERsiTCQd9rjlu\np4KTaBxEutNZ+T+kEb4MqZUOHIVCkY7q8dHoWpItVbNaaW9xYozUpXhvfoSIIvTk\nNxzihVjPVb4Xdrg0CTo6wzwEs4U6fcA6QNmbuX6TZGzGozx4mJZ7f0WbBQblEbsB\nJszz8VEnUUqWTcsAXcJODGbfojcq/kkdVOxM7cfD8Yfne3RP3MFiMoBx/xjLR3fn\niDE/gvFDAgMBAAECggEADULWM/BNWvdiSf/CBr6oSeqN99kAd/B3PgP5FHiUVYyq\nRjkT8MsmE27nA/7I038xENEv2UncUdiz+LOBZrJvJ22dBrhaOxmYdqYH8r1pwCBt\nzS0NkRS/V0btVe8cmbMH4ez9MQih2hwi4e3a6YN0TCU6+ARP6V3ykMVoHirIWXnI\nHDNA2I+Nn74QqsTFJvuwnhP3IWtF4FBXYBUfWkxx0iJEsZBdR1DxJCqMMP+v7UMP\niamPKYtR9q5cVzilS5w4tAfN41K7ouxEMG0vHqYsYLv70RKcBwcE1raU4P/8RQuQ\nxNEoi8Awwa1wif3nDL2XTxINcLQtOd5E/iYQkOPquQKBgQDAoCAEHuU3d9EOJ4VU\nT2gx4L31Fq8Na8/cd/SkA4bSDKA4MFNTGA86VsQDrA45vEmYcQJQ9Ne+Hp6qW9t1\nxYFhbhHfwqdQsn9j7b7KslGSFgSE3NzKxsE8tqX64CNVn5PNRxHsilttL0zRokUl\nrDEnILbvWZUaqTtYJIhZ0QaWNwKBgQC19fAFvsuV3GUoeptM7E4tOmd4lxqIspkX\n8t+zTi2dA0KQMZkfumIPEE4XOhgTkjHB1ITuBfk0Bx2+pJmy37cCEMEV3bfkBqt8\n6uL+G+5EcR9P2gK8N3+7Vb1cyKAuvAv/ofhqJ1btd47G/WTVJ07Jzgfk0P3zueHn\nhm9nu7z3VQKBgQCwVKSaQRIBUcxs0Z7KzBoMtrgNWOOMPKo+Hw0y6wuK0wYECbDt\nOvQNqomq9uDa11LjmmfNZiTspCkIuCfQyqkiYFk6ZX02cQAOoP9rnArx2PfwDCKN\n+Z3BD04ntvCBnB/35VwyFYGWFJuUt5/m2ZbxQ5BS0MWeb1ak3GR5G9CUxwKBgQCA\nMRr/QTK2ioXt5arhn51X+cyJxZKY+ZInsCDvdsVl17UeVwL0ul95E1igvnnV1+oc\nDzfzZNvzTowjEl2CCmApIVqWqBR0nkpUgDqZIV5Uc4nGvOWuaj8f4MC+zE0lf6/I\nUfjr+HkiZVd+U2ilTsMQI4mmJ6KyAaPoc+qqnzX63QKBgDOmNLTaJ5RsEsVqfOmN\naZshyokfpJFJn9Z7MP2RkETX1BvypeHgLImi0bat5HVY54Y++a1XKPWO0qB5Z5B9\nWlTMgdvrKVTeY9FbXf4ffJgdZ/GO1q7CD/jNbVIhjx9na84yizYUcV83sSvcJN4H\npRGh47Yv6LClsmOKTaVjjSre\n-----END PRIVATE KEY-----\n",
+  "oidcServicePrivateKeySig": "-----BEGIN PRIVATE KEY-----\nMIIEvwIBADANBgkqhkiG9w0BAQEFAASCBKkwggSlAgEAAoIBAQDxZUj8oppjk+dc\nEUnA994k3sgHJdWzIV9DAnffoVXOjcqAlnb0Qgiz3yoG0talPuc1V644MxDEi9AY\ne3YDk4fCJzj8AWlzSC3hO2/UF+0mtvBeG0rtFInG0KpOwddl2xYusZ2LffCFvdVJ\nkt64QNHOjYp513qfSwzt96JazesCl1eJPrKaKnVJR11JL+3fz9j0GgYcG2KcRLBp\nSsz6TtHMXbREYU8XZnQLgrdsSQWfamG9/xx9BLrI4L2MGOKgmQQrQ77vV0z90N0h\nudINuocycGgoM5b0i7e7P+25OPit3SgiZqf27yVExP7GhEQP6fIzb5i2SaSXpmH7\naR2ReHEvAgMBAAECggEAdMbiwBSJS5LJYaibXVaLiJqdeZe8AaQrSWdwRibuM7Y0\nOHCRqygmvZ0/330viVEc2JlKFrXdbreUO8O+G4zLKAmBb6ffM32/dC4ksx3AA/KL\n5XqejIJbBGr9eIwdf5C08nHKHSkXqhtjiuwaAliZJqsiSj8LevP7lUMur27eOam8\nkZ1bwjnIs4oxDM1qPbNO6Q1v49onfiXILmA3lGUzFNbHMxNgpvuQw5Xz76rvGncG\nKnE4kWBIEY+cOW6O8m50is1eIX3lhpc6qexQsbZ2E/iPOvvfDlX55Adp+dwL7crk\nOSsUWH5d/4tbk86Jl3Jx0KyF6hfBDFuwrZt8Ak4ywQKBgQD5v8p+uGuJcSBHMz8c\nS9m+aCBUpdJNvvyofoo7hkGkUgYJdFsMvpNWh9LmB8uK5HXYIl1hKF6vzipnD59P\n69yDB6kki//Q5kR4NSBiBJu+WUBAj3njGWabtIW5iMAXPDcU8EE6cZjWOkNtbM7u\nKZipWpwjyYVfMegtTgh5EI/vhQKBgQD3b/iFBQkvTkc4Ae2IK4bk5UdU8q8N0iDE\n5VKjwwQCT29G/pQV0fm/JO69YvLtefw4NAW0VUmoIVgboSTRbBXJWVVpXiQzxWgU\njjsKHdzlkxxcqsmkRSxoPDQdkea22/xcaqy3EY50yGlym9bRbSog1f9D6BHkVrfV\npNEojwmKIwKBgQDfYtABln0BW4FOjiTl72ZcrBA3Bnbb+XdOUpjb8xMlogQqUrvZ\n42AwJp7aB6Dko8JQRzSU4aIHx/UfZ9bMiqAbRy/gM6TmOgCGMKa9ZXfUw0n4NR0F\np0OjA84UjJ+caMyv2tHNL6xP+Z8z8f4JAoW8/QHp9Kdp5V7RnxlvCARmbQKBgQDC\ncp3Mew6ivFM/clRmRD53tq591VE3/T9/O+/bfa+y2RXLpthc5WvsiGuNLStW8BwD\nVu58ruF5XOrOm65BXT0pxChY64BrpuCJ9tPyuVEUoK0TLavUif/B0j3qVvQGE46Y\nWcRtAUEACVbEmC8S2UTYFRPLG56j4HoLTMCJrQ6EHQKBgQCQTUB75RO/v2XPKhHG\nNBPWVoCBVT6qI8uAGR0l7Ru/Z8APHIOZM+g6VN0FsKIyURqP+0ojiN6PjG9Jri6b\nfSQmdQW7BgQJIpwmL5NRd2cVmOQ/pvU5FvhpusKwWC0Ab9EhFFQHrUQK9wAcXy4a\nsWPrr0+l0WNdZKlI0wsszUIC6g==\n-----END PRIVATE KEY-----\n",
+  "oidcServicePublicKeyEnc": "-----BEGIN CERTIFICATE-----\nMIICszCCAZugAwIBAgIFAMspGRIwDQYJKoZIhvcNAQELBQAwGzEZMBcGA1UEAwwQ\nYXV0aC5leGFtcGxlLmNvbTAeFw0yNjA0MTMxNjA5MzBaFw00NjA0MDgxNjA5MzBa\nMBsxGTAXBgNVBAMMEGF1dGguZXhhbXBsZS5jb20wggEiMA0GCSqGSIb3DQEBAQUA\nA4IBDwAwggEKAoIBAQCI6kR7/n4mIMWCqC0b5Txes5IGAgd8SzIKsjG7KCI7UzhZ\ngYhLyIOvz2Fg/CzHA8X6r8i2rqOXuLdsNelepbj109gBnXILQinfRaxw3ui2Dkz8\nr+UJyTIF+sgmrkzLMYWERsiTCQd9rjlup4KTaBxEutNZ+T+kEb4MqZUOHIVCkY7q\n8dHoWpItVbNaaW9xYozUpXhvfoSIIvTkNxzihVjPVb4Xdrg0CTo6wzwEs4U6fcA6\nQNmbuX6TZGzGozx4mJZ7f0WbBQblEbsBJszz8VEnUUqWTcsAXcJODGbfojcq/kkd\nVOxM7cfD8Yfne3RP3MFiMoBx/xjLR3fniDE/gvFDAgMBAAEwDQYJKoZIhvcNAQEL\nBQADggEBAFa/sKVjZeLXYpIDjdg7lTCBQfEAxXPUxIbk9GP+34SNJhjzR53pwMwg\nL3eujq7Y2ZzZa5DVmRQcLuVLTU1ttyx2MkIvb8E+phliKBLwISP4Rnz2lqsQ/Rru\nBzF0/y0b5IO+M6201w7hx/JoWCAupHZbzU8W9YSDSQs7t5E0mgaKjtcFgDXZb79U\ny17DwBRB4T5+Soi5EVnexRR7YLuQImcOEzmlTIWltSMKUkkeSh6bCR8FdmvuVgm7\na0XB2PzJgBcgWawURDlqj+QQJwuEPK5vQKecCQ8Ip+1747shUqtMtAeN3p0zvRjK\nMHtc3AL+FMDEpYJ81wsWwdCtaIygQQU=\n-----END CERTIFICATE-----\n",
+  "oidcServicePublicKeySig": "-----BEGIN CERTIFICATE-----\nMIICsjCCAZqgAwIBAgIEYN2lITANBgkqhkiG9w0BAQsFADAbMRkwFwYDVQQDDBBh\ndXRoLmV4YW1wbGUuY29tMB4XDTI2MDQxMzE2MDkyOFoXDTQ2MDQwODE2MDkyOFow\nGzEZMBcGA1UEAwwQYXV0aC5leGFtcGxlLmNvbTCCASIwDQYJKoZIhvcNAQEBBQAD\nggEPADCCAQoCggEBAPFlSPyimmOT51wRScD33iTeyAcl1bMhX0MCd9+hVc6NyoCW\ndvRCCLPfKgbS1qU+5zVXrjgzEMSL0Bh7dgOTh8InOPwBaXNILeE7b9QX7Sa28F4b\nSu0UicbQqk7B12XbFi6xnYt98IW91UmS3rhA0c6NinnXep9LDO33olrN6wKXV4k+\nspoqdUlHXUkv7d/P2PQaBhwbYpxEsGlKzPpO0cxdtERhTxdmdAuCt2xJBZ9qYb3/\nHH0EusjgvYwY4qCZBCtDvu9XTP3Q3SG50g26hzJwaCgzlvSLt7s/7bk4+K3dKCJm\np/bvJUTE/saERA/p8jNvmLZJpJemYftpHZF4cS8CAwEAATANBgkqhkiG9w0BAQsF\nAAOCAQEAmiCp7dqgXi2hu4UpO6Jrnx02JK+gFCPsheigZSzAoH3NFkI66+l6D+1H\ncaZo8/qIlIfUA9H+1k+cD7UHO7mhQDLblqSzKgzLrLBq9TGiZW2BREOfOEAmRO+A\nnrY5VjAc87z2/so3MVCtm4OozywXbb0ql44K9JdEgXk1mrTh3TxluNn62g+yTq6B\neDmAwFJMInHItoKlx0aHdiPapy0Fl0r2PSJXzBA8ZZtDNifTgJgIr+e7gDSrt6TM\nS/CSkz5WYzJeMb3fQtRax8JhsAlgmBKNwn+1/G6Kgh9ploHMSZby5xgdt+kojV4R\nMa/ShT+ovYzXNXVIiWnLJ1+fESt18A==\n-----END CERTIFICATE-----\n",
   "oidcRPMetaDataExportedVars": {
     "matrix": {
       "email": "mail",
@@ -124,7 +128,8 @@
       "oidcRPMetaDataOptionsPublic": 0,
       "oidcRPMetaDataOptionsRedirectUris": "https://matrix.docker.internal/_synapse/client/oidc/callback",
       "oidcRPMetaDataOptionsRefreshToken": 0,
-      "oidcRPMetaDataOptionsRequirePKCE": 0
+      "oidcRPMetaDataOptionsRequirePKCE": 0,
+      "oidcRPMetaDataOptionsTokenXAuthorizedMatrix": "docker.internal"
     }
   },
   "locationRules": {

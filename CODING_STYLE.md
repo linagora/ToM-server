@@ -176,6 +176,54 @@ name — `fetchAndTransformUser` — you have written two functions that happen 
 share a body. Extract them. Each one becomes individually testable and individually
 reusable.
 
+### `function` for things that _are_ something. `=>` for things that _do_ something inline.
+
+Use `function` declarations for named, standalone, exported units — factories,
+service methods, controllers, entry points. These are the nouns of your
+architecture. They get hoisted, they have a `name` property useful in stack
+traces, and they signal to the reader "this is a first-class building block."
+
+Use arrow functions for callbacks, transforms, inline helpers, and closures
+returned from factories. These are the verbs — they operate inside a context
+established by a `function`.
+
+The distinction is not aesthetic. It maps to a real structural difference:
+`function` declarations are hoisted and self-named; arrow functions are
+positional and anonymous (even when assigned to a `const`, the `.name` property
+is inferred, not intrinsic, and does not survive minification). Using `function`
+for your architecture's named units makes stack traces, profiler output, and
+`Function.name`-based debugging more useful.
+
+```ts
+// Named building block — function declaration.
+export function createIdentityRouter(deps: AppDeps): Router {
+  const router = Router()
+
+  // Callback — arrow function.
+  router.post('/lookup', async (req, res, next) => {
+    // ...
+  })
+
+  return router
+}
+
+// Factory returning a callback — outer is function, inner is arrow.
+export function authMiddleware(deps: AppDeps) {
+  return async (req: Request, _res: Response, next: NextFunction): Promise<void> => {
+    // ...
+  }
+}
+
+// Transform / inline helper — arrow function.
+const withDisplayName = (u: User) => ({
+  ...u,
+  displayName: `${u.firstName} ${u.lastName}`,
+})
+```
+
+The heuristic: if you would give it a JSDoc block, it is a `function`. If you
+would not, it is an `=>`.
+
 ### Maximum 5 arguments. No exceptions.
 
 The reason is cognitive, not aesthetic. Research on working memory (Miller's law:

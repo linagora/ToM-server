@@ -25,19 +25,7 @@ jobs:
     with:
       app-name: tom-server
       image-name: linagora/tom-server
-      dockerfile: Dockerfile
-    secrets:
-      DOCKERHUB_USER: ${{ secrets.DOCKERHUB_USER }}
-      DOCKERHUB_PASSWORD: ${{ secrets.DOCKERHUB_PASSWORD }}
-
-  publish-federated-identity-service:
-    name: Publish ToM Federated Identity Service
-    needs: test
-    uses: ./.github/workflows/_docker-publish.yml
-    with:
-      app-name: federated-identity-service
-      image-name: linagora/tom-federated-identity-service
-      dockerfile: packages/federated-identity-service/Dockerfile
+      dockerfile: apps/tom-server/Dockerfile
     secrets:
       DOCKERHUB_USER: ${{ secrets.DOCKERHUB_USER }}
       DOCKERHUB_PASSWORD: ${{ secrets.DOCKERHUB_PASSWORD }}

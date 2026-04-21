@@ -15,9 +15,9 @@ ToM-Server (Twake on Matrix Server) is a npm monorepo that implements a Matrix I
 | `tsconfig.json`       | Root TypeScript configuration (strict mode, ES module target)      |
 | `jest-base.config.js` | Shared Jest configuration extended by all packages                 |
 | `rollup.config.js`    | Shared Rollup bundler configuration                                |
-| `docker-compose.yml`  | Main compose file for local development stack                      |
-| `Dockerfile`          | Container image for the main tom-server package                    |
-| `.env.example`        | Template for required environment variables                        |
+| `compose.yml`         | Base compose — shared infrastructure (traefik, ldap, postgres, synapse, auth, rabbitmq, cs-bridge, chat) |
+| `compose.override.yml` | Dev overrides — auto-loaded; routes tom to host (`npx nx serve`) |
+| `compose.deploy.yml`  | Deploy overrides — adds tom as a Docker container                  |
 | `biome.json`          | Biome linter and formatter configuration                           |
 | `README.md`           | Project overview and setup instructions                            |
 | `TODO.md`             | In-progress work notes                                             |
@@ -27,8 +27,9 @@ ToM-Server (Twake on Matrix Server) is a npm monorepo that implements a Matrix I
 
 | Directory   | Purpose                                                                        |
 | ----------- | ------------------------------------------------------------------------------ |
-| `packages/` | All workspace packages — 11 TypeScript packages (see `packages/AGENTS.md`)     |
-| `.compose/` | Docker Compose service configurations for local dev (see `.compose/AGENTS.md`) |
+| `apps/tom-server/` | The active unified server (`npx nx serve tom-server`); has its own `Dockerfile` and `docker.md` |
+| `packages/` | Legacy workspace packages — deprecated, being migrated to `apps/tom-server` (see `packages/AGENTS.md`) |
+| `.compose/` | Docker Compose service configs and assets (synapse, ldap, traefik, cs-bridge…) (see `.compose/AGENTS.md`) |
 | `.github/`  | GitHub Actions CI/CD workflows (see `.github/AGENTS.md`)                       |
 | `docs/`     | Swagger UI API documentation assets (see `docs/AGENTS.md`)                     |
 | `.husky/`   | Git hooks: `pre-commit` (lint), `pre-push` (test)                              |
@@ -78,8 +79,15 @@ All inter-package dependencies are managed via npm workspace protocol.
 - `ldapts` — LDAP client for user directory integration
 - `tweetnacl` — NaCl cryptography (Ed25519/Curve25519)
 - `dotenv` — Environment variable loading
-- `concurrently` — Dev: parallel watch + serve
 - `lerna` — Monorepo build orchestration
 - `rollup` — Module bundler for all packages
 
 <!-- MANUAL: -->
+
+## Working on the Code
+
+This repo is advocating the use of guidelines for code contribution.
+Please refere to:
+
+- CODING_STYLE.md: for all code related rules
+- CONTRIBUTING.md: for all developer guidelines

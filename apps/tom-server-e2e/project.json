@@ -1,0 +1,26 @@
+{
+  "name": "tom-server-e2e",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "implicitDependencies": ["tom-server"],
+  "projectType": "application",
+  "targets": {
+    "check": {
+      "command": "npx biome check {projectRoot}"
+    },
+    "check:write": {
+      "command": "npx biome check --write {projectRoot}"
+    },
+    "check:write:unsafe": {
+      "command": "npx biome check --write --unsafe {projectRoot}"
+    },
+    "e2e": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/{e2eProjectRoot}"],
+      "options": {
+        "jestConfig": "apps/tom-server-e2e/jest.config.ts",
+        "passWithNoTests": true
+      },
+      "dependsOn": ["tom-server:build", "tom-server:serve"]
+    }
+  }
+}

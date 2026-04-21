@@ -1,0 +1,123 @@
+# =============================================================================
+# Deploy overrides — containerised tom-server with federation service
+#
+# Usage: docker compose -f compose.yml -f compose.deploy.yml up -d
+#
+# Before running:
+#   cp .compose/tom/config.example.yaml .compose/tom/config.yaml
+#   # Edit .compose/tom/config.yaml — fill in required fields
+# =============================================================================
+
+services:
+
+  traefik:
+    # Add file provider for mkcert TLS certs and CORS middleware.
+    # Tom routing is handled via Docker labels below (no tom-local route needed).
+    command:
+      - "--api.insecure=true"
+      - "--api.dashboard=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--providers.file.filename=/etc/traefik/dynamic.yaml"
+      - "--providers.file.watch=true"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
+      - "--entrypoints.websecure.address=:443"
+      - "--log.level=INFO"
+    volumes:
+      - ./.compose/traefik/dynamic/deploy.yml:/etc/traefik/dynamic.yaml:ro
+
+  # ---------------------------------------------------------------------------
+  # ToM Server — containerised (standard mode)
+  # Config is loaded from /etc/twake/chat/tom/config.yaml (see docker.md)
+  # ---------------------------------------------------------------------------
+  tom:
+    image: linagora/tom-server
+    build:
+      context: .
+      dockerfile: apps/tom-server/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      synapse: { condition: service_healthy }
+      postgres: { condition: service_healthy }
+      traefik: { condition: service_healthy }
+      ldap: { condition: service_healthy }
+      smtp: { condition: service_started }
+    environment:
+      - NODE_TLS_REJECT_UNAUTHORIZED=0
+      - NODE_EXTRA_CA_CERTS=/certs/rootCA.pem
+    volumes:
+      - ./.compose/tom/tom.yaml:/etc/twake/chat/tom/config.yaml:ro
+      - ./.compose/ssl/certs:/certs:ro
+    labels:
+      - "traefik.enable=true"
+
+      # Direct access via tom.docker.internal
+      - "traefik.http.routers.tom-direct.rule=Host(`tom.docker.internal`)"
+      - "traefik.http.routers.tom-direct.entrypoints=websecure"
+      - "traefik.http.routers.tom-direct.tls=true"
+      - "traefik.http.routers.tom-direct.priority=110"
+      - "traefik.http.routers.tom-direct.middlewares=cors-policy@file"
+
+      # .well-known endpoints on the matrix domain
+      - "traefik.http.routers.tom-wellknown.rule=(Host(`matrix.docker.internal`) || Host(`docker.internal`)) && PathPrefix(`/.well-known/matrix/client`)"
+      - "traefik.http.routers.tom-wellknown.entrypoints=websecure"
+      - "traefik.http.routers.tom-wellknown.tls=true"
+      - "traefik.http.routers.tom-wellknown.priority=100"
+      - "traefik.http.routers.tom-wellknown.middlewares=cors-policy@file"
+
+      # Matrix Identity Server API
+      - "traefik.http.routers.tom-identity.rule=Host(`matrix.docker.internal`) && PathPrefix(`/_matrix/identity/v2`)"
+      - "traefik.http.routers.tom-identity.entrypoints=websecure"
+      - "traefik.http.routers.tom-identity.tls=true"
+      - "traefik.http.routers.tom-identity.priority=90"
+      - "traefik.http.routers.tom-identity.middlewares=cors-policy@file"
+
+      # createRoom proxy
+      - "traefik.http.routers.tom-matrix-client.rule=Host(`matrix.docker.internal`) && PathPrefix(`/_matrix/client/v3/createRoom`)"
+      - "traefik.http.routers.tom-matrix-client.entrypoints=websecure"
+      - "traefik.http.routers.tom-matrix-client.tls=true"
+      - "traefik.http.routers.tom-matrix-client.priority=80"
+      - "traefik.http.routers.tom-matrix-client.middlewares=cors-policy@file"
+
+      - "traefik.http.services.tom.loadbalancer.server.port=3000"
+
+  # ---------------------------------------------------------------------------
+  # ToM Federated Identity Service — containerised
+  # Runs as a standalone federation service with no LDAP or matrix connection
+  # Config is loaded from /etc/twake/chat/tom/fed.config.yaml
+  # ---------------------------------------------------------------------------
+  fed:
+    image: linagora/tom-server
+    build:
+      context: .
+      dockerfile: apps/tom-server/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres: { condition: service_healthy }
+      traefik: { condition: service_healthy }
+    environment:
+      - NODE_TLS_REJECT_UNAUTHORIZED=0
+      - NODE_EXTRA_CA_CERTS=/certs/rootCA.pem
+    volumes:
+      - ./.compose/tom/fed.yaml:/etc/twake/chat/tom/config.yaml:ro
+      - ./.compose/ssl/certs:/certs:ro
+    labels:
+      - "traefik.enable=true"
+
+      # Direct access via fed.docker.internal
+      - "traefik.http.routers.fed-direct.rule=Host(`fed.docker.internal`)"
+      - "traefik.http.routers.fed-direct.entrypoints=websecure"
+      - "traefik.http.routers.fed-direct.tls=true"
+      - "traefik.http.routers.fed-direct.priority=110"
+      - "traefik.http.routers.fed-direct.middlewares=cors-policy@file"
+
+      # Federation Identity Server API
+      - "traefik.http.routers.fed-identity.rule=Host(`fed.docker.internal`) && PathPrefix(`/_matrix/identity/v2`)"
+      - "traefik.http.routers.fed-identity.entrypoints=websecure"
+      - "traefik.http.routers.fed-identity.tls=true"
+      - "traefik.http.routers.fed-identity.priority=90"
+      - "traefik.http.routers.fed-identity.middlewares=cors-policy@file"
+
+      - "traefik.http.services.fed.loadbalancer.server.port=3000"

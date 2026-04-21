@@ -1,0 +1,8 @@
+M_INVALID_PARAM: "Invalid parameter: {{detail}}"
+M_UNAUTHORIZED: "Authentication required"
+M_FORBIDDEN: "You do not have permission to perform this action"
+M_NOT_FOUND: "The requested resource was not found"
+M_TERMS_NOT_SIGNED: "You must accept the terms of service"
+M_INVALID_PEPPER: "Invalid pepper value"
+M_UNKNOWN: "An internal error occurred"
+M_SERVICE_UNAVAILABLE: "Service temporarily unavailable"

@@ -1,0 +1,93 @@
+{
+  "name": "tom-server",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/tom-server/src",
+  "projectType": "application",
+  "implicitDependencies": [
+    "@twake/server",
+    "@twake/federated-identity-service"
+  ],
+  "tags": [],
+  "targets": {
+    "build": {
+      "executor": "@nx/webpack:webpack",
+      "outputs": ["{options.outputPath}"],
+      "defaultConfiguration": "production",
+      "options": {
+        "target": "node",
+        "compiler": "tsc",
+        "outputPath": "dist/apps/tom-server",
+        "main": "apps/tom-server/src/main.ts",
+        "tsConfig": "apps/tom-server/tsconfig.app.json",
+        "webpackConfig": "apps/tom-server/webpack.config.js",
+        "generatePackageJson": true
+      },
+      "configurations": {
+        "development": {
+          "outputHashing": "none"
+        },
+        "production": {}
+      }
+    },
+    "check": {
+      "command": "npx biome check {projectRoot}"
+    },
+    "check:write": {
+      "command": "npx biome check --write {projectRoot}"
+    },
+    "check:write:unsafe": {
+      "command": "npx biome check --write --unsafe {projectRoot}"
+    },
+    "prune-lockfile": {
+      "dependsOn": ["build"],
+      "cache": true,
+      "executor": "@nx/js:prune-lockfile",
+      "outputs": [
+        "{workspaceRoot}/dist/apps/tom-server/package.json",
+        "{workspaceRoot}/dist/apps/tom-server/package-lock.json"
+      ],
+      "options": {
+        "buildTarget": "build"
+      }
+    },
+    "copy-workspace-modules": {
+      "dependsOn": ["build"],
+      "cache": true,
+      "outputs": ["{workspaceRoot}/dist/apps/tom-server/workspace_modules"],
+      "executor": "@nx/js:copy-workspace-modules",
+      "options": {
+        "buildTarget": "build"
+      }
+    },
+    "prune": {
+      "dependsOn": ["prune-lockfile", "copy-workspace-modules"],
+      "executor": "nx:noop"
+    },
+    "serve": {
+      "continuous": true,
+      "executor": "@nx/js:node",
+      "defaultConfiguration": "development",
+      "dependsOn": ["build"],
+      "options": {
+        "buildTarget": "tom-server:build",
+        "runBuildTargetDependencies": false
+      },
+      "configurations": {
+        "development": {
+          "buildTarget": "tom-server:build:development"
+        },
+        "production": {
+          "buildTarget": "tom-server:build:production"
+        }
+      }
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "options": {
+        "jestConfig": "apps/tom-server/jest.config.ts",
+        "passWithNoTests": true
+      }
+    }
+  }
+}

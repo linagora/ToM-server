@@ -1,0 +1,37 @@
+# Federated Identity Service Configuration
+# Full reference: .tomconfig.example.yaml
+#
+# This is a minimal configuration for running ToM as a standalone federated
+# identity service. It requires only server and database configuration.
+
+server:
+  name: "fed.docker.internal"
+  base_url: "https://fed.docker.internal"
+  trust_x_forwarded_for: true
+  trusted_proxies:
+    - uniquelocal
+
+  enable_cron_jobs: true
+
+database:
+  host: "postgres"
+  name: "fed_db"
+  user: "twake"
+  password: "twake_password"
+
+email:
+  smtp_host: "smtp"
+  smtp_port: 2525
+  tls: false
+  verify_certificate: false
+  sender: "no-reply@docker.internal"
+
+federation:
+  is_federated_identity_service: true
+  trusted_servers_addresses:
+    - "172.16.0.0/12"  # Docker internal networks
+    - "10.0.0.0/8"     # Private networks
+    - "127.0.0.1/8"    # loopback
+
+hash:
+  pepper_cron: "*/1 * * * *"

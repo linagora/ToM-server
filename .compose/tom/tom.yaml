@@ -1,0 +1,55 @@
+# Identity Service Configuration
+# Full reference: .tomconfig.example.yaml
+#
+# This configuration runs ToM as a full featured identity service.
+
+server:
+  name: "docker.internal"
+  base_url: "https://tom.docker.internal"
+  trust_x_forwarded_for: true
+  trusted_proxies:
+    - uniquelocal
+
+  additional_features: true
+  enable_cron_jobs: true
+
+synapse:
+  server_url: "https://matrix.docker.internal"
+  internal_host: "http://synapse:8008"
+  admin:
+    login: "admin"
+    password: "change-me"
+  database:
+    host: "postgres"
+    name: "synapse"
+    user: "synapse_user"
+    password: "secretpassword"
+
+database:
+  host: "postgres"
+  name: "tom_db"
+  user: "twake"
+  password: "twake_password"
+
+ldap:
+  uri: "ldap://ldap"
+  base: "ou=users,dc=docker,dc=internal"
+  filter: "(objectClass=inetOrgPerson)"
+
+email:
+  smtp_host: "smtp"
+  smtp_port: 2525
+  tls: false
+  verify_certificate: false
+  sender: "no-reply@docker.internal"
+
+federation:
+  identity_services:
+    - "fed.docker.internal"
+  sync_cron: "*/1 * * * *"
+
+hash:
+  pepper_cron: "*/1 * * * *"
+
+oidc:
+  issuer: "https://auth.docker.internal/"

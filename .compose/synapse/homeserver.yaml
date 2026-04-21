@@ -1,0 +1,78 @@
+server_name: 'docker.internal'
+pid_file: /data/homeserver.pid
+public_baseurl: 'https://matrix.docker.internal/'
+listeners:
+  - port: 8008
+    tls: false
+    type: http
+    x_forwarded: true
+    bind_addresses: ['0.0.0.0']
+    resources:
+      - names: [client, federation]
+        compress: false
+database:
+  name: psycopg2
+  txn_limit: 10000
+  args:
+    user: synapse_user
+    password: secretpassword
+    dbname: synapse
+    host: postgres
+    port: 5432
+    cp_min: 5
+    cp_max: 10
+log_config: '/data/docker.internal.log.config'
+media_store_path: /data/media_store
+signing_key_path: '/data/docker.internal.signing.key'
+macaroon_secret_key: 'i8dF@4#7uLt~ZJC@m@HqxfXt+-Y^rvI5yF3CC;8LbXwNLWO9YM'
+form_secret: ':m_kP~38:lPnlfO2S8lhSrMRy8T52~dT=e35X+jCMHNz-pxIoZ'
+trusted_key_servers:
+  - server_name: 'matrix.org'
+enable_metrics: false
+report_stats: false
+
+# SSO via LemonLDAP::NG (auth.docker.internal)
+oidc_providers:
+  - idp_id: twake
+    idp_name: Connect with Twake
+    issuer: "https://auth.docker.internal/"
+    client_id: "synapse"
+    client_secret: "synapse-secret"
+    client_auth_method: client_secret_post
+    scopes: ["openid", "profile", "email"]
+    discover: true
+    backchannel_logout_enabled: true
+    user_profile_method: "userinfo_endpoint"
+    user_mapping_provider:
+      config:
+        subject_claim: "sub"
+        localpart_template: "{{ user.preferred_username }}"
+        display_name_template: "{{ user.name }}"
+        email_template: "{{ user.email }}"
+sso:
+  client_whitelist:
+    - https://chat.docker.internal
+    - https://app.element.io
+  update_profile_information: true
+
+# Disable password login when using SSO
+password_config:
+  enabled: false
+enable_registration: true
+enable_registration_without_verification: true
+
+auto_accept_invites:
+  enabled: true
+  only_for_direct_messages: true
+  only_from_local_users: true
+
+# Common Settings Bridge appservice
+# Set booleans to false to test cs-bridge profile update behaviour
+enable_set_displayname: false  # cs-bridge will use admin API as fallback/exclusive
+enable_set_avatar_url: false   # cs-bridge will use admin API as fallback/exclusive
+enable_3pid_changes: false
+
+app_service_config_files:
+  - "/data/cs-bridge-registration.yaml"
+
+enable_authenticated_media: true

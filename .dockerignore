@@ -12,6 +12,7 @@
 !packages/**/package-lock.json
 
 ## Allow build configuration files
+!nx.json
 !lerna.json
 !tsconfig-build.json
 !packages/**/tsconfig.json
@@ -19,6 +20,12 @@
 !packages/**/rollup.config.js
 
 ## Allow source files
+!apps/tom-server/src/
+!apps/tom-server/project.json
+!apps/tom-server/webpack.config.js
+!apps/tom-server/tsconfig.json
+!apps/tom-server/tsconfig.app.json
+## LEGACY ##
 !packages/amqp-connector/src/
 !packages/common-settings-bridge/src/
 !packages/config-parser/src/
@@ -36,10 +43,13 @@
 !packages/federated-identity-service/server.mjs
 
 ## Allow template files
-!packages/matrix-identity-server/templates
-!packages/tom-server/templates
-!packages/tom-server/static
-!packages/federated-identity-service/templates
+!packages/matrix-identity-server/templates/
+!packages/tom-server/templates/
+!packages/tom-server/static/
+!packages/federated-identity-service/templates/
+!i18n/
+!static/
+!assets/
 
 ## Allow default config files
 !packages/logger/src/configDesc.json

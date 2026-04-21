@@ -13,106 +13,146 @@
     •
     <a href="https://github.com/linagora/twake-on-matrix/issues">Report Bug</a>
     •
-    <a href="https://hosted.weblate.org/projects/linagora/twake-matrix/#repository">Translate Twake></a>
-</p>
+    <a href="https://hosted.weblate.org/projects/linagora/twake-matrix/#repository">Translate Twake</a>
+  </p>
 </div>
 
 ---
 
-This repository is a multi-packages repository. See [Modules](#modules) for details.
+**ToM server** is a [Matrix Identity Server](https://spec.matrix.org/latest/identity-service-api/) that strictly implements and extends the Matrix Identity Service spec:
 
-**ToM server** enhances a [Matrix Synapse server](https://github.com/element-hq/synapse) with several features:
- * first, **Tom** is a [Matrix Identity Server](https://spec.matrix.org/latest/identity-service-api/) but with additional features:
-   * inside an organization, it adds some search APIs that allows to find internal users like do the mail clients, for autocompletion for example
-   * it extends also [Matrix Identity Service](https://spec.matrix.org/latest/identity-service-api/) search responses by adding inactive users
- * it provide also an "application service" that allows administrator to create channels with automatic join
- * it implements also the [federated identity mechanism](https://github.com/matrix-org/matrix-spec-proposals/pull/4004) that extend the
-   [Matrix Identity Service](https://spec.matrix.org/latest/identity-service-api/) to join Matrix identity services to provide a better search
+- inside an organization, it adds search APIs for autocompletion of internal users
+- it extends identity lookup responses to include inactive users
+- it implements the [federated identity mechanism](https://github.com/matrix-org/matrix-spec-proposals/pull/4004) to join multiple identity services for broader search
 
-Here is the architecture principle:
+Other cross-concern integrations between Twake Workplace and a Matrix deployment (Synapse + ToM) are developed as standalone **application services** in `packages/`. For example, [`@twake/common-settings-bridge`](./packages/common-settings-bridge) synchronises user profile updates from Twake Workplace to Synapse via RabbitMQ and the Matrix Application Service protocol.
 
-![architecture principle](./docs/arch.png)
+## Structure
 
-REST API Endpoints documentation is available on https://linagora.github.io/ToM-server/
+This is an **Nx monorepo**:
 
-## Try it yourself
+- `apps/` — launchable server applications
+  - `apps/tom-server` — the unified ToM server entrypoint (active development)
+- `packages/` — application services and shared libraries
+  - `packages/common-settings-bridge` — bridges Twake Workplace profile updates to Synapse
 
-- [Running our Dockers](./docker.md)
-- [Deploy locally with compose](./docker.md#docker-compose)
-
-## Modules
-
-* [@twake/matrix-identity-server](./packages/matrix-identity-server):
-  [Matrix Identity Service](https://spec.matrix.org/v1.6/identity-service-api/) implementation for Node.js
-* [@twake/server](./packages/tom-server): the main Twake Chat Server, extends [@twake/matrix-identity-server](./packages/matrix-identity-server)
-* [@twake/federated-identity-service](./packages/federated-identity-service): Twake Federated Identity Service
-* [@twake/config-parser](./packages/config-parser): simple file parser that uses also environment variables
-* [@twake/crypto](./packages/crypto): cryptographic methods for Twake Chat
-* [@twake/logger](./packages/logger): logger for Twake
-* [@twake/utils](.packages/utils): utilitary methods for Twake Chat
-* [matrix-resolve](./packages/matrix-resolve): resolve a Matrix "server name" into base URL following
-  [Matrix specification](https://spec.matrix.org/latest/server-server-api/#server-discovery)
+> **Note:** The legacy packages (`packages/tom-server`, `packages/matrix-identity-server`, `packages/federated-identity-service`, `packages/logger`, `packages/config-parser`, `packages/utils`) are deprecated. Their functionality is being reimplemented incrementally in `apps/tom-server`.
 
 ## Requirements
 
-- [ ] Node >=18
+- Node >= 24
+- Docker (for the full-stack compose environment)
 
-## Commands
+## Quick Start
 
-* `npm run build`: build all packages
-* `npm run test`: test all packages
-* `node ./server.mjs`: run the server
-
-## Development Setup
-
-Follow these steps to start the project in development mode:
-
-### 1. Copy environment file
-
-Create a local `.env` file based on the provided example:
+### 1. Start the full-stack environment
 
 ```bash
 cp .env.example .env
+docker compose up -d
 ```
 
-You can adjust any variables inside `.env` as needed (e.g., database credentials, API keys, etc.).
+This starts Synapse, PostgreSQL, Traefik, OpenLDAP, LemonLDAP::NG, and the Twake Chat frontend. Matrix identity requests are routed to the local tom-server process.
 
-### 2. Start required services
+### 2. Start the server(s)
 
-Use the provided Docker Compose file to start the local dependencies (PostgreSQL, LDAP, etc.):
+The repository ships two ready-to-use configs under `examples/config/` with working values for the Docker Compose environment:
 
 ```bash
-docker compose -f .compose/examples/dev.pgsql+ldap.yml up -d
+# Standard ToM server only
+npx nx serve tom-server --args="--config" --args="examples/config/tom.yaml"
+
+# With a federated identity service (two terminals)
+npx nx serve tom-server --args="--config" --args="examples/config/tom.yaml"     # Terminal 1
+npx nx serve tom-server --args="--config" --args="examples/config/fed.yaml"     # Terminal 2
 ```
 
-This runs all necessary backend services in the background.
-To stop them later:
+With the Docker Compose setup, Traefik routes requests accordingly:
+
+- `tom.docker.internal` → standard tom-server on port 3000
+- `fed.docker.internal` → federated identity service on port 3001
+
+Code changes trigger automatic rebuilds and restarts.
+
+To stop all services:
 
 ```bash
-docker compose -f .compose/examples/dev.pgsql+ldap.yml down
+docker compose down --volumes
 ```
 
-### 3. Run the development environment
-
-Start the local dev environment (watchers + server auto-reload):
+## Commands
 
 ```bash
-npm run dev
+# Install dependencies
+npm install
+
+# Build
+npx nx build tom-server
+
+# Run tests
+npx nx test tom-server
+
+# Serve with auto-reload
+npx nx serve tom-server # loads system config + local .tomconfig.yaml
+npx nx serve tom-server --args="--config" --args="path/to/config.yaml" # loads as above + path/to/config.yaml file as final precedence
 ```
 
-This will:
+## Configuration
 
-* Watch and rebuild all packages automatically (`lerna run watch`)
-* Launch the backend server via `nodemon`
-* Load environment variables from `.env` automatically
+Configuration is loaded from YAML files (format validated with Zod). The config loader searches for `twake/chat/tom/config.yaml` in the following base directories, in order, with each file's values overriding the previous:
 
-### 4. Access and debug
+| Priority    | Linux                                          | Windows                                     |
+| ----------- | ---------------------------------------------- | ------------------------------------------- |
+| 1 (lowest)  | `/etc`                                         | `%PROGRAMDATA%` (default: `C:\ProgramData`) |
+| 2           | `/usr/local/etc`                               | `%APPDATA%` (default: `AppData\Roaming`)    |
+| 3           | `$XDG_CONFIG_HOME` (default: `~/.config`)      | `%LOCALAPPDATA%` (default: `AppData\Local`) |
+| 4           | `.tomconfig.yaml` in current working directory | ← same                                      |
+| 5 (highest) | `--config /path/to/config.yaml` flag           | ← same                                      |
 
-Once started:
+Each file found is merged on top of the previous, so only the fields present in a file are overridden. For example, if `/etc/twake/chat/tom/config.yaml` sets `server_name: "foo"` and a later file sets `server_name: "bar"`, the result is `"bar"`.
 
-* The server should be running at the URL printed in the console (e.g. `http://localhost:3000`)
-* Any code changes in `packages/` will trigger automatic rebuilds and server restarts
+### Example configs
 
+`examples/config/tom.yaml` and `examples/config/fed.yaml` are pre-filled with working values for the Docker Compose environment and are the recommended starting point for local development. For production deployments, use them as a reference alongside `.tomconfig.example.yaml`, which documents every available option.
+
+### Key configuration sections
+
+| Section      | Purpose                                                 |
+| ------------ | ------------------------------------------------------- |
+| `server`     | Matrix domain, host/port, rate limiting, proxy settings |
+| `synapse`    | Homeserver URL, admin credentials, database connection  |
+| `database`   | ToM's own PostgreSQL connection                         |
+| `ldap`       | User directory (optional)                               |
+| `email`      | SMTP settings for invitations and 3PID verification     |
+| `features`   | Feature flags (user directory, common settings, etc.)   |
+| `federation` | Federation mode settings (see below)                    |
+
+### Running ToM as a federated identity service
+
+To run a ToM instance as a federated identity service, the only required difference from a standard configuration is the `federation` block:
+
+```yaml
+federation:
+  is_federated_identity_service: true
+  trusted_servers_addresses:
+    - "172.16.0.0/12" # Docker internal networks
+    - "10.0.0.0/8" # Private networks
+    - "127.0.0.1/8" # Loopback
+```
+
+All other sections (`server`, `synapse`, `database`, etc.) work identically in both modes. Make sure the federated instance uses a different port than the standard server (`server.port` in the config).
+
+## Assets
+
+- `assets/templates/` — mail and SMS templates
+- `i18n/` — internationalisation translations
+- `static/` — server landing page
+
+## Docker Image
+
+The published Docker image remains `linagora/tom-server`.
+
+> **Deprecated:** `linagora/tom-federated-identity-service` will no longer be updated. Federation is now handled directly by `linagora/tom-server`.
 
 ## Copyright and license
 

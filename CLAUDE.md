@@ -2,93 +2,92 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Working on the Code
+
+This repo is advocating the use of guidelines for code contribution.
+Please refere to:
+
+- CODING_STYLE.md: for all code related rules
+- CONTRIBUTING.md: for all developer guidelines
+
 ## Commands
 
 ```bash
 # Install dependencies
 npm install
 
-# Build all packages
-npm run build
+# Serve with auto-reload (primary dev command)
+npx nx serve tom-server
 
-# Run all tests
-npm run test
+# Run tests
+npx nx test tom-server
 
-# Run tests for a single package (e.g. tom-server)
-cd packages/tom-server && npm run test
-
-# Run tests matching a pattern (from within a package directory)
-npx jest --testPathPattern="addressbook"
+# Build
+npx nx build tom-server
 
 # Format check / fix
 npm run format:check
 npm run format:fix
 
-# Dev mode (watch + auto-reload server)
-npm run dev
+# Start the full-stack dev environment (tom runs on host)
+docker compose up -d
 
-# Start dev dependencies (Postgres + LDAP)
-docker compose -f .compose/examples/dev.pgsql+ldap.yml up -d
+# Start the full-stack deploy environment (tom runs in Docker)
+docker compose -f compose.yml -f compose.deploy.yml up -d
 ```
 
-Tests run with `LOG_TRANSPORTS=File LOG_FILE=/dev/null jest` to suppress log output. The jest config maps `@twake/*` imports to local `packages/*/src` directories, so tests run against source directly without building.
+### Skip NX Cache
+
+```bash
+npx nx <script> <project> --no-cloud # To only skip cloud cache
+npx nx <script> <project> --skip-nx-cache # To entirely skip the cache
+```
+
+## Development Setup
+
+1. Copy config: `cp .tomconfig.example.yaml .tomconfig.yaml`
+2. Edit `.tomconfig.yaml` — fill in required fields (Matrix domain, DB credentials, etc.)
+3. `docker compose up -d` — starts Synapse, PostgreSQL, Traefik, LDAP, LemonLDAP::NG (SSO), RabbitMQ, Common Settings Bridge, Twake Chat. Traefik routes `tom.docker.internal` → `localhost:3000`.
+4. `npx nx serve tom-server` — starts the server with hot-reload
+
+## Compose Structure
+
+Three files at the repo root:
+
+| File | Purpose |
+|------|---------|
+| `compose.yml` | Base — all shared services (traefik, ldap, postgres, synapse, auth, rabbitmq, cs-bridge, twake-chat) |
+| `compose.override.yml` | Dev overrides — auto-loaded; adds traefik file provider routing tom to `host.docker.internal:3000` |
+| `compose.deploy.yml` | Deploy overrides — adds tom as a Docker container (`apps/tom-server/Dockerfile`) |
+
+Config files under `.compose/`:
+- `.compose/tom/config.example.yaml` — tom config template for deploy mode (copy to `config.yaml`)
 
 ## Architecture
 
-This is an **npm workspaces + Lerna monorepo** with ESM modules (`"type": "module"`). Packages are built with Rollup.
+This is an **Nx monorepo**. The active server lives in `apps/tom-server`; `packages/` is reserved for shared libraries.
 
-### Package Hierarchy
+> The legacy packages (`packages/tom-server`, `packages/matrix-identity-server`, `packages/federated-identity-service`, `packages/logger`, `packages/config-parser`, `packages/utils`) are deprecated. Their functionality is being migrated incrementally to `apps/tom-server`. Do not add new code to deprecated packages.
 
-```
-@twake/matrix-identity-server   ← Base Matrix Identity Server (spec-compliant)
-        ↑
-@twake/server (tom-server)      ← Extends identity server with Twake-specific APIs
-        ↑
-@twake/federated-identity-service ← Cross-server federated identity lookup
-```
+### `apps/tom-server`
 
-Supporting packages: `@twake/config-parser`, `@twake/crypto`, `@twake/logger`, `@twake/utils`, `@twake/db`, `@twake/amqp-connector`, `matrix-resolve`.
+The unified server entrypoint. Uses **Express**, **Winston** for logging, and **Zod + YAML** for configuration. Config schema and types are in `apps/tom-server/src/`.
 
-### `@twake/matrix-identity-server`
-
-Implements the [Matrix Identity Service API v2](https://spec.matrix.org/latest/identity-service-api/). The main class (`MatrixIdentityServer`) initializes two databases:
-
-- **`IdentityServerDb`** (`db/`): owns identity-server tables (accessTokens, hashes, mappings, keys, etc.) — backed by SQLite or PostgreSQL.
-- **`UserDB`** (`userdb/`): user directory — backed by SQLite, PostgreSQL, or LDAP.
-
-Routes are registered on `this.api.get` / `this.api.post` maps and mounted by the parent server.
-
-### `@twake/server` (tom-server)
-
-The main entrypoint. `TwakeServer` extends `MatrixIdentityServer` by adding:
-
-- A second DB connection to the **Matrix (Synapse) database** (`MatrixDB`) for reading room/user state.
-- Feature APIs as Express Router modules under `src/`:
-  - `addressbook-api`, `user-info-api`, `invitation-api` — contact/user management
-  - `vault-api` — end-to-end key backup
-  - `matrix-api/client` — proxies/extends Matrix client-server API
-  - `admin-settings-api`, `metrics-api`, `sms-api`, `qrcode-api`, `deactivate-account-api`
-  - `wellKnown` — `.well-known` discovery endpoints
-  - `identity-server` — wires lookup routes to singleton services
-
-Feature API modules follow a consistent pattern: `routes/` → `controllers/` → `services/` with `middlewares/` and `types.ts`. Tests live in `tests/`.
-
-Singleton services (`AddressbookService`, `UserInfoService`, `TokenService`, `SmsService`) are created in `TwakeServer._initServer()` and injected into feature routers.
+Feature modules follow a consistent pattern: `routes/` → `controllers/` → `services/` with `middlewares/` and `types.ts`. Tests live alongside source in `tests/`.
 
 ### Configuration
 
-Config is loaded via `@twake/config-parser` from (in priority order): `/etc/twake/server.conf`, `TWAKE_SERVER_CONF` env var, or constructor argument. Defaults are in each package's `src/config.json`. See `packages/tom-server/src/types.ts` (`Config` type) for all options.
+Config is loaded from `.tomconfig.yaml` (Zod-validated). Overloading via environment variables is **not supported** — all configuration is in the YAML file. See `.tomconfig.example.yaml` for the full reference.
 
-### Databases
+### Assets
 
-- `database_engine`: `sqlite` (default/dev) or `pg` (production)
-- `userdb_engine`: `sqlite`, `pg`, or `ldap`
-- `matrix_database_engine`: connects to Synapse's own DB (read-only)
-- Optional: Redis cache (`cache_engine`), RabbitMQ (`rabbitmq`) for AMQP features
+- `assets/templates/` — mail and SMS templates
+- `i18n/` — internationalisation translations
+- `static/` — server landing page
 
 ### Testing
 
-Tests use Jest + ts-jest and `testcontainers` for spinning up real PostgreSQL/LDAP in CI. Coverage thresholds: 70% branches, 80% lines. Each package has its own `jest.config.ts` extending `jest-base.config.js` at the root.
+Tests use Jest + ts-jest. Run with `npx nx test tom-server`. New projects should be created with `npx nx generate`.
 
 <!-- rtk-instructions v2 -->
 
@@ -110,28 +109,20 @@ rtk git add . && rtk git commit -m "msg" && rtk git push
 
 ## RTK Commands by Workflow
 
-### Build & Compile (80-90% savings)
+### Build & Compile
 
 ```bash
-rtk cargo build         # Cargo build output
-rtk cargo check         # Cargo check output
-rtk cargo clippy        # Clippy warnings grouped by file (80%)
 rtk tsc                 # TypeScript errors grouped by file/code (83%)
 rtk lint                # ESLint/Biome violations grouped (84%)
-rtk prettier --check    # Files needing format only (70%)
-rtk next build          # Next.js build with route metrics (87%)
 ```
 
-### Test (90-99% savings)
+### Test
 
 ```bash
-rtk cargo test          # Cargo test failures only (90%)
-rtk vitest run          # Vitest failures only (99.5%)
-rtk playwright test     # Playwright failures only (94%)
 rtk test <cmd>          # Generic test wrapper - failures only
 ```
 
-### Git (59-80% savings)
+### Git
 
 ```bash
 rtk git status          # Compact status
@@ -150,7 +141,7 @@ rtk git worktree        # Compact worktree
 
 Note: Git passthrough works for ALL subcommands, even those not explicitly listed.
 
-### GitHub (26-87% savings)
+### GitHub
 
 ```bash
 rtk gh pr view <num>    # Compact PR view (87%)
@@ -160,18 +151,14 @@ rtk gh issue list       # Compact issue list (80%)
 rtk gh api              # Compact API responses (26%)
 ```
 
-### JavaScript/TypeScript Tooling (70-90% savings)
+### JavaScript/TypeScript Tooling
 
 ```bash
-rtk pnpm list           # Compact dependency tree (70%)
-rtk pnpm outdated       # Compact outdated packages (80%)
-rtk pnpm install        # Compact install output (90%)
 rtk npm run <script>    # Compact npm script output
 rtk npx <cmd>           # Compact npx command output
-rtk prisma              # Prisma without ASCII art (88%)
 ```
 
-### Files & Search (60-75% savings)
+### Files & Search
 
 ```bash
 rtk ls <path>           # Tree format, compact (65%)
@@ -180,7 +167,7 @@ rtk grep <pattern>      # Search grouped by file (75%)
 rtk find <pattern>      # Find grouped by directory (70%)
 ```
 
-### Analysis & Debug (70-90% savings)
+### Analysis & Debug
 
 ```bash
 rtk err <cmd>           # Filter errors only from any command
@@ -192,47 +179,17 @@ rtk summary <cmd>       # Smart summary of command output
 rtk diff                # Ultra-compact diffs
 ```
 
-### Infrastructure (85% savings)
+### Infrastructure
 
 ```bash
 rtk docker ps           # Compact container list
 rtk docker images       # Compact image list
 rtk docker logs <c>     # Deduplicated logs
-rtk kubectl get         # Compact resource list
-rtk kubectl logs        # Deduplicated pod logs
 ```
 
-### Network (65-70% savings)
+### Network
 
 ```bash
 rtk curl <url>          # Compact HTTP responses (70%)
 rtk wget <url>          # Compact download output (65%)
 ```
-
-### Meta Commands
-
-```bash
-rtk gain                # View token savings statistics
-rtk gain --history      # View command history with savings
-rtk discover            # Analyze Claude Code sessions for missed RTK usage
-rtk proxy <cmd>         # Run command without filtering (for debugging)
-rtk init                # Add RTK instructions to CLAUDE.md
-rtk init --global       # Add RTK to ~/.claude/CLAUDE.md
-```
-
-## Token Savings Overview
-
-| Category         | Commands                       | Typical Savings |
-| ---------------- | ------------------------------ | --------------- |
-| Tests            | vitest, playwright, cargo test | 90-99%          |
-| Build            | next, tsc, lint, prettier      | 70-87%          |
-| Git              | status, log, diff, add, commit | 59-80%          |
-| GitHub           | gh pr, gh run, gh issue        | 26-87%          |
-| Package Managers | pnpm, npm, npx                 | 70-90%          |
-| Files            | ls, read, grep, find           | 60-75%          |
-| Infrastructure   | docker, kubectl                | 85%             |
-| Network          | curl, wget                     | 65-70%          |
-
-Overall average: **60-90% token reduction** on common development operations.
-
-<!-- /rtk-instructions -->

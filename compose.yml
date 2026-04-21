@@ -1,0 +1,312 @@
+# =============================================================================
+# ToM Server — base compose
+#
+# Shared infrastructure for dev and deploy.
+# Do not run this file directly — use one of the profiles below:
+#
+#   Dev (tom on host):    docker compose up -d
+#                         (auto-loads compose.override.yml)
+#
+#   Deploy (tom in Docker): docker compose -f compose.yml -f compose.deploy.yml up -d
+#
+# Prerequisites: add to /etc/hosts
+#   127.0.0.1 docker.internal *.docker.internal
+# =============================================================================
+
+services:
+
+  # ---------------------------------------------------------------------------
+  # TLS — generate self-signed certs via mkcert
+  # ---------------------------------------------------------------------------
+  mkcert:
+    build:
+      context: ./.compose/ssl
+      dockerfile: Dockerfile
+    environment:
+      - DOMAINS=docker.internal *.docker.internal
+    volumes:
+      - ./.compose/ssl/certs:/certs:rw
+
+  # ---------------------------------------------------------------------------
+  # Reverse proxy
+  # Dynamic config is injected by compose.override.yml (dev) or
+  # compose.deploy.yml (deploy) via volume override.
+  # ---------------------------------------------------------------------------
+  traefik:
+    image: traefik:v2.11
+    restart: unless-stopped
+    depends_on:
+      mkcert: { condition: service_completed_successfully }
+    command:
+      - "--api.insecure=true"
+      - "--api.dashboard=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
+      - "--entrypoints.websecure.address=:443"
+      - "--log.level=INFO"
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./.compose/ssl/certs:/certs:ro
+    networks:
+      default:
+        aliases:
+          - docker.internal
+          - auth.docker.internal
+          - smtp.docker.internal
+          - matrix.docker.internal
+          - tom.docker.internal
+          - fed.docker.internal
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    labels:
+      - "traefik.enable=true"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:8080/api/overview || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+
+  # ---------------------------------------------------------------------------
+  # LDAP directory
+  # ---------------------------------------------------------------------------
+  ldap:
+    image: osixia/openldap:1.5.0
+    environment:
+      LDAP_ORGANISATION: "Docker"
+      LDAP_DOMAIN: "docker.internal"
+      LDAP_ADMIN_PASSWORD: "admin"
+      LDAP_CONFIG_PASSWORD: "config"
+      LDAP_READONLY_USER: "false"
+      LDAP_RFC2307BIS_SCHEMA: "false"
+      LDAP_BACKEND: "mdb"
+      LDAP_TLS: "false"
+      LDAP_LOG_LEVEL: "256"
+      LDAP_REMOVE_CONFIG_AFTER_SETUP: "false"
+      DISABLE_CHOWN: "true"
+    ports:
+      - "389:389"
+    volumes:
+      - ./.compose/ldap/bootstrap:/container/service/slapd/assets/config/bootstrap/ldif/custom
+    healthcheck:
+      test: ["CMD-SHELL", "ldapsearch -x -b 'dc=docker,dc=internal' -H ldap://localhost || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # ---------------------------------------------------------------------------
+  # SMTP (Papercut — catches all outgoing mail)
+  # ---------------------------------------------------------------------------
+  smtp:
+    image: changemakerstudiosus/papercut-smtp:latest
+    ports:
+      - "2525:25"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.smtp.rule=Host(`smtp.docker.internal`)"
+      - "traefik.http.routers.smtp.entrypoints=websecure"
+      - "traefik.http.routers.smtp.tls=true"
+      - "traefik.http.routers.smtp.middlewares=cors-policy@file"
+      - "traefik.http.services.smtp.loadbalancer.server.port=37408"
+
+  # ---------------------------------------------------------------------------
+  # PostgreSQL
+  # ---------------------------------------------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./.compose/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U twake"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # ---------------------------------------------------------------------------
+  # SSO — LemonLDAP::NG OIDC provider
+  # ---------------------------------------------------------------------------
+  auth:
+    image: yadd/lemonldap-ng-portal:lts-2.21
+    depends_on:
+      ldap: { condition: service_healthy }
+      postgres: { condition: service_healthy }
+      traefik: { condition: service_healthy }
+      mkcert: { condition: service_completed_successfully }
+    environment:
+      - SSODOMAIN=docker.internal
+      - PORTAL=https://auth.docker.internal
+      - LOGLEVEL=debug
+      - LOGGER=stderr
+      - USERLOGGER=stderr
+    volumes:
+      - ./.compose/llng/lmConf-1.json:/var/lib/lemonldap-ng/conf/lmConf-1.json:ro
+      - ./.compose/ssl/certs:/etc/nginx/ssl:ro
+      - llng_sys_config:/etc/lemonldap-ng
+      - llng_var_config:/var/lib/lemonldap-ng/conf
+      - llng_sessions:/var/lib/lemonldap-ng/sessions
+      - llng_psessions:/var/lib/lemonldap-ng/psessions
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.auth.rule=Host(`auth.docker.internal`)"
+      - "traefik.http.routers.auth.entrypoints=websecure"
+      - "traefik.http.routers.auth.tls=true"
+      - "traefik.http.routers.auth.priority=10"
+      - "traefik.http.routers.auth.middlewares=cors-policy@file"
+      - "traefik.http.services.auth.loadbalancer.server.port=80"
+
+  # ---------------------------------------------------------------------------
+  # Synapse — Matrix homeserver (SSO + Common Settings Bridge)
+  # ---------------------------------------------------------------------------
+  synapse:
+    image: matrixdotorg/synapse:v1.119.0
+    restart: unless-stopped
+    depends_on:
+      postgres: { condition: service_healthy }
+      traefik: { condition: service_healthy }
+      auth: { condition: service_healthy }
+      mkcert: { condition: service_completed_successfully }
+    volumes:
+      - ./.compose/synapse/.data:/data
+      - ./.compose/synapse/homeserver.yaml:/data/homeserver.yaml:ro
+      - ./.compose/synapse/docker.internal.log.config:/data/docker.internal.log.config:ro
+      - ./.compose/synapse/docker.internal.signing.key:/data/docker.internal.signing.key:ro
+      - ./.compose/ssl/certs:/etc/ssl/certs:ro
+      - ./.compose/cs-bridge/registration.yaml:/data/cs-bridge-registration.yaml:ro
+    ports:
+      - "8008:8008"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.synapse.rule=Host(`matrix.docker.internal`)"
+      - "traefik.http.routers.synapse.entrypoints=websecure"
+      - "traefik.http.routers.synapse.tls=true"
+      - "traefik.http.routers.synapse.priority=10"
+      - "traefik.http.routers.synapse.middlewares=cors-policy@file"
+      - "traefik.http.services.synapse.loadbalancer.server.port=8008"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8008/_matrix/client/versions || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # ---------------------------------------------------------------------------
+  # RabbitMQ — message broker for Common Settings Bridge
+  # ---------------------------------------------------------------------------
+  rabbitmq:
+    image: rabbitmq:3-management
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD-SHELL", "rabbitmq-diagnostics -q ping || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # ---------------------------------------------------------------------------
+  # Common Settings Bridge
+  # config.yaml must set tom's URL:
+  #   dev mode:    http://host.docker.internal:3000
+  #   deploy mode: http://tom:3000
+  # ---------------------------------------------------------------------------
+  tom-twp-cs-bridge:
+    image: linagora/tom-twp-cs-bridge
+    build:
+      context: .
+      dockerfile: packages/common-settings-bridge/Dockerfile
+    depends_on:
+      synapse: { condition: service_healthy }
+      postgres: { condition: service_healthy }
+      rabbitmq: { condition: service_healthy }
+    volumes:
+      - tom-twp-cs-bridge-data:/data
+      - ./.compose/cs-bridge/config.yaml:/data/config.yaml:ro
+      - ./.compose/cs-bridge/registration.yaml:/data/registration.yaml:ro
+    environment:
+      - NODE_TLS_REJECT_UNAUTHORIZED=0
+      - REGISTRATION_FILE=/data/registration.yaml
+      - LOG_RAW_MESSAGES=true
+      - LOG_LEVEL=debug
+
+  # ---------------------------------------------------------------------------
+  # Common Settings Bridge notifier (interactive testing tool)
+  # ---------------------------------------------------------------------------
+  tom-twp-cs-bridge-notifier:
+    image: linagora/tom-twp-cs-bridge-notifier
+    build:
+      context: .
+      dockerfile: packages/common-settings-bridge/tools/Dockerfile
+    stdin_open: true
+    tty: true
+    depends_on:
+      rabbitmq: { condition: service_healthy }
+      tom-twp-cs-bridge: { condition: service_started }
+    environment:
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USERNAME=guest
+      - RABBITMQ_PASSWORD=guest
+      - RABBITMQ_VHOST=/
+      - RABBITMQ_TLS=false
+      - EXCHANGE_NAME=settings.exchange
+      - ROUTING_KEY=user.settings.updated
+
+  # ---------------------------------------------------------------------------
+  # Twake Chat frontend
+  # ---------------------------------------------------------------------------
+  twake-chat:
+    image: linagora/twake-web:v2.21.17
+    restart: unless-stopped
+    depends_on:
+      synapse: { condition: service_healthy }
+      traefik: { condition: service_healthy }
+    volumes:
+      - ./.compose/chat/config.json:/usr/share/nginx/html/web/config.json:ro
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.chat.rule=Host(`chat.docker.internal`)"
+      - "traefik.http.routers.chat.entrypoints=websecure"
+      - "traefik.http.routers.chat.tls=true"
+      - "traefik.http.routers.chat.middlewares=chat-redirect,cors-policy@file"
+      - "traefik.http.services.chat.loadbalancer.server.port=80"
+      - "traefik.http.middlewares.chat-redirect.redirectregex.regex=^https://([^/]+)/?$$"
+      - "traefik.http.middlewares.chat-redirect.redirectregex.replacement=https://$$1/web/"
+      - "traefik.http.middlewares.chat-redirect.redirectregex.permanent=true"
+
+volumes:
+  llng_sys_config:
+  llng_var_config:
+  llng_sessions:
+  llng_psessions:
+  postgres-data:
+  rabbitmq-data:
+  tom-twp-cs-bridge-data:

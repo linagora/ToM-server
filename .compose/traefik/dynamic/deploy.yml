@@ -1,0 +1,33 @@
+tls:
+  certificates:
+    - certFile: "/certs/docker.internal+1.pem"
+      keyFile: "/certs/docker.internal+1-key.pem"
+  stores:
+    default:
+      defaultCertificate:
+        certFile: "/certs/docker.internal+1.pem"
+        keyFile: "/certs/docker.internal+1-key.pem"
+
+http:
+  middlewares:
+    cors-policy:
+      headers:
+        accessControlAllowMethods:
+          - "GET"
+          - "OPTIONS"
+          - "POST"
+          - "PUT"
+          - "DELETE"
+          - "PATCH"
+        accessControlAllowOriginList:
+          - "https://app.element.io"
+          - "https://chat.docker.internal"
+          - "https://tom.docker.internal"
+          - "https://matrix.docker.internal"
+          - "https://auth.docker.internal"
+          - "https://fed.docker.internal"
+        accessControlAllowHeaders:
+          - "*"
+        accessControlAllowCredentials: true
+        accessControlMaxAge: 100
+        addVaryHeader: true

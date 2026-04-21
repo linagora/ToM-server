@@ -9,7 +9,7 @@
 
   "files": {
     "ignoreUnknown": true,
-    "includes": ["packages/**/*.{js,jsx,ts,tsx}"]
+    "includes": ["packages/**/*.{js,jsx,ts,tsx}", "apps/**/*.{js,jsx,ts,tsx}"]
   },
 
   "formatter": {
@@ -33,7 +33,42 @@
     "enabled": true,
     "actions": {
       "source": {
-        "organizeImports": "on"
+        "organizeImports": {
+          "level": "on",
+          "options": {
+            "groups": [
+              ["telemetry", "telemetry/**", "**/telemetry", "**/telemetry/**"],
+              ":BLANK_LINE:",
+              [":BUN:", ":NODE:"],
+              ":BLANK_LINE:",
+              [
+                ":PACKAGE:",
+                ":PACKAGE_WITH_PROTOCOL:",
+                "!@twake",
+                "!@twake/**",
+                "!matrix-resolve",
+                "!tom-server",
+                "!tom-server-e2e"
+              ],
+              ":BLANK_LINE:",
+              ":URL:",
+              ":BLANK_LINE:",
+              [
+                "@twake/**",
+                "matrix-resolve",
+                "tom-server",
+                "tom-server-e2e",
+                "!@twake/federated-identity-service",
+                "!@twake/matrix-identity-server",
+                "!@twake/server"
+              ],
+              ":BLANK_LINE:",
+              ["@twake/federated-identity-service", "@twake/matrix-identity-server", "@twake/server"],
+              ":BLANK_LINE:",
+              ":PATH:"
+            ]
+          }
+        }
       }
     }
   },

@@ -15,6 +15,8 @@ const makeLogger = (): MockLogger => ({
   error: jest.fn()
 })
 
+conf.matrix_server = 'https://matrix.example.com'
+
 describe('AdminService', () => {
   let service: AdminService
   let logger: MockLogger
