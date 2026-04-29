@@ -61,7 +61,7 @@ const DEFAULT_CREATEROOM_PROXY_IS_DIRECT_MASK = {
 };
 
 const DEFAULT_CORS_ENABLED = true;
-const DEFAULT_CORS_CREDENTIALS = true;
+const DEFAULT_CORS_CREDENTIALS = false; // Wildcard in origin is not compatible with this being true by specs.
 const DEFAULT_CORS_ORIGINS: string[] = ["*"];
 const DEFAULT_CORS_METHODS: string[] = ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"];
 const DEFAULT_CORS_ALLOWED_HEADERS: string[] = [
