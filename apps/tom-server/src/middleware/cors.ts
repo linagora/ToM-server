@@ -10,7 +10,7 @@
  * Express callback contract: void return is framework-mandated.
  */
 import cors from "cors";
-import type { NextFunction, Request, Response } from "express";
+import type { NextFunction, Request, RequestHandler, Response } from "express";
 
 import type { Config } from "../config/types";
 
@@ -30,8 +30,7 @@ type CorsOptions = {
  * @param corsConfig - CORS configuration from the application config
  * @returns Express middleware function handling CORS
  */
-// biome-ignore lint/nursery/useExplicitType: Unclear Express middleware type returned by cors...
-export function createCorsMiddleware(corsConfig: Config["cors"]) {
+export function createCorsMiddleware(corsConfig: Config["cors"]): RequestHandler {
   // If CORS is disabled, return no-op middleware
   if (!corsConfig.enabled) {
     return (_req: Request, _res: Response, next: NextFunction): void => {
