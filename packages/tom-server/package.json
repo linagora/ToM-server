@@ -49,7 +49,7 @@
     "qrcode": "^1.5.4",
     "redis": "^4.6.6",
     "sqlite3": "^5.1.6",
-    "uuid": "^11.0.3",
+    "uuid": "^14.0.0",
     "validator": "^13.11.0"
   },
   "optionalDependencies": {
