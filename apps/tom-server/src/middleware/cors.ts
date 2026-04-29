@@ -31,7 +31,6 @@ type CorsOptions = {
  * @returns Express middleware function handling CORS
  */
 export function createCorsMiddleware(corsConfig: Config["cors"]): RequestHandler {
-  // If CORS is disabled, return no-op middleware
   if (!corsConfig.enabled) {
     return (_req: Request, _res: Response, next: NextFunction): void => {
       next();
@@ -46,12 +45,10 @@ export function createCorsMiddleware(corsConfig: Config["cors"]): RequestHandler
     optionsSuccessStatus: 204,
   };
 
-  // Add optional exposed headers if configured
   if (corsConfig.exposed_headers !== undefined && corsConfig.exposed_headers.length > 0) {
     options.exposedHeaders = corsConfig.exposed_headers;
   }
 
-  // Add optional max age if configured
   if (corsConfig.max_age !== undefined) {
     options.maxAge = corsConfig.max_age;
   }
