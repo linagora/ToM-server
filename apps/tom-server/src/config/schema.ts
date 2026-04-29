@@ -60,6 +60,19 @@ const DEFAULT_CREATEROOM_PROXY_IS_DIRECT_MASK = {
   creator_becomes: 10,
 };
 
+const DEFAULT_CORS_ENABLED = true;
+const DEFAULT_CORS_CREDENTIALS = false; // Wildcard in origin is not compatible with this being true by specs.
+const DEFAULT_CORS_ORIGINS: string[] = ["*"];
+const DEFAULT_CORS_METHODS: string[] = ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"];
+const DEFAULT_CORS_ALLOWED_HEADERS: string[] = [
+  "Origin",
+  "X-Requested-With",
+  "Content-Type",
+  "Accept",
+  "Authorization",
+  "X-Request-Id",
+];
+
 // biome-ignore lint/nursery/useExplicitType: Specific type for a default value, disregard
 const DEFAULT_CREATEROOM_PROXY_PRESETS = [
   {
@@ -304,6 +317,25 @@ const createroomProxySchema = z.object({
 });
 
 // biome-ignore lint/nursery/useExplicitType: Zod type is fragile to write by hand, we let TS infer it
+const corsSettingsSchema = z.object({
+  enabled: z.boolean().default(DEFAULT_CORS_ENABLED),
+  origins: z.array(z.string()).default(DEFAULT_CORS_ORIGINS),
+  credentials: z.boolean().default(DEFAULT_CORS_CREDENTIALS),
+  methods: z.array(z.string()).default(DEFAULT_CORS_METHODS),
+  allowed_headers: z.array(z.string()).default(DEFAULT_CORS_ALLOWED_HEADERS),
+  exposed_headers: z.array(z.string()).optional(),
+  max_age: z.number().int().min(0).optional(),
+}).superRefine((value, ctx) => {
+  if (value.credentials && value.origins.includes("*")) {
+    ctx.addIssue({
+      code: "custom",
+      path: ["origins"],
+      message: "cors.credentials cannot be enabled when cors.origin contains '*'",
+    });
+  }
+});
+
+// biome-ignore lint/nursery/useExplicitType: Zod type is fragile to write by hand, we let TS infer it
 const serverSettingsSchema = z.object({
   name: z.string(), // REQUIRED
   base_url: z.string().default(""),
@@ -504,8 +536,14 @@ const telemetryConfigSchema = z.object({
 });
 
 // biome-ignore lint/nursery/useExplicitType: Zod type is fragile to write by hand, we let TS infer it
+const corsConfigSchema = z.object({
+  cors: corsSettingsSchema.prefault({}),
+});
+
+// biome-ignore lint/nursery/useExplicitType: Zod type is fragile to write by hand, we let TS infer it
 export const configSchema = z.object({
   ...serverConfigSchema.shape,
+  ...corsConfigSchema.shape,
   ...urlsConfigSchema.shape,
   ...synapseConfigSchema.shape,
   ...databaseConfigSchema.shape,

@@ -12,6 +12,7 @@ import type { Logger } from "winston";
 
 import type { Config } from "./config/types";
 import { errorMiddleware } from "./errors/error-middleware";
+import { createCorsMiddleware } from "./middleware/cors";
 import { httpLogger } from "./middleware/http-logger";
 import { requestId } from "./middleware/request-id";
 import { createLandingRouter } from "./modules/landing/router";
@@ -30,6 +31,7 @@ export async function createApp(
   }
 
   // --- Global middleware (cross-cutting only) ---
+  app.use(createCorsMiddleware(config.cors));
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
   app.use(requestId());
