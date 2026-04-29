@@ -324,7 +324,7 @@ const corsSettingsSchema = z.object({
   methods: z.array(z.string()).default(DEFAULT_CORS_METHODS),
   allowed_headers: z.array(z.string()).default(DEFAULT_CORS_ALLOWED_HEADERS),
   exposed_headers: z.array(z.string()).optional(),
-  max_age: z.number().optional(),
+  max_age: z.number().int().min(0).optional(),
 });
 
 // biome-ignore lint/nursery/useExplicitType: Zod type is fragile to write by hand, we let TS infer it
