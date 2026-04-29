@@ -9,20 +9,20 @@
  *
  * Express callback contract: void return is framework-mandated.
  */
-import cors from "cors";
+import cors, { type CorsOptions } from "cors";
 import type { NextFunction, Request, RequestHandler, Response } from "express";
 
 import type { Config } from "../config/types";
 
-type CorsOptions = {
-  origin: string[] | ((origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => void);
-  methods: string;
-  allowedHeaders: string[];
-  exposedHeaders?: string[];
-  credentials: boolean;
-  maxAge?: number;
-  optionsSuccessStatus: number;
-};
+// type CorsOptions = {
+//   origin: string[] | ((origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => void);
+//   methods: string;
+//   allowedHeaders: string[];
+//   exposedHeaders?: string[];
+//   credentials: boolean;
+//   maxAge?: number;
+//   optionsSuccessStatus: number;
+// };
 
 /**
  * Creates CORS middleware configured from application settings.
@@ -39,10 +39,9 @@ export function createCorsMiddleware(corsConfig: Config["cors"]): RequestHandler
 
   const options: CorsOptions = {
     origin: corsConfig.origins,
-    methods: corsConfig.methods.join(","),
+    methods: corsConfig.methods,
     allowedHeaders: corsConfig.allowed_headers,
     credentials: corsConfig.credentials,
-    optionsSuccessStatus: 204,
   };
 
   if (corsConfig.exposed_headers !== undefined && corsConfig.exposed_headers.length > 0) {
