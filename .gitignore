@@ -616,7 +616,7 @@ packages/matrix-identity-server/matrix-server/synapse-data
 
 ## compose related
 .compose/synapse/.data/*
-!.compose/synapse/.data/.gitkeep
+!.compose/synapse/.data/media_store/.gitkeep
 
 # IDEs and editors
 /.idea
