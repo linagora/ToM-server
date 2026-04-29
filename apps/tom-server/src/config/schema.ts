@@ -325,6 +325,14 @@ const corsSettingsSchema = z.object({
   allowed_headers: z.array(z.string()).default(DEFAULT_CORS_ALLOWED_HEADERS),
   exposed_headers: z.array(z.string()).optional(),
   max_age: z.number().int().min(0).optional(),
+}).superRefine((value, ctx) => {
+  if (value.credentials && value.origins.includes("*")) {
+    ctx.addIssue({
+      code: "custom",
+      path: ["origins"],
+      message: "cors.credentials cannot be enabled when cors.origin contains '*'",
+    });
+  }
 });
 
 // biome-ignore lint/nursery/useExplicitType: Zod type is fragile to write by hand, we let TS infer it
