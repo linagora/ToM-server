@@ -114,7 +114,7 @@ services:
       - "traefik.http.routers.smtp.rule=Host(`smtp.docker.internal`)"
       - "traefik.http.routers.smtp.entrypoints=websecure"
       - "traefik.http.routers.smtp.tls=true"
-      - "traefik.http.routers.smtp.middlewares=cors-policy@file"
+      # - "traefik.http.routers.smtp.middlewares=cors-policy@file"
       - "traefik.http.services.smtp.loadbalancer.server.port=37408"
 
   # ---------------------------------------------------------------------------
@@ -174,7 +174,7 @@ services:
       - "traefik.http.routers.auth.entrypoints=websecure"
       - "traefik.http.routers.auth.tls=true"
       - "traefik.http.routers.auth.priority=10"
-      - "traefik.http.routers.auth.middlewares=cors-policy@file"
+      # - "traefik.http.routers.auth.middlewares=cors-policy@file"
       - "traefik.http.services.auth.loadbalancer.server.port=80"
 
   # ---------------------------------------------------------------------------
@@ -203,7 +203,7 @@ services:
       - "traefik.http.routers.synapse.entrypoints=websecure"
       - "traefik.http.routers.synapse.tls=true"
       - "traefik.http.routers.synapse.priority=10"
-      - "traefik.http.routers.synapse.middlewares=cors-policy@file"
+      # - "traefik.http.routers.synapse.middlewares=cors-policy@file"
       - "traefik.http.services.synapse.loadbalancer.server.port=8008"
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8008/_matrix/client/versions || exit 1"]
@@ -284,7 +284,7 @@ services:
   # Twake Chat frontend
   # ---------------------------------------------------------------------------
   twake-chat:
-    image: linagora/twake-web:v2.21.17
+    image: linagora/twake-web:v2.22.0
     restart: unless-stopped
     depends_on:
       synapse: { condition: service_healthy }
@@ -296,7 +296,8 @@ services:
       - "traefik.http.routers.chat.rule=Host(`chat.docker.internal`)"
       - "traefik.http.routers.chat.entrypoints=websecure"
       - "traefik.http.routers.chat.tls=true"
-      - "traefik.http.routers.chat.middlewares=chat-redirect,cors-policy@file"
+      # - "traefik.http.routers.chat.middlewares=chat-redirect,cors-policy@file"
+      - "traefik.http.routers.chat.middlewares=chat-redirect"
       - "traefik.http.services.chat.loadbalancer.server.port=80"
       - "traefik.http.middlewares.chat-redirect.redirectregex.regex=^https://([^/]+)/?$$"
       - "traefik.http.middlewares.chat-redirect.redirectregex.replacement=https://$$1/web/"

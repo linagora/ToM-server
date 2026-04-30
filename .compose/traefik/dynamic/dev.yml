@@ -9,28 +9,28 @@ tls:
         keyFile: "/certs/docker.internal+1-key.pem"
 
 http:
-  middlewares:
-    cors-policy:
-      headers:
-        accessControlAllowMethods:
-          - "GET"
-          - "OPTIONS"
-          - "POST"
-          - "PUT"
-          - "DELETE"
-          - "PATCH"
-        accessControlAllowOriginList:
-          - "https://app.element.io"
-          - "https://chat.docker.internal"
-          - "https://tom.docker.internal"
-          - "https://matrix.docker.internal"
-          - "https://auth.docker.internal"
-          - "https://fed.docker.internal"
-        accessControlAllowHeaders:
-          - "*"
-        accessControlAllowCredentials: true
-        accessControlMaxAge: 100
-        addVaryHeader: true
+  # middlewares:
+  #   cors-policy:
+  #     headers:
+  #       accessControlAllowMethods:
+  #         - "GET"
+  #         - "OPTIONS"
+  #         - "POST"
+  #         - "PUT"
+  #         - "DELETE"
+  #         - "PATCH"
+  #       accessControlAllowOriginList:
+  #         - "https://app.element.io"
+  #         - "https://chat.docker.internal"
+  #         - "https://tom.docker.internal"
+  #         - "https://matrix.docker.internal"
+  #         - "https://auth.docker.internal"
+  #         - "https://fed.docker.internal"
+  #       accessControlAllowHeaders:
+  #         - "*"
+  #       accessControlAllowCredentials: true
+  #       accessControlMaxAge: 100
+  #       addVaryHeader: true
 
   routers:
     tom-direct:
@@ -38,7 +38,7 @@ http:
       entrypoints: ["websecure"]
       tls: {}
       priority: 110
-      middlewares: ["cors-policy@file"]
+      # middlewares: ["cors-policy@file"]
       service: tom-local
 
     tom-direct-http:
@@ -52,7 +52,7 @@ http:
       entrypoints: ["websecure"]
       tls: {}
       priority: 100
-      middlewares: ["cors-policy@file"]
+      # middlewares: ["cors-policy@file"]
       service: tom-local
 
     tom-identity:
@@ -60,7 +60,7 @@ http:
       entrypoints: ["websecure"]
       tls: {}
       priority: 90
-      middlewares: ["cors-policy@file"]
+      # middlewares: ["cors-policy@file"]
       service: tom-local
 
     tom-matrix-client:
@@ -68,7 +68,7 @@ http:
       entrypoints: ["websecure"]
       tls: {}
       priority: 80
-      middlewares: ["cors-policy@file"]
+      # middlewares: ["cors-policy@file"]
       service: tom-local
 
     # Federation service routes (when running on port 3001)
@@ -77,7 +77,7 @@ http:
       entrypoints: ["websecure"]
       tls: {}
       priority: 110
-      middlewares: ["cors-policy@file"]
+      # middlewares: ["cors-policy@file"]
       service: fed-local
 
     fed-direct-http:
@@ -91,7 +91,7 @@ http:
       entrypoints: ["websecure"]
       tls: {}
       priority: 90
-      middlewares: ["cors-policy@file"]
+      # middlewares: ["cors-policy@file"]
       service: fed-local
 
   services:
