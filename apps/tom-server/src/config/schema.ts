@@ -337,6 +337,22 @@ const corsSettingsSchema = z
         message: "cors.credentials cannot be enabled when cors.origin contains '*'",
       });
     }
+
+    for (const [index, origin] of value.origins.entries()) {
+      if (!origin.startsWith("~")) {
+        continue;
+      }
+
+      try {
+        new RegExp(origin.slice(1));
+      } catch {
+        ctx.addIssue({
+          code: "custom",
+          path: ["origins", index],
+          message: "cors.origins regex rules must be valid regular expressions",
+        });
+      }
+    }
   });
 
 // biome-ignore lint/nursery/useExplicitType: Zod type is fragile to write by hand, we let TS infer it
