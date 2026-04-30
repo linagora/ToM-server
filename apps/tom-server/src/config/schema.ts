@@ -62,7 +62,7 @@ const DEFAULT_CREATEROOM_PROXY_IS_DIRECT_MASK = {
 
 const DEFAULT_CORS_ENABLED = true;
 const DEFAULT_CORS_CREDENTIALS = false; // Wildcard in origin is not compatible with this being true by specs.
-const DEFAULT_CORS_ALLOW_NO_ORIGIN: boolean = true; // Control whether or not to block requests without origin (e.g. mobile apps)
+const DEFAULT_CORS_ALLOW_NO_ORIGIN: boolean = false; // Control whether or not to block requests without origin (e.g. mobile apps)
 const DEFAULT_CORS_ORIGINS: string[] = ["*"];
 const DEFAULT_CORS_METHODS: string[] = ["GET", "HEAD", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"];
 const DEFAULT_CORS_ALLOWED_HEADERS: string[] = [
