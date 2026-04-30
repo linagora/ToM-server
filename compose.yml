@@ -297,6 +297,7 @@ services:
       - "traefik.http.routers.chat.entrypoints=websecure"
       - "traefik.http.routers.chat.tls=true"
       # - "traefik.http.routers.chat.middlewares=chat-redirect,cors-policy@file"
+      - "traefik.http.routers.chat.middlewares=chat-redirect"
       - "traefik.http.services.chat.loadbalancer.server.port=80"
       - "traefik.http.middlewares.chat-redirect.redirectregex.regex=^https://([^/]+)/?$$"
       - "traefik.http.middlewares.chat-redirect.redirectregex.replacement=https://$$1/web/"
