@@ -58,28 +58,28 @@ services:
       - "traefik.http.routers.tom-direct.entrypoints=websecure"
       - "traefik.http.routers.tom-direct.tls=true"
       - "traefik.http.routers.tom-direct.priority=110"
-      - "traefik.http.routers.tom-direct.middlewares=cors-policy@file"
+      # - "traefik.http.routers.tom-direct.middlewares=cors-policy@file"
 
       # .well-known endpoints on the matrix domain
       - "traefik.http.routers.tom-wellknown.rule=(Host(`matrix.docker.internal`) || Host(`docker.internal`)) && PathPrefix(`/.well-known/matrix/client`)"
       - "traefik.http.routers.tom-wellknown.entrypoints=websecure"
       - "traefik.http.routers.tom-wellknown.tls=true"
       - "traefik.http.routers.tom-wellknown.priority=100"
-      - "traefik.http.routers.tom-wellknown.middlewares=cors-policy@file"
+      # - "traefik.http.routers.tom-wellknown.middlewares=cors-policy@file"
 
       # Matrix Identity Server API
       - "traefik.http.routers.tom-identity.rule=Host(`matrix.docker.internal`) && PathPrefix(`/_matrix/identity/v2`)"
       - "traefik.http.routers.tom-identity.entrypoints=websecure"
       - "traefik.http.routers.tom-identity.tls=true"
       - "traefik.http.routers.tom-identity.priority=90"
-      - "traefik.http.routers.tom-identity.middlewares=cors-policy@file"
+      # - "traefik.http.routers.tom-identity.middlewares=cors-policy@file"
 
       # createRoom proxy
       - "traefik.http.routers.tom-matrix-client.rule=Host(`matrix.docker.internal`) && PathPrefix(`/_matrix/client/v3/createRoom`)"
       - "traefik.http.routers.tom-matrix-client.entrypoints=websecure"
       - "traefik.http.routers.tom-matrix-client.tls=true"
       - "traefik.http.routers.tom-matrix-client.priority=80"
-      - "traefik.http.routers.tom-matrix-client.middlewares=cors-policy@file"
+      # - "traefik.http.routers.tom-matrix-client.middlewares=cors-policy@file"
 
       - "traefik.http.services.tom.loadbalancer.server.port=3000"
 
@@ -111,13 +111,13 @@ services:
       - "traefik.http.routers.fed-direct.entrypoints=websecure"
       - "traefik.http.routers.fed-direct.tls=true"
       - "traefik.http.routers.fed-direct.priority=110"
-      - "traefik.http.routers.fed-direct.middlewares=cors-policy@file"
+      # - "traefik.http.routers.fed-direct.middlewares=cors-policy@file"
 
       # Federation Identity Server API
       - "traefik.http.routers.fed-identity.rule=Host(`fed.docker.internal`) && PathPrefix(`/_matrix/identity/v2`)"
       - "traefik.http.routers.fed-identity.entrypoints=websecure"
       - "traefik.http.routers.fed-identity.tls=true"
       - "traefik.http.routers.fed-identity.priority=90"
-      - "traefik.http.routers.fed-identity.middlewares=cors-policy@file"
+      # - "traefik.http.routers.fed-identity.middlewares=cors-policy@file"
 
       - "traefik.http.services.fed.loadbalancer.server.port=3000"
