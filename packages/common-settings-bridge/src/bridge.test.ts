@@ -342,6 +342,35 @@ describe("CommonSettingsBridge", () => {
       expect(mockProfileUpdater.processChanges).not.toHaveBeenCalled();
     });
 
+    it("should ack-and-drop a message whose timestamp is not finite", async () => {
+      // `1e1000` round-trips through JSON.parse to Infinity; `typeof Infinity === "number"`.
+      // Without the Number.isFinite guard, formatTimestamp(Infinity) throws inside the info log
+      // and the lib retries → DLQ instead of the intended ack-and-drop.
+      await expect(handleMessageFn(buildMessage({ timestamp: Number.POSITIVE_INFINITY }))).resolves.toBeUndefined();
+      await expect(handleMessageFn(buildMessage({ timestamp: Number.NEGATIVE_INFINITY }))).resolves.toBeUndefined();
+      await expect(handleMessageFn(buildMessage({ timestamp: Number.NaN }))).resolves.toBeUndefined();
+      expect(mockSettingsRepo.getUserSettings).not.toHaveBeenCalled();
+      expect(mockProfileUpdater.processChanges).not.toHaveBeenCalled();
+    });
+
+    it("should default version to 1 when version is not finite", async () => {
+      mockSettingsRepo.getUserSettings.mockResolvedValue(null);
+
+      await handleMessageFn(buildMessage({ version: Number.NaN }));
+      await handleMessageFn(buildMessage({ version: Number.NEGATIVE_INFINITY, request_id: "req-2" }));
+
+      // First call's `isNewUser` is true, so version defaulted to 1 was persisted.
+      expect(mockSettingsRepo.saveSettings).toHaveBeenNthCalledWith(
+        1,
+        "@user:example.com",
+        expect.any(Object),
+        1,
+        expect.any(Number),
+        "req-123",
+        true,
+      );
+    });
+
     it("should get user settings from repository", async () => {
       mockUserSettings = null;
       mockSettingsRepo.getUserSettings.mockResolvedValue(mockUserSettings);

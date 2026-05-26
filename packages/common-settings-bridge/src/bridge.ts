@@ -48,13 +48,15 @@ function validateMessage(message: Record<string, unknown>): ParsedMessage {
   if (typeof requestId !== "string" || requestId.length === 0) {
     throw new MessageParseError("Message missing required request_id field");
   }
+  // `Number.isFinite` rejects NaN/Infinity that `typeof === "number"` lets through.
+  // Infinity would later blow up `new Date(...).toISOString()` and turn ack-drop into a DLQ storm.
   const timestamp = message.timestamp;
-  if (typeof timestamp !== "number") {
+  if (!Number.isFinite(timestamp)) {
     throw new MessageParseError("Message missing required timestamp field");
   }
   const payload = message.payload;
   if (payload === null || typeof payload !== "object" || Array.isArray(payload)) {
-    throw new UserIdNotProvidedError();
+    throw new MessageParseError("Message payload must be a JSON object");
   }
   const matrixId = (payload as Record<string, unknown>).matrix_id;
   if (typeof matrixId !== "string" || matrixId.length === 0) {
@@ -64,8 +66,8 @@ function validateMessage(message: Record<string, unknown>): ParsedMessage {
   const source = message.source;
   return {
     userId: matrixId,
-    version: typeof version === "number" ? version : 1,
-    timestamp,
+    version: Number.isFinite(version) ? (version as number) : 1,
+    timestamp: timestamp as number,
     requestId,
     source: typeof source === "string" ? source : "",
     payload: payload as ISettingsPayload,
