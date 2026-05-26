@@ -230,9 +230,9 @@ rabbitmq:
   tls: false                          # Enable TLS with `true`
   queue: "chat.settings.updated.queue"
   exchange: "settings.exchange"
-  routingKey: "user.settings.updated"
-  deadLetterExchange: "users.settings.dlx"  # Dead letter exchange for failed messages
-  deadLetterRoutingKey: "user.settings.updated.dlx"
+  routingKey: "user.settings.updated"      # optional, defaults to '#'
+  # Dead-letter topology is provisioned automatically as
+  # '<exchange>.dlx' / '<queue>.dlq' / '<routingKey>.dead'.
 ```
 
 ### Configuration File: registration.yaml
@@ -1040,7 +1040,7 @@ usersettings:
 **Key Enums**:
 - `SynapseAdminRetryMode`: DISABLED | FALLBACK | EXCLUSIVE
 
-**Dependencies**: @twake/amqp-connector
+**Dependencies**: @linagora/rabbitmq-client
 
 ---
 
@@ -1137,7 +1137,7 @@ Each module has a corresponding test file with comprehensive test coverage:
 ### Key Dependencies
 
 - `matrix-appservice-bridge`: Matrix Application Service protocol implementation
-- `@twake/amqp-connector`: RabbitMQ connection management
+- `@linagora/rabbitmq-client`: RabbitMQ connection, publisher confirms, DLQ wiring, and reconnection
 - `@twake/db`: Database abstraction layer
 - `@twake/logger`: Structured logging
 

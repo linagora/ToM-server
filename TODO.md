@@ -20,7 +20,6 @@ Add path resolution and fix JSON imports:
     "resolveJsonModule": true,
     "declaration": true,
     "paths": {
-      "@twake/amqp-connector": ["./packages/amqp-connector/src"],
       "@twake/common-settings-bridge": ["./packages/common-settings-bridge/src"],
       "@twake/config-parser": ["./packages/config-parser/src"],
       "@twake/crypto": ["./packages/crypto/src"],

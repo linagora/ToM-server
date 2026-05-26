@@ -36,9 +36,7 @@ rabbitmq:
   queue: "chat.settings.updated.queue"
   # Exchange for publishing settings updates
   exchange: "settings.exchange"
-  # Routing key for filtering settings update messages
+  # Routing key for filtering settings update messages (defaults to '#' if omitted)
   routingKey: "user.settings.updated"
-  # Dead letter exchange for handling failed message processing
-  deadLetterExchange: "users.settings.dlx"
-  # Routing key for directing failed messages to dead letter queue
-  deadLetterRoutingKey: "user.settings.updated.dlx"
+  # Dead-letter topology is provisioned automatically by the client as
+  # '<exchange>.dlx' / '<queue>.dlq' / '<routingKey>.dead'.

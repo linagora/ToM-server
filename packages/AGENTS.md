@@ -4,13 +4,12 @@
 # packages/
 
 ## Purpose
-Container for all 11 npm workspace packages that make up the ToM-Server monorepo. Packages range from low-level utilities (config-parser, crypto, logger) to high-level application servers (tom-server, federated-identity-service). Each package is independently buildable and testable, and they depend on each other via the `@twake/*` workspace protocol.
+Container for all npm workspace packages that make up the ToM-Server monorepo. Packages range from low-level utilities (config-parser, crypto, logger) to high-level application servers (tom-server, federated-identity-service). Each package is independently buildable and testable, and they depend on each other via the `@twake/*` workspace protocol.
 
 ## Subdirectories
 
 | Directory | Purpose |
 |-----------|---------|
-| `amqp-connector/` | AMQP message broker client with reconnection (see `amqp-connector/AGENTS.md`) |
 | `common-settings-bridge/` | Matrix Application Service bridge for syncing settings (see `common-settings-bridge/AGENTS.md`) |
 | `config-parser/` | Multi-source configuration loader with type coercion (see `config-parser/AGENTS.md`) |
 | `crypto/` | Hashing, key generation, and JSON signing utilities (see `crypto/AGENTS.md`) |
@@ -38,7 +37,6 @@ matrix-resolve ← (no @twake deps)
 logger         ← config-parser
 utils          ← logger
 db             ← config-parser, logger
-amqp-connector ← logger
 matrix-identity-server ← config-parser, logger, utils, crypto, db, matrix-resolve
 federated-identity-service ← matrix-identity-server (+ all its deps)
 tom-server     ← matrix-identity-server, utils, config-parser, logger, db

@@ -1,9 +1,10 @@
-import { AMQPConnector } from "@twake/amqp-connector";
+import { RabbitMQClient } from "@linagora/rabbitmq-client";
+import type { SynapseAdminApis } from "@vector-im/matrix-bot-sdk";
+import { Bridge, type Intent, Logger } from "matrix-appservice-bridge";
+
 import { Database } from "@twake/db";
 import type * as logger from "@twake/logger";
-import type { SynapseAdminApis } from "@vector-im/matrix-bot-sdk";
-import type { Channel, ConsumeMessage } from "amqplib";
-import { Bridge, type Intent, Logger } from "matrix-appservice-bridge";
+
 import {
   DEFAULT_AVATAR_FETCH_TIMEOUT_MS,
   DEFAULT_MAX_AVATAR_BYTES,
@@ -40,17 +41,6 @@ interface ParsedMessage {
 }
 
 /**
- * Attempts to parse a JSON string into a CommonSettingsMessage object.
- */
-function parseMessage(raw: string): CommonSettingsMessage | null {
-  try {
-    return JSON.parse(raw) as CommonSettingsMessage;
-  } catch {
-    return null;
-  }
-}
-
-/**
  * Validates a CommonSettingsMessage and extracts required fields.
  */
 function validateMessage(message: CommonSettingsMessage): ParsedMessage {
@@ -71,6 +61,14 @@ function validateMessage(message: CommonSettingsMessage): ParsedMessage {
     source: message.source,
     payload: message.payload,
   };
+}
+
+/**
+ * Builds an AMQP URL from the structured rabbitmq config.
+ */
+function buildAmqpUrl(conf: BridgeConfig["rabbitmq"]): string {
+  const protocol = conf.tls === true ? "amqps" : "amqp";
+  return `${protocol}://${encodeURIComponent(conf.username)}:${encodeURIComponent(conf.password)}@${conf.host}:${conf.port}/${conf.vhost}`;
 }
 
 // =============================================================================
@@ -118,7 +116,7 @@ export class CommonSettingsBridge {
   #botIntent!: Intent;
   #adminApis!: SynapseAdminApis;
   #db!: Database<UserSettingsTableName>;
-  #connector!: AMQPConnector;
+  #client!: RabbitMQClient;
   #settingsRepository!: SettingsRepository;
   #profileUpdater!: MatrixProfileUpdater;
   #isDatabaseAvailable: boolean = false;
@@ -132,7 +130,7 @@ export class CommonSettingsBridge {
     this.#log.debug("Initializing CommonSettingsBridge instance");
     this.#config = config;
     this.#initDatabase();
-    this.#initAmqpConnector();
+    this.#initRabbitMQClient();
     this.#log.debug("CommonSettingsBridge instance created");
   }
 
@@ -171,34 +169,26 @@ export class CommonSettingsBridge {
   }
 
   /**
-   * Initializes the AMQP connector with exchange, queue, and dead letter configuration.
-   * Sets up the message handler for processing incoming settings change messages.
+   * Initializes the RabbitMQ client. Subscription is established later in
+   * `start()` once `init()` has opened the connection and channel.
    */
-  #initAmqpConnector(): void {
-    this.#log.debug("Initializing AMQP connector...");
+  #initRabbitMQClient(): void {
+    this.#log.debug("Initializing RabbitMQ client...");
 
-    const amqpLogger = createLoggerAdapter(this.#log, "AMQP");
     const rabbitConfig = this.#config.rabbitmq;
 
     this.#log.debug(
       `RabbitMQ config: host=${rabbitConfig.host}, exchange=${rabbitConfig.exchange}, queue=${rabbitConfig.queue}, routingKey=${rabbitConfig.routingKey}`,
     );
 
-    this.#connector = new AMQPConnector(amqpLogger as logger.TwakeLogger)
-      .withConfig(rabbitConfig)
-      .withExchange(rabbitConfig.exchange, { durable: true })
-      .withQueue(
-        rabbitConfig.queue,
-        {
-          durable: true,
-          deadLetterExchange: rabbitConfig.deadLetterExchange,
-          deadLetterRoutingKey: rabbitConfig.deadLetterRoutingKey,
-        },
-        rabbitConfig.routingKey,
-      )
-      .onMessage(this.#handleMessage.bind(this));
+    this.#client = new RabbitMQClient({
+      url: buildAmqpUrl(rabbitConfig),
+      prefetch: rabbitConfig.prefetch,
+      maxRetries: rabbitConfig.maxRetries,
+      retryDelay: rabbitConfig.retryDelay,
+    });
 
-    this.#log.debug("AMQP connector configured");
+    this.#log.debug("RabbitMQ client configured");
   }
 
   /**
@@ -236,29 +226,29 @@ export class CommonSettingsBridge {
   /**
    * Handles incoming AMQP messages containing user settings changes.
    * Implements idempotency checking and version-based ordering.
-   * @param msg - The AMQP message containing settings data
-   * @param channel - The AMQP channel for acknowledgment
+   * Message JSON parsing is done by the RabbitMQ client; malformed
+   * payloads are routed to the DLQ before this handler is invoked.
+   * @param message - The parsed settings message
    */
-  async #handleMessage(msg: ConsumeMessage, _channel: Channel): Promise<void> {
-    const rawContent = msg.content.toString();
+  async #handleMessage(message: Record<string, unknown>): Promise<void> {
+    this.#log.debug("Received message");
 
-    this.#log.debug(`Received message (${rawContent.length} bytes)`);
-
-    /* Parse and validate */
-    const message = parseMessage(rawContent);
-    if (!message) {
-      this.#log.error("Failed to parse message");
-      if (process.env.NODE_ENV === "development" || process.env.LOG_RAW_MESSAGES === "true") {
-        this.#log.debug(`Raw content: ${rawContent.substring(0, 200)}...`);
-      }
-      throw new MessageParseError();
+    // Validation failures are deterministic: re-running on the same bytes will
+    // fail the same way. Ack-and-drop instead of throwing, otherwise the client
+    // library retries this message `maxRetries` times before DLQ'ing.
+    if (message === null || typeof message !== "object" || Array.isArray(message)) {
+      this.#log.error("Discarding message: payload root is not a JSON object");
+      return;
     }
 
     let parsed: ParsedMessage;
     try {
-      parsed = validateMessage(message);
+      parsed = validateMessage(message as unknown as CommonSettingsMessage);
     } catch (err) {
-      this.#log.error("Message validation failed", err);
+      if (err instanceof MessageParseError || err instanceof UserIdNotProvidedError) {
+        this.#log.error(`Discarding message: validation failed (${(err as Error).message})`);
+        return;
+      }
       throw err;
     }
 
@@ -471,9 +461,23 @@ export class CommonSettingsBridge {
         fetchTimeoutMs: this.#config.synapse.avatarFetchTimeoutMs ?? DEFAULT_AVATAR_FETCH_TIMEOUT_MS,
       });
 
-      this.#log.info("Building AMQP connector...");
-      await this.#connector.build();
-      this.#log.info("AMQP connector ready");
+      this.#log.info("Connecting RabbitMQ client...");
+      await this.#client.init();
+      try {
+        const rabbitConfig = this.#config.rabbitmq;
+        await this.#client.subscribe(
+          rabbitConfig.exchange,
+          rabbitConfig.routingKey ?? "#",
+          rabbitConfig.queue,
+          this.#handleMessage.bind(this),
+        );
+      } catch (subscribeError) {
+        // Roll the connection back so the lib's auto-reconnect loop doesn't
+        // keep a zombie session open after start() rejects.
+        await this.#client.close().catch(() => {});
+        throw subscribeError;
+      }
+      this.#log.info("RabbitMQ client ready");
 
       this.#log.info("------------------------------------------");
       this.#log.info("Common Settings Bridge Started");
@@ -503,26 +507,38 @@ export class CommonSettingsBridge {
     this.#log.info("Shutdown signal received...");
     this.#log.info("==========================================");
 
-    try {
-      if (this.#connector) {
-        this.#log.info("Closing AMQP connector...");
-        await this.#connector.close();
-        this.#log.info("AMQP connector closed");
-      }
+    // Each resource closes in its own try block so a failure on one does not
+    // skip the others (the lib's close() can throw on drain timeout).
+    let firstError: unknown;
 
-      if (this.#db) {
-        this.#log.info("Closing database connection...");
+    if (this.#client) {
+      this.#log.info("Closing RabbitMQ client...");
+      try {
+        await this.#client.close();
+        this.#log.info("RabbitMQ client closed");
+      } catch (error) {
+        firstError ??= error;
+        this.#log.error(`Error closing RabbitMQ client: ${error instanceof Error ? error.message : String(error)}`);
+      }
+    }
+
+    if (this.#db) {
+      this.#log.info("Closing database connection...");
+      try {
         this.#db.close();
         this.#log.info("Database closed");
+      } catch (error) {
+        firstError ??= error;
+        this.#log.error(`Error closing database: ${error instanceof Error ? error.message : String(error)}`);
       }
+    }
 
-      this.#log.info("==========================================");
-      this.#log.info("Common Settings Bridge Stopped");
-      this.#log.info("==========================================");
-    } catch (error) {
-      this.#log.error("Error during shutdown:");
-      this.#log.error(error instanceof Error ? error.message : String(error));
-      throw error;
+    this.#log.info("==========================================");
+    this.#log.info("Common Settings Bridge Stopped");
+    this.#log.info("==========================================");
+
+    if (firstError !== undefined) {
+      throw firstError;
     }
   }
 }
