@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+
 import { ConfigCoercionError, FileReadParseError, MissingRequiredConfigError, UnacceptedKeyError } from "./errors";
 import twakeConfig from "./index";
 import type { ConfigDescription, Configuration } from "./types";
@@ -63,14 +64,14 @@ const setupMockFs = (files: { [key: string]: string }) => {
   });
 
   // mock async readFile
-  (fs.promises.readFile as jest.Mock).mockImplementation(async (filePath: string) => {
+  (fs.promises.readFile as jest.Mock).mockImplementation((filePath: string) => {
     const content = files[filePath];
     if (content === undefined) {
       const error = new Error(`ENOENT: no such file or directory, open '${filePath}'`);
-      (error as any).code = "ENOENT";
-      throw error;
+      (error as NodeJS.ErrnoException).code = "ENOENT";
+      return Promise.reject(error);
     }
-    return content;
+    return Promise.resolve(content);
   });
 
   // mock sync readFileSync
@@ -78,7 +79,7 @@ const setupMockFs = (files: { [key: string]: string }) => {
     const content = files[filePath];
     if (content === undefined) {
       const error = new Error(`ENOENT: no such file or directory, open '${filePath}'`);
-      (error as any).code = "ENOENT";
+      (error as NodeJS.ErrnoException).code = "ENOENT";
       throw error;
     }
     return content;
@@ -92,7 +93,7 @@ describe("twakeConfig - Basic Cases", () => {
     (fs.existsSync as jest.Mock).mockClear();
   });
 
-  test("Should return default values when no file or env vars are provided", async () => {
+  test("Should return default values when no file or env vars are provided", () => {
     const res: Configuration = twakeConfig(createTestConfigDesc());
     expect(res).toEqual({
       STRING_KEY: "defaultString",
@@ -108,7 +109,7 @@ describe("twakeConfig - Basic Cases", () => {
     });
   });
 
-  test("Should load config from file and override defaults", async () => {
+  test("Should load config from file and override defaults", () => {
     const mockFilePath = "config.json";
     setupMockFs({
       [mockFilePath]: JSON.stringify({
@@ -134,7 +135,7 @@ describe("twakeConfig - Basic Cases", () => {
     expect(fs.readFileSync).toHaveBeenCalledWith(mockFilePath, "utf8");
   });
 
-  test("Should load config from object and override defaults", async () => {
+  test("Should load config from object and override defaults", () => {
     const initialConfig: Configuration = {
       STRING_KEY: "objectString",
       BOOLEAN_KEY: false,
@@ -155,7 +156,7 @@ describe("twakeConfig - Basic Cases", () => {
     });
   });
 
-  test("Should override defaults with environment variables when useEnv is true", async () => {
+  test("Should override defaults with environment variables when useEnv is true", () => {
     process.env.STRING_KEY = "envString";
     process.env.NUMBER_KEY = "300";
     process.env.BOOLEAN_KEY = "false";
@@ -184,7 +185,7 @@ describe("twakeConfig - Easy Cases (Mixed Sources)", () => {
     (fs.existsSync as jest.Mock).mockClear();
   });
 
-  test("Environment variables should override file values", async () => {
+  test("Environment variables should override file values", () => {
     const mockFilePath = "config.json";
     setupMockFs({
       [mockFilePath]: JSON.stringify({
@@ -215,7 +216,7 @@ describe("twakeConfig - Easy Cases (Mixed Sources)", () => {
     });
   });
 
-  test("File values should override defaults when env vars are not used", async () => {
+  test("File values should override defaults when env vars are not used", () => {
     const mockFilePath = "config.json";
     setupMockFs({
       [mockFilePath]: JSON.stringify({
@@ -251,31 +252,31 @@ describe("twakeConfig - Medium Cases (Coercion Details)", () => {
     (fs.existsSync as jest.Mock).mockClear();
   });
 
-  test("Array type coercion from comma-separated string", async () => {
+  test("Array type coercion from comma-separated string", () => {
     process.env.ARRAY_KEY = "item1,item2, item3 , item4";
     const res: Configuration = twakeConfig(createTestConfigDesc(), undefined, true);
     expect(res.ARRAY_KEY).toEqual(["item1", "item2", "item3", "item4"]);
   });
 
-  test("Array type coercion from space-separated string", async () => {
+  test("Array type coercion from space-separated string", () => {
     process.env.ARRAY_KEY = "itemA itemB  itemC";
     const res: Configuration = twakeConfig(createTestConfigDesc(), undefined, true);
     expect(res.ARRAY_KEY).toEqual(["itemA", "itemB", "itemC"]);
   });
 
-  test("JSON type coercion from simple JSON string", async () => {
+  test("JSON type coercion from simple JSON string", () => {
     process.env.JSON_KEY = '{"name": "test", "value": 123}';
     const res: Configuration = twakeConfig(createTestConfigDesc(), undefined, true);
     expect(res.JSON_KEY).toEqual({ name: "test", value: 123 });
   });
 
-  test("Object type coercion from simple JSON string (environment variable)", async () => {
+  test("Object type coercion from simple JSON string (environment variable)", () => {
     process.env.OBJECT_KEY = '{"key": "value", "num": 456}';
     const res: Configuration = twakeConfig(createTestConfigDesc(), undefined, true);
     expect(res.OBJECT_KEY).toEqual({ key: "value", num: 456 });
   });
 
-  test('Boolean coercion with "1" and "0"', async () => {
+  test('Boolean coercion with "1" and "0"', () => {
     process.env.BOOLEAN_KEY = "1";
     let res: Configuration = twakeConfig(createTestConfigDesc(), undefined, true);
     expect(res.BOOLEAN_KEY).toBe(true);
@@ -285,7 +286,7 @@ describe("twakeConfig - Medium Cases (Coercion Details)", () => {
     expect(res.BOOLEAN_KEY).toBe(false);
   });
 
-  test('Boolean coercion with mixed case "TRUE" and "FALSE"', async () => {
+  test('Boolean coercion with mixed case "TRUE" and "FALSE"', () => {
     process.env.BOOLEAN_KEY = "TRUE";
     let res: Configuration = twakeConfig(createTestConfigDesc(), undefined, true);
     expect(res.BOOLEAN_KEY).toBe(true);
@@ -303,7 +304,7 @@ describe("twakeConfig - Hard Cases (Complex Coercion & Defaults)", () => {
     (fs.existsSync as jest.Mock).mockClear();
   });
 
-  test("JSON type coercion from complex JSON string", async () => {
+  test("JSON type coercion from complex JSON string", () => {
     process.env.JSON_KEY = '{"data": [{"id": 1, "val": "a"}, {"id": 2, "val": "b"}], "meta": {"version": "1.0"}}';
     const res: Configuration = twakeConfig(createTestConfigDesc(), undefined, true);
     expect(res.JSON_KEY).toEqual({
@@ -315,7 +316,7 @@ describe("twakeConfig - Hard Cases (Complex Coercion & Defaults)", () => {
     });
   });
 
-  test("Object type coercion from complex JSON string (environment variable)", async () => {
+  test("Object type coercion from complex JSON string (environment variable)", () => {
     process.env.OBJECT_KEY = '{"complex": {"nested": true, "items": [1, 2, 3]}, "status": "active"}';
     const res: Configuration = twakeConfig(createTestConfigDesc(), undefined, true);
     expect(res.OBJECT_KEY).toEqual({
@@ -335,7 +336,7 @@ describe("twakeConfig - Hard Cases (Complex Coercion & Defaults)", () => {
     expect(() => twakeConfig(createTestConfigDesc(), undefined, true)).toThrow(/Empty string values are not allowed/);
   });
 
-  test("Default value is a string but needs coercion to target type", async () => {
+  test("Default value is a string but needs coercion to target type", () => {
     const descWithCoercibleDefault: ConfigDescription = {
       NUM_FROM_STRING: { type: "number", default: "42" },
       BOOL_FROM_STRING: { type: "boolean", default: "true" },
@@ -349,7 +350,7 @@ describe("twakeConfig - Hard Cases (Complex Coercion & Defaults)", () => {
     expect(res.ARRAY_FROM_STRING).toEqual(["itemA", "itemB"]);
   });
 
-  test("Default value is already correct type, no coercion needed", async () => {
+  test("Default value is already correct type, no coercion needed", () => {
     const descWithCorrectDefault: ConfigDescription = {
       NUM_FROM_NUMBER: { type: "number", default: 42 },
       BOOL_FROM_BOOLEAN: { type: "boolean", default: true },
@@ -369,14 +370,14 @@ describe("twakeConfig - Side Effects", () => {
     (fs.existsSync as jest.Mock).mockClear();
   });
 
-  test("Should not modify the input ConfigDescription object", async () => {
+  test("Should not modify the input ConfigDescription object", () => {
     const originalDesc = createTestConfigDesc();
     const descCopy = JSON.parse(JSON.stringify(originalDesc));
     twakeConfig(originalDesc);
     expect(originalDesc).toEqual(descCopy);
   });
 
-  test("Should not modify the input defaultConfigurationFile object", async () => {
+  test("Should not modify the input defaultConfigurationFile object", () => {
     const originalFileConfig: Configuration = {
       STRING_KEY: "initial",
       NUMBER_KEY: 123,
@@ -481,7 +482,7 @@ describe("twakeConfig - Edge Cases and Error Handling", () => {
     (fs.existsSync as jest.Mock).mockReturnValue(false);
     (fs.promises.readFile as jest.Mock).mockImplementation(() => {
       const error = new Error(`ENOENT: no such file or directory, open '${nonExistentPath}'`);
-      (error as any).code = "ENOENT";
+      (error as NodeJS.ErrnoException).code = "ENOENT";
       throw error;
     });
 
@@ -501,18 +502,18 @@ describe("twakeConfig - Edge Cases and Error Handling", () => {
     expect(consoleWarnSpy).not.toHaveBeenCalled();
   });
 
-  test("Should handle null default values correctly", async () => {
+  test("Should handle null default values correctly", () => {
     const res: Configuration = twakeConfig(createTestConfigDesc());
     expect(res.NULL_KEY).toBeNull();
   });
 
-  test("Should handle undefined default values correctly", async () => {
+  test("Should handle undefined default values correctly", () => {
     const res: Configuration = twakeConfig(createTestConfigDesc());
     expect(res.UNDEFINED_KEY).toBeUndefined();
     expect(res.NO_DEFAULT_KEY).toBeUndefined();
   });
 
-  test("Should throw MissingRequiredConfigError if a required key is not provided", async () => {
+  test("Should throw MissingRequiredConfigError if a required key is not provided", () => {
     const descWithRequired: ConfigDescription = {
       MY_REQUIRED_KEY: { type: "string", required: true },
     };
@@ -520,7 +521,7 @@ describe("twakeConfig - Edge Cases and Error Handling", () => {
     expect(() => twakeConfig(descWithRequired)).toThrow("Required configuration key 'MY_REQUIRED_KEY' is missing.");
   });
 
-  test("Should not throw MissingRequiredConfigError if a required key is provided by env", async () => {
+  test("Should not throw MissingRequiredConfigError if a required key is provided by env", () => {
     const descWithRequired: ConfigDescription = {
       MY_REQUIRED_KEY: { type: "string", required: true },
     };
@@ -529,7 +530,7 @@ describe("twakeConfig - Edge Cases and Error Handling", () => {
     expect(res.MY_REQUIRED_KEY).toBe("present");
   });
 
-  test("Should not throw MissingRequiredConfigError if a required key is provided by default", async () => {
+  test("Should not throw MissingRequiredConfigError if a required key is provided by default", () => {
     const descWithRequired: ConfigDescription = {
       MY_REQUIRED_KEY: {
         type: "string",

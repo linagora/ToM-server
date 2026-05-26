@@ -1,4 +1,5 @@
 import fs from "node:fs";
+
 import {
   ConfigCoercionError,
   FileReadParseError,
@@ -26,7 +27,7 @@ import { isTruthy, oldParser } from "./utils";
  * @throws {InvalidBooleanFormatError} if coercion to boolean fails.
  * @throws {InvalidJsonFormatError} if coercion to JSON fails.
  */
-const coerceValue = (value: string, targetType: ConfigValueType): any => {
+const coerceValue = (value: string, targetType: ConfigValueType): unknown => {
   switch (targetType) {
     case "number": {
       const num = parseFloat(value);
