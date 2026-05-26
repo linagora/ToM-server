@@ -474,7 +474,9 @@ export class CommonSettingsBridge {
       } catch (subscribeError) {
         // Roll the connection back so the lib's auto-reconnect loop doesn't
         // keep a zombie session open after start() rejects.
-        await this.#client.close().catch(() => {});
+        await this.#client.close().catch((closeErr) => {
+          this.#log.warn(`Error closing client during rollback: ${closeErr instanceof Error ? closeErr.message : String(closeErr)}`);
+        });
         throw subscribeError;
       }
       this.#log.info("RabbitMQ client ready");
