@@ -1,44 +1,30 @@
-import { type TwakeLogger } from '@twake/logger'
-import { type IdServerAPI, type Utils } from '@twake/matrix-identity-server'
-import { Router, json, urlencoded } from 'express'
-import { hashDetails, lookup, lookups } from '../controllers/controllers'
-import { auth } from '../middlewares/auth'
-import { errorMiddleware } from '../middlewares/errors'
-import {
-  allowCors,
-  methodNotAllowed,
-  methodNotFound
-} from '../middlewares/utils'
-import {
-  commonValidators,
-  lookupValidator,
-  lookupsValidator
-} from '../middlewares/validation'
-import {
-  type FdServerDb,
-  type Config,
-  type expressAppHandler,
-  type middlewaresList
-} from '../types'
+import { json, Router, urlencoded } from "express";
 
-const errorMiddlewares = (middleware: expressAppHandler): middlewaresList => [
-  allowCors,
-  middleware,
-  errorMiddleware
-]
+import type { TwakeLogger } from "@twake/logger";
+
+import type { IdServerAPI, Utils } from "@twake/matrix-identity-server";
+
+import { hashDetails, lookup, lookups } from "../controllers/controllers";
+import { auth } from "../middlewares/auth";
+import { errorMiddleware } from "../middlewares/errors";
+import { allowCors, methodNotAllowed, methodNotFound } from "../middlewares/utils";
+import { commonValidators, lookupsValidator, lookupValidator } from "../middlewares/validation";
+import type { Config, expressAppHandler, FdServerDb, middlewaresList } from "../types";
+
+const errorMiddlewares = (middleware: expressAppHandler): middlewaresList => [allowCors, middleware, errorMiddleware];
 
 export default (
   api: {
-    get: IdServerAPI
-    post: IdServerAPI
-    put?: IdServerAPI
+    get: IdServerAPI;
+    post: IdServerAPI;
+    put?: IdServerAPI;
   },
   db: FdServerDb,
   authenticate: Utils.AuthenticationFunction,
   conf: Config,
-  logger: TwakeLogger
+  logger: TwakeLogger,
 ): Router => {
-  const routes = Router()
+  const routes = Router();
   /**
    * @openapi
    * '/_matrix/identity/v2/lookup':
@@ -127,7 +113,7 @@ export default (
    *        $ref: '#/components/responses/InternalServerError'
    */
   routes
-    .route('/_matrix/identity/v2/lookup')
+    .route("/_matrix/identity/v2/lookup")
     .post(
       allowCors,
       json(),
@@ -136,9 +122,9 @@ export default (
       ...commonValidators,
       lookupValidator(conf.hashes_rate_limit as number),
       lookup(conf, db),
-      errorMiddleware
+      errorMiddleware,
     )
-    .all(...errorMiddlewares(methodNotAllowed))
+    .all(...errorMiddlewares(methodNotAllowed));
 
   /**
    * @openapi
@@ -149,34 +135,32 @@ export default (
    *    description: Implements https://spec.matrix.org/v1.6/identity-service-api/#get_matrixidentityv2hash_details
    */
   routes
-    .route('/_matrix/identity/v2/hash_details')
+    .route("/_matrix/identity/v2/hash_details")
     .get(
       allowCors,
       json(),
       urlencoded({ extended: false }),
       auth(authenticate),
       hashDetails(db, logger),
-      errorMiddleware
+      errorMiddleware,
     )
-    .all(...errorMiddlewares(methodNotAllowed))
+    .all(...errorMiddlewares(methodNotAllowed));
 
-  const defaultGetEndpoints = Object.keys(api.get)
-  const defaultPostEndpoints = Object.keys(api.post)
+  const defaultGetEndpoints = Object.keys(api.get);
+  const defaultPostEndpoints = Object.keys(api.post);
 
   defaultGetEndpoints.forEach((k) => {
-    routes.route(k).get(api.get[k])
-  })
+    routes.route(k).get(api.get[k]);
+  });
   defaultPostEndpoints.forEach((k) => {
-    routes.route(k).post(api.post[k])
-  })
+    routes.route(k).post(api.post[k]);
+  });
 
-  const allDefaultEndpoints = [
-    ...new Set([...defaultGetEndpoints, ...defaultPostEndpoints])
-  ]
+  const allDefaultEndpoints = [...new Set([...defaultGetEndpoints, ...defaultPostEndpoints])];
 
   allDefaultEndpoints.forEach((k) => {
-    routes.route(k).all(...errorMiddlewares(methodNotAllowed))
-  })
+    routes.route(k).all(...errorMiddlewares(methodNotAllowed));
+  });
 
   /**
    * @openapi
@@ -236,7 +220,7 @@ export default (
    *        $ref: '#/components/responses/InternalServerError'
    */
   routes
-    .route('/_matrix/identity/v2/lookups')
+    .route("/_matrix/identity/v2/lookups")
     .post(
       allowCors,
       json(),
@@ -245,11 +229,11 @@ export default (
       ...commonValidators,
       lookupsValidator,
       lookups(db),
-      errorMiddleware
+      errorMiddleware,
     )
-    .all(...errorMiddlewares(methodNotAllowed))
+    .all(...errorMiddlewares(methodNotAllowed));
 
-  routes.use(...errorMiddlewares(methodNotFound))
+  routes.use(...errorMiddlewares(methodNotFound));
 
-  return routes
-}
+  return routes;
+};

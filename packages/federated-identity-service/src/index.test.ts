@@ -1,59 +1,47 @@
-import { Hash } from '@twake/crypto'
-import express from 'express'
-import fs from 'fs'
-import type * as http from 'http'
-import * as fetch from 'node-fetch'
-import { execFileSync } from 'node:child_process'
-import { createServer } from 'node:https'
-import os from 'os'
-import path from 'path'
-import request, { type Response } from 'supertest'
-import {
-  DockerComposeEnvironment,
-  Wait,
-  type StartedDockerComposeEnvironment,
-  type StartedTestContainer
-} from 'testcontainers'
-import FederatedIdentityService from '.'
-import JEST_PROCESS_ROOT_PATH from '../jest.globals'
-import { buildMatrixDb, buildUserDB } from './__testData__/build-userdb'
-import defaultConfig from './__testData__/config.json'
-import { hashByServer } from './controllers/controllers'
-import { type Config } from './types'
+import fs from "node:fs";
+import type * as http from "node:http";
+import path from "node:path";
+
+import express from "express";
+import request, { type Response } from "supertest";
+
+import { Hash } from "@twake/crypto";
+
+import JEST_PROCESS_ROOT_PATH from "../jest.globals";
+import FederatedIdentityService from ".";
+import { buildMatrixDb, buildUserDB } from "./__testData__/build-userdb";
+import defaultConfig from "./__testData__/config.json";
+import { hashByServer } from "./controllers/controllers";
+import type { Config } from "./types";
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const syswideCas = require('@small-tech/syswide-cas')
+const _syswideCas = require("@small-tech/syswide-cas");
 
-const pathToTestDataFolder = path.join(
-  JEST_PROCESS_ROOT_PATH,
-  'src',
-  '__testData__'
-)
-const pathToSynapseDataFolder = path.join(pathToTestDataFolder, 'synapse-data')
+const pathToTestDataFolder = path.join(JEST_PROCESS_ROOT_PATH, "src", "__testData__");
+const _pathToSynapseDataFolder = path.join(pathToTestDataFolder, "synapse-data");
 
-const authToken =
-  'authTokenddddddddddddddddddddddddddddddddddddddddddddddddddddddd'
+const authToken = "authTokenddddddddddddddddddddddddddddddddddddddddddddddddddddddd";
 
-jest.unmock('node-fetch')
+jest.unmock("node-fetch");
 
 interface IHashDetails {
-  algorithms: ['sha256']
-  lookup_pepper: string
-  alt_lookup_peppers?: string[]
+  algorithms: ["sha256"];
+  lookup_pepper: string;
+  alt_lookup_peppers?: string[];
 }
 
-describe('Federated identity service', () => {
-  const hash = new Hash()
+describe("Federated identity service", () => {
+  const hash = new Hash();
 
   beforeAll((done) => {
     hash.ready
       .then(() => {
-        done()
+        done();
       })
       .catch((e) => {
-        done(e)
-      })
-  })
+        done(e);
+      });
+  });
 
   // TODO: enable these tests after resolving issues with DNS resolution in CI environment
   // describe('Integration tests', () => {
@@ -885,7 +873,7 @@ describe('Federated identity service', () => {
   //         expect(response.body).toHaveProperty('mappings')
   //         Object.values(
   //           response.body.mappings as Record<string, string>
-  //         ).forEach((address) => matrixAddresses.add(address))
+  //         ).forEach((address) => { matrixAddresses.add(address); })
   //       }
   //       expect(matrixAddresses.size).toEqual(1)
   //       expect(matrixAddresses.has('@chewbacca:example.com')).toEqual(true)
@@ -978,7 +966,7 @@ describe('Federated identity service', () => {
   //         expect(response.body).toHaveProperty('mappings')
   //         Object.values(
   //           response.body.mappings as Record<string, string>
-  //         ).forEach((address) => matrixAddresses.add(address))
+  //         ).forEach((address) => { matrixAddresses.add(address); })
   //         expect(response.body).toHaveProperty('third_party_mappings')
   //         Object.keys(response.body.third_party_mappings).forEach((host) => {
   //           ;(response.body.third_party_mappings[host] as string[]).forEach(
@@ -1008,349 +996,318 @@ describe('Federated identity service', () => {
   //   })
   // })
 
-  describe('Mock tests', () => {
-    let federatedIdentityService: FederatedIdentityService
-    let app: express.Application
-    let expressFederatedIdentityService: http.Server
-    const trustedIpAddress = '192.168.1.1'
-    const trustedIpv6Address = '2001:db8:3333:4444:5555:6666:7777:8888'
-    const trustedNetwork = '192.168.200.4/30'
+  describe("Mock tests", () => {
+    let federatedIdentityService: FederatedIdentityService;
+    let app: express.Application;
+    let expressFederatedIdentityService: http.Server;
+    const trustedIpAddress = "192.168.1.1";
+    const trustedIpv6Address = "2001:db8:3333:4444:5555:6666:7777:8888";
+    const trustedNetwork = "192.168.200.4/30";
     const testConfig = {
       ...(defaultConfig as Partial<Config>),
       additional_features: true,
       cron_service: true,
-      trusted_servers_addresses: [
-        trustedIpAddress,
-        trustedNetwork,
-        trustedIpv6Address
-      ]
-    }
+      trusted_servers_addresses: [trustedIpAddress, trustedNetwork, trustedIpv6Address],
+    };
 
     const stopFederatedIdentityService = (
       done: jest.DoneCallback,
       filesToDelete = [
-        path.join(pathToTestDataFolder, 'database.db'),
-        path.join(pathToTestDataFolder, 'matrix.db'),
-        path.join(pathToTestDataFolder, 'user.db')
-      ]
+        path.join(pathToTestDataFolder, "database.db"),
+        path.join(pathToTestDataFolder, "matrix.db"),
+        path.join(pathToTestDataFolder, "user.db"),
+      ],
     ): void => {
       filesToDelete.forEach((path: string) => {
-        if (fs.existsSync(path)) fs.unlinkSync(path)
-      })
-      if (federatedIdentityService != null) federatedIdentityService.cleanJobs()
-      if (expressFederatedIdentityService != null) {
+        if (fs.existsSync(path)) fs.unlinkSync(path);
+      });
+      if (federatedIdentityService !== undefined && federatedIdentityService !== null)
+        federatedIdentityService.cleanJobs();
+      if (expressFederatedIdentityService !== undefined && expressFederatedIdentityService !== null) {
         expressFederatedIdentityService.close((e) => {
-          if (e != null) {
-            done(e)
+          if (e !== undefined && e !== null) {
+            done(e);
           }
-          done()
-        })
+          done();
+        });
       } else {
-        done()
+        done();
       }
-    }
+    };
 
     beforeAll((done) => {
-      Promise.all([
-        buildUserDB(testConfig as Config),
-        buildMatrixDb(testConfig as Config)
-      ])
+      Promise.all([buildUserDB(testConfig as Config), buildMatrixDb(testConfig as Config)])
         // eslint-disable-next-line @typescript-eslint/promise-function-async
         .then(() => {
-          done()
+          done();
         })
         .catch((e) => {
-          done(e)
-        })
-    })
+          done(e);
+        });
+    });
 
     afterAll((done) => {
-      stopFederatedIdentityService(done)
-    })
+      stopFederatedIdentityService(done);
+    });
 
     beforeEach(() => {
-      jest.restoreAllMocks()
-    })
+      jest.restoreAllMocks();
+    });
 
-    describe('Working cases', () => {
-      let hashDetails: IHashDetails
-      let allPeppers: string[]
-      let askywalkerHashes: string[]
-      let lskywalkerHashes: string[]
-      let okenobiHashes: string[]
-      let chewbaccaHashes: string[]
-      let qjinnHashes: string[]
+    describe("Working cases", () => {
+      let hashDetails: IHashDetails;
+      let allPeppers: string[];
+      let askywalkerHashes: string[];
+      let lskywalkerHashes: string[];
+      let okenobiHashes: string[];
+      let chewbaccaHashes: string[];
+      let qjinnHashes: string[];
 
-      const setFederatedIdentityServiceDataAndRoutes =
-        async (): Promise<void> => {
-          await new Promise<void>((resolve, _reject) =>
-            setTimeout(() => {
-              resolve()
-            }, 16000)
-          ) // wait to set previousPepper in db
-          await federatedIdentityService.db.insert('accessTokens', {
-            id: authToken,
-            data: '{"sub": "@test:example.com"}'
-          })
-          await new Promise<void>((resolve, _reject) => {
-            app.use(federatedIdentityService.routes)
-            expressFederatedIdentityService = app.listen(3000, () => {
-              resolve()
-            })
-          })
-        }
+      const setFederatedIdentityServiceDataAndRoutes = async (): Promise<void> => {
+        await new Promise<void>((resolve, _reject) =>
+          setTimeout(() => {
+            resolve();
+          }, 16000),
+        ); // wait to set previousPepper in db
+        await federatedIdentityService.db.insert("accessTokens", {
+          id: authToken,
+          data: '{"sub": "@test:example.com"}',
+        });
+        await new Promise<void>((resolve, _reject) => {
+          app.use(federatedIdentityService.routes);
+          expressFederatedIdentityService = app.listen(3000, () => {
+            resolve();
+          });
+        });
+      };
 
-      const pushHashesToFederatedIdentityService = async (
-        fedServerHashDetails?: IHashDetails
-      ): Promise<void> => {
+      const pushHashesToFederatedIdentityService = async (fedServerHashDetails?: IHashDetails): Promise<void> => {
         hashDetails =
           fedServerHashDetails ??
           ((
             await request(app)
-              .get('/_matrix/identity/v2/hash_details')
-              .set('Accept', 'application/json')
-              .set('Authorization', `Bearer ${authToken}`)
-          ).body as IHashDetails)
+              .get("/_matrix/identity/v2/hash_details")
+              .set("Accept", "application/json")
+              .set("Authorization", `Bearer ${authToken}`)
+          ).body as IHashDetails);
 
-        allPeppers = [
-          hashDetails.lookup_pepper,
-          ...(hashDetails.alt_lookup_peppers ?? [])
-        ]
+        allPeppers = [hashDetails.lookup_pepper, ...(hashDetails.alt_lookup_peppers ?? [])];
 
-        askywalkerHashes = allPeppers.map((pepper) =>
-          hash.sha256(`askywalker@example.com email ${pepper}`)
-        )
-        lskywalkerHashes = allPeppers.map((pepper) =>
-          hash.sha256(`lskywalker@example.com email ${pepper}`)
-        )
-        okenobiHashes = allPeppers.map((pepper) =>
-          hash.sha256(`okenobi@example.com email ${pepper}`)
-        )
+        askywalkerHashes = allPeppers.map((pepper) => hash.sha256(`askywalker@example.com email ${pepper}`));
+        lskywalkerHashes = allPeppers.map((pepper) => hash.sha256(`lskywalker@example.com email ${pepper}`));
+        okenobiHashes = allPeppers.map((pepper) => hash.sha256(`okenobi@example.com email ${pepper}`));
 
-        chewbaccaHashes = allPeppers.map((pepper) =>
-          hash.sha256(`chewbacca@example.com email ${pepper}`)
-        )
+        chewbaccaHashes = allPeppers.map((pepper) => hash.sha256(`chewbacca@example.com email ${pepper}`));
 
-        qjinnHashes = allPeppers.map((pepper) =>
-          hash.sha256(`qjinn@example.com email ${pepper}`)
-        )
+        qjinnHashes = allPeppers.map((pepper) => hash.sha256(`qjinn@example.com email ${pepper}`));
 
         await Promise.all([
           // eslint-disable-next-line @typescript-eslint/promise-function-async
           ...askywalkerHashes.map((askywalkerHash, index) =>
             request(app)
-              .post('/_matrix/identity/v2/lookups')
-              .set('Accept', 'application/json')
-              .set('X-forwarded-for', trustedIpAddress)
+              .post("/_matrix/identity/v2/lookups")
+              .set("Accept", "application/json")
+              .set("X-forwarded-for", trustedIpAddress)
               .send({
                 algorithm: hashDetails.algorithms[0],
                 pepper: allPeppers[index],
                 mappings: {
-                  'identity1.example.com:8448': [askywalkerHash]
-                }
-              })
+                  "identity1.example.com:8448": [askywalkerHash],
+                },
+              }),
           ),
           // eslint-disable-next-line @typescript-eslint/promise-function-async
           ...lskywalkerHashes.map((lskywalkerHash, index) =>
             request(app)
-              .post('/_matrix/identity/v2/lookups')
-              .set('Accept', 'application/json')
-              .set('X-forwarded-for', '192.168.200.5')
+              .post("/_matrix/identity/v2/lookups")
+              .set("Accept", "application/json")
+              .set("X-forwarded-for", "192.168.200.5")
               .send({
                 algorithm: hashDetails.algorithms[0],
                 pepper: allPeppers[index],
                 mappings: {
-                  'identity2.example.com:443': [lskywalkerHash]
-                }
-              })
+                  "identity2.example.com:443": [lskywalkerHash],
+                },
+              }),
           ),
           // eslint-disable-next-line @typescript-eslint/promise-function-async
           ...okenobiHashes.map((okenobiHash, index) =>
             request(app)
-              .post('/_matrix/identity/v2/lookups')
-              .set('Accept', 'application/json')
-              .set('X-forwarded-for', 'falsy_ip_address')
+              .post("/_matrix/identity/v2/lookups")
+              .set("Accept", "application/json")
+              .set("X-forwarded-for", "falsy_ip_address")
               .send({
                 algorithm: hashDetails.algorithms[0],
                 pepper: allPeppers[index],
                 mappings: {
-                  'identity4.example.com:443': [okenobiHash]
-                }
-              })
-          )
-        ])
-      }
+                  "identity4.example.com:443": [okenobiHash],
+                },
+              }),
+          ),
+        ]);
+      };
 
-      describe('Use environment variables', () => {
+      describe("Use environment variables", () => {
         const {
           trust_x_forwarded_for: trustXForwardedFor,
           trusted_servers_addresses: trustedServersAddresses,
           ...mIdentityServerConfig
-        } = testConfig
+        } = testConfig;
 
         beforeAll((done) => {
-          process.env.TRUSTED_SERVERS_ADDRESSES = trustedServersAddresses
-            .join(',')
-            .concat(',invalid_ip')
-          process.env.TRUST_X_FORWARDED_FOR = String(trustXForwardedFor)
-          federatedIdentityService = new FederatedIdentityService(
-            mIdentityServerConfig
-          )
-          app = express()
+          process.env.TRUSTED_SERVERS_ADDRESSES = trustedServersAddresses.join(",").concat(",invalid_ip");
+          process.env.TRUST_X_FORWARDED_FOR = String(trustXForwardedFor);
+          federatedIdentityService = new FederatedIdentityService(mIdentityServerConfig);
+          app = express();
           federatedIdentityService.ready
             // eslint-disable-next-line @typescript-eslint/promise-function-async
             .then(() => setFederatedIdentityServiceDataAndRoutes())
             // eslint-disable-next-line @typescript-eslint/promise-function-async
             .then(() => pushHashesToFederatedIdentityService())
             .then(() => {
-              done()
+              done();
             })
             .catch((e) => {
-              done(e)
-            })
-        })
+              done(e);
+            });
+        });
 
         afterAll((done) => {
-          delete process.env.TRUSTED_SERVERS_ADDRESSES
-          delete process.env.TRUST_X_FORWARDED_FOR
-          stopFederatedIdentityService(done, [
-            path.join(pathToTestDataFolder, 'database.db')
-          ])
-        })
+          delete process.env.TRUSTED_SERVERS_ADDRESSES;
+          delete process.env.TRUST_X_FORWARDED_FOR;
+          stopFederatedIdentityService(done, [path.join(pathToTestDataFolder, "database.db")]);
+        });
 
-        it('should get server in which third party user is registered on lookup', async () => {
-          const hosts = new Set<string>()
+        it("should get server in which third party user is registered on lookup", async () => {
+          const hosts = new Set<string>();
           for (let i = 0; i < allPeppers.length; i++) {
             const response = await request(app)
-              .post('/_matrix/identity/v2/lookup')
-              .set('Accept', 'application/json')
-              .set('Authorization', `Bearer ${authToken}`)
+              .post("/_matrix/identity/v2/lookup")
+              .set("Accept", "application/json")
+              .set("Authorization", `Bearer ${authToken}`)
               .send({
                 algorithm: hashDetails.algorithms[0],
                 pepper: allPeppers[i],
-                addresses: [lskywalkerHashes[i]]
-              })
-            expect(response.body).toHaveProperty('mappings', {})
-            expect(response.body).toHaveProperty('inactive_mappings', {})
-            expect(response.body).toHaveProperty('third_party_mappings')
-            Object.keys(response.body.third_party_mappings).forEach((host) =>
-              hosts.add(host)
-            )
+                addresses: [lskywalkerHashes[i]],
+              });
+            expect(response.body).toHaveProperty("mappings", {});
+            expect(response.body).toHaveProperty("inactive_mappings", {});
+            expect(response.body).toHaveProperty("third_party_mappings");
+            Object.keys(response.body.third_party_mappings).forEach((host) => {
+              hosts.add(host);
+            });
           }
-          expect(hosts.size).toEqual(1)
-          expect(hosts.has('identity2.example.com:443')).toEqual(true)
-        })
+          expect(hosts.size).toEqual(1);
+          expect(hosts.has("identity2.example.com:443")).toEqual(true);
+        });
 
-        it('should get user of federated identity service environment on lookup', async () => {
-          const matrixAddresses = new Set<string>()
+        it("should get user of federated identity service environment on lookup", async () => {
+          const matrixAddresses = new Set<string>();
           for (let i = 0; i < allPeppers.length; i++) {
             const response = await request(app)
-              .post('/_matrix/identity/v2/lookup')
-              .set('Accept', 'application/json')
-              .set('Authorization', `Bearer ${authToken}`)
+              .post("/_matrix/identity/v2/lookup")
+              .set("Accept", "application/json")
+              .set("Authorization", `Bearer ${authToken}`)
               .send({
                 algorithm: hashDetails.algorithms[0],
                 pepper: allPeppers[i],
-                addresses: [chewbaccaHashes[i]]
-              })
-            expect(response.body).toHaveProperty('inactive_mappings', {})
-            expect(response.body).toHaveProperty('third_party_mappings', {})
-            expect(response.body).toHaveProperty('mappings')
-            Object.values(
-              response.body.mappings as Record<string, string>
-            ).forEach((address) => matrixAddresses.add(address))
+                addresses: [chewbaccaHashes[i]],
+              });
+            expect(response.body).toHaveProperty("inactive_mappings", {});
+            expect(response.body).toHaveProperty("third_party_mappings", {});
+            expect(response.body).toHaveProperty("mappings");
+            Object.values(response.body.mappings as Record<string, string>).forEach((address) => {
+              matrixAddresses.add(address);
+            });
           }
-          expect(matrixAddresses.size).toEqual(1)
-          expect(matrixAddresses.has('@chewbacca:example.com')).toEqual(true)
-        })
+          expect(matrixAddresses.size).toEqual(1);
+          expect(matrixAddresses.has("@chewbacca:example.com")).toEqual(true);
+        });
 
-        it('should not find user from not trusted identity server on lookup', async () => {
+        it("should not find user from not trusted identity server on lookup", async () => {
           for (let i = 0; i < allPeppers.length; i++) {
             const response = await request(app)
-              .post('/_matrix/identity/v2/lookup')
-              .set('Accept', 'application/json')
-              .set('Authorization', `Bearer ${authToken}`)
+              .post("/_matrix/identity/v2/lookup")
+              .set("Accept", "application/json")
+              .set("Authorization", `Bearer ${authToken}`)
               .send({
                 algorithm: hashDetails.algorithms[0],
                 pepper: allPeppers[i],
-                addresses: [okenobiHashes[i]]
-              })
-            expect(response.body).toHaveProperty('inactive_mappings', {})
-            expect(response.body).toHaveProperty('third_party_mappings', {})
-            expect(response.body).toHaveProperty('mappings', {})
+                addresses: [okenobiHashes[i]],
+              });
+            expect(response.body).toHaveProperty("inactive_mappings", {});
+            expect(response.body).toHaveProperty("third_party_mappings", {});
+            expect(response.body).toHaveProperty("mappings", {});
           }
-        })
+        });
 
-        it('should not find user not connected on any matrix server on lookup', async () => {
+        it("should not find user not connected on any matrix server on lookup", async () => {
           for (let i = 0; i < allPeppers.length; i++) {
             const response = await request(app)
-              .post('/_matrix/identity/v2/lookup')
-              .set('Accept', 'application/json')
-              .set('Authorization', `Bearer ${authToken}`)
+              .post("/_matrix/identity/v2/lookup")
+              .set("Accept", "application/json")
+              .set("Authorization", `Bearer ${authToken}`)
               .send({
                 algorithm: hashDetails.algorithms[0],
                 pepper: allPeppers[i],
-                addresses: [qjinnHashes[i]]
-              })
-            expect(response.body).toHaveProperty('inactive_mappings', {})
-            expect(response.body).toHaveProperty('third_party_mappings', {})
-            expect(response.body).toHaveProperty('mappings', {})
+                addresses: [qjinnHashes[i]],
+              });
+            expect(response.body).toHaveProperty("inactive_mappings", {});
+            expect(response.body).toHaveProperty("third_party_mappings", {});
+            expect(response.body).toHaveProperty("mappings", {});
           }
-        })
+        });
 
-        it('should find all servers on which a third party user is connected on lookup', async () => {
+        it("should find all servers on which a third party user is connected on lookup", async () => {
           await Promise.all(
             allPeppers.map(async (pepper, i) => {
               await request(app)
-                .post('/_matrix/identity/v2/lookups')
-                .set('Accept', 'application/json')
-                .set('X-forwarded-for', trustedIpAddress)
+                .post("/_matrix/identity/v2/lookups")
+                .set("Accept", "application/json")
+                .set("X-forwarded-for", trustedIpAddress)
                 .send({
                   algorithm: hashDetails.algorithms[0],
                   pepper,
                   mappings: {
-                    'identity1.example.com:8448': [
-                      lskywalkerHashes[i],
-                      askywalkerHashes[i]
-                    ]
-                  }
-                })
-            })
-          )
+                    "identity1.example.com:8448": [lskywalkerHashes[i], askywalkerHashes[i]],
+                  },
+                });
+            }),
+          );
 
-          const hosts = new Set<string>()
+          const hosts = new Set<string>();
           for (let i = 0; i < allPeppers.length; i++) {
             const response = await request(app)
-              .post('/_matrix/identity/v2/lookup')
-              .set('Accept', 'application/json')
-              .set('Authorization', `Bearer ${authToken}`)
+              .post("/_matrix/identity/v2/lookup")
+              .set("Accept", "application/json")
+              .set("Authorization", `Bearer ${authToken}`)
               .send({
                 algorithm: hashDetails.algorithms[0],
                 pepper: allPeppers[i],
-                addresses: [lskywalkerHashes[i]]
-              })
-            expect(response.body).toHaveProperty('mappings', {})
-            expect(response.body).toHaveProperty('inactive_mappings', {})
-            expect(response.body).toHaveProperty('third_party_mappings')
-            Object.keys(response.body.third_party_mappings).forEach((host) =>
-              hosts.add(host)
-            )
+                addresses: [lskywalkerHashes[i]],
+              });
+            expect(response.body).toHaveProperty("mappings", {});
+            expect(response.body).toHaveProperty("inactive_mappings", {});
+            expect(response.body).toHaveProperty("third_party_mappings");
+            Object.keys(response.body.third_party_mappings).forEach((host) => {
+              hosts.add(host);
+            });
           }
-          expect(hosts.size).toEqual(2)
-          expect(hosts.has('identity1.example.com:8448')).toEqual(true)
-          expect(hosts.has('identity2.example.com:443')).toEqual(true)
-        })
+          expect(hosts.size).toEqual(2);
+          expect(hosts.has("identity1.example.com:8448")).toEqual(true);
+          expect(hosts.has("identity2.example.com:443")).toEqual(true);
+        });
 
-        it('should find all federated identity service users and servers address of third party users on lookup', async () => {
-          const matrixAddresses = new Set<string>()
-          const askywalkerHosts = new Set<string>()
-          const lskywalkerHosts = new Set<string>()
+        it("should find all federated identity service users and servers address of third party users on lookup", async () => {
+          const matrixAddresses = new Set<string>();
+          const askywalkerHosts = new Set<string>();
+          const lskywalkerHosts = new Set<string>();
 
           for (let i = 0; i < allPeppers.length; i++) {
             const response = await request(app)
-              .post('/_matrix/identity/v2/lookup')
-              .set('Accept', 'application/json')
-              .set('Authorization', `Bearer ${authToken}`)
+              .post("/_matrix/identity/v2/lookup")
+              .set("Accept", "application/json")
+              .set("Authorization", `Bearer ${authToken}`)
               .send({
                 algorithm: hashDetails.algorithms[0],
                 pepper: hashDetails.lookup_pepper,
@@ -1359,196 +1316,187 @@ describe('Federated identity service', () => {
                   chewbaccaHashes[i],
                   qjinnHashes[i],
                   okenobiHashes[i],
-                  askywalkerHashes[i]
-                ]
-              })
-            expect(response.body).toHaveProperty('inactive_mappings', {})
-            expect(response.body).toHaveProperty('mappings')
-            Object.values(
-              response.body.mappings as Record<string, string>
-            ).forEach((address) => matrixAddresses.add(address))
-            expect(response.body).toHaveProperty('third_party_mappings')
+                  askywalkerHashes[i],
+                ],
+              });
+            expect(response.body).toHaveProperty("inactive_mappings", {});
+            expect(response.body).toHaveProperty("mappings");
+            Object.values(response.body.mappings as Record<string, string>).forEach((address) => {
+              matrixAddresses.add(address);
+            });
+            expect(response.body).toHaveProperty("third_party_mappings");
             Object.keys(response.body.third_party_mappings).forEach((host) => {
-              ;(response.body.third_party_mappings[host] as string[]).forEach(
-                (hash) => {
-                  switch (hash) {
-                    case lskywalkerHashes[i]:
-                      lskywalkerHosts.add(host)
-                      break
-                    case askywalkerHashes[i]:
-                      askywalkerHosts.add(host)
-                      break
-                    default:
-                      break
-                  }
+              (response.body.third_party_mappings[host] as string[]).forEach((hash) => {
+                switch (hash) {
+                  case lskywalkerHashes[i]:
+                    lskywalkerHosts.add(host);
+                    break;
+                  case askywalkerHashes[i]:
+                    askywalkerHosts.add(host);
+                    break;
+                  default:
+                    break;
                 }
-              )
-            })
+              });
+            });
           }
-          expect(askywalkerHosts.size).toEqual(1)
-          expect(askywalkerHosts.has('identity1.example.com:8448')).toEqual(
-            true
-          )
-          expect(lskywalkerHosts.size).toEqual(2)
-          expect(lskywalkerHosts.has('identity1.example.com:8448')).toEqual(
-            true
-          )
-          expect(lskywalkerHosts.has('identity2.example.com:443')).toEqual(true)
-          expect(matrixAddresses.size).toEqual(1)
-          expect(matrixAddresses.has('@chewbacca:example.com')).toEqual(true)
-        })
-      })
+          expect(askywalkerHosts.size).toEqual(1);
+          expect(askywalkerHosts.has("identity1.example.com:8448")).toEqual(true);
+          expect(lskywalkerHosts.size).toEqual(2);
+          expect(lskywalkerHosts.has("identity1.example.com:8448")).toEqual(true);
+          expect(lskywalkerHosts.has("identity2.example.com:443")).toEqual(true);
+          expect(matrixAddresses.size).toEqual(1);
+          expect(matrixAddresses.has("@chewbacca:example.com")).toEqual(true);
+        });
+      });
 
-      describe('Use JSON configuration object', () => {
+      describe("Use JSON configuration object", () => {
         beforeAll((done) => {
-          federatedIdentityService = new FederatedIdentityService(testConfig)
-          app = express()
+          federatedIdentityService = new FederatedIdentityService(testConfig);
+          app = express();
           federatedIdentityService.ready
             // eslint-disable-next-line @typescript-eslint/promise-function-async
             .then(() => setFederatedIdentityServiceDataAndRoutes())
             // eslint-disable-next-line @typescript-eslint/promise-function-async
             .then(() => pushHashesToFederatedIdentityService())
             .then(() => {
-              done()
+              done();
             })
             .catch((e) => {
-              done(e)
-            })
-        })
+              done(e);
+            });
+        });
 
-        it('should get server in which third party user is registered on lookup', async () => {
-          const hosts = new Set<string>()
+        it("should get server in which third party user is registered on lookup", async () => {
+          const hosts = new Set<string>();
           for (let i = 0; i < allPeppers.length; i++) {
             const response = await request(app)
-              .post('/_matrix/identity/v2/lookup')
-              .set('Accept', 'application/json')
-              .set('Authorization', `Bearer ${authToken}`)
+              .post("/_matrix/identity/v2/lookup")
+              .set("Accept", "application/json")
+              .set("Authorization", `Bearer ${authToken}`)
               .send({
                 algorithm: hashDetails.algorithms[0],
                 pepper: allPeppers[i],
-                addresses: [lskywalkerHashes[i]]
-              })
-            expect(response.body).toHaveProperty('mappings', {})
-            expect(response.body).toHaveProperty('inactive_mappings', {})
-            expect(response.body).toHaveProperty('third_party_mappings')
-            Object.keys(response.body.third_party_mappings).forEach((host) =>
-              hosts.add(host)
-            )
+                addresses: [lskywalkerHashes[i]],
+              });
+            expect(response.body).toHaveProperty("mappings", {});
+            expect(response.body).toHaveProperty("inactive_mappings", {});
+            expect(response.body).toHaveProperty("third_party_mappings");
+            Object.keys(response.body.third_party_mappings).forEach((host) => {
+              hosts.add(host);
+            });
           }
-          expect(hosts.size).toEqual(1)
-          expect(hosts.has('identity2.example.com:443')).toEqual(true)
-        })
+          expect(hosts.size).toEqual(1);
+          expect(hosts.has("identity2.example.com:443")).toEqual(true);
+        });
 
-        it('should get user of federated identity service environment on lookup', async () => {
-          const matrixAddresses = new Set<string>()
+        it("should get user of federated identity service environment on lookup", async () => {
+          const matrixAddresses = new Set<string>();
           for (let i = 0; i < allPeppers.length; i++) {
             const response = await request(app)
-              .post('/_matrix/identity/v2/lookup')
-              .set('Accept', 'application/json')
-              .set('Authorization', `Bearer ${authToken}`)
+              .post("/_matrix/identity/v2/lookup")
+              .set("Accept", "application/json")
+              .set("Authorization", `Bearer ${authToken}`)
               .send({
                 algorithm: hashDetails.algorithms[0],
                 pepper: allPeppers[i],
-                addresses: [chewbaccaHashes[i]]
-              })
-            expect(response.body).toHaveProperty('inactive_mappings', {})
-            expect(response.body).toHaveProperty('third_party_mappings', {})
-            expect(response.body).toHaveProperty('mappings')
-            Object.values(
-              response.body.mappings as Record<string, string>
-            ).forEach((address) => matrixAddresses.add(address))
+                addresses: [chewbaccaHashes[i]],
+              });
+            expect(response.body).toHaveProperty("inactive_mappings", {});
+            expect(response.body).toHaveProperty("third_party_mappings", {});
+            expect(response.body).toHaveProperty("mappings");
+            Object.values(response.body.mappings as Record<string, string>).forEach((address) => {
+              matrixAddresses.add(address);
+            });
           }
-          expect(matrixAddresses.size).toEqual(1)
-          expect(matrixAddresses.has('@chewbacca:example.com')).toEqual(true)
-        })
+          expect(matrixAddresses.size).toEqual(1);
+          expect(matrixAddresses.has("@chewbacca:example.com")).toEqual(true);
+        });
 
-        it('should not find user from not trusted identity server on lookup', async () => {
+        it("should not find user from not trusted identity server on lookup", async () => {
           for (let i = 0; i < allPeppers.length; i++) {
             const response = await request(app)
-              .post('/_matrix/identity/v2/lookup')
-              .set('Accept', 'application/json')
-              .set('Authorization', `Bearer ${authToken}`)
+              .post("/_matrix/identity/v2/lookup")
+              .set("Accept", "application/json")
+              .set("Authorization", `Bearer ${authToken}`)
               .send({
                 algorithm: hashDetails.algorithms[0],
                 pepper: allPeppers[i],
-                addresses: [okenobiHashes[i]]
-              })
-            expect(response.body).toHaveProperty('inactive_mappings', {})
-            expect(response.body).toHaveProperty('third_party_mappings', {})
-            expect(response.body).toHaveProperty('mappings', {})
+                addresses: [okenobiHashes[i]],
+              });
+            expect(response.body).toHaveProperty("inactive_mappings", {});
+            expect(response.body).toHaveProperty("third_party_mappings", {});
+            expect(response.body).toHaveProperty("mappings", {});
           }
-        })
+        });
 
-        it('should not find user not connected on any matrix server on lookup', async () => {
+        it("should not find user not connected on any matrix server on lookup", async () => {
           for (let i = 0; i < allPeppers.length; i++) {
             const response = await request(app)
-              .post('/_matrix/identity/v2/lookup')
-              .set('Accept', 'application/json')
-              .set('Authorization', `Bearer ${authToken}`)
+              .post("/_matrix/identity/v2/lookup")
+              .set("Accept", "application/json")
+              .set("Authorization", `Bearer ${authToken}`)
               .send({
                 algorithm: hashDetails.algorithms[0],
                 pepper: allPeppers[i],
-                addresses: [qjinnHashes[i]]
-              })
-            expect(response.body).toHaveProperty('inactive_mappings', {})
-            expect(response.body).toHaveProperty('third_party_mappings', {})
-            expect(response.body).toHaveProperty('mappings', {})
+                addresses: [qjinnHashes[i]],
+              });
+            expect(response.body).toHaveProperty("inactive_mappings", {});
+            expect(response.body).toHaveProperty("third_party_mappings", {});
+            expect(response.body).toHaveProperty("mappings", {});
           }
-        })
+        });
 
-        it('should find all servers on which a third party user is connected on lookup', async () => {
+        it("should find all servers on which a third party user is connected on lookup", async () => {
           await Promise.all(
             allPeppers.map(async (pepper, i) => {
               await request(app)
-                .post('/_matrix/identity/v2/lookups')
-                .set('Accept', 'application/json')
-                .set('X-forwarded-for', trustedIpAddress)
+                .post("/_matrix/identity/v2/lookups")
+                .set("Accept", "application/json")
+                .set("X-forwarded-for", trustedIpAddress)
                 .send({
                   algorithm: hashDetails.algorithms[0],
                   pepper,
                   mappings: {
-                    'identity1.example.com:8448': [
-                      lskywalkerHashes[i],
-                      askywalkerHashes[i]
-                    ]
-                  }
-                })
-            })
-          )
+                    "identity1.example.com:8448": [lskywalkerHashes[i], askywalkerHashes[i]],
+                  },
+                });
+            }),
+          );
 
-          const hosts = new Set<string>()
+          const hosts = new Set<string>();
           for (let i = 0; i < allPeppers.length; i++) {
             const response = await request(app)
-              .post('/_matrix/identity/v2/lookup')
-              .set('Accept', 'application/json')
-              .set('Authorization', `Bearer ${authToken}`)
+              .post("/_matrix/identity/v2/lookup")
+              .set("Accept", "application/json")
+              .set("Authorization", `Bearer ${authToken}`)
               .send({
                 algorithm: hashDetails.algorithms[0],
                 pepper: allPeppers[i],
-                addresses: [lskywalkerHashes[i]]
-              })
-            expect(response.body).toHaveProperty('mappings', {})
-            expect(response.body).toHaveProperty('inactive_mappings', {})
-            expect(response.body).toHaveProperty('third_party_mappings')
-            Object.keys(response.body.third_party_mappings).forEach((host) =>
-              hosts.add(host)
-            )
+                addresses: [lskywalkerHashes[i]],
+              });
+            expect(response.body).toHaveProperty("mappings", {});
+            expect(response.body).toHaveProperty("inactive_mappings", {});
+            expect(response.body).toHaveProperty("third_party_mappings");
+            Object.keys(response.body.third_party_mappings).forEach((host) => {
+              hosts.add(host);
+            });
           }
-          expect(hosts.size).toEqual(2)
-          expect(hosts.has('identity1.example.com:8448')).toEqual(true)
-          expect(hosts.has('identity2.example.com:443')).toEqual(true)
-        })
+          expect(hosts.size).toEqual(2);
+          expect(hosts.has("identity1.example.com:8448")).toEqual(true);
+          expect(hosts.has("identity2.example.com:443")).toEqual(true);
+        });
 
-        it('should find all federated identity service users and servers address of third party users on lookup', async () => {
-          const matrixAddresses = new Set<string>()
-          const askywalkerHosts = new Set<string>()
-          const lskywalkerHosts = new Set<string>()
+        it("should find all federated identity service users and servers address of third party users on lookup", async () => {
+          const matrixAddresses = new Set<string>();
+          const askywalkerHosts = new Set<string>();
+          const lskywalkerHosts = new Set<string>();
 
           for (let i = 0; i < allPeppers.length; i++) {
             const response = await request(app)
-              .post('/_matrix/identity/v2/lookup')
-              .set('Accept', 'application/json')
-              .set('Authorization', `Bearer ${authToken}`)
+              .post("/_matrix/identity/v2/lookup")
+              .set("Accept", "application/json")
+              .set("Authorization", `Bearer ${authToken}`)
               .send({
                 algorithm: hashDetails.algorithms[0],
                 pepper: hashDetails.lookup_pepper,
@@ -1557,817 +1505,776 @@ describe('Federated identity service', () => {
                   chewbaccaHashes[i],
                   qjinnHashes[i],
                   okenobiHashes[i],
-                  askywalkerHashes[i]
-                ]
-              })
-            expect(response.body).toHaveProperty('inactive_mappings', {})
-            expect(response.body).toHaveProperty('mappings')
-            Object.values(
-              response.body.mappings as Record<string, string>
-            ).forEach((address) => matrixAddresses.add(address))
-            expect(response.body).toHaveProperty('third_party_mappings')
+                  askywalkerHashes[i],
+                ],
+              });
+            expect(response.body).toHaveProperty("inactive_mappings", {});
+            expect(response.body).toHaveProperty("mappings");
+            Object.values(response.body.mappings as Record<string, string>).forEach((address) => {
+              matrixAddresses.add(address);
+            });
+            expect(response.body).toHaveProperty("third_party_mappings");
             Object.keys(response.body.third_party_mappings).forEach((host) => {
-              ;(response.body.third_party_mappings[host] as string[]).forEach(
-                (hash) => {
-                  switch (hash) {
-                    case lskywalkerHashes[i]:
-                      lskywalkerHosts.add(host)
-                      break
-                    case askywalkerHashes[i]:
-                      askywalkerHosts.add(host)
-                      break
-                    default:
-                      break
-                  }
+              (response.body.third_party_mappings[host] as string[]).forEach((hash) => {
+                switch (hash) {
+                  case lskywalkerHashes[i]:
+                    lskywalkerHosts.add(host);
+                    break;
+                  case askywalkerHashes[i]:
+                    askywalkerHosts.add(host);
+                    break;
+                  default:
+                    break;
                 }
-              )
-            })
+              });
+            });
           }
-          expect(askywalkerHosts.size).toEqual(1)
-          expect(askywalkerHosts.has('identity1.example.com:8448')).toEqual(
-            true
-          )
-          expect(lskywalkerHosts.size).toEqual(2)
-          expect(lskywalkerHosts.has('identity1.example.com:8448')).toEqual(
-            true
-          )
-          expect(lskywalkerHosts.has('identity2.example.com:443')).toEqual(true)
-          expect(matrixAddresses.size).toEqual(1)
-          expect(matrixAddresses.has('@chewbacca:example.com')).toEqual(true)
-        })
+          expect(askywalkerHosts.size).toEqual(1);
+          expect(askywalkerHosts.has("identity1.example.com:8448")).toEqual(true);
+          expect(lskywalkerHosts.size).toEqual(2);
+          expect(lskywalkerHosts.has("identity1.example.com:8448")).toEqual(true);
+          expect(lskywalkerHosts.has("identity2.example.com:443")).toEqual(true);
+          expect(matrixAddresses.size).toEqual(1);
+          expect(matrixAddresses.has("@chewbacca:example.com")).toEqual(true);
+        });
 
-        it('should store only hashes based on current peppers', async () => {
+        it("should store only hashes based on current peppers", async () => {
           let response = await request(app)
-            .get('/_matrix/identity/v2/hash_details')
-            .set('Accept', 'application/json')
-            .set('Authorization', `Bearer ${authToken}`)
+            .get("/_matrix/identity/v2/hash_details")
+            .set("Accept", "application/json")
+            .set("Authorization", `Bearer ${authToken}`);
 
-          const oldHashDetails = response.body as IHashDetails
+          const oldHashDetails = response.body as IHashDetails;
 
-          const oldPeppers = [
-            oldHashDetails.lookup_pepper,
-            ...(oldHashDetails.alt_lookup_peppers ?? [])
-          ]
+          const oldPeppers = [oldHashDetails.lookup_pepper, ...(oldHashDetails.alt_lookup_peppers ?? [])];
 
           let handledPeppers = [
             ...new Set<string>(
-              (
-                await federatedIdentityService.db.getAll(hashByServer, [
-                  'pepper'
-                ])
-              ).map((row) => row.pepper as string)
-            )
-          ]
+              (await federatedIdentityService.db.getAll(hashByServer, ["pepper"])).map((row) => row.pepper as string),
+            ),
+          ];
 
-          expect(oldPeppers.length).toEqual(2)
-          expect(handledPeppers.length).toEqual(2)
-          expect(handledPeppers).toEqual(expect.arrayContaining(oldPeppers))
+          expect(oldPeppers.length).toEqual(2);
+          expect(handledPeppers.length).toEqual(2);
+          expect(handledPeppers).toEqual(expect.arrayContaining(oldPeppers));
 
           await new Promise<void>((resolve) =>
             setTimeout(() => {
-              resolve()
-            }, 33000)
-          )
+              resolve();
+            }, 33000),
+          );
 
           response = await request(app)
-            .get('/_matrix/identity/v2/hash_details')
-            .set('Accept', 'application/json')
-            .set('Authorization', `Bearer ${authToken}`)
+            .get("/_matrix/identity/v2/hash_details")
+            .set("Accept", "application/json")
+            .set("Authorization", `Bearer ${authToken}`);
 
-          const newHashDetails = response.body as IHashDetails
+          const newHashDetails = response.body as IHashDetails;
 
-          const newPeppers = [
-            newHashDetails.lookup_pepper,
-            ...(newHashDetails.alt_lookup_peppers ?? [])
-          ]
+          const newPeppers = [newHashDetails.lookup_pepper, ...(newHashDetails.alt_lookup_peppers ?? [])];
 
-          await pushHashesToFederatedIdentityService(newHashDetails)
+          await pushHashesToFederatedIdentityService(newHashDetails);
 
           handledPeppers = [
             ...new Set<string>(
-              (
-                await federatedIdentityService.db.getAll(hashByServer, [
-                  'pepper'
-                ])
-              ).map((row) => row.pepper as string)
-            )
-          ]
+              (await federatedIdentityService.db.getAll(hashByServer, ["pepper"])).map((row) => row.pepper as string),
+            ),
+          ];
 
-          expect(newPeppers.length).toEqual(2)
-          expect(handledPeppers.length).toEqual(2)
-          expect(handledPeppers).toEqual(expect.arrayContaining(newPeppers))
-          expect(handledPeppers).toEqual(expect.not.arrayContaining(oldPeppers))
-        })
-      })
-    })
+          expect(newPeppers.length).toEqual(2);
+          expect(handledPeppers.length).toEqual(2);
+          expect(handledPeppers).toEqual(expect.arrayContaining(newPeppers));
+          expect(handledPeppers).toEqual(expect.not.arrayContaining(oldPeppers));
+        });
+      });
+    });
 
-    describe('Error cases', () => {
-      const errorMessage = 'error message'
+    describe("Error cases", () => {
+      const errorMessage = "error message";
 
-      it('reject unimplemented endpoint with 404', async () => {
-        const response = await request(app).get('/unkown')
-        expect(response.statusCode).toBe(404)
-        expect(JSON.stringify(response.body)).toEqual(
-          JSON.stringify({ errcode: 'M_NOT_FOUND', error: 'Not Found' })
-        )
-      })
+      it("reject unimplemented endpoint with 404", async () => {
+        const response = await request(app).get("/unkown");
+        expect(response.statusCode).toBe(404);
+        expect(JSON.stringify(response.body)).toEqual(JSON.stringify({ errcode: "M_NOT_FOUND", error: "Not Found" }));
+      });
 
-      describe('Lookup endpoint', () => {
-        it('reject not allowed method with 405 status code', async () => {
+      describe("Lookup endpoint", () => {
+        it("reject not allowed method with 405 status code", async () => {
           const response = await request(app)
-            .get('/_matrix/identity/v2/lookup')
-            .set('Accept', 'application/json')
-            .set('Authorization', `Bearer ${authToken}`)
+            .get("/_matrix/identity/v2/lookup")
+            .set("Accept", "application/json")
+            .set("Authorization", `Bearer ${authToken}`);
 
-          expect(response.statusCode).toBe(405)
+          expect(response.statusCode).toBe(405);
           expect(JSON.stringify(response.body)).toEqual(
             JSON.stringify({
-              errcode: 'M_UNRECOGNIZED',
-              error: 'Unrecognized'
-            })
-          )
-        })
+              errcode: "M_UNRECOGNIZED",
+              error: "Unrecognized",
+            }),
+          );
+        });
 
-        it('should reject if more than 100 requests are done in less than 10 seconds', async () => {
-          let response
-          let token
-          // eslint-disable-next-line @typescript-eslint/no-for-in-array, @typescript-eslint/no-unused-vars
-          for (const i in [...Array(101).keys()]) {
-            token = Number(i) % 2 === 0 ? `Bearer ${authToken}` : 'falsy_token'
+        it("should reject if more than 100 requests are done in less than 10 seconds", async () => {
+          let response: request.Response | undefined;
+          let token: string;
+
+          for (let i = 0; i < 101; i++) {
+            token = Number(i) % 2 === 0 ? `Bearer ${authToken}` : "falsy_token";
             response = await request(app)
-              .post('/_matrix/identity/v2/lookup')
-              .set('Accept', 'application/json')
-              .set('Authorization', token)
+              .post("/_matrix/identity/v2/lookup")
+              .set("Accept", "application/json")
+              .set("Authorization", token)
               .send({
                 addresse: [],
-                algorithm: 'sha256',
-                pepper: 'test_pepper'
-              })
+                algorithm: "sha256",
+                pepper: "test_pepper",
+              });
           }
-          expect((response as Response).statusCode).toEqual(429)
-          await new Promise((resolve) => setTimeout(resolve, 11000))
-        })
+          expect((response as Response).statusCode).toEqual(429);
+          await new Promise((resolve) => setTimeout(resolve, 11000));
+        });
 
-        it('should send an error if auth token is invalid', async () => {
+        it("should send an error if auth token is invalid", async () => {
           const response = await request(app)
-            .post('/_matrix/identity/v2/lookup')
-            .set('Accept', 'application/json')
-            .set('Authorization', 'falsy_token')
+            .post("/_matrix/identity/v2/lookup")
+            .set("Accept", "application/json")
+            .set("Authorization", "falsy_token")
             .send({
               addresse: [],
-              algorithm: 'sha256',
-              pepper: 'test_pepper'
-            })
+              algorithm: "sha256",
+              pepper: "test_pepper",
+            });
 
-          expect(response.statusCode).toEqual(401)
+          expect(response.statusCode).toEqual(401);
           expect(JSON.stringify(response.body)).toEqual(
             JSON.stringify({
-              errcode: 'M_UNAUTHORIZED',
-              error: 'Unauthorized'
-            })
-          )
-        })
+              errcode: "M_UNAUTHORIZED",
+              error: "Unauthorized",
+            }),
+          );
+        });
 
-        it('should send an error if auth token is not in accessTokens table', async () => {
+        it("should send an error if auth token is not in accessTokens table", async () => {
           const response = await request(app)
-            .post('/_matrix/identity/v2/lookup')
-            .set('Accept', 'application/json')
-            .set('Authorization', `Bearer ${authToken.replace('a', 'f')}`)
+            .post("/_matrix/identity/v2/lookup")
+            .set("Accept", "application/json")
+            .set("Authorization", `Bearer ${authToken.replace("a", "f")}`)
             .send({
               addresse: [],
-              algorithm: 'sha256',
-              pepper: 'test_pepper'
-            })
+              algorithm: "sha256",
+              pepper: "test_pepper",
+            });
 
-          expect(response.statusCode).toEqual(401)
+          expect(response.statusCode).toEqual(401);
           expect(JSON.stringify(response.body)).toEqual(
             JSON.stringify({
-              errcode: 'M_UNAUTHORIZED',
-              error: 'Unauthorized'
-            })
-          )
-        })
+              errcode: "M_UNAUTHORIZED",
+              error: "Unauthorized",
+            }),
+          );
+        });
 
         it('should send an error if token data in accessTokens table does not contain "sub" field', async () => {
-          jest
-            .spyOn(federatedIdentityService.db, 'get')
-            .mockResolvedValue([{ data: JSON.stringify({}) }])
+          jest.spyOn(federatedIdentityService.db, "get").mockResolvedValue([{ data: JSON.stringify({}) }]);
 
-          const jsonParseSpy = jest.spyOn(JSON, 'parse')
+          const jsonParseSpy = jest.spyOn(JSON, "parse");
 
           const response = await request(app)
-            .post('/_matrix/identity/v2/lookup')
-            .set('Accept', 'application/json')
-            .set('Authorization', `Bearer ${authToken}`)
+            .post("/_matrix/identity/v2/lookup")
+            .set("Accept", "application/json")
+            .set("Authorization", `Bearer ${authToken}`)
             .send({
               addresse: [],
-              algorithm: 'sha256',
-              pepper: 'test_pepper'
-            })
+              algorithm: "sha256",
+              pepper: "test_pepper",
+            });
 
-          expect(jsonParseSpy).toHaveBeenNthCalledWith(2, '{}')
-          expect(response.statusCode).toEqual(401)
+          expect(jsonParseSpy).toHaveBeenNthCalledWith(2, "{}");
+          expect(response.statusCode).toEqual(401);
           expect(JSON.stringify(response.body)).toEqual(
             JSON.stringify({
-              errcode: 'M_UNAUTHORIZED',
-              error: 'Unauthorized'
-            })
-          )
-        })
+              errcode: "M_UNAUTHORIZED",
+              error: "Unauthorized",
+            }),
+          );
+        });
 
         it('should send an error if "algorithm" is not in body', async () => {
           const response = await request(app)
-            .post('/_matrix/identity/v2/lookup')
-            .set('Accept', 'application/json')
-            .set('Authorization', `Bearer ${authToken}`)
+            .post("/_matrix/identity/v2/lookup")
+            .set("Accept", "application/json")
+            .set("Authorization", `Bearer ${authToken}`)
             .send({
               addresses: [],
-              pepper: 'test_pepper'
-            })
+              pepper: "test_pepper",
+            });
 
-          expect(response.statusCode).toEqual(400)
+          expect(response.statusCode).toEqual(400);
           expect(JSON.stringify(response.body)).toEqual(
             JSON.stringify({
-              errcode: 'M_INVALID_PARAM',
-              error: 'Error field: Invalid value (property: algorithm)'
-            })
-          )
-        })
+              errcode: "M_INVALID_PARAM",
+              error: "Error field: Invalid value (property: algorithm)",
+            }),
+          );
+        });
 
         it('should send an error if "algorithm" is not a string', async () => {
           const response = await request(app)
-            .post('/_matrix/identity/v2/lookup')
-            .set('Accept', 'application/json')
-            .set('Authorization', `Bearer ${authToken}`)
+            .post("/_matrix/identity/v2/lookup")
+            .set("Accept", "application/json")
+            .set("Authorization", `Bearer ${authToken}`)
             .send({
               addresses: [],
               algorithm: 2,
-              pepper: 'test_pepper'
-            })
+              pepper: "test_pepper",
+            });
 
-          expect(response.statusCode).toEqual(400)
+          expect(response.statusCode).toEqual(400);
           expect(JSON.stringify(response.body)).toEqual(
             JSON.stringify({
-              errcode: 'M_INVALID_PARAM',
-              error: 'Error field: Invalid value (property: algorithm)'
-            })
-          )
-        })
+              errcode: "M_INVALID_PARAM",
+              error: "Error field: Invalid value (property: algorithm)",
+            }),
+          );
+        });
 
         it('should send an error if "pepper" is not in body', async () => {
           const response = await request(app)
-            .post('/_matrix/identity/v2/lookup')
-            .set('Accept', 'application/json')
-            .set('Authorization', `Bearer ${authToken}`)
+            .post("/_matrix/identity/v2/lookup")
+            .set("Accept", "application/json")
+            .set("Authorization", `Bearer ${authToken}`)
             .send({
               addresses: [],
-              algorithm: 'sha256'
-            })
+              algorithm: "sha256",
+            });
 
-          expect(response.statusCode).toEqual(400)
+          expect(response.statusCode).toEqual(400);
           expect(JSON.stringify(response.body)).toEqual(
             JSON.stringify({
-              errcode: 'M_INVALID_PARAM',
-              error: 'Error field: Invalid value (property: pepper)'
-            })
-          )
-        })
+              errcode: "M_INVALID_PARAM",
+              error: "Error field: Invalid value (property: pepper)",
+            }),
+          );
+        });
 
         it('should send an error if "pepper" is not a string', async () => {
           const response = await request(app)
-            .post('/_matrix/identity/v2/lookup')
-            .set('Accept', 'application/json')
-            .set('Authorization', `Bearer ${authToken}`)
+            .post("/_matrix/identity/v2/lookup")
+            .set("Accept", "application/json")
+            .set("Authorization", `Bearer ${authToken}`)
             .send({
               addresses: [],
-              algorithm: 'sha256',
-              pepper: 2
-            })
+              algorithm: "sha256",
+              pepper: 2,
+            });
 
-          expect(response.statusCode).toEqual(400)
+          expect(response.statusCode).toEqual(400);
           expect(JSON.stringify(response.body)).toEqual(
             JSON.stringify({
-              errcode: 'M_INVALID_PARAM',
-              error: 'Error field: Invalid value (property: pepper)'
-            })
-          )
-        })
+              errcode: "M_INVALID_PARAM",
+              error: "Error field: Invalid value (property: pepper)",
+            }),
+          );
+        });
 
         it('should send an error if "addresses" is not in body', async () => {
           const response = await request(app)
-            .post('/_matrix/identity/v2/lookup')
-            .set('Accept', 'application/json')
-            .set('Authorization', `Bearer ${authToken}`)
+            .post("/_matrix/identity/v2/lookup")
+            .set("Accept", "application/json")
+            .set("Authorization", `Bearer ${authToken}`)
             .send({
-              algorithm: 'sha256',
-              pepper: 'test_pepper'
-            })
+              algorithm: "sha256",
+              pepper: "test_pepper",
+            });
 
-          expect(response.statusCode).toEqual(400)
+          expect(response.statusCode).toEqual(400);
           expect(JSON.stringify(response.body)).toEqual(
             JSON.stringify({
-              errcode: 'M_INVALID_PARAM',
-              error: 'Error field: Invalid value (property: addresses)'
-            })
-          )
-        })
+              errcode: "M_INVALID_PARAM",
+              error: "Error field: Invalid value (property: addresses)",
+            }),
+          );
+        });
 
         it('should send an error if "addresses" is not an array', async () => {
           const response = await request(app)
-            .post('/_matrix/identity/v2/lookup')
-            .set('Accept', 'application/json')
-            .set('Authorization', `Bearer ${authToken}`)
+            .post("/_matrix/identity/v2/lookup")
+            .set("Accept", "application/json")
+            .set("Authorization", `Bearer ${authToken}`)
             .send({
               addresses: 2,
-              algorithm: 'sha256',
-              pepper: 'test_pepper'
-            })
+              algorithm: "sha256",
+              pepper: "test_pepper",
+            });
 
-          expect(response.statusCode).toEqual(400)
+          expect(response.statusCode).toEqual(400);
           expect(JSON.stringify(response.body)).toEqual(
             JSON.stringify({
-              errcode: 'M_INVALID_PARAM',
-              error: 'Error field: Invalid value (property: addresses)'
-            })
-          )
-        })
+              errcode: "M_INVALID_PARAM",
+              error: "Error field: Invalid value (property: addresses)",
+            }),
+          );
+        });
 
-        it('should send an error if one address is not a string', async () => {
+        it("should send an error if one address is not a string", async () => {
           const response = await request(app)
-            .post('/_matrix/identity/v2/lookup')
-            .set('Accept', 'application/json')
-            .set('Authorization', `Bearer ${authToken}`)
+            .post("/_matrix/identity/v2/lookup")
+            .set("Accept", "application/json")
+            .set("Authorization", `Bearer ${authToken}`)
             .send({
-              addresses: ['hash1', 'hash2', 2, 'hash3'],
-              algorithm: 'sha256',
-              pepper: 'test_pepper'
-            })
+              addresses: ["hash1", "hash2", 2, "hash3"],
+              algorithm: "sha256",
+              pepper: "test_pepper",
+            });
 
-          expect(response.statusCode).toEqual(400)
+          expect(response.statusCode).toEqual(400);
           expect(JSON.stringify(response.body)).toEqual(
             JSON.stringify({
-              errcode: 'M_INVALID_PARAM',
-              error:
-                'Error field: One of the address is not a string (property: addresses)'
-            })
-          )
-        })
+              errcode: "M_INVALID_PARAM",
+              error: "Error field: One of the address is not a string (property: addresses)",
+            }),
+          );
+        });
 
-        it('should send an error if exceeds hashes limit', async () => {
+        it("should send an error if exceeds hashes limit", async () => {
           const response = await request(app)
-            .post('/_matrix/identity/v2/lookup')
-            .set('Accept', 'application/json')
-            .set('Authorization', `Bearer ${authToken}`)
+            .post("/_matrix/identity/v2/lookup")
+            .set("Accept", "application/json")
+            .set("Authorization", `Bearer ${authToken}`)
             .send({
               addresses: Array.from({ length: 101 }, (_, i) => `hash${i}`),
-              algorithm: 'sha256',
-              pepper: 'test_pepper'
-            })
+              algorithm: "sha256",
+              pepper: "test_pepper",
+            });
 
-          expect(response.statusCode).toEqual(400)
+          expect(response.statusCode).toEqual(400);
           expect(JSON.stringify(response.body)).toEqual(
             JSON.stringify({
-              errcode: 'M_INVALID_PARAM',
-              error:
-                'Error field: Adresses limit of 100 exceeded (property: addresses)'
-            })
-          )
-        })
+              errcode: "M_INVALID_PARAM",
+              error: "Error field: Adresses limit of 100 exceeded (property: addresses)",
+            }),
+          );
+        });
 
-        it('should send an error if getting hashes from db fails', async () => {
+        it("should send an error if getting hashes from db fails", async () => {
           jest
-            .spyOn(federatedIdentityService.db, 'get')
-            .mockResolvedValueOnce([
-              { data: JSON.stringify({ sub: '@test:example.com' }) }
-            ])
-            .mockRejectedValueOnce(new Error(errorMessage))
+            .spyOn(federatedIdentityService.db, "get")
+            .mockResolvedValueOnce([{ data: JSON.stringify({ sub: "@test:example.com" }) }])
+            .mockRejectedValueOnce(new Error(errorMessage));
 
           const response = await request(app)
-            .post('/_matrix/identity/v2/lookup')
-            .set('Accept', 'application/json')
-            .set('Authorization', `Bearer ${authToken}`)
+            .post("/_matrix/identity/v2/lookup")
+            .set("Accept", "application/json")
+            .set("Authorization", `Bearer ${authToken}`)
             .send({
-              addresses: ['hash1', 'hash2'],
-              algorithm: 'sha256',
-              pepper: 'test_pepper'
-            })
+              addresses: ["hash1", "hash2"],
+              algorithm: "sha256",
+              pepper: "test_pepper",
+            });
 
-          expect(response.statusCode).toEqual(500)
+          expect(response.statusCode).toEqual(500);
           expect(JSON.stringify(response.body)).toEqual(
             JSON.stringify({
-              errcode: 'M_UNKNOWN',
-              error: `Error: ${errorMessage}`
-            })
-          )
-        })
+              errcode: "M_UNKNOWN",
+              error: `Error: ${errorMessage}`,
+            }),
+          );
+        });
 
-        it('should send an error if getting hashes from hashes table fails', async () => {
+        it("should send an error if getting hashes from hashes table fails", async () => {
           const dbGetSpy = jest
-            .spyOn(federatedIdentityService.db, 'get')
-            .mockResolvedValueOnce([
-              { data: JSON.stringify({ sub: '@test:example.com' }) }
-            ])
-            .mockRejectedValueOnce(new Error(errorMessage))
+            .spyOn(federatedIdentityService.db, "get")
+            .mockResolvedValueOnce([{ data: JSON.stringify({ sub: "@test:example.com" }) }])
+            .mockRejectedValueOnce(new Error(errorMessage));
 
           const response = await request(app)
-            .post('/_matrix/identity/v2/lookup')
-            .set('Accept', 'application/json')
-            .set('Authorization', `Bearer ${authToken}`)
+            .post("/_matrix/identity/v2/lookup")
+            .set("Accept", "application/json")
+            .set("Authorization", `Bearer ${authToken}`)
             .send({
-              addresses: ['hash1', 'hash2'],
-              algorithm: 'sha256',
-              pepper: 'test_pepper'
-            })
+              addresses: ["hash1", "hash2"],
+              algorithm: "sha256",
+              pepper: "test_pepper",
+            });
 
-          expect(dbGetSpy).toHaveBeenCalledTimes(2)
-          expect(response.statusCode).toEqual(500)
+          expect(dbGetSpy).toHaveBeenCalledTimes(2);
+          expect(response.statusCode).toEqual(500);
           expect(JSON.stringify(response.body)).toEqual(
             JSON.stringify({
-              errcode: 'M_UNKNOWN',
-              error: `Error: ${errorMessage}`
-            })
-          )
-        })
+              errcode: "M_UNKNOWN",
+              error: `Error: ${errorMessage}`,
+            }),
+          );
+        });
 
-        it('should send an error if getting hashes from hashbyserver table fails', async () => {
+        it("should send an error if getting hashes from hashbyserver table fails", async () => {
           const dbGetSpy = jest
-            .spyOn(federatedIdentityService.db, 'get')
-            .mockResolvedValueOnce([
-              { data: JSON.stringify({ sub: '@test:example.com' }) }
-            ])
+            .spyOn(federatedIdentityService.db, "get")
+            .mockResolvedValueOnce([{ data: JSON.stringify({ sub: "@test:example.com" }) }])
             .mockResolvedValueOnce([])
-            .mockRejectedValueOnce(new Error(errorMessage))
+            .mockRejectedValueOnce(new Error(errorMessage));
 
           const response = await request(app)
-            .post('/_matrix/identity/v2/lookup')
-            .set('Accept', 'application/json')
-            .set('Authorization', `Bearer ${authToken}`)
+            .post("/_matrix/identity/v2/lookup")
+            .set("Accept", "application/json")
+            .set("Authorization", `Bearer ${authToken}`)
             .send({
-              addresses: ['hash1', 'hash2'],
-              algorithm: 'sha256',
-              pepper: 'test_pepper'
-            })
+              addresses: ["hash1", "hash2"],
+              algorithm: "sha256",
+              pepper: "test_pepper",
+            });
 
-          expect(dbGetSpy).toHaveBeenCalledTimes(3)
-          expect(response.statusCode).toEqual(500)
+          expect(dbGetSpy).toHaveBeenCalledTimes(3);
+          expect(response.statusCode).toEqual(500);
           expect(JSON.stringify(response.body)).toEqual(
             JSON.stringify({
-              errcode: 'M_UNKNOWN',
-              error: `Error: ${errorMessage}`
-            })
-          )
-        })
-      })
+              errcode: "M_UNKNOWN",
+              error: `Error: ${errorMessage}`,
+            }),
+          );
+        });
+      });
 
-      describe('Lookups endpoint', () => {
-        it('reject not allowed method with 405 status code', async () => {
+      describe("Lookups endpoint", () => {
+        it("reject not allowed method with 405 status code", async () => {
           const response = await request(app)
-            .get('/_matrix/identity/v2/lookups')
-            .set('Accept', 'application/json')
-            .set('X-forwarded-for', trustedIpAddress)
+            .get("/_matrix/identity/v2/lookups")
+            .set("Accept", "application/json")
+            .set("X-forwarded-for", trustedIpAddress);
 
-          expect(response.statusCode).toBe(405)
+          expect(response.statusCode).toBe(405);
           expect(JSON.stringify(response.body)).toEqual(
             JSON.stringify({
-              errcode: 'M_UNRECOGNIZED',
-              error: 'Unrecognized'
-            })
-          )
-        })
+              errcode: "M_UNRECOGNIZED",
+              error: "Unrecognized",
+            }),
+          );
+        });
 
-        it('should reject if more than 100 requests are done in less than 10 seconds', async () => {
-          let response
-          let ipAddress
-          // eslint-disable-next-line @typescript-eslint/no-for-in-array, @typescript-eslint/no-unused-vars
-          for (const i in [...Array(101).keys()]) {
-            ipAddress = Number(i) % 2 === 0 ? trustedIpAddress : '192.168.1.25'
+        it("should reject if more than 100 requests are done in less than 10 seconds", async () => {
+          let response: request.Response | undefined;
+          let ipAddress: string;
+
+          for (let i = 0; i < 101; i++) {
+            ipAddress = Number(i) % 2 === 0 ? trustedIpAddress : "192.168.1.25";
             response = await request(app)
-              .post('/_matrix/identity/v2/lookups')
-              .set('Accept', 'application/json')
-              .set('X-forwarded-for', ipAddress)
+              .post("/_matrix/identity/v2/lookups")
+              .set("Accept", "application/json")
+              .set("X-forwarded-for", ipAddress)
               .send({
                 mappings: {},
-                algorithm: 'sha256',
-                pepper: 'test_pepper'
-              })
+                algorithm: "sha256",
+                pepper: "test_pepper",
+              });
           }
-          expect((response as Response).statusCode).toEqual(429)
-          await new Promise((resolve) => setTimeout(resolve, 11000))
-        })
+          expect((response as Response).statusCode).toEqual(429);
+          await new Promise((resolve) => setTimeout(resolve, 11000));
+        });
 
-        it('should send an error if requester ip does not belong to trusted ip addresses', async () => {
+        it("should send an error if requester ip does not belong to trusted ip addresses", async () => {
           const response = await request(app)
-            .post('/_matrix/identity/v2/lookups')
-            .set('Accept', 'application/json')
-            .set('X-forwarded-for', '192.168.1.25')
+            .post("/_matrix/identity/v2/lookups")
+            .set("Accept", "application/json")
+            .set("X-forwarded-for", "192.168.1.25")
             .send({
               mappings: {},
-              algorithm: 'sha256',
-              pepper: 'test_pepper'
-            })
+              algorithm: "sha256",
+              pepper: "test_pepper",
+            });
 
-          expect(response.statusCode).toEqual(401)
+          expect(response.statusCode).toEqual(401);
           expect(JSON.stringify(response.body)).toEqual(
             JSON.stringify({
-              errcode: 'M_UNAUTHORIZED',
-              error: 'Unauthorized'
-            })
-          )
-        })
+              errcode: "M_UNAUTHORIZED",
+              error: "Unauthorized",
+            }),
+          );
+        });
 
-        it('should send an error if requester ip is not a valid address', async () => {
+        it("should send an error if requester ip is not a valid address", async () => {
           const response = await request(app)
-            .post('/_matrix/identity/v2/lookups')
-            .set('Accept', 'application/json')
-            .set('X-forwarded-for', 'falsy_ip_address')
+            .post("/_matrix/identity/v2/lookups")
+            .set("Accept", "application/json")
+            .set("X-forwarded-for", "falsy_ip_address")
             .send({
               mappings: {},
-              algorithm: 'sha256',
-              pepper: 'test_pepper'
-            })
+              algorithm: "sha256",
+              pepper: "test_pepper",
+            });
 
-          expect(response.statusCode).toEqual(401)
+          expect(response.statusCode).toEqual(401);
           expect(JSON.stringify(response.body)).toEqual(
             JSON.stringify({
-              errcode: 'M_UNAUTHORIZED',
-              error: 'Unauthorized'
-            })
-          )
-        })
+              errcode: "M_UNAUTHORIZED",
+              error: "Unauthorized",
+            }),
+          );
+        });
 
         it('should send an error if "pepper" is not in body', async () => {
           const response = await request(app)
-            .post('/_matrix/identity/v2/lookups')
-            .set('Accept', 'application/json')
-            .set('X-forwarded-for', trustedIpAddress)
+            .post("/_matrix/identity/v2/lookups")
+            .set("Accept", "application/json")
+            .set("X-forwarded-for", trustedIpAddress)
             .send({
-              mappings: { 'test.example.com': [] },
-              algorithm: 'sha256'
-            })
+              mappings: { "test.example.com": [] },
+              algorithm: "sha256",
+            });
 
-          expect(response.statusCode).toEqual(400)
+          expect(response.statusCode).toEqual(400);
           expect(JSON.stringify(response.body)).toEqual(
             JSON.stringify({
-              errcode: 'M_INVALID_PARAM',
-              error: 'Error field: Invalid value (property: pepper)'
-            })
-          )
-        })
+              errcode: "M_INVALID_PARAM",
+              error: "Error field: Invalid value (property: pepper)",
+            }),
+          );
+        });
 
         it('should send an error if "pepper" is not a string', async () => {
           const response = await request(app)
-            .post('/_matrix/identity/v2/lookups')
-            .set('Accept', 'application/json')
-            .set('X-forwarded-for', trustedIpAddress)
+            .post("/_matrix/identity/v2/lookups")
+            .set("Accept", "application/json")
+            .set("X-forwarded-for", trustedIpAddress)
             .send({
-              mappings: { 'test.example.com': [] },
-              algorithm: 'sha256',
-              pepper: 2
-            })
+              mappings: { "test.example.com": [] },
+              algorithm: "sha256",
+              pepper: 2,
+            });
 
-          expect(response.statusCode).toEqual(400)
+          expect(response.statusCode).toEqual(400);
           expect(JSON.stringify(response.body)).toEqual(
             JSON.stringify({
-              errcode: 'M_INVALID_PARAM',
-              error: 'Error field: Invalid value (property: pepper)'
-            })
-          )
-        })
+              errcode: "M_INVALID_PARAM",
+              error: "Error field: Invalid value (property: pepper)",
+            }),
+          );
+        });
 
         it('should send an error if "mappings" is not in body', async () => {
           const response = await request(app)
-            .post('/_matrix/identity/v2/lookups')
-            .set('Accept', 'application/json')
-            .set('X-forwarded-for', trustedIpAddress)
+            .post("/_matrix/identity/v2/lookups")
+            .set("Accept", "application/json")
+            .set("X-forwarded-for", trustedIpAddress)
             .send({
-              algorithm: 'sha256',
-              pepper: 'test_pepper'
-            })
+              algorithm: "sha256",
+              pepper: "test_pepper",
+            });
 
-          expect(response.statusCode).toEqual(400)
+          expect(response.statusCode).toEqual(400);
           expect(JSON.stringify(response.body)).toEqual(
             JSON.stringify({
-              errcode: 'M_INVALID_PARAM',
-              error: 'Error field: Invalid value (property: mappings)'
-            })
-          )
-        })
+              errcode: "M_INVALID_PARAM",
+              error: "Error field: Invalid value (property: mappings)",
+            }),
+          );
+        });
 
         it('should send an error if "mappings" is not an object', async () => {
           const response = await request(app)
-            .post('/_matrix/identity/v2/lookups')
-            .set('Accept', 'application/json')
-            .set('X-forwarded-for', trustedIpAddress)
+            .post("/_matrix/identity/v2/lookups")
+            .set("Accept", "application/json")
+            .set("X-forwarded-for", trustedIpAddress)
             .send({
               mappings: 2,
-              algorithm: 'sha256',
-              pepper: 'test_pepper'
-            })
+              algorithm: "sha256",
+              pepper: "test_pepper",
+            });
 
-          expect(response.statusCode).toEqual(400)
+          expect(response.statusCode).toEqual(400);
           expect(JSON.stringify(response.body)).toEqual(
             JSON.stringify({
-              errcode: 'M_INVALID_PARAM',
-              error: 'Error field: Invalid value (property: mappings)'
-            })
-          )
-        })
+              errcode: "M_INVALID_PARAM",
+              error: "Error field: Invalid value (property: mappings)",
+            }),
+          );
+        });
 
         it('should send an error if "mappings" contains more than one server hostname', async () => {
           const response = await request(app)
-            .post('/_matrix/identity/v2/lookups')
-            .set('Accept', 'application/json')
-            .set('X-forwarded-for', trustedIpAddress)
+            .post("/_matrix/identity/v2/lookups")
+            .set("Accept", "application/json")
+            .set("X-forwarded-for", trustedIpAddress)
             .send({
-              mappings: { 'test.example.com': [], 'test2.example.com': [] },
-              algorithm: 'sha256',
-              pepper: 'test_pepper'
-            })
+              mappings: { "test.example.com": [], "test2.example.com": [] },
+              algorithm: "sha256",
+              pepper: "test_pepper",
+            });
 
-          expect(response.statusCode).toEqual(400)
+          expect(response.statusCode).toEqual(400);
           expect(JSON.stringify(response.body)).toEqual(
             JSON.stringify({
-              errcode: 'M_INVALID_PARAM',
-              error:
-                'Error field: Only one server address is allowed (property: mappings)'
-            })
-          )
-        })
+              errcode: "M_INVALID_PARAM",
+              error: "Error field: Only one server address is allowed (property: mappings)",
+            }),
+          );
+        });
 
         it('should send an error if "mappings" values is not an array', async () => {
           const response = await request(app)
-            .post('/_matrix/identity/v2/lookups')
-            .set('Accept', 'application/json')
-            .set('Authorization', `Bearer ${authToken}`)
+            .post("/_matrix/identity/v2/lookups")
+            .set("Accept", "application/json")
+            .set("Authorization", `Bearer ${authToken}`)
             .send({
-              mappings: { 'test.example.com': 2 },
-              algorithm: 'sha256',
-              pepper: 'test_pepper'
-            })
+              mappings: { "test.example.com": 2 },
+              algorithm: "sha256",
+              pepper: "test_pepper",
+            });
 
-          expect(response.statusCode).toEqual(400)
+          expect(response.statusCode).toEqual(400);
           expect(JSON.stringify(response.body)).toEqual(
             JSON.stringify({
-              errcode: 'M_INVALID_PARAM',
-              error:
-                'Error field: Mappings object values are not string arrays (property: mappings)'
-            })
-          )
-        })
+              errcode: "M_INVALID_PARAM",
+              error: "Error field: Mappings object values are not string arrays (property: mappings)",
+            }),
+          );
+        });
 
-        it('should send an error if one address is not a string', async () => {
+        it("should send an error if one address is not a string", async () => {
           const response = await request(app)
-            .post('/_matrix/identity/v2/lookups')
-            .set('Accept', 'application/json')
-            .set('Authorization', `Bearer ${authToken}`)
+            .post("/_matrix/identity/v2/lookups")
+            .set("Accept", "application/json")
+            .set("Authorization", `Bearer ${authToken}`)
             .send({
-              mappings: { 'test.example.com': ['hash1', 'hash2', 2, 'hash3'] },
-              algorithm: 'sha256',
-              pepper: 'test_pepper'
-            })
+              mappings: { "test.example.com": ["hash1", "hash2", 2, "hash3"] },
+              algorithm: "sha256",
+              pepper: "test_pepper",
+            });
 
-          expect(response.statusCode).toEqual(400)
+          expect(response.statusCode).toEqual(400);
           expect(JSON.stringify(response.body)).toEqual(
             JSON.stringify({
-              errcode: 'M_INVALID_PARAM',
-              error:
-                'Error field: Mappings object values are not string arrays (property: mappings)'
-            })
-          )
-        })
+              errcode: "M_INVALID_PARAM",
+              error: "Error field: Mappings object values are not string arrays (property: mappings)",
+            }),
+          );
+        });
 
-        it('should send an error if getting pepper in keys table fails', async () => {
-          jest
-            .spyOn(federatedIdentityService.db, 'get')
-            .mockRejectedValueOnce(new Error(errorMessage))
+        it("should send an error if getting pepper in keys table fails", async () => {
+          jest.spyOn(federatedIdentityService.db, "get").mockRejectedValueOnce(new Error(errorMessage));
 
           const response = await request(app)
-            .post('/_matrix/identity/v2/lookups')
-            .set('Accept', 'application/json')
-            .set('X-forwarded-for', trustedIpAddress)
+            .post("/_matrix/identity/v2/lookups")
+            .set("Accept", "application/json")
+            .set("X-forwarded-for", trustedIpAddress)
             .send({
-              mappings: { 'test.example.com': [] },
-              algorithm: 'sha256',
-              pepper: 'test_pepper'
-            })
+              mappings: { "test.example.com": [] },
+              algorithm: "sha256",
+              pepper: "test_pepper",
+            });
 
-          expect(response.statusCode).toEqual(500)
+          expect(response.statusCode).toEqual(500);
           expect(JSON.stringify(response.body)).toEqual(
             JSON.stringify({
-              errcode: 'M_UNKNOWN',
-              error: `Error: ${errorMessage}`
-            })
-          )
-        })
+              errcode: "M_UNKNOWN",
+              error: `Error: ${errorMessage}`,
+            }),
+          );
+        });
 
-        it('should send an error if deleting hashes in hashbyserver table fails', async () => {
-          jest
-            .spyOn(federatedIdentityService.db, 'deleteWhere')
-            .mockRejectedValue(new Error(errorMessage))
+        it("should send an error if deleting hashes in hashbyserver table fails", async () => {
+          jest.spyOn(federatedIdentityService.db, "deleteWhere").mockRejectedValue(new Error(errorMessage));
 
           const response = await request(app)
-            .post('/_matrix/identity/v2/lookups')
-            .set('Accept', 'application/json')
-            .set('X-forwarded-for', trustedIpAddress)
+            .post("/_matrix/identity/v2/lookups")
+            .set("Accept", "application/json")
+            .set("X-forwarded-for", trustedIpAddress)
             .send({
-              mappings: { 'test.example.com': [] },
-              algorithm: 'sha256',
-              pepper: 'test_pepper'
-            })
+              mappings: { "test.example.com": [] },
+              algorithm: "sha256",
+              pepper: "test_pepper",
+            });
 
-          expect(response.statusCode).toEqual(500)
+          expect(response.statusCode).toEqual(500);
           expect(JSON.stringify(response.body)).toEqual(
             JSON.stringify({
-              errcode: 'M_UNKNOWN',
-              error: `Error: ${errorMessage}`
-            })
-          )
-        })
+              errcode: "M_UNKNOWN",
+              error: `Error: ${errorMessage}`,
+            }),
+          );
+        });
 
-        it('should send an error if inserting hashes in hashbyserver table fails', async () => {
+        it("should send an error if inserting hashes in hashbyserver table fails", async () => {
           const insertSpyOn = jest
-            .spyOn(federatedIdentityService.db, 'insert')
+            .spyOn(federatedIdentityService.db, "insert")
             .mockResolvedValueOnce([])
             .mockResolvedValueOnce([])
             .mockRejectedValueOnce(new Error(errorMessage))
-            .mockResolvedValueOnce([])
+            .mockResolvedValueOnce([]);
 
           const response = await request(app)
-            .post('/_matrix/identity/v2/lookups')
-            .set('Accept', 'application/json')
-            .set('X-forwarded-for', trustedIpAddress)
+            .post("/_matrix/identity/v2/lookups")
+            .set("Accept", "application/json")
+            .set("X-forwarded-for", trustedIpAddress)
             .send({
               mappings: {
-                'test.example.com': ['test1', 'test2', 'test3', 'test4']
+                "test.example.com": ["test1", "test2", "test3", "test4"],
               },
-              algorithm: 'sha256',
-              pepper: 'test_pepper'
-            })
+              algorithm: "sha256",
+              pepper: "test_pepper",
+            });
 
-          expect(insertSpyOn).toHaveBeenCalledTimes(4)
-          expect(response.statusCode).toEqual(500)
+          expect(insertSpyOn).toHaveBeenCalledTimes(4);
+          expect(response.statusCode).toEqual(500);
           expect(JSON.stringify(response.body)).toEqual(
             JSON.stringify({
-              errcode: 'M_UNKNOWN',
-              error: `Error: ${errorMessage}`
-            })
-          )
-        })
-      })
+              errcode: "M_UNKNOWN",
+              error: `Error: ${errorMessage}`,
+            }),
+          );
+        });
+      });
 
-      describe('Hash_details endpoint', () => {
-        it('reject not allowed method with 405 status code', async () => {
+      describe("Hash_details endpoint", () => {
+        it("reject not allowed method with 405 status code", async () => {
           const response = await request(app)
-            .post('/_matrix/identity/v2/hash_details')
-            .set('Accept', 'application/json')
-            .set('Authorization', `Bearer ${authToken}`)
+            .post("/_matrix/identity/v2/hash_details")
+            .set("Accept", "application/json")
+            .set("Authorization", `Bearer ${authToken}`);
 
-          expect(response.statusCode).toBe(405)
+          expect(response.statusCode).toBe(405);
           expect(JSON.stringify(response.body)).toEqual(
             JSON.stringify({
-              errcode: 'M_UNRECOGNIZED',
-              error: 'Unrecognized'
-            })
-          )
-        })
+              errcode: "M_UNRECOGNIZED",
+              error: "Unrecognized",
+            }),
+          );
+        });
 
-        it('should reject if more than 100 requests are done in less than 10 seconds', async () => {
-          let response
-          let token
-          // eslint-disable-next-line @typescript-eslint/no-for-in-array, @typescript-eslint/no-unused-vars
-          for (const i in [...Array(101).keys()]) {
-            token = Number(i) % 2 === 0 ? `Bearer ${authToken}` : 'falsy_token'
+        it("should reject if more than 100 requests are done in less than 10 seconds", async () => {
+          let response: request.Response | undefined;
+          let token: string;
+
+          for (let i = 0; i < 101; i++) {
+            token = Number(i) % 2 === 0 ? `Bearer ${authToken}` : "falsy_token";
             response = await request(app)
-              .get('/_matrix/identity/v2/hash_details')
-              .set('Accept', 'application/json')
-              .set('Authorization', token)
+              .get("/_matrix/identity/v2/hash_details")
+              .set("Accept", "application/json")
+              .set("Authorization", token);
           }
-          expect((response as Response).statusCode).toEqual(429)
-          await new Promise((resolve) => setTimeout(resolve, 11000))
-        })
+          expect((response as Response).statusCode).toEqual(429);
+          await new Promise((resolve) => setTimeout(resolve, 11000));
+        });
 
-        it('should send an error if deleting hashes in hashbyserver table fails', async () => {
+        it("should send an error if deleting hashes in hashbyserver table fails", async () => {
           jest
-            .spyOn(federatedIdentityService.db, 'get')
-            .mockResolvedValueOnce([
-              { data: JSON.stringify({ sub: '@test:example.com' }) }
-            ])
-            .mockRejectedValueOnce(new Error(errorMessage))
+            .spyOn(federatedIdentityService.db, "get")
+            .mockResolvedValueOnce([{ data: JSON.stringify({ sub: "@test:example.com" }) }])
+            .mockRejectedValueOnce(new Error(errorMessage));
 
           const response = await request(app)
-            .get('/_matrix/identity/v2/hash_details')
-            .set('Accept', 'application/json')
-            .set('Authorization', `Bearer ${authToken}`)
+            .get("/_matrix/identity/v2/hash_details")
+            .set("Accept", "application/json")
+            .set("Authorization", `Bearer ${authToken}`);
 
-          expect(response.statusCode).toEqual(500)
+          expect(response.statusCode).toEqual(500);
           expect(JSON.stringify(response.body)).toEqual(
             JSON.stringify({
-              errcode: 'M_UNKNOWN',
-              error: `Error: ${errorMessage}`
-            })
-          )
-        })
-      })
-    })
-  })
-})
+              errcode: "M_UNKNOWN",
+              error: `Error: ${errorMessage}`,
+            }),
+          );
+        });
+      });
+    });
+  });
+});

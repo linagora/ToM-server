@@ -1,4 +1,4 @@
-import jestConfigBase from '../../jest-base.config.js'
+import jestConfigBase from "../../jest-base.config.js";
 
 export default {
   ...jestConfigBase,
@@ -7,5 +7,5 @@ export default {
     ...jestConfigBase.moduleNameMapper,
     "node-fetch": "<rootDir>/../../node_modules/node-fetch-jest",
   },
-  clearMocks: true
-}
+  clearMocks: true,
+};

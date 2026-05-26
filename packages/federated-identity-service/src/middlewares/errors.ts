@@ -1,79 +1,70 @@
-import { defaultMsg, errCodes } from '@twake/utils'
-import { type Request } from 'express'
-import { validationResult, type ValidationError } from 'express-validator'
-import {
-  type ErrorResponseBody,
-  type expressAppHandlerError,
-  type federatedIdentityServiceErrorCode
-} from '../types'
+import type { Request } from "express";
+import { type ValidationError, validationResult } from "express-validator";
 
-export const defaultErrorMsg = 'Internal server error'
+import { defaultMsg, errCodes } from "@twake/utils";
+
+import type { ErrorResponseBody, expressAppHandlerError, federatedIdentityServiceErrorCode } from "../types";
+
+export const defaultErrorMsg = "Internal server error";
 
 export class FederatedIdentityServiceError extends Error {
-  statusCode: number
-  errcode?: federatedIdentityServiceErrorCode
+  statusCode: number;
+  errcode?: federatedIdentityServiceErrorCode;
 
   constructor(
     error: {
-      status?: number
-      message?: string
-      code?: federatedIdentityServiceErrorCode
-    } = {}
+      status?: number;
+      message?: string;
+      code?: federatedIdentityServiceErrorCode;
+    } = {},
   ) {
-    let errorMessage = defaultErrorMsg
-    if (error.message != null) {
-      errorMessage = error.message
-    } else if (error.code != null) {
-      errorMessage = defaultMsg(error.code)
+    let errorMessage = defaultErrorMsg;
+    if (error.message !== undefined && error.message !== null) {
+      errorMessage = error.message;
+    } else if (error.code !== undefined && error.code !== null) {
+      errorMessage = defaultMsg(error.code);
     }
-    super(errorMessage)
-    if (error.code != null) {
-      this.errcode = error.code
+    super(errorMessage);
+    if (error.code !== undefined && error.code !== null) {
+      this.errcode = error.code;
     }
-    this.statusCode = error.status ?? 500
+    this.statusCode = error.status ?? 500;
   }
 }
 
-export const errorMiddleware: expressAppHandlerError = (
-  error,
-  req,
-  res,
-  next
-) => {
+export const errorMiddleware: expressAppHandlerError = (error, req, res, next) => {
   const federatedIdentityServiceError: FederatedIdentityServiceError =
     error instanceof FederatedIdentityServiceError
       ? error
-      : new FederatedIdentityServiceError({ message: error.message })
-  res.status(federatedIdentityServiceError.statusCode)
+      : new FederatedIdentityServiceError({ message: error.message });
+  res.status(federatedIdentityServiceError.statusCode);
   let bodyResponse: ErrorResponseBody = {
-    error: federatedIdentityServiceError.message
-  }
-  if (federatedIdentityServiceError.errcode != null) {
+    error: federatedIdentityServiceError.message,
+  };
+  if (federatedIdentityServiceError.errcode !== undefined && federatedIdentityServiceError.errcode !== null) {
     bodyResponse = {
       errcode: federatedIdentityServiceError.errcode,
-      ...bodyResponse
-    }
+      ...bodyResponse,
+    };
   }
-  res.statusMessage = federatedIdentityServiceError.message
-  res.json(bodyResponse)
-}
+  res.statusMessage = federatedIdentityServiceError.message;
+  res.json(bodyResponse);
+};
 
 export const validationErrorHandler = (req: Request): void => {
-  const errors = validationResult(req)
+  const errors = validationResult(req);
   if (!errors.isEmpty()) {
     const errorMessage = errors
       .array({ onlyFirstError: true })
       .map(
         (error: ValidationError) =>
-          `Error ${error.type}: ${String(error.msg)}${
-            'path' in error ? ` (property: ${error.path})` : ''
-          }`
+          `Error ${error.type}: ${String(error.msg)}${"path" in error ? ` (property: ${error.path})` : ""}`,
       )
-      .join(', ')
+      .join(", ");
     throw new FederatedIdentityServiceError({
       status: 400,
       message: errorMessage,
-      code: errCodes.invalidParam
-    })
+      code: errCodes.invalidParam,
+    });
   }
-}
+};
