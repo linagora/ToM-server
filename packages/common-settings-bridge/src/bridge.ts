@@ -14,7 +14,6 @@ import {
 import { SettingsRepository } from "./settings-repository";
 import {
   type BridgeConfig,
-  type CommonSettingsMessage,
   createLoggerAdapter,
   type ISettingsPayload,
   MessageParseError,
@@ -41,25 +40,35 @@ interface ParsedMessage {
 }
 
 /**
- * Validates a CommonSettingsMessage and extracts required fields.
+ * Validates a raw AMQP message and extracts required fields. Runtime narrowing
+ * is used because the lib hands us `Record<string, unknown>` without schema.
  */
-function validateMessage(message: CommonSettingsMessage): ParsedMessage {
-  if (!message.request_id) {
+function validateMessage(message: Record<string, unknown>): ParsedMessage {
+  const requestId = message.request_id;
+  if (typeof requestId !== "string" || requestId.length === 0) {
     throw new MessageParseError("Message missing required request_id field");
   }
-  if (message.timestamp === undefined || message.timestamp === null) {
+  const timestamp = message.timestamp;
+  if (typeof timestamp !== "number") {
     throw new MessageParseError("Message missing required timestamp field");
   }
-  if (!message.payload?.matrix_id) {
+  const payload = message.payload;
+  if (payload === null || typeof payload !== "object" || Array.isArray(payload)) {
     throw new UserIdNotProvidedError();
   }
+  const matrixId = (payload as Record<string, unknown>).matrix_id;
+  if (typeof matrixId !== "string" || matrixId.length === 0) {
+    throw new UserIdNotProvidedError();
+  }
+  const version = message.version;
+  const source = message.source;
   return {
-    userId: message.payload.matrix_id,
-    version: message.version ?? 1,
-    timestamp: message.timestamp,
-    requestId: message.request_id,
-    source: message.source,
-    payload: message.payload,
+    userId: matrixId,
+    version: typeof version === "number" ? version : 1,
+    timestamp,
+    requestId,
+    source: typeof source === "string" ? source : "",
+    payload: payload as ISettingsPayload,
   };
 }
 
@@ -243,7 +252,7 @@ export class CommonSettingsBridge {
 
     let parsed: ParsedMessage;
     try {
-      parsed = validateMessage(message as unknown as CommonSettingsMessage);
+      parsed = validateMessage(message);
     } catch (err) {
       if (err instanceof MessageParseError || err instanceof UserIdNotProvidedError) {
         this.#log.error(`Discarding message: validation failed (${(err as Error).message})`);
@@ -475,7 +484,9 @@ export class CommonSettingsBridge {
         // Roll the connection back so the lib's auto-reconnect loop doesn't
         // keep a zombie session open after start() rejects.
         await this.#client.close().catch((closeErr) => {
-          this.#log.warn(`Error closing client during rollback: ${closeErr instanceof Error ? closeErr.message : String(closeErr)}`);
+          this.#log.warn(
+            `Error closing client during rollback: ${closeErr instanceof Error ? closeErr.message : String(closeErr)}`,
+          );
         });
         throw subscribeError;
       }

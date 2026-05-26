@@ -1,5 +1,9 @@
 /* eslint-disable @typescript-eslint/promise-function-async */
-import type { BridgeConfig } from "./types";
+import type { RabbitMQMessageHandler } from "@linagora/rabbitmq-client";
+
+import type { BridgeConfig, ISettingsPayload } from "./types";
+
+type LoggerWithConfigure = jest.Mock & { configure: jest.Mock };
 
 // Must provide factory functions for mocks used at module load time
 jest.mock("matrix-appservice-bridge", () => {
@@ -9,8 +13,10 @@ jest.mock("matrix-appservice-bridge", () => {
     error: jest.fn(),
     debug: jest.fn(),
   };
-  const MockLogger = jest.fn(() => mockLoggerInstance);
-  (MockLogger as any).configure = jest.fn();
+  const MockLogger: LoggerWithConfigure = Object.assign(
+    jest.fn(() => mockLoggerInstance),
+    { configure: jest.fn() },
+  );
 
   return {
     Bridge: jest.fn(),
@@ -85,12 +91,14 @@ const mockDb = {
 
 const mockClientInit = jest.fn(() => Promise.resolve());
 const mockClientClose = jest.fn(() => Promise.resolve());
-let messageHandler: (message: Record<string, unknown>) => Promise<void>;
+let messageHandler: RabbitMQMessageHandler;
 
-const mockClientSubscribe = jest.fn((_exchange: string, _routingKey: string, _queue: string, handler: any) => {
-  messageHandler = handler;
-  return Promise.resolve();
-});
+const mockClientSubscribe = jest.fn(
+  (_exchange: string, _routingKey: string, _queue: string, handler: RabbitMQMessageHandler) => {
+    messageHandler = handler;
+    return Promise.resolve();
+  },
+);
 
 const mockClient = {
   init: mockClientInit,
@@ -130,12 +138,14 @@ beforeEach(() => {
   mockUploadContentFromUrl.mockResolvedValue("mxc://example.com/uploaded123");
   mockUploadContent.mockResolvedValue("mxc://example.com/uploaded123");
   // Mock global fetch for avatar downloads
-  global.fetch = jest.fn(() => Promise.resolve(createMockFetchResponse())) as any;
+  global.fetch = jest.fn(() => Promise.resolve(createMockFetchResponse())) as unknown as typeof fetch;
   // Re-bind capture after clearAllMocks
-  mockClientSubscribe.mockImplementation((_exchange: string, _routingKey: string, _queue: string, handler: any) => {
-    messageHandler = handler;
-    return Promise.resolve();
-  });
+  mockClientSubscribe.mockImplementation(
+    (_exchange: string, _routingKey: string, _queue: string, handler: RabbitMQMessageHandler) => {
+      messageHandler = handler;
+      return Promise.resolve();
+    },
+  );
 });
 
 const createTestConfig = (adminRetryMode: "disabled" | "fallback" | "exclusive" = "disabled"): BridgeConfig => ({
@@ -162,7 +172,16 @@ const createTestConfig = (adminRetryMode: "disabled" | "fallback" | "exclusive" 
   },
 });
 
-const createTestMessage = (overrides: Record<string, any> = {}) => ({
+interface TestMessageOverrides {
+  source?: string;
+  nickname?: string;
+  request_id?: string;
+  timestamp?: number;
+  version?: number;
+  payload?: Partial<ISettingsPayload>;
+}
+
+const createTestMessage = (overrides: TestMessageOverrides = {}): Record<string, unknown> => ({
   source: "test-service",
   nickname: "test-user",
   request_id: "12345",
@@ -187,7 +206,7 @@ describe("CommonSettingsBridge - Message Parsing", () => {
   it("should process a valid message", async () => {
     const { CommonSettingsBridge } = await import("./index");
     const config = createTestConfig();
-    const bridge = new (CommonSettingsBridge as any)(config);
+    const bridge = new CommonSettingsBridge(config);
 
     await bridge.start();
 
@@ -204,7 +223,7 @@ describe("CommonSettingsBridge - Message Parsing", () => {
   it("should ack-and-drop messages where matrix_id is missing (no retry storm)", async () => {
     const { CommonSettingsBridge } = await import("./index");
     const config = createTestConfig();
-    const bridge = new (CommonSettingsBridge as any)(config);
+    const bridge = new CommonSettingsBridge(config);
 
     await bridge.start();
 
@@ -223,7 +242,7 @@ describe("CommonSettingsBridge - Avatar URL Resolution", () => {
   it("should use MXC URL directly when avatar starts with mxc://", async () => {
     const { CommonSettingsBridge } = await import("./index");
     const config = createTestConfig();
-    const bridge = new (CommonSettingsBridge as any)(config);
+    const bridge = new CommonSettingsBridge(config);
 
     await bridge.start();
 
@@ -243,7 +262,7 @@ describe("CommonSettingsBridge - Avatar URL Resolution", () => {
   it("should download and upload HTTP avatar URL", async () => {
     const { CommonSettingsBridge } = await import("./index");
     const config = createTestConfig();
-    const bridge = new (CommonSettingsBridge as any)(config);
+    const bridge = new CommonSettingsBridge(config);
 
     await bridge.start();
 
@@ -267,7 +286,7 @@ describe("CommonSettingsBridge - Avatar URL Resolution", () => {
   it("should propagate upload errors", async () => {
     const { CommonSettingsBridge } = await import("./index");
     const config = createTestConfig();
-    const bridge = new (CommonSettingsBridge as any)(config);
+    const bridge = new CommonSettingsBridge(config);
 
     mockUploadContent.mockRejectedValueOnce(new Error("Upload failed"));
 
@@ -286,7 +305,7 @@ describe("CommonSettingsBridge - Avatar URL Resolution", () => {
   it("should use uploaded MXC URL with admin API in EXCLUSIVE mode", async () => {
     const { CommonSettingsBridge } = await import("./index");
     const config = createTestConfig("exclusive");
-    const bridge = new (CommonSettingsBridge as any)(config);
+    const bridge = new CommonSettingsBridge(config);
 
     await bridge.start();
 
@@ -315,7 +334,7 @@ describe("CommonSettingsBridge - Matrix Updates", () => {
   it("should use admin API in EXCLUSIVE mode for display name", async () => {
     const { CommonSettingsBridge } = await import("./index");
     const config = createTestConfig("exclusive");
-    const bridge = new (CommonSettingsBridge as any)(config);
+    const bridge = new CommonSettingsBridge(config);
 
     await bridge.start();
 
@@ -331,7 +350,7 @@ describe("CommonSettingsBridge - Matrix Updates", () => {
   it("should use intent API in DISABLED mode for display name", async () => {
     const { CommonSettingsBridge } = await import("./index");
     const config = createTestConfig("disabled");
-    const bridge = new (CommonSettingsBridge as any)(config);
+    const bridge = new CommonSettingsBridge(config);
 
     await bridge.start();
 
@@ -344,7 +363,7 @@ describe("CommonSettingsBridge - Matrix Updates", () => {
   it("should fallback to admin API on M_FORBIDDEN in FALLBACK mode", async () => {
     const { CommonSettingsBridge } = await import("./index");
     const config = createTestConfig("fallback");
-    const bridge = new (CommonSettingsBridge as any)(config);
+    const bridge = new CommonSettingsBridge(config);
 
     mockSetDisplayName.mockRejectedValueOnce({
       errcode: "M_FORBIDDEN",
@@ -367,7 +386,7 @@ describe("CommonSettingsBridge - Change Detection", () => {
   it("should not update display name when unchanged", async () => {
     const { CommonSettingsBridge } = await import("./index");
     const config = createTestConfig();
-    const bridge = new (CommonSettingsBridge as any)(config);
+    const bridge = new CommonSettingsBridge(config);
 
     const existingSettings = {
       matrix_id: "@user:example.com",
@@ -395,7 +414,7 @@ describe("CommonSettingsBridge - Change Detection", () => {
   it("should update display name when changed", async () => {
     const { CommonSettingsBridge } = await import("./index");
     const config = createTestConfig();
-    const bridge = new (CommonSettingsBridge as any)(config);
+    const bridge = new CommonSettingsBridge(config);
 
     const existingSettings = {
       matrix_id: "@user:example.com",
@@ -431,7 +450,7 @@ describe("CommonSettingsBridge - Lifecycle", () => {
   it("should start successfully", async () => {
     const { CommonSettingsBridge } = await import("./index");
     const config = createTestConfig();
-    const bridge = new (CommonSettingsBridge as any)(config);
+    const bridge = new CommonSettingsBridge(config);
 
     await bridge.start();
 
@@ -444,7 +463,7 @@ describe("CommonSettingsBridge - Lifecycle", () => {
   it("should stop successfully", async () => {
     const { CommonSettingsBridge } = await import("./index");
     const config = createTestConfig();
-    const bridge = new (CommonSettingsBridge as any)(config);
+    const bridge = new CommonSettingsBridge(config);
 
     await bridge.start();
     await bridge.stop();
@@ -456,7 +475,7 @@ describe("CommonSettingsBridge - Lifecycle", () => {
   it("should check admin privileges on start", async () => {
     const { CommonSettingsBridge } = await import("./index");
     const config = createTestConfig();
-    const bridge = new (CommonSettingsBridge as any)(config);
+    const bridge = new CommonSettingsBridge(config);
 
     await bridge.start();
 

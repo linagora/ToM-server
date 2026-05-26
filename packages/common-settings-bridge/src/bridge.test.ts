@@ -1,4 +1,5 @@
 import { RabbitMQClient } from "@linagora/rabbitmq-client";
+import type { SynapseAdminApis } from "@vector-im/matrix-bot-sdk";
 import { Bridge, type Intent } from "matrix-appservice-bridge";
 
 import { Database } from "@twake/db";
@@ -6,8 +7,12 @@ import { Database } from "@twake/db";
 import { CommonSettingsBridge } from "./bridge";
 import { MatrixProfileUpdater } from "./matrix-profile-updater";
 import { SettingsRepository } from "./settings-repository";
-import type { BridgeConfig, ISettingsPayload, StoredUserSettings } from "./types";
+import type { BridgeConfig, ISettingsPayload, StoredUserSettings, UserSettingsTableName } from "./types";
 import { SynapseAdminRetryMode } from "./types";
+
+type MockAdminApis = jest.Mocked<Pick<SynapseAdminApis, "isSelfAdmin" | "upsertUser">>;
+type MockRabbitClient = jest.Mocked<Pick<RabbitMQClient, "init" | "subscribe" | "close">>;
+type MockBridgeInstance = jest.Mocked<Pick<Bridge, "run" | "getBot" | "getIntent">>;
 
 // Mock external dependencies
 jest.mock("./settings-repository");
@@ -18,13 +23,13 @@ jest.mock("@twake/db");
 describe("CommonSettingsBridge", () => {
   let bridge: CommonSettingsBridge;
   let mockConfig: BridgeConfig;
-  let mockBridgeInstance: jest.Mocked<Bridge>;
+  let mockBridgeInstance: MockBridgeInstance;
   let mockIntent: jest.Mocked<Intent>;
-  let mockDatabase: jest.Mocked<Database<any>>;
-  let mockClient: jest.Mocked<RabbitMQClient>;
+  let mockDatabase: jest.Mocked<Database<UserSettingsTableName>>;
+  let mockClient: MockRabbitClient;
   let mockSettingsRepo: jest.Mocked<SettingsRepository>;
   let mockProfileUpdater: jest.Mocked<MatrixProfileUpdater>;
-  let mockAdminApis: any;
+  let mockAdminApis: MockAdminApis;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -56,7 +61,8 @@ describe("CommonSettingsBridge", () => {
       },
     };
 
-    // Mock database
+    // Mock database. Jest's Mocked<T> isn't structurally compatible with the
+    // raw class, so bridge through `unknown` to convert real -> mock and back.
     mockDatabase = {
       ready: Promise.resolve(),
       get: jest.fn(),
@@ -64,56 +70,41 @@ describe("CommonSettingsBridge", () => {
       update: jest.fn(),
       close: jest.fn(),
       ensureColumns: jest.fn().mockResolvedValue(undefined),
-    } as any;
-    (Database as jest.MockedClass<typeof Database>).mockImplementation(() => mockDatabase);
+    } as unknown as jest.Mocked<Database<UserSettingsTableName>>;
+    (Database as jest.MockedClass<typeof Database>).mockImplementation(
+      () => mockDatabase as unknown as Database<string>,
+    );
 
     // Mock RabbitMQ client
     mockClient = {
       init: jest.fn().mockResolvedValue(undefined),
       subscribe: jest.fn().mockResolvedValue(undefined),
       close: jest.fn().mockResolvedValue(undefined),
-    } as any;
-    (RabbitMQClient as jest.MockedClass<typeof RabbitMQClient>).mockImplementation(() => mockClient);
-
-    // Mock admin APIs
-    mockAdminApis = {
-      isSelfAdmin: jest.fn().mockResolvedValue(true),
-      upsertUser: jest.fn().mockResolvedValue(undefined),
     };
-
-    // Mock Intent
-    mockIntent = {
-      ensureRegistered: jest.fn().mockResolvedValue(undefined),
-      setDisplayName: jest.fn().mockResolvedValue(undefined),
-      setAvatarUrl: jest.fn().mockResolvedValue(undefined),
-      matrixClient: {
-        adminApis: {
-          synapse: mockAdminApis,
-        },
-        uploadContentFromUrl: jest.fn().mockResolvedValue("mxc://example.com/avatar123"),
-      },
-    } as any;
+    (RabbitMQClient as jest.MockedClass<typeof RabbitMQClient>).mockImplementation(
+      () => mockClient as unknown as RabbitMQClient,
+    );
 
     // The Bridge mock is handled by the manual mock in __mocks__
     // Create an instance to access the shared mock methods
-    const tempBridge = new Bridge({} as any);
+    const tempBridge = new Bridge({} as ConstructorParameters<typeof Bridge>[0]);
     mockBridgeInstance = {
-      run: tempBridge.run,
-      getBot: tempBridge.getBot,
-      getIntent: tempBridge.getIntent,
-    } as any;
+      run: tempBridge.run as jest.Mock,
+      getBot: tempBridge.getBot as jest.Mock,
+      getIntent: tempBridge.getIntent as jest.Mock,
+    };
 
     // Get the shared mockIntent from the Bridge's getIntent mock
-    mockIntent = mockBridgeInstance.getIntent() as any;
+    mockIntent = mockBridgeInstance.getIntent() as jest.Mocked<Intent>;
 
     // Update mockAdminApis to reference the mockIntent's admin APIs
-    mockAdminApis = mockIntent.matrixClient.adminApis.synapse;
+    mockAdminApis = mockIntent.matrixClient.adminApis.synapse as unknown as MockAdminApis;
 
     // Mock SettingsRepository
     mockSettingsRepo = {
       getUserSettings: jest.fn(),
       saveSettings: jest.fn(),
-    } as any;
+    } as unknown as jest.Mocked<SettingsRepository>;
     (SettingsRepository as jest.MockedClass<typeof SettingsRepository>).mockImplementation(() => mockSettingsRepo);
 
     // Mock MatrixProfileUpdater
@@ -121,7 +112,7 @@ describe("CommonSettingsBridge", () => {
       processChanges: jest.fn().mockResolvedValue(undefined),
       updateDisplayName: jest.fn().mockResolvedValue(undefined),
       updateAvatar: jest.fn().mockResolvedValue(undefined),
-    } as any;
+    } as unknown as jest.Mocked<MatrixProfileUpdater>;
     (MatrixProfileUpdater as jest.MockedClass<typeof MatrixProfileUpdater>).mockImplementation(
       () => mockProfileUpdater,
     );
@@ -226,8 +217,11 @@ describe("CommonSettingsBridge", () => {
     });
 
     it("should default routingKey to '#' when omitted from config", async () => {
-      const configNoRouting = { ...mockConfig, rabbitmq: { ...mockConfig.rabbitmq, routingKey: undefined } };
-      const newBridge = new CommonSettingsBridge(configNoRouting as unknown as typeof mockConfig);
+      const configNoRouting: BridgeConfig = {
+        ...mockConfig,
+        rabbitmq: { ...mockConfig.rabbitmq, routingKey: undefined },
+      };
+      const newBridge = new CommonSettingsBridge(configNoRouting);
       await newBridge.start();
 
       expect(mockClient.subscribe).toHaveBeenCalledWith("test-exchange", "#", "test-queue", expect.any(Function));
@@ -288,7 +282,9 @@ describe("CommonSettingsBridge", () => {
   });
 
   describe("#handleMessage orchestration", () => {
-    let handleMessageFn: (message: Record<string, unknown>) => Promise<void>;
+    // Typed as `unknown` so we can also pass non-object inputs (null/42/[]) to
+    // exercise the runtime guards at the top of the handler.
+    let handleMessageFn: (message: unknown) => Promise<void>;
     let mockUserSettings: StoredUserSettings | null;
     let mockPayload: ISettingsPayload;
 
@@ -339,9 +335,9 @@ describe("CommonSettingsBridge", () => {
     });
 
     it("should ack-and-drop a non-object payload root", async () => {
-      await expect(handleMessageFn(null as unknown as Record<string, unknown>)).resolves.toBeUndefined();
-      await expect(handleMessageFn(42 as unknown as Record<string, unknown>)).resolves.toBeUndefined();
-      await expect(handleMessageFn([] as unknown as Record<string, unknown>)).resolves.toBeUndefined();
+      await expect(handleMessageFn(null)).resolves.toBeUndefined();
+      await expect(handleMessageFn(42)).resolves.toBeUndefined();
+      await expect(handleMessageFn([])).resolves.toBeUndefined();
       expect(mockSettingsRepo.getUserSettings).not.toHaveBeenCalled();
       expect(mockProfileUpdater.processChanges).not.toHaveBeenCalled();
     });
