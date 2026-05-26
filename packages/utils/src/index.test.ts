@@ -1,7 +1,10 @@
 import type http from "node:http";
 import querystring from "node:querystring";
-import type { TwakeLogger } from "@twake/logger";
+
 import type { Request, Response } from "express";
+
+import type { TwakeLogger } from "@twake/logger";
+
 import { epoch, isMatrixId, isValidUrl, jsonContent, send, toMatrixId, validateParameters } from "./index";
 
 describe("Utility Functions", () => {
@@ -43,7 +46,7 @@ describe("Utility Functions", () => {
       const req = {
         headers: { "content-type": "application/json" },
         body: { key: "value" },
-        on: (event: string, callback: any) => {
+        on: (event: string, callback: (data?: string) => void) => {
           if (event === "data") {
             callback(JSON.stringify({ key: "value" }));
           }
@@ -62,7 +65,7 @@ describe("Utility Functions", () => {
     it("should handle form-urlencoded content", (done) => {
       const req = {
         headers: { "content-type": "application/x-www-form-urlencoded" },
-        on: (event: string, callback: any) => {
+        on: (event: string, callback: (data?: string) => void) => {
           if (event === "data") {
             callback(querystring.encode({ key: "value" }));
           }
@@ -81,7 +84,7 @@ describe("Utility Functions", () => {
     it("should handle JSON parsing errors", () => {
       const req = {
         headers: { "content-type": "application/json" },
-        on: (event: string, callback: any) => {
+        on: (event: string, callback: (data?: string) => void) => {
           if (event === "data") {
             callback("invalid json");
           }

@@ -2,8 +2,11 @@
 
 import type http from "node:http";
 import querystring from "node:querystring";
-import type { TwakeLogger } from "@twake/logger";
+
 import type { NextFunction, Request, Response } from "express";
+
+import type { TwakeLogger } from "@twake/logger";
+
 import { errMsg } from "./errors";
 
 export const hostnameRe =
@@ -38,7 +41,7 @@ export const jsonContent = (
   let content = "";
   let accept = true;
   const end = (): void => {
-    let obj;
+    let obj: unknown;
     try {
       if (typeof content === "string") {
         // eslint-disable-next-line @typescript-eslint/prefer-optional-chain
@@ -56,7 +59,7 @@ export const jsonContent = (
       send(res, 400, errMsg("unknown", err as string));
       accept = false;
     }
-    if (accept) callback(obj);
+    if (accept) callback(obj as Record<string, string>);
   };
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
   /* istanbul ignore if */ // @ts-expect-error
