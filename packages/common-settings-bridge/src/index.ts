@@ -6,7 +6,6 @@
 
 // Re-export main bridge class
 export { CommonSettingsBridge } from "./bridge";
-
 // Re-export types and errors
 export * from "./types";
 
@@ -15,6 +14,7 @@ export * from "./types";
 // =============================================================================
 
 import { AppServiceRegistration, Cli, Logger } from "matrix-appservice-bridge";
+
 import { CommonSettingsBridge } from "./bridge";
 import type { BridgeConfig } from "./types";
 

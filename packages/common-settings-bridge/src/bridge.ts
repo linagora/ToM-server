@@ -344,7 +344,12 @@ export class CommonSettingsBridge {
           ...(lastSettings?.payload ?? {}),
           ...payload,
         };
-        await this.#settingsRepository.saveSettings(userId, mergedPayload, version, timestamp, requestId, isNewUser);
+        await this.#settingsRepository.saveSettings(userId, mergedPayload, {
+          version,
+          timestamp,
+          requestId,
+          isNewUser,
+        });
       } catch (error) {
         // DB save failed but profile was updated - log and continue in degraded mode
         const errorMsg = error instanceof Error ? error.message : String(error);

@@ -360,15 +360,12 @@ describe("CommonSettingsBridge", () => {
       await handleMessageFn(buildMessage({ version: Number.NEGATIVE_INFINITY, request_id: "req-2" }));
 
       // First call's `isNewUser` is true, so version defaulted to 1 was persisted.
-      expect(mockSettingsRepo.saveSettings).toHaveBeenNthCalledWith(
-        1,
-        "@user:example.com",
-        expect.any(Object),
-        1,
-        expect.any(Number),
-        "req-123",
-        true,
-      );
+      expect(mockSettingsRepo.saveSettings).toHaveBeenNthCalledWith(1, "@user:example.com", expect.any(Object), {
+        version: 1,
+        timestamp: expect.any(Number),
+        requestId: "req-123",
+        isNewUser: true,
+      });
     });
 
     it("should get user settings from repository", async () => {
@@ -453,14 +450,12 @@ describe("CommonSettingsBridge", () => {
 
       await handleMessageFn(buildMessage());
 
-      expect(mockSettingsRepo.saveSettings).toHaveBeenCalledWith(
-        "@user:example.com",
-        mockPayload,
-        2,
-        1640995200000,
-        "req-123",
-        true,
-      );
+      expect(mockSettingsRepo.saveSettings).toHaveBeenCalledWith("@user:example.com", mockPayload, {
+        version: 2,
+        timestamp: 1640995200000,
+        requestId: "req-123",
+        isNewUser: true,
+      });
     });
 
     it("should save settings for existing user", async () => {
@@ -475,14 +470,12 @@ describe("CommonSettingsBridge", () => {
 
       await handleMessageFn(buildMessage());
 
-      expect(mockSettingsRepo.saveSettings).toHaveBeenCalledWith(
-        "@user:example.com",
-        mockPayload,
-        2,
-        1640995200000,
-        "req-123",
-        false,
-      );
+      expect(mockSettingsRepo.saveSettings).toHaveBeenCalledWith("@user:example.com", mockPayload, {
+        version: 2,
+        timestamp: 1640995200000,
+        requestId: "req-123",
+        isNewUser: false,
+      });
     });
 
     it("should execute orchestration steps in correct order", async () => {

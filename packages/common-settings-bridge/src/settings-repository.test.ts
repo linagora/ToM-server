@@ -12,13 +12,19 @@ jest.mock("matrix-appservice-bridge", () => {
     error: jest.fn(),
     debug: jest.fn(),
   };
-  const MockLogger = jest.fn(() => mockLoggerInstance);
-  (MockLogger as any).configure = jest.fn();
+  const MockLogger = Object.assign(
+    jest.fn(() => mockLoggerInstance),
+    { configure: jest.fn() },
+  );
 
   return {
     Logger: MockLogger,
   };
 });
+
+import type { Logger as RealLogger } from "matrix-appservice-bridge";
+
+import type { Database as RealDatabase } from "@twake/db";
 
 import { SettingsRepository } from "./settings-repository";
 
@@ -73,7 +79,10 @@ describe("SettingsRepository", () => {
     jest.clearAllMocks();
     mockDb = createMockDatabase();
     mockLogger = createMockLogger();
-    repository = new SettingsRepository(mockDb as any, mockLogger as any);
+    repository = new SettingsRepository(
+      mockDb as unknown as RealDatabase<UserSettingsTableName>,
+      mockLogger as unknown as RealLogger,
+    );
   });
 
   describe("getUserSettings", () => {
@@ -164,7 +173,7 @@ describe("SettingsRepository", () => {
     it("should insert new settings when isNewUser is true", async () => {
       mockDb.insert.mockResolvedValue(undefined);
 
-      await repository.saveSettings(userId, payload, version, timestamp, requestId, true);
+      await repository.saveSettings(userId, payload, { version, timestamp, requestId, isNewUser: true });
 
       expect(mockDb.insert).toHaveBeenCalledWith("usersettings", {
         matrix_id: userId,
@@ -183,7 +192,7 @@ describe("SettingsRepository", () => {
     it("should update existing settings when isNewUser is false", async () => {
       mockDb.update.mockResolvedValue(undefined);
 
-      await repository.saveSettings(userId, payload, version, timestamp, requestId, false);
+      await repository.saveSettings(userId, payload, { version, timestamp, requestId, isNewUser: false });
 
       expect(mockDb.update).toHaveBeenCalledWith(
         "usersettings",
@@ -207,9 +216,9 @@ describe("SettingsRepository", () => {
       const insertError = new Error("Database connection lost");
       mockDb.insert.mockRejectedValue(insertError);
 
-      await expect(repository.saveSettings(userId, payload, version, timestamp, requestId, true)).rejects.toThrow(
-        "Database connection lost",
-      );
+      await expect(
+        repository.saveSettings(userId, payload, { version, timestamp, requestId, isNewUser: true }),
+      ).rejects.toThrow("Database connection lost");
 
       expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining(`Failed to insert cache entry for ${userId}: Database connection lost`),
@@ -221,7 +230,7 @@ describe("SettingsRepository", () => {
       mockDb.insert.mockRejectedValue(duplicateError);
       mockDb.update.mockResolvedValue(undefined);
 
-      await repository.saveSettings(userId, payload, version, timestamp, requestId, true);
+      await repository.saveSettings(userId, payload, { version, timestamp, requestId, isNewUser: true });
 
       expect(mockDb.insert).toHaveBeenCalledWith("usersettings", {
         matrix_id: userId,
@@ -247,12 +256,11 @@ describe("SettingsRepository", () => {
     });
 
     it("should fallback to update when insert fails with PostgreSQL unique violation code", async () => {
-      const duplicateError: any = new Error("unique constraint violation");
-      duplicateError.code = "23505";
+      const duplicateError = Object.assign(new Error("unique constraint violation"), { code: "23505" });
       mockDb.insert.mockRejectedValue(duplicateError);
       mockDb.update.mockResolvedValue(undefined);
 
-      await repository.saveSettings(userId, payload, version, timestamp, requestId, true);
+      await repository.saveSettings(userId, payload, { version, timestamp, requestId, isNewUser: true });
 
       expect(mockDb.update).toHaveBeenCalled();
       expect(mockLogger.debug).toHaveBeenCalledWith(expect.stringContaining("concurrent insert detected"));
@@ -262,9 +270,9 @@ describe("SettingsRepository", () => {
       const updateError = new Error("Update failed");
       mockDb.update.mockRejectedValue(updateError);
 
-      await expect(repository.saveSettings(userId, payload, version, timestamp, requestId, false)).rejects.toThrow(
-        "Update failed",
-      );
+      await expect(
+        repository.saveSettings(userId, payload, { version, timestamp, requestId, isNewUser: false }),
+      ).rejects.toThrow("Update failed");
 
       expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining(`Failed to update cache entry for ${userId}: Update failed`),
@@ -278,7 +286,7 @@ describe("SettingsRepository", () => {
         display_name: 'User with "quotes" and special chars: \n\t',
       });
 
-      await repository.saveSettings(userId, complexPayload, version, timestamp, requestId, true);
+      await repository.saveSettings(userId, complexPayload, { version, timestamp, requestId, isNewUser: true });
 
       expect(mockDb.insert).toHaveBeenCalledWith("usersettings", {
         matrix_id: userId,
