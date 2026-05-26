@@ -1,4 +1,14 @@
-import type { AmqpConfig } from "@twake/amqp-connector";
+/**
+ * AMQP server connection settings.
+ */
+export interface AmqpConfig {
+  readonly host: string;
+  readonly port: number;
+  readonly vhost: string;
+  readonly username: string;
+  readonly password: string;
+  readonly tls?: boolean;
+}
 
 /**
  * Defines the retry strategy for Synapse admin API operations.
@@ -55,13 +65,20 @@ export interface StoredUserSettings {
 
 /**
  * Configuration for AMQP exchange, queue, and routing within the bridge.
+ * The dead-letter exchange/queue are derived automatically by the client
+ * (`<exchange>.dlx`, `<queue>.dlq`, `<routingKey>.dead`). When `routingKey`
+ * is omitted, the bridge subscribes with `#` (catch-all topic binding).
  */
 export interface BridgeAmqpConfig {
   readonly exchange: string;
   readonly queue: string;
   readonly routingKey?: string;
-  readonly deadLetterExchange?: string;
-  readonly deadLetterRoutingKey?: string;
+  /** Channel prefetch (in-flight handler concurrency). Lib default: 10. */
+  readonly prefetch?: number;
+  /** Handler retries before DLQ for transient failures. Lib default: 3. */
+  readonly maxRetries?: number;
+  /** Delay between handler retries, ms. Lib default: 1000. */
+  readonly retryDelay?: number;
 }
 
 /**
@@ -116,7 +133,7 @@ export interface AppLogger {
 }
 
 /**
- * TwakeLogger-compatible interface for @twake/db and @twake/amqp-connector.
+ * TwakeLogger-compatible interface for @twake/db.
  */
 export interface TwakeLoggerAdapter {
   error: (...args: unknown[]) => void;

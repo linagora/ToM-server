@@ -1,7 +1,8 @@
-import { AMQPConnector } from "@twake/amqp-connector";
-import { Database } from "@twake/db";
-import type { Channel, ConsumeMessage } from "amqplib";
+import { RabbitMQClient } from "@linagora/rabbitmq-client";
 import { Bridge, type Intent } from "matrix-appservice-bridge";
+
+import { Database } from "@twake/db";
+
 import { CommonSettingsBridge } from "./bridge";
 import { MatrixProfileUpdater } from "./matrix-profile-updater";
 import { SettingsRepository } from "./settings-repository";
@@ -11,7 +12,7 @@ import { SynapseAdminRetryMode } from "./types";
 // Mock external dependencies
 jest.mock("./settings-repository");
 jest.mock("./matrix-profile-updater");
-jest.mock("@twake/amqp-connector");
+jest.mock("@linagora/rabbitmq-client");
 jest.mock("@twake/db");
 
 describe("CommonSettingsBridge", () => {
@@ -20,10 +21,9 @@ describe("CommonSettingsBridge", () => {
   let mockBridgeInstance: jest.Mocked<Bridge>;
   let mockIntent: jest.Mocked<Intent>;
   let mockDatabase: jest.Mocked<Database<any>>;
-  let mockConnector: jest.Mocked<AMQPConnector>;
+  let mockClient: jest.Mocked<RabbitMQClient>;
   let mockSettingsRepo: jest.Mocked<SettingsRepository>;
   let mockProfileUpdater: jest.Mocked<MatrixProfileUpdater>;
-  let mockChannel: jest.Mocked<Channel>;
   let mockAdminApis: any;
 
   beforeEach(() => {
@@ -50,8 +50,6 @@ describe("CommonSettingsBridge", () => {
         exchange: "test-exchange",
         queue: "test-queue",
         routingKey: "test.routing.key",
-        deadLetterExchange: "test-dlx",
-        deadLetterRoutingKey: "test.dlx.routing.key",
       },
       synapse: {
         adminRetryMode: "fallback",
@@ -69,16 +67,13 @@ describe("CommonSettingsBridge", () => {
     } as any;
     (Database as jest.MockedClass<typeof Database>).mockImplementation(() => mockDatabase);
 
-    // Mock AMQP connector
-    mockConnector = {
-      withConfig: jest.fn().mockReturnThis(),
-      withExchange: jest.fn().mockReturnThis(),
-      withQueue: jest.fn().mockReturnThis(),
-      onMessage: jest.fn().mockReturnThis(),
-      build: jest.fn().mockResolvedValue(undefined),
+    // Mock RabbitMQ client
+    mockClient = {
+      init: jest.fn().mockResolvedValue(undefined),
+      subscribe: jest.fn().mockResolvedValue(undefined),
       close: jest.fn().mockResolvedValue(undefined),
     } as any;
-    (AMQPConnector as jest.MockedClass<typeof AMQPConnector>).mockImplementation(() => mockConnector);
+    (RabbitMQClient as jest.MockedClass<typeof RabbitMQClient>).mockImplementation(() => mockClient);
 
     // Mock admin APIs
     mockAdminApis = {
@@ -130,12 +125,6 @@ describe("CommonSettingsBridge", () => {
     (MatrixProfileUpdater as jest.MockedClass<typeof MatrixProfileUpdater>).mockImplementation(
       () => mockProfileUpdater,
     );
-
-    // Mock AMQP Channel
-    mockChannel = {
-      ack: jest.fn(),
-      nack: jest.fn(),
-    } as any;
   });
 
   describe("constructor", () => {
@@ -158,24 +147,12 @@ describe("CommonSettingsBridge", () => {
       );
     });
 
-    it("should initialize AMQP connector with config", () => {
+    it("should initialize RabbitMQ client with URL built from config", () => {
       bridge = new CommonSettingsBridge(mockConfig);
 
-      expect(AMQPConnector).toHaveBeenCalled();
-      expect(mockConnector.withConfig).toHaveBeenCalledWith(mockConfig.rabbitmq);
-      expect(mockConnector.withExchange).toHaveBeenCalledWith("test-exchange", {
-        durable: true,
+      expect(RabbitMQClient).toHaveBeenCalledWith({
+        url: "amqp://guest:guest@localhost:5672//",
       });
-      expect(mockConnector.withQueue).toHaveBeenCalledWith(
-        "test-queue",
-        {
-          durable: true,
-          deadLetterExchange: "test-dlx",
-          deadLetterRoutingKey: "test.dlx.routing.key",
-        },
-        "test.routing.key",
-      );
-      expect(mockConnector.onMessage).toHaveBeenCalledWith(expect.any(Function));
     });
   });
 
@@ -236,10 +213,34 @@ describe("CommonSettingsBridge", () => {
       );
     });
 
-    it("should build AMQP connector", async () => {
+    it("should init RabbitMQ client and subscribe to the configured queue", async () => {
       await bridge.start();
 
-      expect(mockConnector.build).toHaveBeenCalled();
+      expect(mockClient.init).toHaveBeenCalled();
+      expect(mockClient.subscribe).toHaveBeenCalledWith(
+        "test-exchange",
+        "test.routing.key",
+        "test-queue",
+        expect.any(Function),
+      );
+    });
+
+    it("should default routingKey to '#' when omitted from config", async () => {
+      const configNoRouting = { ...mockConfig, rabbitmq: { ...mockConfig.rabbitmq, routingKey: undefined } };
+      const newBridge = new CommonSettingsBridge(configNoRouting as unknown as typeof mockConfig);
+      await newBridge.start();
+
+      expect(mockClient.subscribe).toHaveBeenCalledWith("test-exchange", "#", "test-queue", expect.any(Function));
+    });
+
+    it("should close the RabbitMQ client if subscribe() fails after init() succeeded", async () => {
+      mockClient.subscribe.mockRejectedValueOnce(new Error("PRECONDITION_FAILED"));
+
+      const newBridge = new CommonSettingsBridge(mockConfig);
+      await expect(newBridge.start()).rejects.toThrow("PRECONDITION_FAILED");
+
+      expect(mockClient.init).toHaveBeenCalled();
+      expect(mockClient.close).toHaveBeenCalled();
     });
 
     it("should handle startup errors", async () => {
@@ -257,10 +258,10 @@ describe("CommonSettingsBridge", () => {
       await bridge.start();
     });
 
-    it("should close AMQP connector", async () => {
+    it("should close RabbitMQ client", async () => {
       await bridge.stop();
 
-      expect(mockConnector.close).toHaveBeenCalled();
+      expect(mockClient.close).toHaveBeenCalled();
     });
 
     it("should close database connection", async () => {
@@ -271,28 +272,43 @@ describe("CommonSettingsBridge", () => {
 
     it("should handle shutdown errors", async () => {
       const error = new Error("Shutdown failed");
-      mockConnector.close.mockRejectedValue(error);
+      mockClient.close.mockRejectedValue(error);
 
       await expect(bridge.stop()).rejects.toThrow("Shutdown failed");
+    });
+
+    it("should still close the database even if RabbitMQ client.close() rejects", async () => {
+      mockClient.close.mockRejectedValueOnce(new Error("drain timeout"));
+
+      await expect(bridge.stop()).rejects.toThrow("drain timeout");
+
+      expect(mockClient.close).toHaveBeenCalled();
+      expect(mockDatabase.close).toHaveBeenCalled();
     });
   });
 
   describe("#handleMessage orchestration", () => {
-    let handleMessageFn: (msg: ConsumeMessage, channel: Channel) => Promise<void>;
-    let mockMessage: ConsumeMessage;
+    let handleMessageFn: (message: Record<string, unknown>) => Promise<void>;
     let mockUserSettings: StoredUserSettings | null;
     let mockPayload: ISettingsPayload;
+
+    const buildMessage = (overrides: Record<string, unknown> = {}): Record<string, unknown> => ({
+      source: "test-app",
+      request_id: "req-123",
+      timestamp: 1640995200000,
+      version: 2,
+      payload: mockPayload,
+      ...overrides,
+    });
 
     beforeEach(async () => {
       bridge = new CommonSettingsBridge(mockConfig);
 
-      // Capture the message handler
-      const onMessageCall = (mockConnector.onMessage as jest.Mock).mock.calls[0];
-      handleMessageFn = onMessageCall[0];
-
       await bridge.start();
 
-      // Setup test data
+      const subscribeCall = (mockClient.subscribe as jest.Mock).mock.calls[0];
+      handleMessageFn = subscribeCall[3];
+
       mockPayload = {
         matrix_id: "@user:example.com",
         display_name: "John Doe",
@@ -306,66 +322,35 @@ describe("CommonSettingsBridge", () => {
       };
     });
 
-    it("should throw error if JSON parse fails", async () => {
-      mockMessage = {
-        content: Buffer.from("invalid json {{{"),
-      } as ConsumeMessage;
+    it("should ack-and-drop a message missing request_id (no retry storm)", async () => {
+      const message = buildMessage({ request_id: undefined });
 
-      await expect(handleMessageFn(mockMessage, mockChannel)).rejects.toThrow("Failed to parse AMQP message payload");
+      await expect(handleMessageFn(message)).resolves.toBeUndefined();
+      expect(mockSettingsRepo.getUserSettings).not.toHaveBeenCalled();
+      expect(mockProfileUpdater.processChanges).not.toHaveBeenCalled();
     });
 
-    it("should throw error if message is missing request_id", async () => {
-      mockMessage = {
-        content: Buffer.from(
-          JSON.stringify({
-            source: "test-app",
-            timestamp: 1640995200000,
-            version: 1,
-            payload: mockPayload,
-          }),
-        ),
-      } as ConsumeMessage;
+    it("should ack-and-drop a message missing matrix_id in payload", async () => {
+      const message = buildMessage({ version: 1, payload: { display_name: "Test" } });
 
-      await expect(handleMessageFn(mockMessage, mockChannel)).rejects.toThrow(
-        "Message missing required request_id field",
-      );
+      await expect(handleMessageFn(message)).resolves.toBeUndefined();
+      expect(mockSettingsRepo.getUserSettings).not.toHaveBeenCalled();
+      expect(mockProfileUpdater.processChanges).not.toHaveBeenCalled();
     });
 
-    it("should throw error if message is missing matrix_id in payload", async () => {
-      mockMessage = {
-        content: Buffer.from(
-          JSON.stringify({
-            source: "test-app",
-            request_id: "req-123",
-            timestamp: 1640995200000,
-            version: 1,
-            payload: { display_name: "Test" },
-          }),
-        ),
-      } as ConsumeMessage;
-
-      await expect(handleMessageFn(mockMessage, mockChannel)).rejects.toThrow(
-        "User ID (matrix_id) not provided in message payload",
-      );
+    it("should ack-and-drop a non-object payload root", async () => {
+      await expect(handleMessageFn(null as unknown as Record<string, unknown>)).resolves.toBeUndefined();
+      await expect(handleMessageFn(42 as unknown as Record<string, unknown>)).resolves.toBeUndefined();
+      await expect(handleMessageFn([] as unknown as Record<string, unknown>)).resolves.toBeUndefined();
+      expect(mockSettingsRepo.getUserSettings).not.toHaveBeenCalled();
+      expect(mockProfileUpdater.processChanges).not.toHaveBeenCalled();
     });
 
     it("should get user settings from repository", async () => {
       mockUserSettings = null;
       mockSettingsRepo.getUserSettings.mockResolvedValue(mockUserSettings);
 
-      mockMessage = {
-        content: Buffer.from(
-          JSON.stringify({
-            source: "test-app",
-            request_id: "req-123",
-            timestamp: 1640995200000,
-            version: 2,
-            payload: mockPayload,
-          }),
-        ),
-      } as ConsumeMessage;
-
-      await handleMessageFn(mockMessage, mockChannel);
+      await handleMessageFn(buildMessage());
 
       expect(mockSettingsRepo.getUserSettings).toHaveBeenCalledWith("@user:example.com");
     });
@@ -376,23 +361,11 @@ describe("CommonSettingsBridge", () => {
         payload: mockPayload,
         version: 1,
         timestamp: 1640991600000,
-        request_id: "req-123", // Same as incoming
+        request_id: "req-123",
       };
       mockSettingsRepo.getUserSettings.mockResolvedValue(mockUserSettings);
 
-      mockMessage = {
-        content: Buffer.from(
-          JSON.stringify({
-            source: "test-app",
-            request_id: "req-123",
-            timestamp: 1640995200000,
-            version: 2,
-            payload: mockPayload,
-          }),
-        ),
-      } as ConsumeMessage;
-
-      await handleMessageFn(mockMessage, mockChannel);
+      await handleMessageFn(buildMessage());
 
       expect(mockProfileUpdater.processChanges).not.toHaveBeenCalled();
       expect(mockSettingsRepo.saveSettings).not.toHaveBeenCalled();
@@ -402,25 +375,13 @@ describe("CommonSettingsBridge", () => {
       mockUserSettings = {
         nickname: "@user:example.com",
         payload: mockPayload,
-        version: 5, // Higher than incoming
+        version: 5,
         timestamp: 1640998800000,
         request_id: "req-999",
       };
       mockSettingsRepo.getUserSettings.mockResolvedValue(mockUserSettings);
 
-      mockMessage = {
-        content: Buffer.from(
-          JSON.stringify({
-            source: "test-app",
-            request_id: "req-123",
-            timestamp: 1640995200000,
-            version: 2, // Lower than stored
-            payload: mockPayload,
-          }),
-        ),
-      } as ConsumeMessage;
-
-      await handleMessageFn(mockMessage, mockChannel);
+      await handleMessageFn(buildMessage());
 
       expect(mockProfileUpdater.processChanges).not.toHaveBeenCalled();
       expect(mockSettingsRepo.saveSettings).not.toHaveBeenCalled();
@@ -430,19 +391,7 @@ describe("CommonSettingsBridge", () => {
       mockUserSettings = null;
       mockSettingsRepo.getUserSettings.mockResolvedValue(mockUserSettings);
 
-      mockMessage = {
-        content: Buffer.from(
-          JSON.stringify({
-            source: "test-app",
-            request_id: "req-123",
-            timestamp: 1640995200000,
-            version: 2,
-            payload: mockPayload,
-          }),
-        ),
-      } as ConsumeMessage;
-
-      await handleMessageFn(mockMessage, mockChannel);
+      await handleMessageFn(buildMessage());
 
       expect(mockProfileUpdater.processChanges).toHaveBeenCalledWith("@user:example.com", null, mockPayload);
     });
@@ -468,19 +417,7 @@ describe("CommonSettingsBridge", () => {
       };
       mockSettingsRepo.getUserSettings.mockResolvedValue(mockUserSettings);
 
-      mockMessage = {
-        content: Buffer.from(
-          JSON.stringify({
-            source: "test-app",
-            request_id: "req-123",
-            timestamp: 1640995200000,
-            version: 2,
-            payload: mockPayload,
-          }),
-        ),
-      } as ConsumeMessage;
-
-      await handleMessageFn(mockMessage, mockChannel);
+      await handleMessageFn(buildMessage());
 
       expect(mockProfileUpdater.processChanges).toHaveBeenCalledWith("@user:example.com", oldPayload, mockPayload);
     });
@@ -489,19 +426,7 @@ describe("CommonSettingsBridge", () => {
       mockUserSettings = null;
       mockSettingsRepo.getUserSettings.mockResolvedValue(mockUserSettings);
 
-      mockMessage = {
-        content: Buffer.from(
-          JSON.stringify({
-            source: "test-app",
-            request_id: "req-123",
-            timestamp: 1640995200000,
-            version: 2,
-            payload: mockPayload,
-          }),
-        ),
-      } as ConsumeMessage;
-
-      await handleMessageFn(mockMessage, mockChannel);
+      await handleMessageFn(buildMessage());
 
       expect(mockSettingsRepo.saveSettings).toHaveBeenCalledWith(
         "@user:example.com",
@@ -523,19 +448,7 @@ describe("CommonSettingsBridge", () => {
       };
       mockSettingsRepo.getUserSettings.mockResolvedValue(mockUserSettings);
 
-      mockMessage = {
-        content: Buffer.from(
-          JSON.stringify({
-            source: "test-app",
-            request_id: "req-123",
-            timestamp: 1640995200000,
-            version: 2,
-            payload: mockPayload,
-          }),
-        ),
-      } as ConsumeMessage;
-
-      await handleMessageFn(mockMessage, mockChannel);
+      await handleMessageFn(buildMessage());
 
       expect(mockSettingsRepo.saveSettings).toHaveBeenCalledWith(
         "@user:example.com",
@@ -567,21 +480,8 @@ describe("CommonSettingsBridge", () => {
       };
       mockSettingsRepo.getUserSettings.mockResolvedValue(mockUserSettings);
 
-      mockMessage = {
-        content: Buffer.from(
-          JSON.stringify({
-            source: "test-app",
-            request_id: "req-123",
-            timestamp: 1640995200000,
-            version: 2,
-            payload: mockPayload,
-          }),
-        ),
-      } as ConsumeMessage;
+      await handleMessageFn(buildMessage());
 
-      await handleMessageFn(mockMessage, mockChannel);
-
-      // Verify orchestration order: getUserSettings -> processChanges -> saveSettings
       const getSettingsOrder = mockSettingsRepo.getUserSettings.mock.invocationCallOrder[0];
       const processChangesOrder = mockProfileUpdater.processChanges.mock.invocationCallOrder[0];
       const saveSettingsOrder = mockSettingsRepo.saveSettings.mock.invocationCallOrder[0];

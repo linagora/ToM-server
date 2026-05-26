@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/promise-function-async */
-import type { Channel, ConsumeMessage } from "amqplib";
-import { type BridgeConfig, MessageParseError, UserIdNotProvidedError } from "./types";
+import type { BridgeConfig } from "./types";
 
 // Must provide factory functions for mocks used at module load time
 jest.mock("matrix-appservice-bridge", () => {
@@ -25,8 +24,8 @@ jest.mock("matrix-appservice-bridge", () => {
   };
 });
 
-jest.mock("@twake/amqp-connector", () => ({
-  AMQPConnector: jest.fn(),
+jest.mock("@linagora/rabbitmq-client", () => ({
+  RabbitMQClient: jest.fn(),
 }));
 
 jest.mock("@twake/db", () => ({
@@ -84,39 +83,27 @@ const mockDb = {
   ensureColumns: mockDbEnsureColumns,
 };
 
-const mockConnectorBuild = jest.fn(() => Promise.resolve());
-const mockConnectorClose = jest.fn(() => Promise.resolve());
-let messageHandler: (msg: ConsumeMessage, channel: Channel) => Promise<void>;
+const mockClientInit = jest.fn(() => Promise.resolve());
+const mockClientClose = jest.fn(() => Promise.resolve());
+let messageHandler: (message: Record<string, unknown>) => Promise<void>;
 
-const mockConnectorWithConfig = jest.fn();
-const mockConnectorWithExchange = jest.fn();
-const mockConnectorWithQueue = jest.fn();
-const mockConnectorOnMessage = jest.fn();
-
-const mockConnector = {
-  withConfig: mockConnectorWithConfig,
-  withExchange: mockConnectorWithExchange,
-  withQueue: mockConnectorWithQueue,
-  onMessage: mockConnectorOnMessage,
-  build: mockConnectorBuild,
-  close: mockConnectorClose,
-};
-
-// Setup return this chaining
-mockConnectorWithConfig.mockReturnValue(mockConnector);
-mockConnectorWithExchange.mockReturnValue(mockConnector);
-mockConnectorWithQueue.mockReturnValue(mockConnector);
-mockConnectorOnMessage.mockImplementation((handler: any) => {
+const mockClientSubscribe = jest.fn((_exchange: string, _routingKey: string, _queue: string, handler: any) => {
   messageHandler = handler;
-  return mockConnector;
+  return Promise.resolve();
 });
+
+const mockClient = {
+  init: mockClientInit,
+  subscribe: mockClientSubscribe,
+  close: mockClientClose,
+};
 
 beforeAll(() => {
   const { Bridge } = jest.requireMock("matrix-appservice-bridge");
   Bridge.mockImplementation(() => mockBridge);
 
-  const { AMQPConnector } = jest.requireMock("@twake/amqp-connector");
-  AMQPConnector.mockImplementation(() => mockConnector);
+  const { RabbitMQClient } = jest.requireMock("@linagora/rabbitmq-client");
+  RabbitMQClient.mockImplementation(() => mockClient);
 
   const { Database } = jest.requireMock("@twake/db");
   Database.mockImplementation(() => mockDb);
@@ -144,13 +131,10 @@ beforeEach(() => {
   mockUploadContent.mockResolvedValue("mxc://example.com/uploaded123");
   // Mock global fetch for avatar downloads
   global.fetch = jest.fn(() => Promise.resolve(createMockFetchResponse())) as any;
-  // Re-setup chaining after clearAllMocks
-  mockConnectorWithConfig.mockReturnValue(mockConnector);
-  mockConnectorWithExchange.mockReturnValue(mockConnector);
-  mockConnectorWithQueue.mockReturnValue(mockConnector);
-  mockConnectorOnMessage.mockImplementation((handler: any) => {
+  // Re-bind capture after clearAllMocks
+  mockClientSubscribe.mockImplementation((_exchange: string, _routingKey: string, _queue: string, handler: any) => {
     messageHandler = handler;
-    return mockConnector;
+    return Promise.resolve();
   });
 });
 
@@ -171,8 +155,6 @@ const createTestConfig = (adminRetryMode: "disabled" | "fallback" | "exclusive" 
     exchange: "common-settings",
     queue: "settings-updates",
     routingKey: "settings.update",
-    deadLetterExchange: "common-settings-dlx",
-    deadLetterRoutingKey: "settings.dead",
   },
   database: {
     engine: "sqlite",
@@ -201,27 +183,15 @@ const createTestMessage = (overrides: Record<string, any> = {}) => ({
   ...overrides,
 });
 
-const createMockConsumeMessage = (content: string): ConsumeMessage =>
-  ({
-    content: Buffer.from(content),
-    fields: {},
-    properties: {},
-  }) as ConsumeMessage;
-
-const mockChannel = {} as Channel;
-
 describe("CommonSettingsBridge - Message Parsing", () => {
-  it("should parse valid JSON message", async () => {
+  it("should process a valid message", async () => {
     const { CommonSettingsBridge } = await import("./index");
     const config = createTestConfig();
     const bridge = new (CommonSettingsBridge as any)(config);
 
     await bridge.start();
 
-    const testMessage = createTestMessage();
-    const msg = createMockConsumeMessage(JSON.stringify(testMessage));
-
-    await messageHandler(msg, mockChannel);
+    await messageHandler(createTestMessage());
 
     expect(mockDbInsert).toHaveBeenCalledWith(
       "usersettings",
@@ -231,19 +201,7 @@ describe("CommonSettingsBridge - Message Parsing", () => {
     );
   });
 
-  it("should throw MessageParseError for invalid JSON", async () => {
-    const { CommonSettingsBridge } = await import("./index");
-    const config = createTestConfig();
-    const bridge = new (CommonSettingsBridge as any)(config);
-
-    await bridge.start();
-
-    const msg = createMockConsumeMessage("invalid json {");
-
-    await expect(messageHandler(msg, mockChannel)).rejects.toThrow(MessageParseError);
-  });
-
-  it("should throw UserIdNotProvidedError when matrix_id is missing", async () => {
+  it("should ack-and-drop messages where matrix_id is missing (no retry storm)", async () => {
     const { CommonSettingsBridge } = await import("./index");
     const config = createTestConfig();
     const bridge = new (CommonSettingsBridge as any)(config);
@@ -255,9 +213,9 @@ describe("CommonSettingsBridge - Message Parsing", () => {
         display_name: "Test User",
       },
     });
-    const msg = createMockConsumeMessage(JSON.stringify(testMessage));
 
-    await expect(messageHandler(msg, mockChannel)).rejects.toThrow(UserIdNotProvidedError);
+    await expect(messageHandler(testMessage)).resolves.toBeUndefined();
+    expect(mockDbInsert).not.toHaveBeenCalled();
   });
 });
 
@@ -276,9 +234,7 @@ describe("CommonSettingsBridge - Avatar URL Resolution", () => {
         avatar: "mxc://example.com/already-mxc",
       },
     });
-    const msg = createMockConsumeMessage(JSON.stringify(testMessage));
-
-    await messageHandler(msg, mockChannel);
+    await messageHandler(testMessage);
 
     expect(mockUploadContentFromUrl).not.toHaveBeenCalled();
     expect(mockSetAvatarUrl).toHaveBeenCalledWith("mxc://example.com/already-mxc");
@@ -298,9 +254,7 @@ describe("CommonSettingsBridge - Avatar URL Resolution", () => {
         avatar: "https://example.com/avatar.png",
       },
     });
-    const msg = createMockConsumeMessage(JSON.stringify(testMessage));
-
-    await messageHandler(msg, mockChannel);
+    await messageHandler(testMessage);
 
     expect(global.fetch).toHaveBeenCalledWith(
       "https://example.com/avatar.png",
@@ -326,9 +280,7 @@ describe("CommonSettingsBridge - Avatar URL Resolution", () => {
         avatar: "https://example.com/avatar.png",
       },
     });
-    const msg = createMockConsumeMessage(JSON.stringify(testMessage));
-
-    await expect(messageHandler(msg, mockChannel)).rejects.toThrow("Upload failed");
+    await expect(messageHandler(testMessage)).rejects.toThrow("Upload failed");
   });
 
   it("should use uploaded MXC URL with admin API in EXCLUSIVE mode", async () => {
@@ -345,9 +297,7 @@ describe("CommonSettingsBridge - Avatar URL Resolution", () => {
         avatar: "https://example.com/avatar.png",
       },
     });
-    const msg = createMockConsumeMessage(JSON.stringify(testMessage));
-
-    await messageHandler(msg, mockChannel);
+    await messageHandler(testMessage);
 
     expect(global.fetch).toHaveBeenCalledWith(
       "https://example.com/avatar.png",
@@ -370,9 +320,7 @@ describe("CommonSettingsBridge - Matrix Updates", () => {
     await bridge.start();
 
     const testMessage = createTestMessage();
-    const msg = createMockConsumeMessage(JSON.stringify(testMessage));
-
-    await messageHandler(msg, mockChannel);
+    await messageHandler(testMessage);
 
     expect(mockUpsertUser).toHaveBeenCalledWith("@user:example.com", {
       displayname: "Test User",
@@ -388,9 +336,7 @@ describe("CommonSettingsBridge - Matrix Updates", () => {
     await bridge.start();
 
     const testMessage = createTestMessage();
-    const msg = createMockConsumeMessage(JSON.stringify(testMessage));
-
-    await messageHandler(msg, mockChannel);
+    await messageHandler(testMessage);
 
     expect(mockSetDisplayName).toHaveBeenCalledWith("Test User");
   });
@@ -408,9 +354,7 @@ describe("CommonSettingsBridge - Matrix Updates", () => {
     await bridge.start();
 
     const testMessage = createTestMessage();
-    const msg = createMockConsumeMessage(JSON.stringify(testMessage));
-
-    await messageHandler(msg, mockChannel);
+    await messageHandler(testMessage);
 
     expect(mockSetDisplayName).toHaveBeenCalledWith("Test User");
     expect(mockUpsertUser).toHaveBeenCalledWith("@user:example.com", {
@@ -442,9 +386,7 @@ describe("CommonSettingsBridge - Change Detection", () => {
     await bridge.start();
 
     const testMessage = createTestMessage();
-    const msg = createMockConsumeMessage(JSON.stringify(testMessage));
-
-    await messageHandler(msg, mockChannel);
+    await messageHandler(testMessage);
 
     expect(mockSetDisplayName).not.toHaveBeenCalled();
     expect(mockSetAvatarUrl).not.toHaveBeenCalled();
@@ -478,9 +420,7 @@ describe("CommonSettingsBridge - Change Detection", () => {
         avatar: "mxc://example.com/avatar123",
       },
     });
-    const msg = createMockConsumeMessage(JSON.stringify(testMessage));
-
-    await messageHandler(msg, mockChannel);
+    await messageHandler(testMessage);
 
     expect(mockSetDisplayName).toHaveBeenCalledWith("New Name");
     expect(mockSetAvatarUrl).not.toHaveBeenCalled();
@@ -497,7 +437,8 @@ describe("CommonSettingsBridge - Lifecycle", () => {
 
     expect(mockRun).toHaveBeenCalledWith(0);
     expect(mockEnsureRegistered).toHaveBeenCalled();
-    expect(mockConnectorBuild).toHaveBeenCalled();
+    expect(mockClientInit).toHaveBeenCalled();
+    expect(mockClientSubscribe).toHaveBeenCalled();
   });
 
   it("should stop successfully", async () => {
@@ -508,7 +449,7 @@ describe("CommonSettingsBridge - Lifecycle", () => {
     await bridge.start();
     await bridge.stop();
 
-    expect(mockConnectorClose).toHaveBeenCalled();
+    expect(mockClientClose).toHaveBeenCalled();
     expect(mockDbClose).toHaveBeenCalled();
   });
 

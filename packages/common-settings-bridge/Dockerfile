@@ -24,7 +24,6 @@ COPY package.json package-lock.json lerna.json ./
 # Copy only required workspace package.json files first (for better caching)
 COPY packages/config-parser/package.json ./packages/config-parser/
 COPY packages/logger/package.json ./packages/logger/
-COPY packages/amqp-connector/package.json ./packages/amqp-connector/
 COPY packages/db/package.json ./packages/db/
 COPY packages/common-settings-bridge/package.json ./packages/common-settings-bridge/
 
@@ -41,9 +40,6 @@ COPY packages/config-parser/tsconfig.json packages/config-parser/rollup.config.j
 COPY packages/logger/src ./packages/logger/src
 COPY packages/logger/tsconfig.json packages/logger/rollup.config.js ./packages/logger/
 
-COPY packages/amqp-connector/src ./packages/amqp-connector/src
-COPY packages/amqp-connector/tsconfig.json packages/amqp-connector/rollup.config.js ./packages/amqp-connector/
-
 COPY packages/db/src ./packages/db/src
 COPY packages/db/tsconfig.json packages/db/rollup.config.js ./packages/db/
 
@@ -54,7 +50,6 @@ COPY packages/common-settings-bridge/tsconfig.json packages/common-settings-brid
 RUN npm rebuild && \
     npm run build --workspace=@twake/config-parser && \
     npm run build --workspace=@twake/logger && \
-    npm run build --workspace=@twake/amqp-connector && \
     npm run build --workspace=@twake/db && \
     npm run build --workspace=@twake/common-settings-bridge
 
@@ -71,7 +66,6 @@ COPY package.json package-lock.json lerna.json ./
 # Copy only required workspace package.json files first (for better caching)
 COPY packages/config-parser/package.json ./packages/config-parser/
 COPY packages/logger/package.json ./packages/logger/
-COPY packages/amqp-connector/package.json ./packages/amqp-connector/
 COPY packages/db/package.json ./packages/db/
 COPY packages/common-settings-bridge/package.json ./packages/common-settings-bridge/
 
@@ -100,9 +94,6 @@ COPY --from=builder /usr/src/app/packages/config-parser/package.json ./packages/
 
 COPY --from=builder /usr/src/app/packages/logger/dist ./packages/logger/dist
 COPY --from=builder /usr/src/app/packages/logger/package.json ./packages/logger/
-
-COPY --from=builder /usr/src/app/packages/amqp-connector/dist ./packages/amqp-connector/dist
-COPY --from=builder /usr/src/app/packages/amqp-connector/package.json ./packages/amqp-connector/
 
 COPY --from=builder /usr/src/app/packages/db/dist ./packages/db/dist
 COPY --from=builder /usr/src/app/packages/db/package.json ./packages/db/

@@ -259,8 +259,6 @@
       "enabled": true,
       "queue": "settings.queue",
       "exchange": "exchange.exchange",
-      "deadLetterExchange": "settings.dead.letter.exchange",
-      "deadLetterRoutingKey": "settings.dead.letter.routing.key",
       "api_url": "http://host.docker.internal:4000",
       "api_secret": "secret"
     },

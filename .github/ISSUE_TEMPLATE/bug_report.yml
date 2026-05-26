@@ -14,7 +14,6 @@ body:
       label: Package
       description: Which package is affected?
       options:
-        - amqp-connector
         - common-settings-bridge
         - config-parser
         - crypto
