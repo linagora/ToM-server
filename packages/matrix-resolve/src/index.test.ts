@@ -1,11 +1,6 @@
 import fetch from "node-fetch";
-import { MatrixResolve, matrixResolve, type WellKnownMatrixServer } from "./index";
 
-type DnsResolve = (
-  name: string,
-  type: string,
-  callback: (err: null | Error, records: null | Record<string, string | number>) => void,
-) => void;
+import { MatrixResolve, matrixResolve, type WellKnownMatrixServer } from "./index";
 
 jest.mock("node-fetch", () => jest.fn());
 
@@ -52,7 +47,7 @@ describe("matrixResolve", () => {
         const wellKnown: WellKnownMatrixServer = {
           "m.server": "1.2.3.5:678",
         };
-        (fetch as jest.Mock<any, any, any>).mockResolvedValue({
+        (fetch as jest.Mock).mockResolvedValue({
           json: jest.fn().mockResolvedValue(wellKnown),
         });
         expect(await matrixResolve("matrix.org")).toBe("https://1.2.3.5:678/");
@@ -62,7 +57,7 @@ describe("matrixResolve", () => {
         const wellKnown: WellKnownMatrixServer = {
           "m.server": "1.2.3.5",
         };
-        (fetch as jest.Mock<any, any, any>).mockResolvedValue({
+        (fetch as jest.Mock).mockResolvedValue({
           json: jest.fn().mockResolvedValue(wellKnown),
         });
         expect(await matrixResolve("matrix.org")).toBe("https://1.2.3.5:8448/");
@@ -72,7 +67,7 @@ describe("matrixResolve", () => {
         const wellKnown: WellKnownMatrixServer = {
           "m.server": "matrix-federation.matrix.org:443",
         };
-        (fetch as jest.Mock<any, any, any>).mockResolvedValue({
+        (fetch as jest.Mock).mockResolvedValue({
           json: jest.fn().mockResolvedValue(wellKnown),
         });
         expect(await matrixResolve("matrix.org")).toBe("https://matrix-federation.matrix.org:443/");
@@ -81,7 +76,7 @@ describe("matrixResolve", () => {
 
     describe("when .well-knwon/matrix/server#m.server is not available", () => {
       beforeEach(() => {
-        (fetch as jest.Mock<any, any, any>).mockResolvedValue({
+        (fetch as jest.Mock).mockResolvedValue({
           json: Promise.reject,
         });
       });
@@ -113,7 +108,7 @@ describe("MatrixResolve", () => {
     const wellKnown: WellKnownMatrixServer = {
       "m.server": "1.2.3.5",
     };
-    (fetch as jest.Mock<any, any, any>).mockResolvedValue({
+    (fetch as jest.Mock).mockResolvedValue({
       json: jest.fn().mockResolvedValue(wellKnown),
     });
     const m = new MatrixResolve();
@@ -124,7 +119,7 @@ describe("MatrixResolve", () => {
     const wellKnown: WellKnownMatrixServer = {
       "m.server": "1.2.3.5",
     };
-    (fetch as jest.Mock<any, any, any>).mockResolvedValue({
+    (fetch as jest.Mock).mockResolvedValue({
       json: jest.fn().mockResolvedValue(wellKnown),
     });
     const m = new MatrixResolve({
@@ -132,7 +127,7 @@ describe("MatrixResolve", () => {
     });
     await m.cacheReady;
     expect(await m.resolve("matrix.noexist")).toBe("https://1.2.3.5:8448/");
-    (fetch as jest.Mock<any, any, any>).mockResolvedValue({
+    (fetch as jest.Mock).mockResolvedValue({
       json: jest.fn().mockResolvedValue({}),
     });
     expect(await m.resolve("matrix.noexist")).toBe("https://1.2.3.5:8448/");

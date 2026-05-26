@@ -1,4 +1,5 @@
 import dns, { type SrvRecord } from "node:dns";
+
 import fetch from "node-fetch";
 import type { ToadCache } from "toad-cache";
 
@@ -118,7 +119,7 @@ const dnsResolve = (
   name: string,
   //resolve: (value: string | string[]>) => void,
   resolve: (value: string | string[] | PromiseLike<string | string[]>) => void,
-  reject: (reason?: any) => void,
+  reject: (reason?: unknown) => void,
 ): void => {
   /* If the /.well-known request resulted in an error response, a server is
    * found by resolving an SRV record for _matrix-fed._tcp.<hostname>. This
