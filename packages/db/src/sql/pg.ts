@@ -1,6 +1,9 @@
 /* istanbul ignore file */
+
+import type { ClientConfig, Pool as PgPool, QueryResult } from "pg";
+
 import type { TwakeLogger } from "@twake/logger";
-import type { ClientConfig, Pool as PgPool } from "pg";
+
 import type { ColumnDefinition, ColumnInfo, DatabaseConfig, DbBackend, DbGetResult, ISQLCondition } from "../types";
 import createTables from "./_createTables";
 import SQL from "./sql";
@@ -55,7 +58,7 @@ class Pg<T extends string> extends SQL<T> implements DbBackend<T> {
     });
   }
 
-  rawQuery(query: string): Promise<any> {
+  rawQuery(query: string): Promise<unknown> {
     if (!this.db) {
       this.logger.error("[Pg][rawQuery] DB not ready");
       return Promise.reject(new Error("DB not ready"));
@@ -241,6 +244,7 @@ class Pg<T extends string> extends SQL<T> implements DbBackend<T> {
     });
   }
 
+  // biome-ignore lint/complexity/useMaxParams: internal SQL query builder, parameters represent successive WHERE clauses with their join operators
   _get(
     tables: T[],
     fields?: string[],
@@ -345,7 +349,7 @@ class Pg<T extends string> extends SQL<T> implements DbBackend<T> {
           condition,
           query,
         });
-        this.db.query(query, values, (err: any, rows: any) => {
+        this.db.query(query, values, (err: Error | null, rows: QueryResult) => {
           if (err) {
             this.logger.error("[Pg][_get] SELECT failed", {
               tables,
@@ -480,6 +484,7 @@ class Pg<T extends string> extends SQL<T> implements DbBackend<T> {
     );
   }
 
+  // biome-ignore lint/complexity/useMaxParams: internal MIN/MAX query builder, parameters represent successive WHERE clauses
   _getMinMax(
     minmax: "MIN" | "MAX",
     tables: T[],
@@ -629,6 +634,7 @@ class Pg<T extends string> extends SQL<T> implements DbBackend<T> {
     );
   }
 
+  // biome-ignore lint/complexity/useMaxParams: implements the public Database API shape
   getMaxWhereEqualAndLower(
     table: T,
     targetField: string,
@@ -652,6 +658,7 @@ class Pg<T extends string> extends SQL<T> implements DbBackend<T> {
     );
   }
 
+  // biome-ignore lint/complexity/useMaxParams: implements the public Database API shape
   getMinWhereEqualAndHigher(
     table: T,
     targetField: string,
@@ -675,6 +682,7 @@ class Pg<T extends string> extends SQL<T> implements DbBackend<T> {
     );
   }
 
+  // biome-ignore lint/complexity/useMaxParams: implements the public Database API shape
   getMaxWhereEqualAndLowerJoin(
     tables: T[],
     targetField: string,
@@ -1032,6 +1040,7 @@ class Pg<T extends string> extends SQL<T> implements DbBackend<T> {
     return value.replace(/'/g, "''");
   }
 
+  // biome-ignore lint/suspicious/useAwait: `async` makes the early `throw` reject the returned promise consistently with the wrapped callback-style query
   async addColumn(table: T, column: ColumnDefinition): Promise<void> {
     if (!this.db) {
       this.logger.error("[Pg][addColumn] DB not ready", table, column);

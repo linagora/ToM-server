@@ -90,6 +90,7 @@ type GetMinMax<T> = (
   order?: string,
 ) => Promise<DbGetResult>;
 
+// biome-ignore lint/complexity/useMaxParams: existing public Database API shape
 type GetMinMax2<T> = (
   table: T,
   targetField: string,
@@ -99,6 +100,7 @@ type GetMinMax2<T> = (
   order?: string,
 ) => Promise<DbGetResult>;
 
+// biome-ignore lint/complexity/useMaxParams: existing public Database API shape
 type GetMinMaxJoin2<T> = (
   tables: T[],
   targetField: string,
@@ -136,9 +138,16 @@ type AddColumn<T> = (table: T, column: ColumnDefinition) => Promise<void>;
 
 type EnsureColumns<T> = (table: T, columns: ColumnDefinition[]) => Promise<void>;
 
-export interface DbBackend<T> {
+export interface DbBackend<T extends string> {
   ready: Promise<void>;
-  createDatabases: (conf: DatabaseConfig, ...args: any) => Promise<void>;
+  // biome-ignore lint/complexity/useMaxParams: shared by pg/sqlite backends; each tables/indexes/values argument is a distinct concept
+  createDatabases: (
+    conf: DatabaseConfig,
+    tables: Record<T, string>,
+    indexes: Partial<Record<T, string[]>>,
+    initializeValues: Partial<Record<T, Array<Record<string, string | number>>>>,
+    logger: import("@twake/logger").TwakeLogger,
+  ) => Promise<void>;
   insert: Insert<T>;
   get: Get<T>;
   getJoin: GetJoin<T>;

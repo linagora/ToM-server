@@ -1,5 +1,7 @@
-import type { TwakeLogger } from "@twake/logger";
 import type { Database, Statement } from "sqlite3";
+
+import type { TwakeLogger } from "@twake/logger";
+
 import type { ColumnDefinition, ColumnInfo, DatabaseConfig, DbBackend, DbGetResult, ISQLCondition } from "../types";
 import createTables from "./_createTables";
 import SQL from "./sql";
@@ -237,6 +239,7 @@ class SQLite<T extends string> extends SQL<T> implements DbBackend<T> {
     });
   }
 
+  // biome-ignore lint/complexity/useMaxParams: internal SQL query builder, parameters represent successive WHERE clauses with their join operators
   _get(
     tables: T[],
     fields?: string[],
@@ -487,6 +490,7 @@ class SQLite<T extends string> extends SQL<T> implements DbBackend<T> {
     );
   }
 
+  // biome-ignore lint/complexity/useMaxParams: internal MIN/MAX query builder, parameters represent successive WHERE clauses
   _getMinMax(
     minmax: "MIN" | "MAX",
     tables: T[],
@@ -647,6 +651,7 @@ class SQLite<T extends string> extends SQL<T> implements DbBackend<T> {
     );
   }
 
+  // biome-ignore lint/complexity/useMaxParams: implements the public Database API shape
   getMaxWhereEqualAndLower(
     table: T,
     targetField: string,
@@ -670,6 +675,7 @@ class SQLite<T extends string> extends SQL<T> implements DbBackend<T> {
     );
   }
 
+  // biome-ignore lint/complexity/useMaxParams: implements the public Database API shape
   getMinWhereEqualAndHigher(
     table: T,
     targetField: string,
@@ -693,6 +699,7 @@ class SQLite<T extends string> extends SQL<T> implements DbBackend<T> {
     );
   }
 
+  // biome-ignore lint/complexity/useMaxParams: implements the public Database API shape
   getMaxWhereEqualAndLowerJoin(
     tables: T[],
     targetField: string,
@@ -987,6 +994,7 @@ class SQLite<T extends string> extends SQL<T> implements DbBackend<T> {
     });
   }
 
+  // biome-ignore lint/suspicious/useAwait: `async` makes the early `throw` reject the returned promise consistently with the wrapped callback-style query
   async getTableColumns(table: T): Promise<ColumnInfo[]> {
     if (!this.db) {
       this.logger.error("[SQLite][getTableColumns] DB not ready", { table });
@@ -1064,6 +1072,7 @@ class SQLite<T extends string> extends SQL<T> implements DbBackend<T> {
     return typePattern.test(type.trim());
   }
 
+  // biome-ignore lint/suspicious/useAwait: `async` makes the early `throw` reject the returned promise consistently with the wrapped callback-style query
   async addColumn(table: T, column: ColumnDefinition): Promise<void> {
     if (!this.db) {
       this.logger.error("[SQLite][addColumn] DB not ready", { table, column });

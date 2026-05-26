@@ -1,4 +1,5 @@
 import type { TwakeLogger } from "@twake/logger";
+
 import Pg from "./sql/pg";
 import SQLite from "./sql/sqlite";
 import type { ColumnDefinition, ColumnInfo, DatabaseConfig, DbBackend, DbGetResult, ISQLCondition } from "./types";
@@ -53,8 +54,15 @@ class Database<T extends string> implements DbBackend<T> {
     });
   }
 
-  createDatabases(conf: DatabaseConfig, ...args: any): Promise<void> {
-    return this.db.createDatabases(conf, ...args);
+  // biome-ignore lint/complexity/useMaxParams: forwards to the DbBackend interface
+  createDatabases(
+    conf: DatabaseConfig,
+    tables: Record<T, string>,
+    indexes: Partial<Record<T, string[]>>,
+    initializeValues: Partial<Record<T, Array<Record<string, string | number>>>>,
+    logger: import("@twake/logger").TwakeLogger,
+  ): Promise<void> {
+    return this.db.createDatabases(conf, tables, indexes, initializeValues, logger);
   }
 
   insert(table: T, values: Record<string, string | number>): Promise<DbGetResult> {
@@ -128,6 +136,7 @@ class Database<T extends string> implements DbBackend<T> {
     return this.db.getMaxWhereEqual(table, targetField, fields, filterFields, order);
   }
 
+  // biome-ignore lint/complexity/useMaxParams: existing public Database API shape, consumed by all downstream packages
   getMaxWhereEqualAndLower(
     table: T,
     targetField: string,
@@ -139,6 +148,7 @@ class Database<T extends string> implements DbBackend<T> {
     return this.db.getMaxWhereEqualAndLower(table, targetField, fields, filterFields1, filterFields2, order);
   }
 
+  // biome-ignore lint/complexity/useMaxParams: existing public Database API shape, consumed by all downstream packages
   getMinWhereEqualAndHigher(
     table: T,
     targetField: string,
@@ -150,6 +160,7 @@ class Database<T extends string> implements DbBackend<T> {
     return this.db.getMinWhereEqualAndHigher(table, targetField, fields, filterFields1, filterFields2, order);
   }
 
+  // biome-ignore lint/complexity/useMaxParams: existing public Database API shape, consumed by all downstream packages
   getMaxWhereEqualAndLowerJoin(
     tables: T[],
     targetField: string,

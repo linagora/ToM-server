@@ -1,4 +1,5 @@
 import type { TwakeLogger } from "@twake/logger";
+
 import type { DatabaseConfig, DbGetResult } from "../types";
 import type { PgDatabase } from "./pg";
 import type { SQLiteDatabase } from "./sqlite";
@@ -30,14 +31,14 @@ abstract class SQL<T extends string> {
 
   getCount(table: T, field: string, value?: string | number | string[]): Promise<number> {
     return new Promise((resolve, reject) => {
-      const args: any[] = [table, [`count(${field}) as count`]];
+      const args: unknown[] = [table, [`count(${field}) as count`]];
       if (value !== null && value !== undefined) args.push({ [field]: value });
       // @ts-expect-error implemented later
       this.get(...args)
         .then((rows: Array<Record<string, string>>) => {
           resolve(parseInt(rows[0].count, 10));
         })
-        .catch((e: any) => {
+        .catch((e: unknown) => {
           /* istanbul ignore next */
           reject(e);
         });
