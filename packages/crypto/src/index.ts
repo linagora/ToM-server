@@ -132,13 +132,13 @@ export const generateKeyPair = (
   throw new Error("Unsupported algorithm");
 };
 
-export const canonicalJson = (value: any): string => {
-  return JSON.stringify(value, (_key, val) =>
+export const canonicalJson = (value: unknown): string => {
+  return JSON.stringify(value, (_key, val: unknown) =>
     typeof val === "object" && val !== null && !Array.isArray(val)
-      ? Object.keys(val)
+      ? Object.keys(val as Record<string, unknown>)
           .sort()
-          .reduce<any>((sorted, key) => {
-            sorted[key] = val[key];
+          .reduce<Record<string, unknown>>((sorted, key) => {
+            sorted[key] = (val as Record<string, unknown>)[key];
             return sorted;
           }, {})
       : val,
@@ -146,9 +146,9 @@ export const canonicalJson = (value: any): string => {
 };
 
 interface JsonObject {
-  [key: string]: any;
+  [key: string]: unknown;
   signatures?: Record<string, Record<string, string>>;
-  unsigned?: any;
+  unsigned?: unknown;
 }
 
 export const signJson = (jsonObj: JsonObject, signingKey: string, signingName: string, keyId: string): JsonObject => {
