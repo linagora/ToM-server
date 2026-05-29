@@ -1,6 +1,6 @@
 services:
   synapse:
-    image: matrixdotorg/synapse:v1.119.0
+    image: matrixdotorg/synapse:v1.152.1
     container_name: synapse
     hostname: matrix.example.com
     volumes:
