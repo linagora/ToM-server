@@ -1,5 +1,5 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.4.8/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.4.14/schema.json",
 
   "vcs": {
     "enabled": true,
@@ -9,7 +9,7 @@
 
   "files": {
     "ignoreUnknown": true,
-    "includes": ["packages/**/*.{js,jsx,ts,tsx}", "apps/**/*.{js,jsx,ts,tsx}"]
+    "includes": ["apps/**/*.{js,jsx,ts,tsx,json}"]
   },
 
   "formatter": {

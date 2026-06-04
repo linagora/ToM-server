@@ -54,7 +54,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.4.8",
     "@crowdsec/express-bouncer": "^0.1.0",
     "@nx/express": "^22.6.1",
     "@nx/jest": "22.6.1",
