@@ -3,10 +3,7 @@
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "apps/tom-server/src",
   "projectType": "application",
-  "implicitDependencies": [
-    "@twake/server",
-    "@twake/federated-identity-service"
-  ],
+  "implicitDependencies": ["@twake/server", "@twake/federated-identity-service"],
   "tags": [],
   "targets": {
     "build": {

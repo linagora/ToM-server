@@ -25,7 +25,7 @@ jobs:
       - name: Setup Biome
         uses: biomejs/setup-biome@v2
         with:
-          version: 2.4.8
+          version: "latest"
 
       - name: Run lint
-        run: biome ci . --vcs-enabled=true --no-errors-on-unmatched --max-diagnostics none
+        run: biome ci . --vcs-enabled=true --reporter=github --no-errors-on-unmatched --max-diagnostics none
