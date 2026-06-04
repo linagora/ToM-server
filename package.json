@@ -41,8 +41,6 @@
     "@opentelemetry/sdk-node": "^0.214.0",
     "@opentelemetry/sdk-trace-node": "^2.6.1",
     "@opentelemetry/semantic-conventions": "^1.40.0",
-    "@twake/amqp-connector": "^0.0.1",
-    "@twake/logger": "^0.0.1",
     "axios": "^1.15.0",
     "cors": "^2.8.6",
     "deepmerge": "^4.3.1",
@@ -117,11 +115,16 @@
     "typescript": "^5.9.3"
   },
   "engines": {
-    "node": "24.14.0",
-    "npm": "11.9.0"
+    "node": ">=18.0.0 <25.0.0"
   },
-  "volta": {
-    "node": "24.14.0",
-    "npm": "11.9.0"
+  "devEngines": {
+    "runtime": {
+      "name": "node",
+      "onFail": "error"
+    },
+    "packageManager": {
+      "name": "npm",
+      "onFail": "error"
+    }
   }
 }

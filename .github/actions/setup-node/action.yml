@@ -4,9 +4,10 @@ description: Setup Node.js with npm cache and install dependencies
 runs:
   using: composite
   steps:
-    - uses: actions/setup-node@v4
+    - uses: actions/setup-node@v6
       with:
-        node-version: "24.14.0"
+        node-version-file: "package.json"
+        check-latest: true
         cache: "npm"
 
     - name: Install dependencies
