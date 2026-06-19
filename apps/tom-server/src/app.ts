@@ -45,16 +45,16 @@ export async function createApp(
     app.get(config.telemetry.metrics_endpoint, prometheusExporter.getMetricsRequestHandler.bind(prometheusExporter));
   }
 
-  // --- Module routers ---
-  const legacyRouter = await createLegacyRouter(config, logger);
-  app.use(legacyRouter);
-
   // --- Root Landing Page ---
   const landingRouter = createLandingRouter(config.landing, logger);
   if (landingRouter) {
     logger.info("Mounting landing page router");
     app.use(landingRouter);
   }
+
+  // --- Module routers ---
+  const legacyRouter = await createLegacyRouter(config, logger);
+  app.use(legacyRouter);
 
   // --- Error handler (single, terminal) ---
   app.use(errorMiddleware(config.i18n));
