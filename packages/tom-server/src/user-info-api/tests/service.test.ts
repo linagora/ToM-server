@@ -41,7 +41,7 @@ const MOCK_DATA = {
     givenName: 'LDAP First Name',
     mail: 'ldap@example.org',
     mobile: '+1 555 123 4567',
-    workplaceFqdn: 'workplace.example.com'
+    twakeWorkplaceUrl: 'workplace.example.com'
   },
   COMMON_SETTINGS: {
     display_name: 'CS Display Name',
@@ -77,7 +77,7 @@ type useProfileTwake = {
   givenName: boolean
   mail: boolean
   phone: boolean
-  workplaceFqdn: boolean
+  twakeWorkplaceUrl: boolean
 }
 const useProfileTwakeDefaults: useProfileTwake = {
   displayName: false,
@@ -85,7 +85,7 @@ const useProfileTwakeDefaults: useProfileTwake = {
   givenName: false,
   mail: false,
   phone: false,
-  workplaceFqdn: false
+  twakeWorkplaceUrl: false
 }
 /**
  * Configure Matrix mock response.
@@ -104,7 +104,7 @@ const mockUserDB = (
     if (Object.values(useProfileDefaults).every((v) => !v)) {
       userDBMock.get.mockResolvedValue([])
     } else {
-      const { displayName, lastName, givenName, mail, phone, workplaceFqdn } =
+      const { displayName, lastName, givenName, mail, phone, twakeWorkplaceUrl } =
         useProfileDefaults
       // Extract local part from MATRIX_MXID (e.g., '@dwho:docker.localhost' -> 'dwho')
       const localPart = MATRIX_MXID.replace(/^@([^:]+):.*$/, '$1')
@@ -132,8 +132,8 @@ const mockUserDB = (
       if (phone) {
         profile.mobile = MOCK_DATA.LDAP.mobile
       }
-      if (workplaceFqdn) {
-        profile.workplaceFqdn = MOCK_DATA.LDAP.workplaceFqdn
+      if (twakeWorkplaceUrl) {
+        profile.twakeWorkplaceUrl = MOCK_DATA.LDAP.twakeWorkplaceUrl
       }
 
       userDBMock.get.mockResolvedValue([profile])
@@ -511,13 +511,13 @@ describe('User Info Service GET with: No feature flags ON', () => {
       expect(user).not.toHaveProperty('timezone')
     })
 
-    it('Should add workplaceFqdn from UserDB when available', async () => {
+    it('Should add twakeWorkplaceUrl from UserDB when available', async () => {
       mockMatrix({ displayName: true, avatar: true })
       mockUserDB({
         displayName: true,
         lastName: true,
         givenName: true,
-        workplaceFqdn: true
+        twakeWorkplaceUrl: true
       })
 
       const user = await svc.get(MATRIX_MXID)
@@ -527,7 +527,7 @@ describe('User Info Service GET with: No feature flags ON', () => {
       expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
       expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
       expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
-      expect(user).toHaveProperty('workplaceFqdn', MOCK_DATA.LDAP.workplaceFqdn)
+      expect(user).toHaveProperty('twakeWorkplaceUrl', MOCK_DATA.LDAP.twakeWorkplaceUrl)
       expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
       expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
       expect(user).not.toHaveProperty('emails')
@@ -536,13 +536,13 @@ describe('User Info Service GET with: No feature flags ON', () => {
       expect(user).not.toHaveProperty('timezone')
     })
 
-    it('Should not add workplaceFqdn when not available in UserDB', async () => {
+    it('Should not add twakeWorkplaceUrl when not available in UserDB', async () => {
       mockMatrix({ displayName: true, avatar: true })
       mockUserDB({
         displayName: true,
         lastName: true,
         givenName: true,
-        workplaceFqdn: false
+        twakeWorkplaceUrl: false
       })
 
       const user = await svc.get(MATRIX_MXID)
@@ -552,7 +552,7 @@ describe('User Info Service GET with: No feature flags ON', () => {
       expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
       expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
       expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
-      expect(user).not.toHaveProperty('workplaceFqdn')
+      expect(user).not.toHaveProperty('twakeWorkplaceUrl')
       expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
       expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
       expect(user).not.toHaveProperty('emails')

@@ -15,6 +15,8 @@ import type { TwakeLogger } from '@twake/logger'
 import { type IAddressbookService } from '../../addressbook-api/types'
 import { AddressbookService } from '../../addressbook-api/services'
 
+const getFirstString = (input: string | string[]): string => Array.isArray(input) ? input[0] : input;
+
 class UserInfoService implements IUserInfoService {
   private readonly addressBookService: IAddressbookService
   private readonly enableAdditionalFeatures: boolean
@@ -46,9 +48,9 @@ class UserInfoService implements IUserInfoService {
           .visibility === 'public'
           ? ProfileVisibility.Public
           : this.config.features.user_profile.default_visibility_settings
-              .visibility === 'contacts'
-          ? ProfileVisibility.Contacts
-          : ProfileVisibility.Private,
+            .visibility === 'contacts'
+            ? ProfileVisibility.Contacts
+            : ProfileVisibility.Private,
       visible_fields: []
     }
 
@@ -102,8 +104,7 @@ class UserInfoService implements IUserInfoService {
     viewer?: string
   ): Promise<Map<string, UserInformation>> => {
     this.logger.debug(
-      `[UserInfoService].getBatch: Gathering information on ${ids.length} user${
-        ids.length > 1 ? 's' : ''
+      `[UserInfoService].getBatch: Gathering information on ${ids.length} user${ids.length > 1 ? 's' : ''
       }`
     )
 
@@ -162,7 +163,8 @@ class UserInfoService implements IUserInfoService {
             'givenName',
             'mail',
             'mobile',
-            'workplaceFqdn'
+            'workplaceFqdn',
+            'twakeWorkplaceUrl'
           ],
           { uid: localParts }
         )) as unknown as Array<Record<string, string | string[]>>
@@ -391,11 +393,21 @@ class UserInfoService implements IUserInfoService {
             )
             userInfo.phones = [directoryRow.mobile as string]
           }
-          if (directoryRow.workplaceFqdn) {
+          // The Twake Workplace user LDAP schema has changed to favor twakeWorkplaceUrl instead of previously choosen workplaceFqdn
+          // https://github.com/linagora/twake-on-matrix/pull/2787
+          // To reflect that change gracefully, ToM returns both deprectaed workplaceFqdn and newly adopted twakeWorkplaceUrl
+          // To also support legacy LDAP users not yet / unsuccessfully migrated we keep looking for both LDAP properties
+          if (directoryRow.twakeWorkplaceUrl || directoryRow.workplaceFqdn) {
+            const workplaceUrl: string = getFirstString(directoryRow.twakeWorkplaceUrl || directoryRow.workplaceFqdn)
             this.logger.debug(
               `[UserInfoService].getBatch: mxid=${id} workplaceFqdn source=directory value="${directoryRow.workplaceFqdn}"`
             )
-            userInfo.workplaceFqdn = directoryRow.workplaceFqdn as string
+            this.logger.debug(
+              `[UserInfoService].getBatch: mxid=${id} twakeWorkplaceUrl source=directory value="${directoryRow.twakeWorkplaceUrl}"`
+            )
+            this.logger.debug(`[UserInfoService].getBatch: returned workplaceFqdn: ${workplaceUrl}`)
+            userInfo.workplaceFqdn = workplaceUrl
+            userInfo.twakeWorkplaceUrl = workplaceUrl
           }
         }
 
