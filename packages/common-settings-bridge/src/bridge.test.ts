@@ -150,9 +150,11 @@ describe("CommonSettingsBridge", () => {
     it("should initialize RabbitMQ client with URL built from config", () => {
       bridge = new CommonSettingsBridge(mockConfig);
 
-      expect(RabbitMQClient).toHaveBeenCalledWith({
-        url: "amqp://guest:guest@localhost:5672//",
-      });
+      expect(RabbitMQClient).toHaveBeenCalledWith(
+        expect.objectContaining({
+          url: "amqp://guest:guest@localhost:5672//",
+        })
+      );
     });
   });
 

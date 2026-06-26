@@ -186,6 +186,7 @@ export class CommonSettingsBridge {
       prefetch: rabbitConfig.prefetch,
       maxRetries: rabbitConfig.maxRetries,
       retryDelay: rabbitConfig.retryDelay,
+      logger: this.#log,
     });
 
     this.#log.debug("RabbitMQ client configured");
