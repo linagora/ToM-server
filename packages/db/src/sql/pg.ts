@@ -9,6 +9,49 @@ export type PgDatabase = PgPool;
 
 class Pg<T extends string> extends SQL<T> implements DbBackend<T> {
   declare db?: PgDatabase;
+
+  protected createVerifiedPool(
+    pg: typeof import('pg'),
+    opts: ClientConfig,
+    label: string
+  ): Promise<PgPool> {
+    const sslType =
+      opts.ssl === null || opts.ssl === undefined || opts.ssl === false
+        ? 'disabled'
+        : opts.ssl === true
+          ? 'enabled'
+          : typeof opts.ssl === 'object'
+            ? 'object'
+            : `unexpected(${typeof opts.ssl}: ${String(opts.ssl)})`
+    this.logger.info(`[${label}] Creating connection pool`, {
+      host: opts.host,
+      port: opts.port,
+      database: opts.database,
+      ssl: sslType
+    })
+    const pool = new pg.Pool(opts)
+    pool.on('error', (err) => {
+      this.logger.error(`[${label}] Pool background error`, {
+        error: err.message,
+        code: (err as NodeJS.ErrnoException).code
+      })
+    })
+    return pool
+      .query('SELECT 1')
+      .then(() => {
+        this.logger.info(`[${label}] Connection verified`)
+        return pool
+      })
+      .catch((err: NodeJS.ErrnoException) => {
+        this.logger.error(`[${label}] Connection test failed`, {
+          error: err.message,
+          code: err.code
+        })
+        void pool.end()
+        throw err
+      })
+  }
+
   createDatabases(
     conf: DatabaseConfig,
     tables: Record<T, string>,
@@ -38,14 +81,22 @@ class Pg<T extends string> extends SQL<T> implements DbBackend<T> {
               opts.host = RegExp.$1;
               opts.port = parseInt(RegExp.$2, 10);
             }
-            try {
-              this.db = new pg.Pool(opts);
-              logger.info("[Db:Pg] connected.");
-              createTables(this, tables, indexes, initializeValues, logger, resolve, reject);
-            } catch (e) {
-              logger.error("Unable to connect to Pg database");
-              reject(e);
-            }
+            this.createVerifiedPool(pg, opts, 'IdentityServerDb:Pg')
+              .then((pool) => {
+                this.db = pool
+                createTables(
+                  this,
+                  tables,
+                  indexes,
+                  initializeValues,
+                  logger,
+                  resolve,
+                  reject
+                )
+              })
+              .catch((e) => {
+                reject(e)
+              })
           })
           .catch((e) => {
             logger.error("Unable to load pg module", e);
@@ -80,11 +131,12 @@ class Pg<T extends string> extends SQL<T> implements DbBackend<T> {
             });
             resolve(res.rows[0].exists);
           } else {
-            this.logger.warn("[Pg][exists] Check error, assuming false", {
+            this.logger.error('[Pg][exists] Check failed', {
               table,
-              error: err,
-            });
-            resolve(false);
+              error: err.message,
+              code: (err as NodeJS.ErrnoException).code
+            })
+            reject(err)
           }
         });
       } else {
@@ -210,9 +262,8 @@ class Pg<T extends string> extends SQL<T> implements DbBackend<T> {
         vals.push(condition1.value, condition2.value);
         const query = `UPDATE ${table} SET ${names
           .map((name, i) => `${name}=$${i + 1}`)
-          .join(",")} WHERE ${condition1.field}=$${vals.length - 1} AND ${
-          condition2.field
-        }=$${vals.length} RETURNING *;`;
+          .join(",")} WHERE ${condition1.field}=$${vals.length - 1} AND ${condition2.field
+          }=$${vals.length} RETURNING *;`;
         this.logger.debug("[Pg][updateAnd] Executing", {
           table,
           fields: names,
@@ -842,8 +893,8 @@ class Pg<T extends string> extends SQL<T> implements DbBackend<T> {
         this.db.query(
           query,
           [condition1.value, condition2.value] as
-            | (string[] & Array<string | number>)
-            | (number[] & Array<string | number>),
+          | (string[] & Array<string | number>)
+          | (number[] & Array<string | number>),
           (err) => {
             if (err) {
               this.logger.error("[Pg][deleteEqualAnd] Failed", {
