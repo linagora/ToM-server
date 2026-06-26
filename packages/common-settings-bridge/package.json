@@ -17,7 +17,7 @@
   },
   "license": "AGPL-3.0-or-later",
   "dependencies": {
-    "@linagora/rabbitmq-client": "^0.1.2",
+    "@linagora/rabbitmq-client": "^0.2.0",
     "@twake/db": "*",
     "@twake/logger": "*",
     "matrix-appservice-bridge": "^11.2.0"
