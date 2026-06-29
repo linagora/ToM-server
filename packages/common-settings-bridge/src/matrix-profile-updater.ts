@@ -1,5 +1,22 @@
 import type { Intent, Logger } from "matrix-appservice-bridge";
+
 import { AvatarFetchError, type ISettingsPayload, SynapseAdminRetryMode } from "./types";
+
+/**
+ * Shape of errors raised by the Matrix client/admin APIs. They are plain Error
+ * instances with an optional `errcode` (M_FORBIDDEN, M_EXCLUSIVE, ...).
+ */
+interface MatrixError {
+  errcode?: string;
+  message?: string;
+}
+
+function asMatrixError(err: unknown): MatrixError {
+  if (err !== null && typeof err === "object") {
+    return err as MatrixError;
+  }
+  return {};
+}
 
 /**
  * Default maximum allowed avatar file size (5MB).
@@ -93,15 +110,14 @@ export class MatrixProfileUpdater {
       this.logger.debug(`Attempting standard API display name update for ${userId}`);
       await intent.setDisplayName(newDisplayname);
       this.logger.info(`Updated display name for ${userId} to "${newDisplayname}"`);
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const mxErr = asMatrixError(err);
       this.logger.warn(
-        `Failed to update display name via standard API for ${userId}: ${
-          err?.errcode || err?.message || "Unknown error"
-        }`,
+        `Failed to update display name via standard API for ${userId}: ${mxErr.errcode || mxErr.message || "Unknown error"}`,
       );
 
       if (
-        (err?.errcode === "M_FORBIDDEN" || err?.errcode === "M_EXCLUSIVE") &&
+        (mxErr.errcode === "M_FORBIDDEN" || mxErr.errcode === "M_EXCLUSIVE") &&
         this.retryMode === SynapseAdminRetryMode.FALLBACK
       ) {
         this.logger.info(`Falling back to admin API for display name ${userId}`);
@@ -236,10 +252,11 @@ export class MatrixProfileUpdater {
       const mxcUrl = await intent.matrixClient.uploadContent(buffer, contentType, "avatar");
       this.logger.info(`Uploaded avatar to Synapse for ${userId}: ${mxcUrl}`);
       return mxcUrl;
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const mxErr = asMatrixError(error);
       // In FALLBACK mode, try bot upload on M_FORBIDDEN
       if (
-        (error?.errcode === "M_FORBIDDEN" || error?.errcode === "M_EXCLUSIVE") &&
+        (mxErr.errcode === "M_FORBIDDEN" || mxErr.errcode === "M_EXCLUSIVE") &&
         this.retryMode === SynapseAdminRetryMode.FALLBACK
       ) {
         this.logger.info(`Falling back to bot credentials for avatar upload: ${userId}`);
@@ -280,13 +297,14 @@ export class MatrixProfileUpdater {
       this.logger.debug(`Attempting standard API avatar update for ${userId}`);
       await intent.setAvatarUrl(resolvedUrl);
       this.logger.info(`Updated avatar for ${userId} to "${resolvedUrl}"`);
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const mxErr = asMatrixError(err);
       this.logger.warn(
-        `Failed to update avatar via standard API for ${userId}: ${err?.errcode || err?.message || "Unknown error"}`,
+        `Failed to update avatar via standard API for ${userId}: ${mxErr.errcode || mxErr.message || "Unknown error"}`,
       );
 
       if (
-        (err?.errcode === "M_FORBIDDEN" || err?.errcode === "M_EXCLUSIVE") &&
+        (mxErr.errcode === "M_FORBIDDEN" || mxErr.errcode === "M_EXCLUSIVE") &&
         this.retryMode === SynapseAdminRetryMode.FALLBACK
       ) {
         this.logger.info(`Falling back to admin API for avatar ${userId}`);

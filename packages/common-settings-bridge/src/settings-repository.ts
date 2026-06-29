@@ -1,6 +1,19 @@
-import type { Database, DbGetResult } from "@twake/db";
 import type { Logger } from "matrix-appservice-bridge";
+
+import type { Database, DbGetResult } from "@twake/db";
+
 import type { ISettingsPayload, StoredUserSettings, UserSettingsTableName } from "./types";
+
+/**
+ * Metadata accompanying a settings save: version, timestamp, request id, and
+ * whether to insert (new user) or update (existing user).
+ */
+export interface SaveSettingsMeta {
+  readonly version: number;
+  readonly timestamp: number;
+  readonly requestId: string;
+  readonly isNewUser: boolean;
+}
 
 /**
  * Formats a Unix timestamp (milliseconds) as an ISO 8601 string.
@@ -227,20 +240,11 @@ export class SettingsRepository {
    *
    * @param userId - The Matrix user ID
    * @param payload - The settings payload to persist
-   * @param version - The version number of the settings
-   * @param timestamp - The timestamp when settings were last modified
-   * @param requestId - The unique request ID for idempotency tracking
-   * @param isNewUser - Whether this is a new user (insert) or existing user (update)
+   * @param meta - Versioning, timestamp, request id, and whether this is an insert vs update
    * @throws Error if database operation fails
    */
-  async saveSettings(
-    userId: string,
-    payload: ISettingsPayload,
-    version: number,
-    timestamp: number,
-    requestId: string,
-    isNewUser: boolean,
-  ): Promise<void> {
+  async saveSettings(userId: string, payload: ISettingsPayload, meta: SaveSettingsMeta): Promise<void> {
+    const { version, timestamp, requestId, isNewUser } = meta;
     const cacheData = {
       matrix_id: userId,
       settings: JSON.stringify(payload),
@@ -257,7 +261,10 @@ export class SettingsRepository {
       } catch (error) {
         // Handle TOCTOU race: another request may have inserted first
         const errorMsg = error instanceof Error ? error.message.toLowerCase() : "";
-        const errorCode = (error as any)?.code;
+        const errorCode =
+          error !== null && typeof error === "object" && "code" in error
+            ? (error as { code?: unknown }).code
+            : undefined;
         const isDuplicateKey =
           errorMsg.includes("duplicate") ||
           errorMsg.includes("unique") ||

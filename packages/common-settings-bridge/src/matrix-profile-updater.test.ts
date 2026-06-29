@@ -1,12 +1,18 @@
 import type { Intent, Logger } from "matrix-appservice-bridge";
+
 import { type MatrixApis, MatrixProfileUpdater } from "./matrix-profile-updater";
 import { type ISettingsPayload, SynapseAdminRetryMode } from "./types";
+
+type MockMatrixClient = {
+  uploadContentFromUrl: jest.Mock;
+  uploadContent: jest.Mock;
+};
 
 describe("MatrixProfileUpdater", () => {
   let mockApis: jest.Mocked<MatrixApis>;
   let mockIntent: jest.Mocked<Intent>;
   let mockLogger: jest.Mocked<Logger>;
-  let mockMatrixClient: any;
+  let mockMatrixClient: MockMatrixClient;
 
   beforeEach(() => {
     // Create mock matrix client
@@ -20,7 +26,7 @@ describe("MatrixProfileUpdater", () => {
       setDisplayName: jest.fn(),
       setAvatarUrl: jest.fn(),
       matrixClient: mockMatrixClient,
-    } as any;
+    } as unknown as jest.Mocked<Intent>;
 
     // Create mock APIs
     mockApis = {
@@ -35,7 +41,7 @@ describe("MatrixProfileUpdater", () => {
       info: jest.fn(),
       warn: jest.fn(),
       error: jest.fn(),
-    } as any;
+    } as unknown as jest.Mocked<Logger>;
 
     // Mock global fetch
     global.fetch = jest.fn();
