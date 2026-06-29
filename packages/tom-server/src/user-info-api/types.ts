@@ -28,7 +28,7 @@ export interface UserEnrichmentFields {
   language?: string
   timezone?: string
   workplaceFqdn?: string
-  twakeWorkplaceUrl?: string
+  twakeWorkspaceUrl?: string
 }
 
 export interface UserInformation extends UserEnrichmentFields {

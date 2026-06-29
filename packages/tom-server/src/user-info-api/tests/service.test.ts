@@ -41,7 +41,7 @@ const MOCK_DATA = {
     givenName: 'LDAP First Name',
     mail: 'ldap@example.org',
     mobile: '+1 555 123 4567',
-    twakeWorkplaceUrl: 'workplace.example.com'
+    twakeWorkspaceUrl: 'workplace.example.com'
   },
   COMMON_SETTINGS: {
     display_name: 'CS Display Name',
@@ -77,7 +77,7 @@ type useProfileTwake = {
   givenName: boolean
   mail: boolean
   phone: boolean
-  twakeWorkplaceUrl: boolean
+  twakeWorkspaceUrl: boolean
 }
 const useProfileTwakeDefaults: useProfileTwake = {
   displayName: false,
@@ -85,7 +85,7 @@ const useProfileTwakeDefaults: useProfileTwake = {
   givenName: false,
   mail: false,
   phone: false,
-  twakeWorkplaceUrl: false
+  twakeWorkspaceUrl: false
 }
 /**
  * Configure Matrix mock response.
@@ -104,7 +104,7 @@ const mockUserDB = (
     if (Object.values(useProfileDefaults).every((v) => !v)) {
       userDBMock.get.mockResolvedValue([])
     } else {
-      const { displayName, lastName, givenName, mail, phone, twakeWorkplaceUrl } =
+      const { displayName, lastName, givenName, mail, phone, twakeWorkspaceUrl } =
         useProfileDefaults
       // Extract local part from MATRIX_MXID (e.g., '@dwho:docker.localhost' -> 'dwho')
       const localPart = MATRIX_MXID.replace(/^@([^:]+):.*$/, '$1')
@@ -132,8 +132,8 @@ const mockUserDB = (
       if (phone) {
         profile.mobile = MOCK_DATA.LDAP.mobile
       }
-      if (twakeWorkplaceUrl) {
-        profile.twakeWorkplaceUrl = MOCK_DATA.LDAP.twakeWorkplaceUrl
+      if (twakeWorkspaceUrl) {
+        profile.twakeWorkspaceUrl = MOCK_DATA.LDAP.twakeWorkspaceUrl
       }
 
       userDBMock.get.mockResolvedValue([profile])
@@ -511,13 +511,13 @@ describe('User Info Service GET with: No feature flags ON', () => {
       expect(user).not.toHaveProperty('timezone')
     })
 
-    it('Should add twakeWorkplaceUrl from UserDB when available', async () => {
+    it('Should add twakeWorkspaceUrl from UserDB when available', async () => {
       mockMatrix({ displayName: true, avatar: true })
       mockUserDB({
         displayName: true,
         lastName: true,
         givenName: true,
-        twakeWorkplaceUrl: true
+        twakeWorkspaceUrl: true
       })
 
       const user = await svc.get(MATRIX_MXID)
@@ -527,7 +527,7 @@ describe('User Info Service GET with: No feature flags ON', () => {
       expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
       expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
       expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
-      expect(user).toHaveProperty('twakeWorkplaceUrl', MOCK_DATA.LDAP.twakeWorkplaceUrl)
+      expect(user).toHaveProperty('twakeWorkspaceUrl', MOCK_DATA.LDAP.twakeWorkspaceUrl)
       expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
       expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
       expect(user).not.toHaveProperty('emails')
@@ -536,13 +536,13 @@ describe('User Info Service GET with: No feature flags ON', () => {
       expect(user).not.toHaveProperty('timezone')
     })
 
-    it('Should not add twakeWorkplaceUrl when not available in UserDB', async () => {
+    it('Should not add twakeWorkspaceUrl when not available in UserDB', async () => {
       mockMatrix({ displayName: true, avatar: true })
       mockUserDB({
         displayName: true,
         lastName: true,
         givenName: true,
-        twakeWorkplaceUrl: false
+        twakeWorkspaceUrl: false
       })
 
       const user = await svc.get(MATRIX_MXID)
@@ -552,7 +552,7 @@ describe('User Info Service GET with: No feature flags ON', () => {
       expect(user).toHaveProperty('avatar_url', MOCK_DATA.MATRIX.avatar_url)
       expect(user).toHaveProperty('sn', MOCK_DATA.LDAP.sn)
       expect(user).toHaveProperty('givenName', MOCK_DATA.LDAP.givenName)
-      expect(user).not.toHaveProperty('twakeWorkplaceUrl')
+      expect(user).not.toHaveProperty('twakeWorkspaceUrl')
       expect(user).toHaveProperty('last_name', MOCK_DATA.LDAP.sn)
       expect(user).toHaveProperty('first_name', MOCK_DATA.LDAP.givenName)
       expect(user).not.toHaveProperty('emails')
