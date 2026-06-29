@@ -1,10 +1,13 @@
 import { waitForPortOpen } from "@nx/node/utils";
 
-/* eslint-disable */
-var __TEARDOWN_MESSAGE__: string;
+declare global {
+  // biome-ignore lint/suspicious/noVar: TypeScript requires `var` for global augmentation
+  var __TEARDOWN_MESSAGE__: string;
+}
 
-module.exports = async () => {
-  // Start services that that the app needs to run (e.g. database, docker-compose, etc.).
+module.exports = async (): Promise<void> => {
+  // Start services that the app needs to run (e.g. database, docker-compose, etc.).
+  // biome-ignore lint/suspicious/noConsole: jest global setup logs to the test runner
   console.log("\nSetting up...\n");
 
   const host = process.env.HOST ?? "localhost";
