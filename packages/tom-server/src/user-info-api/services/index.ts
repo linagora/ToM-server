@@ -163,7 +163,7 @@ class UserInfoService implements IUserInfoService {
             'givenName',
             'mail',
             'mobile',
-            'workplaceFqdn',
+            'workspaceurl',
             'twakeWorkplaceUrl'
           ],
           { uid: localParts }
@@ -393,19 +393,20 @@ class UserInfoService implements IUserInfoService {
             )
             userInfo.phones = [directoryRow.mobile as string]
           }
-          // The Twake Workplace user LDAP schema has changed to favor twakeWorkplaceUrl instead of previously choosen workplaceFqdn
+          // The Twake Workplace user LDAP schema has changed to favor twakeWorkspaceUrl instead of previously choosen workspaceurl or workplaceFqdn
           // https://github.com/linagora/twake-on-matrix/pull/2787
-          // To reflect that change gracefully, ToM returns both deprectaed workplaceFqdn and newly adopted twakeWorkplaceUrl
+          // To reflect that change gracefully, ToM searches both deprecated workspaceurl and newly adopted twakeWorkplaceUrl
           // To also support legacy LDAP users not yet / unsuccessfully migrated we keep looking for both LDAP properties
-          if (directoryRow.twakeWorkplaceUrl || directoryRow.workplaceFqdn) {
-            const workplaceUrl: string = getFirstString(directoryRow.twakeWorkplaceUrl || directoryRow.workplaceFqdn)
+          // And returns deprecated workplaceFqdn along new twakeWorkplaceUrl allowing older TC clients to still understand the info
+          if (directoryRow.twakeWorkplaceUrl || directoryRow.workspaceurl) {
+            const workplaceUrl: string = getFirstString(directoryRow.twakeWorkplaceUrl || directoryRow.workspaceurl)
             this.logger.debug(
-              `[UserInfoService].getBatch: mxid=${id} workplaceFqdn source=directory value="${directoryRow.workplaceFqdn}"`
+              `[UserInfoService].getBatch: mxid=${id} workspaceurl source=directory value="${directoryRow.workspaceurl}"`
             )
             this.logger.debug(
               `[UserInfoService].getBatch: mxid=${id} twakeWorkplaceUrl source=directory value="${directoryRow.twakeWorkplaceUrl}"`
             )
-            this.logger.debug(`[UserInfoService].getBatch: returned workplaceFqdn: ${workplaceUrl}`)
+            this.logger.debug(`[UserInfoService].getBatch: returned workspaceurl: ${workplaceUrl}`)
             userInfo.workplaceFqdn = workplaceUrl
             userInfo.twakeWorkplaceUrl = workplaceUrl
           }
