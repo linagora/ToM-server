@@ -1,0 +1,27 @@
+# =============================================================================
+# Docker Build Context Exclusions
+# Only include files necessary for building the application
+# =============================================================================
+**/*
+*
+
+## Allow package definition files
+!package.json
+!bun.lock
+
+## Allow build configuration files
+!bunup.config.ts
+!tsconfig.json
+
+## Allow source files
+!src/**
+
+## Ensure test files are not imported
+src/__mocks__/
+src/**/*.test.ts
+
+## Allow patches
+!patches/**
+
+## Allow assets
+!assets/

@@ -1,0 +1,101 @@
+---
+
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  call-linters:
+    uses: ./.github/workflows/linters.yml
+
+  call-checks:
+    uses: ./.github/workflows/checks.yml
+
+  docker:
+    needs: [call-linters, call-checks]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: linagora/tom-server
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=raw,value=latest
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Docker Hub description
+        uses: peter-evans/dockerhub-description@v4
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          repository: linagora/tom-server
+          short-description: "ToM Server - Matrix Identity Server for Twake Workplace"
+          readme-filepath: docs/Docker.md
+
+  github-release:
+    needs: docker
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Extract changelog for tag
+        id: changelog
+        run: |
+          tag="${GITHUB_REF#refs/tags/}"
+          # Extract the section for this version from CHANGELOG.md
+          if [ -f CHANGELOG.md ]; then
+            awk "/^## \\[${tag#v}\\]/{found=1; next} /^## /{if(found) exit} found{print}" CHANGELOG.md > /tmp/release-body.md
+            if [ ! -s /tmp/release-body.md ]; then
+              echo "No section found for ${tag} in CHANGELOG.md, using full file"
+              cp CHANGELOG.md /tmp/release-body.md
+            fi
+          else
+            echo "No CHANGELOG.md found, creating empty release body"
+            echo "Release ${tag}" > /tmp/release-body.md
+          fi
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: ${{ github.ref_name }}
+          body_path: /tmp/release-body.md
+          generate_release_notes: true

@@ -1,0 +1,231 @@
+import fs from "node:fs";
+import {
+  ConfigCoercionError,
+  FileReadParseError,
+  InvalidBooleanFormatError,
+  InvalidJsonFormatError,
+  InvalidNumberFormatError,
+  MissingRequiredConfigError,
+  UnacceptedKeyError,
+} from "./errors";
+import type {
+  ConfigDescription,
+  Configuration,
+  ConfigurationFile,
+  ConfigValueType,
+  NewConfigDescription,
+} from "./types";
+import { isTruthy, oldParser } from "./utils";
+
+/**
+ * Coerces a string value to the target type.
+ * @param {string} value - The string value to coerce.
+ * @param {ConfigValueType} targetType - The desired type.
+ * @returns {any} The coerced value.
+ * @throws {InvalidNumberFormatError} if coercion to number fails.
+ * @throws {InvalidBooleanFormatError} if coercion to boolean fails.
+ * @throws {InvalidJsonFormatError} if coercion to JSON fails.
+ */
+const coerceValue = (value: string, targetType: ConfigValueType): any => {
+  switch (targetType) {
+    case "number": {
+      const num = parseFloat(value);
+      if (Number.isNaN(num)) {
+        throw new InvalidNumberFormatError(value);
+      }
+      return num;
+    }
+    case "boolean": {
+      const lowerValue = value.toLowerCase().trim();
+      if (lowerValue === "true" || lowerValue === "1") {
+        return true;
+      }
+      if (lowerValue === "false" || lowerValue === "0") {
+        return false;
+      }
+      throw new InvalidBooleanFormatError(value);
+    }
+    case "array":
+      return value.split(/[,\s]+/).filter((s) => s.length > 0);
+    case "json":
+    case "object":
+      try {
+        return JSON.parse(value);
+      } catch (e: unknown) {
+        const error = e instanceof Error ? e : new Error(String(e));
+        throw new InvalidJsonFormatError(value, error);
+      }
+    default:
+      return value;
+  }
+};
+
+/**
+ * Loads configuration from a specified file path.
+ * @param {string} filePath - The path to the configuration JSON file.
+ * @returns {Promise<Configuration>} The parsed configuration object from the file.
+ * @throws {FileReadParseError} if the file cannot be read or parsed.
+ */
+const loadConfigFromFile = (filePath: string): Configuration => {
+  try {
+    const fileContent = fs.readFileSync(filePath, "utf8");
+    return JSON.parse(fileContent);
+  } catch (e: unknown) {
+    const error = e instanceof Error ? e : new Error(String(e));
+    throw new FileReadParseError(filePath, error);
+  }
+};
+
+/**
+ * Applies environment variable overrides to the configuration.
+ * @param {Configuration} config - The current configuration object to modify.
+ * @param {ConfigDescription} desc - The ConfigDescription for type information.
+ * @param {boolean} useEnv - Whether to enable environment variable overrides.
+ * @throws {ConfigCoercionError} if an environment variable value cannot be coerced to the expected type or is an empty string.
+ */
+const applyEnvironmentVariables = (config: Configuration, desc: NewConfigDescription, useEnv: boolean): void => {
+  Object.keys(desc).forEach((key: string) => {
+    const configProp = desc[key];
+    const envVarName = key.toUpperCase();
+    const envValue = process.env[envVarName];
+
+    if (useEnv && Object.hasOwn(process.env, envVarName)) {
+      if (envValue === "") {
+        throw new ConfigCoercionError(
+          key,
+          "environment",
+          new Error("Empty string values are not allowed for this configuration key from environment variables."),
+        );
+      }
+
+      try {
+        config[key] = coerceValue(envValue as string, configProp.type);
+      } catch (e: unknown) {
+        const error = e instanceof Error ? e : new Error(String(e));
+        throw new ConfigCoercionError(key, "environment", error);
+      }
+    }
+  });
+};
+
+/**
+ * Applies default values from ConfigDescription if a key is not already set.
+ * Coerces string defaults if their target type is not string.
+ * @param {Configuration} config - The current configuration object to modify.
+ * @param {ConfigDescription} desc - The ConfigDescription for default values and type information.
+ * @throws {ConfigCoercionError} if a default value string cannot be coerced to its expected type.
+ */
+const applyDefaultValues = (config: Configuration, desc: NewConfigDescription): void => {
+  Object.keys(desc).forEach((key: string) => {
+    const configProp = desc[key];
+    if (config[key] === undefined) {
+      if (configProp.default === undefined) {
+        config[key] = undefined;
+      } else if (
+        typeof configProp.default === "string" &&
+        configProp.type !== "string" &&
+        configProp.type !== "array"
+      ) {
+        try {
+          config[key] = coerceValue(configProp.default, configProp.type);
+        } catch (e: unknown) {
+          const error = e instanceof Error ? e : new Error(String(e));
+          throw new ConfigCoercionError(key, "default", error);
+        }
+      } else if (typeof configProp.default === "string" && configProp.type === "array") {
+        try {
+          config[key] = coerceValue(configProp.default, configProp.type);
+        } catch (e: unknown) {
+          const error = e instanceof Error ? e : new Error(String(e));
+          throw new ConfigCoercionError(key, "default", error);
+        }
+      } else {
+        config[key] = configProp.default;
+      }
+    }
+  });
+};
+
+/**
+ * Validates that all keys in the final configuration are defined in the ConfigDescription.
+ * @param {Configuration} config - The final consolidated configuration object.
+ * @param {ConfigDescription} desc - The ConfigDescription.
+ * @throws {UnacceptedKeyError} if an unexpected key is found in the configuration.
+ */
+const validateUnwantedKeys = (config: Configuration, desc: NewConfigDescription): void => {
+  Object.keys(config).forEach((key: string) => {
+    if (desc[key] === undefined) {
+      throw new UnacceptedKeyError(key);
+    }
+  });
+};
+
+/**
+ * Validates that all required configuration keys are present in the final configuration.
+ * @param {Configuration} config - The final consolidated configuration object.
+ * @param {ConfigDescription} desc - The ConfigDescription.
+ * @throws {MissingRequiredConfigError} if a required key is missing.
+ */
+const validateRequiredKeys = (config: Configuration, desc: NewConfigDescription): void => {
+  Object.keys(desc).forEach((key: string) => {
+    const configProp = desc[key];
+    if ((configProp.required ?? false) && config[key] === undefined) {
+      throw new MissingRequiredConfigError(key);
+    }
+  });
+};
+
+/**
+ * Loads and consolidates application configuration from multiple sources.
+ * The priority order is: defaultConfigurationFile > environment variables > ConfigDescription defaults.
+ *
+ * @param {ConfigDescription} desc - The ConfigDescription defining expected keys, types, defaults, and required status.
+ * @param {ConfigurationFile} [defaultConfigurationFile] - An optional base configuration object or path to a JSON file.
+ * @param {boolean} [useEnv=false] - Whether to use environment variables for overrides. Defaults to false.
+ * @param {boolean} [useOldParser=true] - Whether to use the old parser logic. Defaults to true.
+ * @returns {Promise<Configuration>} The consolidated configuration object with coerced types.
+ * @throws {FileReadParseError} if reading/parsing the configuration file fails.
+ * @throws {UnacceptedKeyError} if a key isn't accepted (not defined in ConfigDescription).
+ * @throws {ConfigCoercionError} if type coercion fails for environment variables or default values.
+ * @throws {MissingRequiredConfigError} if a required configuration key is missing.
+ */
+const twakeConfig = (
+  desc: ConfigDescription,
+  defaultConfigurationFile?: ConfigurationFile,
+  useEnv: boolean = false,
+  useOldParser: boolean = true,
+): Configuration => {
+  // Determine if we should use the old parser
+  const shouldUseOldParser = useOldParser && !isTruthy(process.env.TWAKE_CONFIG_PARSER_NEW);
+
+  // Start with an empty config
+  let config: Configuration = {};
+
+  if (defaultConfigurationFile) {
+    if (typeof defaultConfigurationFile === "string") {
+      config = loadConfigFromFile(defaultConfigurationFile);
+    } else {
+      config = shouldUseOldParser ? defaultConfigurationFile : JSON.parse(JSON.stringify(defaultConfigurationFile));
+    }
+  }
+
+  if (shouldUseOldParser) {
+    // Use old parser by default unless explicitly opting into the new parser
+    oldParser(desc, config);
+    return config;
+  }
+  // New parser
+  // Ensure desc is treated as NewConfigDescription
+  const newDesc = desc as NewConfigDescription;
+
+  applyEnvironmentVariables(config, newDesc, useEnv);
+  applyDefaultValues(config, newDesc);
+  validateUnwantedKeys(config, newDesc);
+  validateRequiredKeys(config, newDesc);
+
+  return config;
+};
+
+export type { ConfigDescription } from "./types";
+
+export default twakeConfig;

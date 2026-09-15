@@ -1,0 +1,45 @@
+{
+  "cron_service": false,
+  "database_engine": "sqlite",
+  "database_host": "src/modules/legacy/matrix-identity-server/__testData__/terms.db",
+  "database_vacuum_delay": 7200,
+  "invitation_server_name": "matrix.to",
+  "is_federated_identity_service": false,
+  "key_delay": 3600,
+  "keys_depth": 5,
+  "mail_link_delay": 7200,
+  "rate_limiting_window": 10000,
+  "server_name": "matrix.org",
+  "smtp_sender": "yadd@debian.org",
+  "smtp_server": "localhost",
+  "policies": {
+    "privacy_policy": {
+      "en": {
+        "name": "Privacy Policy",
+        "url": "https://example.org/somewhere/privacy-1.2-en.html"
+      },
+      "fr": {
+        "name": "Politique de confidentialité",
+        "url": "https://example.org/somewhere/privacy-1.2-fr.html"
+      },
+      "version": "1.2"
+    },
+    "terms_of_service": {
+      "en": {
+        "name": "Terms of Service",
+        "url": "https://example.org/somewhere/terms-2.0-en.html"
+      },
+      "fr": {
+        "name": "Conditions d'utilisation",
+        "url": "https://example.org/somewhere/terms-2.0-fr.html"
+      },
+      "version": "2.0"
+    }
+  },
+  "template_dir": "assets/templates",
+  "userdb_engine": "sqlite",
+  "userdb_host": "src/modules/legacy/matrix-identity-server/__testData__/terms.db",
+  "sms_api_key": "test_key",
+  "sms_api_login": "test_secret",
+  "sms_api_url": "http://localhost/sms/api"
+}

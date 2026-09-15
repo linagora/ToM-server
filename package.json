@@ -1,0 +1,89 @@
+{
+  "name": "@twake/tom-server",
+  "description": "A Twake Workplace Matrix Identity Server with augmented capacities",
+  "version": "2.0.0",
+  "type": "module",
+  "private": true,
+  "files": [
+    "dist",
+    "bin"
+  ],
+  "exports": {
+    "./package.json": "./package.json"
+  },
+  "license": "AGPL-3.0-or-later",
+  "repository": "github:linagora/tom-server",
+  "homepage": "https://github.com/linagora/tom-server?tab=readme-ov-file",
+  "bugs": {
+    "url": "https://github.com/linagora/tom-server/issues"
+  },
+  "author": {
+    "name": "Xavier Guimard",
+    "email": "xguimard@linagora.com"
+  },
+  "contributors": [
+    {
+      "name": "Pierre 'McFly' Marty",
+      "email": "pmarty@linagora.com"
+    },
+    {
+      "name": "Khaled Ferjani",
+      "email": "kferjani@linagora.com"
+    },
+    {
+      "name": "Montassar Ghanmy",
+      "email": "mghanmy@linagora.com"
+    }
+  ],
+  "scripts": {
+    "dev": "bun --watch run ./src/main.ts",
+    "start": "bun run ./src/main.ts",
+    "type-check": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.4.0",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "bunup": "^0.16.32",
+    "typescript": "^7.0.2"
+  },
+  "peerDependencies": {
+    "typescript": ">=4.5.0"
+  },
+  "peerDependenciesMeta": {
+    "typescript": {
+      "optional": true
+    }
+  },
+  "dependencies": {
+    "@opentelemetry/api": "^1.9.1",
+    "@opentelemetry/auto-instrumentations-node": "^0.80.0",
+    "cors": "^2.8.6",
+    "deepmerge": "^4.3.1",
+    "express": "^5.2.1",
+    "express-rate-limit": "^8.7.0",
+    "express-validator": "^7.3.2",
+    "generic-pool": "^3.9.0",
+    "ip-address": "^10.7.0",
+    "js-nacl": "^1.4.0",
+    "js-yaml": "^5.4.1",
+    "ldapts": "^9.0.0",
+    "node-cron": "^4.6.0",
+    "nodemailer": "^10.0.1",
+    "pg": "^8.23.0",
+    "qrcode": "^1.5.4",
+    "sqlite3": "^6.0.1",
+    "supertest": "^7.2.2",
+    "toad-cache": "^3.7.4",
+    "tweetnacl": "^1.0.3",
+    "tweetnacl-util": "^0.15.1",
+    "uuid": "^14.0.2",
+    "winston": "^3.19.0",
+    "winston-daily-rotate-file": "^5.0.0",
+    "zod": "^4.5.4"
+  },
+  "trustedDependencies": [
+    "protobufjs",
+    "sqlite3"
+  ]
+}

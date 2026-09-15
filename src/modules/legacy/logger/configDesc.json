@@ -1,0 +1,38 @@
+{
+  "logging": {
+    "log_level": {
+      "type": "string",
+      "required": true,
+      "default": "info"
+    },
+    "log_transports": {
+      "type": "string",
+      "required": true,
+      "default": "Console"
+    },
+    "silent": {
+      "type": "boolean",
+      "required": true,
+      "default": false
+    },
+    "exit_on_error": {
+      "type": "boolean",
+      "required": true,
+      "default": false
+    },
+    "default_meta": {
+      "type": "object",
+      "required": false
+    },
+    "exception_handlers": {
+      "type": "array",
+      "required": false,
+      "default": []
+    },
+    "rejection_handlers": {
+      "type": "array",
+      "required": false,
+      "default": []
+    }
+  }
+}

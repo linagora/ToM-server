@@ -1,0 +1,120 @@
+---
+
+name: Linters
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      biome: ${{ steps.filter.outputs.biome }}
+      markdownlint: ${{ steps.filter.outputs.markdownlint }}
+      nixfmt: ${{ steps.filter.outputs.nixfmt }}
+      shfmt: ${{ steps.filter.outputs.shfmt }}
+      yamllint: ${{ steps.filter.outputs.yamllint }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 100
+          persist-credentials: false
+
+      - uses: dorny/paths-filter@v4
+        id: filter
+        with:
+          filters: |
+            biome:
+              - '**/*.{js,ts,jsx,tsx,json,jsonc}'
+            markdownlint:
+              - '**/*.md'
+            nixfmt:
+              - '**/*.nix'
+            shfmt:
+              - '**/*.sh'
+            yamllint:
+              - '**/*.{yaml,yml}'
+              - .yamllint
+
+  # convco:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v7
+  #       with:
+  #         fetch-depth: 100
+  #         persist-credentials: false
+  #
+  #     - name: Install convco
+  #       uses: convco/convco-action@0.3.0
+  #
+  #     - name: Run convco
+  #       run: convco check ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}
+
+  biome:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.biome == 'true'
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: biomejs/setup-biome@v2
+        with:
+          version: "2.5.8"
+
+      - run: biome ci . --vcs-enabled=true --reporter=github --no-errors-on-unmatched --max-diagnostics=none
+
+  markdownlint:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.markdownlint == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - run: npm install -g markdownlint-cli
+
+      - run: markdownlint '**/*.md'
+
+  nixfmt:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.nixfmt == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: nixbuild/nix-quick-install-action@v28
+
+      - run: nix run nixpkgs#nixfmt-rfc-style -- --check $(find . -name "*.nix")
+
+  shfmt:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.shfmt == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - run: sudo DEBIAN_FRONTEND=noninteractive apt-get update -qq && sudo DEBIAN_FRONTEND=noninteractive apt-get install -yqq --no-install-recommends --no-install-suggests shfmt
+
+      - run: shfmt -d .
+
+  yamllint:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.yamllint == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - run: sudo DEBIAN_FRONTEND=noninteractive apt-get update -qq && sudo DEBIAN_FRONTEND=noninteractive apt-get install -yqq --no-install-recommends --no-install-suggests yamllint
+
+      - run: yamllint .

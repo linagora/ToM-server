@@ -1,0 +1,166 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.5.8/schema.json",
+  "vcs": {
+    "enabled": true,
+    "clientKind": "git",
+    "defaultBranch": "main",
+    "useIgnoreFile": true
+  },
+  "files": {
+    "includes": [
+      "src/**/*.{js,jsx,ts,tsx,json,jsonc}",
+
+      // Ignoring legacy modules ...
+      "!!src/modules/legacy/config-parser/**/*.{js,jsx,ts,tsx,json,jsonc}",
+      "!!src/modules/legacy/crypto/**/*.{js,jsx,ts,tsx,json,jsonc}",
+      "!!src/modules/legacy/db/**/*.{js,jsx,ts,tsx,json,jsonc}",
+      "!!src/modules/legacy/federated-identity-service/**/*.{js,jsx,ts,tsx,json,jsonc}",
+      "!!src/modules/legacy/logger/**/*.{js,jsx,ts,tsx,json,jsonc}",
+      "!!src/modules/legacy/matrix-identity-server/**/*.{js,jsx,ts,tsx,json,jsonc}",
+      "!!src/modules/legacy/matrix-resolve/**/*.{js,jsx,ts,tsx,json,jsonc}",
+      "!!src/modules/legacy/tom-server/**/*.{js,jsx,ts,tsx,json,jsonc}",
+      "!!src/modules/legacy/utils/**/*.{js,jsx,ts,tsx,json,jsonc}",
+      // ... end
+
+      "biome.jsonc",
+      "package.json",
+      "tsconfig.json"
+    ],
+    "ignoreUnknown": true
+  },
+  "formatter": {
+    "enabled": true,
+    "expand": "always",
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 120,
+    "lineEnding": "lf"
+  },
+  "javascript": {
+    "formatter": {
+      "semicolons": "always",
+      "trailingCommas": "all",
+      "quoteStyle": "double",
+      "arrowParentheses": "always",
+      "attributePosition": "multiline"
+    }
+  },
+  "assist": {
+    "enabled": true,
+    "actions": {
+      "source": {
+        "organizeImports": {
+          "level": "on",
+          "options": {
+            "groups": [
+              [
+                "telemetry",
+                "telemetry/**",
+                "**/telemetry",
+                "**/telemetry/**"
+              ],
+              ":BLANK_LINE:",
+              [
+                ":BUN:",
+                ":NODE:"
+              ],
+              ":BLANK_LINE:",
+              [
+                ":PACKAGE:",
+                ":PACKAGE_WITH_PROTOCOL:",
+                "!@linagora",
+                "!@linagora/**"
+              ],
+              ":BLANK_LINE:",
+              ":URL:",
+              ":BLANK_LINE:",
+              [
+                "@linagora",
+                "@linagora/**"
+              ],
+              ":BLANK_LINE:",
+              ":PATH:"
+            ]
+          }
+        }
+      }
+    }
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "preset": "recommended",
+      "correctness": {
+        "noUnusedVariables": "error",
+        "noUnusedImports": "error",
+        "noUnusedFunctionParameters": "warn"
+      },
+      "suspicious": {
+        "noExplicitAny": "error",
+        "noDoubleEquals": {
+          "level": "error",
+          "options": {
+            "ignoreNull": false
+          }
+        },
+        "noConsole": "error",
+        "noTsIgnore": "error",
+        "noVar": "error",
+        "noConfusingVoidType": "error",
+        "useAwait": "error",
+        "useErrorMessage": "warn",
+        "noForIn": "error"
+      },
+      "complexity": {
+        "noForEach": "warn",
+        "useArrowFunction": "error",
+        "useOptionalChain": "warn",
+        "noStaticOnlyClass": "error",
+        "noUselessCatch": "error",
+        "noUselessCatchBinding": "error",
+        "noExcessiveCognitiveComplexity": {
+          "level": "warn",
+          "options": {
+            "maxAllowedComplexity": 10
+          }
+        },
+        "noExcessiveLinesPerFunction": {
+          "level": "warn",
+          "options": {
+            "maxLines": 40,
+            "skipBlankLines": true
+          }
+        },
+        "useMaxParams": {
+          "level": "error",
+          "options": {
+            "max": 5
+          }
+        }
+      },
+      "style": {
+        "useConst": "error",
+        "useTemplate": "error",
+        "noUselessElse": "error",
+        "noEnum": "warn",
+        "useImportType": "warn",
+        "useExportType": "warn",
+        "useThrowNewError": "error",
+        "useThrowOnlyError": "error",
+        "useNodejsImportProtocol": "warn",
+        "useShorthandFunctionType": "warn",
+        "useDefaultParameterLast": "warn",
+        "useErrorCause": "warn"
+      },
+      "nursery": {
+        "noFloatingPromises": "error",
+        "noMisusedPromises": "warn",
+        "useExplicitType": "warn"
+      },
+      "performance": {
+        "noBarrelFile": "warn",
+        "noReExportAll": "warn"
+      }
+    }
+  }
+}

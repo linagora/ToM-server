@@ -1,0 +1,60 @@
+import { afterAll, beforeEach, describe, expect, it, mock, spyOn, test } from 'bun:test'
+import { getLogger } from '../../../logger'
+import fetch, { type Response } from 'node-fetch'
+import { type Config } from '../../types'
+import SmsService from '../services'
+mock.module('node-fetch', () => ({
+  default: mock(),
+}))
+
+beforeEach(() => {
+  spyOn(console, 'error').mockImplementation(() => {})
+})
+
+describe('the SMS service', () => {
+  const smsConfig = {
+    sms_api_key: 'test',
+    sms_api_login: 'test',
+    sms_api_url: 'http://url/'
+  }
+  const mockFetch = fetch as Mock<(...args: any[]) => any>
+  const logger = getLogger()
+  const smsService = new SmsService(smsConfig as Config, logger)
+
+  afterAll(() => {
+    logger.close()
+  })
+
+  it('should attempt to use the SMS api', async () => {
+    mockFetch.mockResolvedValue(
+      Promise.resolve({ status: 200 } as unknown as Response)
+    )
+    await smsService.send({ to: ['123456'], text: 'test' })
+
+    expect(mockFetch).toHaveBeenCalledWith('http://url/', {
+      method: 'POST',
+      body: JSON.stringify({
+        recipients: [{ phone_number: '123456' }],
+        sender: 'Twake',
+        text: 'test',
+        type: 'sms_low_cost'
+      }),
+      headers: {
+        'Content-Type': 'application/json',
+        'cache-control': 'no-cache',
+        'api-key': 'test',
+        'api-login': 'test'
+      }
+    })
+  })
+
+  it('should throw an error if the sms api returns an error', async () => {
+    mockFetch.mockResolvedValue(
+      Promise.resolve({ status: 400 } as unknown as Response)
+    )
+    // expect the service to throw an error
+    await expect(
+      smsService.send({ to: ['123456'], text: 'test' })
+    ).rejects.toThrow('Failed to send SMS')
+  })
+})

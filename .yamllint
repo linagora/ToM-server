@@ -1,0 +1,15 @@
+---
+
+extends: default
+
+ignore-from-file: .gitignore
+
+rules:
+  truthy:
+    ignore:
+      - .github/workflows/*.yml
+  line-length:
+    ignore:
+      - .github/workflows/*.yml
+
+# vim: set ft=yaml fenc=utf-8 et ts=2 sw=2 tw=80 cc=80:

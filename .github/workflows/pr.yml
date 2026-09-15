@@ -1,0 +1,33 @@
+---
+
+name: Pull Request
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: pr-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  call-linters:
+    uses: ./.github/workflows/linters.yml
+
+  call-checks:
+    uses: ./.github/workflows/checks.yml
+
+  build:
+    needs: [call-linters, call-checks]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: oven-sh/setup-bun@v2
+
+      - run: bun install --frozen-lockfile
+
+      - run: bunx bunup

@@ -1,0 +1,7 @@
+---
+
+blank_issues_enabled: false
+contact_links:
+  - name: Requests & General FAQ
+    url: https://github.com/linagora/tom-server/discussions
+    about: Ask questions or submit feature requests in GitHub Discussions.

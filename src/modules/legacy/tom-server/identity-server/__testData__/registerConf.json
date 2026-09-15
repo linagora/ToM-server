@@ -1,0 +1,67 @@
+{
+  "additional_features": true,
+  "base_url": "http://example.com",
+  "cron_service": true,
+  "database_engine": "sqlite",
+  "database_host": "./src/identity-server/__testData__/test.db",
+  "database_vacuum_delay": 7200,
+  "is_federated_identity_service": false,
+  "jitsiBaseUrl": "https://jitsi.example.com/",
+  "jitsiJwtAlgorithm": "HS256",
+  "jitsiJwtIssuer": "",
+  "jitsiJwtSecret": "",
+  "jitsiPreferredDomain": "jitsi.example.com",
+  "jitsiUseJwt": false,
+  "key_delay": 3600,
+  "keys_depth": 5,
+  "mail_link_delay": 7200,
+  "matrix_server": "localhost",
+  "matrix_internal_host": "localhost",
+  "server_name": "example.com",
+  "smtp_sender": "yadd@debian.org",
+  "smtp_server": "localhost",
+  "template_dir": "assets/templates",
+  "userdb_engine": "sqlite",
+  "userdb_host": "./src/identity-server/__testData__/users.test.db",
+  "sender_localpart": "twake",
+  "sms_api_url": "https://sms.example.com",
+  "sms_api_key": "1234567890",
+  "sms_api_login": "login",
+  "signup_url": "https://signup.example.com",
+  "auth_url": "https://auth.example.com",
+  "twake_chat": {
+    "application_name": "",
+    "application_welcome_message": "",
+    "privacy_url": "",
+    "render_html": false,
+    "hide_redacted_events": false,
+    "hide_unknown_events": false,
+    "issue_id": "",
+    "registration_url": "",
+    "twake_workplace_homeserver": "",
+    "app_grid_dashboard_available": false,
+    "platform": "",
+    "default_max_upload_avatar_size_in_bytes": "",
+    "dev_mode": false,
+    "qr_code_download_url": "",
+    "enable_logs": false,
+    "support_url": "",
+    "enable_invitations": false
+  },
+  "features": {
+    "common_settings": {
+      "enabled": true,
+      "application_url": "https://{username}-settings.localhost"
+    },
+    "matrix_profile_updates_allowed": false,
+    "user_profile": {
+      "default_visibility_settings": {
+        "visibility": "private",
+        "visible_fields": []
+      }
+    },
+    "user_directory": {
+      "enabled": true
+    }
+  }
+}

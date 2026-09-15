@@ -1,0 +1,307 @@
+import { afterAll, beforeAll, beforeEach, describe, expect, it, mock, spyOn, test } from "bun:test"
+import express from 'express'
+import fs from 'fs'
+import path from 'path'
+import request, { type Response } from 'supertest'
+import TwakeServer from '..'
+import JEST_PROCESS_ROOT_PATH from '../../jest.globals'
+import { type Config } from '../types'
+import buildTokenTable from './__testData__/buildTokenTable'
+import defaultConfig from './__testData__/config.json'
+
+const fetchMock = mock()
+mock.module('node-fetch', () => ({ default: fetchMock }))
+
+const endpoint = '/_twake/recoveryWords'
+const testFilePath = path.join(JEST_PROCESS_ROOT_PATH, 'vault.db')
+const matrixTestFilePath = path.join(JEST_PROCESS_ROOT_PATH, 'matrix.db')
+
+const words = 'This is a test sentence'
+const accessToken =
+  'accessTokenddddddddddddddddddddddddddddddddddddddddddddddddddddd'
+
+// @ts-expect-error ignore this
+delete defaultConfig.policies
+
+const unsavedToken = accessToken.replace('accessToken', 'unsavedToken')
+const unsavedToken2 = accessToken.replace('accessToken', 'unsavedT2ken')
+
+const matrixServerResponseBody = {
+  user_id: 'test',
+  is_guest: 'test',
+  device_id: 'test'
+}
+
+/*
+describe('getConfigurationFile method', () => {
+  let vaultApiServerConfigTest: TwakeVaultAPI
+
+  it('should return default config', async () => {
+    delete process.env.TWAKE_VAULT_SERVER_CONF
+    vaultApiServerConfigTest = new TwakeVaultAPI()
+    await vaultApiServerConfigTest.ready
+    expect(vaultApiServerConfigTest.conf).toStrictEqual({defaultConfig})
+    fs.unlinkSync('./tokens.db')
+  })
+
+  it('should return config from parameter', async () => {
+    const dbFilePath = './customdb.db'
+    const config: Partial<Config> = {
+      database_engine: 'sqlite',
+      database_host: dbFilePath,
+      server_name: 'test',
+      matrix_server: 'localhost'
+    }
+    vaultApiServerConfigTest = new TwakeVaultAPI(config)
+    await vaultApiServerConfigTest.ready
+    expect(vaultApiServerConfigTest.conf).toStrictEqual(config)
+    fs.unlinkSync(dbFilePath)
+  })
+})
+*/
+
+describe('Vault API server', () => {
+  let vaultApiServer: TwakeServer
+  let app: express.Application
+
+  beforeAll((done) => {
+    const conf = {
+      ...defaultConfig,
+      database_engine: 'sqlite',
+      database_host: testFilePath,
+      matrix_server: 'localhost',
+      template_dir: 'assets/templates',
+      userdb_engine: 'sqlite',
+      userdb_host: testFilePath,
+      matrix_database_engine: 'sqlite',
+      matrix_database_host: matrixTestFilePath,
+      rate_limiting_window: 10000,
+      rate_limiting_nb_requests: 100,
+      sms_api_key: '',
+      sms_api_login: '',
+      sms_api_url: 'https://api.example.com/'
+    }
+    buildTokenTable(conf as Config)
+      .then(() => {
+        app = express()
+        vaultApiServer = new TwakeServer(conf as Config)
+        vaultApiServer.ready
+          .then(() => {
+            app.use(vaultApiServer.endpoints)
+            done()
+          })
+          .catch((e) => {
+            console.error(e)
+            done(e)
+          })
+      })
+      .catch((e) => {
+        console.error(e)
+        done(e)
+      })
+  })
+
+  beforeEach(() => {
+    fetchMock.mockResolvedValue({
+      json: mock().mockResolvedValue(matrixServerResponseBody)
+    })
+    mock.clearAllMocks()
+  })
+
+  afterAll(() => {
+    if (fs.existsSync(testFilePath)) {
+      fs.unlinkSync(testFilePath)
+    }
+    if (fs.existsSync(matrixTestFilePath)) {
+      fs.unlinkSync(matrixTestFilePath)
+    }
+    vaultApiServer.cleanJobs()
+  })
+
+  it('reject unimplemented endpoint with 404', async () => {
+    const response = await request(app).get('/unkown')
+    expect(response.statusCode).toBe(404)
+  })
+
+  it('reject not allowed method with 405', async () => {
+    const response = await request(app).patch(endpoint)
+    expect(response.statusCode).toBe(405)
+    expect(response.body).toStrictEqual({
+      error: 'Method not allowed'
+    })
+  })
+
+  it('error on get words in database for connected user who did not save words before', async () => {
+    const response = await request(app)
+      .get(endpoint)
+      .set('Authorization', `Bearer ${accessToken}`)
+    expect(response.statusCode).toBe(404)
+    expect(response.body).toStrictEqual({
+      error: 'User has no recovery sentence'
+    })
+  })
+
+  it('insert words in database for the connected user', async () => {
+    const response = await request(app)
+      .post(endpoint)
+      .send({ words })
+      .set('Authorization', `Bearer ${accessToken}`)
+    expect(response.statusCode).toBe(201)
+    expect(response.body).toStrictEqual({
+      message: 'Saved recovery words successfully'
+    })
+  })
+
+  it('get words in database for the connected user', async () => {
+    const response = await request(app)
+      .get(endpoint)
+      .set('Authorization', `Bearer ${accessToken}`)
+    expect(response.statusCode).toBe(200)
+    expect(response.body).toStrictEqual({
+      words
+    })
+  })
+
+  it('get words in database user authenticated whose access_token is not stored without recovery sentence', async () => {
+    const response = await request(app)
+      .get(endpoint)
+      .set('Authorization', `Bearer ${unsavedToken}`)
+    expect(response.statusCode).toBe(404)
+    expect(response.body).toStrictEqual({
+      error: 'User has no recovery sentence'
+    })
+    await removeUserInAccessTokenTable(unsavedToken)
+  })
+
+  it('get words in database user authenticated whose access_token is not stored with recovery sentence', async () => {
+    const recoverySentence = 'This is another recovery sentence'
+    await new Promise<void>((resolve, reject) => {
+      vaultApiServer.db
+        ?.insert('recoveryWords', {
+          userId: matrixServerResponseBody.user_id,
+          words: recoverySentence
+        })
+        .then(() => {
+          resolve()
+        })
+        .catch(reject)
+    })
+    let response = await request(app)
+      .get(endpoint)
+      .set('Authorization', `Bearer ${unsavedToken}`)
+    expect(response.statusCode).toBe(200)
+    expect(response.body).toStrictEqual({
+      words: recoverySentence
+    })
+    await removeUserInAccessTokenTable(unsavedToken)
+    await removeUserInRecoveryWordsTable(matrixServerResponseBody.user_id)
+    response = await request(app)
+      .get(endpoint)
+      .set('Authorization', `Bearer ${unsavedToken}`)
+    expect(response.statusCode).toBe(404)
+  })
+
+  it('post words in database for authenticated user whose access_token is not stored', async () => {
+    const response = await request(app)
+      .post(endpoint)
+      .send({ words })
+      .set('Authorization', `Bearer ${unsavedToken}`)
+    expect(response.statusCode).toBe(201)
+    expect(response.body).toStrictEqual({
+      message: 'Saved recovery words successfully'
+    })
+    await removeUserInAccessTokenTable(unsavedToken)
+    await removeUserInRecoveryWordsTable(matrixServerResponseBody.user_id)
+  })
+
+  // Delete words from database for connected user whose recovery sentence is previously saved
+  it('delete words in database for the connected user whose recovery sentence is previously saved', async () => {
+    await request(app)
+      .post(endpoint)
+      .send({ words })
+      .set('Authorization', `Bearer ${unsavedToken2}`)
+    const response = await request(app)
+      .delete(endpoint)
+      .set('Authorization', `Bearer ${unsavedToken2}`)
+    expect(response.statusCode).toBe(204)
+  })
+
+  // Delete words from database for connected user whose doesn't have a recovery sentence associated to his access_token
+  // It returns 201 even if there weren't any words saved : depends on the behaviour we would like to have.
+  it('delete words in database for the connected user whose recovery sentence is not saved', async () => {
+    const response = await request(app)
+      .delete(endpoint)
+      .set('Authorization', `Bearer ${unsavedToken}`)
+    expect(response.statusCode).toBe(404)
+    expect(response.body).toStrictEqual({
+      error: 'User has no recovery sentence'
+    })
+  })
+
+  it('should update words in the dabase if the connected user have some', async () => {
+    const response = await request(app)
+      .put(endpoint)
+      .send({ words })
+      .set('Authorization', `Bearer ${accessToken}`)
+
+    expect(response.statusCode).toBe(200)
+    expect(response.body).toStrictEqual({
+      message: 'Updated recovery words successfully'
+    })
+  })
+
+  it('should reject if more than 100 requests are done in less than 10 seconds on get words', { timeout: 20000 }, async () => {
+    let response
+    let token
+    // eslint-disable-next-line @typescript-eslint/no-for-in-array, @typescript-eslint/no-unused-vars
+    for (const i in [...Array(101).keys()]) {
+      token = Number(i) % 2 === 0 ? `Bearer ${accessToken}` : 'falsy_token'
+      response = await request(app).get(endpoint).set('Authorization', token)
+    }
+    expect((response as Response).statusCode).toEqual(429)
+    await new Promise((resolve) => setTimeout(resolve, 11000))
+  })
+
+  it('should reject if more than 100 requests are done in less than 10 seconds on post words', { timeout: 20000 }, async () => {
+    let response
+    let token
+    // eslint-disable-next-line @typescript-eslint/no-for-in-array, @typescript-eslint/no-unused-vars
+    for (const i in [...Array(101).keys()]) {
+      token = Number(i) % 2 === 0 ? `Bearer ${accessToken}` : 'falsy_token'
+      response = await request(app)
+        .post(endpoint)
+        .send({ words })
+        .set('Authorization', token)
+    }
+    expect((response as Response).statusCode).toEqual(429)
+    await new Promise((resolve) => setTimeout(resolve, 11000))
+  })
+
+  const removeUserInAccessTokenTable = async (
+    accessToken: string
+  ): Promise<void> => {
+    // eslint-disable-next-line @typescript-eslint/return-await
+    return new Promise<void>((resolve, reject) => {
+      vaultApiServer.db
+        ?.deleteEqual('matrixTokens', 'id', accessToken)
+        .then(() => {
+          resolve()
+        })
+        .catch(reject)
+    })
+  }
+
+  const removeUserInRecoveryWordsTable = async (
+    userId: string
+  ): Promise<void> => {
+    // eslint-disable-next-line @typescript-eslint/return-await
+    return new Promise<void>((resolve, reject) => {
+      vaultApiServer.db
+        ?.deleteEqual('recoveryWords', 'userId', userId)
+        .then(() => {
+          resolve()
+        })
+        .catch(reject)
+    })
+  }
+})
