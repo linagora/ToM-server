@@ -10,7 +10,7 @@ Matrix protocol.
 
 > [!NOTE]
 > This is a reboot of the legacy repo:
-> https://github.com/linagora/ToM-Server-archive
+> [ToM-Server-archive](https://github.com/linagora/ToM-Server-archive)
 
 ## Table of Contents
 
