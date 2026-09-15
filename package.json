@@ -1,7 +1,7 @@
 {
   "name": "@twake/tom-server",
   "description": "A Twake Workplace Matrix Identity Server with augmented capacities",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "type": "module",
   "private": true,
   "files": [
