@@ -36,6 +36,6 @@ COPY ./assets/templates/ ./templates/
 WORKDIR /app
 RUN mkdir -p /data
 
-COPY --from=builder /app/bin/tom-bridge ./
+COPY --from=builder /app/bin/tom-server ./
 
 ENTRYPOINT ["./tom-server", "--config", "/data/config.yaml"]
